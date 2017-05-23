@@ -86,7 +86,7 @@ documents.onDidChangeContent((change) => {
 });
 
 documents.onDidClose((event=>{
-  cleanPendingValidation(event.document);
+	cleanPendingValidation(event.document);
 	connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
 }));
 

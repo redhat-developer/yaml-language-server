@@ -63,20 +63,32 @@ export class YAMLSChemaValidator extends ASTVisitor {
     return true;
   };
 
-  public endVisit(node: YAMLNode): void {
+  public endVisit(node:YAMLNode): void {
     
   };
 
+  /*
+  Get the parent node names in the format of closest to node to least closest
 
-  private getParentNodeNames(node){
+  A -> B -> C.
+  getParentNodes(C) -> [B, A]
+  */
+  private getParentNodes(node:YAMLNode){
     
-    let parentNodeNames = [];
-    
-    while(node.parent != null && node.parent != node){
-      parentNodeNames.push(node.parent.value);
+    if(!node){
+      return [];
     }
 
-    return parentNodeNames;
+    let holderNode = node;
+
+    let parentNodeArray = [];
+    
+    while(holderNode.parent != null && holderNode.parent != holderNode){
+      parentNodeArray.push((holderNode.parent).value);
+      holderNode = holderNode.parent;
+    }
+
+    return parentNodeArray;
 
   }
 
@@ -87,17 +99,18 @@ export class YAMLSChemaValidator extends ASTVisitor {
   */
   private validateScalar(node:YAMLScalar){
     
-    //The parents given type is correct if true else it fails
-    //this.schema[] at this location current location all the way down is true
-    
-    //Just an idea, not the full working code. Can potentially be made more efficient.
-    let parentNodeNames = this.getParentNodeNames(node);
-    let depth = null;
-    for(let x = 0; x < parentNodeNames.length; x++){
-      depth = this.schema[parentNodeNames[x]];
+    if(!node){
+      return true;
     }
 
-    return depth.type == typeof node.value;
+    //Just an idea, not the full working code. Can potentially be made more efficient.
+    let parentNodes = this.getParentNodes(node); //Gets the parent nodes from closest to furthest
+    let traversedSchema = this.schema;
+    for(let x = parentNodes.length - 1; x >= 0; x--){
+      traversedSchema = traversedSchema[parentNodes[x]];
+    }
+
+    return traversedSchema[node.key].type == typeof node.value;
 
   }
 
@@ -108,10 +121,19 @@ export class YAMLSChemaValidator extends ASTVisitor {
   /*
   The left side of the item i.e. the node. E.g. apiVersion (Mapping value): v1
   
-  Validate the the left side is in properties and correct depth or additional properties
+  Validate it is in properties and the correct depth (Automatically done) or has additional properties
   */
   private validateMapping(node:YAMLScalar){
-    node.value;
+  
+    //Just an idea, not the full working code. Can potentially be made more efficient.
+    let parentNodeNames = this.getParentNodes(node);
+    let depth = null;
+    for(let x = 0; x < parentNodeNames.length; x++){
+      depth = this.schema[parentNodeNames[x]];
+    }
+
+    return depth.type == typeof node.value;
+  
   }
 
   private validateMap(node:YAMLScalar){
