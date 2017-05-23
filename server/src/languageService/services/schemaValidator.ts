@@ -107,7 +107,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
     let parentNodes = this.getParentNodes(node); //Gets the parent nodes from closest to furthest
     let traversedSchema = this.schema;
     for(let x = parentNodes.length - 1; x >= 0; x--){
-      traversedSchema = traversedSchema[parentNodes[x]];
+      traversedSchema = traversedSchema[parentNodes[x].value];
     }
 
     return traversedSchema[node.key].type == typeof node.value;
