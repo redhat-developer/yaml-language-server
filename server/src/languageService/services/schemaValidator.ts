@@ -92,6 +92,15 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
   }
 
+  private traverseBackToLocation(node:YAMLNode){
+    let parentNodes = this.getParentNodes(node); //Gets the parent nodes from closest to furthest
+    let traversedSchema = this.schema;
+    for(let x = parentNodes.length - 1; x >= 0; x--){
+      traversedSchema = traversedSchema[parentNodes[x].value];
+    }
+    return traversedSchema;
+  }
+
   /*
   The actual string value on the right side of the item
 
@@ -104,12 +113,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
     }
 
     //Just an idea, not the full working code. Can potentially be made more efficient.
-    let parentNodes = this.getParentNodes(node); //Gets the parent nodes from closest to furthest
-    let traversedSchema = this.schema;
-    for(let x = parentNodes.length - 1; x >= 0; x--){
-      traversedSchema = traversedSchema[parentNodes[x].value];
-    }
-
+    let traversedSchema = this.traverseBackToLocation(node);
     return traversedSchema[node.key].type == typeof node.value;
 
   }
@@ -119,23 +123,21 @@ export class YAMLSChemaValidator extends ASTVisitor {
   }
 
   /*
-  The left side of the item i.e. the node. E.g. apiVersion (Mapping value): v1
+  The key value node pair itself E.g. apiVersion : v1
   
   Validate it is in properties and the correct depth (Automatically done) or has additional properties
   */
   private validateMapping(node:YAMLScalar){
   
     //Just an idea, not the full working code. Can potentially be made more efficient.
-    let parentNodeNames = this.getParentNodes(node);
-    let depth = null;
-    for(let x = 0; x < parentNodeNames.length; x++){
-      depth = this.schema[parentNodeNames[x]];
-    }
-
-    return depth.type == typeof node.value;
+    let traversedSchema = this.traverseBackToLocation(node);
+    return traversedSchema.type == typeof node.value;
   
   }
 
+  /*
+  In order for this to be valid you need the correct value in the key node and correct type in the value node
+  */
   private validateMap(node:YAMLScalar){
     node.value;
   }
