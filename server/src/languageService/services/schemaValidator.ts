@@ -1,6 +1,7 @@
 import { ASTVisitor } from '../utils/astServices';
 import { YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference } from 'yaml-ast-parser';
 import { JSONSchema } from "../jsonSchema";
+import { SchemaToMappingTransformer } from "../schemaToMappingTransformer"
 
 export class YAMLSChemaValidator extends ASTVisitor {
   private schema: JSONSchema;
@@ -19,7 +20,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
       Validate the type
       */
       case Kind.SCALAR :
-        this.validateScalar(<YAMLScalar>node);
+        new SchemaToMappingTransformer(this.schema);
         break;
       
       /*
@@ -93,12 +94,62 @@ export class YAMLSChemaValidator extends ASTVisitor {
   }
 
   private traverseBackToLocation(node:YAMLNode){
-    let parentNodes = this.getParentNodes(node); //Gets the parent nodes from closest to furthest
-    let traversedSchema = this.schema;
-    for(let x = parentNodes.length - 1; x >= 0; x--){
-      traversedSchema = traversedSchema[parentNodes[x].value];
-    }
-    return traversedSchema;
+    
+    //
+    //  Schema mapping
+    //  "matchExpressions": {0: {"children": ["key", "operator", "values"]}}
+    //
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   }
 
   /*
@@ -131,7 +182,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
   
     //Just an idea, not the full working code. Can potentially be made more efficient.
     let traversedSchema = this.traverseBackToLocation(node);
-    return traversedSchema.type == typeof node.value;
+    //return traversedSchema.type == typeof node.value;
   
   }
 
