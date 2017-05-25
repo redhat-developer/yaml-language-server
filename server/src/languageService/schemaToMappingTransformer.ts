@@ -24,7 +24,6 @@ export class SchemaToMappingTransformer {
                    this.mappingKuberSchema[prop] = [];
               }
         
-              //This parts working
               if(this.kuberSchema.definitions[api_obj]["properties"][prop]["items"]){
                 
                 let children = this.kuberSchema.definitions[api_obj]["properties"][prop]["items"]["properties"];
