@@ -112,7 +112,6 @@ export class YAMLSChemaValidator extends ASTVisitor {
     let parentListDepth = parentNodeList.length;
     let rootNode = parentNodeList[parentNodeList.length - 1].toString(); //matchingExpressions
     let schema = mappedSchema["mappingKuberSchema"];
-    let t = schema[rootNode][0].children;
 
     //Add the nodes that need to be searched
     for(let node = 0; node < schema[rootNode].length; node++){
