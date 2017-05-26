@@ -1,5 +1,5 @@
 {
-  "name": "vscode-yaml",
+  "name": "vscode-k8s",
   "description": "Kubernetes support for VS Code",
   "author": "Gorkem Ercan",
   "license": "MIT",
