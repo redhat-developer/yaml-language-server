@@ -20,7 +20,9 @@ export class YAMLSChemaValidator extends ASTVisitor {
       Validate the type
       */
       case Kind.SCALAR :
-        new SchemaToMappingTransformer(this.schema);
+        let mappedSchema = new SchemaToMappingTransformer(this.schema);
+        let parentNodes = this.getParentNodes(node);
+        this.traverseBackToLocation(mappedSchema, parentNodes, node);
         break;
       
       /*
@@ -85,70 +87,58 @@ export class YAMLSChemaValidator extends ASTVisitor {
     let parentNodeArray = [];
     
     while(holderNode.parent != null && holderNode.parent != holderNode){
-      parentNodeArray.push((holderNode.parent).value);
+      
+      if(typeof holderNode.parent.key != "undefined"){
+        parentNodeArray.push(holderNode.parent.key.value);
+      }
+
       holderNode = holderNode.parent;
+    
     }
 
     return parentNodeArray;
 
   }
 
-  private traverseBackToLocation(node:YAMLNode){
+  private traverseBackToLocation(mappedSchema:JSONSchema, parentNodeList:Array<String>, node:YAMLNode){
     
     //
     //  Schema mapping
     //  "matchExpressions": {0: {"children": ["key", "operator", "values"]}}
     //
 
+    let nodeList = [];
+    let modelDepth = 0;
+    let parentListDepth = parentNodeList.length;
+    let rootNode = parentNodeList[parentNodeList.length - 1].toString(); //matchingExpressions
+    let schema = mappedSchema["mappingKuberSchema"];
+    let t = schema[rootNode][0].children;
 
+    //Add the nodes that need to be searched
+    for(let node = 0; node < schema[rootNode].length; node++){
+      for(let childNode = 0; childNode < schema[rootNode][node].children.length; childNode++){
+        nodeList.push([rootNode, schema[rootNode][node]["children"][childNode]]);
+      }
+    }
 
+    while(nodeList.length != 0){
+      let nodeListToSearch = nodeList.shift();
+      let nodeToSearch = nodeListToSearch[nodeListToSearch.length - 1];
 
+      if(nodeListToSearch.length === parentListDepth && nodeToSearch === node.value){
+        return true;
+      }
 
+      for(let node = 0; node < schema[nodeToSearch].length; node++){
+        for(let childNode = 0; childNode < schema[nodeToSearch][node]["children"].length; childNode++){
+          nodeListToSearch.push(schema[nodeToSearch][node]["children"][childNode]);
+          nodeList.push(nodeListToSearch);
+        }
+      }
 
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return false;
 
   }
 
@@ -164,8 +154,8 @@ export class YAMLSChemaValidator extends ASTVisitor {
     }
 
     //Just an idea, not the full working code. Can potentially be made more efficient.
-    let traversedSchema = this.traverseBackToLocation(node);
-    return traversedSchema[node.key].type == typeof node.value;
+    //let traversedSchema = this.traverseBackToLocation([], node);
+    //return traversedSchema[node.key].type == typeof node.value;
 
   }
 
@@ -181,7 +171,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
   private validateMapping(node:YAMLScalar){
   
     //Just an idea, not the full working code. Can potentially be made more efficient.
-    let traversedSchema = this.traverseBackToLocation(node);
+    //let traversedSchema = this.traverseBackToLocation(node);
     //return traversedSchema.type == typeof node.value;
   
   }
