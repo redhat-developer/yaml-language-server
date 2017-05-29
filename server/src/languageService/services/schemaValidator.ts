@@ -174,7 +174,6 @@ export class YAMLSChemaValidator extends ASTVisitor {
       if(this.validateObject(traversalResults) && this.verifyType(traversalResults, valueValue, node)){
         return true;
       }else{
-        //TODO: We need to add the errors to the error result list so find this error
         YAMLSChemaValidator.addErrorResult(node);
         return false;
       }
