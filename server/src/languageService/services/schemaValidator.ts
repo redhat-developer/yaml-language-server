@@ -2,9 +2,13 @@ import { ASTVisitor } from '../utils/astServices';
 import { YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference } from 'yaml-ast-parser';
 import { JSONSchema } from "../jsonSchema";
 import { SchemaToMappingTransformer } from "../schemaToMappingTransformer"
+import { DiagnosticSeverity } from "vscode-languageserver-types/lib/main";
+import { error } from "util";
+import { xhr,configure as getErrorStatusDescription } from 'request-light';
 
 export class YAMLSChemaValidator extends ASTVisitor {
   private schema: JSONSchema;
+  private static errorResults = [];
 
   constructor(schema: JSONSchema) {
     super();
@@ -20,9 +24,10 @@ export class YAMLSChemaValidator extends ASTVisitor {
       Validate the type
       */
       case Kind.SCALAR :
-        let mappedSchema = new SchemaToMappingTransformer(this.schema);
-        let parentNodes = this.getParentNodes(node);
-        this.traverseBackToLocation(mappedSchema, parentNodes, node);
+        let scalarSchema = new SchemaToMappingTransformer(this.schema);
+        let scalarParents = this.getParentNodes(node);
+        let z = this.traverseBackToLocation(scalarSchema, scalarParents, node);
+        let f = this.verifyType(z, node.value);
         break;
       
       /*
@@ -31,8 +36,40 @@ export class YAMLSChemaValidator extends ASTVisitor {
       Validate the the left side is in properties and correct depth or additional properties
       */
       case Kind.MAPPING :
-        this.validateMapping(<YAMLScalar>node); 
+        //this.validateMapping(<YAMLScalar>node);
+        let mappedSchema = new SchemaToMappingTransformer(this.schema);
+        if(mappedSchema[node.key.value] === undefined){
+          //False
+          //Add the nodes to the error list
+          YAMLSChemaValidator.addErrorResult(node);
+        }else{
+          let parentNodes = this.getParentNodes(node);
+          let test = this.traverseBackToLocation(mappedSchema, parentNodes, node);
+          if(!this.validateObject(test)){
+            let t = this.verifyType(test, node.value.value); //This is validating the child node
+          }
+        }
+        
         break;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       /************************************/
       /* MIGHT NOT HAVE TO VALIDATE THESE */
@@ -46,25 +83,25 @@ export class YAMLSChemaValidator extends ASTVisitor {
       
       Validate ??? 
       */
-      case Kind.SEQ :
-        this.validateSeq(<YAMLScalar>node);
-        break;
+      //case Kind.SEQ :
+      //  this.validateSeq(<YAMLScalar>node);
+      //  break;
 
       /*
       A list of mappings
 
       Validate that the children are of the property type
       */
-      case Kind.MAP : 
-        this.validateMap(<YAMLScalar>node);
-        break;
+      //case Kind.MAP : 
+      //  this.validateMap(<YAMLScalar>node);
+      //  break;
       
       /*
       Unsure
       */
-      case Kind.ANCHOR_REF :
-        this.validateAnchorRef(<YAMLScalar>node); 
-        break;
+      //case Kind.ANCHOR_REF :
+      //  this.validateAnchorRef(<YAMLScalar>node); 
+      //  break;
       
     }
     return true;
@@ -73,6 +110,18 @@ export class YAMLSChemaValidator extends ASTVisitor {
   public endVisit(node:YAMLNode): void {
     
   };
+
+  private static addErrorResult(errorNode){
+    this.errorResults.push({
+        severity: DiagnosticSeverity.Error,
+        range: {
+					start: errorNode.startPosition,
+					end: errorNode.endPosition
+				},
+        message: "Not valid Kubernetes Code",
+        source: "k8s"
+      });
+  }
 
   /*
   Get the parent node names in the format of closest to node to least closest
@@ -104,35 +153,42 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
   }
 
-  private validation(mappedSchema:JSONSchema, parentNodeList:Array<String>, node:YAMLNode){
-    
-    let traversalValidation = this.traverseBackToLocation(mappedSchema, parentNodeList, node);
-    
-    //If the object is empty then it is not validated since traverseBackToLocation didn't find the node.
-    if(Object.keys(traversalValidation).length === 0){
-      return false;
+  private verifyType(mappingNode, node:YAMLNode){
+    for(let n = 0; n < mappingNode.length; n++){
+      if(mappingNode[n].type === typeof node){
+        return true;
+      }
     }
+    return false;
+  }
 
-    return true;
-
+  private validateObject(nodeObject){
+    return Object.keys(nodeObject).length >= 1;
   }
 
   private traverseBackToLocation(mappedSchema:JSONSchema, parentNodeList:Array<String>, node:YAMLNode){
-    
-    //
-    //  Schema mapping
-    //  "matchExpressions": {0: {"children": ["key", "operator", "values"]}}
-    //
+
+    if(mappedSchema[node.value] === 'undefined'){
+      return {};
+    }
+
+    if(parentNodeList.length === 0){
+      if(node.kind === Kind.MAPPING){
+        return mappedSchema["mappingKuberSchema"][node["key"]["value"]];
+      }
+    }
+
+    if(parentNodeList.length === 1){
+      if(node.kind === Kind.SCALAR){
+        return mappedSchema["mappingKuberSchema"][node["parent"]["key"]["value"]];
+      }
+    }
 
     let nodeList = [];
     let modelDepth = 0;
     let parentListDepth = parentNodeList.length;
     let rootNode = parentNodeList[parentNodeList.length - 1].toString(); //matchingExpressions
     let schema = mappedSchema["mappingKuberSchema"];
-
-    if(parentNodeList.length === 0){
-      return schema[node.value];
-    }
 
     //Add the nodes that need to be searched
     for(let node = 0; node < schema[rootNode].length; node++){
@@ -192,10 +248,6 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
   }
 
-  private validateSeq(node:YAMLScalar){
-    node.value;
-  }
-
   /*
   The key value node pair itself E.g. apiVersion : v1
   
@@ -209,15 +261,23 @@ export class YAMLSChemaValidator extends ASTVisitor {
   
   }
 
-  /*
-  In order for this to be valid you need the correct value in the key node and correct type in the value node
-  */
-  private validateMap(node:YAMLScalar){
-    node.value;
+  private static getErrorResults(){
+    return this.errorResults;
   }
+  
+  // private validateSeq(node:YAMLScalar){
+  //   node.value;
+  // }
 
-  private validateAnchorRef(node:YAMLScalar){
-    node.value;
-  }
+  // /*
+  // In order for this to be valid you need the correct value in the key node and correct type in the value node
+  // */
+  // private validateMap(node:YAMLScalar){
+  //   node.value;
+  // }
+
+  // private validateAnchorRef(node:YAMLScalar){
+  //   node.value;
+  // }
 
 }
