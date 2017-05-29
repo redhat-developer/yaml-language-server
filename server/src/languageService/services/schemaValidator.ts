@@ -26,6 +26,19 @@ export class YAMLSChemaValidator extends ASTVisitor {
         break;
       
       /*
+      The left side of the item i.e. the node. E.g. apiVersion (Mapping value): v1
+      
+      Validate the the left side is in properties and correct depth or additional properties
+      */
+      case Kind.MAPPING :
+        this.validateMapping(<YAMLScalar>node); 
+        break;
+
+      /************************************/
+      /* MIGHT NOT HAVE TO VALIDATE THESE */
+      /************************************/
+
+      /*
       An item prefaced by -? i.e. 
       objects:
          - apiVersion: v1
@@ -35,15 +48,6 @@ export class YAMLSChemaValidator extends ASTVisitor {
       */
       case Kind.SEQ :
         this.validateSeq(<YAMLScalar>node);
-        break;
-      
-      /*
-      The left side of the item i.e. the node. E.g. apiVersion (Mapping value): v1
-      
-      Validate the the left side is in properties and correct depth or additional properties
-      */
-      case Kind.MAPPING :
-        this.validateMapping(<YAMLScalar>node); 
         break;
 
       /*
@@ -100,6 +104,19 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
   }
 
+  private validation(mappedSchema:JSONSchema, parentNodeList:Array<String>, node:YAMLNode){
+    
+    let traversalValidation = this.traverseBackToLocation(mappedSchema, parentNodeList, node);
+    
+    //If the object is empty then it is not validated since traverseBackToLocation didn't find the node.
+    if(Object.keys(traversalValidation).length === 0){
+      return false;
+    }
+
+    return true;
+
+  }
+
   private traverseBackToLocation(mappedSchema:JSONSchema, parentNodeList:Array<String>, node:YAMLNode){
     
     //
@@ -113,6 +130,10 @@ export class YAMLSChemaValidator extends ASTVisitor {
     let rootNode = parentNodeList[parentNodeList.length - 1].toString(); //matchingExpressions
     let schema = mappedSchema["mappingKuberSchema"];
 
+    if(parentNodeList.length === 0){
+      return schema[node.value];
+    }
+
     //Add the nodes that need to be searched
     for(let node = 0; node < schema[rootNode].length; node++){
       for(let childNode = 0; childNode < schema[rootNode][node].children.length; childNode++){
@@ -125,7 +146,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
       let nodeToSearch = nodeListToSearch[nodeListToSearch.length - 1];
 
       if(nodeListToSearch.length === parentListDepth && nodeToSearch === node.value){
-        return true;
+        return schema[nodeToSearch];
       }
 
       for(let node = 0; node < schema[nodeToSearch].length; node++){
@@ -137,8 +158,21 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
     }
 
-    return false;
+    return {};
 
+  }
+
+  private getChildNodes(mappedSchemaNode:JSONSchema){
+    let childNodes = [];
+
+    //We need to fix this
+    for(let x = 0; x < mappedSchemaNode; x++){
+      for(let y = 0; y < mappedSchemaNode[x]; y++){
+        childNodes.push(mappedSchemaNode[x].children[y]);
+      }
+    }
+
+    return childNodes;
   }
 
   /*
