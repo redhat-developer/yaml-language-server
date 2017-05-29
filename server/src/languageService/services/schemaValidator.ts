@@ -25,9 +25,15 @@ export class YAMLSChemaValidator extends ASTVisitor {
       */
       case Kind.SCALAR :
         let scalarSchema = new SchemaToMappingTransformer(this.schema);
-        let scalarParents = this.getParentNodes(node);
-        let z = this.traverseBackToLocation(scalarSchema, scalarParents, node);
-        let f = this.verifyType(z, node.value);
+        if(scalarSchema[node.value] === undefined){
+          //False
+          //Add the nodes to the error list
+          YAMLSChemaValidator.addErrorResult(node);
+        }else{
+          let scalarParents = this.getParentNodes(node);
+          let z = this.traverseBackToLocation(scalarSchema, scalarParents, node);
+          let f = this.verifyType(z, node.value);
+        }
         break;
       
       /*
