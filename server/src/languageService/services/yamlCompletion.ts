@@ -24,10 +24,11 @@ export class YamlCompletion {
     let node = findNode(<YAMLNode>doc, offset);
     // TODO: Handle comments
 
+    //Not sure how this works
     return this.schemaService.getSchemaForResource(document.uri).then(schema =>{
       let validator = new YAMLSChemaValidator(schema.schema);
       traverse(<YAMLNode>doc,validator);
-
+      result.items = YAMLSChemaValidator.getErrorResults();
       return result;
     });
   }

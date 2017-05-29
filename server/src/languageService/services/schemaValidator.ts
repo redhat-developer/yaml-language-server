@@ -65,7 +65,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
     let parentNodeArray = [];
     
     while(holderNode.parent != null && holderNode.parent != holderNode){
-      
+
       if(typeof holderNode.parent.key != "undefined"){
         parentNodeArray.push(holderNode.parent.key.value);
       }
@@ -129,7 +129,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
       let nodeListToSearch = nodeList.shift();
       let nodeToSearch = nodeListToSearch[nodeListToSearch.length - 1];
 
-      if(nodeListToSearch.length === parentListDepth && nodeToSearch === node.value){
+      if(nodeListToSearch.length - 1 === parentListDepth && nodeToSearch === node.key.value){
         return schema[nodeToSearch];
       }
 
@@ -185,6 +185,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
   private static addErrorResult(errorNode){
     this.errorResults.push({
         severity: DiagnosticSeverity.Error,
+        label: "test",
         range: {
 					start: errorNode.startPosition,
 					end: errorNode.endPosition
@@ -194,7 +195,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
       });
   }
 
-  private static getErrorResults(){
+  public static getErrorResults(){
     return this.errorResults;
   }
 
