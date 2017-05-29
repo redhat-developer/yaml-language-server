@@ -1,5 +1,5 @@
 {
-  "name": "vscode-yaml",
+  "name": "vscode-k8s",
   "description": "Kubernetes language server",
   "version": "0.0.1",
   "author": "Gorkem Ercan",
