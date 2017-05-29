@@ -78,13 +78,19 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
   }
 
-  private verifyType(mappingNode, nodeToTest){
-    for(let n = 0; n < mappingNode.length; n++){
-      if(mappingNode[n].type === typeof nodeToTest || (typeof nodeToTest === "number" && mappingNode[n].type === "integer")){
-        return true;
+  /*
+  Verify that the type of nodeToTest is the same as atleast one of the nodes in the mappingNode schema. Also add support for "number" === "integer" since typescript/javascript uses number instead of integer while yaml uses integer
+  */
+  private verifyType(mappingNode, nodeToTest, node){
+    if(node.kind === Kind.SCALAR){
+      for(let n = 0; n < mappingNode.length; n++){
+        if(mappingNode[n].type === typeof nodeToTest || (typeof nodeToTest === "number" && mappingNode[n].type === "integer")){
+          return true;
+        }
       }
+      return false;
     }
-    return false;
+    return true;
   }
 
   private validateObject(nodeObject){
@@ -143,7 +149,8 @@ export class YAMLSChemaValidator extends ASTVisitor {
   }
 
   private validateScalar(node:YAMLScalar){
-    if(node.valueObject === undefined){
+    //The case where the object isn't a string
+    if(node.valueObject !== undefined){
       this.validate(<YAMLScalar>node, node.parent.key.value, node.valueObject);
     }else{
       this.validate(<YAMLScalar>node, node.parent.key.value, node.value);
@@ -164,11 +171,11 @@ export class YAMLSChemaValidator extends ASTVisitor {
     }else{
       let nodeParents = this.getParentNodes(node);
       let traversalResults = this.traverseBackToLocation(nodeParents, node);
-      if(this.validateObject(traversalResults) && this.verifyType(traversalResults, valueValue)){
+      if(this.validateObject(traversalResults) && this.verifyType(traversalResults, valueValue, node)){
         return true;
       }else{
         //TODO: We need to add the errors to the error result list so find this error
-
+        YAMLSChemaValidator.addErrorResult(node);
         return false;
       }
     }
