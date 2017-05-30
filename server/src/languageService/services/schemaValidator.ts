@@ -112,15 +112,20 @@ export class YAMLSChemaValidator extends ASTVisitor {
     }
 
     let nodeList = [];
-    let modelDepth = 0;
     let parentListDepth = parentNodeList.length;
-    let rootNode = parentNodeList[parentNodeList.length - 1].toString(); //matchingExpressions
+    let parentListReversed = this.deepCopy(parentNodeList).reverse();
+    let rootNode = parentNodeList[parentNodeList.length - 1].toString(); //metadata
     let schema = this.kuberSchema;
 
+    let trackedNodes = new Set();
     //Add the nodes that need to be searched
     for(let node = 0; node < schema[rootNode].length; node++){
       for(let childNode = 0; childNode < schema[rootNode][node].children.length; childNode++){
-        nodeList.push([rootNode, schema[rootNode][node]["children"][childNode]]);
+        let potentialNodeList = [rootNode, schema[rootNode][node]["children"][childNode]]; 
+        let potentialNodeListJson = JSON.stringify(potentialNodeList);
+        if(!trackedNodes.has(potentialNodeListJson)){
+          nodeList.push(potentialNodeList);
+        }
       }
     }
 
@@ -129,16 +134,26 @@ export class YAMLSChemaValidator extends ASTVisitor {
       let nodeListToSearch = nodeList.shift();
       let nodeToSearch = nodeListToSearch[nodeListToSearch.length - 1];
 
+      //Ignore this for now
+      //Checking when its a map
       if(nodeListToSearch.length - 1 === parentListDepth && nodeToSearch === node.key.value){
         return schema[nodeToSearch];
       }
 
+      //Checking when its scalar
+      if(nodeListToSearch.length === parentListDepth && nodeToSearch === node.parent.key.value){
+        return schema[nodeToSearch];
+      }
+      
       //TODO: We need to fix the way in which this works
       for(let node = 0; node < schema[nodeToSearch].length; node++){
         for(let childNode = 0; childNode < schema[nodeToSearch][node]["children"].length; childNode++){
-          //TODO: We are pushing on multiple ending items to the same thing. Deepcopy here?
-          nodeListToSearch.push(schema[nodeToSearch][node]["children"][childNode]);
-          nodeList.push(nodeListToSearch);
+          //Only add the nodes which are the depth are the same as the parentListNode
+          if(nodeToSearch === parentListReversed[nodeListToSearch.length - 1]){ 
+            let searchingNode = this.deepCopy(nodeListToSearch);
+            searchingNode.push(schema[nodeToSearch][node]["children"][childNode]);
+            nodeList.push(searchingNode);  
+          }
         }
       }
 
@@ -197,5 +212,11 @@ export class YAMLSChemaValidator extends ASTVisitor {
   public static getErrorResults(){
     return this.errorResults;
   }
+
+  private deepCopy(Obj:Object){
+    return JSON.parse(JSON.stringify(Obj));
+  }
+
+  
 
 }
