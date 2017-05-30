@@ -9,7 +9,6 @@ import { xhr,configure as getErrorStatusDescription } from 'request-light';
 export class YAMLSChemaValidator extends ASTVisitor {
   private schema: JSONSchema;
   private static errorResultsList = [];
-  private static errorResultsSet = new Set();
   private kuberSchema: JSONSchema;
 
   constructor(schema: JSONSchema) {
@@ -206,24 +205,19 @@ export class YAMLSChemaValidator extends ASTVisitor {
   }
 
   private static addErrorResult(errorNode, errorMessage){
-    let nodeToTest = JSON.parse(JSON.stringify(errorNode));
+  
+    this.errorResultsList.push({
+      severity: DiagnosticSeverity.Error,
+      label: "test",
+      range: {
+        start: errorNode.startPosition,
+        end: errorNode.endPosition
+      },
+      message: errorMessage,
+      source: "k8s"
+    });
 
-    if(!this.errorResultsSet.has(nodeToTest)){
-
-      this.errorResultsSet.add(nodeToTest);
-
-      this.errorResultsList.push({
-        severity: DiagnosticSeverity.Error,
-        label: "test",
-        range: {
-					start: errorNode.startPosition,
-					end: errorNode.endPosition
-				},
-        message: errorMessage,
-        source: "k8s"
-      });
-
-    }
+    
   }
 
   public static getErrorResults(){
