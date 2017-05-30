@@ -190,7 +190,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
     
     if(this.kuberSchema[keyValue] === undefined){
       
-        YAMLSChemaValidator.addErrorResult(node);
+        YAMLSChemaValidator.addErrorResult(node, "Does not meet the kubernetes model");
         return false;
       
     }else{
@@ -198,14 +198,14 @@ export class YAMLSChemaValidator extends ASTVisitor {
       if(this.validateObject(traversalResults) && this.verifyType(traversalResults, valueValue, node)){
         return true;
       }else{
-        YAMLSChemaValidator.addErrorResult(node);
+        YAMLSChemaValidator.addErrorResult(node, "Field is not in the correct location or not the correct type");
         return false;
       }
     }
   
   }
 
-  private static addErrorResult(errorNode){
+  private static addErrorResult(errorNode, errorMessage){
     let nodeToTest = JSON.parse(JSON.stringify(errorNode));
 
     if(!this.errorResultsSet.has(nodeToTest)){
@@ -219,10 +219,10 @@ export class YAMLSChemaValidator extends ASTVisitor {
 					start: errorNode.startPosition,
 					end: errorNode.endPosition
 				},
-        message: "Not valid Kubernetes Code",
+        message: errorMessage,
         source: "k8s"
       });
-      
+
     }
   }
 
