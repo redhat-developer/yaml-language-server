@@ -8,7 +8,8 @@ import { xhr,configure as getErrorStatusDescription } from 'request-light';
 
 export class YAMLSChemaValidator extends ASTVisitor {
   private schema: JSONSchema;
-  private static errorResults = [];
+  private static errorResultsList = [];
+  private static errorResultsSet = new Set();
   private kuberSchema: JSONSchema;
 
   constructor(schema: JSONSchema) {
@@ -20,20 +21,16 @@ export class YAMLSChemaValidator extends ASTVisitor {
   public visit(node: YAMLNode): boolean {
     switch(node.kind){
       
-      /*
-      The actual string value on the right side of the item
-
-      Validate the type
-      */
+      /**
+       * YamlScalar is the value in {key: value}
+       */
       case Kind.SCALAR :
         this.validateScalar(<YAMLScalar>node);
         break;
       
-      /*
-      The left side of the item i.e. the node. E.g. apiVersion (Mapping value): v1
-      
-      Validate the the left side is in properties and correct depth or additional properties
-      */
+      /**
+       * YamlMapping has YAMLScalar as the key and YAMLNode value fields
+       */
       case Kind.MAPPING :
         this.validateMapping(<YAMLMapping>node);        
         break;
@@ -46,14 +43,10 @@ export class YAMLSChemaValidator extends ASTVisitor {
     
   };
 
-  
-
-  /*
-  Get the parent node names in the format of closest to node to least closest
-
-  A -> B -> C.
-  getParentNodes(C) -> [B, A]
-  */
+  /**
+   * Traverse up the ast getting the parent node names in the order of parent to root.
+   * @param {YAMLNode} node - The node to use
+   */
   private getParentNodes(node:YAMLNode){
     
     if(!node){
@@ -66,6 +59,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
     
     while(holderNode.parent != null && holderNode.parent != holderNode){
 
+      //When there is a parent key value we can add it
       if(typeof holderNode.parent.key != "undefined"){
         parentNodeArray.push(holderNode.parent.key.value);
       }
@@ -78,13 +72,19 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
   }
 
-  /*
-  Verify that the type of nodeToTest is the same as atleast one of the nodes in the mappingNode schema. Also add support for "number" === "integer" since typescript/javascript uses number instead of integer while yaml uses integer
-  */
-  private verifyType(mappingNode, nodeToTest, node){
+  /**
+   * Verify that the type of nodeToTest is the same as atleast one of the nodes in mappingNode schema
+   * @param {} traversalResults - The results of the search traversal
+   * @param {YAMLNode} nodeToTest - The node to test
+   * @param {YAMLNode} node - The node to use
+   *
+   * A -> B -> C.
+   * getParentNodes(C) -> [B, A]
+   */
+  private verifyType(traversalResults, nodeToTest, node): Boolean {
     if(node.kind === Kind.SCALAR){
-      for(let n = 0; n < mappingNode.length; n++){
-        if(mappingNode[n].type === typeof nodeToTest || (typeof nodeToTest === "number" && mappingNode[n].type === "integer")){
+      for(let n = 0; n < traversalResults.length; n++){
+        if(traversalResults[n].type === typeof nodeToTest || (typeof nodeToTest === "number" && traversalResults[n].type === "integer")){
           return true;
         }
       }
@@ -93,12 +93,25 @@ export class YAMLSChemaValidator extends ASTVisitor {
     return true;
   }
 
+  /* Validate that the object is NOT empty */
   private validateObject(nodeObject){
     return Object.keys(nodeObject).length >= 1;
   }
 
-  private traverseBackToLocation(parentNodeList:Array<String>, node:YAMLNode){
+  /**
+   * Perform a search navigating down the model looking if there exists a pathway to the node
+   * @param {YAMLNode} node - The node we need to traverse to
+   */
+  private traverseBackToLocation(node:YAMLNode){
 
+    let parentNodeList = this.getParentNodes(node);
+    let nodeList = [];
+    let parentListDepth = parentNodeList.length;
+    let parentListReversed = this.deepCopy(parentNodeList).reverse();
+    let rootNode = parentNodeList[parentNodeList.length - 1].toString(); //metadata
+    let trackedNodes = new Set();
+    let schema = this.kuberSchema;
+    
     if(parentNodeList.length === 0){
       if(node.kind === Kind.MAPPING){
         return this.kuberSchema[node["key"]["value"]];
@@ -110,14 +123,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
         return this.kuberSchema[node["parent"]["key"]["value"]];
       }
     }
-
-    let nodeList = [];
-    let parentListDepth = parentNodeList.length;
-    let parentListReversed = this.deepCopy(parentNodeList).reverse();
-    let rootNode = parentNodeList[parentNodeList.length - 1].toString(); //metadata
-    let schema = this.kuberSchema;
-
-    let trackedNodes = new Set();
+ 
     //Add the nodes that need to be searched
     for(let node = 0; node < schema[rootNode].length; node++){
       for(let childNode = 0; childNode < schema[rootNode][node].children.length; childNode++){
@@ -144,16 +150,18 @@ export class YAMLSChemaValidator extends ASTVisitor {
       if(nodeListToSearch.length === parentListDepth && nodeToSearch === node.parent.key.value){
         return schema[nodeToSearch];
       }
+
       
-      //TODO: We need to fix the way in which this works
       for(let node = 0; node < schema[nodeToSearch].length; node++){
         for(let childNode = 0; childNode < schema[nodeToSearch][node]["children"].length; childNode++){
-          //Only add the nodes which are the depth are the same as the parentListNode
+
+          //Only add nodes that are relevant to the pathway
           if(nodeToSearch === parentListReversed[nodeListToSearch.length - 1]){ 
             let searchingNode = this.deepCopy(nodeListToSearch);
             searchingNode.push(schema[nodeToSearch][node]["children"][childNode]);
             nodeList.push(searchingNode);  
           }
+
         }
       }
 
@@ -164,7 +172,8 @@ export class YAMLSChemaValidator extends ASTVisitor {
   }
 
   private validateScalar(node:YAMLScalar){
-    //The case where the object isn't a string
+
+    //The case where the object isn't a string you can access a different property
     if(node.valueObject !== undefined){
       this.validate(<YAMLScalar>node, node.parent.key.value, node.valueObject);
     }else{
@@ -177,15 +186,15 @@ export class YAMLSChemaValidator extends ASTVisitor {
      this.validate(<YAMLMapping>node, node.key.value, node.key.value);
   }
 
-  private validate(node:YAMLNode, keyValue, valueValue){
+  private validate(node:YAMLNode, keyValue, valueValue) : boolean {
     
     if(this.kuberSchema[keyValue] === undefined){
       
         YAMLSChemaValidator.addErrorResult(node);
+        return false;
       
     }else{
-      let nodeParents = this.getParentNodes(node);
-      let traversalResults = this.traverseBackToLocation(nodeParents, node);
+      let traversalResults = this.traverseBackToLocation(node);
       if(this.validateObject(traversalResults) && this.verifyType(traversalResults, valueValue, node)){
         return true;
       }else{
@@ -197,7 +206,13 @@ export class YAMLSChemaValidator extends ASTVisitor {
   }
 
   private static addErrorResult(errorNode){
-    this.errorResults.push({
+    let nodeToTest = JSON.parse(JSON.stringify(errorNode));
+
+    if(!this.errorResultsSet.has(nodeToTest)){
+
+      this.errorResultsSet.add(nodeToTest);
+
+      this.errorResultsList.push({
         severity: DiagnosticSeverity.Error,
         label: "test",
         range: {
@@ -207,16 +222,16 @@ export class YAMLSChemaValidator extends ASTVisitor {
         message: "Not valid Kubernetes Code",
         source: "k8s"
       });
+      
+    }
   }
 
   public static getErrorResults(){
-    return this.errorResults;
+    return this.errorResultsList;
   }
 
   private deepCopy(Obj:Object){
     return JSON.parse(JSON.stringify(Obj));
   }
-
-  
 
 }
