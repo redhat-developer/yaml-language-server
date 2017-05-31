@@ -198,22 +198,27 @@ export class YAMLSChemaValidator extends ASTVisitor {
     
     if(this.kuberSchema[keyValue] === undefined){
       
-        this.addErrorResult(node, "Does not meet the kubernetes model");
+        this.addErrorResult(node, "Command not found in k8s", DiagnosticSeverity.Warning);
         return false;
       
     }else{
       let traversalResults = this.traverseBackToLocation(node);
       if(this.validateObject(traversalResults) && this.verifyType(traversalResults, valueValue, node)){
         return true;
-      }else{
-        this.addErrorResult(node, "Field is not in the correct location or not the correct type");
+      
+      }else if(!this.verifyType(traversalResults, valueValue, node)){
+        this.addErrorResult(node, "Does not have the correct k8s type", DiagnosticSeverity.Error);
         return false;
+      }else if(!this.validateObject(traversalResults)){
+        this.addErrorResult(node, "Does not match the k8s model", DiagnosticSeverity.Error);
+        return false;
+      
       }
     }
   
   }
 
-  private addErrorResult(errorNode, errorMessage){
+  private addErrorResult(errorNode, errorMessage, errorType){
     
     this.errorResultsList.push({
       severity: DiagnosticSeverity.Error,
@@ -222,7 +227,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
         end: {line: this.getLineCount()-1, character:Number.MAX_VALUE}
       },
       message: errorMessage,
-      source: "k8s"
+      source: "k8s Model"
     });
     
   }
