@@ -14,21 +14,21 @@ export class YamlCompletion {
     this.schemaService = schemaService;
   }
 
-  public doComplete(document: TextDocument, position: Position, doc: YAMLDocument): Thenable<CompletionList> {
+  public doComplete(document: TextDocument, position: Position, doc: YAMLDocument) {
     let result: CompletionList = {
       items: [],
       isIncomplete: false
     };
 
-    let offset = document.offsetAt(position);
-    let node = findNode(<YAMLNode>doc, offset);
+    //let offset = document.offsetAt(position);
+    //let node = findNode(<YAMLNode>doc, offset);
     // TODO: Handle comments
 
     //Not sure how this works
     return this.schemaService.getSchemaForResource(document.uri).then(schema =>{
       let validator = new YAMLSChemaValidator(schema.schema);
       traverse(<YAMLNode>doc,validator);
-      result.items = YAMLSChemaValidator.getErrorResults();
+      result.items = validator.getErrorResults();
       return result;
     });
   }

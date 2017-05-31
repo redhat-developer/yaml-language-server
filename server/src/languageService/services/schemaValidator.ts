@@ -8,13 +8,15 @@ import { xhr,configure as getErrorStatusDescription } from 'request-light';
 
 export class YAMLSChemaValidator extends ASTVisitor {
   private schema: JSONSchema;
-  private static errorResultsList = [];
+  private errorResultsList = [];
+  private lineCount;
   private kuberSchema: JSONSchema;
 
   constructor(schema: JSONSchema) {
     super();
     this.schema = schema;
     this.kuberSchema = new SchemaToMappingTransformer(this.schema)["mappingKuberSchema"];
+    this.lineCount = 0;
   }
 
   public visit(node: YAMLNode): boolean {
@@ -31,7 +33,8 @@ export class YAMLSChemaValidator extends ASTVisitor {
        * YamlMapping has YAMLScalar as the key and YAMLNode value fields
        */
       case Kind.MAPPING :
-        this.validateMapping(<YAMLMapping>node);        
+        this.validateMapping(<YAMLMapping>node);   
+        this.lineCount+=1;     
         break;
       
     }
@@ -107,7 +110,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
     let nodeList = [];
     let parentListDepth = parentNodeList.length;
     let parentListReversed = this.deepCopy(parentNodeList).reverse();
-    let rootNode = parentNodeList[parentNodeList.length - 1].toString(); //metadata
+    let rootNode = parentNodeList[parentNodeList.length - 1]; //metadata
     let trackedNodes = new Set();
     let schema = this.kuberSchema;
     
@@ -189,7 +192,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
     
     if(this.kuberSchema[keyValue] === undefined){
       
-        YAMLSChemaValidator.addErrorResult(node, "Does not meet the kubernetes model");
+        this.addErrorResult(node, "Does not meet the kubernetes model");
         return false;
       
     }else{
@@ -197,21 +200,20 @@ export class YAMLSChemaValidator extends ASTVisitor {
       if(this.validateObject(traversalResults) && this.verifyType(traversalResults, valueValue, node)){
         return true;
       }else{
-        YAMLSChemaValidator.addErrorResult(node, "Field is not in the correct location or not the correct type");
+        this.addErrorResult(node, "Field is not in the correct location or not the correct type");
         return false;
       }
     }
   
   }
 
-  private static addErrorResult(errorNode, errorMessage){
-  
+  private addErrorResult(errorNode, errorMessage){
+    console.error(this.getLineCount());
     this.errorResultsList.push({
       severity: DiagnosticSeverity.Error,
-      label: "test",
       range: {
-        start: errorNode.startPosition,
-        end: errorNode.endPosition
+        start: {line: this.getLineCount()-1, character: errorNode.startPosition},
+        end: {line: this.getLineCount()-1, character: errorNode.endPosition}
       },
       message: errorMessage,
       source: "k8s"
@@ -220,12 +222,16 @@ export class YAMLSChemaValidator extends ASTVisitor {
     
   }
 
-  public static getErrorResults(){
+  public getErrorResults(){
     return this.errorResultsList;
   }
 
   private deepCopy(Obj:Object){
     return JSON.parse(JSON.stringify(Obj));
+  }
+
+  private getLineCount(){
+    return this.lineCount;
   }
 
 }

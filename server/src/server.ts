@@ -20,6 +20,7 @@ namespace VSCodeContentRequest {
 }
 
 let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
+let pendingSchemaValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
 const validationDelayMs = 200;
 
 // Create a connection for the server. The connection uses Node's IPC as a transport
@@ -82,7 +83,9 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext)
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent((change) => {
+	console.error("this has been hit??");
 	triggerValidation(change.document);
+	triggerSchemaValidation(change.document);
 });
 
 documents.onDidClose((event=>{
@@ -137,8 +140,38 @@ function validateTextDocument(textDocument: TextDocument): void {
     });
   }
 
+  console.error(diagnostics);
+  //console.error(diagnostics[0].range);
+
 	// Send the computed diagnostics to VSCode.
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+}
+
+function triggerSchemaValidation(textDocument: TextDocument): void {
+	cleanPendingSchemaValidation(textDocument);
+	pendingSchemaValidationRequests[textDocument.uri] = setTimeout(() => {
+		delete pendingSchemaValidationRequests[textDocument.uri];
+		validateSchema(textDocument);
+	}, validationDelayMs);
+}
+
+function cleanPendingSchemaValidation(textDocument: TextDocument): void {
+	let request = pendingSchemaValidationRequests[textDocument.uri];
+	if (request) {
+		clearTimeout(request);
+		delete pendingSchemaValidationRequests[textDocument.uri];
+	}
+}
+
+function validateSchema(textDocument: TextDocument) {
+	let document = documents.get(textDocument.uri);
+  	let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
+  	languageService.doComplete(document,null,yamlDoc).then(function(result){
+		console.error("this has been hit?? validateSchema");
+		console.error(result.items);
+		let diagnostics = result.items;
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+	});
 }
 
 connection.onDidChangeWatchedFiles((change) => {
@@ -146,11 +179,11 @@ connection.onDidChangeWatchedFiles((change) => {
 
 
 // This handler provides the initial list of the completion items.
-connection.onCompletion(textDocumentPosition =>  {
-  let document = documents.get(textDocumentPosition.textDocument.uri);
-  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
-  return languageService.doComplete(document,textDocumentPosition.position,yamlDoc);
-});
+//connection.onCompletion(textDocumentPosition =>  {
+  //let document = documents.get(textDocumentPosition.textDocument.uri);
+  //let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
+  //return languageService.doComplete(document,textDocumentPosition.position,yamlDoc);
+//});
 
 // This handler resolve additional information for the item selected in
 // the completion list.

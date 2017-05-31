@@ -60,7 +60,7 @@ export interface SchemaRequestService {
 	(uri: string): Thenable<string>;
 }
 export interface LanguageService {
-	doComplete(document: TextDocument, position: Position, doc: YAMLDocument): Thenable<CompletionList>;
+	doComplete(document: TextDocument, position: Position, doc: YAMLDocument);
 }
 
 export function getLanguageService(schemaRequest: SchemaRequestService, wscontext:WorkspaceContextService): LanguageService {
