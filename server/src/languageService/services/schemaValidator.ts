@@ -31,12 +31,6 @@ export class YAMLSChemaValidator extends ASTVisitor {
        this.validateMapping(<YAMLMapping>node);   
        this.lineCount+=1;
        break;
-
-      /**
-     * YamlMap is an Array of YamlMappings
-     */
-      case Kind.MAP:
-        break;
       
     }
     return true;
