@@ -1,22 +1,24 @@
-import { ASTVisitor } from '../utils/astServices';
+import { ASTVisitor, getParentNodes } from '../utils/astServices';
 import { YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference } from 'yaml-ast-parser';
 import { JSONSchema } from "../jsonSchema";
 import { SchemaToMappingTransformer } from "../schemaToMappingTransformer"
 import { DiagnosticSeverity } from "vscode-languageserver-types/lib/main";
 import { error } from "util";
 import { xhr,configure as getErrorStatusDescription } from 'request-light';
+import { ErrorHandler } from '../utils/errorHandler';
 
 export class YAMLSChemaValidator extends ASTVisitor {
   private schema: JSONSchema;
-  private errorResultsList = [];
   private lineCount;
   private kuberSchema: JSONSchema;
+  private errorHandler: ErrorHandler;
 
   constructor(schema: JSONSchema) {
     super();
     this.schema = schema;
     this.kuberSchema = new SchemaToMappingTransformer(this.schema)["mappingKuberSchema"];
     this.lineCount = 0;
+    this.errorHandler = new ErrorHandler();
   }
 
   public visit(node: YAMLNode): boolean {
@@ -45,38 +47,6 @@ export class YAMLSChemaValidator extends ASTVisitor {
     return true;
   };
 
-  public endVisit(node:YAMLNode): void {
-    
-  };
-
-  /**
-   * Traverse up the ast getting the parent node names in the order of parent to root.
-   * @param {YAMLNode} node - The node to use
-   */
-  private getParentNodes(node:YAMLNode){
-    
-    if(!node){
-      return [];
-    }
-
-    let holderNode = node;
-
-    let parentNodeArray = [];
-    
-    while(holderNode.parent != null && holderNode.parent != holderNode){
-
-      //When there is a parent key value we can add it
-      if(typeof holderNode.parent.key != "undefined"){
-        parentNodeArray.push(holderNode.parent.key.value);
-      }
-
-      holderNode = holderNode.parent;
-    
-    }
-
-    return parentNodeArray;
-
-  }
 
   /**
    * Verify that the type of nodeToTest is the same as atleast one of the nodes in mappingNode schema
@@ -110,11 +80,11 @@ export class YAMLSChemaValidator extends ASTVisitor {
    */
   private traverseBackToLocation(node:YAMLNode){
 
-    let parentNodeList = this.getParentNodes(node);
+    let parentNodeList = getParentNodes(node);
     let nodeList = [];
     let parentListDepth = parentNodeList.length;
     let parentListReversed = this.deepCopy(parentNodeList).reverse();
-    let rootNode = parentNodeList[parentNodeList.length - 1]; //metadata
+    let rootNode = parentNodeList[parentNodeList.length - 1];
     let trackedNodes = new Set();
     let schema = this.kuberSchema;
     
@@ -152,7 +122,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
         return schema[nodeToSearch];
       }
 
-      //TODO: THIS ISN'T CATCHING EVERYTHING
+      //TODO: THIS ISN'T CATCHING EVERYTHING????
       //Checking when its scalar 
       if(node.parent.hasOwnProperty("key") && node.parent.key.hasOwnProperty("value") && nodeListToSearch.length === parentListDepth && nodeToSearch === node.parent.key.value){
           return schema[nodeToSearch];
@@ -198,19 +168,18 @@ export class YAMLSChemaValidator extends ASTVisitor {
     
     if(this.kuberSchema[keyValue] === undefined){
       
-        this.addErrorResult(node, "Command not found in k8s", DiagnosticSeverity.Warning);
+        this.errorHandler.addErrorResult(node, "Command not found in k8s", DiagnosticSeverity.Warning, this.lineCount-1, this.lineCount-1);
         return false;
       
     }else{
       let traversalResults = this.traverseBackToLocation(node);
       if(this.validateObject(traversalResults) && this.verifyType(traversalResults, valueValue, node)){
-        return true;
-      
+        return true;   
       }else if(!this.verifyType(traversalResults, valueValue, node)){
-        this.addErrorResult(node, "Does not have the correct k8s type", DiagnosticSeverity.Error);
+        this.errorHandler.addErrorResult(node, "Does not have the correct k8s type", DiagnosticSeverity.Warning, this.lineCount-1, this.lineCount-1);
         return false;
       }else if(!this.validateObject(traversalResults)){
-        this.addErrorResult(node, "Does not match the k8s model", DiagnosticSeverity.Error);
+        this.errorHandler.addErrorResult(node, "Does not match the k8s model", DiagnosticSeverity.Warning, this.lineCount-1, this.lineCount-1);
         return false;
       
       }
@@ -218,30 +187,12 @@ export class YAMLSChemaValidator extends ASTVisitor {
   
   }
 
-  private addErrorResult(errorNode, errorMessage, errorType){
-    
-    this.errorResultsList.push({
-      severity: DiagnosticSeverity.Error,
-      range: {
-        start: {line: this.getLineCount()-1, character: 0},
-        end: {line: this.getLineCount()-1, character:Number.MAX_VALUE}
-      },
-      message: errorMessage,
-      source: "k8s Model"
-    });
-    
-  }
-
   public getErrorResults(){
-    return this.errorResultsList;
+    return this.errorHandler.getErrorResultsList();
   }
 
   private deepCopy(Obj:Object){
     return JSON.parse(JSON.stringify(Obj));
-  }
-
-  private getLineCount(){
-    return this.lineCount;
   }
 
 }

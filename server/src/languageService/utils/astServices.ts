@@ -55,3 +55,32 @@ export function findNode(node:YAMLNode, offset: number): YAMLNode {
   traverse(node, new Finder());
   return lastNode;
 }
+
+/**
+ * Traverse up the ast getting the parent node names in the order of parent to root.
+ * @param {YAMLNode} node - The node to use
+ */
+export function getParentNodes(node:YAMLNode){
+  
+  if(!node){
+    return [];
+  }
+
+  let holderNode = node;
+
+  let parentNodeArray = [];
+  
+  while(holderNode.parent != null && holderNode.parent != holderNode){
+
+    //When there is a parent key value we can add it
+    if(typeof holderNode.parent.key != "undefined"){
+      parentNodeArray.push(holderNode.parent.key.value);
+    }
+
+    holderNode = holderNode.parent;
+  
+  }
+
+  return parentNodeArray;
+
+}
