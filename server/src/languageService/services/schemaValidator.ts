@@ -125,7 +125,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
     }
 
-    return {};
+    return {"error": "Not a child"};
 
   }
 
@@ -155,7 +155,9 @@ export class YAMLSChemaValidator extends ASTVisitor {
         this.errorHandler.addErrorResult(node, "Command not found in k8s", DiagnosticSeverity.Warning, this.lineCount, this.lineCount);
     }else{
       let traversalResults = this.traverseBackToLocation(node);
-      if(!this.validateObject(traversalResults) && !this.verifyType(traversalResults, valueValue)){
+      if(traversalResults.hasOwnProperty("error")){
+        this.errorHandler.addErrorResult(node, traversalResults.error, DiagnosticSeverity.Warning, this.lineCount, this.lineCount);
+      }else if(!this.validateObject(traversalResults) && !this.verifyType(traversalResults, valueValue)){
         this.errorHandler.addErrorResult(node, "Root node is invalid", DiagnosticSeverity.Warning, this.lineCount, this.lineCount);
       }else if(!this.verifyType(traversalResults, valueValue)){
         this.errorHandler.addErrorResult(node, "Does not have the correct k8s type", DiagnosticSeverity.Warning, this.lineCount, this.lineCount);
