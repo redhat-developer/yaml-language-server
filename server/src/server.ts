@@ -85,7 +85,6 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext)
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent((change) => {
 	triggerValidation(change.document);
-	triggerSchemaValidation(change.document);
 });
 
 documents.onDidClose((event=>{
@@ -140,33 +139,16 @@ function validateTextDocument(textDocument: TextDocument): void {
 		});
 	}
 
-	// Send the computed diagnostics to VSCode.
-	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-}
-
-function triggerSchemaValidation(textDocument: TextDocument): void {
-	cleanPendingSchemaValidation(textDocument);
-	pendingSchemaValidationRequests[textDocument.uri] = setTimeout(() => {
-		delete pendingSchemaValidationRequests[textDocument.uri];
-		validateSchema(textDocument);
-	}, validationSchemaDelayMs);
-}
-
-function cleanPendingSchemaValidation(textDocument: TextDocument): void {
-	let request = pendingSchemaValidationRequests[textDocument.uri];
-	if (request) {
-		clearTimeout(request);
-		delete pendingSchemaValidationRequests[textDocument.uri];
-	}
-}
-
-function validateSchema(textDocument: TextDocument) {
-	let document = documents.get(textDocument.uri);
-  	let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
-  	languageService.doComplete(document,null,yamlDoc).then(function(result){		
-		let diagnostics = result.items;
+	let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(textDocument.getText(),{});
+	languageService.doComplete(textDocument,null,yamlDoc).then(function(result){		
+		for(let x = 0; x < result.items.length; x++){
+			diagnostics.push(result.items[x]);
+		}
+		
+		// Send the computed diagnostics to VSCode.
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 	});
+	
 }
 
 connection.onDidChangeWatchedFiles((change) => {
