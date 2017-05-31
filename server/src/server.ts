@@ -83,7 +83,6 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext)
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent((change) => {
-	console.error("this has been hit??");
 	triggerValidation(change.document);
 	triggerSchemaValidation(change.document);
 });
@@ -123,25 +122,22 @@ function cleanPendingValidation(textDocument: TextDocument): void {
 }
 
 function validateTextDocument(textDocument: TextDocument): void {
-  let yDoc= yamlLoader(textDocument.getText(),{});
-  let diagnostics  = [];
-  if(yDoc.errors){
-    diagnostics = yDoc.errors.map(error =>{
-      let mark = error.mark;
-      return {
-        severity: DiagnosticSeverity.Error,
-        range: {
-					start: textDocument.positionAt(mark.position),
-					end: { line: error.mark.line, character: error.mark.column }
-				},
-        message: error.reason,
-        source: "k8s"
-      }
-    });
-  }
-
-  console.error(diagnostics);
-  //console.error(diagnostics[0].range);
+	let yDoc= yamlLoader(textDocument.getText(),{});
+	let diagnostics  = [];
+	if(yDoc.errors){
+		diagnostics = yDoc.errors.map(error =>{
+			let mark = error.mark;
+			return {
+			severity: DiagnosticSeverity.Error,
+			range: {
+						start: textDocument.positionAt(mark.position),
+						end: { line: error.mark.line, character: error.mark.column }
+					},
+			message: error.reason,
+			source: "k8s"
+			}
+		});
+	}
 
 	// Send the computed diagnostics to VSCode.
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
@@ -166,9 +162,7 @@ function cleanPendingSchemaValidation(textDocument: TextDocument): void {
 function validateSchema(textDocument: TextDocument) {
 	let document = documents.get(textDocument.uri);
   	let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
-  	languageService.doComplete(document,null,yamlDoc).then(function(result){
-		console.error("this has been hit?? validateSchema");
-		console.error(result.items);
+  	languageService.doComplete(document,null,yamlDoc).then(function(result){		
 		let diagnostics = result.items;
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 	});

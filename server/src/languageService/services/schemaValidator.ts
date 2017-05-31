@@ -27,14 +27,18 @@ export class YAMLSChemaValidator extends ASTVisitor {
        */
       case Kind.SCALAR :
         this.validateScalar(<YAMLScalar>node);
+        this.lineCount+=1;   
         break;
       
       /**
        * YamlMapping has YAMLScalar as the key and YAMLNode value fields
        */
       case Kind.MAPPING :
-        this.validateMapping(<YAMLMapping>node);   
-        this.lineCount+=1;     
+       this.validateMapping(<YAMLMapping>node);   
+        break;
+
+      case Kind.MAP:
+        this.lineCount+=1;
         break;
       
     }
@@ -148,11 +152,11 @@ export class YAMLSChemaValidator extends ASTVisitor {
         return schema[nodeToSearch];
       }
 
-      //Checking when its scalar
-      if(nodeListToSearch.length === parentListDepth && nodeToSearch === node.parent.key.value){
-        return schema[nodeToSearch];
+      //TODO: THIS ISN'T CATCHING EVERYTHING
+      //Checking when its scalar 
+      if(node.parent.hasOwnProperty("key")&& node.parent.key.hasOwnProperty("value") && nodeListToSearch.length === parentListDepth && nodeToSearch === node.parent.key.value){
+          return schema[nodeToSearch];
       }
-
       
       for(let node = 0; node < schema[nodeToSearch].length; node++){
         for(let childNode = 0; childNode < schema[nodeToSearch][node]["children"].length; childNode++){
@@ -178,7 +182,9 @@ export class YAMLSChemaValidator extends ASTVisitor {
     //The case where the object isn't a string you can access a different property
     if(node.valueObject !== undefined){
       this.validate(<YAMLScalar>node, node.parent.key.value, node.valueObject);
-    }else{
+    
+    //TODO: THIS ISN'T CATCH EVERYTHING
+    }else if(node.parent.hasOwnProperty("key") && node.parent.key.hasOwnProperty("value")){
       this.validate(<YAMLScalar>node, node.parent.key.value, node.value);
     }
     
@@ -208,17 +214,16 @@ export class YAMLSChemaValidator extends ASTVisitor {
   }
 
   private addErrorResult(errorNode, errorMessage){
-    console.error(this.getLineCount());
+    
     this.errorResultsList.push({
       severity: DiagnosticSeverity.Error,
       range: {
-        start: {line: this.getLineCount()-1, character: errorNode.startPosition},
-        end: {line: this.getLineCount()-1, character: errorNode.endPosition}
+        start: {line: this.getLineCount()-1, character: 0},
+        end: {line: this.getLineCount()-1, character:Number.MAX_VALUE}
       },
       message: errorMessage,
       source: "k8s"
     });
-
     
   }
 
