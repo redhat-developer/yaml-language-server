@@ -25,25 +25,17 @@ export class YAMLSChemaValidator extends ASTVisitor {
     switch(node.kind){
       
       /**
-       * YamlScalar is the value in {key: value}
-       */
-      case Kind.SCALAR :
-        this.validateScalar(<YAMLScalar>node);
-        this.lineCount+=1;   
-        break;
-      
-      /**
        * YamlMapping has YAMLScalar as the key and YAMLNode value fields
        */
       case Kind.MAPPING :
        this.validateMapping(<YAMLMapping>node);   
-        break;
+       this.lineCount+=1;
+       break;
 
       /**
      * YamlMap is an Array of YamlMappings
      */
       case Kind.MAP:
-        this.lineCount+=1;
         break;
       
     }
@@ -60,16 +52,20 @@ export class YAMLSChemaValidator extends ASTVisitor {
    * A -> B -> C.
    * getParentNodes(C) -> [B, A]
    */
-  private verifyType(traversalResults, nodeToTest, node): Boolean {
-    if(node.kind === Kind.SCALAR){
-      for(let n = 0; n < traversalResults.length; n++){
-        if(traversalResults[n].type === typeof nodeToTest || (typeof nodeToTest === "number" && traversalResults[n].type === "integer")){
-          return true;
-        }
-      }
-      return false;
+  private verifyType(traversalResults, nodeToTest): Boolean {
+    
+    if(nodeToTest === undefined){
+      return true;      
     }
-    return true;
+
+    for(let n = 0; n < traversalResults.length; n++){
+      if(traversalResults[n].type === typeof nodeToTest || (typeof nodeToTest === "number" && traversalResults[n].type === "integer")){
+        return true;
+      }
+    }
+    
+    return false;
+
   }
 
   /* Validate that the object is NOT empty */
@@ -91,16 +87,12 @@ export class YAMLSChemaValidator extends ASTVisitor {
     let trackedNodes = new Set();
     let schema = this.kuberSchema;
     
-    if(parentNodeList.length === 0){
-      if(node.kind === Kind.MAPPING){
-        return this.kuberSchema[node["key"]["value"]];
-      }
+    if(schema[rootNode] === undefined && parentNodeList.length > 0){
+      return {};
     }
 
-    if(parentNodeList.length === 1){
-      if(node.kind === Kind.SCALAR){
-        return this.kuberSchema[node["parent"]["key"]["value"]];
-      }
+    if(parentNodeList.length === 0 && node.kind === Kind.MAPPING){
+      return this.kuberSchema[node["key"]["value"]];
     }
  
     //Add the nodes that need to be searched
@@ -119,16 +111,9 @@ export class YAMLSChemaValidator extends ASTVisitor {
       let nodeListToSearch = nodeList.shift();
       let nodeToSearch = nodeListToSearch[nodeListToSearch.length - 1];
 
-      //Ignore this for now
       //Checking when its a map
       if(nodeListToSearch.length - 1 === parentListDepth && nodeToSearch === node.key.value){
         return schema[nodeToSearch];
-      }
-
-      //TODO: THIS ISN'T CATCHING EVERYTHING????
-      //Checking when its scalar 
-      if(node.parent.hasOwnProperty("key") && node.parent.key.hasOwnProperty("value") && nodeListToSearch.length === parentListDepth && nodeToSearch === node.parent.key.value){
-          return schema[nodeToSearch];
       }
       
       for(let node = 0; node < schema[nodeToSearch].length; node++){
@@ -150,47 +135,53 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
   }
 
-  private validateScalar(node:YAMLScalar){
-
-    //The case where the object isn't a string you can access a different property
-    if(node.valueObject !== undefined){
-      this.validate(<YAMLScalar>node, node.parent.key.value, node.valueObject);
-    
-    //TODO: THIS ISN'T CATCH EVERYTHING
-    }else if(node.parent.hasOwnProperty("key") && node.parent.key.hasOwnProperty("value")){
-      this.validate(<YAMLScalar>node, node.parent.key.value, node.value);
-    }
-    
-  }
-
   private validateMapping(node:YAMLMapping){
-     this.validate(<YAMLMapping>node, node.key.value, node.key.value);
+
+    if(node.hasOwnProperty("value")){
+      if(node.value != null){
+        if(node.value.hasOwnProperty("valueObject")){
+          this.validate(<YAMLMapping>node, node.value.valueObject);
+        }else if(node.value.hasOwnProperty("value")){
+          this.validate(<YAMLMapping>node, node.value.value);
+        }else{
+          this.validate(<YAMLMapping>node, undefined);  
+        }
+      }else{
+        this.validate(<YAMLMapping>node, undefined);
+      }
+    }else{
+      this.validate(<YAMLMapping>node, undefined);
+    }
+        
   }
 
-  private validate(node:YAMLNode, keyValue, valueValue) : boolean {
-    
-    if(this.kuberSchema[keyValue] === undefined){
-      
-        this.errorHandler.addErrorResult(node, "Command not found in k8s", DiagnosticSeverity.Warning, this.lineCount-1, this.lineCount-1);
-        return false;
-      
+  private validate(node:YAMLNode, valueValue) : void {
+
+    if(this.kuberSchema[node.key.value] === undefined){
+        this.errorHandler.addErrorResult(node, "Command not found in k8s", DiagnosticSeverity.Warning, this.lineCount, this.lineCount);
     }else{
       let traversalResults = this.traverseBackToLocation(node);
-      if(this.validateObject(traversalResults) && this.verifyType(traversalResults, valueValue, node)){
-        return true;   
-      }else if(!this.verifyType(traversalResults, valueValue, node)){
-        this.errorHandler.addErrorResult(node, "Does not have the correct k8s type", DiagnosticSeverity.Warning, this.lineCount-1, this.lineCount-1);
-        return false;
+      if(!this.validateObject(traversalResults) && !this.verifyType(traversalResults, valueValue)){
+        this.errorHandler.addErrorResult(node, "Root node is invalid", DiagnosticSeverity.Warning, this.lineCount, this.lineCount);
+      }else if(!this.verifyType(traversalResults, valueValue)){
+        this.errorHandler.addErrorResult(node, "Does not have the correct k8s type", DiagnosticSeverity.Warning, this.lineCount, this.lineCount);
       }else if(!this.validateObject(traversalResults)){
-        this.errorHandler.addErrorResult(node, "Does not match the k8s model", DiagnosticSeverity.Warning, this.lineCount-1, this.lineCount-1);
-        return false;
-      
+        this.errorHandler.addErrorResult(node, "Does not match the k8s model", DiagnosticSeverity.Warning, this.lineCount, this.lineCount);
       }
     }
   
   }
 
   public getErrorResults(){
+    
+    this.errorHandler.getErrorResultsList().forEach(element => {
+      var propValue;
+      for(var propName in element) {
+        propValue = element[propName];
+        console.log(propName,propValue);
+      }
+    });
+    
     return this.errorHandler.getErrorResultsList();
   }
 
