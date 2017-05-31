@@ -166,16 +166,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
   
   }
 
-  public getErrorResults(){
-    
-    this.errorHandler.getErrorResultsList().forEach(element => {
-      var propValue;
-      for(var propName in element) {
-        propValue = element[propName];
-        console.log(propName,propValue);
-      }
-    });
-    
+  public getErrorResults(){   
     return this.errorHandler.getErrorResultsList();
   }
 
