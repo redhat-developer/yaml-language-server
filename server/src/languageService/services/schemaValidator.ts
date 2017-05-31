@@ -54,7 +54,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
    */
   private verifyType(traversalResults, nodeToTest): Boolean {
     
-    if(nodeToTest === null){
+    if(nodeToTest === undefined){
       return true;      
     }
 
@@ -144,13 +144,13 @@ export class YAMLSChemaValidator extends ASTVisitor {
         }else if(node.value.hasOwnProperty("value")){
           this.validate(<YAMLMapping>node, node.value.value);
         }else{
-          this.validate(<YAMLMapping>node, null);  
+          this.validate(<YAMLMapping>node, undefined);  
         }
       }else{
-        this.validate(<YAMLMapping>node, null);
+        this.validate(<YAMLMapping>node, undefined);
       }
     }else{
-      this.validate(<YAMLMapping>node, null);
+      this.validate(<YAMLMapping>node, undefined);
     }
         
   }
