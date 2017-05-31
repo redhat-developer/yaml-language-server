@@ -154,7 +154,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
       //TODO: THIS ISN'T CATCHING EVERYTHING
       //Checking when its scalar 
-      if(node.parent.hasOwnProperty("key")&& node.parent.key.hasOwnProperty("value") && nodeListToSearch.length === parentListDepth && nodeToSearch === node.parent.key.value){
+      if(node.parent.hasOwnProperty("key") && node.parent.key.hasOwnProperty("value") && nodeListToSearch.length === parentListDepth && nodeToSearch === node.parent.key.value){
           return schema[nodeToSearch];
       }
       

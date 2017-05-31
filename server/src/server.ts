@@ -22,6 +22,7 @@ namespace VSCodeContentRequest {
 let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
 let pendingSchemaValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
 const validationDelayMs = 200;
+const validationSchemaDelayMs = 300;
 
 // Create a connection for the server. The connection uses Node's IPC as a transport
 let connection: IConnection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
@@ -148,7 +149,7 @@ function triggerSchemaValidation(textDocument: TextDocument): void {
 	pendingSchemaValidationRequests[textDocument.uri] = setTimeout(() => {
 		delete pendingSchemaValidationRequests[textDocument.uri];
 		validateSchema(textDocument);
-	}, validationDelayMs);
+	}, validationSchemaDelayMs);
 }
 
 function cleanPendingSchemaValidation(textDocument: TextDocument): void {
