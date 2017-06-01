@@ -12,13 +12,14 @@ export class YAMLSChemaValidator extends ASTVisitor {
   private lineCount;
   private kuberSchema: JSONSchema;
   private errorHandler: ErrorHandler;
+  private textDoc;
 
-  constructor(schema: JSONSchema) {
+  constructor(schema: JSONSchema, document) {
     super();
     this.schema = schema;
     this.kuberSchema = new SchemaToMappingTransformer(this.schema)["mappingKuberSchema"];
-    this.lineCount = 0;
-    this.errorHandler = new ErrorHandler();
+    this.errorHandler = new ErrorHandler(document);
+    this.textDoc = document;
   }
 
   public visit(node: YAMLNode): boolean {
@@ -152,17 +153,17 @@ export class YAMLSChemaValidator extends ASTVisitor {
   private validate(node:YAMLNode, valueValue) : void {
 
     if(this.kuberSchema[node.key.value] === undefined){
-        this.errorHandler.addErrorResult(node, "Command not found in k8s", DiagnosticSeverity.Warning, this.lineCount, this.lineCount);
+        this.errorHandler.addErrorResult(node.key, "Command not found in k8s", DiagnosticSeverity.Warning);
     }else{
       let traversalResults = this.traverseBackToLocation(node);
       if(traversalResults.hasOwnProperty("error")){
-        this.errorHandler.addErrorResult(node, traversalResults.error, DiagnosticSeverity.Warning, this.lineCount, this.lineCount);
+        this.errorHandler.addErrorResult(node, traversalResults.error, DiagnosticSeverity.Warning);
       }else if(!this.validateObject(traversalResults) && !this.verifyType(traversalResults, valueValue)){
-        this.errorHandler.addErrorResult(node, "Root node is invalid", DiagnosticSeverity.Warning, this.lineCount, this.lineCount);
+        this.errorHandler.addErrorResult(node, "Root node is invalid", DiagnosticSeverity.Warning);
       }else if(!this.verifyType(traversalResults, valueValue)){
-        this.errorHandler.addErrorResult(node, "Does not have the correct k8s type", DiagnosticSeverity.Warning, this.lineCount, this.lineCount);
+        this.errorHandler.addErrorResult(node, "Does not have the correct k8s type", DiagnosticSeverity.Warning);
       }else if(!this.validateObject(traversalResults)){
-        this.errorHandler.addErrorResult(node, "Does not match the k8s model", DiagnosticSeverity.Warning, this.lineCount, this.lineCount);
+        this.errorHandler.addErrorResult(node, "Does not match the k8s model", DiagnosticSeverity.Warning);
       }
     }
   
