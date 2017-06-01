@@ -6,7 +6,7 @@ and Openshift configuration.
 
 ## Features 
 * YAML validation
-
+* Kubernetes validation
 
 ## Developer Support
 
