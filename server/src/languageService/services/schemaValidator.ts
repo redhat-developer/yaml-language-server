@@ -82,6 +82,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
           nodesToSearch.push([element]);
         }else{
           //Throw error
+          this.errorHandler.addErrorResult(node, "Command not found in k8s", DiagnosticSeverity.Warning);
         }
       });
     
@@ -90,30 +91,27 @@ export class YAMLSChemaValidator extends ASTVisitor {
         let currentSearchingNode = nodesToSearch.pop();
         let currentNode = currentSearchingNode[currentSearchingNode.length - 1];
 
-        currentNode.forEach(element => {
+        
+        //This is going to be the children nodes
+        currentNode.value.mappings.forEach(element => {
           //Spec has items or value or something that we can loop through I think
           //Assuming we are iterating through that
 
           //Compare currentNode with getParents(this node)
           let parentNodes = getParentNodes(currentNode);
-          if(currentSearchingNode.length === parentNodes.length && currentSearchingNode.every((v, i) => v === parentNodes[i])){
+          if(currentSearchingNode.length -1 === parentNodes.length || currentSearchingNode.every((v, i) => v === parentNodes[i])){
             //Then we can add it and keep going
-
+            let nodeList = this.deepCopy(currentSearchingNode);
+            nodeList.push(element);
           } else {
             //Throw an error here and stop
-            
+            this.errorHandler.addErrorResult(node, "Bloop", DiagnosticSeverity.Warning);
           }
-
-
 
         });
 
       }
 
-
-  }
-
-  public isChild(node, data){
 
   }
 
@@ -143,9 +141,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
         this.errorHandler.addErrorResult(node.key, "Command not found in k8s", DiagnosticSeverity.Warning);
     }else{
       let traversalResults = this.traverseBackToLocation(node);
-      if(traversalResults.hasOwnProperty("error")){
-        this.errorHandler.addErrorResult(node, traversalResults.error, DiagnosticSeverity.Warning);
-      }else if(!this.validateObject(traversalResults) && !this.verifyType(traversalResults, valueValue)){
+      if(!this.validateObject(traversalResults) && !this.verifyType(traversalResults, valueValue)){
         this.errorHandler.addErrorResult(node, "Root node is invalid", DiagnosticSeverity.Warning);
       }else if(!this.verifyType(traversalResults, valueValue)){
         this.errorHandler.addErrorResult(node, "Does not have the correct k8s type", DiagnosticSeverity.Warning);
