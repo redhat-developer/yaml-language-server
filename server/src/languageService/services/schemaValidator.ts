@@ -22,22 +22,6 @@ export class YAMLSChemaValidator extends ASTVisitor {
     this.textDoc = document;
   }
 
-  public visit(node: YAMLNode): boolean {
-    switch(node.kind){
-      
-      /**
-       * YamlMapping has YAMLScalar as the key and YAMLNode value fields
-       */
-      case Kind.MAPPING :
-       this.validateMapping(<YAMLMapping>node);   
-       this.lineCount+=1;
-       break;
-      
-    }
-    return true;
-  };
-
-
   /**
    * Verify that the type of nodeToTest is the same as atleast one of the nodes in mappingNode schema
    * @param {} traversalResults - The results of the search traversal
@@ -47,11 +31,13 @@ export class YAMLSChemaValidator extends ASTVisitor {
    * A -> B -> C.
    * getParentNodes(C) -> [B, A]
    */
-  private verifyType(traversalResults, nodeToTest): Boolean {
+  private verifyType(traversalResults, node): Boolean {
     
-    if(nodeToTest === undefined){
+    if(node === undefined || traversalResults === undefined){
       return true;      
     }
+
+    let nodeToTest = node.valueObject !== undefined ? node.valueObject : node.value;
 
     for(let n = 0; n < traversalResults.length; n++){
       if(traversalResults[n].type === typeof nodeToTest || (typeof nodeToTest === "number" && traversalResults[n].type === "integer")){
@@ -63,118 +49,127 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
   }
 
-  /* Validate that the object is NOT empty */
-  private validateObject(nodeObject){
-    return Object.keys(nodeObject).length >= 1;
-  }
-
   /**
    * Perform a search navigating down the model looking if there exists a pathway to the node
    * @param {YAMLNode} node - The node we need to traverse to
    */
-  private traverseBackToLocation(node:YAMLNode){
+  public traverseBackToLocation(node:YAMLNode){
 
-    let parentNodeList = getParentNodes(node);
-    let nodeList = [];
-    let parentListDepth = parentNodeList.length;
-    let parentListReversed = this.deepCopy(parentNodeList).reverse();
-    let rootNode = parentNodeList[parentNodeList.length - 1];
-    let trackedNodes = new Set();
-    let schema = this.kuberSchema;
-    
-    if(schema[rootNode] === undefined && parentNodeList.length > 0){
-      return {};
-    }
+      let root = node;
+      let nodesToSearch = [];
 
-    if(parentNodeList.length === 0 && node.kind === Kind.MAPPING){
-      return this.kuberSchema[node["key"]["value"]];
-    }
- 
-    //Add the nodes that need to be searched
-    for(let node = 0; node < schema[rootNode].length; node++){
-      for(let childNode = 0; childNode < schema[rootNode][node].children.length; childNode++){
-        let potentialNodeList = [rootNode, schema[rootNode][node]["children"][childNode]]; 
-        let potentialNodeListJson = JSON.stringify(potentialNodeList);
-        if(!trackedNodes.has(potentialNodeListJson)){
-          nodeList.push(potentialNodeList);
+      if(root.mappings === undefined){
+        root.mappings = [];
+      }
+
+      root.mappings.forEach(element => {
+        if(this.kuberSchema[element.key.value] !== undefined){
+          nodesToSearch.push([element]);
+        }else{
+          this.errorHandler.addErrorResult(element, "Command not found in k8s", DiagnosticSeverity.Warning);
         }
-      }
-    }
+      });
 
-    //We need to do that error check in here somewhere
-    while(nodeList.length != 0){
-      let nodeListToSearch = nodeList.shift();
-      let nodeToSearch = nodeListToSearch[nodeListToSearch.length - 1];
+      while(nodesToSearch.length != 0){
+        let currentSearchingNode = nodesToSearch.pop();
+        let currentNode = currentSearchingNode[currentSearchingNode.length - 1];
 
-      //Checking when its a map
-      if(nodeListToSearch.length - 1 === parentListDepth && nodeToSearch === node.key.value){
-        return schema[nodeToSearch];
-      }
-      
-      for(let node = 0; node < schema[nodeToSearch].length; node++){
-        for(let childNode = 0; childNode < schema[nodeToSearch][node]["children"].length; childNode++){
+        if(this.kuberSchema[currentNode.key.value] === undefined){
+          this.errorHandler.addErrorResult(currentNode, "Command not found in k8s", DiagnosticSeverity.Warning);
+        }
+        
+        if(currentNode.value !== null && currentNode.value.kind === Kind.SCALAR && !this.verifyType(this.kuberSchema[currentNode.key.value], currentNode.value)){
+          this.errorHandler.addErrorResult(currentNode.value, "Node has wrong type", DiagnosticSeverity.Warning);
+        }
+        
+        //This is going to be the children node
+        let childrenNodes = this.getChildren(currentNode); 
+        childrenNodes.forEach(element => {
 
-          //Only add nodes that are relevant to the pathway
-          if(nodeToSearch === parentListReversed[nodeListToSearch.length - 1]){ 
-            let searchingNode = this.deepCopy(nodeListToSearch);
-            searchingNode.push(schema[nodeToSearch][node]["children"][childNode]);
-            nodeList.push(searchingNode);  
+          //Compare currentNode with getParents(this node)
+          let parentNodes = getParentNodes(currentNode);
+
+          if(currentSearchingNode.length - 1 === parentNodes.length && this.validateChildren(element)){
+
+            if(currentNode.value.kind === Kind.SCALAR && !this.verifyType(this.kuberSchema[currentNode.key.value], currentNode.value)){
+              this.errorHandler.addErrorResult(element, "Node has wrong type", DiagnosticSeverity.Warning);
+            }
+
+            let newNodeToSearch = currentSearchingNode.concat(element);
+            nodesToSearch.push(newNodeToSearch);
+          } else {
+            this.errorHandler.addErrorResult(element, "Not a valid child node for this parent", DiagnosticSeverity.Warning);
           }
 
-        }
+        });
+
       }
-
-    }
-
-    return {"error": "Not a child"};
 
   }
 
-  private validateMapping(node:YAMLMapping){
+  private validateChildren(node: YAMLNode){ 
+    if(node.kind === Kind.MAPPING){
+      return this.kuberSchema[this.validateChildrenHelper(node)].map(x => x.children).filter(function(child){
+        return child.indexOf(node.key.value) != -1;
+      }).length != 0;
+    }
+    return false;
+  }
 
-    if(node.hasOwnProperty("value")){
-      if(node.value != null){
-        if(node.value.hasOwnProperty("valueObject")){
-          this.validate(<YAMLMapping>node, node.value.valueObject);
-        }else if(node.value.hasOwnProperty("value")){
-          this.validate(<YAMLMapping>node, node.value.value);
+  private validateChildrenHelper(node: YAMLNode){
+    //Get the parent node key
+    let parentNodeKey = node.parent;
+    while(parentNodeKey.key === undefined){
+      parentNodeKey = parentNodeKey.parent;
+    }
+    return parentNodeKey.key.value;
+
+  }
+
+  private getChildren(node: YAMLNode){
+    switch(node.kind){
+      case Kind.MAP : 
+        let mapNodeList = [];
+        node.mappings.forEach(element => {
+          element.value.mappings.forEach(newElement => {
+            mapNodeList.push(newElement);  
+          });
+        });
+        return mapNodeList;
+      case Kind.MAPPING :
+        if(node.value === undefined){
+          return node.mappings;
+        }else if(node.value.mappings !== undefined){
+          return node.value.mappings;
         }else{
-          this.validate(<YAMLMapping>node, undefined);  
+          let mappingNodeList = [];
+          
+          if(node.value.kind === Kind.SCALAR){
+            return [];
+          }
+
+          node.value.items.forEach(element => {
+          element.mappings.forEach(newElement => {
+            mappingNodeList.push(newElement);  
+            });
+          });
+          return mappingNodeList;
         }
-      }else{
-        this.validate(<YAMLMapping>node, undefined);
-      }
-    }else{
-      this.validate(<YAMLMapping>node, undefined);
+      case Kind.SEQ :
+        let seqNodeList = [];
+        (<YAMLSequence> node).items.forEach(element => {
+          element.mappings.forEach(newElement => {
+            seqNodeList.push(newElement);  
+          });
+        });
+        return seqNodeList;
+      default:
+        return [];
     }
-        
-  }
-
-  private validate(node:YAMLNode, valueValue) : void {
-
-    if(this.kuberSchema[node.key.value] === undefined){
-        this.errorHandler.addErrorResult(node.key, "Command not found in k8s", DiagnosticSeverity.Warning);
-    }else{
-      let traversalResults = this.traverseBackToLocation(node);
-      if(traversalResults.hasOwnProperty("error")){
-        this.errorHandler.addErrorResult(node, traversalResults.error, DiagnosticSeverity.Warning);
-      }else if(!this.validateObject(traversalResults) && !this.verifyType(traversalResults, valueValue)){
-        this.errorHandler.addErrorResult(node, "Root node is invalid", DiagnosticSeverity.Warning);
-      }else if(!this.verifyType(traversalResults, valueValue)){
-        this.errorHandler.addErrorResult(node, "Does not have the correct k8s type", DiagnosticSeverity.Warning);
-      }else if(!this.validateObject(traversalResults)){
-        this.errorHandler.addErrorResult(node, "Does not match the k8s model", DiagnosticSeverity.Warning);
-      }
-    }
-  
   }
 
   public getErrorResults(){   
     return this.errorHandler.getErrorResultsList();
-  }
-
-  private deepCopy(Obj:Object){
-    return JSON.parse(JSON.stringify(Obj));
   }
 
 }

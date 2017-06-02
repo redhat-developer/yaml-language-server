@@ -20,9 +20,8 @@ namespace VSCodeContentRequest {
 }
 
 let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
-let pendingSchemaValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
-const validationDelayMs = 200;
-const validationSchemaDelayMs = 350;
+const validationDelayMs = 1;
+
 
 // Create a connection for the server. The connection uses Node's IPC as a transport
 let connection: IConnection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
@@ -138,6 +137,8 @@ function validateTextDocument(textDocument: TextDocument): void {
 			}
 		});
 	}
+
+	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 
 	let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(textDocument.getText(),{});
 	languageService.doComplete(textDocument,null,yamlDoc).then(function(result){		
