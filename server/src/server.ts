@@ -160,11 +160,11 @@ connection.onDidChangeWatchedFiles((change) => {
 
 
 // This handler provides the initial list of the completion items.
-//connection.onCompletion(textDocumentPosition =>  {
-  //let document = documents.get(textDocumentPosition.textDocument.uri);
-  //let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
-  //return languageService.doComplete(document,textDocumentPosition.position,yamlDoc);
-//});
+connection.onCompletion(textDocumentPosition =>  {
+  let document = documents.get(textDocumentPosition.textDocument.uri);
+  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
+  return languageService.doComplete(document,textDocumentPosition.position,yamlDoc);
+});
 
 // This handler resolve additional information for the item selected in
 // the completion list.

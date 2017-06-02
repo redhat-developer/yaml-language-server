@@ -60,7 +60,7 @@ export interface SchemaRequestService {
 	(uri: string): Thenable<string>;
 }
 export interface LanguageService {
-	doComplete(document: TextDocument, doc: YAMLDocument): Thenable<CompletionList>;
+	doComplete(document: TextDocument, documentPosition: Position, doc: YAMLDocument): Thenable<CompletionList>;
   doValidation(document: TextDocument, doc: YAMLDocument): Thenable<CompletionList>;
 }
 
