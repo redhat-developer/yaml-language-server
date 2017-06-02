@@ -138,7 +138,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 		});
 	}
 
-	//connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 
 	let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(textDocument.getText(),{});
 	languageService.doComplete(textDocument,null,yamlDoc).then(function(result){		

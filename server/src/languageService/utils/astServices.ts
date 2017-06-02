@@ -4,40 +4,6 @@ import {YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnch
 export function traverse ( node: YAMLNode, visitor:ASTVisitor){
   if(!node || !visitor) return;
   visitor.traverseBackToLocation(node);
-  // switch(node.kind){
-  //   case Kind.SCALAR:
-  //     let scalar = <YAMLScalar> node;
-  //     visitor.visit(scalar);
-  //     break;
-  //   case Kind.SEQ:
-  //     let seq = <YAMLSequence> node;
-  //     if(visitor.visit(seq)){
-  //       seq.items.forEach(item=>{
-  //         traverse(item,visitor);
-  //       });
-  //     }
-  //     break;
-  //   case Kind.MAPPING:
-  //     let mapping = <YAMLMapping> node;
-  //     if(visitor.visit(mapping)){
-  //       traverse(mapping.value,visitor);
-  //     }
-  //     break;
-  //   case Kind.MAP:
-  //     let map = <YamlMap> node;
-  //     if(visitor.visit(map)){
-  //       map.mappings.forEach(mapping=>{
-  //         traverse(mapping,visitor);
-  //       });
-  //     }
-  //     break;
-  //   case Kind.ANCHOR_REF:
-  //     let anchor = <YAMLAnchorReference> node;
-  //     if(visitor.visit(anchor)){
-  //       traverse(anchor.value,visitor);
-  //     }
-  //     break
-  // }
 }
 
 export class ASTVisitor{
