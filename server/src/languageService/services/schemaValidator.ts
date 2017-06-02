@@ -137,8 +137,10 @@ export class YAMLSChemaValidator extends ASTVisitor {
         });
         return mapNodeList;
       case Kind.MAPPING :
-        if(node.value === undefined){
-          return node.mappings;
+        if(node.value === null && node.mappings === undefined){
+          return [];
+        }else if(node.value === null){
+          return node.mappings;  
         }else if(node.value.mappings !== undefined){
           return node.value.mappings;
         }else{

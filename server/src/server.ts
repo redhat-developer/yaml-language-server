@@ -122,33 +122,36 @@ function cleanPendingValidation(textDocument: TextDocument): void {
 
 function validateTextDocument(textDocument: TextDocument): void {
 	let yDoc= yamlLoader(textDocument.getText(),{});
-	let diagnostics  = [];
-	if(yDoc.errors){
-		diagnostics = yDoc.errors.map(error =>{
-			let mark = error.mark;
-			return {
-			severity: DiagnosticSeverity.Error,
-			range: {
-						start: textDocument.positionAt(mark.position),
-						end: { line: error.mark.line, character: error.mark.column }
-					},
-			message: error.reason,
-			source: "k8s"
+	if(yDoc !== undefined){
+		let diagnostics  = [];
+		if(yDoc.errors){
+			diagnostics = yDoc.errors.map(error =>{
+				let mark = error.mark;
+				return {
+				severity: DiagnosticSeverity.Error,
+				range: {
+							start: textDocument.positionAt(mark.position),
+							end: { line: error.mark.line, character: error.mark.column }
+						},
+				message: error.reason,
+				source: "k8s"
+				}
+			});
+		}
+
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+
+		let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(textDocument.getText(),{});
+		languageService.doComplete(textDocument,null,yamlDoc).then(function(result){		
+			for(let x = 0; x < result.items.length; x++){
+				diagnostics.push(result.items[x]);
 			}
+			
+			// Send the computed diagnostics to VSCode.
+			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 		});
 	}
-
-	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-
-	let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(textDocument.getText(),{});
-	languageService.doComplete(textDocument,null,yamlDoc).then(function(result){		
-		for(let x = 0; x < result.items.length; x++){
-			diagnostics.push(result.items[x]);
-		}
-		
-		// Send the computed diagnostics to VSCode.
-		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-	});
+	
 	
 }
 
