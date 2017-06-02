@@ -142,7 +142,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 
 		let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(textDocument.getText(),{});
-		languageService.doComplete(textDocument,null,yamlDoc).then(function(result){		
+		languageService.doValidation(textDocument, yamlDoc).then(function(result){		
 			for(let x = 0; x < result.items.length; x++){
 				diagnostics.push(result.items[x]);
 			}
