@@ -6,14 +6,14 @@ let AutoComplete = require('triesearch');
 
 export class AutoCompleter {
 
-    private document: TextDocument;
     private autoCompleter;
+    private schema: JSONSchema;
     private kuberSchema: JSONSchema; 
 
-    constructor(document: TextDocument, schema:JSONSchema){
-        this.document = document;
+    constructor(schema:JSONSchema){
+        this.schema = schema;
         this.autoCompleter = new AutoComplete();
-        this.kuberSchema = new SchemaToMappingTransformer(schema)["mappingKuberSchema"];
+        this.kuberSchema = new SchemaToMappingTransformer(this.schema)["mappingKuberSchema"];
     }
 
     public search(searchItem: String): Array<String>{

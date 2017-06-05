@@ -20,16 +20,14 @@ export class YamlCompletion {
     };
 
     return this.schemaService.getSchemaForResource(document.uri).then(schema =>{
-      let autoComplete = new AutoCompleter(document, schema);
+      let autoComplete = new AutoCompleter(schema.schema);
 
 
 
       let offset = document.offsetAt(position);
       let node = findNode(<YAMLNode>doc, offset);
 
-      console.log(node);
       autoComplete.generateResults(node);
-      console.log(node)
       autoComplete.search(node.key.rawValue).map(x => result.items.push({
         label: "hello", 
       }));
