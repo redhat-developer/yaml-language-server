@@ -20,7 +20,7 @@ namespace VSCodeContentRequest {
 }
 
 let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
-const validationDelayMs = 1;
+const validationDelayMs = 250;
 
 
 // Create a connection for the server. The connection uses Node's IPC as a transport
@@ -162,7 +162,13 @@ connection.onDidChangeWatchedFiles((change) => {
 // This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition =>  {
   let document = documents.get(textDocumentPosition.textDocument.uri);
-  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
+
+  //THIS IS A HACKY VERSION
+
+  let test = document.getText() + ":";
+  console.log(test);
+
+  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(test,{});
   return languageService.doComplete(document,textDocumentPosition.position,yamlDoc);
 });
 

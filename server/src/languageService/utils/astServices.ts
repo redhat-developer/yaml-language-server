@@ -50,7 +50,7 @@ export class ASTVisitor{
 export function findNode(node:YAMLNode, offset: number): YAMLNode {
   let lastNode:YAMLNode;
   class Finder extends ASTVisitor {
-      visit(node:YAMLNode):boolean{
+      visit(node:YAMLNode):boolean {
         if(node.endPosition >= offset  && node.startPosition < offset){
           lastNode=node;
           return true;

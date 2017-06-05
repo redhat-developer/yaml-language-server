@@ -8,7 +8,7 @@ export class AutoCompleter {
 
     private autoCompleter;
     private schema: JSONSchema;
-    private kuberSchema: JSONSchema; 
+    private kuberSchema; 
 
     constructor(schema:JSONSchema){
         this.schema = schema;
@@ -17,7 +17,11 @@ export class AutoCompleter {
     }
 
     public search(searchItem: String): Array<String>{
-        return this.autoCompleter.search(searchItem);
+        return this.autoCompleter.search(searchItem).map(x => x.key);
+    }
+
+    public searchAll(): Array<String>{
+        return Object.keys(this.kuberSchema);
     }
 
     public initData(data:Array<String>): void {
@@ -33,20 +37,32 @@ export class AutoCompleter {
     }
 
     public generateResults(node){
-        let getParentNodeKey = this.getParentKey(node);
-        if(node.parent === null || getParentNodeKey === null || getParentNodeKey.key === undefined || getParentNodeKey.key === null){
-            return [];
+        let getParentNodeValue = this.getParentVal(node);
+        if(getParentNodeValue !== ""){
+            let results = this.kuberSchema[getParentNodeValue].map(x => x.children).reduce((a, b) => a.concat(b)).filter((value, index, self) => self.indexOf(value) === index);
+            this.initData(results);
         }
-        let results = this.kuberSchema[getParentNodeKey.key.value].map(x => x.children).reduce((a, b) => a.concat(b)).filter((value, index, self) => self.indexOf(value) === index);
-        this.initData(results);
     }
 
-    private getParentKey(node: YAMLNode){
+    public getKuberResults(node){
+        return this.kuberSchema[node.key.value].map(x => x.children).reduce((a, b) => a.concat(b)).filter((value, index, self) => self.indexOf(value) === index);
+     }
+
+    private getParentVal(node: YAMLNode){
         let parentNodeKey = node.parent;
         while(parentNodeKey != null && parentNodeKey.key === undefined){
             parentNodeKey = parentNodeKey.parent;
         }
-        return parentNodeKey;
+
+        if(parentNodeKey === null && node.mappings){
+            parentNodeKey = node.mappings[0];
+        }
+
+        if(parentNodeKey === null || parentNodeKey.key === undefined || parentNodeKey.key === null){
+            return "";
+        }
+
+        return parentNodeKey.key.value;
     }
 
 
