@@ -46,10 +46,6 @@ export class AutoCompleter {
         }
     }
 
-    public getKuberResults(node){
-        return this.kuberSchema[node.key.value].map(x => x.children).reduce((a, b) => a.concat(b)).filter((value, index, self) => self.indexOf(value) === index);
-     }
-
     private getParentVal(node: YAMLNode){
         let parentNodeKey = node.parent;
         while(parentNodeKey != null && parentNodeKey.key === undefined){
