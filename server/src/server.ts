@@ -164,12 +164,33 @@ connection.onCompletion(textDocumentPosition =>  {
   let document = documents.get(textDocumentPosition.textDocument.uri);
 
   //THIS IS A HACKY VERSION
+  //Create a node
+  let start = document.getLineOffsets()[textDocumentPosition.position.line];
+  let end = document.offsetAt(textDocumentPosition.position);
+  let textLine = document.getText().substring(start, end);
+  
+  if(textLine.indexOf(":")){
+	  //We need to add the ":" to load the nodes
+			  
+	  let newText = "";
 
-  let test = document.getText() + ":";
-  console.log(test);
+	  //This is for the empty line
+	  if(textLine.trim().length === 0){
+		newText = document.getText().substring(0, end) + "holder:" + document.getText().substr(end+2) 
+	  //For when missing semi colon
+	  }else{
+		newText = document.getText().substring(0, end) + ":" + document.getText().substr(end+2)
+	  }
 
-  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(test,{});
-  return languageService.doComplete(document,textDocumentPosition.position,yamlDoc);
+	  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(newText,{});
+	  return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
+  }else{
+
+	  //All the nodes are loaded
+	  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
+	  return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
+  }
+  
 });
 
 // This handler resolve additional information for the item selected in
