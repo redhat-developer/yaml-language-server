@@ -7,7 +7,7 @@ and Openshift configuration.
 ## Features 
 * YAML validation
 * Kubernetes validation
-* Kubernetes autocompletion
+* Kubernetes auto completion
 
 ## Developer Support
 
