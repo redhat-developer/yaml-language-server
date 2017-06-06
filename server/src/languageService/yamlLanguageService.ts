@@ -1,7 +1,7 @@
 
 import {YamlCompletion} from './services/yamlCompletion';
 import {JSONSchemaService} from './services/jsonSchemaService'
-
+import {SchemaValidation} from './services/schemaValidation'
 
 import { TextDocument, Position, CompletionList } from 'vscode-languageserver-types';
 import { YAMLDocument} from 'yaml-ast-parser';
@@ -60,7 +60,8 @@ export interface SchemaRequestService {
 	(uri: string): Thenable<string>;
 }
 export interface LanguageService {
-	doComplete(document: TextDocument, position: Position, doc: YAMLDocument);
+	doComplete(document: TextDocument, documentPosition: Position, doc: YAMLDocument): Thenable<CompletionList>;
+  doValidation(document: TextDocument, doc: YAMLDocument): Thenable<CompletionList>;
 }
 
 export function getLanguageService(schemaRequest: SchemaRequestService, wscontext:WorkspaceContextService): LanguageService {
@@ -70,7 +71,9 @@ export function getLanguageService(schemaRequest: SchemaRequestService, wscontex
   ['*.yml']);
 
   let completer = new YamlCompletion(schemaService);
+  let validator = new SchemaValidation(schemaService);
   return {
     	doComplete: completer.doComplete.bind(completer),
+      doValidation: validator.doValidation.bind(validator)
   }
 }

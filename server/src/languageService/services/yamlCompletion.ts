@@ -1,12 +1,11 @@
-
-
 import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Position, Range, TextEdit, InsertTextFormat } from 'vscode-languageserver-types';
-import { YAMLDocument, YAMLNode } from 'yaml-ast-parser';
+import { YAMLDocument, YAMLNode, Kind } from 'yaml-ast-parser';
 import { Thenable } from '../yamlLanguageService';
 import { findNode } from '../utils/astServices';
 import {IJSONSchemaService}  from './jsonSchemaService';
 import {YAMLSChemaValidator} from './schemaValidator';
 import {traverse} from '../utils/astServices';
+import {AutoCompleter} from './autoCompleter';
 
 export class YamlCompletion {
   private schemaService: IJSONSchemaService;
@@ -14,23 +13,40 @@ export class YamlCompletion {
     this.schemaService = schemaService;
   }
 
-  public doComplete(document: TextDocument, position: Position, doc: YAMLDocument) {
+  public doComplete(document: TextDocument, position: Position, doc: YAMLDocument): Thenable<CompletionList> {
     let result: CompletionList = {
       items: [],
       isIncomplete: false
     };
 
-    //let offset = document.offsetAt(position);
-    //let node = findNode(<YAMLNode>doc, offset);
-    // TODO: Handle comments
-
-    //Not sure how this works
     return this.schemaService.getSchemaForResource(document.uri).then(schema =>{
-      let validator = new YAMLSChemaValidator(schema.schema, document);
-      traverse(<YAMLNode>doc,validator);
-      result.items = validator.getErrorResults();
+      let autoComplete = new AutoCompleter(schema.schema);
+
+      let offset = document.offsetAt(position);
+      let node = findNode(<YAMLNode>doc, offset);
+
+      if(node !== undefined && node.kind === Kind.SCALAR){
+        return [];
+      }
+
+      if(node === undefined || node.parent === null){
+        //Its a root node
+        autoComplete.searchAll().map(x => result.items.push({
+            label: x.toString()
+        }));
+      }else{
+        autoComplete.generateResults(node);
+        autoComplete.search(node.key.value).map(x => result.items.push({
+            label: x.toString()
+        }));
+      }
+      
+      
       return result;
     });
   }
+  
+  
 
 }
+

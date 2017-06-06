@@ -17,7 +17,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
   constructor(schema: JSONSchema, document) {
     super();
     this.schema = schema;
-    this.kuberSchema = new SchemaToMappingTransformer(this.schema)["mappingKuberSchema"];
+    this.kuberSchema = new SchemaToMappingTransformer(this.schema).getSchema();
     this.errorHandler = new ErrorHandler(document);
     this.textDoc = document;
   }
@@ -25,11 +25,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
   /**
    * Verify that the type of nodeToTest is the same as atleast one of the nodes in mappingNode schema
    * @param {} traversalResults - The results of the search traversal
-   * @param {YAMLNode} nodeToTest - The node to test
    * @param {YAMLNode} node - The node to use
-   *
-   * A -> B -> C.
-   * getParentNodes(C) -> [B, A]
    */
   private verifyType(traversalResults, node): Boolean {
     
@@ -151,8 +147,8 @@ export class YAMLSChemaValidator extends ASTVisitor {
           }
 
           node.value.items.forEach(element => {
-          element.mappings.forEach(newElement => {
-            mappingNodeList.push(newElement);  
+            element.mappings.forEach(newElement => {
+              mappingNodeList.push(newElement);  
             });
           });
           return mappingNodeList;

@@ -20,7 +20,7 @@ namespace VSCodeContentRequest {
 }
 
 let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
-const validationDelayMs = 1;
+const validationDelayMs = 250;
 
 
 // Create a connection for the server. The connection uses Node's IPC as a transport
@@ -124,7 +124,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 	let yDoc= yamlLoader(textDocument.getText(),{});
 	if(yDoc !== undefined){
 		let diagnostics  = [];
-		if(yDoc.errors){
+		if(yDoc.errors.length != 0){
 			diagnostics = yDoc.errors.map(error =>{
 				let mark = error.mark;
 				return {
@@ -139,10 +139,8 @@ function validateTextDocument(textDocument: TextDocument): void {
 			});
 		}
 
-		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-
 		let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(textDocument.getText(),{});
-		languageService.doComplete(textDocument,null,yamlDoc).then(function(result){		
+		languageService.doValidation(textDocument, yamlDoc).then(function(result){		
 			for(let x = 0; x < result.items.length; x++){
 				diagnostics.push(result.items[x]);
 			}
@@ -160,11 +158,38 @@ connection.onDidChangeWatchedFiles((change) => {
 
 
 // This handler provides the initial list of the completion items.
-//connection.onCompletion(textDocumentPosition =>  {
-  //let document = documents.get(textDocumentPosition.textDocument.uri);
-  //let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
-  //return languageService.doComplete(document,textDocumentPosition.position,yamlDoc);
-//});
+connection.onCompletion(textDocumentPosition =>  {
+  let document = documents.get(textDocumentPosition.textDocument.uri);
+
+  //THIS IS A HACKY VERSION
+  //Create a node
+  let start = document.getLineOffsets()[textDocumentPosition.position.line];
+  let end = document.offsetAt(textDocumentPosition.position);
+  let textLine = document.getText().substring(start, end);
+  
+  if(textLine.indexOf(":")){
+	  //We need to add the ":" to load the nodes
+			  
+	  let newText = "";
+
+	  //This is for the empty line
+	  if(textLine.trim().length === 0){
+		newText = document.getText().substring(0, end) + "holder:\r\n" + document.getText().substr(end+2) 
+	  //For when missing semi colon
+	  }else{
+		newText = document.getText().substring(0, end) + ":\r\n" + document.getText().substr(end+2)
+	  }
+
+	  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(newText,{});
+	  return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
+  }else{
+
+	  //All the nodes are loaded
+	  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
+	  return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
+  }
+  
+});
 
 // This handler resolve additional information for the item selected in
 // the completion list.
