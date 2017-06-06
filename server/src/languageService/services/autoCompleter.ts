@@ -13,7 +13,7 @@ export class AutoCompleter {
     constructor(schema:JSONSchema){
         this.schema = schema;
         this.autoCompleter = new AutoComplete();
-        this.kuberSchema = new SchemaToMappingTransformer(this.schema)["mappingKuberSchema"];
+        this.kuberSchema = new SchemaToMappingTransformer(this.schema).getSchema();
     }
 
     public search(searchItem: String): Array<String>{

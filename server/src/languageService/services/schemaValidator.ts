@@ -17,7 +17,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
   constructor(schema: JSONSchema, document) {
     super();
     this.schema = schema;
-    this.kuberSchema = new SchemaToMappingTransformer(this.schema)["mappingKuberSchema"];
+    this.kuberSchema = new SchemaToMappingTransformer(this.schema).getSchema();
     this.errorHandler = new ErrorHandler(document);
     this.textDoc = document;
   }
