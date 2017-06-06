@@ -176,10 +176,10 @@ connection.onCompletion(textDocumentPosition =>  {
 
 	  //This is for the empty line
 	  if(textLine.trim().length === 0){
-		newText = document.getText().substring(0, end) + "holder:" + document.getText().substr(end+2) 
+		newText = document.getText().substring(0, end) + "holder:\r\n" + document.getText().substr(end+2) 
 	  //For when missing semi colon
 	  }else{
-		newText = document.getText().substring(0, end) + ":" + document.getText().substr(end+2)
+		newText = document.getText().substring(0, end) + ":\r\n" + document.getText().substr(end+2)
 	  }
 
 	  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(newText,{});

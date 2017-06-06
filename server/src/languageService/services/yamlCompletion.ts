@@ -25,6 +25,22 @@ export class YamlCompletion {
       let offset = document.offsetAt(position);
       let node = findNode(<YAMLNode>doc, offset);
 
+      if(node.kind === Kind.SCALAR){
+        return [];
+      }
+
+      if(node.parent === null){
+        //Its a root node
+        autoComplete.generateResults(node);
+        autoComplete.searchAll().map(x => result.items.push({
+            label: x.toString()
+        }));
+      }else{
+        autoComplete.generateResults(node);
+        autoComplete.search(node.key.value).map(x => result.items.push({
+            label: x.toString()
+        }));
+      }
       
       
       return result;

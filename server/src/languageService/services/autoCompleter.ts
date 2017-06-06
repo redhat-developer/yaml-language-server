@@ -41,6 +41,8 @@ export class AutoCompleter {
         if(getParentNodeValue !== ""){
             let results = this.kuberSchema[getParentNodeValue].map(x => x.children).reduce((a, b) => a.concat(b)).filter((value, index, self) => self.indexOf(value) === index);
             this.initData(results);
+        }else{
+            this.initData(this.searchAll());
         }
     }
 
