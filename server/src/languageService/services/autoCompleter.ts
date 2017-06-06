@@ -17,7 +17,7 @@ export class AutoCompleter {
     }
 
     public search(searchItem: String): Array<String>{
-        return this.autoCompleter.search(searchItem).map(x => x.key);
+        return this.autoCompleter.search(searchItem).map(x => x.value);
     }
 
     public searchAll(): Array<String>{
