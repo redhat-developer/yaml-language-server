@@ -124,20 +124,20 @@ function validateTextDocument(textDocument: TextDocument): void {
 	let yDoc= yamlLoader(textDocument.getText(),{});
 	if(yDoc !== undefined){
 		let diagnostics  = [];
-		if(yDoc.errors){
-			diagnostics = yDoc.errors.map(error =>{
-				let mark = error.mark;
-				return {
-				severity: DiagnosticSeverity.Error,
-				range: {
-							start: textDocument.positionAt(mark.position),
-							end: { line: error.mark.line, character: error.mark.column }
-						},
-				message: error.reason,
-				source: "k8s"
-				}
-			});
-		}
+		// if(yDoc.errors){
+		// 	diagnostics = yDoc.errors.map(error =>{
+		// 		let mark = error.mark;
+		// 		return {
+		// 		severity: DiagnosticSeverity.Error,
+		// 		range: {
+		// 					start: textDocument.positionAt(mark.position),
+		// 					end: { line: error.mark.line, character: error.mark.column }
+		// 				},
+		// 		message: error.reason,
+		// 		source: "k8s"
+		// 		}
+		// 	});
+		// }
 
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 

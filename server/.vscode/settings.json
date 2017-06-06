@@ -1,3 +1,8 @@
 {
-	"typescript.tsdk": "./node_modules/typescript/lib"
+	"typescript.tsdk": "./node_modules/typescript/lib",
+	"editor.quickSuggestions": {
+		"other": true,
+		"comments": true,
+		"strings": true
+	}
 }
