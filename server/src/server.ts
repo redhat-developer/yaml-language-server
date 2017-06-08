@@ -22,8 +22,13 @@ namespace VSCodeContentRequest {
 let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
 const validationDelayMs = 200;
 
-// Create a connection for the server. The connection uses Node's IPC as a transport
-let connection: IConnection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
+// Create a connection for the server.
+let connection: IConnection = null;
+if (process.argv.indexOf('--stdio') == -1) {
+	connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
+} else {
+	connection = createConnection();
+}
 
 // Create a simple text document manager. The text document manager
 // supports full document sync only
