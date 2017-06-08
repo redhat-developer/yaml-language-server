@@ -68,7 +68,7 @@ export function getLanguageService(schemaRequest: SchemaRequestService, wscontex
   let schemaService = new JSONSchemaService(schemaRequest, wscontext);
   //TODO: maps schemas from settings.
   schemaService.registerExternalSchema('http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.0.65/kubernetes-model-1.0.65-schema.json',
-  ['*.yml']);
+  ['*.yml', '*.yaml']);
 
   let completer = new YamlCompletion(schemaService);
   let validator = new SchemaValidation(schemaService);
