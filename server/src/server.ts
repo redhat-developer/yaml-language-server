@@ -8,7 +8,7 @@ import {
 	CompletionItem, CompletionItemKind, RequestType
 } from 'vscode-languageserver';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import {load as yamlLoader, YAMLDocument, YAMLException} from 'yaml-ast-parser';
+import {load as yamlLoader, YAMLDocument, YAMLException} from 'yaml-ast-parser-beta';
 import {getLanguageService} from './languageService/yamlLanguageService'
 import Strings = require( './languageService/utils/strings');
 import URI from './languageService/utils/uri';
