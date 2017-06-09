@@ -7,7 +7,6 @@ export function traverse ( node: YAMLNode, visitor:ASTVisitor){
     case Kind.SCALAR:
       let scalar = <YAMLScalar> node;
       if (visitor.visit(scalar)){
-        visitor.endVisit(scalar);
       }
       break;
     case Kind.SEQ:
@@ -16,14 +15,12 @@ export function traverse ( node: YAMLNode, visitor:ASTVisitor){
         seq.items.forEach(item=>{
             traverse(item,visitor);
         })
-        visitor.endVisit(seq);
       }
       break;
     case Kind.MAPPING:
       let mapping = <YAMLMapping> node;
       if(visitor.visit(mapping)){
         traverse(mapping.value,visitor);
-        visitor.endVisit(mapping)
       }
       break;
     case Kind.MAP:
@@ -32,32 +29,29 @@ export function traverse ( node: YAMLNode, visitor:ASTVisitor){
         map.mappings.forEach(mapping=>{
           traverse(mapping,visitor);
         })
-        visitor.endVisit(map);
       }
       break;
     case Kind.ANCHOR_REF:
       let anchor = <YAMLAnchorReference> node;
       if(visitor.visit(anchor)){
         traverse(anchor.value,visitor);
-        visitor.endVisit(anchor);
       }
       break
   }
 }
-
 export class ASTVisitor{
   public visit(node: YAMLNode) : boolean {
     return true;
   };
-  public endVisit(node: YAMLNode) : void{
-  };
+  public traverseBackToLocation(node: YAMLNode): void{
+  }
 }
 
 export function findNode(node:YAMLNode, offset: number): YAMLNode {
   let lastNode:YAMLNode;
   class Finder extends ASTVisitor {
-      visit(node:YAMLNode):boolean{
-        if(node.endPosition > offset  && node.startPosition < offset){
+      visit(node:YAMLNode):boolean {
+        if(node.endPosition >= offset  && node.startPosition < offset){
           lastNode=node;
           return true;
         }
@@ -66,4 +60,33 @@ export function findNode(node:YAMLNode, offset: number): YAMLNode {
   }
   traverse(node, new Finder());
   return lastNode;
+}
+
+/**
+ * Traverse up the ast getting the parent node names in the order of parent to root.
+ * @param {YAMLNode} node - The node to use
+ */
+export function getParentNodes(node:YAMLNode){
+  
+  if(!node){
+    return [];
+  }
+
+  let holderNode = node;
+
+  let parentNodeArray = [];
+  
+  while(holderNode.parent != null && holderNode.parent != holderNode){
+
+    //When there is a parent key value we can add it
+    if(typeof holderNode.parent.key != "undefined"){
+      parentNodeArray.push(holderNode.parent.key.value);
+    }
+
+    holderNode = holderNode.parent;
+  
+  }
+
+  return parentNodeArray;
+
 }

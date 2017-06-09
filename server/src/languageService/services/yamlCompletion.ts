@@ -1,12 +1,11 @@
-
-
 import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Position, Range, TextEdit, InsertTextFormat } from 'vscode-languageserver-types';
-import { YAMLDocument, YAMLNode } from 'yaml-ast-parser';
+import { YAMLDocument, YAMLNode, Kind } from 'yaml-ast-parser';
 import { Thenable } from '../yamlLanguageService';
 import { findNode } from '../utils/astServices';
 import {IJSONSchemaService}  from './jsonSchemaService';
 import {YAMLSChemaValidator} from './schemaValidator';
 import {traverse} from '../utils/astServices';
+import {AutoCompleter} from './autoCompleter';
 
 export class YamlCompletion {
   private schemaService: IJSONSchemaService;
@@ -20,16 +19,34 @@ export class YamlCompletion {
       isIncomplete: false
     };
 
-    let offset = document.offsetAt(position);
-    let node = findNode(<YAMLNode>doc, offset);
-    // TODO: Handle comments
-
     return this.schemaService.getSchemaForResource(document.uri).then(schema =>{
-      let validator = new YAMLSChemaValidator(schema.schema);
-      traverse(<YAMLNode>doc,validator);
+      let autoComplete = new AutoCompleter(schema.schema);
 
+      let offset = document.offsetAt(position);
+      let node = findNode(<YAMLNode>doc, offset);
+
+      if(node !== undefined && node.kind === Kind.SCALAR){
+        return [];
+      }
+
+      if(node === undefined || node.parent === null){
+        //Its a root node
+        autoComplete.searchAll().map(x => result.items.push({
+            label: x.toString()
+        }));
+      }else{
+        autoComplete.generateResults(node);
+        autoComplete.search(node.key.value).map(x => result.items.push({
+            label: x.toString()
+        }));
+      }
+      
+      
       return result;
     });
   }
+  
+  
 
 }
+

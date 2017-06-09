@@ -8,7 +8,7 @@ import {
 	CompletionItem, CompletionItemKind, RequestType
 } from 'vscode-languageserver';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import {load as yamlLoader, YAMLDocument, YAMLException} from 'yaml-ast-parser';
+import {load as yamlLoader, YAMLDocument, YAMLException} from 'yaml-ast-parser-beta';
 import {getLanguageService} from './languageService/yamlLanguageService'
 import Strings = require( './languageService/utils/strings');
 import URI from './languageService/utils/uri';
@@ -20,7 +20,8 @@ namespace VSCodeContentRequest {
 }
 
 let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
-const validationDelayMs = 200;
+const validationDelayMs = 250;
+
 
 // Create a connection for the server.
 let connection: IConnection = null;
@@ -91,7 +92,7 @@ documents.onDidChangeContent((change) => {
 });
 
 documents.onDidClose((event=>{
-  cleanPendingValidation(event.document);
+	cleanPendingValidation(event.document);
 	connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
 }));
 
@@ -125,36 +126,103 @@ function cleanPendingValidation(textDocument: TextDocument): void {
 }
 
 function validateTextDocument(textDocument: TextDocument): void {
-  let yDoc= yamlLoader(textDocument.getText(),{});
-  let diagnostics  = [];
-  if(yDoc.errors){
-    diagnostics = yDoc.errors.map(error =>{
-      let mark = error.mark;
-      return {
-        severity: DiagnosticSeverity.Error,
-        range: {
-					start: textDocument.positionAt(mark.position),
-					end: { line: error.mark.line, character: error.mark.column }
-				},
-        message: error.reason,
-        source: "k8s"
-      }
-    });
-  }
+	let yDoc= yamlLoader(textDocument.getText(),{});
+	if(yDoc !== undefined){
+		let diagnostics  = [];
+		if(yDoc.errors.length != 0){
+			diagnostics = yDoc.errors.map(error =>{
+				let mark = error.mark;
+				return {
+				severity: DiagnosticSeverity.Error,
+				range: {
+							start: textDocument.positionAt(mark.position),
+							end: { line: error.mark.line, character: error.mark.column }
+						},
+				message: error.reason,
+				source: "k8s"
+				}
+			});
+		}
 
-	// Send the computed diagnostics to VSCode.
-	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+		let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(textDocument.getText(),{});
+		languageService.doValidation(textDocument, yamlDoc).then(function(result){		
+			for(let x = 0; x < result.items.length; x++){
+				diagnostics.push(result.items[x]);
+			}
+			
+			// Send the computed diagnostics to VSCode.
+			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+		});
+	}
+	
+	
 }
 
 connection.onDidChangeWatchedFiles((change) => {
 });
 
+function getLineOffsets(textDocString: String): number[] {
+		
+		let lineOffsets: number[] = [];
+		let text = textDocString;
+		let isLineStart = true;
+		for (let i = 0; i < text.length; i++) {
+			if (isLineStart) {
+				lineOffsets.push(i);
+				isLineStart = false;
+			}
+			let ch = text.charAt(i);
+			isLineStart = (ch === '\r' || ch === '\n');
+			if (ch === '\r' && i + 1 < text.length && text.charAt(i + 1) === '\n') {
+				i++;
+			}
+		}
+		if (isLineStart && text.length > 0) {
+			lineOffsets.push(text.length);
+		}
+		
+		return lineOffsets;
+}
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition =>  {
   let document = documents.get(textDocumentPosition.textDocument.uri);
-  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
-  return languageService.doComplete(document,textDocumentPosition.position,yamlDoc);
+
+  /*
+   * THIS IS A HACKY VERSION. 
+   * Needed to get the parent node from the current node to support autocompletion.
+   */
+
+  //Get the string we are looking at via a substring
+  let start = getLineOffsets(document.getText())[textDocumentPosition.position.line];
+  let end = document.offsetAt(textDocumentPosition.position);
+  let textLine = document.getText().substring(start, end);
+  
+  //Check if the string we are looking at is a node
+  if(textLine.indexOf(":")){
+	  //We need to add the ":" to load the nodes
+			  
+	  let newText = "";
+
+	  //This is for the empty line case
+	  if(textLine.trim().length === 0){
+		  //Add a temp node that is in the document but we don't use at all.
+		newText = document.getText().substring(0, end) + "holder:\r\n" + document.getText().substr(end+2) 
+	  //For when missing semi colon case
+	}else{
+		//Add a semicolon to the end of the current line so we can validate the node
+		newText = document.getText().substring(0, end) + ":\r\n" + document.getText().substr(end+2)
+	  }
+
+	  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(newText,{});
+	  return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
+  }else{
+
+	  //All the nodes are loaded
+	  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
+	  return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
+  }
+  
 });
 
 // This handler resolve additional information for the item selected in
