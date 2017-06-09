@@ -161,27 +161,56 @@ function validateTextDocument(textDocument: TextDocument): void {
 connection.onDidChangeWatchedFiles((change) => {
 });
 
+function getLineOffsets(textDocString: String): number[] {
+		
+		let lineOffsets: number[] = [];
+		let text = textDocString;
+		let isLineStart = true;
+		for (let i = 0; i < text.length; i++) {
+			if (isLineStart) {
+				lineOffsets.push(i);
+				isLineStart = false;
+			}
+			let ch = text.charAt(i);
+			isLineStart = (ch === '\r' || ch === '\n');
+			if (ch === '\r' && i + 1 < text.length && text.charAt(i + 1) === '\n') {
+				i++;
+			}
+		}
+		if (isLineStart && text.length > 0) {
+			lineOffsets.push(text.length);
+		}
+		
+		return lineOffsets;
+}
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition =>  {
   let document = documents.get(textDocumentPosition.textDocument.uri);
 
-  //THIS IS A HACKY VERSION
-  //Create a node
-  let start = document.getLineOffsets()[textDocumentPosition.position.line];
+  /*
+   * THIS IS A HACKY VERSION. 
+   * Needed to get the parent node from the current node to support autocompletion.
+   */
+
+  //Get the string we are looking at via a substring
+  let start = getLineOffsets(document.getText())[textDocumentPosition.position.line];
   let end = document.offsetAt(textDocumentPosition.position);
   let textLine = document.getText().substring(start, end);
   
+  //Check if the string we are looking at is a node
   if(textLine.indexOf(":")){
 	  //We need to add the ":" to load the nodes
 			  
 	  let newText = "";
 
-	  //This is for the empty line
+	  //This is for the empty line case
 	  if(textLine.trim().length === 0){
+		  //Add a temp node that is in the document but we don't use at all.
 		newText = document.getText().substring(0, end) + "holder:\r\n" + document.getText().substr(end+2) 
-	  //For when missing semi colon
-	  }else{
+	  //For when missing semi colon case
+	}else{
+		//Add a semicolon to the end of the current line so we can validate the node
 		newText = document.getText().substring(0, end) + ":\r\n" + document.getText().substr(end+2)
 	  }
 
