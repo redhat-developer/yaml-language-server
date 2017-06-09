@@ -25,5 +25,7 @@ deploy:
   api_key:
     secure: ceF/0BC5bbfr3oxVtiBVfQJoDK4n3oMTqkwlZXT/ny6kJEejO0FWl6FYAk5OEQXX4TVCzez8BDxEd4wopv1kBcYYYlXlUviU4YaLsTGMjSY5OwhhkdVJ6BofReizJHD/xuJDUO1yHQWJ+PKfOab1NsL2Q8YEpJ7ZSoApb/ejuNcqecp7sn9/r8VphPn3ISCB6oq2pPDz/KjV8TM/LMaA5kB4UTP4d8QlyN3EZrtM7KNQLWLCpyEqzUf+I0oQS0xDdb2jKhwtAUH16UxyH1KTIZQ2C+h+9BEEwjt3XxnZh6ZKwBalUt2mkupyLHM4MX/5CjG9x8tYcKI27Y5Pb4zsM7mmjmLDsy36MjL1HFzmTA3LJSif5SpgaVKxGfB/jz7Xf7uziVtRtqFtiDoHXdtMJnOwB9JVSaX/+dc3prEKS2FDbWkm8Eb2DdIlDt7SHRuXCMQAPYs3JeNOKtU5Zj+ts06q6UvbU3tkTgJKvuC9i9mbe6b6pvOBWxXnQkQjlW9JT0GkIjkJsBivCC4dfk/+jCEeDUzCJ1MlWFTlMTjq/WKY62tELlorh2+zm/Ntqf1Zv3tzbbSQJL3JL1ZHTdwFP8E4i+wwTsa9QwJhIAZcRBbSxxS81w88PtIpuysE/48Jtz6h9vEmH8KBpQnGcFePCj3kYXWz8g4crqtTFgve2zY=
   file: "*.vsix"
+  skip_cleanup: true
   on:
     repo: gorkem/vscode-k8s
+
