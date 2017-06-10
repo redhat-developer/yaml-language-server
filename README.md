@@ -37,3 +37,10 @@ and Openshift configuration.
   code ./server
   ```
   Refer to VS Code [documentation](https://code.visualstudio.com/docs/extensions/debugging-extensions) on how to run and debug the extension
+  
+### Configuring the extension for testing
+In order to configure the extension for autocompletion you need to change edit.quickSuggestions.strings to true
+
+1. Open up your settings.json file by going to VS code settings
+2. Under the editor tab scroll down until you find "editor.quickSuggestions"
+3. Edit this and make sure that "strings" is set to true (otherwise autocomplete will not work)
