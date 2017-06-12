@@ -231,6 +231,7 @@ connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
   return item;
 });
 
+
 let t: Thenable<string>;
 
 /*
