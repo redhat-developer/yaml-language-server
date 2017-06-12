@@ -1,7 +1,8 @@
 import {SchemaToMappingTransformer} from "../schemaToMappingTransformer"
-import {TextDocument} from 'vscode-languageserver-types';
+import {TextDocument, CompletionList} from 'vscode-languageserver-types';
 import {JSONSchema} from "../jsonSchema";
 import {YAMLDocument, YAMLNode} from 'yaml-ast-parser';
+
 let AutoComplete = require('triesearch');
 
 export class AutoCompleter {
@@ -17,11 +18,15 @@ export class AutoCompleter {
     }
 
     public search(searchItem: String): Array<String>{
-        return this.autoCompleter.search(searchItem).map(x => x.value);
+        return this.autoCompleter.search(searchItem).map(x => ({
+            label: x.value.toString()
+        }));
     }
 
-    public searchAll(): Array<String>{
-        return Object.keys(this.kuberSchema);
+    public searchAll() {
+        return Object.keys(this.kuberSchema).map(x => ({
+            label: x.toString()
+        }));
     }
 
     public initData(data:Array<String>): void {
@@ -42,7 +47,7 @@ export class AutoCompleter {
             let results = this.kuberSchema[getParentNodeValue].map(x => x.children).reduce((a, b) => a.concat(b)).filter((value, index, self) => self.indexOf(value) === index);
             this.initData(results);
         }else{
-            this.initData(this.searchAll());
+            this.initData(Object.keys(this.kuberSchema));
         }
     }
 
@@ -65,8 +70,9 @@ export class AutoCompleter {
 
     public generateScalarAutocompletion(nodeValue: String){
         let results = this.kuberSchema[nodeValue.toString()].map(x => x.default).filter((value, index, self) => self.indexOf(value) === index && value !== undefined);
-        return results;
+        return results.map(x => ({
+            label: x.toString()
+        }));
     }
-
 
 }

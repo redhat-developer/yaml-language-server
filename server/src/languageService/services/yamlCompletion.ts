@@ -26,36 +26,23 @@ export class YamlCompletion {
       let node = findNode(<YAMLNode>doc, offset);
 
       if(node !== undefined && node.kind === Kind.SCALAR){
-        autoComplete.generateScalarAutocompletion(node.parent.key.value).map(x => result.items.push({
-            label: x.toString()
-        }));
-        return result;
+        return autoComplete.generateScalarAutocompletion(node.parent.key.value);
       }
 
-      if(node != undefined && node.value !== null && node.value.kind === Kind.SCALAR){
-        autoComplete.generateScalarAutocompletion(node.key.value).map(x => result.items.push({
-            label: x.toString()
-        }));
-        return result;
+      if(node != undefined && node.value !== null && node.value !== undefined && node.value.kind === Kind.SCALAR){
+        return autoComplete.generateScalarAutocompletion(node.key.value);
       }
 
       if(node === undefined || node.parent === null){
         //Its a root node
-        autoComplete.searchAll().map(x => result.items.push({
-            label: x.toString()
-        }));
+        return autoComplete.searchAll();
       }else{
         autoComplete.generateResults(node);
-        autoComplete.search(node.key.value).map(x => result.items.push({
-            label: x.toString()
-        }));
+        return autoComplete.search(node.key.value);
       }
-      
-      
-      return result;
+    
     });
-  }
-  
+  } 
   
 
 }
