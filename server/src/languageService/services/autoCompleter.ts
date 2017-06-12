@@ -63,6 +63,10 @@ export class AutoCompleter {
         return parentNodeKey.key.value;
     }
 
+    public generateScalarAutocompletion(nodeValue: String){
+        let results = this.kuberSchema[nodeValue.toString()].map(x => x.default).filter((value, index, self) => self.indexOf(value) === index && value !== undefined);
+        return results;
+    }
 
 
 }
