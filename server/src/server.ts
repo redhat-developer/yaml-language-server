@@ -14,6 +14,7 @@ import Strings = require( './languageService/utils/strings');
 import URI from './languageService/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
+var glob = require('glob');
 
 namespace VSCodeContentRequest {
 	export const type: RequestType<string, string, any, any> = new RequestType('vscode/content');
@@ -88,8 +89,9 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext)
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent((change) => {
-	console.log("hit");
-	triggerValidation(change.document);
+	if(validDocuments.indexOf(change.document.uri) !== -1){
+		triggerValidation(change.document);
+	}
 });
 
 documents.onDidClose((event=>{
@@ -99,16 +101,46 @@ documents.onDidClose((event=>{
 
 // The settings interface describe the server relevant settings part
 interface Settings {
+	k8s: globSetting;
 }
 
-// hold the maxNumberOfProblems setting
-// The settings have changed. Is send on server activation
-// as well.
+interface globSetting {
+	glob: string;
+}
+
+let globSetting: string;
 connection.onDidChangeConfiguration((change) => {
 	let settings = <Settings>change.settings;
-	// Revalidate any open text documents
-	documents.all().forEach(validateTextDocument);
+	globSetting = settings.k8s.glob || "";
+	validateValidFiles();
 });
+
+let validDocuments: Array<String>;
+function validateValidFiles(){
+	//Clear all the previous diagnostics 
+	documents.all().forEach(doc => {
+		connection.sendDiagnostics({ uri: doc.uri, diagnostics: [] });
+	});
+	
+	validDocuments = [];
+	glob(globSetting, function (er, files) {
+		if(er){
+			throw er;
+		}
+
+		files.forEach(file => {
+			documents.all().forEach(doc => {
+				let splitDocumentUri = doc.uri.split("/");
+				let strippedDocumentUri = splitDocumentUri[splitDocumentUri.length - 1];
+				if(strippedDocumentUri.indexOf(file) !== -1){
+					validDocuments.push(doc.uri);
+					triggerValidation(doc);
+				}
+			}
+		)});
+
+	})
+}
 
 function triggerValidation(textDocument: TextDocument): void {
 	cleanPendingValidation(textDocument);
@@ -128,7 +160,7 @@ function cleanPendingValidation(textDocument: TextDocument): void {
 
 function validateTextDocument(textDocument: TextDocument): void {
 	let yDoc= yamlLoader(textDocument.getText(),{});
-	if(yDoc !== undefined){
+	if(yDoc !== undefined){ 
 		let diagnostics  = [];
 		if(yDoc.errors.length != 0){
 			diagnostics = yDoc.errors.map(error =>{
@@ -159,8 +191,6 @@ function validateTextDocument(textDocument: TextDocument): void {
 	
 }
 
-connection.onDidChangeWatchedFiles((change) => {
-});
 
 function getLineOffsets(textDocString: String): number[] {
 		
@@ -187,42 +217,44 @@ function getLineOffsets(textDocString: String): number[] {
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition =>  {
-  let document = documents.get(textDocumentPosition.textDocument.uri);
+	let document = documents.get(textDocumentPosition.textDocument.uri);
+	if(validDocuments.indexOf(document.uri) !== -1){
+		
+		/*
+		* THIS IS A HACKY VERSION. 
+		* Needed to get the parent node from the current node to support autocompletion.
+		*/
 
-  /*
-   * THIS IS A HACKY VERSION. 
-   * Needed to get the parent node from the current node to support autocompletion.
-   */
+		//Get the string we are looking at via a substring
+		let start = getLineOffsets(document.getText())[textDocumentPosition.position.line];
+		let end = document.offsetAt(textDocumentPosition.position);
+		let textLine = document.getText().substring(start, end);
+		
+		//Check if the string we are looking at is a node
+		if(textLine.indexOf(":")){
+			//We need to add the ":" to load the nodes
+					
+			let newText = "";
 
-  //Get the string we are looking at via a substring
-  let start = getLineOffsets(document.getText())[textDocumentPosition.position.line];
-  let end = document.offsetAt(textDocumentPosition.position);
-  let textLine = document.getText().substring(start, end);
-  
-  //Check if the string we are looking at is a node
-  if(textLine.indexOf(":")){
-	  //We need to add the ":" to load the nodes
-			  
-	  let newText = "";
+			//This is for the empty line case
+			if(textLine.trim().length === 0){
+				//Add a temp node that is in the document but we don't use at all.
+				newText = document.getText().substring(0, end) + "holder:\r\n" + document.getText().substr(end+2) 
+			//For when missing semi colon case
+			}else{
+				//Add a semicolon to the end of the current line so we can validate the node
+				newText = document.getText().substring(0, end) + ":\r\n" + document.getText().substr(end+2)
+			}
 
-	  //This is for the empty line case
-	  if(textLine.trim().length === 0){
-		  //Add a temp node that is in the document but we don't use at all.
-		newText = document.getText().substring(0, end) + "holder:\r\n" + document.getText().substr(end+2) 
-	  //For when missing semi colon case
-	}else{
-		//Add a semicolon to the end of the current line so we can validate the node
-		newText = document.getText().substring(0, end) + ":\r\n" + document.getText().substr(end+2)
-	  }
+			let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(newText,{});
+			return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
+		}else{
 
-	  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(newText,{});
-	  return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
-  }else{
-
-	  //All the nodes are loaded
-	  let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
-	  return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
-  }
+			//All the nodes are loaded
+			let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
+			return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
+		}
+	}
   
 });
 
