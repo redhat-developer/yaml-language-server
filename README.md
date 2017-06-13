@@ -5,6 +5,7 @@ VS Code extension that provides asssitance for authoring kubernetes
 and Openshift configuration.
 
 ## Features 
+![screencast](https://github.com/JPinkney/vscode-k8s/blob/master/images/demo.gif)
 * YAML validation
 * Kubernetes validation
 * Kubernetes auto completion
