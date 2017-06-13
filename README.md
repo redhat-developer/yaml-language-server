@@ -6,9 +6,24 @@ and Openshift configuration.
 
 ## Features 
 ![screencast](https://github.com/JPinkney/vscode-k8s/blob/master/images/demo.gif)
-* YAML validation
-* Kubernetes validation
-* Kubernetes auto completion
+
+YAML validation:
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Detects whether the entire file is valid yaml
+
+Kubernetes validation:
+
+&nbsp;&nbsp;&nbsp;&nbsp;Detects errors such as:
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Child node does not exist
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Command not found in kubernetes
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Incorrect type of value
+
+Kubernetes auto completion:
+
+&nbsp;&nbsp;&nbsp;&nbsp;Auto completes on all commands and resorts to defaults for the value if found
 
 ## Developer Support
 
