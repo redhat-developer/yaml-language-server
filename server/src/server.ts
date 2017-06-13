@@ -20,8 +20,9 @@ namespace VSCodeContentRequest {
 	export const type: RequestType<string, string, any, any> = new RequestType('vscode/content');
 }
 
-let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
 const validationDelayMs = 250;
+let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
+let validDocuments: Array<String>;
 
 
 // Create a connection for the server.
@@ -115,12 +116,15 @@ connection.onDidChangeConfiguration((change) => {
 	validateValidFiles();
 });
 
-let validDocuments: Array<String>;
-function validateValidFiles(){
+function clearDiagnostics(){
 	//Clear all the previous diagnostics 
 	documents.all().forEach(doc => {
 		connection.sendDiagnostics({ uri: doc.uri, diagnostics: [] });
 	});
+}
+
+function validateValidFiles(){
+	clearDiagnostics();
 	
 	validDocuments = [];
 	glob(globSetting, function (er, files) {
@@ -187,38 +191,18 @@ function validateTextDocument(textDocument: TextDocument): void {
 			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 		});
 	}
-	
-	
-}
-
-
-function getLineOffsets(textDocString: String): number[] {
-		
-		let lineOffsets: number[] = [];
-		let text = textDocString;
-		let isLineStart = true;
-		for (let i = 0; i < text.length; i++) {
-			if (isLineStart) {
-				lineOffsets.push(i);
-				isLineStart = false;
-			}
-			let ch = text.charAt(i);
-			isLineStart = (ch === '\r' || ch === '\n');
-			if (ch === '\r' && i + 1 < text.length && text.charAt(i + 1) === '\n') {
-				i++;
-			}
-		}
-		if (isLineStart && text.length > 0) {
-			lineOffsets.push(text.length);
-		}
-		
-		return lineOffsets;
 }
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition =>  {
 	let document = documents.get(textDocumentPosition.textDocument.uri);
 	if(validDocuments.indexOf(document.uri) !== -1){
+		return completionHelper(document, textDocumentPosition);
+	}
+	return null;
+});
+
+function completionHelper(document: TextDocument, textDocumentPosition){
 		
 		/*
 		* THIS IS A HACKY VERSION. 
@@ -254,9 +238,8 @@ connection.onCompletion(textDocumentPosition =>  {
 			let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
 			return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
 		}
-	}
-  
-});
+
+}
 
 // This handler resolve additional information for the item selected in
 // the completion list.
@@ -264,29 +247,28 @@ connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
   return item;
 });
 
-let t: Thenable<string>;
-
-/*
-connection.onDidOpenTextDocument((params) => {
-	// A text document got opened in VSCode.
-	// params.textDocument.uri uniquely identifies the document. For documents store on disk this is a file URI.
-	// params.textDocument.text the initial full content of the document.
-	connection.console.log(`${params.textDocument.uri} opened.`);
-});
-
-connection.onDidChangeTextDocument((params) => {
-	// The content of a text document did change in VSCode.
-	// params.textDocument.uri uniquely identifies the document.
-	// params.contentChanges describe the content changes to the document.
-	connection.console.log(`${params.textDocument.uri} changed: ${JSON.stringify(params.contentChanges)}`);
-});
-
-connection.onDidCloseTextDocument((params) => {
-	// A text document got closed in VSCode.
-	// params.textDocument.uri uniquely identifies the document.
-	connection.console.log(`${params.textDocument.uri} closed.`);
-});
-*/
+function getLineOffsets(textDocString: String): number[] {
+		
+		let lineOffsets: number[] = [];
+		let text = textDocString;
+		let isLineStart = true;
+		for (let i = 0; i < text.length; i++) {
+			if (isLineStart) {
+				lineOffsets.push(i);
+				isLineStart = false;
+			}
+			let ch = text.charAt(i);
+			isLineStart = (ch === '\r' || ch === '\n');
+			if (ch === '\r' && i + 1 < text.length && text.charAt(i + 1) === '\n') {
+				i++;
+			}
+		}
+		if (isLineStart && text.length > 0) {
+			lineOffsets.push(text.length);
+		}
+		
+		return lineOffsets;
+}
 
 // Listen on the connection
 connection.listen();
