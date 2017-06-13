@@ -7,68 +7,61 @@ let AutoComplete = require('triesearch');
 
 export class AutoCompleter {
 
-    private autoCompleter;
-    private schema: JSONSchema;
     private kuberSchema; 
-    private currentWords;
 
     constructor(schema:JSONSchema){
-        this.schema = schema;
-        this.autoCompleter = new AutoComplete();
-        this.kuberSchema = new SchemaToMappingTransformer(this.schema).getSchema();
-        this.currentWords = [];
+        this.kuberSchema = new SchemaToMappingTransformer(schema).getSchema();
     }
 
-    public search(searchItem: String): Array<String>{
-        let results = this.autoCompleter.search(searchItem).map(x => ({
-            label: x.value.toString()
+    public search(searchItem: String, data: Array<String>): Array<String>{
+        let auto = new AutoComplete();
+        auto.initialize(data);
+        return auto.search(searchItem).map(searchResult => ({
+            label: searchResult.value.toString()
         }));
-        return results;
     }
 
     public searchAll() {
-        let results = Object.keys(this.kuberSchema);
-        return this.arrToCompletionList(results);
+        let allSchemaKeys = Object.keys(this.kuberSchema);
+        return this.arrToCompletionList(allSchemaKeys);
     }
 
-    public initData(data:Array<String>): void {
-        this.purge();
-        this.autoCompleter.initialize(data);
-    }
-
-    private purge(): void{
-        this.autoCompleter.words = 0;
-        this.autoCompleter.prefixes = 0;
-        this.autoCompleter.value = "";
-        this.autoCompleter.children = [];
-    }
-
-    public generateResults(node){
-        let genVal = "";
+    public generateRegularAutocompletion(node){
+        let nodeToSearch = "";
         
         if(node.kind === Kind.MAPPING && node.value === null){
-            genVal = this.getParentVal(node);
+            nodeToSearch = this.getParentVal(node);
         }else{
-            genVal = node.key.value;
+            nodeToSearch = node.key.value;
         }
 
-        if(genVal === ""){
-            this.initData(Object.keys(this.kuberSchema));
-            return this.search(node.key.value);    
+        if(nodeToSearch === ""){
+            return this.search(node.key.value, Object.keys(this.kuberSchema));    
         }else{
             
-            let results = this.kuberSchema[genVal].map(x => x.children).reduce((a, b) => a.concat(b)).filter((value, index, self) => self.indexOf(value) === index);
-            if(genVal !== node.key.value){
-                this.initData(results);
-                return this.search(node.key.value);
+            let nodeChildrenArray = this.kuberSchema[nodeToSearch].map(node => node.children);
+            let flattenNodeChildrenArray = nodeChildrenArray.reduce((cur, newVal) => cur.concat(newVal));
+            let uniqueChildrenArray = flattenNodeChildrenArray.filter((value, index, self) => self.indexOf(value) === index);
+            if(nodeToSearch !== node.key.value){
+                return this.search(node.key.value, uniqueChildrenArray);
             }else{
-                return this.arrToCompletionList(results);
+                return this.arrToCompletionList(uniqueChildrenArray );
             }
-            
-            
 
         }
         
+    }
+
+    public generateScalarAutocompletion(nodeValue: String){
+        let defaultScalarValues = this.kuberSchema[nodeValue.toString()].map(node => node.default);
+        let defaultScalarValuesUnique = defaultScalarValues.filter((value, index, self) => self.indexOf(value) === index && value !== undefined);
+        return this.arrToCompletionList(defaultScalarValuesUnique);
+    }
+
+    private arrToCompletionList(arr){
+        return arr.map(x => ({
+            label: x.toString()
+        }));
     }
 
     private getParentVal(node: YAMLNode){
@@ -86,17 +79,6 @@ export class AutoCompleter {
         }
 
         return parentNodeKey.key.value;
-    }
-
-    public generateScalarAutocompletion(nodeValue: String){
-        let results = this.kuberSchema[nodeValue.toString()].map(x => x.default).filter((value, index, self) => self.indexOf(value) === index && value !== undefined);
-        return this.arrToCompletionList(results);
-    }
-
-    private arrToCompletionList(arr){
-        return arr.map(x => ({
-            label: x.toString()
-        }));
     }
 
 }

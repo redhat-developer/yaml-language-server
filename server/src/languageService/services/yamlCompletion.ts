@@ -41,7 +41,7 @@ export class YamlCompletion {
       
         }else{
       
-          return autoComplete.generateResults(node);
+          return autoComplete.generateRegularAutocompletion(node);
                 
         }
 
