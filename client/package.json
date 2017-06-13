@@ -32,7 +32,7 @@
           "type": [
             "string"
           ],
-          "default": "**/.clientrc",
+          "default": "",
           "description": "Specifies the glob that will be used when validating yaml files as k8s"
         }
       }
