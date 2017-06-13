@@ -25,9 +25,9 @@ export function activate(context: ExtensionContext) {
 		documentSelector: ['yaml'],
 		synchronize: {
 			// Synchronize the setting section 'languageServerExample' to the server
-			configurationSection: 'yaml',
+			configurationSection: 'k8s',
 			// Notify the server about file changes to '.clientrc files contain in the workspace
-			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
+			fileEvents: workspace.createFileSystemWatcher("**/*.yaml")
 		}
 	}
 
