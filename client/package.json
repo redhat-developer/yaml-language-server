@@ -17,6 +17,7 @@
   "main": "./out/src/extension",
   "contributes": {
     "configuration": {
+      "properties": {
         "yaml.trace.server": {
           "type": "string",
           "enum": [
@@ -26,9 +27,17 @@
           ],
           "default": "off",
           "description": "Traces the communication between VSCode and the languageServerExample service."
+        },
+        "k8s.glob": {
+          "type": [
+            "string"
+          ],
+          "default": "**/.clientrc",
+          "description": "Specifies the glob that will be used when validating yaml files as k8s"
         }
       }
-    },
+    }
+  },
   "scripts": {
     "vscode:prepublish": "tsc -p ./",
     "compile": "tsc -watch -p ./",
