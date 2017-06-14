@@ -13,14 +13,6 @@ export class AutoCompleter {
         this.kuberSchema = new SchemaToMappingTransformer(schema).getSchema();
     }
 
-    public search(searchItem: String, data: Array<String>): Array<String>{
-        let auto = new AutoComplete();
-        auto.initialize(data);
-        return auto.search(searchItem).map(searchResult => ({
-            label: searchResult.value.toString()
-        }));
-    }
-
     public searchAll() {
         let allSchemaKeys = Object.keys(this.kuberSchema);
         return this.arrToCompletionList(allSchemaKeys);
@@ -52,10 +44,18 @@ export class AutoCompleter {
         
     }
 
-    public generateScalarAutocompletion(nodeValue: String){
+    public generateScalarAutocompletion(nodeValue: String) {
         let defaultScalarValues = this.kuberSchema[nodeValue.toString()].map(node => node.default);
         let defaultScalarValuesUnique = defaultScalarValues.filter((value, index, self) => self.indexOf(value) === index && value !== undefined);
         return this.arrToCompletionList(defaultScalarValuesUnique);
+    }
+
+    private search(searchItem: String, data: Array<String>): Array<String>{
+        let auto = new AutoComplete();
+        auto.initialize(data);
+        return auto.search(searchItem).map(searchResult => ({
+            label: searchResult.value.toString()
+        }));
     }
 
     private arrToCompletionList(arr){

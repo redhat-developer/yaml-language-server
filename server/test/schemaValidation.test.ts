@@ -93,8 +93,6 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext)
 // Defines a Mocha test suite to group tests of similar kind together
 suite("Validation Tests", () => {
 
-	// Tests for schemaToMappingTransformer
-
 	// Tests for validator
 	describe('Validation - schemaValidation and schemaValidator files', function() {
 		describe('traverseBackToLocation', function() {
