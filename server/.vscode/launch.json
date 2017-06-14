@@ -22,6 +22,8 @@
 				"--timeout",
 				"999999",
 				"--colors",
+				"-r",
+				"ts-node/register",
 				"${workspaceRoot}/test/*.test.ts"
 			],
 			"preLaunchTask": "npm"

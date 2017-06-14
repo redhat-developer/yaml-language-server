@@ -6,6 +6,7 @@ import { DiagnosticSeverity } from "vscode-languageserver-types/lib/main";
 import { error } from "util";
 import { xhr,configure as getErrorStatusDescription } from 'request-light';
 import { ErrorHandler } from '../utils/errorHandler';
+import {load as yamlLoader, YAMLDocument, YAMLException} from 'yaml-ast-parser-beta';
 
 export class YAMLSChemaValidator extends ASTVisitor {
   private schema: JSONSchema;
@@ -49,7 +50,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
    * Perform a search navigating down the model looking if there exists a pathway to the node
    * @param {YAMLNode} node - The node we need to traverse to
    */
-  public traverseBackToLocation(node:YAMLNode){
+  public traverseBackToLocation(node:YAMLNode): void {
 
       let root = node;
       let nodesToSearch = [];
