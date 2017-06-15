@@ -62,31 +62,87 @@ export function findNode(node:YAMLNode, offset: number): YAMLNode {
   return lastNode;
 }
 
+export class ASTHelper {
+  
+  private addr = [];
+  private parentAddr = [];
+  
+  public getChildrenNodes(node: YAMLNode, depth){
+    if(!node || depth > 1) return;
+    switch(node.kind){
+      case Kind.SCALAR:
+        return [];
+      case Kind.SEQ:
+        let seq = <YAMLSequence> node;
+        if(seq.items.length > 0){
+          seq.items.forEach(item=>{
+            this.getChildrenNodes(item, depth);
+          });
+        }
+        break;
+      case Kind.MAPPING:
+        let mapping = <YAMLMapping> node;
+        this.addr.push(mapping.key); 
+        this.getChildrenNodes(mapping.value, depth+1);
+        break;
+      case Kind.MAP:
+        let map = <YamlMap> node;
+        if(map.mappings !== undefined && map.mappings.length > 0 && depth <= 1){
+          map.mappings.forEach(mapping=>{
+            this.getChildrenNodes(mapping, depth);
+          });
+        }
+        break;
+      case Kind.ANCHOR_REF:
+        let anchor = <YAMLAnchorReference> node;
+        this.getChildrenNodes(anchor.value, depth);
+        break;
+      }
+    }  
+
 /**
  * Traverse up the ast getting the parent node names in the order of parent to root.
  * @param {YAMLNode} node - The node to use
  */
-export function getParentNodes(node:YAMLNode){
+public getParentNodes(node:YAMLNode){
   
-  if(!node){
-    return [];
-  }
+    if(!node || !node.parent) return;
 
-  let holderNode = node;
-
-  let parentNodeArray = [];
-  
-  while(holderNode.parent != null && holderNode.parent != holderNode){
-
-    //When there is a parent key value we can add it
-    if(typeof holderNode.parent.key != "undefined"){
-      parentNodeArray.push(holderNode.parent.key.value);
+    switch(node.kind){
+      case Kind.SCALAR:
+        let scalar = <YAMLScalar> node;
+        this.getParentNodes(scalar.parent);
+      case Kind.SEQ:
+        let seq = <YAMLSequence> node;
+        if(seq.items.length > 0){
+          seq.items.forEach(item=>{
+            this.getParentNodes(item);
+          });
+        }
+        break;
+      case Kind.MAPPING:
+        let mapping = <YAMLMapping> node;
+        this.parentAddr.push(mapping.key.value);
+        this.getParentNodes(mapping.parent);
+        break;
+      case Kind.MAP:
+        let map = <YamlMap> node;
+        this.getParentNodes(map.parent); 
+        break;
+      case Kind.ANCHOR_REF:
+        let anchor = <YAMLAnchorReference> node;
+        this.getParentNodes(anchor.value);
+        break;
     }
 
-    holderNode = holderNode.parent;
-  
+}
+
+  public getAddr(){
+    return this.addr;
   }
 
-  return parentNodeArray;
+  public getParentAddr(){
+    return this.parentAddr;
+  }
 
 }
