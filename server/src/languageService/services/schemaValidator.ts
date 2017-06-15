@@ -1,4 +1,4 @@
-import { ASTVisitor, getParentNodes } from '../utils/astServices';
+import { ASTVisitor, ASTHelper} from '../utils/astServices';
 import { YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference } from 'yaml-ast-parser';
 import { JSONSchema } from "../jsonSchema";
 import { SchemaToMappingTransformer } from "../schemaToMappingTransformer"
@@ -35,9 +35,8 @@ export class YAMLSChemaValidator extends ASTVisitor {
     }
 
     let nodeToTest = node.valueObject !== undefined ? node.valueObject : node.value;
-
     for(let n = 0; n < traversalResults.length; n++){
-      if(traversalResults[n].type === typeof nodeToTest || (typeof nodeToTest === "number" && traversalResults[n].type === "integer")){
+      if(traversalResults[n].type ===  typeof nodeToTest || (typeof nodeToTest === "number" && traversalResults[n].type === "integer")){
         return true;
       }
     }
@@ -75,18 +74,21 @@ export class YAMLSChemaValidator extends ASTVisitor {
           this.errorHandler.addErrorResult(currentNode, "Command not found in k8s", DiagnosticSeverity.Warning);
         }
         
-        if(currentNode.value !== null && currentNode.value.kind === Kind.SCALAR && !this.verifyType(this.kuberSchema[currentNode.key.value], currentNode.value)){
-          this.errorHandler.addErrorResult(currentNode.value, "Node has wrong type", DiagnosticSeverity.Warning);
-        }
+        //FIX ME
+        //if(currentNode.kind === Kind.MAPPING && !this.verifyType(this.kuberSchema[currentNode.key.value], currentNode.value)){
+        //  this.errorHandler.addErrorResult(currentNode.value, "Node has wrong type", DiagnosticSeverity.Warning);
+        //}
         
         //This is going to be the children node
         let childrenNodes = this.getChildren(currentNode); 
         childrenNodes.forEach(element => {
 
           //Compare currentNode with getParents(this node)
-          let parentNodes = getParentNodes(currentNode);
+          let astHelper = new ASTHelper();
+          let parentNodeHelper = astHelper.getParentNodes(currentNode);
+          let parentNodes = astHelper.getParentAddr();
 
-          if(currentSearchingNode.length - 1 === parentNodes.length && this.validateChildren(element)){
+          if(currentSearchingNode.length === parentNodes.length && this.validateChildren(element)){
 
             if(currentNode.value.kind === Kind.SCALAR && !this.verifyType(this.kuberSchema[currentNode.key.value], currentNode.value)){
               this.errorHandler.addErrorResult(element, "Node has wrong type", DiagnosticSeverity.Warning);
@@ -124,46 +126,18 @@ export class YAMLSChemaValidator extends ASTVisitor {
   }
 
   private getChildren(node: YAMLNode){
+    if(!node) return [];
     switch(node.kind){
-      case Kind.MAP : 
-        let mapNodeList = [];
-        node.mappings.forEach(element => {
-          element.value.mappings.forEach(newElement => {
-            mapNodeList.push(newElement);  
-          });
-        });
-        return mapNodeList;
-      case Kind.MAPPING :
-        if(node.value === null && node.mappings === undefined){
-          return [];
-        }else if(node.value === null){
-          return node.mappings;  
-        }else if(node.value.mappings !== undefined){
-          return node.value.mappings;
-        }else{
-          let mappingNodeList = [];
-          
-          if(node.value.kind === Kind.SCALAR){
-            return [];
-          }
-
-          node.value.items.forEach(element => {
-            element.mappings.forEach(newElement => {
-              mappingNodeList.push(newElement);  
-            });
-          });
-          return mappingNodeList;
-        }
-      case Kind.SEQ :
-        let seqNodeList = [];
-        (<YAMLSequence> node).items.forEach(element => {
-          element.mappings.forEach(newElement => {
-            seqNodeList.push(newElement);  
-          });
-        });
-        return seqNodeList;
-      default:
+      case Kind.SCALAR:
         return [];
+      case Kind.MAPPING :
+        return this.getChildren(node.value);
+      case Kind.MAP :
+        return node.mappings;
+      case Kind.SEQ :
+        return (<YAMLSequence> node).items;
+      case Kind.ANCHOR_REF:
+        return [(<YAMLAnchorReference> node).value];
     }
   }
 
