@@ -75,9 +75,9 @@ export class YAMLSChemaValidator extends ASTVisitor {
         }
         
         //FIX ME
-        //if(currentNode.kind === Kind.MAPPING && !this.verifyType(this.kuberSchema[currentNode.key.value], currentNode.value)){
-        //  this.errorHandler.addErrorResult(currentNode.value, "Node has wrong type", DiagnosticSeverity.Warning);
-        //}
+        if(currentNode.kind === Kind.MAPPING && currentNode.value.kind !== Kind.MAP && !this.verifyType(this.kuberSchema[currentNode.key.value], currentNode.value)){
+          this.errorHandler.addErrorResult(currentNode.value, "Node has wrong type", DiagnosticSeverity.Warning);
+        }
         
         //This is going to be the children node
         let childrenNodes = this.getChildren(currentNode); 
