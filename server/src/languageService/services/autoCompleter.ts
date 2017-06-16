@@ -44,10 +44,14 @@ export class AutoCompleter {
         
     }
 
-    public generateScalarAutocompletion(nodeValue: String) {
-        let defaultScalarValues = this.kuberSchema["childrenNodes"][nodeValue.toString()].map(node => node.default);
-        let defaultScalarValuesUnique = defaultScalarValues.filter((value, index, self) => self.indexOf(value) === index && value !== undefined);
-        return this.arrToCompletionList(defaultScalarValuesUnique);
+    public generateScalarAutocompletion(nodeValue: string) {
+        let defaultScalarValues = this.kuberSchema["childrenNodes"][nodeValue];
+        if(defaultScalarValues){
+            let defaultScalarValuesMap = defaultScalarValues.map(node => node.default);
+            let defaultScalarValuesUnique = defaultScalarValuesMap.filter((value, index, self) => self.indexOf(value) === index && value !== undefined);
+            return this.arrToCompletionList(defaultScalarValuesUnique);
+        }
+        return [];
     }
 
     private search(searchItem: String, data: Array<String>): Array<String>{

@@ -89,7 +89,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
           let parentNodeHelper = astHelper.getParentNodes(currentNode);
           let parentNodes = astHelper.getParentAddr();
 
-          if(currentSearchingNode.length === parentNodes.length && this.validateChildren(element)){
+          if(currentSearchingNode.length === parentNodes.length && this.validateChildren(parentNodes, element)){
 
             if(currentNode.value.kind === Kind.SCALAR && !this.verifyType(this.kuberSchema["childrenNodes"][currentNode.key.value], currentNode.value)){
               this.errorHandler.addErrorResult(element, "Node has wrong type", DiagnosticSeverity.Warning);
@@ -109,22 +109,14 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
   }
 
-  private validateChildren(node: YAMLNode){ 
-    if(node.kind === Kind.MAPPING){
-      return this.kuberSchema["childrenNodes"][this.validateChildrenHelper(node)].map(x => x.children).filter(function(child){
-        return child.indexOf(node.key.value) != -1;
-      }).length != 0;
-    }
-    return false;
-  }
-
-  private validateChildrenHelper(node: YAMLNode){
-    //Get the parent node key
-    let parentNodeKey = node.parent;
-    while(parentNodeKey.key === undefined){
-      parentNodeKey = parentNodeKey.parent;
-    }
-    return parentNodeKey.key.value;
+  private validateChildren(nodeParentList: Array<string>, childNode: YAMLNode){
+    if(nodeParentList.length === 0 || childNode === null) return true;
+    if(childNode.key === undefined || childNode.key.value === undefined) return false; 
+    
+    let parentNode = nodeParentList[0];
+    return this.kuberSchema["childrenNodes"][parentNode].map(x => x.children).filter(function(child){
+      return child.indexOf(childNode.key.value) != -1;
+    }).length != 0;
 
   }
 
