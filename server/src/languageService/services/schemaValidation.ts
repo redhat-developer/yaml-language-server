@@ -20,8 +20,6 @@ export class SchemaValidation {
 
     return this.schemaService.getSchemaForResource(document.uri).then(schema =>{
       let validator = new YAMLSChemaValidator(schema.schema, document);
-      console.log(doc);
-      console.log(document);
       validator.traverseBackToLocation(<YAMLNode>doc);
       result.items = validator.getErrorResults();
       return result;

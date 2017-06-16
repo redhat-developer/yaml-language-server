@@ -54,8 +54,6 @@ export class YAMLSChemaValidator extends ASTVisitor {
       let root = node;
       let nodesToSearch = [];
 
-      console.log(this.kuberSchema["rootNodes"]["containers"]);
-
       if(root.mappings === undefined){
         root.mappings = [];
       }
