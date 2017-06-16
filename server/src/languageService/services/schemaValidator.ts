@@ -54,13 +54,17 @@ export class YAMLSChemaValidator extends ASTVisitor {
       let root = node;
       let nodesToSearch = [];
 
+      console.log(this.kuberSchema["rootNodes"]["containers"]);
+
       if(root.mappings === undefined){
         root.mappings = [];
       }
 
       root.mappings.forEach(element => {
-        if(this.kuberSchema[element.key.value] !== undefined){
+        if(this.kuberSchema["rootNodes"][element.key.value]){
           nodesToSearch.push([element]);
+        }else if(this.kuberSchema["childrenNodes"][element.key.value]){
+          this.errorHandler.addErrorResult(element, "This is not a root node", DiagnosticSeverity.Warning);
         }else{
           this.errorHandler.addErrorResult(element, "Command not found in k8s", DiagnosticSeverity.Warning);
         }
@@ -70,12 +74,11 @@ export class YAMLSChemaValidator extends ASTVisitor {
         let currentSearchingNode = nodesToSearch.pop();
         let currentNode = currentSearchingNode[currentSearchingNode.length - 1];
 
-        if(this.kuberSchema[currentNode.key.value] === undefined){
+        if(this.kuberSchema["childrenNodes"][currentNode.key.value] === undefined){
           this.errorHandler.addErrorResult(currentNode, "Command not found in k8s", DiagnosticSeverity.Warning);
         }
         
-        //FIX ME
-        if(currentNode.kind === Kind.MAPPING && currentNode.value.kind !== Kind.MAP && !this.verifyType(this.kuberSchema[currentNode.key.value], currentNode.value)){
+        if(currentNode.kind === Kind.MAPPING && currentNode.value.kind !== Kind.MAP && !this.verifyType(this.kuberSchema["childrenNodes"][currentNode.key.value], currentNode.value)){
           this.errorHandler.addErrorResult(currentNode.value, "Node has wrong type", DiagnosticSeverity.Warning);
         }
         
@@ -90,7 +93,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
           if(currentSearchingNode.length === parentNodes.length && this.validateChildren(element)){
 
-            if(currentNode.value.kind === Kind.SCALAR && !this.verifyType(this.kuberSchema[currentNode.key.value], currentNode.value)){
+            if(currentNode.value.kind === Kind.SCALAR && !this.verifyType(this.kuberSchema["childrenNodes"][currentNode.key.value], currentNode.value)){
               this.errorHandler.addErrorResult(element, "Node has wrong type", DiagnosticSeverity.Warning);
             }
 
@@ -104,11 +107,13 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
       }
 
+      
+
   }
 
   private validateChildren(node: YAMLNode){ 
     if(node.kind === Kind.MAPPING){
-      return this.kuberSchema[this.validateChildrenHelper(node)].map(x => x.children).filter(function(child){
+      return this.kuberSchema["childrenNodes"][this.validateChildrenHelper(node)].map(x => x.children).filter(function(child){
         return child.indexOf(node.key.value) != -1;
       }).length != 0;
     }

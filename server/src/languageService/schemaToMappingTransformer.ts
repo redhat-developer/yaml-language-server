@@ -88,8 +88,6 @@ export class SchemaToMappingTransformer {
             }
        
         }
-
-        console.log(this.mappingKuberSchema);
     
     }
 
