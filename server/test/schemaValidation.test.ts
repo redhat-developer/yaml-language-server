@@ -23,77 +23,13 @@ import URI from '../src/languageService/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
 import {JSONSchemaService} from '../src/languageService/services/jsonSchemaService'
+import {schemaService, languageService}  from './testHelper';
 var glob = require('glob');
 var assert = require('assert');
 
-namespace VSCodeContentRequest {
-	export const type: RequestType<string, string, any, any> = new RequestType('vscode/content');
-}
-
-const validationDelayMs = 250;
-let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
-let validDocuments: Array<String>;
-
-
-// Create a connection for the server.
-let connection: IConnection = null;
-if (process.argv.indexOf('--stdio') == -1) {
-	connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
-} else {
-	connection = createConnection();
-}
-
-// After the server has started the client sends an initialize request. The server receives
-// in the passed params the rootPath of the workspace plus the client capabilities.
-let workspaceRoot: string;
-connection.onInitialize((params): InitializeResult => {
-	workspaceRoot = params.rootPath;
-	return {
-		capabilities: {
-			// Tell the client that the server works in FULL text document sync mode
-			textDocumentSync: TextDocumentSyncKind.Full,
-			// Tell the client that the server support code complete
-			completionProvider: {
-				resolveProvider: false
-			}
-		}
-	}
-});
-
-let workspaceContext = {
-	resolveRelativePath: (relativePath: string, resource: string) => {
-		return URL.resolve(resource, relativePath);
-	}
-};
-
-let schemaRequestService = (uri: string): Thenable<string> => {
-	if (Strings.startsWith(uri, 'file://')) {
-		let fsPath = URI.parse(uri).fsPath;
-		return new Promise<string>((c, e) => {
-			fs.readFile(fsPath, 'UTF-8', (err, result) => {
-				err ? e('') : c(result.toString());
-			});
-		});
-	} else if (Strings.startsWith(uri, 'vscode://')) {
-		return connection.sendRequest(VSCodeContentRequest.type, uri).then(responseText => {
-			return responseText;
-		}, error => {
-			return error.message;
-		});
-	}
-	return xhr({ url: uri, followRedirects: 5 }).then(response => {
-		return response.responseText;
-	}, (error: XHRResponse) => {
-		return Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString());
-	});
-};
-
-let languageService = getLanguageService(schemaRequestService, workspaceContext);
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite("Validation Tests", () => {
-
-	// Tests for schemaToMappingTransformer
 
 	// Tests for validator
 	describe('Validation - schemaValidation and schemaValidator files', function() {
@@ -135,7 +71,7 @@ suite("Validation Tests", () => {
 				});
 			});
 			
-			describe('Checking validating types', function(){
+			describe('Validating types', function(){
 				it('Validating fails on incorrect scalar node type (boolean)', (done) => {
 					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 					let content = `apiVersion: false`;
@@ -158,6 +94,28 @@ suite("Validation Tests", () => {
 					}).then(done, done);
 				});
 
+				it('Validating fails on incorrect scalar node type with parent (boolean)', (done) => {
+					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+					let content = `metadata:\n  name: false`;
+					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
+					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
+					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
+					validator.then(function(result){
+						assert.equal(result.items.length, 1);
+					}).then(done, done);
+				});
+
+				it('Validating fails on incorrect scalar node type with multiple parents (boolean)', (done) => {
+					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+					let content = `spec:\n  containers\n    name: false`;
+					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
+					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
+					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
+					validator.then(function(result){
+						assert.equal(result.items.length, 1);
+					}).then(done, done);
+				});
+
 				it('Validating is correct scalar node type (string)', (done) => {
 					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 					let content = `apiVersion: v1`;
@@ -168,20 +126,64 @@ suite("Validation Tests", () => {
 						assert.equal(result.items.length, 0);
 					}).then(done, done);
 				});
-			});
-			
 
-			//Validation errors
-			describe('Checking validation errors', function(){
-				it('Root Child node not found', (done) => {
+				it('Validating is correct scalar node type with parent (number)', (done) => {
 					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
-					let content = `testNode: null`;
+					let content = `metadata:\n  generation: 5`;
+					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
+					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
+					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
+					validator.then(function(result){
+						assert.equal(result.items.length, 0);
+					}).then(done, done);
+				});
+
+				it('Validating is correct scalar node type with multiple parents (number)', (done) => {
+					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+					let content = `spec:\n  containers\n    name: testing`;
+					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
+					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
+					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
+					validator.then(function(result){
+						assert.equal(result.items.length, 0);
+					}).then(done, done);
+				});
+
+				it('Validating if the object is correct', (done) => {
+					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+					let content = `spec: hello`;
 					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
 					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
 					validator.then(function(result){
 						assert.equal(result.items.length, 1);
-						assert.equal(result.items[0]["message"], "Command not found in k8s")
+					}).then(done, done);
+				});
+
+				it('Validating if the object is correct 2', (done) => {
+					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+					let content = `apiVersion:\n  name: hello`;
+					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
+					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
+					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
+					validator.then(function(result){
+						assert.equal(result.items.length, 1);
+					}).then(done, done);
+				});
+			});
+			
+
+			//Validation errors
+			describe('Checking validation errors', function(){
+				it('Root node not found', (done) => {
+					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+					let content = `testNode: hello_world`;
+					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
+					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
+					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
+					validator.then(function(result){
+						assert.equal(result.items.length, 1);
+						assert.equal(result.items[0]["message"], "Command not found in k8s");
 					}).then(done, done);
 				});
 
@@ -193,13 +195,36 @@ suite("Validation Tests", () => {
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
 					validator.then(function(result){
 						assert.equal(result.items.length, 1);
-						assert.equal(result.items[0]["message"], "Not a valid child node for this parent")
+						assert.equal(result.items[0]["message"], "Not a valid child node for this parent");
 					}).then(done, done);
 				});
 
 				it('Checking for valid child node for parent (exists but not valid child node)', (done) => {
 					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 					let content = `metadata:\n apiVersion: v1`;
+					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
+					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
+					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
+					validator.then(function(result){
+						assert.equal(result.items.length, 1);
+						assert.equal(result.items[0]["message"], "Not a valid child node for this parent");
+					}).then(done, done);
+				});
+
+				it('Checking that children node values are validated (node exists)', (done) => {
+					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+					let content = `spec:\n  containers:\n    name: hello`;
+					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
+					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
+					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
+					validator.then(function(result){
+						assert.equal(result.items.length, 0);
+					}).then(done, done);
+				});
+
+				it('Checking that children node values are validated (node does not exist under parent)', (done) => {
+					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+					let content = `spec:\n  containers:\n    port:\n      - containerPort: 404`;
 					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
 					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);

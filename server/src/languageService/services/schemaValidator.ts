@@ -1,4 +1,4 @@
-import { ASTVisitor, getParentNodes } from '../utils/astServices';
+import { ASTVisitor} from '../utils/astServices';
 import { YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference } from 'yaml-ast-parser';
 import { JSONSchema } from "../jsonSchema";
 import { SchemaToMappingTransformer } from "../schemaToMappingTransformer"
@@ -84,7 +84,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
         childrenNodes.forEach(element => {
 
           //Compare currentNode with getParents(this node)
-          let parentNodes = getParentNodes(currentNode);
+          let parentNodes = ["getParentNodes(currentNode)"];
 
           if(currentSearchingNode.length - 1 === parentNodes.length && this.validateChildren(element)){
 
