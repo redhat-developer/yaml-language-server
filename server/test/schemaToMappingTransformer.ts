@@ -22,86 +22,32 @@ import Strings = require( '../src/languageService/utils/strings');
 import URI from '../src/languageService/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
-import {JSONSchemaService} from '../src/languageService/services/jsonSchemaService'
+import {JSONSchemaService} from '../src/languageService/services/jsonSchemaService';
+import {SchemaToMappingTransformer} from '../src/languageService/schemaToMappingTransformer';
+import {schemaService, languageService}  from './testHelper';
 var glob = require('glob');
 var assert = require('assert');
 
-namespace VSCodeContentRequest {
-	export const type: RequestType<string, string, any, any> = new RequestType('vscode/content');
-}
+schemaService.getResolvedSchema(schemaService.getRegisteredSchemaIds()[0]).then(schema =>{
+	suite("Schema Transformation Tests", () => {
 
-const validationDelayMs = 250;
-let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
-let validDocuments: Array<String>;
+		describe('Schema Tranformation - schemaToMappingTransformer', function(){
+			
+			let schemaTransformer = new SchemaToMappingTransformer(schema.schema);
 
-
-// Create a connection for the server.
-let connection: IConnection = null;
-if (process.argv.indexOf('--stdio') == -1) {
-	connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
-} else {
-	connection = createConnection();
-}
-
-// After the server has started the client sends an initialize request. The server receives
-// in the passed params the rootPath of the workspace plus the client capabilities.
-let workspaceRoot: string;
-connection.onInitialize((params): InitializeResult => {
-	workspaceRoot = params.rootPath;
-	return {
-		capabilities: {
-			// Tell the client that the server works in FULL text document sync mode
-			textDocumentSync: TextDocumentSyncKind.Full,
-			// Tell the client that the server support code complete
-			completionProvider: {
-				resolveProvider: false
-			}
-		}
-	}
-});
-
-let workspaceContext = {
-	resolveRelativePath: (relativePath: string, resource: string) => {
-		return URL.resolve(resource, relativePath);
-	}
-};
-
-let schemaRequestService = (uri: string): Thenable<string> => {
-	if (Strings.startsWith(uri, 'file://')) {
-		let fsPath = URI.parse(uri).fsPath;
-		return new Promise<string>((c, e) => {
-			fs.readFile(fsPath, 'UTF-8', (err, result) => {
-				err ? e('') : c(result.toString());
+			describe('getSchema', function(){
+				it("Schema is not empty", function(){
+					assert.notEqual(Object.keys(schemaTransformer.getSchema()).length, 0);
+				});
 			});
+
+			describe('getKuberSchema', function(){
+				it("Schema is not empty", function(){
+					assert.notEqual(Object.keys(schemaTransformer.getKuberSchema()).length, 0);
+				});
+			});
+
 		});
-	} else if (Strings.startsWith(uri, 'vscode://')) {
-		return connection.sendRequest(VSCodeContentRequest.type, uri).then(responseText => {
-			return responseText;
-		}, error => {
-			return error.message;
-		});
-	}
-	return xhr({ url: uri, followRedirects: 5 }).then(response => {
-		return response.responseText;
-	}, (error: XHRResponse) => {
-		return Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString());
+
 	});
-};
-
-let languageService = getLanguageService(schemaRequestService, workspaceContext);
-
-suite("Schema Transformation Tests", () => {
-
-    describe('Schema Tranformation - schemaToMappingTransformer', function(){
-        
-        describe('getSchema', function(){
-
-        });
-
-        describe('getKuberSchema', function(){
-
-        });
-
-    });
-
 });
