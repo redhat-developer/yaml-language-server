@@ -76,7 +76,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
           this.errorHandler.addErrorResult(currentNode, "Command not found in k8s", DiagnosticSeverity.Warning);
         }
         
-        if(currentNode.kind === Kind.MAPPING && currentNode.value.kind !== Kind.MAP && !this.verifyType(this.kuberSchema["childrenNodes"][currentNode.key.value], currentNode.value)){
+        if(currentNode.kind === Kind.MAPPING && currentNode.value != null && currentNode.value.kind !== Kind.MAP && !this.verifyType(this.kuberSchema["childrenNodes"][currentNode.key.value], currentNode.value)){
           this.errorHandler.addErrorResult(currentNode.value, "Node has wrong type", DiagnosticSeverity.Warning);
         }
         
