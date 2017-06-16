@@ -15,13 +15,49 @@ export class SchemaToMappingTransformer {
     }
 
     private buildCommandMapFromKuberProperties(kuberSchema: JSONSchema){
-        
+        this.mappingKuberSchema["rootNodes"] = {};
+        for(let api_obj in this.kuberSchema.properties){
+            for(let prop in this.kuberSchema.properties[api_obj]["properties"]){
+
+                if(!this.mappingKuberSchema["rootNodes"].hasOwnProperty(prop)){
+                   this.mappingKuberSchema["rootNodes"][prop] = [];
+                }
+                
+                if(this.kuberSchema.properties[api_obj]["properties"][prop]["items"]){
+                
+                    let children = this.kuberSchema.properties[api_obj]["properties"][prop]["items"]["properties"];
+                    this.kuberSchema.properties[api_obj]["properties"][prop]["children"] = [];
+
+                    for(let keys in children){
+                        this.kuberSchema.properties[api_obj]["properties"][prop]["children"].push(keys);
+                    }
+                
+                }else if(this.kuberSchema.properties[api_obj]["properties"][prop]["properties"]){
+                    
+                    let children = this.kuberSchema.properties[api_obj]["properties"][prop]["properties"];
+                    this.kuberSchema.properties[api_obj]["properties"][prop]["children"] = [];
+
+                    for(let keys in children){
+                        this.kuberSchema.properties[api_obj]["properties"][prop]["children"].push(keys);
+                    }
+                    
+                }else{
+                    this.kuberSchema.properties[api_obj]["properties"][prop]["children"] = [];
+                }
+
+                this.mappingKuberSchema["rootNodes"][prop].push(this.kuberSchema.properties[api_obj]["properties"][prop]);
+
+
+            }
+        }
+
+        this.mappingKuberSchema["childrenNodes"] = {};
         for(let api_obj in this.kuberSchema.definitions){
 
            for(let prop in this.kuberSchema.definitions[api_obj]["properties"]){
          
-              if(!this.mappingKuberSchema.hasOwnProperty(prop)){
-                   this.mappingKuberSchema[prop] = [];
+              if(!this.mappingKuberSchema["childrenNodes"].hasOwnProperty(prop)){
+                   this.mappingKuberSchema["childrenNodes"][prop] = [];
               }
         
               if(this.kuberSchema.definitions[api_obj]["properties"][prop]["items"]){
@@ -46,12 +82,14 @@ export class SchemaToMappingTransformer {
                   this.kuberSchema.definitions[api_obj]["properties"][prop]["children"] = [];
               }
 
-              this.mappingKuberSchema[prop].push(this.kuberSchema.definitions[api_obj]["properties"][prop]);
+              this.mappingKuberSchema["childrenNodes"][prop].push(this.kuberSchema.definitions[api_obj]["properties"][prop]);
                
            
             }
        
         }
+
+        console.log(this.mappingKuberSchema);
     
     }
 
