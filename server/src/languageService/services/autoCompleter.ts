@@ -31,14 +31,19 @@ export class AutoCompleter {
             return this.search(node.key.value, Object.keys(this.kuberSchema["rootNodes"]));    
         }else{
             
-            let nodeChildrenArray = this.kuberSchema["childrenNodes"][nodeToSearch].map(node => node.children);
-            let flattenNodeChildrenArray = nodeChildrenArray.reduce((cur, newVal) => cur.concat(newVal));
-            let uniqueChildrenArray = flattenNodeChildrenArray.filter((value, index, self) => self.indexOf(value) === index);
-            if(nodeToSearch !== node.key.value){
-                return this.search(node.key.value, uniqueChildrenArray);
-            }else{
-                return this.arrToCompletionList(uniqueChildrenArray);
+            let nodeChildren = this.kuberSchema["childrenNodes"][nodeToSearch];
+            if(nodeChildren){
+                let nodeChildrenArray = nodeChildren.map(node => node.children);
+                let flattenNodeChildrenArray = nodeChildrenArray.reduce((cur, newVal) => cur.concat(newVal));
+                let uniqueChildrenArray = flattenNodeChildrenArray.filter((value, index, self) => self.indexOf(value) === index);
+                if(nodeToSearch !== node.key.value){
+                    return this.search(node.key.value, uniqueChildrenArray);
+                }else{
+                    return this.arrToCompletionList(uniqueChildrenArray);
+                }
             }
+            
+            return [];
 
         }
         
