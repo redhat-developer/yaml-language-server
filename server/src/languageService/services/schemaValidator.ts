@@ -1,4 +1,4 @@
-import { ASTVisitor, ASTHelper} from '../utils/astServices';
+import { ASTVisitor} from '../utils/astServices';
 import { YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference } from 'yaml-ast-parser';
 import { JSONSchema } from "../jsonSchema";
 import { SchemaToMappingTransformer } from "../schemaToMappingTransformer"
@@ -24,146 +24,122 @@ export class YAMLSChemaValidator extends ASTVisitor {
   }
 
   /**
-   * Verify that the type of nodeToTest is the same as atleast one of the nodes in mappingNode schema
-   * @param {} traversalResults - The results of the search traversal
-   * @param {YAMLNode} node - The node to use
-   */
-  private verifyType(traversalResults, node): Boolean {
-    
-    if(node === undefined || traversalResults === undefined){
-      return true;      
-    }
-
-    let nodeToTest = node.valueObject !== undefined ? node.valueObject : node.value;
-    for(let n = 0; n < traversalResults.length; n++){
-      if(traversalResults[n].type ===  typeof nodeToTest || (typeof nodeToTest === "number" && traversalResults[n].type === "integer")){
-        return true;
-      }
-    }
-    
-    return false;
-
-  }
-
-  /**
    * Perform a search navigating down the model looking if there exists a pathway to the node
    * @param {YAMLNode} node - The node we need to traverse to
    */
   public traverseBackToLocation(node:YAMLNode): void {
 
-      let root = node;
+      let rootNode = node;
       let nodesToSearch = [];
 
-      if(root.mappings === undefined){
-        root.mappings = [];
-      }
-
-      root.mappings.forEach(element => {
+      rootNode.mappings.forEach(element => {
         if(this.kuberSchema["rootNodes"][element.key.value]){
           nodesToSearch.push([element]);
         }else if(this.kuberSchema["childrenNodes"][element.key.value]){
-          this.errorHandler.addErrorResult(element, "This is not a root node", DiagnosticSeverity.Warning);
+          this.errorHandler.addErrorResult(element, "Command is not a root node", DiagnosticSeverity.Warning);
         }else{
           this.errorHandler.addErrorResult(element, "Command not found in k8s", DiagnosticSeverity.Warning);
         }
       });
 
-      while(nodesToSearch.length != 0){
-        let currentSearchingNode = nodesToSearch.pop();
-        let currentNode = currentSearchingNode[currentSearchingNode.length - 1];
+      while(nodesToSearch.length > 0){
+        let currentNodePath = nodesToSearch.pop();
+        let currentNode = currentNodePath[currentNodePath.length - 1];
 
-        if(currentNode.kind === Kind.MAP){
-          currentNode.mappings.forEach(mapNode => {
-            let newNodeToSearch = currentSearchingNode.concat(mapNode);
-            nodesToSearch.push(newNodeToSearch);
-          }); 
-        }else if(currentNode.kind === Kind.SEQ){
-          
-          currentNode.items.forEach(mapNode => {
-            let newNodeToSearch = currentSearchingNode.concat(mapNode);
-            nodesToSearch.push(newNodeToSearch);
-          });        
-
-        }else{
-          
-          //This will have to be more complex
-          if(this.kuberSchema["childrenNodes"][currentNode.key.value] === undefined){
-            this.errorHandler.addErrorResult(currentNode, "Command not found in k8s", DiagnosticSeverity.Warning);
-          }
-          
-          if(currentNode.kind === Kind.MAPPING && currentNode.value != null && currentNode.value.kind !== Kind.MAP && currentNode.value.kind !== Kind.SEQ && !this.verifyType(this.kuberSchema["childrenNodes"][currentNode.key.value], currentNode.value)){
-            this.errorHandler.addErrorResult(currentNode.value, "Node has wrong type", DiagnosticSeverity.Warning);
-          }
-
-          //This is going to be the children node
-          let childrenNodes = this.getChildren(currentNode); 
-          childrenNodes.forEach(element => {
-
-            if(element.kind === Kind.MAP){
-              element.mappings.forEach(mapNode => {
-                let newNodeToSearch = currentSearchingNode.concat(mapNode);
-                nodesToSearch.push(newNodeToSearch);
-              }); 
-            }else if(element.kind === Kind.SEQ){
-              
-              element.items.forEach(mapNode => {
-                let newNodeToSearch = currentSearchingNode.concat(mapNode);
-                nodesToSearch.push(newNodeToSearch);
-              });        
-
-            }else{
-              //Compare currentNode with getParents(this node)
-              let astHelper = new ASTHelper();
-              let parentNodeHelper = astHelper.getParentNodes(currentNode);
-              let parentNodes = astHelper.getParentAddr();
-
-              if(currentSearchingNode.length === parentNodes.length && this.validateChildren(parentNodes, element)){
-
-                if(currentNode.value.kind === Kind.SCALAR && !this.verifyType(this.kuberSchema["childrenNodes"][currentNode.key.value], currentNode.value)){
-                  this.errorHandler.addErrorResult(element, "Node has wrong type", DiagnosticSeverity.Warning);
-                }
-
-                let newNodeToSearch = currentSearchingNode.concat(element);
-                nodesToSearch.push(newNodeToSearch);
-              } else {
-                this.errorHandler.addErrorResult(element, "Not a valid child node for this parent", DiagnosticSeverity.Warning);
-              }
-
-              }      
-          });
-        }
+        //Do some error checking on the current key
+        //If there is an error then throw the error on it and don't add the children
         
+        //Error: If key not found
+        if(!this.kuberSchema["childrenNodes"][currentNode.key.value]){
+          this.errorHandler.addErrorResult(currentNode.key, "Command not found in k8s", DiagnosticSeverity.Warning);
+        }
+
+        //Error: It did not validate correctly
+        if(!this.isValid(currentNodePath)){
+          this.errorHandler.addErrorResult(currentNode.key, "This is not a valid statement", DiagnosticSeverity.Warning);
+        }
+
+        //Error: If type is mapping then we need to check the scalar type
+        console.log(this.isValidType(currentNode));
+        if(currentNode.kind === Kind.MAPPING && this.isValidType(currentNode)){
+          this.errorHandler.addErrorResult(currentNode.value, "Not a valid type", DiagnosticSeverity.Warning);
+        }
+
+        let childrenNodes = this.generateChildren(currentNode.value);
+        childrenNodes.forEach(child => {
+          //We are getting back a bunch of nodes which all have a key and we adding them
+
+          let newNodePath = currentNodePath.concat(child);
+          if(!this.isValid(newNodePath)){
+
+            if(!this.kuberSchema["childrenNodes"][child.key.value]){
+              this.errorHandler.addErrorResult(child, "Command not found in k8s", DiagnosticSeverity.Warning);
+            }
+
+            this.errorHandler.addErrorResult(child, "This is not a valid child node of the parent", DiagnosticSeverity.Warning);
+          }else{         
+            nodesToSearch.push(newNodePath);
+          }
+        
+        });
 
       }
 
-      
+  }
+
+  private isValidType(node){
+     
+     if(!node) return true;
+
+     let nodeTypes = this.kuberSchema["childrenNodes"][node.key.value].map(x => x.type);
+     let nodeTypesUnique = Array.from(new Set(nodeTypes));
+
+     let nodeToTest = node.value.valueObject !== undefined ? node.value.valueObject : node.value.value;
+     return nodeTypesUnique.indexOf(nodeToTest) !== -1;
 
   }
 
-  private validateChildren(nodeParentList: Array<string>, childNode: YAMLNode){
-    if(nodeParentList.length === 0 || childNode === null) return true;
-    if(childNode.key === undefined || childNode.key.value === undefined) return false; 
+  private isValid(node){
+    let parentNodes = this.getParentNodes(node);
     
-    let parentNode = nodeParentList[0];
-    return this.kuberSchema["childrenNodes"][parentNode].map(x => x.children).filter(function(child){
-      return child.indexOf(childNode.key.value) != -1;
-    }).length != 0;
+    if(parentNodes.length === 0){
+      return true; 
+    }
+    
+    let parent = parentNodes[parentNodes.length - 2];
+    let child = parentNodes[parentNodes.length - 1];
+    if(this.kuberSchema["childrenNodes"][parent]){
+      let parentChildNodes = this.kuberSchema["childrenNodes"][parent].map(x => x.children);
+      let parentChildNodesFlatten = [].concat.apply([], parentChildNodes);
+      let parentChildNodesUnique = Array.from(new Set(parentChildNodesFlatten));
+      return parentChildNodesUnique.indexOf(child) !== -1;
+    }
+
+    return false;
 
   }
 
-  private getChildren(node: YAMLNode){
-    if(!node || !node.value) return [];
-    switch(node.value.kind){
-      case Kind.SCALAR:
+  private getParentNodes(nodeList){
+    if(nodeList.length ===  1) return []; //Case when its a root node
+
+    let parentNodeNameList = [];
+    for(let nodeCount = 0; nodeCount <= nodeList.length - 1; nodeCount++){
+      parentNodeNameList.push(nodeList[nodeCount].key.value);
+    }
+    return parentNodeNameList;
+  }
+
+  private generateChildren(node){
+    if(!node) return [];
+    switch(node.kind){
+      case Kind.SCALAR :
         return [];
-      case Kind.MAPPING :
-        return node.value;
+      case Kind.MAPPING : 
+        return node;
       case Kind.MAP :
-        return node.value.mappings;
+        return (<YamlMap> node).mappings;
       case Kind.SEQ :
-        return (<YAMLSequence> node).value.items;
-      case Kind.ANCHOR_REF:
-        return [(<YAMLAnchorReference> node).value];
+        return (<YAMLSequence> node).items;
     }
   }
 
