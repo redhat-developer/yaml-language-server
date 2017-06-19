@@ -183,7 +183,7 @@ suite("Validation Tests", () => {
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
 					validator.then(function(result){
 						assert.equal(result.items.length, 1);
-						assert.equal(result.items[0]["message"], "Command not found in k8s");
+						assert.equal(result.items[0]["message"], 'Command \'testNode\' is not found');
 					}).then(done, done);
 				});
 
@@ -195,8 +195,8 @@ suite("Validation Tests", () => {
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
 					validator.then(function(result){
 						assert.equal(result.items.length, 2);
-						assert.equal(result.items[0]["message"], "Command not found in k8s");
-						assert.equal(result.items[1]["message"], "This is not a valid child node of the parent");
+						assert.equal(result.items[0]["message"], 'Command \'na\' is not found');
+						assert.equal(result.items[1]["message"], '\'na\' is not a valid child node of metadata');
 					}).then(done, done);
 				});
 
@@ -208,7 +208,7 @@ suite("Validation Tests", () => {
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
 					validator.then(function(result){
 						assert.equal(result.items.length, 1);
-						assert.equal(result.items[0]["message"], "This is not a valid child node of the parent");
+						assert.equal(result.items[0]["message"], '\'apiVersion\' is not a valid child node of metadata');
 					}).then(done, done);
 				});
 
@@ -231,7 +231,7 @@ suite("Validation Tests", () => {
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
 					validator.then(function(result){
 						assert.equal(result.items.length, 1);
-						assert.equal(result.items[0]["message"], "This is not a valid child node of the parent");
+						assert.equal(result.items[0]["message"], '\'port\' is not a valid child node of containers');
 					}).then(done, done);
 				});
 			});
