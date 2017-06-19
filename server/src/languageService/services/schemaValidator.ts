@@ -32,6 +32,10 @@ export class YAMLSChemaValidator extends ASTVisitor {
       let rootNode = node;
       let nodesToSearch = [];
 
+      if(!rootNode.mappings){
+        rootNode.mappings = [];
+      }
+
       rootNode.mappings.forEach(element => {
         if(this.kuberSchema["rootNodes"][element.key.value]){
           nodesToSearch.push([element]);
@@ -60,8 +64,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
         }
 
         //Error: If type is mapping then we need to check the scalar type
-        console.log(this.isValidType(currentNode));
-        if(currentNode.kind === Kind.MAPPING && this.isValidType(currentNode)){
+        if(currentNode.kind === Kind.MAPPING && currentNode.value !== null && this.isInvalidType(currentNode)){
           this.errorHandler.addErrorResult(currentNode.value, "Not a valid type", DiagnosticSeverity.Warning);
         }
 
@@ -87,15 +90,30 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
   }
 
-  private isValidType(node){
+  private isInvalidType(node){
      
-     if(!node) return true;
+     if(!node) return false;
 
      let nodeTypes = this.kuberSchema["childrenNodes"][node.key.value].map(x => x.type);
      let nodeTypesUnique = Array.from(new Set(nodeTypes));
 
      let nodeToTest = node.value.valueObject !== undefined ? node.value.valueObject : node.value.value;
-     return nodeTypesUnique.indexOf(nodeToTest) !== -1;
+     if(node.value.mappings || node.value.items || nodeToTest === undefined){
+       return false;
+     }
+
+     //Typescript doesn't have integer it has value so we need to check if its an integer
+     if(typeof nodeToTest === 'number'){
+       return nodeTypesUnique.indexOf("integer") === -1;  
+     }
+
+     //Not working
+     if(typeof nodeToTest === 'object'){
+       let dateToTest = new Date(nodeToTest);
+       return dateToTest.toString() === 'Invalid Date' ? true: false;
+     }
+
+     return nodeTypesUnique.indexOf(typeof nodeToTest) === -1;
 
   }
 
