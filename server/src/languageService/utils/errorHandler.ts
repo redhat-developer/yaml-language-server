@@ -10,7 +10,6 @@ export class ErrorHandler {
     }
 
     public addErrorResult(errorNode, errorMessage, errorType){
-        
         this.errorResultsList.push({
             severity: DiagnosticSeverity.Error,
             range: {

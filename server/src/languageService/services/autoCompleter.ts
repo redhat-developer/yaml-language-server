@@ -14,7 +14,7 @@ export class AutoCompleter {
     }
 
     public searchAll() {
-        let allSchemaKeys = Object.keys(this.kuberSchema);
+        let allSchemaKeys = Object.keys(this.kuberSchema["rootNodes"]);
         return this.arrToCompletionList(allSchemaKeys);
     }
 
@@ -28,26 +28,35 @@ export class AutoCompleter {
         }
 
         if(nodeToSearch === ""){
-            return this.search(node.key.value, Object.keys(this.kuberSchema));    
+            return this.search(node.key.value, Object.keys(this.kuberSchema["rootNodes"]));    
         }else{
             
-            let nodeChildrenArray = this.kuberSchema[nodeToSearch].map(node => node.children);
-            let flattenNodeChildrenArray = nodeChildrenArray.reduce((cur, newVal) => cur.concat(newVal));
-            let uniqueChildrenArray = flattenNodeChildrenArray.filter((value, index, self) => self.indexOf(value) === index);
-            if(nodeToSearch !== node.key.value){
-                return this.search(node.key.value, uniqueChildrenArray);
-            }else{
-                return this.arrToCompletionList(uniqueChildrenArray );
+            let nodeChildren = this.kuberSchema["childrenNodes"][nodeToSearch];
+            if(nodeChildren){
+                let nodeChildrenArray = nodeChildren.map(node => node.children);
+                let flattenNodeChildrenArray = nodeChildrenArray.reduce((cur, newVal) => cur.concat(newVal));
+                let uniqueChildrenArray = flattenNodeChildrenArray.filter((value, index, self) => self.indexOf(value) === index);
+                if(nodeToSearch !== node.key.value){
+                    return this.search(node.key.value, uniqueChildrenArray);
+                }else{
+                    return this.arrToCompletionList(uniqueChildrenArray);
+                }
             }
+            
+            return [];
 
         }
         
     }
 
-    public generateScalarAutocompletion(nodeValue: String) {
-        let defaultScalarValues = this.kuberSchema[nodeValue.toString()].map(node => node.default);
-        let defaultScalarValuesUnique = defaultScalarValues.filter((value, index, self) => self.indexOf(value) === index && value !== undefined);
-        return this.arrToCompletionList(defaultScalarValuesUnique);
+    public generateScalarAutocompletion(nodeValue: string) {
+        let defaultScalarValues = this.kuberSchema["childrenNodes"][nodeValue];
+        if(defaultScalarValues){
+            let defaultScalarValuesMap = defaultScalarValues.map(node => node.default);
+            let defaultScalarValuesUnique = defaultScalarValuesMap.filter((value, index, self) => self.indexOf(value) === index && value !== undefined);
+            return this.arrToCompletionList(defaultScalarValuesUnique);
+        }
+        return [];
     }
 
     private search(searchItem: String, data: Array<String>): Array<String>{
