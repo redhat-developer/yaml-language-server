@@ -165,15 +165,19 @@ export class YAMLSChemaValidator extends ASTVisitor {
       case Kind.MAP :
         let yamlMappingNodeList = [];
         (<YamlMap> node).mappings.forEach(node => {
-          yamlMappingNodeList.push(this.generateChildren(node));
+          let gen = this.generateChildren(node);
+          yamlMappingNodeList.push(gen);  
         });
-        return yamlMappingNodeList;
+        return [].concat([], yamlMappingNodeList);
       case Kind.SEQ :
         let yamlSeqNodeList = [];
         (<YAMLSequence> node).items.forEach(node => {
-          yamlSeqNodeList.push(this.generateChildren(node));
+          let gen = this.generateChildren(node);
+          gen.forEach(element => {
+            yamlSeqNodeList.push(element);  
+          });
         });
-        return yamlSeqNodeList;
+        return [].concat([], yamlSeqNodeList);
     }
   }
 

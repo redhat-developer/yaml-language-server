@@ -69,6 +69,17 @@ suite("Validation Tests", () => {
 						assert.equal(result.items.length, 0);
 					}).then(done, done);
 				});
+
+				it('Advanced validation on full file with sequence nodes', (done) => {
+					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+					let content = `spec:\n  containers:\n    - name: front-end\n      image: nginx\n      ports:\n        - containerPort: 80\n    - name: rss-reader\n      image: rss-php-nginx:v1\n      ports:\n        - containerPort: 88`;
+					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
+					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
+					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
+					validator.then(function(result){
+						assert.equal(result.items.length, 0);
+					}).then(done, done);
+				});
 			});
 			
 			describe('Validating types', function(){
