@@ -83,17 +83,6 @@ suite("Validation Tests", () => {
 					}).then(done, done);
 				});
 
-				it('Validating fails on incorrect scalar node type (null)', (done) => {
-					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
-					let content = `apiVersion: null`;
-					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
-					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
-					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
-					validator.then(function(result){
-						assert.equal(result.items.length, 1);
-					}).then(done, done);
-				});
-
 				it('Validating fails on incorrect scalar node type with parent (boolean)', (done) => {
 					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 					let content = `metadata:\n  name: false`;
@@ -127,6 +116,17 @@ suite("Validation Tests", () => {
 					}).then(done, done);
 				});
 
+				it('Validating is correct on scalar node type (null)', (done) => {
+					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+					let content = `apiVersion: null`;
+					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
+					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
+					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
+					validator.then(function(result){
+						assert.equal(result.items.length, 0);
+					}).then(done, done);
+				});
+
 				it('Validating is correct scalar node type with parent (number)', (done) => {
 					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 					let content = `metadata:\n  generation: 5`;
@@ -140,7 +140,7 @@ suite("Validation Tests", () => {
 
 				it('Validating is correct scalar node type with multiple parents (number)', (done) => {
 					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
-					let content = `spec:\n  containers\n    name: testing`;
+					let content = `spec:\n  containers:\n    name: testing`;
 					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
 					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
@@ -194,8 +194,9 @@ suite("Validation Tests", () => {
 					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
 					validator.then(function(result){
-						assert.equal(result.items.length, 1);
-						assert.equal(result.items[0]["message"], "Not a valid child node for this parent");
+						assert.equal(result.items.length, 2);
+						assert.equal(result.items[0]["message"], "Command not found in k8s");
+						assert.equal(result.items[1]["message"], "This is not a valid child node of the parent");
 					}).then(done, done);
 				});
 
@@ -207,7 +208,7 @@ suite("Validation Tests", () => {
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
 					validator.then(function(result){
 						assert.equal(result.items.length, 1);
-						assert.equal(result.items[0]["message"], "Not a valid child node for this parent");
+						assert.equal(result.items[0]["message"], "This is not a valid child node of the parent");
 					}).then(done, done);
 				});
 
@@ -230,7 +231,7 @@ suite("Validation Tests", () => {
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
 					validator.then(function(result){
 						assert.equal(result.items.length, 1);
-						assert.equal(result.items[0]["message"], "Not a valid child node for this parent");
+						assert.equal(result.items[0]["message"], "This is not a valid child node of the parent");
 					}).then(done, done);
 				});
 			});

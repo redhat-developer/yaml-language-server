@@ -18,7 +18,7 @@ export class AutoCompleter {
         return this.arrToCompletionList(allSchemaKeys);
     }
 
-    public generateRegularAutocompletion(node){
+    public generateRegularAutocompletion(node) {
         let nodeToSearch = "";
         
         if(node.kind === Kind.MAPPING && node.value === null){
@@ -34,7 +34,7 @@ export class AutoCompleter {
             let nodeChildren = this.kuberSchema["childrenNodes"][nodeToSearch];
             if(nodeChildren){
                 let nodeChildrenArray = nodeChildren.map(node => node.children);
-                let flattenNodeChildrenArray = nodeChildrenArray.reduce((cur, newVal) => cur.concat(newVal));
+                let flattenNodeChildrenArray = [].concat.apply([], nodeChildrenArray);
                 let uniqueChildrenArray = flattenNodeChildrenArray.filter((value, index, self) => self.indexOf(value) === index);
                 if(nodeToSearch !== node.key.value){
                     return this.search(node.key.value, uniqueChildrenArray);
@@ -46,7 +46,7 @@ export class AutoCompleter {
             return [];
 
         }
-        
+
     }
 
     public generateScalarAutocompletion(nodeValue: string) {
@@ -59,7 +59,7 @@ export class AutoCompleter {
         return [];
     }
 
-    private search(searchItem: String, data: Array<String>): Array<String>{
+    private search(searchItem: String, data: Array<String>){
         let auto = new AutoComplete();
         auto.initialize(data);
         return auto.search(searchItem).map(searchResult => ({

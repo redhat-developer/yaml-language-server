@@ -27,25 +27,27 @@ export class YamlCompletion {
 
       if(node === undefined || node.kind === Kind.MAP){
     
-        return autoComplete.searchAll();
+        result.items = autoComplete.searchAll();
       
       }else{
       
         if(node.kind === Kind.SCALAR){
     
-          return autoComplete.generateScalarAutocompletion(node.parent.key.value);
+          result.items = autoComplete.generateScalarAutocompletion(node.parent.key.value);
       
         }else if(node.value != null && node.kind === Kind.MAPPING && node.value.kind === Kind.SCALAR){
       
-          return autoComplete.generateScalarAutocompletion(node.key.value);
+          result.items = autoComplete.generateScalarAutocompletion(node.key.value);
       
         }else{
       
-          return autoComplete.generateRegularAutocompletion(node);
+          result.items = autoComplete.generateRegularAutocompletion(node);
                 
         }
 
       }    
+
+      return result;
     });
   } 
   
