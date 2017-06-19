@@ -40,9 +40,9 @@ export class YAMLSChemaValidator extends ASTVisitor {
         if(this.kuberSchema["rootNodes"][element.key.value]){
           nodesToSearch.push([element]);
         }else if(this.kuberSchema["childrenNodes"][element.key.value]){
-          this.errorHandler.addErrorResult(element, "Command is not a root node", DiagnosticSeverity.Warning);
+          this.errorHandler.addErrorResult(element, "Command \'" + element.key.value + "\' is not a root node", DiagnosticSeverity.Warning);
         }else{
-          this.errorHandler.addErrorResult(element, "Command not found in k8s", DiagnosticSeverity.Warning);
+          this.errorHandler.addErrorResult(element, "Command \'" + element.key.value + "\' is not found", DiagnosticSeverity.Warning);
         }
       });
 
@@ -55,17 +55,17 @@ export class YAMLSChemaValidator extends ASTVisitor {
         
         //Error: If key not found
         if(!this.kuberSchema["childrenNodes"][currentNode.key.value]){
-          this.errorHandler.addErrorResult(currentNode.key, "Command not found in k8s", DiagnosticSeverity.Warning);
+          this.errorHandler.addErrorResult(currentNode.key, "Command \'" + currentNode.key.value + "\' is not found", DiagnosticSeverity.Warning);
         }
 
         //Error: It did not validate correctly
         if(!this.isValid(currentNodePath)){
-          this.errorHandler.addErrorResult(currentNode.key, "This is not a valid statement", DiagnosticSeverity.Warning);
+          this.errorHandler.addErrorResult(currentNode.key, "Command \'" + currentNode.key.value + "\' is not in a valid location in the file", DiagnosticSeverity.Warning);
         }
 
         //Error: If type is mapping then we need to check the scalar type
         if(currentNode.kind === Kind.MAPPING && currentNode.value !== null && this.isInvalidType(currentNode)){
-          this.errorHandler.addErrorResult(currentNode.value, "Not a valid type", DiagnosticSeverity.Warning);
+          this.errorHandler.addErrorResult(currentNode.value, "Command \'" + currentNode.key.value + "\' has an invalid type. Valid type(s) are: " + this.validTypes(currentNode).toString(), DiagnosticSeverity.Warning);
         }
 
         let childrenNodes = this.generateChildren(currentNode.value);
@@ -76,10 +76,10 @@ export class YAMLSChemaValidator extends ASTVisitor {
           if(!this.isValid(newNodePath)){
 
             if(!this.kuberSchema["childrenNodes"][child.key.value]){
-              this.errorHandler.addErrorResult(child, "Command not found in k8s", DiagnosticSeverity.Warning);
+              this.errorHandler.addErrorResult(child,  "Command \'" + child.key.value + "\' is not found", DiagnosticSeverity.Warning);
             }
 
-            this.errorHandler.addErrorResult(child, "This is not a valid child node of the parent", DiagnosticSeverity.Warning);
+            this.errorHandler.addErrorResult(child, "\'" + child.key.value + "\' is not a valid child node of " + currentNode.key.value, DiagnosticSeverity.Warning);
           }else{         
             nodesToSearch.push(newNodePath);
           }
@@ -94,8 +94,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
      
      if(!node) return false;
 
-     let nodeTypes = this.kuberSchema["childrenNodes"][node.key.value].map(x => x.type);
-     let nodeTypesUnique = Array.from(new Set(nodeTypes));
+     let nodeTypesUnique = this.validTypes(node);
 
      let nodeToTest = node.value.valueObject !== undefined ? node.value.valueObject : node.value.value;
      if(node.value.mappings || node.value.items || nodeToTest === undefined){
@@ -107,13 +106,22 @@ export class YAMLSChemaValidator extends ASTVisitor {
        return nodeTypesUnique.indexOf("integer") === -1;  
      }
 
-     //Not working
+     //Date needs to be added to schema
      if(typeof nodeToTest === 'object'){
        let dateToTest = new Date(nodeToTest);
        return dateToTest.toString() === 'Invalid Date' ? true: false;
      }
 
      return nodeTypesUnique.indexOf(typeof nodeToTest) === -1;
+
+  }
+
+  private validTypes(node) {
+
+     let nodeTypes = this.kuberSchema["childrenNodes"][node.key.value].map(x => x.type);
+     let nodeTypesUnique = Array.from(new Set(nodeTypes));
+
+     return nodeTypesUnique;
 
   }
 
