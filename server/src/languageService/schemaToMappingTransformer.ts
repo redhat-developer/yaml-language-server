@@ -82,11 +82,10 @@ export class SchemaToMappingTransformer {
                   this.kuberSchema.definitions[api_obj]["properties"][prop]["children"] = [];
               }
 
-              this.mappingKuberSchema["childrenNodes"][prop].push(this.kuberSchema.definitions[api_obj]["properties"][prop]);
-               
+              this.mappingKuberSchema["childrenNodes"][prop].push(this.kuberSchema.definitions[api_obj]["properties"][prop]);              
            
             }
-       
+    
         }
     
     }

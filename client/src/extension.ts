@@ -2,10 +2,14 @@
 
 import * as path from 'path';
 
-import { workspace, Disposable, ExtensionContext } from 'vscode';
+import { workspace, Disposable, ExtensionContext, commands } from 'vscode';
 import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind } from 'vscode-languageclient';
+import { enableValidation, disableValidation } from './kubernetes-commands';
 
 export function activate(context: ExtensionContext) {
+
+	commands.registerCommand('extension.k8s.enableValidation', enableValidation);
+	commands.registerCommand('extension.k8s.disableValidation', disableValidation);
 
 	// The se	rver is implemented in node
 	let serverModule = context.asAbsolutePath(path.join('server/src', 'server.js'));

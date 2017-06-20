@@ -12,10 +12,22 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:yaml"
+    "onLanguage:yaml",
+    "onCommand:extension.k8s.enableValidation",
+    "onCommand:extension.k8s.disableValidation"
   ],
   "main": "./out/src/extension",
   "contributes": {
+    "commands": [
+      {
+        "command": "extension.k8s.enableValidation",
+        "title": "Enable Kubernetes Validation for this file"
+      },
+      {
+        "command": "extension.k8s.disableValidation",
+        "title": "Disable Kubernetes Validation for this file"
+      }
+    ],
     "configuration": {
       "properties": {
         "yaml.trace.server": {
@@ -28,12 +40,10 @@
           "default": "off",
           "description": "Traces the communication between VSCode and the languageServerExample service."
         },
-        "k8s.glob": {
-          "type": [
-            "string"
-          ],
-          "default": "",
-          "description": "Specifies the glob that will be used when validating yaml files as k8s"
+        "k8s.filesNotValidating": {
+          "type": "array",
+          "default": [],
+          "description": "List of files you DO NOT want to validate"
         }
       }
     }

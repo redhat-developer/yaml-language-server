@@ -22,7 +22,6 @@ namespace VSCodeContentRequest {
 
 const validationDelayMs = 250;
 let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
-let validDocuments: Array<String>;
 
 
 // Create a connection for the server.
@@ -90,7 +89,7 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext)
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent((change) => {
-	if(validDocuments.indexOf(change.document.uri) !== -1){
+	if(docIsValid(change.document)){
 		triggerValidation(change.document);
 	}
 });
@@ -102,48 +101,43 @@ documents.onDidClose((event=>{
 
 // The settings interface describe the server relevant settings part
 interface Settings {
-	k8s: globSetting;
+	k8s: filesToIgnore;
 }
 
-interface globSetting {
-	glob: string;
+interface filesToIgnore {
+	filesNotValidating: Array<string>;
 }
 
-let globSetting: string;
+let filesToIgnore: Array<string>;
 connection.onDidChangeConfiguration((change) => {
 	let settings = <Settings>change.settings;
-	globSetting = settings.k8s.glob || "";
-	validateValidFiles();
+	filesToIgnore = settings.k8s.filesNotValidating || [];
+	validateFilesNotInSetting();
 });
 
 function clearDiagnostics(){
-	//Clear all the previous diagnostics 
 	documents.all().forEach(doc => {
 		connection.sendDiagnostics({ uri: doc.uri, diagnostics: [] });
 	});
 }
 
-function validateValidFiles(){
+function validateFilesNotInSetting(){
 	clearDiagnostics();
-	
-	validDocuments = [];
-	glob(globSetting, function (er, files) {
-		if(er){
-			throw er;
+
+	documents.all().forEach(doc => {
+		
+		//Only validate documents that are NOT in the "filesNotValidating" setting
+		if(docIsValid(doc)){
+			triggerValidation(doc);
 		}
 
-		files.forEach(file => {
-			documents.all().forEach(doc => {
-				let splitDocumentUri = doc.uri.split("/");
-				let strippedDocumentUri = splitDocumentUri[splitDocumentUri.length - 1];
-				if(strippedDocumentUri.indexOf(file) !== -1){
-					validDocuments.push(doc.uri);
-					triggerValidation(doc);
-				}
-			}
-		)});
+	});
+	
+}
 
-	})
+function docIsValid(doc){
+	let docUriFileTypeRemoved = doc.uri.split("//").pop();
+	return filesToIgnore.indexOf(docUriFileTypeRemoved) === -1;
 }
 
 function triggerValidation(textDocument: TextDocument): void {
@@ -196,7 +190,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 // This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition =>  {
 	let document = documents.get(textDocumentPosition.textDocument.uri);
-	if(validDocuments.indexOf(document.uri) !== -1){
+	if(docIsValid(document)){
 		return completionHelper(document, textDocumentPosition);
 	}
 	return null;
