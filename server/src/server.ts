@@ -89,6 +89,8 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext)
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent((change) => {
+	if(change.document.getText().length === 0) connection.sendDiagnostics({ uri: change.document.uri, diagnostics: [] });
+
 	if(docIsValid(change.document)){
 		triggerValidation(change.document);
 	}
@@ -193,7 +195,7 @@ connection.onCompletion(textDocumentPosition =>  {
 	if(docIsValid(document)){
 		return completionHelper(document, textDocumentPosition);
 	}
-	return null;
+	return [];
 });
 
 function completionHelper(document: TextDocument, textDocumentPosition){
