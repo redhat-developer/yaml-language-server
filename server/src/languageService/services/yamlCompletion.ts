@@ -33,15 +33,15 @@ export class YamlCompletion {
       
         if(node.kind === Kind.SCALAR){
     
-          result.items = autoComplete.generateScalarAutocompletion(node.parent.key.value);
+          result.items = autoComplete.getScalarAutocompletionList(node.parent.key.value);
       
         }else if(node.value != null && node.kind === Kind.MAPPING && node.value.kind === Kind.SCALAR){
       
-          result.items = autoComplete.generateScalarAutocompletion(node.key.value);
+          result.items = autoComplete.getScalarAutocompletionList(node.key.value);
       
         }else{
       
-          result.items = autoComplete.generateRegularAutocompletion(node);
+          result.items = autoComplete.getRegularAutocompletionList(node);
                 
         }
 

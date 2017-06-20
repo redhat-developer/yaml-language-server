@@ -14,51 +14,59 @@ export class AutoCompleter {
     }
 
     public searchAll() {
-        let allSchemaKeys = Object.keys(this.kuberSchema["rootNodes"]);
-        return this.arrToCompletionList(allSchemaKeys);
+        let allRootNodeValues = Object.keys(this.kuberSchema["rootNodes"]);
+        return this.arrayToCompletionList(allRootNodeValues);
     }
 
-    public generateRegularAutocompletion(node) {
-        let nodeToSearch = "";
+    public getRegularAutocompletionList(node) {
         
-        if(node.kind === Kind.MAPPING && node.value === null){
-            nodeToSearch = this.getParentVal(node);
-        }else{
-            nodeToSearch = node.key.value;
-        }
+        let nameOfNodeToSearch = this.getCompletionNodeValue(node);
 
-        if(nodeToSearch === ""){
+        //The node is a root node
+        if(nameOfNodeToSearch === ""){
             return this.search(node.key.value, Object.keys(this.kuberSchema["rootNodes"]));    
         }else{
-            
-            let nodeChildren = this.kuberSchema["childrenNodes"][nodeToSearch];
-            if(nodeChildren){
-                let nodeChildrenArray = nodeChildren.map(node => node.children);
-                let flattenNodeChildrenArray = [].concat.apply([], nodeChildrenArray);
-                let uniqueChildrenArray = flattenNodeChildrenArray.filter((value, index, self) => self.indexOf(value) === index);
-                if(nodeToSearch !== node.key.value){
-                    return this.search(node.key.value, uniqueChildrenArray);
-                }else{
-                    return this.arrToCompletionList(uniqueChildrenArray);
-                }
-            }
-            
-            return [];
-
+            return this.getChildrenNodeAutocompletionList(node, nameOfNodeToSearch);
         }
-
+    }
+    
+    public getCompletionNodeValue(node){
+        if(node.kind === Kind.MAPPING && node.value === null){
+            return this.getParentVal(node);
+        }else{
+            return node.key.value;
+        }
     }
 
-    public generateScalarAutocompletion(nodeValue: string) {
+    public getChildrenNodeAutocompletionList(node, nameOfNodeToSearch){
+        let nodeChildren = this.kuberSchema["childrenNodes"][nameOfNodeToSearch];
+        if(nodeChildren){
+            let nodeChildrenArray = nodeChildren.map(node => node.children);
+            let flattenNodeChildrenArray = [].concat.apply([], nodeChildrenArray);
+            let uniqueChildrenArray = flattenNodeChildrenArray.filter((value, index, self) => self.indexOf(value) === index);
+            if(nameOfNodeToSearch !== node.key.value){
+                return this.search(node.key.value, uniqueChildrenArray);
+            }else{
+                return this.arrayToCompletionList(uniqueChildrenArray);
+            }
+        }
+        
+        return [];
+    }
+
+    public getScalarAutocompletionList(nodeValue: string) {
         let defaultScalarValues = this.kuberSchema["childrenNodes"][nodeValue];
         if(defaultScalarValues){
             let defaultScalarValuesMap = defaultScalarValues.map(node => node.default);
             let defaultScalarValuesUnique = defaultScalarValuesMap.filter((value, index, self) => self.indexOf(value) === index && value !== undefined);
-            return this.arrToCompletionList(defaultScalarValuesUnique);
+            return this.arrayToCompletionList(defaultScalarValuesUnique);
         }
         return [];
     }
 
+    /*
+     * Helper function that uses triesearch to get the values
+     */
     private search(searchItem: String, data: Array<String>){
         let auto = new AutoComplete();
         auto.initialize(data);
@@ -67,12 +75,18 @@ export class AutoCompleter {
         }));
     }
 
-    private arrToCompletionList(arr){
+    /*
+     * Helper for mapping arrays to CompletionList
+     */
+    private arrayToCompletionList(arr){
         return arr.map(x => ({
             label: x.toString()
         }));
     }
 
+    /*
+     * Helper function that traverses the AST looking for the parent node value
+     */
     private getParentVal(node: YAMLNode){
         let parentNodeKey = node.parent;
         while(parentNodeKey != null && parentNodeKey.key === undefined){
