@@ -1,4 +1,4 @@
-import { ASTVisitor} from '../utils/astServices';
+import { ASTVisitor, generateChildren } from '../utils/astServices';
 import { YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference } from 'yaml-ast-parser';
 import { JSONSchema } from "../jsonSchema";
 import { SchemaToMappingTransformer } from "../schemaToMappingTransformer"
@@ -68,7 +68,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
           this.errorHandler.addErrorResult(currentNode.value, "Command \'" + currentNode.key.value + "\' has an invalid type. Valid type(s) are: " + this.validTypes(currentNode).toString(), DiagnosticSeverity.Warning);
         }
 
-        let childrenNodes = this.generateChildren(currentNode.value);
+        let childrenNodes = generateChildren(currentNode.value);
         childrenNodes.forEach(child => {
           //We are getting back a bunch of nodes which all have a key and we adding them
 
@@ -153,32 +153,6 @@ export class YAMLSChemaValidator extends ASTVisitor {
       parentNodeNameList.push(nodeList[nodeCount].key.value);
     }
     return parentNodeNameList;
-  }
-
-  private generateChildren(node){
-    if(!node) return [];
-    switch(node.kind){
-      case Kind.SCALAR :
-        return [];
-      case Kind.MAPPING : 
-        return node;
-      case Kind.MAP :
-        let yamlMappingNodeList = [];
-        (<YamlMap> node).mappings.forEach(node => {
-          let gen = this.generateChildren(node);
-          yamlMappingNodeList.push(gen);  
-        });
-        return [].concat([], yamlMappingNodeList);
-      case Kind.SEQ :
-        let yamlSeqNodeList = [];
-        (<YAMLSequence> node).items.forEach(node => {
-          let gen = this.generateChildren(node);
-          gen.forEach(element => {
-            yamlSeqNodeList.push(element);  
-          });
-        });
-        return [].concat([], yamlSeqNodeList);
-    }
   }
 
   public getErrorResults(){   

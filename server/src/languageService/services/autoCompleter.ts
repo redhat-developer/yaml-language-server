@@ -20,6 +20,8 @@ export class AutoCompleter {
 
     public getRegularAutocompletionList(node) {
         
+        if(!node || !node.key || (!node.value && !(node.kind === Kind.MAPPING))) return [];
+
         let nameOfNodeToSearch = this.getCompletionNodeValue(node);
 
         //The node is a root node

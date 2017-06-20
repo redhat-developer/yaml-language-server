@@ -1,4 +1,3 @@
-
 import {YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference} from  'yaml-ast-parser';
 
 export function traverse ( node: YAMLNode, visitor:ASTVisitor){
@@ -62,87 +61,28 @@ export function findNode(node:YAMLNode, offset: number): YAMLNode {
   return lastNode;
 }
 
-export class ASTHelper {
-  
-  private addr = [];
-  private parentAddr = [];
-  
-  public getChildrenNodes(node: YAMLNode, depth){
-    if(!node || depth > 1) return;
+export function generateChildren(node){
+    if(!node) return [];
     switch(node.kind){
-      case Kind.SCALAR:
+      case Kind.SCALAR :
         return [];
-      case Kind.SEQ:
-        let seq = <YAMLSequence> node;
-        if(seq.items.length > 0){
-          seq.items.forEach(item=>{
-            this.getChildrenNodes(item, depth);
+      case Kind.MAPPING : 
+        return node;
+      case Kind.MAP :
+        let yamlMappingNodeList = [];
+        (<YamlMap> node).mappings.forEach(node => {
+          let gen = this.generateChildren(node);
+          yamlMappingNodeList.push(gen);  
+        });
+        return [].concat([], yamlMappingNodeList);
+      case Kind.SEQ :
+        let yamlSeqNodeList = [];
+        (<YAMLSequence> node).items.forEach(node => {
+          let gen = this.generateChildren(node);
+          gen.forEach(element => {
+            yamlSeqNodeList.push(element);  
           });
-        }
-        break;
-      case Kind.MAPPING:
-        let mapping = <YAMLMapping> node;
-        this.addr.push(mapping.key); 
-        this.getChildrenNodes(mapping.value, depth+1);
-        break;
-      case Kind.MAP:
-        let map = <YamlMap> node;
-        if(map.mappings !== undefined && map.mappings.length > 0 && depth <= 1){
-          map.mappings.forEach(mapping=>{
-            this.getChildrenNodes(mapping, depth);
-          });
-        }
-        break;
-      case Kind.ANCHOR_REF:
-        let anchor = <YAMLAnchorReference> node;
-        this.getChildrenNodes(anchor.value, depth);
-        break;
-      }
-    }  
-
-/**
- * Traverse up the ast getting the parent node names in the order of parent to root.
- * @param {YAMLNode} node - The node to use
- */
-public getParentNodes(node:YAMLNode){
-  
-    if(!node || !node.parent) return;
-
-    switch(node.kind){
-      case Kind.SCALAR:
-        let scalar = <YAMLScalar> node;
-        this.getParentNodes(scalar.parent);
-      case Kind.SEQ:
-        let seq = <YAMLSequence> node;
-        if(seq.items.length > 0){
-          seq.items.forEach(item=>{
-            this.getParentNodes(item);
-          });
-        }
-        break;
-      case Kind.MAPPING:
-        let mapping = <YAMLMapping> node;
-        this.parentAddr.push(mapping.key.value);
-        this.getParentNodes(mapping.parent);
-        break;
-      case Kind.MAP:
-        let map = <YamlMap> node;
-        this.getParentNodes(map.parent); 
-        break;
-      case Kind.ANCHOR_REF:
-        let anchor = <YAMLAnchorReference> node;
-        this.getParentNodes(anchor.value);
-        break;
+        });
+        return [].concat([], yamlSeqNodeList);
     }
-
-}
-
-  public getAddr(){
-    return this.addr;
   }
-
-  public getParentAddr(){
-    return this.parentAddr;
-  }
-
-}
