@@ -42,7 +42,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
         }else if(this.kuberSchema["childrenNodes"][element.key.value]){
           this.errorHandler.addErrorResult(element, "Command \'" + element.key.value + "\' is not a root node", DiagnosticSeverity.Warning);
         }else{
-          this.errorHandler.addErrorResult(element, "Command \'" + element.key.value + "\' is not found", DiagnosticSeverity.Warning);
+          this.errorHandler.addErrorResult(element, "Command \'" + element.key.value + "\' is not found", DiagnosticSeverity.Error);
         }
       });
 
@@ -55,7 +55,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
         
         //Error: If key not found
         if(!this.kuberSchema["childrenNodes"][currentNode.key.value]){
-          this.errorHandler.addErrorResult(currentNode.key, "Command \'" + currentNode.key.value + "\' is not found", DiagnosticSeverity.Warning);
+          this.errorHandler.addErrorResult(currentNode.key, "Command \'" + currentNode.key.value + "\' is not found", DiagnosticSeverity.Error);
         }
 
         //Error: It did not validate correctly

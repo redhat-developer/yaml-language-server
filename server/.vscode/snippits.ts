@@ -1,6 +1,6 @@
 export let snippits = {
-    "Deployment": {
-        "prefix": "Deployment",
+    "deployment": {
+        "prefix": "deployment",
         "body": [
             "kind: Deployment",
             "metadata:",
@@ -17,11 +17,11 @@ export let snippits = {
         ],
         "description": "Generate deployment"
     },
-    "Deployment Config": {
-        "prefix": "Deployment Config",
+    "deployment config": {
+        "prefix": "deployment config",
         "body": [
-            "kind: DeploymentConfig",
             "apiVersion: v1",
+            "kind: DeploymentConfig",
             "metadata:",
             "  name: ${TM_FILENAME}",
             "spec:",
@@ -39,8 +39,8 @@ export let snippits = {
         ],
         "description": "Generate deployment config"
     },
-    "Route": {
-        "prefix": "Route",
+    "route": {
+        "prefix": "route",
         "body": [
             "apiVersion: v1",
             "kind: Route",
@@ -54,8 +54,8 @@ export let snippits = {
         ],
         "description": "Generate route"
     },
-    "Config Map": {
-        "prefix": "Config Map",
+    "config map": {
+        "prefix": "config map",
         "body": [
             "kind: ConfigMap",
             "metadata:",
@@ -65,8 +65,8 @@ export let snippits = {
         ],
         "description": "Generate config map"
     },
-    "Persistent Volume Claim": {
-        "prefix": "Persistent Volume Claim",
+    "persistent volume claim": {
+        "prefix": "persistent volume claim",
         "body": [
             "kind: PersistentVolumeClaim",
             "metadata:",

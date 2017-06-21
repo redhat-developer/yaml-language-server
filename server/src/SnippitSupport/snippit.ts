@@ -22,6 +22,8 @@ export class snippitAutocompletor {
             item.kind = CompletionItemKind.Snippet;
             item.insertText = snippits[snip]["body"].join("\n").replace(/\$\{TM_FILENAME\}/g, this.uriToName(this.textDocument.uri));
             item.detail = "vscode-k8s";
+            item.sortText = snippits[snip]["prefix"].substring(0, 5);
+            item.filterText = snippits[snip]["prefix"].substring(0, 5);
             item.documentation = snippits[snip]["description"];
             items.push(item);
         });
