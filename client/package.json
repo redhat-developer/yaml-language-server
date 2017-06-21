@@ -24,56 +24,6 @@
         "path": "./.vscode/snippets.json"
       }
     ],
-    "keybindings":[
-      {
-        "key": "cmd+k 1",
-        "command": "editor.action.insertSnippet",
-        "when": "editorTextFocus",
-        "args": {
-            "name": "Deployment"
-        }
-      },
-      {
-        "key": "cmd+k 2",
-        "command": "editor.action.insertSnippet",
-        "when": "editorTextFocus",
-        "args": {
-            "name": "Deployment Config"
-        }
-      },
-      {
-        "key": "cmd+k 3",
-        "command": "editor.action.insertSnippet",
-        "when": "editorTextFocus",
-        "args": {
-            "name": "Service"
-        }
-      },
-      {
-        "key": "cmd+k 4",
-        "command": "editor.action.insertSnippet",
-        "when": "editorTextFocus",
-        "args": {
-            "name": "Route"
-        }
-      },
-      {
-        "key": "cmd+k 5",
-        "command": "editor.action.insertSnippet",
-        "when": "editorTextFocus",
-        "args": {
-            "name": "Config Map"
-        }
-      },
-      {
-        "key": "cmd+k 6",
-        "command": "editor.action.insertSnippet",
-        "when": "editorTextFocus",
-        "args": {
-            "name": "Persistent Volume Claim"
-        }
-      }
-    ],
     "commands": [
       {
         "command": "extension.k8s.enableValidation",
