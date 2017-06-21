@@ -6,6 +6,7 @@ import {IJSONSchemaService}  from './jsonSchemaService';
 import {YAMLSChemaValidator} from './schemaValidator';
 import {traverse} from '../utils/astServices';
 import {AutoCompleter} from './autoCompleter';
+import {snippitAutocompletor} from '../../SnippitSupport/snippit';
 
 export class YamlCompletion {
   private schemaService: IJSONSchemaService;
@@ -46,6 +47,11 @@ export class YamlCompletion {
         }
 
       }    
+
+      let snip = new snippitAutocompletor(document);
+      snip.provideSnippitAutocompletor().forEach(compItem => {
+        result.items.push(compItem);
+      });
 
       return result;
     });

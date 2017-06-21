@@ -191,11 +191,12 @@ function validateTextDocument(textDocument: TextDocument): void {
 // This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition =>  {
 	let document = documents.get(textDocumentPosition.textDocument.uri);
+	
 	if(docIsValid(document)){
 		return completionHelper(document, textDocumentPosition);
 	}
-	let snip = new snippitAutocompletor(textDocumentPosition.textDocument);
-	return snip.provideSnippitAutocompletor();
+	
+	return [];
 });
 
 
