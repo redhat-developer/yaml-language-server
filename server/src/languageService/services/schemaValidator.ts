@@ -64,7 +64,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
         }
 
         //Error: If type is mapping then we need to check the scalar type
-        if(currentNode.kind === Kind.MAPPING && currentNode.value !== null && this.isInvalidType(currentNode)){
+        if(currentNode.kind === Kind.MAPPING && currentNode.value !== null && this.hasInvalidType(currentNode)){
           this.errorHandler.addErrorResult(currentNode.value, "Command \'" + currentNode.key.value + "\' has an invalid type. Valid type(s) are: " + this.validTypes(currentNode).toString(), DiagnosticSeverity.Error);
         }
 
@@ -79,7 +79,11 @@ export class YAMLSChemaValidator extends ASTVisitor {
               this.errorHandler.addErrorResult(child,  "Command \'" + child.key.value + "\' is not found", DiagnosticSeverity.Warning);
             }
 
-            this.errorHandler.addErrorResult(child, "\'" + child.key.value + "\' is not a valid child node of " + currentNode.key.value, DiagnosticSeverity.Warning);
+            if(this.hasAdditionalProperties(currentNode.key.value)){
+              this.errorHandler.addErrorResult(child, "\'" + child.key.value + "\' is an additional property of " + currentNode.key.value, DiagnosticSeverity.Warning);
+            }else{
+              this.errorHandler.addErrorResult(child, "\'" + child.key.value + "\' is not a valid child node of " + currentNode.key.value, DiagnosticSeverity.Error);
+            }
           }else{         
             nodesToSearch.push(newNodePath);
           }
@@ -90,7 +94,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
   }
 
-  private isInvalidType(node){
+  private hasInvalidType(node){
      
      if(!node) return false;
 
@@ -153,6 +157,14 @@ export class YAMLSChemaValidator extends ASTVisitor {
       parentNodeNameList.push(nodeList[nodeCount].key.value);
     }
     return parentNodeNameList;
+  }
+
+  private hasAdditionalProperties(nodeValue: string): boolean {
+    let schemaAtNode = this.kuberSchema["childrenNodes"][nodeValue];
+    if(schemaAtNode[0].hasOwnProperty("additionalProperties")){
+      return schemaAtNode[0]["additionalProperties"].hasOwnProperty("type") && schemaAtNode[0]["additionalProperties"].hasOwnProperty("description");
+    }
+    return false;
   }
 
   public getErrorResults(){   
