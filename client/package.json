@@ -18,12 +18,6 @@
   ],
   "main": "./out/src/extension",
   "contributes": {
-    "snippets": [
-      {
-        "language": "yaml",
-        "path": "./.vscode/snippets.json"
-      }
-    ],
     "commands": [
       {
         "command": "extension.k8s.enableValidation",

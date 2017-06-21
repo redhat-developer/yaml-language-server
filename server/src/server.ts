@@ -14,6 +14,7 @@ import Strings = require( './languageService/utils/strings');
 import URI from './languageService/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
+import {snippitAutocompletor} from './SnippitSupport/snippit';
 var glob = require('glob');
 
 namespace VSCodeContentRequest {
@@ -195,8 +196,11 @@ connection.onCompletion(textDocumentPosition =>  {
 	if(docIsValid(document)){
 		return completionHelper(document, textDocumentPosition);
 	}
-	return [];
+	let snip = new snippitAutocompletor(textDocumentPosition.textDocument);
+	return snip.provideSnippitAutocompletor();
 });
+
+
 
 function completionHelper(document: TextDocument, textDocumentPosition){
 		
