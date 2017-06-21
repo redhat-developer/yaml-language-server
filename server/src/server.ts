@@ -92,9 +92,8 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext)
 documents.onDidChangeContent((change) => {
 	if(change.document.getText().length === 0) connection.sendDiagnostics({ uri: change.document.uri, diagnostics: [] });
 
-	if(docIsValid(change.document)){
-		triggerValidation(change.document);
-	}
+	triggerValidation(change.document);
+	
 });
 
 documents.onDidClose((event=>{
@@ -128,12 +127,7 @@ function validateFilesNotInSetting(){
 	clearDiagnostics();
 
 	documents.all().forEach(doc => {
-		
-		//Only validate documents that are NOT in the "filesNotValidating" setting
-		if(docIsValid(doc)){
-			triggerValidation(doc);
-		}
-
+		triggerValidation(doc);
 	});
 	
 }
@@ -178,15 +172,19 @@ function validateTextDocument(textDocument: TextDocument): void {
 			});
 		}
 
-		let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(textDocument.getText(),{});
-		languageService.doValidation(textDocument, yamlDoc).then(function(result){		
-			for(let x = 0; x < result.items.length; x++){
-				diagnostics.push(result.items[x]);
-			}
-			
-			// Send the computed diagnostics to VSCode.
+		if(docIsValid(textDocument)){
+			let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(textDocument.getText(),{});
+			languageService.doValidation(textDocument, yamlDoc).then(function(result){		
+				for(let x = 0; x < result.items.length; x++){
+					diagnostics.push(result.items[x]);
+				}
+				
+				// Send the computed diagnostics to VSCode.
+				connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+			});
+		}else{
 			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-		});
+		}
 	}
 }
 
