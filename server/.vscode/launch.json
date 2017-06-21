@@ -10,6 +10,23 @@
 			"sourceMaps": true,
 			"outFiles": [ "${workspaceRoot}/../client/server/**/*.js" ],
 			"protocol": "legacy"
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Launch Tests",
+			"program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+			"args": [
+				"-u",
+				"tdd",
+				"--timeout",
+				"999999",
+				"--colors",
+				"-r",
+				"ts-node/register",
+				"${workspaceRoot}/test/*.test.ts"
+			],
+			"preLaunchTask": "npm"
 		}
 	]
 }

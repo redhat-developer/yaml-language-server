@@ -1,4 +1,3 @@
-
 import {YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference} from  'yaml-ast-parser';
 
 export function traverse ( node: YAMLNode, visitor:ASTVisitor){
@@ -62,31 +61,28 @@ export function findNode(node:YAMLNode, offset: number): YAMLNode {
   return lastNode;
 }
 
-/**
- * Traverse up the ast getting the parent node names in the order of parent to root.
- * @param {YAMLNode} node - The node to use
- */
-export function getParentNodes(node:YAMLNode){
-  
-  if(!node){
-    return [];
-  }
-
-  let holderNode = node;
-
-  let parentNodeArray = [];
-  
-  while(holderNode.parent != null && holderNode.parent != holderNode){
-
-    //When there is a parent key value we can add it
-    if(typeof holderNode.parent.key != "undefined"){
-      parentNodeArray.push(holderNode.parent.key.value);
+export function generateChildren(node){
+    if(!node) return [];
+    switch(node.kind){
+      case Kind.SCALAR :
+        return [];
+      case Kind.MAPPING : 
+        return node;
+      case Kind.MAP :
+        let yamlMappingNodeList = [];
+        (<YamlMap> node).mappings.forEach(node => {
+          let gen = this.generateChildren(node);
+          yamlMappingNodeList.push(gen);  
+        });
+        return [].concat([], yamlMappingNodeList);
+      case Kind.SEQ :
+        let yamlSeqNodeList = [];
+        (<YAMLSequence> node).items.forEach(node => {
+          let gen = this.generateChildren(node);
+          gen.forEach(element => {
+            yamlSeqNodeList.push(element);  
+          });
+        });
+        return [].concat([], yamlSeqNodeList);
     }
-
-    holderNode = holderNode.parent;
-  
   }
-
-  return parentNodeArray;
-
-}

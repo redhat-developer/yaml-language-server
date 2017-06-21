@@ -6,6 +6,7 @@ import {IJSONSchemaService}  from './jsonSchemaService';
 import {YAMLSChemaValidator} from './schemaValidator';
 import {traverse} from '../utils/astServices';
 import {AutoCompleter} from './autoCompleter';
+import {snippitAutocompletor} from '../../SnippitSupport/snippit';
 
 export class YamlCompletion {
   private schemaService: IJSONSchemaService;
@@ -25,27 +26,36 @@ export class YamlCompletion {
       let offset = document.offsetAt(position);
       let node = findNode(<YAMLNode>doc, offset);
 
-      if(node !== undefined && node.kind === Kind.SCALAR){
-        return [];
-      }
-
-      if(node === undefined || node.parent === null){
-        //Its a root node
-        autoComplete.searchAll().map(x => result.items.push({
-            label: x.toString()
-        }));
+      if(node === undefined || node.kind === Kind.MAP){
+    
+        result.items = autoComplete.searchAll();
+      
       }else{
-        autoComplete.generateResults(node);
-        autoComplete.search(node.key.value).map(x => result.items.push({
-            label: x.toString()
-        }));
-      }
       
+        if(node.kind === Kind.SCALAR){
+    
+          result.items = autoComplete.getScalarAutocompletionList(node.parent.key.value);
       
+        }else if(node.value != null && node.kind === Kind.MAPPING && node.value.kind === Kind.SCALAR){
+      
+          result.items = autoComplete.getScalarAutocompletionList(node.key.value);
+      
+        }else{
+      
+          result.items = autoComplete.getRegularAutocompletionList(node);
+                
+        }
+
+      }    
+
+      let snip = new snippitAutocompletor(document);
+      snip.provideSnippitAutocompletor().forEach(compItem => {
+        result.items.push(compItem);
+      });
+
       return result;
     });
-  }
-  
+  } 
   
 
 }

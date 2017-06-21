@@ -1,51 +1,94 @@
 import {SchemaToMappingTransformer} from "../schemaToMappingTransformer"
-import {TextDocument} from 'vscode-languageserver-types';
+import {TextDocument, CompletionList} from 'vscode-languageserver-types';
 import {JSONSchema} from "../jsonSchema";
-import {YAMLDocument, YAMLNode} from 'yaml-ast-parser';
+import {YAMLDocument, YAMLNode, Kind} from 'yaml-ast-parser';
+
 let AutoComplete = require('triesearch');
 
 export class AutoCompleter {
 
-    private autoCompleter;
-    private schema: JSONSchema;
     private kuberSchema; 
 
     constructor(schema:JSONSchema){
-        this.schema = schema;
-        this.autoCompleter = new AutoComplete();
-        this.kuberSchema = new SchemaToMappingTransformer(this.schema).getSchema();
+        this.kuberSchema = new SchemaToMappingTransformer(schema).getSchema();
     }
 
-    public search(searchItem: String): Array<String>{
-        return this.autoCompleter.search(searchItem).map(x => x.value);
+    public searchAll() {
+        let allRootNodeValues = Object.keys(this.kuberSchema["rootNodes"]);
+        return this.arrayToCompletionList(allRootNodeValues);
     }
 
-    public searchAll(): Array<String>{
-        return Object.keys(this.kuberSchema);
-    }
+    public getRegularAutocompletionList(node) {
+        
+        if(!node || !node.key || (!node.value && !(node.kind === Kind.MAPPING))) return [];
 
-    public initData(data:Array<String>): void {
-        this.purge();
-        this.autoCompleter.initialize(data);
-    }
+        let nameOfNodeToSearch = this.getCompletionNodeValue(node);
 
-    public purge(): void{
-        this.autoCompleter.words = 0;
-        this.autoCompleter.prefixes = 0;
-        this.autoCompleter.value = "";
-        this.autoCompleter.children = [];
-    }
-
-    public generateResults(node){
-        let getParentNodeValue = this.getParentVal(node);
-        if(getParentNodeValue !== ""){
-            let results = this.kuberSchema[getParentNodeValue].map(x => x.children).reduce((a, b) => a.concat(b)).filter((value, index, self) => self.indexOf(value) === index);
-            this.initData(results);
+        //The node is a root node
+        if(nameOfNodeToSearch === ""){
+            return this.search(node.key.value, Object.keys(this.kuberSchema["rootNodes"]));    
         }else{
-            this.initData(this.searchAll());
+            return this.getChildrenNodeAutocompletionList(node, nameOfNodeToSearch);
+        }
+    }
+    
+    public getCompletionNodeValue(node){
+        if(node.kind === Kind.MAPPING && node.value === null){
+            return this.getParentVal(node);
+        }else{
+            return node.key.value;
         }
     }
 
+    public getChildrenNodeAutocompletionList(node, nameOfNodeToSearch){
+        let nodeChildren = this.kuberSchema["childrenNodes"][nameOfNodeToSearch];
+        if(nodeChildren){
+            let nodeChildrenArray = nodeChildren.map(node => node.children);
+            let flattenNodeChildrenArray = [].concat.apply([], nodeChildrenArray);
+            let uniqueChildrenArray = flattenNodeChildrenArray.filter((value, index, self) => self.indexOf(value) === index);
+            if(nameOfNodeToSearch !== node.key.value){
+                return this.search(node.key.value, uniqueChildrenArray);
+            }else{
+                return this.arrayToCompletionList(uniqueChildrenArray);
+            }
+        }
+        
+        return [];
+    }
+
+    public getScalarAutocompletionList(nodeValue: string) {
+        let defaultScalarValues = this.kuberSchema["childrenNodes"][nodeValue];
+        if(defaultScalarValues){
+            let defaultScalarValuesMap = defaultScalarValues.map(node => node.default);
+            let defaultScalarValuesUnique = defaultScalarValuesMap.filter((value, index, self) => self.indexOf(value) === index && value !== undefined);
+            return this.arrayToCompletionList(defaultScalarValuesUnique);
+        }
+        return [];
+    }
+
+    /*
+     * Helper function that uses triesearch to get the values
+     */
+    private search(searchItem: String, data: Array<String>){
+        let auto = new AutoComplete();
+        auto.initialize(data);
+        return auto.search(searchItem).map(searchResult => ({
+            label: searchResult.value.toString()
+        }));
+    }
+
+    /*
+     * Helper for mapping arrays to CompletionList
+     */
+    private arrayToCompletionList(arr){
+        return arr.map(x => ({
+            label: x.toString()
+        }));
+    }
+
+    /*
+     * Helper function that traverses the AST looking for the parent node value
+     */
     private getParentVal(node: YAMLNode){
         let parentNodeKey = node.parent;
         while(parentNodeKey != null && parentNodeKey.key === undefined){
@@ -62,7 +105,5 @@ export class AutoCompleter {
 
         return parentNodeKey.key.value;
     }
-
-
 
 }

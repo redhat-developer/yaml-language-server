@@ -8,7 +8,10 @@
     "node": "*"
   },
   "dependencies": {
+    "@types/mocha": "^2.2.41",
+    "glob": "^7.1.2",
     "jsonc-parser": "^0.4.2",
+    "mocha": "^3.4.2",
     "request-light": "^0.2.0",
     "triesearch": "^1.0.2",
     "vscode-languageserver": "^3.1.0",
@@ -19,6 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^6.0.52",
+    "ts-node": "^3.0.6",
     "typescript": "^2.1.5"
   },
   "scripts": {

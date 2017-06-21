@@ -2,13 +2,17 @@
 
 import * as path from 'path';
 
-import { workspace, Disposable, ExtensionContext } from 'vscode';
+import { workspace, Disposable, ExtensionContext, commands } from 'vscode';
 import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind } from 'vscode-languageclient';
+import { enableValidation, disableValidation } from './kubernetes-commands';
 
 export function activate(context: ExtensionContext) {
 
-	// The server is implemented in node
-	let serverModule = context.asAbsolutePath(path.join('server', 'server.js'));
+	commands.registerCommand('extension.k8s.enableValidation', enableValidation);
+	commands.registerCommand('extension.k8s.disableValidation', disableValidation);
+
+	// The se	rver is implemented in node
+	let serverModule = context.asAbsolutePath(path.join('server/src', 'server.js'));
 	// The debug options for the server
 	let debugOptions = { execArgv: ["--nolazy", "--debug=6009"] };
 
@@ -25,9 +29,9 @@ export function activate(context: ExtensionContext) {
 		documentSelector: ['yaml'],
 		synchronize: {
 			// Synchronize the setting section 'languageServerExample' to the server
-			configurationSection: 'yaml',
+			configurationSection: 'k8s',
 			// Notify the server about file changes to '.clientrc files contain in the workspace
-			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
+			fileEvents: workspace.createFileSystemWatcher("**/*.yaml")
 		}
 	}
 
