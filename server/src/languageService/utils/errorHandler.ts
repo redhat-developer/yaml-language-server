@@ -11,7 +11,7 @@ export class ErrorHandler {
 
     public addErrorResult(errorNode, errorMessage, errorType){
         this.errorResultsList.push({
-            severity: DiagnosticSeverity.Error,
+            severity: errorType,
             range: {
                 start: this.textDocument.positionAt(errorNode.startPosition),
                 end: this.textDocument.positionAt(errorNode.endPosition)

@@ -60,12 +60,12 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
         //Error: It did not validate correctly
         if(!this.isValid(currentNodePath)){
-          this.errorHandler.addErrorResult(currentNode.key, "Command \'" + currentNode.key.value + "\' is not in a valid location in the file", DiagnosticSeverity.Warning);
+          this.errorHandler.addErrorResult(currentNode.key, "Command \'" + currentNode.key.value + "\' is not in a valid location in the file", DiagnosticSeverity.Error);
         }
 
         //Error: If type is mapping then we need to check the scalar type
         if(currentNode.kind === Kind.MAPPING && currentNode.value !== null && this.isInvalidType(currentNode)){
-          this.errorHandler.addErrorResult(currentNode.value, "Command \'" + currentNode.key.value + "\' has an invalid type. Valid type(s) are: " + this.validTypes(currentNode).toString(), DiagnosticSeverity.Warning);
+          this.errorHandler.addErrorResult(currentNode.value, "Command \'" + currentNode.key.value + "\' has an invalid type. Valid type(s) are: " + this.validTypes(currentNode).toString(), DiagnosticSeverity.Error);
         }
 
         let childrenNodes = generateChildren(currentNode.value);
