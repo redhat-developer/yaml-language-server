@@ -1,29 +1,29 @@
 [![Build Status](https://travis-ci.org/gorkem/vscode-k8s.svg?branch=master)](https://travis-ci.org/gorkem/vscode-k8s)
 
 # Kubernetes extension for VS Code
-VS Code extension that provides assistance for authoring kubernetes 
-and Openshift configuration.
+VS Code extension that provides assistance for authoring kubernetes and Openshift configurations.
 
 ## Features 
 ![screencast](https://github.com/JPinkney/vscode-k8s/blob/master/images/demo.gif)
 
-YAML validation:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Detects whether the entire file is valid yaml
-
-Kubernetes validation:
-
-&nbsp;&nbsp;&nbsp;&nbsp;Detects errors such as:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Child node does not exist
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Command not found in kubernetes
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Incorrect type of value
-
-Kubernetes auto completion:
-
-&nbsp;&nbsp;&nbsp;&nbsp;Auto completes on all commands and resorts to defaults for the value if found
+1. YAML validation:
+    * Detects whether the entire file is valid yaml
+2. Kubernetes validation:
+    * Detects errors such as:
+        * Node does not exist in kubernetes schema   
+        * Incorrect type of scalar node
+        * Node is not in a valid location in the file
+        * Node is not a valid child node of parent
+    * Detects warnings such as:
+        * Node is found in schema but not a root node
+        * Node is an additional property of parent
+3. Kubernetes auto completion:
+    * Auto completes on all commands
+    * Scalar nodes autocomplete to schema's defaults if they exist
+4. Snippets:
+    * Snippets for creating deployment, deployment config, route, config map, persistent volume claim
+5. Additional Commands:
+    * Commands for allowing the user to turn on/off validation of the specific yaml file they are working on
 
 ## Developer Support
 
@@ -53,10 +53,3 @@ Kubernetes auto completion:
   code ./server
   ```
   Refer to VS Code [documentation](https://code.visualstudio.com/docs/extensions/debugging-extensions) on how to run and debug the extension
-  
-### Configuring the extension for testing
-In order to configure the extension for autocompletion you need to change edit.quickSuggestions.strings to true
-
-1. Open up your settings.json file by going to VS code settings
-2. Under the editor tab scroll down until you find "editor.quickSuggestions"
-3. Edit this and make sure that "strings" is set to true (otherwise autocomplete will not work)
