@@ -31,7 +31,7 @@ var assert = require('assert');
 schemaService.getResolvedSchema(schemaService.getRegisteredSchemaIds()[0]).then(schema =>{
 	suite("Schema Transformation Tests", () => {
 
-		describe('Schema Tranformation - schemaToMappingTransformer', function(){
+		describe('Server - Schema Tranformation - schemaToMappingTransformer', function(){
 			
 			let schemaTransformer = new SchemaToMappingTransformer(schema.schema);
 

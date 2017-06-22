@@ -33,7 +33,7 @@ schemaService.getResolvedSchema(schemaService.getRegisteredSchemaIds()[0]).then(
 
     suite("Auto Completion Tests", () => {
 
-        describe('Auto Completion - yamlCompletion', function(){
+        describe('Server - Auto Completion - yamlCompletion', function(){
             
             describe('doComplete', function(){
 				it('Autocomplete on root node without word', (done) => {
