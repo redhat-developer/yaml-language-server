@@ -161,10 +161,15 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
   private hasAdditionalProperties(nodeValue: string): boolean {
     let schemaAtNode = this.kuberSchema["childrenNodes"][nodeValue];
-    if(schemaAtNode[0].hasOwnProperty("additionalProperties")){
-      return schemaAtNode[0]["additionalProperties"].hasOwnProperty("type") && schemaAtNode[0]["additionalProperties"].hasOwnProperty("description");
-    }
-    return false;
+    let additionalPropertyCount = 0;
+   
+    schemaAtNode.forEach(element => {
+      if(element.hasOwnProperty("additionalProperties") && element["additionalProperties"].hasOwnProperty("type") && element["additionalProperties"].hasOwnProperty("description")){
+        additionalPropertyCount += 1;
+      }
+    });
+      
+    return additionalPropertyCount !== 0;
   }
 
   public getErrorResults(){   
