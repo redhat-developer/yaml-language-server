@@ -1,4 +1,4 @@
-export let snippits = {
+export let snippets = {
     "deployment": {
         "prefix": "deployment",
         "body": [

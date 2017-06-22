@@ -23,7 +23,7 @@
   "devDependencies": {
     "@types/node": "^6.0.52",
     "ts-node": "^3.0.6",
-    "typescript": "^2.1.5"
+    "typescript": "2.1.5"
   },
   "scripts": {
     "compile": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc -p .",
