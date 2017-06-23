@@ -85,4 +85,38 @@ export function generateChildren(node){
         });
         return [].concat([], yamlSeqNodeList);
     }
-  }
+}
+
+export function generateParents(node){
+    if(!node) return [];
+    switch(node.kind){
+      case Kind.SCALAR :
+        let scalarNode = <YAMLScalar> node;
+        if(scalarNode.parent === null){
+          return [];
+        }else{
+          return this.generateParents(scalarNode.parent);
+        }
+      case Kind.MAPPING : 
+        let mappingNode = <YAMLMapping> node;
+        if(mappingNode.parent === null){
+          return [];
+        }else{
+          return [mappingNode.key].concat(this.generateParents(mappingNode.parent));
+        }
+      case Kind.MAP :
+        let mapNode = <YamlMap> node;
+        if(mapNode.parent === null){
+          return [];
+        }else{
+          return this.generateParents(mapNode.parent);
+        }
+      case Kind.SEQ :
+        let seqNode = <YAMLSequence> node;
+        if(seqNode.parent === null){
+          return [];
+        }else{
+          return this.generateParents(seqNode.parent);
+        }
+    }
+}

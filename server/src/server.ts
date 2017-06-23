@@ -51,7 +51,7 @@ connection.onInitialize((params): InitializeResult => {
 			textDocumentSync: TextDocumentSyncKind.Full,
 			// Tell the client that the server support code complete
 			completionProvider: {
-				resolveProvider: false
+				resolveProvider: true
 			}
 		}
 	}

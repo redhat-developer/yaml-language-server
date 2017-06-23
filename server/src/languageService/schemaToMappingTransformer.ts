@@ -1,33 +1,38 @@
 
 import { ASTVisitor } from './utils/astServices';
-import { YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference } from 'yaml-ast-parser';
+import { YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference } from 'yaml-ast-parser-beta';
 import { JSONSchema } from "./jsonSchema";
 
 export class SchemaToMappingTransformer {
 
     private kuberSchema : JSONSchema;
-    private mappingKuberSchema : JSONSchema;
+    private mappedKuberSchema : JSONSchema;
+    private autoCompletionSchema: JSONSchema;
+    private kuberSchemaUnchanged: JSONSchema;
 
     constructor(kuberSchema: JSONSchema){
+        this.kuberSchemaUnchanged = kuberSchema;
         this.kuberSchema = kuberSchema;
-        this.mappingKuberSchema = {};
-        this.buildCommandMapFromKuberProperties(this.kuberSchema);
+        this.mappedKuberSchema = this.buildCommandMapFromKuberProperties();
+        //this.autoCompletionSchema = this.buildAutocompletionFromKuberProperties();
     }
 
-    private buildCommandMapFromKuberProperties(kuberSchema: JSONSchema){
-        this.mappingKuberSchema["rootNodes"] = {};
+    private buildCommandMapFromKuberProperties(){
+        let mappingKuberSchema = {};
+        mappingKuberSchema["rootNodes"] = {};
         for(let api_obj in this.kuberSchema.properties){
             for(let prop in this.kuberSchema.properties[api_obj]["properties"]){
 
-                if(!this.mappingKuberSchema["rootNodes"].hasOwnProperty(prop)){
-                   this.mappingKuberSchema["rootNodes"][prop] = [];
+                if(!mappingKuberSchema["rootNodes"].hasOwnProperty(prop)){
+                   mappingKuberSchema["rootNodes"][prop] = [];
                 }
-                
+
+                this.kuberSchema.properties[api_obj]["properties"][prop]["rootObj"] = api_obj;
                 if(this.kuberSchema.properties[api_obj]["properties"][prop]["items"]){
                 
                     let children = this.kuberSchema.properties[api_obj]["properties"][prop]["items"]["properties"];
                     this.kuberSchema.properties[api_obj]["properties"][prop]["children"] = [];
-
+                    
                     for(let keys in children){
                         this.kuberSchema.properties[api_obj]["properties"][prop]["children"].push(keys);
                     }
@@ -45,25 +50,28 @@ export class SchemaToMappingTransformer {
                     this.kuberSchema.properties[api_obj]["properties"][prop]["children"] = [];
                 }
 
-                this.mappingKuberSchema["rootNodes"][prop].push(this.kuberSchema.properties[api_obj]["properties"][prop]);
+                mappingKuberSchema["rootNodes"][prop].push(this.kuberSchema.properties[api_obj]["properties"][prop]);
 
 
             }
         }
 
-        this.mappingKuberSchema["childrenNodes"] = {};
+        mappingKuberSchema["childrenNodes"] = {};
         for(let api_obj in this.kuberSchema.definitions){
 
            for(let prop in this.kuberSchema.definitions[api_obj]["properties"]){
          
-              if(!this.mappingKuberSchema["childrenNodes"].hasOwnProperty(prop)){
-                   this.mappingKuberSchema["childrenNodes"][prop] = [];
+              if(!mappingKuberSchema["childrenNodes"].hasOwnProperty(prop)){
+                   mappingKuberSchema["childrenNodes"][prop] = [];
               }
         
+              this.kuberSchema.definitions[api_obj]["properties"][prop]["rootObj"] = api_obj;
+
               if(this.kuberSchema.definitions[api_obj]["properties"][prop]["items"]){
                 
                 let children = this.kuberSchema.definitions[api_obj]["properties"][prop]["items"]["properties"];
                 this.kuberSchema.definitions[api_obj]["properties"][prop]["children"] = [];
+                this.kuberSchema.definitions[api_obj]["properties"][prop]["childRef"] = this.kuberSchema.definitions[api_obj]["properties"][prop]["items"]["$ref"];
 
                 for(let keys in children){
                     this.kuberSchema.definitions[api_obj]["properties"][prop]["children"].push(keys);
@@ -73,6 +81,7 @@ export class SchemaToMappingTransformer {
                 
                 let children = this.kuberSchema.definitions[api_obj]["properties"][prop]["properties"];
                 this.kuberSchema.definitions[api_obj]["properties"][prop]["children"] = [];
+                this.kuberSchema.definitions[api_obj]["properties"][prop]["childRef"] = this.kuberSchema.definitions[api_obj]["properties"][prop]["$ref"];
 
                 for(let keys in children){
                     this.kuberSchema.definitions[api_obj]["properties"][prop]["children"].push(keys);
@@ -80,18 +89,21 @@ export class SchemaToMappingTransformer {
                 
               }else{
                   this.kuberSchema.definitions[api_obj]["properties"][prop]["children"] = [];
+                  this.kuberSchema.definitions[api_obj]["properties"][prop]["childRef"] = this.kuberSchema.definitions[api_obj]["properties"][prop]["$ref"];
               }
 
-              this.mappingKuberSchema["childrenNodes"][prop].push(this.kuberSchema.definitions[api_obj]["properties"][prop]);              
+              mappingKuberSchema["childrenNodes"][prop].push(this.kuberSchema.definitions[api_obj]["properties"][prop]);              
            
             }
     
         }
+
+        return mappingKuberSchema;
     
     }
 
     public getSchema(){
-        return this.mappingKuberSchema;
+        return this.mappedKuberSchema;
     }
 
     public getKuberSchema(){

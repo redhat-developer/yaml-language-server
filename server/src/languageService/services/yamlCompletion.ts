@@ -4,7 +4,7 @@ import { Thenable } from '../yamlLanguageService';
 import { findNode } from '../utils/astServices';
 import {IJSONSchemaService}  from './jsonSchemaService';
 import {YAMLSChemaValidator} from './schemaValidator';
-import {traverse} from '../utils/astServices';
+import {traverse, generateParents} from '../utils/astServices';
 import {AutoCompleter} from './autoCompleter';
 import {snippitAutocompletor} from '../../SnippitSupport/snippit';
 
@@ -25,33 +25,21 @@ export class YamlCompletion {
 
       let offset = document.offsetAt(position);
       let node = findNode(<YAMLNode>doc, offset);
+      let parentNodes = generateParents(node);
 
-      if(node === undefined || node.kind === Kind.MAP){
-    
-        result.items = autoComplete.searchAll();
-      
-      }else{
-      
-        if(node.kind === Kind.SCALAR){
-    
-          result.items = autoComplete.getScalarAutocompletionList(node.parent.key.value);
-      
-        }else if(node.value != null && node.kind === Kind.MAPPING && node.value.kind === Kind.SCALAR){
-      
-          result.items = autoComplete.getScalarAutocompletionList(node.key.value);
-      
-        }else{
-      
-          result.items = autoComplete.getRegularAutocompletionList(node);
-                
-        }
+      //If node is an uncompleted root node then it can't be a parent of itself
+      if(node && !node.value){
+        parentNodes = parentNodes.slice(1);
+      }
 
-      }    
-
-      let snip = new snippitAutocompletor(document);
-      snip.provideSnippitAutocompletor().forEach(compItem => {
-        result.items.push(compItem);
-      });
+      result.items = autoComplete.buildAutocompletionFromKuberProperties(parentNodes, node);
+      
+      if(!(node && (node.value && node.value.kind === Kind.SCALAR) || node.kind === Kind.SCALAR)){
+        let snip = new snippitAutocompletor(document);
+        snip.provideSnippitAutocompletor().forEach(compItem => {
+            result.items.push(compItem);
+        });
+      }
 
       return result;
     });
