@@ -14,7 +14,7 @@ import Strings = require( './languageService/utils/strings');
 import URI from './languageService/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
-import {snippitAutocompletor} from './SnippitSupport/snippit';
+import {snippetAutocompletor} from './SnippetSupport/snippet';
 import {traverseForSymbols} from './languageService/utils/astServices';
 var glob = require('glob');
 
