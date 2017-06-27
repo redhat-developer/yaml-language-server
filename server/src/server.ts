@@ -5,16 +5,17 @@ import {
 	createConnection, IConnection, TextDocumentSyncKind,
 	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
 	InitializeParams, InitializeResult, TextDocumentPositionParams,
-	CompletionItem, CompletionItemKind, RequestType
+	CompletionItem, CompletionItemKind, RequestType, Location, Range, Position
 } from 'vscode-languageserver';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import {load as yamlLoader, YAMLDocument, YAMLException} from 'yaml-ast-parser-beta';
+import {load as yamlLoader, YAMLDocument, YAMLException, YAMLNode, Kind} from 'yaml-ast-parser-beta';
 import {getLanguageService} from './languageService/yamlLanguageService'
 import Strings = require( './languageService/utils/strings');
 import URI from './languageService/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
 import {snippitAutocompletor} from './SnippitSupport/snippit';
+import {traverseForSymbols} from './languageService/utils/astServices';
 var glob = require('glob');
 
 namespace VSCodeContentRequest {
@@ -47,6 +48,7 @@ connection.onInitialize((params): InitializeResult => {
 	workspaceRoot = params.rootPath;
 	return {
 		capabilities: {
+			documentSymbolProvider: true,
 			// Tell the client that the server works in FULL text document sync mode
 			textDocumentSync: TextDocumentSyncKind.Full,
 			// Tell the client that the server support code complete
@@ -245,6 +247,30 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
   return item;
 });
+
+connection.onDocumentSymbol(params => {
+	let doc = documents.get(params.textDocument.uri);
+	let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(doc.getText(),{});
+	let symbols = traverseForSymbols(<YAMLNode>yamlDoc);
+	let flattenedSymbols = flatten(symbols);
+	let documentSymbols = [];
+	flattenedSymbols.forEach(obj => {
+		if(obj !== null && obj !== undefined && obj.value){
+			documentSymbols.push({
+				name: obj.value.value,
+				kind: obj.kind,
+				location: Location.create(params.textDocument.uri, Range.create(doc.positionAt(obj.value.startPosition), doc.positionAt(obj.value.endPosition)))
+			});
+		}
+	});
+		
+	return documentSymbols;
+
+});
+
+const flatten = arr => arr.reduce(
+  (a, b) => a.concat(Array.isArray(b) ? flatten(b) : b), []
+);
 
 function getLineOffsets(textDocString: String): number[] {
 		
