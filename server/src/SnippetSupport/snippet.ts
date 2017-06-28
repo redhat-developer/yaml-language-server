@@ -1,5 +1,5 @@
 
-import { snippits } from "../../.vscode/snippits";
+import { snippets } from "../../.vscode/snippets";
 import {
 	IPCMessageReader, IPCMessageWriter,
 	createConnection, IConnection, TextDocumentSyncKind,
@@ -8,23 +8,23 @@ import {
 	CompletionItem, CompletionItemKind, RequestType
 } from 'vscode-languageserver';
 
-export class snippitAutocompletor {
+export class snippetAutocompletor {
     
     private textDocument;
     constructor(textDoc){
         this.textDocument = textDoc;
     }
 
-    public provideSnippitAutocompletor(){
+    public provideSnippetAutocompletor(){
         let items = [];
-        Object.keys(snippits).forEach(snip => {
-            let item = CompletionItem.create(snippits[snip]["prefix"]);
+        Object.keys(snippets).forEach(snip => {
+            let item = CompletionItem.create(snippets[snip]["prefix"]);
             item.kind = CompletionItemKind.Snippet;
-            item.insertText = snippits[snip]["body"].join("\n").replace(/\$\{TM_FILENAME\}/g, this.uriToName(this.textDocument.uri));
+            item.insertText = snippets[snip]["body"].join("\n").replace(/\$\{TM_FILENAME\}/g, this.uriToName(this.textDocument.uri));
             item.detail = "vscode-k8s";
-            item.sortText = snippits[snip]["prefix"].substring(0, 5);
-            item.filterText = snippits[snip]["prefix"].substring(0, 5);
-            item.documentation = snippits[snip]["description"];
+            item.sortText = snippets[snip]["prefix"].substring(0, 5);
+            item.filterText = snippets[snip]["prefix"].substring(0, 5);
+            item.documentation = snippets[snip]["description"];
             items.push(item);
         });
         return items;

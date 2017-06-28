@@ -32,7 +32,7 @@ var assert = require('assert');
 suite("Validation Tests", () => {
 
 	// Tests for validator
-	describe('Validation - schemaValidation and schemaValidator files', function() {
+	describe('Server - Validation - schemaValidation and schemaValidator files', function() {
 		describe('traverseBackToLocation', function() {
 
 			//Validating basic nodes
