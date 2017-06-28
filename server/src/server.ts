@@ -112,7 +112,7 @@ interface filesToIgnore {
 	filesNotValidating: Array<string>;
 }
 
-let filesToIgnore: Array<string>;
+let filesToIgnore: Array<string> = [];
 connection.onDidChangeConfiguration((change) => {
 	let settings = <Settings>change.settings;
 	filesToIgnore = settings.k8s.filesNotValidating || [];
