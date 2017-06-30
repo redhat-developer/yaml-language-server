@@ -14,6 +14,7 @@
     "mocha": "^3.4.2",
     "request-light": "^0.2.0",
     "triesearch": "^1.0.2",
+    "vscode-json-languageservice": "^2.0.12",
     "vscode-languageserver": "^3.1.0",
     "vscode-nls": "^2.0.2",
     "vscode-uri": "1.0.0",
