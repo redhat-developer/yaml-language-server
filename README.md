@@ -25,6 +25,13 @@ VS Code extension that provides assistance for authoring kubernetes and Openshif
 5. Additional Commands:
     * Commands for allowing the user to turn on/off validation of the specific yaml file they are working on
 
+## Supported VS Code Configuration Settings
+`filesNotValidating` : List of files you DO NOT want to validate
+
+## Supported VS Code Commands for Keybindings
+`extension.k8s.enableValidation` : Enable Kubernetes Validation for the file you are on
+`extension.k8s.disableValidation` : Disable Kubernetes Validation for the file you are on
+
 ## Developer Support
 
 ### Getting started

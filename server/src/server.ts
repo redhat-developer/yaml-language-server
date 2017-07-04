@@ -5,7 +5,8 @@ import {
 	createConnection, IConnection, TextDocumentSyncKind,
 	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
 	InitializeParams, InitializeResult, TextDocumentPositionParams,
-	CompletionItem, CompletionItemKind, RequestType, Location, Range, Position
+	CompletionItem, CompletionItemKind, RequestType, Location, Range, Position, Hover,
+	HoverRequest
 } from 'vscode-languageserver';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
 import {load as yamlLoader, YAMLDocument, YAMLException, YAMLNode, Kind} from 'yaml-ast-parser-beta';
@@ -18,6 +19,7 @@ import { getLanguageModelCache } from './languageModelCache';
 import {snippetAutocompletor} from './SnippetSupport/snippet';
 import {parse as parseYaml} from './languageService/parser/yamlParser';
 import {JSONDocument, getLanguageService as getJsonLanguageService } from 'vscode-json-languageservice';
+import {hoverCompleter} from './languageService/services/hover'
 var glob = require('glob');
 
 namespace VSCodeContentRequest {
@@ -50,6 +52,7 @@ connection.onInitialize((params): InitializeResult => {
 	workspaceRoot = params.rootPath;
 	return {
 		capabilities: {
+			hoverProvider: true,
 			documentSymbolProvider: true,
 			// Tell the client that the server works in FULL text document sync mode
 			textDocumentSync: TextDocumentSyncKind.Full,
@@ -214,8 +217,10 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 		*/
 
 		//Get the string we are looking at via a substring
-		let start = getLineOffsets(document.getText())[textDocumentPosition.position.line];
-		let end = document.offsetAt(textDocumentPosition.position);
+		let linePos = textDocumentPosition.position ? textDocumentPosition.position.line : textDocumentPosition.line;
+		let position = textDocumentPosition.position ? textDocumentPosition.position : textDocumentPosition;
+		let start = getLineOffsets(document.getText())[linePos];
+		let end = 0;
 		let textLine = document.getText().substring(start, end);
 		
 		//Check if the string we are looking at is a node
@@ -235,12 +240,12 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 			}
 
 			let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(newText,{});
-			return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
+			return languageService.doComplete(document, position, yamlDoc);
 		}else{
 
 			//All the nodes are loaded
 			let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
-			return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
+			return languageService.doComplete(document, position, yamlDoc);
 		}
 
 }
@@ -264,6 +269,15 @@ connection.onShutdown(() => {
 function getJSONDocument(document: TextDocument): JSONDocument {
 	return yamlDocuments.get(document);
 }
+
+connection.onHover(params => {
+	let document = documents.get(params.textDocument.uri);
+	let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
+
+	return languageService.doHover(document, params.position, yamlDoc).then((hoverItem): Hover => {
+		return hoverItem;
+	});
+});
 
 connection.onDocumentSymbol(params => {
 	

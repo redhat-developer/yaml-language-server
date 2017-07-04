@@ -5,6 +5,7 @@ import {SchemaValidation} from './services/schemaValidation'
 
 import { TextDocument, Position, CompletionList } from 'vscode-languageserver-types';
 import { YAMLDocument} from 'yaml-ast-parser';
+import { hoverCompleter } from "./services/hover";
 
 export interface PromiseConstructor {
     /**
@@ -62,6 +63,7 @@ export interface SchemaRequestService {
 export interface LanguageService {
 	doComplete(document: TextDocument, documentPosition: Position, doc: YAMLDocument): Thenable<CompletionList>;
   doValidation(document: TextDocument, doc: YAMLDocument): Thenable<CompletionList>;
+  doHover(document: TextDocument, documentPosition: Position, doc: YAMLDocument);
 }
 
 export function getLanguageService(schemaRequest: SchemaRequestService, wscontext:WorkspaceContextService): LanguageService {
@@ -72,8 +74,10 @@ export function getLanguageService(schemaRequest: SchemaRequestService, wscontex
 
   let completer = new YamlCompletion(schemaService);
   let validator = new SchemaValidation(schemaService);
+  let hover = new hoverCompleter(schemaService);
   return {
     	doComplete: completer.doComplete.bind(completer),
-      doValidation: validator.doValidation.bind(validator)
+      doValidation: validator.doValidation.bind(validator),
+      doHover: hover.doHover.bind(hover)
   }
 }
