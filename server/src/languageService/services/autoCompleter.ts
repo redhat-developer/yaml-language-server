@@ -7,103 +7,190 @@ let AutoComplete = require('triesearch');
 
 export class AutoCompleter {
 
+    private schema: JSONSchema;
     private kuberSchema; 
+    private mappingTransformer;
+    private test;
 
     constructor(schema:JSONSchema){
-        this.kuberSchema = new SchemaToMappingTransformer(schema).getSchema();
+        this.schema = schema;
+        this.mappingTransformer = new SchemaToMappingTransformer(schema); 
+        this.kuberSchema = this.mappingTransformer.getSchema();
     }
 
-    public searchAll() {
-        let allRootNodeValues = Object.keys(this.kuberSchema["rootNodes"]);
-        return this.arrayToCompletionList(allRootNodeValues);
-    }
+    //Current issues are:
+    //  1. At line 37 its not accounting for mapping nodes, only for scalar
+    //  2. Scalar nodes are autocompleting with other values when they are a child
+    public buildAutocompletionFromKuberProperties(parentNodeList, node){
 
-    public getRegularAutocompletionList(node) {
+        let parentNodeFirst = parentNodeList[0];
+        let parentList = this.getParentNodes(parentNodeList);  
+
+        let nodesToSearch = [];
         
-        if(!node || !node.key || (!node.value && !(node.kind === Kind.MAPPING))) return [];
+        for(let api_obj in this.schema.definitions){
+            
+            for(let prop in this.schema.definitions[api_obj]["properties"]){
 
-        let nameOfNodeToSearch = this.getCompletionNodeValue(node);
-
-        //The node is a root node
-        if(nameOfNodeToSearch === ""){
-            return this.search(node.key.value, Object.keys(this.kuberSchema["rootNodes"]));    
-        }else{
-            return this.getChildrenNodeAutocompletionList(node, nameOfNodeToSearch);
-        }
-    }
+                if(prop === parentList[0]){
+                    nodesToSearch.push([this.schema.definitions[api_obj]["properties"][prop]]);
+                }
     
-    public getCompletionNodeValue(node){
-        if(node.kind === Kind.MAPPING && node.value === null){
-            return this.getParentVal(node);
-        }else{
-            return node.key.value;
-        }
-    }
-
-    public getChildrenNodeAutocompletionList(node, nameOfNodeToSearch){
-        let nodeChildren = this.kuberSchema["childrenNodes"][nameOfNodeToSearch];
-        if(nodeChildren){
-            let nodeChildrenArray = nodeChildren.map(node => node.children);
-            let flattenNodeChildrenArray = [].concat.apply([], nodeChildrenArray);
-            let uniqueChildrenArray = flattenNodeChildrenArray.filter((value, index, self) => self.indexOf(value) === index);
-            if(nameOfNodeToSearch !== node.key.value){
-                return this.search(node.key.value, uniqueChildrenArray);
-            }else{
-                return this.arrayToCompletionList(uniqueChildrenArray);
             }
+    
         }
         
-        return [];
-    }
-
-    public getScalarAutocompletionList(nodeValue: string) {
-        let defaultScalarValues = this.kuberSchema["childrenNodes"][nodeValue];
-        if(defaultScalarValues){
-            let defaultScalarValuesMap = defaultScalarValues.map(node => node.default);
-            let defaultScalarValuesUnique = defaultScalarValuesMap.filter((value, index, self) => self.indexOf(value) === index && value !== undefined);
-            return this.arrayToCompletionList(defaultScalarValuesUnique);
-        }
-        return [];
-    }
-
-    /*
-     * Helper function that uses triesearch to get the values
-     */
-    private search(searchItem: String, data: Array<String>){
-        let auto = new AutoComplete();
-        auto.initialize(data);
-        return auto.search(searchItem).map(searchResult => ({
-            label: searchResult.value.toString()
-        }));
-    }
-
-    /*
-     * Helper for mapping arrays to CompletionList
-     */
-    private arrayToCompletionList(arr){
-        return arr.map(x => ({
-            label: x.toString()
-        }));
-    }
-
-    /*
-     * Helper function that traverses the AST looking for the parent node value
-     */
-    private getParentVal(node: YAMLNode){
-        let parentNodeKey = node.parent;
-        while(parentNodeKey != null && parentNodeKey.key === undefined){
-            parentNodeKey = parentNodeKey.parent;
+        //Autocompletion on root nodes
+        //Case 1 covered
+        if(parentNodeList.length === 0){
+            return Object.keys(this.kuberSchema["rootNodes"]).map(x => ({
+                label: x
+            }));
         }
 
-        if(parentNodeKey === null && node.mappings){
-            parentNodeKey = node.mappings[0];
+        //Autocompletion on scalar nodes
+        //Case 2 Covered
+        if(parentList.length === 1 && (node && (node.value && node.value.kind === Kind.SCALAR) || node.kind === Kind.SCALAR)){
+            return this.autoCompleteScalarResults(nodesToSearch);
         }
 
-        if(parentNodeKey === null || parentNodeKey.key === undefined || parentNodeKey.key === null){
-            return "";
+        let possibleChildren = [];
+        while(nodesToSearch.length > 0){
+            let currNodePath = nodesToSearch.shift(); 
+            let depth = currNodePath.length - 1;
+            let currNode = currNodePath[depth];
+
+            //Autocompletion on deep child nodes
+            if(currNodePath.length === parentList.length){
+                possibleChildren.push(currNode);
+            }
+
+            if(currNode["items"] && currNode["items"]["properties"]){
+                if(currNode["items"]["properties"][parentList[currNodePath.length]]){
+                    let newNodePath = currNodePath.concat(currNode["items"]["properties"][parentList[currNodePath.length]]);
+                    nodesToSearch.push(newNodePath);
+                }               
+            }
+
+            if(currNode["properties"] && currNode["properties"][parentList[currNodePath.length]]){
+                let newNodePath = currNodePath.concat(currNode["properties"][parentList[currNodePath.length]]);
+                nodesToSearch.push(newNodePath);
+            }
+
         }
 
-        return parentNodeKey.key.value;
+        if(node && (node.value && node.value.kind === Kind.SCALAR) || node.kind === Kind.SCALAR){
+            //Scalar nodes
+            return this.autoCompleteScalarResults(nodesToSearch);
+        }else{
+            //Non scalar nodes
+            return this.autoCompleteMappingResults(possibleChildren);
+        }
+        
+    }
+
+    private autoCompleteMappingResults(nodesToSearch){
+        let mapNodes = nodesToSearch.map(function(node){
+            if(node.properties){
+                return node.properties;  
+            }else if(node["items"] && node["items"]["properties"]){
+                return node["items"]["properties"];
+            }    
+        });
+
+        mapNodes = mapNodes.filter(node => node !== undefined);
+
+        let objSet = new Set();
+        let nodeArray = [];
+        mapNodes.forEach(element => {
+            
+            Object.keys(element).forEach(function(node){
+
+                element[node].name = node;
+                if(!objSet.has(element[node].rootObj)){
+                    nodeArray.push(element[node]);
+                }
+
+            });
+
+            objSet.add(element[Object.keys(element)[0]].rootObj);
+            
+        });
+
+        nodeArray = this.tempRemoveDuplicates(nodeArray);
+
+        return nodeArray.map(function(node){
+            return {
+                label: node.name,
+                detail: "k8s-model",
+                documentation: node.description
+            }
+        });
+    }
+
+    private tempRemoveDuplicates(arr){
+        let newArr = [];
+        let canAdd = true;
+        for(let x = 0; x < arr.length; x++){
+            //For each object in current array if these aren't found then add them
+            for(let y = 0; y < newArr.length; y++){
+            
+                if(newArr[y].description === arr[x].description && newArr[y].name === arr[x].name){
+                    canAdd = false
+                }
+            
+            }
+            
+            if(canAdd){
+                newArr.push(arr[x]);
+            }
+            
+            canAdd = true;
+        }
+        return newArr;
+    }
+
+    private autoCompleteScalarResults(nodesToSearch){
+       
+
+        let s = new Set();
+        let nodeArray = [];
+        nodesToSearch.forEach(element => {
+            
+            let def = element[0].default || undefined;
+
+            if(def !== undefined && !s.has(def)){
+                nodeArray.push(element[0]);
+            }
+
+            s.add(def);
+            
+        });
+
+        return nodeArray.map(function(node){
+            if(node.description && node.description.length >= 1){
+                return {
+                    label: node.default,
+                    detail: "k8s-model",
+                    documentation: node.description
+                }
+            }else{
+                return {
+                    label: node.default
+                }
+            }
+            
+        });
+
+        
+    }
+
+    private getParentNodes(nodeList){
+        let parentNodeNameList = [];
+        for(let nodeCount = nodeList.length - 1; nodeCount >= 0; nodeCount--){
+            parentNodeNameList.push(nodeList[nodeCount].value);
+        }
+        return parentNodeNameList;
     }
 
 }
