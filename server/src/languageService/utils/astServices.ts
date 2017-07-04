@@ -38,6 +38,7 @@ export function traverse ( node: YAMLNode, visitor:ASTVisitor){
       break
   }
 }
+
 export class ASTVisitor{
   public visit(node: YAMLNode) : boolean {
     return true;
@@ -71,14 +72,14 @@ export function generateChildren(node){
       case Kind.MAP :
         let yamlMappingNodeList = [];
         (<YamlMap> node).mappings.forEach(node => {
-          let gen = this.generateChildren(node);
+          let gen = generateChildren(node);
           yamlMappingNodeList.push(gen);  
         });
         return [].concat([], yamlMappingNodeList);
       case Kind.SEQ :
         let yamlSeqNodeList = [];
         (<YAMLSequence> node).items.forEach(node => {
-          let gen = this.generateChildren(node);
+          let gen = generateChildren(node);
           gen.forEach(element => {
             yamlSeqNodeList.push(element);  
           });

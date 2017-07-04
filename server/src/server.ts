@@ -5,16 +5,19 @@ import {
 	createConnection, IConnection, TextDocumentSyncKind,
 	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
 	InitializeParams, InitializeResult, TextDocumentPositionParams,
-	CompletionItem, CompletionItemKind, RequestType
+	CompletionItem, CompletionItemKind, RequestType, Location, Range, Position
 } from 'vscode-languageserver';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import {load as yamlLoader, YAMLDocument, YAMLException} from 'yaml-ast-parser-beta';
+import {load as yamlLoader, YAMLDocument, YAMLException, YAMLNode, Kind} from 'yaml-ast-parser-beta';
 import {getLanguageService} from './languageService/yamlLanguageService'
 import Strings = require( './languageService/utils/strings');
 import URI from './languageService/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
-import {snippitAutocompletor} from './SnippitSupport/snippit';
+import { getLanguageModelCache } from './languageModelCache';
+import {snippetAutocompletor} from './SnippetSupport/snippet';
+import {parse as parseYaml} from './languageService/parser/yamlParser';
+import {JSONDocument, getLanguageService as getJsonLanguageService } from 'vscode-json-languageservice';
 var glob = require('glob');
 
 namespace VSCodeContentRequest {
@@ -47,6 +50,7 @@ connection.onInitialize((params): InitializeResult => {
 	workspaceRoot = params.rootPath;
 	return {
 		capabilities: {
+			documentSymbolProvider: true,
 			// Tell the client that the server works in FULL text document sync mode
 			textDocumentSync: TextDocumentSyncKind.Full,
 			// Tell the client that the server support code complete
@@ -86,6 +90,7 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 };
 
 let languageService = getLanguageService(schemaRequestService, workspaceContext);
+let jsonLanguageService = getJsonLanguageService(schemaRequestService);
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
@@ -110,7 +115,7 @@ interface filesToIgnore {
 	filesNotValidating: Array<string>;
 }
 
-let filesToIgnore: Array<string>;
+let filesToIgnore: Array<string> = [];
 connection.onDidChangeConfiguration((change) => {
 	let settings = <Settings>change.settings;
 	filesToIgnore = settings.k8s.filesNotValidating || [];
@@ -245,6 +250,32 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
   return item;
 });
+
+let yamlDocuments = getLanguageModelCache<JSONDocument>(10, 60, document => parseYaml(document.getText()));
+
+documents.onDidClose(e => {
+	yamlDocuments.onDocumentRemoved(e.document);
+});
+
+connection.onShutdown(() => {
+	yamlDocuments.dispose();
+});
+
+function getJSONDocument(document: TextDocument): JSONDocument {
+	return yamlDocuments.get(document);
+}
+
+connection.onDocumentSymbol(params => {
+	
+	let document = documents.get(params.textDocument.uri);
+	let jsonDocument = getJSONDocument(document);
+	return jsonLanguageService.findDocumentSymbols(document, jsonDocument);
+
+});
+
+const flatten = arr => arr.reduce(
+  (a, b) => a.concat(Array.isArray(b) ? flatten(b) : b), []
+);
 
 function getLineOffsets(textDocString: String): number[] {
 		

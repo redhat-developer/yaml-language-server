@@ -6,7 +6,7 @@ import {IJSONSchemaService}  from './jsonSchemaService';
 import {YAMLSChemaValidator} from './schemaValidator';
 import {traverse, generateParents} from '../utils/astServices';
 import {AutoCompleter} from './autoCompleter';
-import {snippitAutocompletor} from '../../SnippitSupport/snippit';
+import {snippetAutocompletor} from '../../SnippetSupport/snippet';
 
 export class YamlCompletion {
   private schemaService: IJSONSchemaService;
@@ -40,7 +40,7 @@ export class YamlCompletion {
             result.items.push(compItem);
         });
       }
-
+      
       return result;
     });
   } 
