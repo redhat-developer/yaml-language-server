@@ -35,8 +35,8 @@ export class YamlCompletion {
       result.items = autoComplete.buildAutocompletionFromKuberProperties(parentNodes, node);
       
       if(!(node && (node.value && node.value.kind === Kind.SCALAR) || node.kind === Kind.SCALAR)){
-        let snip = new snippitAutocompletor(document);
-        snip.provideSnippitAutocompletor().forEach(compItem => {
+        let snip = new snippetAutocompletor(document);
+        snip.provideSnippetAutocompletor().forEach(compItem => {
             result.items.push(compItem);
         });
       }
