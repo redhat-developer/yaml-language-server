@@ -14,8 +14,10 @@ import Strings = require( './languageService/utils/strings');
 import URI from './languageService/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
+import { getLanguageModelCache } from './languageModelCache';
 import {snippetAutocompletor} from './SnippetSupport/snippet';
-import {traverseForSymbols} from './languageService/utils/astServices';
+import {parse as parseYaml} from './languageService/parser/yamlParser';
+import {JSONDocument, getLanguageService as getJsonLanguageService } from 'vscode-json-languageservice';
 var glob = require('glob');
 
 namespace VSCodeContentRequest {
@@ -88,6 +90,7 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 };
 
 let languageService = getLanguageService(schemaRequestService, workspaceContext);
+let jsonLanguageService = getJsonLanguageService(schemaRequestService);
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
@@ -248,23 +251,25 @@ connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
   return item;
 });
 
+let yamlDocuments = getLanguageModelCache<JSONDocument>(10, 60, document => parseYaml(document.getText()));
+
+documents.onDidClose(e => {
+	yamlDocuments.onDocumentRemoved(e.document);
+});
+
+connection.onShutdown(() => {
+	yamlDocuments.dispose();
+});
+
+function getJSONDocument(document: TextDocument): JSONDocument {
+	return yamlDocuments.get(document);
+}
+
 connection.onDocumentSymbol(params => {
-	let doc = documents.get(params.textDocument.uri);
-	let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(doc.getText(),{});
-	let symbols = traverseForSymbols(<YAMLNode>yamlDoc);
-	let flattenedSymbols = flatten(symbols);
-	let documentSymbols = [];
-	flattenedSymbols.forEach(obj => {
-		if(obj !== null && obj !== undefined && obj.value){
-			documentSymbols.push({
-				name: obj.value.value,
-				kind: obj.kind,
-				location: Location.create(params.textDocument.uri, Range.create(doc.positionAt(obj.value.startPosition), doc.positionAt(obj.value.endPosition)))
-			});
-		}
-	});
-		
-	return documentSymbols;
+	
+	let document = documents.get(params.textDocument.uri);
+	let jsonDocument = getJSONDocument(document);
+	return jsonLanguageService.findDocumentSymbols(document, jsonDocument);
 
 });
 
