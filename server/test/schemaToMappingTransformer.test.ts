@@ -13,8 +13,6 @@ import {
 	InitializeParams, InitializeResult, TextDocumentPositionParams,
 	CompletionItem, CompletionItemKind, RequestType
 } from 'vscode-languageserver';
-import { AutoCompleter } from '../src/languageService/services/autoCompleter'
-import { YAMLSChemaValidator } from '../src/languageService/services/schemaValidator'
 import {load as yamlLoader, YAMLDocument, YAMLException, YAMLNode} from 'yaml-ast-parser-beta';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
 import {getLanguageService} from '../src/languageService/yamlLanguageService'
