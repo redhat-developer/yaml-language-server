@@ -1,5 +1,5 @@
 
-import { snippets } from "../../.vscode/snippets";
+import { snippets } from "./snippets";
 import {
 	IPCMessageReader, IPCMessageWriter,
 	createConnection, IConnection, TextDocumentSyncKind,
@@ -10,17 +10,12 @@ import {
 
 export class snippetAutocompletor {
     
-    private textDocument;
-    constructor(textDoc){
-        this.textDocument = textDoc;
-    }
-
-    public provideSnippetAutocompletor(){
+    public static provideSnippetAutocompletor(fileNameURI){
         let items = [];
         Object.keys(snippets).forEach(snip => {
             let item = CompletionItem.create(snippets[snip]["prefix"]);
             item.kind = CompletionItemKind.Snippet;
-            item.insertText = snippets[snip]["body"].join("\n").replace(/\$\{TM_FILENAME\}/g, this.uriToName(this.textDocument.uri));
+            item.insertText = snippets[snip]["body"].join("\n").replace(/\$\{TM_FILENAME\}/g, this.uriToName(fileNameURI));
             item.detail = "vscode-k8s";
             item.sortText = snippets[snip]["prefix"].substring(0, 5);
             item.filterText = snippets[snip]["prefix"].substring(0, 5);
@@ -30,7 +25,7 @@ export class snippetAutocompletor {
         return items;
     }
 
-    private uriToName(uri){
+    private static uriToName(uri){
         return uri.substring(0, uri.lastIndexOf(".")).substring(uri.lastIndexOf("/")+1);
     }
 

@@ -19,7 +19,7 @@ import { getLanguageModelCache } from './languageModelCache';
 import {snippetAutocompletor} from './SnippetSupport/snippet';
 import {parse as parseYaml} from './languageService/parser/yamlParser';
 import {JSONDocument, getLanguageService as getJsonLanguageService } from 'vscode-json-languageservice';
-import {hoverCompleter} from './languageService/services/hover'
+import { getLineOffsets } from "./languageService/utils/arrUtils";
 var glob = require('glob');
 
 namespace VSCodeContentRequest {
@@ -207,8 +207,6 @@ connection.onCompletion(textDocumentPosition =>  {
 	return [];
 });
 
-
-
 function completionHelper(document: TextDocument, textDocumentPosition){
 		
 		/*
@@ -217,14 +215,20 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 		*/
 
 		//Get the string we are looking at via a substring
-		let linePos = textDocumentPosition.position ? textDocumentPosition.position.line : textDocumentPosition.line;
-		let position = textDocumentPosition.position ? textDocumentPosition.position : textDocumentPosition;
-		let start = getLineOffsets(document.getText())[linePos];
-		let end = 0;
+		let linePos = textDocumentPosition.position.line;
+		let position = textDocumentPosition.position;
+		let lineOffset = getLineOffsets(document.getText()); 
+		let start = lineOffset[linePos]; //Start of where the autocompletion is happening
+		let end = 0; //End of where the autocompletion is happening
+		if(lineOffset[linePos+1]){
+			end = lineOffset[linePos+1];
+		}else{
+			end = document.getText().length;
+		}
 		let textLine = document.getText().substring(start, end);
 		
 		//Check if the string we are looking at is a node
-		if(textLine.indexOf(":")){
+		if(textLine.indexOf(":") === -1){
 			//We need to add the ":" to load the nodes
 					
 			let newText = "";
@@ -232,11 +236,20 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 			//This is for the empty line case
 			if(textLine.trim().length === 0){
 				//Add a temp node that is in the document but we don't use at all.
-				newText = document.getText().substring(0, end) + "holder:\r\n" + document.getText().substr(end+2) 
+				if(lineOffset[linePos+1]){
+					newText = document.getText().substring(0, start+(textLine.length-1)) + "holder:\r\n" + document.getText().substr(end+2); 
+				}else{
+					newText = document.getText().substring(0, start+(textLine.length)) + "holder:\r\n" + document.getText().substr(end+2); 
+				}
+				
 			//For when missing semi colon case
 			}else{
 				//Add a semicolon to the end of the current line so we can validate the node
-				newText = document.getText().substring(0, end) + ":\r\n" + document.getText().substr(end+2)
+				if(lineOffset[linePos+1]){
+					newText = document.getText().substring(0, start+(textLine.length-1)) + ":\r\n" + document.getText().substr(end+2);
+				}else{
+					newText = document.getText().substring(0, start+(textLine.length)) + ":\r\n" + document.getText().substr(end+2);
+				}
 			}
 
 			let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(newText,{});
@@ -280,39 +293,10 @@ connection.onHover(params => {
 });
 
 connection.onDocumentSymbol(params => {
-	
 	let document = documents.get(params.textDocument.uri);
 	let jsonDocument = getJSONDocument(document);
 	return jsonLanguageService.findDocumentSymbols(document, jsonDocument);
-
 });
-
-const flatten = arr => arr.reduce(
-  (a, b) => a.concat(Array.isArray(b) ? flatten(b) : b), []
-);
-
-function getLineOffsets(textDocString: String): number[] {
-		
-		let lineOffsets: number[] = [];
-		let text = textDocString;
-		let isLineStart = true;
-		for (let i = 0; i < text.length; i++) {
-			if (isLineStart) {
-				lineOffsets.push(i);
-				isLineStart = false;
-			}
-			let ch = text.charAt(i);
-			isLineStart = (ch === '\r' || ch === '\n');
-			if (ch === '\r' && i + 1 < text.length && text.charAt(i + 1) === '\n') {
-				i++;
-			}
-		}
-		if (isLineStart && text.length > 0) {
-			lineOffsets.push(text.length);
-		}
-		
-		return lineOffsets;
-}
 
 // Listen on the connection
 connection.listen();

@@ -2,15 +2,13 @@ import {SchemaToMappingTransformer} from "../schemaToMappingTransformer"
 import {TextDocument, CompletionList} from 'vscode-languageserver-types';
 import {JSONSchema} from "../jsonSchema";
 import {YAMLDocument, YAMLNode, Kind} from 'yaml-ast-parser';
-
 let AutoComplete = require('triesearch');
 
-export class hoverService {
+export class searchService {
 
     private schema: JSONSchema;
     private kuberSchema; 
     private mappingTransformer;
-    private test;
 
     constructor(schema:JSONSchema){
         this.schema = schema;
@@ -18,10 +16,7 @@ export class hoverService {
         this.kuberSchema = this.mappingTransformer.getSchema();
     }
 
-    //Current issues are:
-    //  1. At line 37 its not accounting for mapping nodes, only for scalar
-    //  2. Scalar nodes are autocompleting with other values when they are a child
-    public buildAutocompletionFromKuberProperties(parentNodeList, node){
+    public traverseKubernetesSchema(parentNodeList, node, returnEarlyForScalar, callback){
 
         let parentNodeFirst = parentNodeList[0];
         let parentList = this.getParentNodes(parentNodeList);  
@@ -29,23 +24,23 @@ export class hoverService {
         let nodesToSearch = [];
         
         for(let api_obj in this.schema.definitions){
-            
             for(let prop in this.schema.definitions[api_obj]["properties"]){
-
                 if(prop === parentList[0]){
                     nodesToSearch.push([this.schema.definitions[api_obj]["properties"][prop]]);
                 }
-    
-            }
-    
+            } 
         }
-        
-        //Autocompletion on root nodes
-        //Case 1 covered
+
         if(parentNodeList.length === 0){
-            return Object.keys(this.kuberSchema["rootNodes"]).map(x => ({
+            let rootNodes = Object.keys(this.kuberSchema["rootNodes"]).map(x => ({
                 label: x
             }));
+            return callback([],[], rootNodes);
+        }
+
+
+        if(returnEarlyForScalar && parentList.length === 1 && (node && (node.value && node.value.kind === Kind.SCALAR) || node.kind === Kind.SCALAR)){
+            return callback([], nodesToSearch, []);
         }
 
         let possibleChildren = [];
@@ -54,7 +49,6 @@ export class hoverService {
             let depth = currNodePath.length - 1;
             let currNode = currNodePath[depth];
 
-            //Autocompletion on deep child nodes
             if(currNodePath.length === parentList.length){
                 possibleChildren.push(currNode);
             }
@@ -73,11 +67,11 @@ export class hoverService {
 
         }
            
-        return this.removeDuplicates(possibleChildren, "description");
+        return callback(possibleChildren, nodesToSearch, []);
         
     }
 
-     private getParentNodes(nodeList){
+    private getParentNodes(nodeList){
         let parentNodeNameList = [];
         for(let nodeCount = nodeList.length - 1; nodeCount >= 0; nodeCount--){
             parentNodeNameList.push(nodeList[nodeCount].value);
@@ -85,20 +79,41 @@ export class hoverService {
         return parentNodeNameList;
     }
 
-    private removeDuplicates(arr, prop) {
-        var new_arr = [];
-        var lookup  = {};
-
-        for (var i in arr) {
-            lookup[arr[i][prop]] = arr[i];
+    private autoCompleteScalarResults(nodesToSearch){
+      
+        if(nodesToSearch.length === 0){
+            return [];
         }
 
-        for (i in lookup) {
-            new_arr.push(lookup[i]);
-        }
+        let scalarSet = new Set();
+        let nodeArray = [];
+        nodesToSearch.forEach(element => {
+            
+            let defaultValue = element[0].default || undefined;
 
-        return new_arr;
+            if(defaultValue !== undefined && !scalarSet.has(defaultValue)){
+                nodeArray.push(element[0]);
+            }
+
+            scalarSet.add(defaultValue);
+            
+        });
+
+        return nodeArray.map(function(node){
+            if(node.description && node.description.length >= 1){
+                return {
+                    label: node.default,
+                    detail: "k8s-model",
+                    documentation: node.description
+                }
+            }else{
+                return {
+                    label: node.default
+                }
+            }
+            
+        });
+
     }
- 
 
 }

@@ -2,11 +2,11 @@ import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Posit
 import { YAMLDocument, YAMLNode } from 'yaml-ast-parser';
 import { Thenable } from '../yamlLanguageService';
 import { findNode } from '../utils/astServices';
-import {IJSONSchemaService}  from './jsonSchemaService';
-import {YAMLSChemaValidator} from './schemaValidator';
+import {IJSONSchemaService}  from '../services/jsonSchemaService';
+import {kubernetesValidator} from '../services/kubernetesValidationService';
 import {traverse} from '../utils/astServices';
 
-export class SchemaValidation {
+export class validationProvider {
   private schemaService: IJSONSchemaService;
   constructor(schemaService : IJSONSchemaService){
     this.schemaService = schemaService;
@@ -19,7 +19,7 @@ export class SchemaValidation {
     };
 
     return this.schemaService.getSchemaForResource(document.uri).then(schema =>{
-      let validator = new YAMLSChemaValidator(schema.schema, document);
+      let validator = new kubernetesValidator(schema.schema, document);
       validator.traverseBackToLocation(<YAMLNode>doc);
       result.items = validator.getErrorResults();
       return result;

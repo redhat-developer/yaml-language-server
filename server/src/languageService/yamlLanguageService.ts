@@ -1,11 +1,11 @@
 
-import {YamlCompletion} from './services/yamlCompletion';
+import {autoCompletionProvider} from './providers/autoCompletionProvider';
 import {JSONSchemaService} from './services/jsonSchemaService'
-import {SchemaValidation} from './services/schemaValidation'
+import {validationProvider} from './providers/validationProvider'
 
 import { TextDocument, Position, CompletionList } from 'vscode-languageserver-types';
 import { YAMLDocument} from 'yaml-ast-parser';
-import { hoverCompleter } from "./services/hover";
+import { hoverProvider } from "./providers/hoverProvider";
 
 export interface PromiseConstructor {
     /**
@@ -72,9 +72,9 @@ export function getLanguageService(schemaRequest: SchemaRequestService, wscontex
   schemaService.registerExternalSchema('http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.0.9/kubernetes-model-1.0.9-schema.json',
   ['*.yml', '*.yaml']);
 
-  let completer = new YamlCompletion(schemaService);
-  let validator = new SchemaValidation(schemaService);
-  let hover = new hoverCompleter(schemaService);
+  let completer = new autoCompletionProvider(schemaService);
+  let validator = new validationProvider(schemaService);
+  let hover = new hoverProvider(schemaService);
   return {
     	doComplete: completer.doComplete.bind(completer),
       doValidation: validator.doValidation.bind(validator),

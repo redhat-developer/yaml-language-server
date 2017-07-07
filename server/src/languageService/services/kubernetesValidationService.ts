@@ -8,19 +8,16 @@ import { xhr,configure as getErrorStatusDescription } from 'request-light';
 import { ErrorHandler } from '../utils/errorHandler';
 import {load as yamlLoader, YAMLDocument, YAMLException} from 'yaml-ast-parser-beta';
 
-export class YAMLSChemaValidator extends ASTVisitor {
+export class kubernetesValidator {
+  
   private schema: JSONSchema;
-  private lineCount;
   private kuberSchema: JSONSchema;
   private errorHandler: ErrorHandler;
-  private textDoc;
 
   constructor(schema: JSONSchema, document) {
-    super();
     this.schema = schema;
     this.kuberSchema = new SchemaToMappingTransformer(this.schema).getSchema();
     this.errorHandler = new ErrorHandler(document);
-    this.textDoc = document;
   }
 
   /**
@@ -107,7 +104,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
      }
 
      //Date needs to be added to schema
-     if(typeof nodeToTest === 'object'){
+     if(node.key.value.indexOf("Timestamp") !== -1){
        let dateToTest = new Date(nodeToTest);
        return dateToTest.toString() === 'Invalid Date' ? true: false;
      }

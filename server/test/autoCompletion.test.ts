@@ -13,8 +13,7 @@ import {
 	InitializeParams, InitializeResult, TextDocumentPositionParams,
 	CompletionItem, CompletionItemKind, RequestType
 } from 'vscode-languageserver';
-import { AutoCompleter } from '../src/languageService/services/autoCompleter'
-import { YAMLSChemaValidator } from '../src/languageService/services/schemaValidator'
+import { autoCompletionProvider } from '../src/languageService/providers/autoCompletionProvider'
 import {load as yamlLoader, YAMLDocument, YAMLException, YAMLNode} from 'yaml-ast-parser-beta';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
 import {getLanguageService} from '../src/languageService/yamlLanguageService'
@@ -43,7 +42,7 @@ schemaService.getResolvedSchema(schemaService.getRegisteredSchemaIds()[0]).then(
 				// 	let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
 				// 	let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 				// 	let validator = languageService.doComplete(testTextDocument, testTextDocument.positionAt(0), <YAMLDocument>yDoc2);
-				// 	let auto = new AutoCompleter(schema.schema);
+				// 	let auto = new autoCompletionProvider(schema.schema);
 				// 	validator.then(function(result){
 				// 		// Commented out because of programically added snippets
 				// 		// result.items.forEach(element => {
@@ -72,7 +71,7 @@ schemaService.getResolvedSchema(schemaService.getRegisteredSchemaIds()[0]).then(
 					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 					let validator = languageService.doComplete(testTextDocument, testTextDocument.positionAt(15), <YAMLDocument>yDoc2);
 					validator.then(function(result){
-						assert.equal(result.items.length, 72);
+						assert.equal(result.items.length, 77);
 						//assert.notEqual(result.items.map(x => x["label"]).indexOf("Deployment"), -1);
 					}).then(done, done);
 				});
@@ -123,7 +122,7 @@ schemaService.getResolvedSchema(schemaService.getRegisteredSchemaIds()[0]).then(
 					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 					let validator = languageService.doComplete(testTextDocument, testTextDocument.positionAt(29), <YAMLDocument>yDoc2);
 					validator.then(function(result){
-						assert.equal(result.items.length, 72);
+						assert.equal(result.items.length, 77);
 						//assert.notEqual(result.items.map(x => x["label"]).indexOf("Deployment"), -1);
 					}).then(done, done);
 				});
