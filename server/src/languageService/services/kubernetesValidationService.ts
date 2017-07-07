@@ -8,19 +8,16 @@ import { xhr,configure as getErrorStatusDescription } from 'request-light';
 import { ErrorHandler } from '../utils/errorHandler';
 import {load as yamlLoader, YAMLDocument, YAMLException} from 'yaml-ast-parser-beta';
 
-export class YAMLSChemaValidator extends ASTVisitor {
+export class kubernetesValidator {
+  
   private schema: JSONSchema;
-  private lineCount;
   private kuberSchema: JSONSchema;
   private errorHandler: ErrorHandler;
-  private textDoc;
 
   constructor(schema: JSONSchema, document) {
-    super();
     this.schema = schema;
     this.kuberSchema = new SchemaToMappingTransformer(this.schema).getSchema();
     this.errorHandler = new ErrorHandler(document);
-    this.textDoc = document;
   }
 
   /**
@@ -40,9 +37,9 @@ export class YAMLSChemaValidator extends ASTVisitor {
         if(this.kuberSchema["rootNodes"][element.key.value]){
           nodesToSearch.push([element]);
         }else if(this.kuberSchema["childrenNodes"][element.key.value]){
-          this.errorHandler.addErrorResult(element, "Command \'" + element.key.value + "\' is not a root node", DiagnosticSeverity.Warning);
+          this.errorHandler.addErrorResult(element, "Node \'" + element.key.value + "\' is not a root node", DiagnosticSeverity.Warning);
         }else{
-          this.errorHandler.addErrorResult(element, "Command \'" + element.key.value + "\' is not found", DiagnosticSeverity.Error);
+          this.errorHandler.addErrorResult(element, "Node \'" + element.key.value + "\' is not found", DiagnosticSeverity.Error);
         }
       });
 
@@ -55,17 +52,17 @@ export class YAMLSChemaValidator extends ASTVisitor {
         
         //Error: If key not found
         if(!this.kuberSchema["childrenNodes"][currentNode.key.value]){
-          this.errorHandler.addErrorResult(currentNode.key, "Command \'" + currentNode.key.value + "\' is not found", DiagnosticSeverity.Error);
+          this.errorHandler.addErrorResult(currentNode.key, "Node \'" + currentNode.key.value + "\' is not found", DiagnosticSeverity.Error);
         }
 
         //Error: It did not validate correctly
         if(!this.isValid(currentNodePath)){
-          this.errorHandler.addErrorResult(currentNode.key, "Command \'" + currentNode.key.value + "\' is not in a valid location in the file", DiagnosticSeverity.Error);
+          this.errorHandler.addErrorResult(currentNode.key, "Node \'" + currentNode.key.value + "\' is not in a valid location in the file", DiagnosticSeverity.Error);
         }
 
         //Error: If type is mapping then we need to check the scalar type
         if(currentNode.kind === Kind.MAPPING && currentNode.value !== null && this.hasInvalidType(currentNode)){
-          this.errorHandler.addErrorResult(currentNode.value, "Command \'" + currentNode.key.value + "\' has an invalid type. Valid type(s) are: " + this.validTypes(currentNode).toString(), DiagnosticSeverity.Error);
+          this.errorHandler.addErrorResult(currentNode.value, "Node \'" + currentNode.key.value + "\' has an invalid type. Valid type(s) are: " + this.validTypes(currentNode).toString(), DiagnosticSeverity.Error);
         }
 
         let childrenNodes = generateChildren(currentNode.value);
@@ -74,10 +71,6 @@ export class YAMLSChemaValidator extends ASTVisitor {
 
           let newNodePath = currentNodePath.concat(child);
           if(!this.isValid(newNodePath)){
-
-            if(!this.kuberSchema["childrenNodes"][child.key.value]){
-              this.errorHandler.addErrorResult(child,  "Command \'" + child.key.value + "\' is not found", DiagnosticSeverity.Warning);
-            }
 
             if(this.hasAdditionalProperties(currentNode.key.value)){
               this.errorHandler.addErrorResult(child, "\'" + child.key.value + "\' is an additional property of " + currentNode.key.value, DiagnosticSeverity.Warning);
@@ -111,7 +104,7 @@ export class YAMLSChemaValidator extends ASTVisitor {
      }
 
      //Date needs to be added to schema
-     if(typeof nodeToTest === 'object'){
+     if(node.key.value.indexOf("Timestamp") !== -1){
        let dateToTest = new Date(nodeToTest);
        return dateToTest.toString() === 'Invalid Date' ? true: false;
      }

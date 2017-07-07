@@ -1,10 +1,11 @@
 
-import {YamlCompletion} from './services/yamlCompletion';
+import {autoCompletionProvider} from './providers/autoCompletionProvider';
 import {JSONSchemaService} from './services/jsonSchemaService'
-import {SchemaValidation} from './services/schemaValidation'
+import {validationProvider} from './providers/validationProvider'
 
 import { TextDocument, Position, CompletionList } from 'vscode-languageserver-types';
 import { YAMLDocument} from 'yaml-ast-parser';
+import { hoverProvider } from "./providers/hoverProvider";
 
 export interface PromiseConstructor {
     /**
@@ -62,18 +63,21 @@ export interface SchemaRequestService {
 export interface LanguageService {
 	doComplete(document: TextDocument, documentPosition: Position, doc: YAMLDocument): Thenable<CompletionList>;
   doValidation(document: TextDocument, doc: YAMLDocument): Thenable<CompletionList>;
+  doHover(document: TextDocument, documentPosition: Position, doc: YAMLDocument);
 }
 
 export function getLanguageService(schemaRequest: SchemaRequestService, wscontext:WorkspaceContextService): LanguageService {
   let schemaService = new JSONSchemaService(schemaRequest, wscontext);
   //TODO: maps schemas from settings.
-  schemaService.registerExternalSchema('http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.0.65/kubernetes-model-1.0.65-schema.json',
+  schemaService.registerExternalSchema('http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.0.9/kubernetes-model-1.0.9-schema.json',
   ['*.yml', '*.yaml']);
 
-  let completer = new YamlCompletion(schemaService);
-  let validator = new SchemaValidation(schemaService);
+  let completer = new autoCompletionProvider(schemaService);
+  let validator = new validationProvider(schemaService);
+  let hover = new hoverProvider(schemaService);
   return {
     	doComplete: completer.doComplete.bind(completer),
-      doValidation: validator.doValidation.bind(validator)
+      doValidation: validator.doValidation.bind(validator),
+      doHover: hover.doHover.bind(hover)
   }
 }

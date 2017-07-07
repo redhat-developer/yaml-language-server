@@ -13,8 +13,7 @@ import {
 	InitializeParams, InitializeResult, TextDocumentPositionParams,
 	CompletionItem, CompletionItemKind, RequestType
 } from 'vscode-languageserver';
-import { AutoCompleter } from '../src/languageService/services/autoCompleter'
-import { YAMLSChemaValidator } from '../src/languageService/services/schemaValidator'
+import { validationProvider } from '../src/languageService/providers/validationProvider'
 import {load as yamlLoader, YAMLDocument, YAMLException, YAMLNode} from 'yaml-ast-parser-beta';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
 import {getLanguageService} from '../src/languageService/yamlLanguageService'
@@ -134,7 +133,7 @@ suite("Validation Tests", () => {
 					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
 					validator.then(function(result){
-						assert.equal(result.items.length, 0);
+						assert.equal(result.items.length, 1);
 					}).then(done, done);
 				});
 
@@ -194,7 +193,7 @@ suite("Validation Tests", () => {
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
 					validator.then(function(result){
 						assert.equal(result.items.length, 1);
-						assert.equal(result.items[0]["message"], 'Command \'testNode\' is not found');
+						assert.equal(result.items[0]["message"], 'Node \'testNode\' is not found');
 					}).then(done, done);
 				});
 
@@ -205,9 +204,8 @@ suite("Validation Tests", () => {
 					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 					let validator = languageService.doValidation(testTextDocument, <YAMLDocument>yDoc2);
 					validator.then(function(result){
-						assert.equal(result.items.length, 2);
-						assert.equal(result.items[0]["message"], 'Command \'na\' is not found');
-						assert.equal(result.items[1]["message"], '\'na\' is not a valid child node of metadata');
+						assert.equal(result.items.length, 1);
+						assert.equal(result.items[0]["message"], '\'na\' is not a valid child node of metadata');
 					}).then(done, done);
 				});
 

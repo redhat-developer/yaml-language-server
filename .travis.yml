@@ -32,3 +32,4 @@ deploy:
     tags: false
     repo: gorkem/vscode-k8s
 
+

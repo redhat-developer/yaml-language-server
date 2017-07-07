@@ -5,7 +5,8 @@ import {
 	createConnection, IConnection, TextDocumentSyncKind,
 	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
 	InitializeParams, InitializeResult, TextDocumentPositionParams,
-	CompletionItem, CompletionItemKind, RequestType, Location, Range, Position
+	CompletionItem, CompletionItemKind, RequestType, Location, Range, Position, Hover,
+	HoverRequest
 } from 'vscode-languageserver';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
 import {load as yamlLoader, YAMLDocument, YAMLException, YAMLNode, Kind} from 'yaml-ast-parser-beta';
@@ -14,8 +15,11 @@ import Strings = require( './languageService/utils/strings');
 import URI from './languageService/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
+import { getLanguageModelCache } from './languageModelCache';
 import {snippetAutocompletor} from './SnippetSupport/snippet';
-import {traverseForSymbols} from './languageService/utils/astServices';
+import {parse as parseYaml} from './languageService/parser/yamlParser';
+import {JSONDocument, getLanguageService as getJsonLanguageService } from 'vscode-json-languageservice';
+import { getLineOffsets } from "./languageService/utils/arrUtils";
 var glob = require('glob');
 
 namespace VSCodeContentRequest {
@@ -48,12 +52,13 @@ connection.onInitialize((params): InitializeResult => {
 	workspaceRoot = params.rootPath;
 	return {
 		capabilities: {
+			hoverProvider: true,
 			documentSymbolProvider: true,
 			// Tell the client that the server works in FULL text document sync mode
 			textDocumentSync: TextDocumentSyncKind.Full,
 			// Tell the client that the server support code complete
 			completionProvider: {
-				resolveProvider: false
+				resolveProvider: true
 			}
 		}
 	}
@@ -88,6 +93,7 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 };
 
 let languageService = getLanguageService(schemaRequestService, workspaceContext);
+let jsonLanguageService = getJsonLanguageService(schemaRequestService);
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
@@ -201,8 +207,6 @@ connection.onCompletion(textDocumentPosition =>  {
 	return [];
 });
 
-
-
 function completionHelper(document: TextDocument, textDocumentPosition){
 		
 		/*
@@ -211,12 +215,20 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 		*/
 
 		//Get the string we are looking at via a substring
-		let start = getLineOffsets(document.getText())[textDocumentPosition.position.line];
-		let end = document.offsetAt(textDocumentPosition.position);
+		let linePos = textDocumentPosition.position.line;
+		let position = textDocumentPosition.position;
+		let lineOffset = getLineOffsets(document.getText()); 
+		let start = lineOffset[linePos]; //Start of where the autocompletion is happening
+		let end = 0; //End of where the autocompletion is happening
+		if(lineOffset[linePos+1]){
+			end = lineOffset[linePos+1];
+		}else{
+			end = document.getText().length;
+		}
 		let textLine = document.getText().substring(start, end);
 		
 		//Check if the string we are looking at is a node
-		if(textLine.indexOf(":")){
+		if(textLine.indexOf(":") === -1){
 			//We need to add the ":" to load the nodes
 					
 			let newText = "";
@@ -224,20 +236,29 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 			//This is for the empty line case
 			if(textLine.trim().length === 0){
 				//Add a temp node that is in the document but we don't use at all.
-				newText = document.getText().substring(0, end) + "holder:\r\n" + document.getText().substr(end+2) 
+				if(lineOffset[linePos+1]){
+					newText = document.getText().substring(0, start+(textLine.length-1)) + "holder:\r\n" + document.getText().substr(end+2); 
+				}else{
+					newText = document.getText().substring(0, start+(textLine.length)) + "holder:\r\n" + document.getText().substr(end+2); 
+				}
+				
 			//For when missing semi colon case
 			}else{
 				//Add a semicolon to the end of the current line so we can validate the node
-				newText = document.getText().substring(0, end) + ":\r\n" + document.getText().substr(end+2)
+				if(lineOffset[linePos+1]){
+					newText = document.getText().substring(0, start+(textLine.length-1)) + ":\r\n" + document.getText().substr(end+2);
+				}else{
+					newText = document.getText().substring(0, start+(textLine.length)) + ":\r\n" + document.getText().substr(end+2);
+				}
 			}
 
 			let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(newText,{});
-			return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
+			return languageService.doComplete(document, position, yamlDoc);
 		}else{
 
 			//All the nodes are loaded
 			let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
-			return languageService.doComplete(document, textDocumentPosition.position, yamlDoc);
+			return languageService.doComplete(document, position, yamlDoc);
 		}
 
 }
@@ -248,52 +269,34 @@ connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
   return item;
 });
 
-connection.onDocumentSymbol(params => {
-	let doc = documents.get(params.textDocument.uri);
-	let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(doc.getText(),{});
-	let symbols = traverseForSymbols(<YAMLNode>yamlDoc);
-	let flattenedSymbols = flatten(symbols);
-	let documentSymbols = [];
-	flattenedSymbols.forEach(obj => {
-		if(obj !== null && obj !== undefined && obj.value){
-			documentSymbols.push({
-				name: obj.value.value,
-				kind: obj.kind,
-				location: Location.create(params.textDocument.uri, Range.create(doc.positionAt(obj.value.startPosition), doc.positionAt(obj.value.endPosition)))
-			});
-		}
-	});
-		
-	return documentSymbols;
+let yamlDocuments = getLanguageModelCache<JSONDocument>(10, 60, document => parseYaml(document.getText()));
 
+documents.onDidClose(e => {
+	yamlDocuments.onDocumentRemoved(e.document);
 });
 
-const flatten = arr => arr.reduce(
-  (a, b) => a.concat(Array.isArray(b) ? flatten(b) : b), []
-);
+connection.onShutdown(() => {
+	yamlDocuments.dispose();
+});
 
-function getLineOffsets(textDocString: String): number[] {
-		
-		let lineOffsets: number[] = [];
-		let text = textDocString;
-		let isLineStart = true;
-		for (let i = 0; i < text.length; i++) {
-			if (isLineStart) {
-				lineOffsets.push(i);
-				isLineStart = false;
-			}
-			let ch = text.charAt(i);
-			isLineStart = (ch === '\r' || ch === '\n');
-			if (ch === '\r' && i + 1 < text.length && text.charAt(i + 1) === '\n') {
-				i++;
-			}
-		}
-		if (isLineStart && text.length > 0) {
-			lineOffsets.push(text.length);
-		}
-		
-		return lineOffsets;
+function getJSONDocument(document: TextDocument): JSONDocument {
+	return yamlDocuments.get(document);
 }
+
+connection.onHover(params => {
+	let document = documents.get(params.textDocument.uri);
+	let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
+
+	return languageService.doHover(document, params.position, yamlDoc).then((hoverItem): Hover => {
+		return hoverItem;
+	});
+});
+
+connection.onDocumentSymbol(params => {
+	let document = documents.get(params.textDocument.uri);
+	let jsonDocument = getJSONDocument(document);
+	return jsonLanguageService.findDocumentSymbols(document, jsonDocument);
+});
 
 // Listen on the connection
 connection.listen();
