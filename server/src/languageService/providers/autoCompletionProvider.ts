@@ -6,6 +6,8 @@ import { IJSONSchemaService }  from '../services/jsonSchemaService';
 import { traverse, generateParents } from '../utils/astServices';
 import { snippetAutocompletor } from '../../SnippetSupport/snippet';
 import { searchService } from "../services/searchService";
+import { getLineOffsets } from "../utils/arrUtils";
+var equal = require('deep-equal');
 
 export class autoCompletionProvider {
   
@@ -15,7 +17,7 @@ export class autoCompletionProvider {
     this.schemaService = schemaService;
   }
 
-  public doComplete(document: TextDocument, position: Position, doc: YAMLDocument): Thenable<CompletionList> {
+  public doComplete(document: TextDocument, position: Position, doc): Thenable<CompletionList> {
     let result: CompletionList = {
       items: [],
       isIncomplete: false
@@ -28,10 +30,21 @@ export class autoCompletionProvider {
       let node = findNode(<YAMLNode>doc, offset);
       let parentNodes = generateParents(node);
 
-      //If node is an uncompleted root node then it can't be a parent of itself
-      if(node && !node.value){
-        parentNodes = parentNodes.slice(1);
+      let linePos = position.line;
+      let lineOffset = getLineOffsets(document.getText()); 
+      let start = lineOffset[linePos]; //Start of where the autocompletion is happening
+      let end = 0; //End of where the autocompletion is happening
+      if(lineOffset[linePos+1]){
+          end = lineOffset[linePos+1];
+      }else{
+          end = document.getText().length;
       }
+
+      //If its a root node and the line isn't doComplete
+      //If its a root node and the line IS complete
+      if(this.isRootNode(doc, node) && document.getText().substring(start, end).indexOf(":") === -1 || node && !node.value && document.getText().substring(start, end).indexOf(":") === -1){
+        parentNodes = parentNodes.slice(1);  
+      }     
 
       return kubeSearchService.traverseKubernetesSchema(parentNodes, node, true, (possibleChildren, nodesToSearch, rootNodes) => {
         
@@ -39,14 +52,14 @@ export class autoCompletionProvider {
             result.items = rootNodes;
         }else if(node && (node.value && node.value.kind === Kind.SCALAR) || node.kind === Kind.SCALAR){
             result.items = this.autoCompleteScalarResults(nodesToSearch);
-        }else{
+        }else {
             result.items = this.autoCompleteMappingResults(possibleChildren);
         }
 
         snippetAutocompletor.provideSnippetAutocompletor(document.uri).forEach(compItem => {
             result.items.push(compItem);
         });
-
+        
         return result;
 
       });
@@ -54,10 +67,23 @@ export class autoCompletionProvider {
     });
   } 
 
+  private isRootNode(doc, node){
+      for(let element in doc.mappings) {
+          if(equal(doc.mappings[element], node)){
+              return true;
+          }
+      };
+      return false;
+  }
+
   private autoCompleteMappingResults(nodesToSearch){
         
         if(nodesToSearch.length === 0){
             return [];
+        }
+
+        if(!(nodesToSearch[0].hasOwnProperty("properties") || nodesToSearch[0].hasOwnProperty("items"))){
+            return this.autoCompleteScalarResults(nodesToSearch);
         }
 
         let mapNodes = nodesToSearch.map(function(node){
@@ -65,7 +91,7 @@ export class autoCompletionProvider {
                 return node.properties;  
             }else if(node["items"] && node["items"]["properties"]){
                 return node["items"]["properties"];
-            }    
+            }
         });
 
         mapNodes = mapNodes.filter(node => node !== undefined);
@@ -82,7 +108,7 @@ export class autoCompletionProvider {
                 }
 
             });
-
+            
             objSet.add(element[Object.keys(element)[0]].rootObj);
             
         });
@@ -130,10 +156,11 @@ export class autoCompletionProvider {
         let nodeArray = [];
         nodesToSearch.forEach(element => {
             
-            let defaultValue = element[0].default || undefined;
+            let ele = element.constructor === Array ? element[0] : element;
+            let defaultValue = ele.default || undefined;
 
             if(defaultValue !== undefined && !scalarSet.has(defaultValue)){
-                nodeArray.push(element[0]);
+                nodeArray.push(ele);
             }
 
             scalarSet.add(defaultValue);
