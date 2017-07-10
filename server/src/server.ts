@@ -258,6 +258,7 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 
 			//All the nodes are loaded
 			let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
+			position.character = position.character - 1;
 			return languageService.doComplete(document, position, yamlDoc);
 		}
 
