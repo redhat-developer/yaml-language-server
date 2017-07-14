@@ -3,7 +3,7 @@ import { YAMLDocument, YAMLNode } from 'yaml-ast-parser';
 import { Thenable } from '../yamlLanguageService';
 import { findNode } from '../utils/astServices';
 import {IJSONSchemaService}  from '../services/jsonSchemaService';
-import {kubernetesValidator} from '../services/kubernetesValidationService';
+import {schemaValidator} from '../services/validationService';
 import {traverse} from '../utils/astServices';
 
 export class validationProvider {
@@ -19,7 +19,7 @@ export class validationProvider {
     };
 
     return this.schemaService.getSchemaForResource(document.uri).then(schema =>{
-      let validator = new kubernetesValidator(schema.schema, document);
+      let validator = new schemaValidator(schema.schema, document);
       validator.traverseBackToLocation(<YAMLNode>doc);
       result.items = validator.getErrorResults();
       return result;

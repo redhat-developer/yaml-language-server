@@ -16,8 +16,7 @@ export class ErrorHandler {
                 start: this.textDocument.positionAt(errorNode.startPosition),
                 end: this.textDocument.positionAt(errorNode.endPosition)
             },
-            message: errorMessage,
-            source: "k8s Model"
+            message: errorMessage
         });
         
     }

@@ -71,7 +71,7 @@ schemaService.getResolvedSchema(schemaService.getRegisteredSchemaIds()[0]).then(
 					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 					let validator = languageService.doComplete(testTextDocument, testTextDocument.positionAt(15), <YAMLDocument>yDoc2);
 					validator.then(function(result){
-						assert.equal(result.items.length, 77);
+						assert.equal(result.items.length, 105);
 						//assert.notEqual(result.items.map(x => x["label"]).indexOf("Deployment"), -1);
 					}).then(done, done);
 				});
@@ -110,7 +110,7 @@ schemaService.getResolvedSchema(schemaService.getRegisteredSchemaIds()[0]).then(
 					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 					let validator = languageService.doComplete(testTextDocument, testTextDocument.positionAt(18), <YAMLDocument>yDoc2);
 					validator.then(function(result){
-						assert.equal(result.items.length, 89);
+						assert.equal(result.items.length, 147);
 						//assert.notEqual(result.items.map(x => x["label"]).indexOf("allowed"), -1);
 					}).then(done, done);
 				});
@@ -122,7 +122,7 @@ schemaService.getResolvedSchema(schemaService.getRegisteredSchemaIds()[0]).then(
 					let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 					let validator = languageService.doComplete(testTextDocument, testTextDocument.positionAt(29), <YAMLDocument>yDoc2);
 					validator.then(function(result){
-						assert.equal(result.items.length, 77);
+						assert.equal(result.items.length, 105);
 						//assert.notEqual(result.items.map(x => x["label"]).indexOf("Deployment"), -1);
 					}).then(done, done);
 				});

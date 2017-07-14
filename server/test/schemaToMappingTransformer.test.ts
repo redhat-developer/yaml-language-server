@@ -21,31 +21,30 @@ import URI from '../src/languageService/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
 import {JSONSchemaService} from '../src/languageService/services/jsonSchemaService';
-import {SchemaToMappingTransformer} from '../src/languageService/schemaToMappingTransformer';
 import {schemaService, languageService}  from './testHelper';
 var glob = require('glob');
 var assert = require('assert');
 
-schemaService.getResolvedSchema(schemaService.getRegisteredSchemaIds()[0]).then(schema =>{
-	suite("Schema Transformation Tests", () => {
+// schemaService.getResolvedSchema(schemaService.getRegisteredSchemaIds()[0]).then(schema =>{
+// 	suite("Schema Transformation Tests", () => {
 
-		describe('Server - Schema Tranformation - schemaToMappingTransformer', function(){
+// 		describe('Server - Schema Tranformation - schemaToMappingTransformer', function(){
 			
-			let schemaTransformer = new SchemaToMappingTransformer(schema.schema);
+// 			let schemaTransformer = new SchemaToMappingTransformer(schema.schema);
 
-			describe('getSchema', function(){
-				it("Schema is not empty", function(){
-					assert.notEqual(Object.keys(schemaTransformer.getSchema()).length, 0);
-				});
-			});
+// 			describe('getSchema', function(){
+// 				it("Schema is not empty", function(){
+// 					assert.notEqual(Object.keys(schemaTransformer.getSchema()).length, 0);
+// 				});
+// 			});
 
-			describe('getKuberSchema', function(){
-				it("Schema is not empty", function(){
-					assert.notEqual(Object.keys(schemaTransformer.getKuberSchema()).length, 0);
-				});
-			});
+// 			describe('getKuberSchema', function(){
+// 				it("Schema is not empty", function(){
+// 					assert.notEqual(Object.keys(schemaTransformer.getKuberSchema()).length, 0);
+// 				});
+// 			});
 
-		});
+// 		});
 
-	});
-});
+// 	});
+// });

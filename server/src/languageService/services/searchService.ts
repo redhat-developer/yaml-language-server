@@ -21,9 +21,8 @@ export class searchService {
         let nodesToSearch = [];
         let rootNodeList = [];
         for(let api_obj in this.schema.properties){
-            //Kubernetes schema
-            if(this.schema.properties[api_obj].hasOwnProperty("javatype")){
-                //Kedge and normal schemas
+            //For Kubernetes schema
+            if(this.schema.properties[api_obj].hasOwnProperty("javaType")){
                 for(let prop in this.schema.properties[api_obj]["properties"]){
                     if(prop === parentList[0]){
                         nodesToSearch.push([this.schema.properties[api_obj]["properties"][prop]]);
@@ -31,8 +30,7 @@ export class searchService {
                     rootNodeList.push(prop);
                 } 
             }else{
-                //Kedge and normal schemas
-
+                //For Kedge and normal schemas
                 if(api_obj === parentList[0]){
                     nodesToSearch.push([this.schema.properties[api_obj]]);
                 }
@@ -43,12 +41,10 @@ export class searchService {
 
         if(parentNodeList.length === 0){
             let rootNodes = Array.from(new Set(rootNodeList));
-            return callback([],[], rootNodes.map(x => ({
-                label: x
-            })));
+            return callback([],[], rootNodes);
         }
 
-
+        //Return early when we found a scalar node at the root level i.e. key: value <- here
         if(returnEarlyForScalar && parentList.length === 1 && (node && (node.value && node.value.kind === Kind.SCALAR) || node.kind === Kind.SCALAR)){
             return callback([], nodesToSearch, []);
         }
@@ -89,43 +85,6 @@ export class searchService {
             parentNodeNameList.push(nodeList[nodeCount].value);
         }
         return parentNodeNameList;
-    }
-
-    private autoCompleteScalarResults(nodesToSearch){
-      
-        if(nodesToSearch.length === 0){
-            return [];
-        }
-
-        let scalarSet = new Set();
-        let nodeArray = [];
-        nodesToSearch.forEach(element => {
-            
-            let defaultValue = element[0].default || undefined;
-
-            if(defaultValue !== undefined && !scalarSet.has(defaultValue)){
-                nodeArray.push(element[0]);
-            }
-
-            scalarSet.add(defaultValue);
-            
-        });
-
-        return nodeArray.map(function(node){
-            if(node.description && node.description.length >= 1){
-                return {
-                    label: node.default,
-                    detail: "k8s-model",
-                    documentation: node.description
-                }
-            }else{
-                return {
-                    label: node.default
-                }
-            }
-            
-        });
-
     }
 
 }

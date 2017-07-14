@@ -44,6 +44,16 @@
           "type": "array",
           "default": [],
           "description": "List of files you DO NOT want to validate"
+        },
+        "k8s.k8sSchemaOn": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the files are being validated against kubernetes schema"
+        },
+        "k8s.kedgeSchemaOn": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the files are being validated against kedge schema"
         }
       }
     }

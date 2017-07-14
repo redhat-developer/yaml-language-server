@@ -66,11 +66,21 @@ export interface LanguageService {
   doHover(document: TextDocument, documentPosition: Position, doc: YAMLDocument);
 }
 
-export function getLanguageService(schemaRequest: SchemaRequestService, wscontext:WorkspaceContextService): LanguageService {
-  let schemaService = new JSONSchemaService(schemaRequest, wscontext);
-  //TODO: maps schemas from settings.
-  schemaService.registerExternalSchema('https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json',
-  ['*.yml', '*.yaml']);
+export function getLanguageService(schemaRequestService, workspaceContext, k8sSchemaOn, kedgeSchemaOn): LanguageService {
+
+  let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
+
+	if(k8sSchemaOn){
+		schemaService.registerExternalSchema('http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json',
+		['*.yml', '*.yaml']);
+	}else if(kedgeSchemaOn){
+		schemaService.registerExternalSchema('https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json',
+		['*.yml', '*.yaml']);
+	}else{
+		schemaService.registerExternalSchema('http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json',
+		['*.yml', '*.yaml']);
+	}
+	
 
   let completer = new autoCompletionProvider(schemaService);
   let validator = new validationProvider(schemaService);

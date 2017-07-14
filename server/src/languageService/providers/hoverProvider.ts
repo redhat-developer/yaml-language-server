@@ -38,10 +38,12 @@ export class hoverProvider {
                 if(hoverNode){
                     let startPos = node.startPosition;
                     let endPos = node.endPosition;
+
+                    //Use the keys start position when you are hovering over a scalar item
                     if(node.kind === Kind.SCALAR){
                         startPos = node.parent.key.startPosition ? node.parent.key.startPosition : startPos;
-                        endPos = node.parent.key.endPosition ? node.parent.key.endPosition : endPos;
                     }
+
                     let hoverRange = Range.create(document.positionAt(startPos), document.positionAt(endPos));
                     let hoverItem : Hover = {
                         contents: hoverNode.description,

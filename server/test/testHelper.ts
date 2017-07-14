@@ -78,7 +78,9 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 	});
 };
 
-export let languageService = getLanguageService(schemaRequestService, workspaceContext);
+
+export let languageService = getLanguageService(schemaRequestService, workspaceContext, true, false);
+
 export let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
 //TODO: maps schemas from settings.
 schemaService.registerExternalSchema('http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.0.65/kubernetes-model-1.0.65-schema.json',

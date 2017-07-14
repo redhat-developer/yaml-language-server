@@ -8,25 +8,32 @@ VS Code extension that provides assistance for authoring kubernetes and Openshif
 
 1. YAML validation:
     * Detects whether the entire file is valid yaml
-2. Kubernetes validation:
+2. Validation:
     * Detects errors such as:
-        * Node does not exist in kubernetes schema   
-        * Incorrect type of scalar node
-        * Node is not in a valid location in the file
-        * Node is not a valid child node of parent
+        * Node is not found   
+        * Node has an invalid key node type
+        * Node has an invalid type
+        * Node is not a valid child node
     * Detects warnings such as:
-        * Node is found in schema but not a root node
         * Node is an additional property of parent
-3. Kubernetes auto completion:
+3. Auto completion:
     * Auto completes on all commands
     * Scalar nodes autocomplete to schema's defaults if they exist
 4. Snippets:
-    * Snippets for creating deployment, deployment config, route, config map, persistent volume claim
-5. Additional Commands:
+    * Snippets for creating deployment, deployment config, route, config map, persistent volume claim. *specifically for kubernetes*
+5. Hover support:
+    * Hovering over a node shows description *if available*
+6. Additional Commands:
     * Commands for allowing the user to turn on/off validation of the specific yaml file they are working on
 
 ## Supported VS Code Configuration Settings
-`filesNotValidating` : List of files you DO NOT want to validate
+`k8s.filesNotValidating` : List of files you DO NOT want to validate
+
+`k8s.k8sSchemaOn` : Whether the files are being validated against kubernetes schema
+
+`k8s.kedgeSchemaOn` : Whether the files are being validated against kedge schema
+
+NOTE: If both k8sSchemaOn and kedgeSchemaOn are true it defaults to only kubernetes schema so they do not clash. Additionally, if k8sSchemaOn and kedgeSchemaOn are both false it defaults to kubernetes schema. If you want to turn off schema specific features then use the commands for keybindings `extension.k8s.disableValidation`
 
 ## Supported VS Code Commands for Keybindings
 `extension.k8s.enableValidation` : Enable Kubernetes Validation for the file you are on

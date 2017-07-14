@@ -20,13 +20,14 @@ import {snippetAutocompletor} from './SnippetSupport/snippet';
 import {parse as parseYaml} from './languageService/parser/yamlParser';
 import {JSONDocument, getLanguageService as getJsonLanguageService } from 'vscode-json-languageservice';
 import { getLineOffsets } from "./languageService/utils/arrUtils";
+import {JSONSchemaService} from './languageService/services/jsonSchemaService'
 var glob = require('glob');
 
 namespace VSCodeContentRequest {
 	export const type: RequestType<string, string, any, any> = new RequestType('vscode/content');
 }
 
-const validationDelayMs = 250;
+const validationDelayMs = 200;
 let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
 
 
@@ -92,36 +93,30 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 	});
 };
 
-let languageService = getLanguageService(schemaRequestService, workspaceContext);
-let jsonLanguageService = getJsonLanguageService(schemaRequestService);
-
-// The content of a text document has changed. This event is emitted
-// when the text document first opened or when its content has changed.
-documents.onDidChangeContent((change) => {
-	if(change.document.getText().length === 0) connection.sendDiagnostics({ uri: change.document.uri, diagnostics: [] });
-
-	triggerValidation(change.document);
-	
-});
-
-documents.onDidClose((event=>{
-	cleanPendingValidation(event.document);
-	connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
-}));
-
 // The settings interface describe the server relevant settings part
 interface Settings {
-	k8s: filesToIgnore;
+	k8s: schemaSettings;
 }
 
-interface filesToIgnore {
+interface schemaSettings {
 	filesNotValidating: Array<string>;
+	k8sSchemaOn: boolean;
+	kedgeSchemaOn: boolean;
 }
 
 let filesToIgnore: Array<string> = [];
+let k8sSchemaOn = true;
+let kedgeSchemaOn = false;
+
+let languageService = getLanguageService(schemaRequestService, workspaceContext, true, false);
+let jsonLanguageService = getJsonLanguageService(schemaRequestService);
+
 connection.onDidChangeConfiguration((change) => {
 	let settings = <Settings>change.settings;
 	filesToIgnore = settings.k8s.filesNotValidating || [];
+	k8sSchemaOn = settings.k8s.k8sSchemaOn;
+	kedgeSchemaOn = settings.k8s.kedgeSchemaOn;
+	languageService = getLanguageService(schemaRequestService, workspaceContext, k8sSchemaOn, kedgeSchemaOn);
 	validateFilesNotInSetting();
 });
 
@@ -139,6 +134,20 @@ function validateFilesNotInSetting(){
 	});
 	
 }
+
+// The content of a text document has changed. This event is emitted
+// when the text document first opened or when its content has changed.
+documents.onDidChangeContent((change) => {
+	if(change.document.getText().length === 0) connection.sendDiagnostics({ uri: change.document.uri, diagnostics: [] });
+
+	triggerValidation(change.document);
+	
+});
+
+documents.onDidClose((event=>{
+	cleanPendingValidation(event.document);
+	connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
+}));
 
 function docIsValid(doc){
 	let docUriFileTypeRemoved = doc.uri.split("//").pop();
@@ -211,7 +220,7 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 		
 		/*
 		* THIS IS A HACKY VERSION. 
-		* Needed to get the parent node from the current node to support autocompletion.
+		* Needed to get the parent node from the current node to support live autocompletion
 		*/
 
 		//Get the string we are looking at via a substring
