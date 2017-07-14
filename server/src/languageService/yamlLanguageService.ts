@@ -61,7 +61,7 @@ export interface SchemaRequestService {
 	(uri: string): Thenable<string>;
 }
 export interface LanguageService {
-	doComplete(document: TextDocument, documentPosition: Position, doc: YAMLDocument): Thenable<CompletionList>;
+	doComplete(document: TextDocument, documentPosition: Position, doc): Thenable<CompletionList>;
   doValidation(document: TextDocument, doc: YAMLDocument): Thenable<CompletionList>;
   doHover(document: TextDocument, documentPosition: Position, doc: YAMLDocument);
 }
@@ -69,7 +69,7 @@ export interface LanguageService {
 export function getLanguageService(schemaRequest: SchemaRequestService, wscontext:WorkspaceContextService): LanguageService {
   let schemaService = new JSONSchemaService(schemaRequest, wscontext);
   //TODO: maps schemas from settings.
-  schemaService.registerExternalSchema('http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.0.9/kubernetes-model-1.0.9-schema.json',
+  schemaService.registerExternalSchema('https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json',
   ['*.yml', '*.yaml']);
 
   let completer = new autoCompletionProvider(schemaService);
