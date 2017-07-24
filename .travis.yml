@@ -13,8 +13,6 @@ install:
 - cd server
 - npm install
 - npm run compile
-script:
-- npm test --silent
 deploy:
   provider: releases
   api_key: ${api_key}
