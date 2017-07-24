@@ -6,6 +6,8 @@ import {validationProvider} from './providers/validationProvider'
 import { TextDocument, Position, CompletionList } from 'vscode-languageserver-types';
 import { YAMLDocument} from 'yaml-ast-parser';
 import { hoverProvider } from "./providers/hoverProvider";
+import { JSONSchema } from './jsonSchema';
+import {schemaContributions} from './services/configuration';
 
 export interface PromiseConstructor {
     /**
@@ -60,32 +62,59 @@ export interface WorkspaceContextService {
 export interface SchemaRequestService {
 	(uri: string): Thenable<string>;
 }
+
+export interface LanguageSettings {
+	/**
+	 * If set, the validator will return syntax errors.
+	 */
+	validate?: boolean;
+
+	/**
+	 * A list of known schemas and/or associations of schemas to file names.
+	 */
+	schemas?: SchemaConfiguration[];
+}
+
+export interface SchemaConfiguration {
+	/**
+	 * The URI of the schema, which is also the identifier of the schema.
+	 */
+	uri: string;
+	/**
+	 * A list of file names that are associated to the schema. The '*' wildcard can be used. For example '*.schema.json', 'package.json'
+	 */
+	fileMatch?: string[];
+	/**
+	 * The schema for the given URI.
+	 * If no schema is provided, the schema will be fetched with the schema request service (if available).
+	 */
+	schema?: JSONSchema;
+}
+
 export interface LanguageService {
+  configure(settings: LanguageSettings): void;
 	doComplete(document: TextDocument, documentPosition: Position, doc): Thenable<CompletionList>;
   doValidation(document: TextDocument, doc: YAMLDocument): Thenable<CompletionList>;
   doHover(document: TextDocument, documentPosition: Position, doc: YAMLDocument);
 }
 
-export function getLanguageService(schemaRequestService, workspaceContext, k8sSchemaOn, kedgeSchemaOn): LanguageService {
+export function getLanguageService(schemaRequestService, workspaceContext): LanguageService {
 
   let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
-
-	if(k8sSchemaOn){
-		schemaService.registerExternalSchema('http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json',
-		['*.yml', '*.yaml']);
-	}else if(kedgeSchemaOn){
-		schemaService.registerExternalSchema('https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json',
-		['*.yml', '*.yaml']);
-	}else{
-		schemaService.registerExternalSchema('http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json',
-		['*.yml', '*.yaml']);
-	}
-	
+  schemaService.setSchemaContributions(schemaContributions);
 
   let completer = new autoCompletionProvider(schemaService);
   let validator = new validationProvider(schemaService);
   let hover = new hoverProvider(schemaService);
   return {
+      configure: (settings: LanguageSettings) => {
+        schemaService.clearExternalSchemas();
+        if (settings.schemas) {
+          settings.schemas.forEach(settings => {
+            schemaService.registerExternalSchema(settings.uri, settings.fileMatch, settings.schema);
+          });
+        }
+      },
     	doComplete: completer.doComplete.bind(completer),
       doValidation: validator.doValidation.bind(validator),
       doHover: hover.doHover.bind(hover)

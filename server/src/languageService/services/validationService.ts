@@ -7,16 +7,25 @@ import { xhr,configure as getErrorStatusDescription } from 'request-light';
 import { ErrorHandler } from '../utils/errorHandler';
 import {load as yamlLoader, YAMLDocument, YAMLException} from 'yaml-ast-parser-beta';
 import {searchService} from './searchService'
+import { LanguageSettings } from "../yamlLanguageService";
 
 
 export class schemaValidator {
   
   private schema: JSONSchema;
   private errorHandler: ErrorHandler;
+  private validationEnabled: boolean;
 
   constructor(schema: JSONSchema, document) {
     this.schema = schema;
     this.errorHandler = new ErrorHandler(document);
+    this.validationEnabled = true;
+  }
+
+  public configure(raw: LanguageSettings) {
+		if (raw) {
+			this.validationEnabled = raw.validate;
+		}
   }
 
   public traverseBackToLocation(node:YAMLNode): void {
@@ -187,8 +196,6 @@ export class schemaValidator {
         itemsList = Object.keys(rootNodeItem.items.properties) || [];
         return this.testForParentType(parentNodeType, itemsList, currentNode, parentNode);
       }
-
-      
 
     }
     

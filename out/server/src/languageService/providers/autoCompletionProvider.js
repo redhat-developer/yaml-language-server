@@ -16,39 +16,41 @@ class autoCompletionProvider {
             isIncomplete: false
         };
         return this.schemaService.getSchemaForResource(document.uri).then(schema => {
-            let kubeSearchService = new searchService_1.searchService(schema.schema);
-            let offset = document.offsetAt(position);
-            let node = astServices_1.findNode(doc, offset);
-            let parentNodes = astServices_2.generateParents(node);
-            let linePos = position.line;
-            let lineOffset = arrUtils_1.getLineOffsets(document.getText());
-            let start = lineOffset[linePos]; //Start of where the autocompletion is happening
-            let end = 0; //End of where the autocompletion is happening
-            if (lineOffset[linePos + 1]) {
-                end = lineOffset[linePos + 1];
-            }
-            else {
-                end = document.getText().length;
-            }
-            //If its a root node
-            if (this.isRootNode(doc, node) && document.getText().substring(start, end).indexOf(":") === -1 || node && !node.value && document.getText().substring(start, end).indexOf(":") === -1) {
-                parentNodes = parentNodes.slice(1);
-            }
-            return kubeSearchService.traverseKubernetesSchema(parentNodes, node, true, (possibleChildren, nodesToSearch, rootNodes) => {
-                if (rootNodes.length !== 0) {
-                    result.items = this.autoCompleteRootNodes(rootNodes);
-                }
-                else if (node && (node.value && node.value.kind === yaml_ast_parser_1.Kind.SCALAR) || node.kind === yaml_ast_parser_1.Kind.SCALAR) {
-                    result.items = this.autoCompleteScalarResults(nodesToSearch);
+            if (schema && schema.schema) {
+                let kubeSearchService = new searchService_1.searchService(schema.schema);
+                let offset = document.offsetAt(position);
+                let node = astServices_1.findNode(doc, offset);
+                let parentNodes = astServices_2.generateParents(node);
+                let linePos = position.line;
+                let lineOffset = arrUtils_1.getLineOffsets(document.getText());
+                let start = lineOffset[linePos]; //Start of where the autocompletion is happening
+                let end = 0; //End of where the autocompletion is happening
+                if (lineOffset[linePos + 1]) {
+                    end = lineOffset[linePos + 1];
                 }
                 else {
-                    result.items = this.autoCompleteMappingResults(possibleChildren);
+                    end = document.getText().length;
                 }
-                snippet_1.snippetAutocompletor.provideSnippetAutocompletor(document.uri).forEach(compItem => {
-                    result.items.push(compItem);
+                //If its a root node
+                if (this.isRootNode(doc, node) && document.getText().substring(start, end).indexOf(":") === -1 || node && !node.value && document.getText().substring(start, end).indexOf(":") === -1) {
+                    parentNodes = parentNodes.slice(1);
+                }
+                return kubeSearchService.traverseKubernetesSchema(parentNodes, node, true, (possibleChildren, nodesToSearch, rootNodes) => {
+                    if (rootNodes.length !== 0) {
+                        result.items = this.autoCompleteRootNodes(rootNodes);
+                    }
+                    else if (node && (node.value && node.value.kind === yaml_ast_parser_1.Kind.SCALAR) || node.kind === yaml_ast_parser_1.Kind.SCALAR) {
+                        result.items = this.autoCompleteScalarResults(nodesToSearch);
+                    }
+                    else {
+                        result.items = this.autoCompleteMappingResults(possibleChildren);
+                    }
+                    snippet_1.snippetAutocompletor.provideSnippetAutocompletor(document.uri).forEach(compItem => {
+                        result.items.push(compItem);
+                    });
+                    return result;
                 });
-                return result;
-            });
+            }
         });
     }
     isRootNode(doc, node) {

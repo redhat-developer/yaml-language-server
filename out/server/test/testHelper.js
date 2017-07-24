@@ -67,7 +67,7 @@ let schemaRequestService = (uri) => {
         return Promise.reject(error.responseText || request_light_1.getErrorStatusDescription(error.status) || error.toString());
     });
 };
-exports.languageService = yamlLanguageService_1.getLanguageService(schemaRequestService, workspaceContext, true, false);
+exports.languageService = yamlLanguageService_1.getLanguageService(schemaRequestService, workspaceContext);
 exports.schemaService = new jsonSchemaService_1.JSONSchemaService(schemaRequestService, workspaceContext);
 //TODO: maps schemas from settings.
 exports.schemaService.registerExternalSchema('http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.0.65/kubernetes-model-1.0.65-schema.json', ['*.yml', '*.yaml']);

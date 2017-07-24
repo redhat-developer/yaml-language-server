@@ -10,9 +10,11 @@ class validationProvider {
             isIncomplete: false
         };
         return this.schemaService.getSchemaForResource(document.uri).then(schema => {
-            let validator = new validationService_1.schemaValidator(schema.schema, document);
-            validator.traverseBackToLocation(doc);
-            result.items = validator.getErrorResults();
+            if (schema && schema.schema) {
+                let validator = new validationService_1.schemaValidator(schema.schema, document);
+                validator.traverseBackToLocation(doc);
+                result.items = validator.getErrorResults();
+            }
             return result;
         });
     }

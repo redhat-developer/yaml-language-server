@@ -79,7 +79,7 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 };
 
 
-export let languageService = getLanguageService(schemaRequestService, workspaceContext, true, false);
+export let languageService = getLanguageService(schemaRequestService, workspaceContext);
 
 export let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
 //TODO: maps schemas from settings.

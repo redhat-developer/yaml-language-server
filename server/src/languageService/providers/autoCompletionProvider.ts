@@ -19,49 +19,51 @@ export class autoCompletionProvider {
 
     public doComplete(document: TextDocument, position: Position, doc): Thenable<CompletionList> {
         let result: CompletionList = {
-        items: [],
-        isIncomplete: false
+            items: [],
+            isIncomplete: false
         };
 
         return this.schemaService.getSchemaForResource(document.uri).then(schema =>{
-            let kubeSearchService = new searchService(schema.schema);
+            if(schema && schema.schema){
+                let kubeSearchService = new searchService(schema.schema);
 
-            let offset = document.offsetAt(position);
-            let node = findNode(<YAMLNode>doc, offset);
-            let parentNodes = generateParents(node);
+                let offset = document.offsetAt(position);
+                let node = findNode(<YAMLNode>doc, offset);
+                let parentNodes = generateParents(node);
 
-            let linePos = position.line;
-            let lineOffset = getLineOffsets(document.getText()); 
-            let start = lineOffset[linePos]; //Start of where the autocompletion is happening
-            let end = 0; //End of where the autocompletion is happening
-            if(lineOffset[linePos+1]){
-                end = lineOffset[linePos+1];
-            }else{
-                end = document.getText().length;
-            }
-
-            //If its a root node
-            if(this.isRootNode(doc, node) && document.getText().substring(start, end).indexOf(":") === -1 || node && !node.value && document.getText().substring(start, end).indexOf(":") === -1){
-                parentNodes = parentNodes.slice(1);  
-            }     
-
-            return kubeSearchService.traverseKubernetesSchema(parentNodes, node, true, (possibleChildren, nodesToSearch, rootNodes) => {
-                
-                if(rootNodes.length !== 0){
-                    result.items = this.autoCompleteRootNodes(rootNodes);
-                }else if(node && (node.value && node.value.kind === Kind.SCALAR) || node.kind === Kind.SCALAR){
-                    result.items = this.autoCompleteScalarResults(nodesToSearch);
-                }else {
-                    result.items = this.autoCompleteMappingResults(possibleChildren);
+                let linePos = position.line;
+                let lineOffset = getLineOffsets(document.getText()); 
+                let start = lineOffset[linePos]; //Start of where the autocompletion is happening
+                let end = 0; //End of where the autocompletion is happening
+                if(lineOffset[linePos+1]){
+                    end = lineOffset[linePos+1];
+                }else{
+                    end = document.getText().length;
                 }
 
-                snippetAutocompletor.provideSnippetAutocompletor(document.uri).forEach(compItem => {
-                    result.items.push(compItem);
-                });
-                
-                return result;
+                //If its a root node
+                if(this.isRootNode(doc, node) && document.getText().substring(start, end).indexOf(":") === -1 || node && !node.value && document.getText().substring(start, end).indexOf(":") === -1){
+                    parentNodes = parentNodes.slice(1);  
+                }     
 
-            });
+                return kubeSearchService.traverseKubernetesSchema(parentNodes, node, true, (possibleChildren, nodesToSearch, rootNodes) => {
+                    
+                    if(rootNodes.length !== 0){
+                        result.items = this.autoCompleteRootNodes(rootNodes);
+                    }else if(node && (node.value && node.value.kind === Kind.SCALAR) || node.kind === Kind.SCALAR){
+                        result.items = this.autoCompleteScalarResults(nodesToSearch);
+                    }else {
+                        result.items = this.autoCompleteMappingResults(possibleChildren);
+                    }
+
+                    snippetAutocompletor.provideSnippetAutocompletor(document.uri).forEach(compItem => {
+                        result.items.push(compItem);
+                    });
+                    
+                    return result;
+
+                });
+            }        
         });
     } 
 

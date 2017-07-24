@@ -19,9 +19,12 @@ export class validationProvider {
     };
 
     return this.schemaService.getSchemaForResource(document.uri).then(schema =>{
-      let validator = new schemaValidator(schema.schema, document);
-      validator.traverseBackToLocation(<YAMLNode>doc);
-      result.items = validator.getErrorResults();
+      if(schema && schema.schema){
+        let validator = new schemaValidator(schema.schema, document);
+        validator.traverseBackToLocation(<YAMLNode>doc);
+        result.items = validator.getErrorResults();
+      }
+
       return result;
     });
   }

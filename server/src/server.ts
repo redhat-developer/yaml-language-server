@@ -6,7 +6,7 @@ import {
 	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
 	InitializeParams, InitializeResult, TextDocumentPositionParams,
 	CompletionItem, CompletionItemKind, RequestType, Location, Range, Position, Hover,
-	HoverRequest
+	HoverRequest, NotificationType, Disposable
 } from 'vscode-languageserver';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
 import {load as yamlLoader, YAMLDocument, YAMLException, YAMLNode, Kind} from 'yaml-ast-parser-beta';
@@ -18,10 +18,20 @@ import fs = require('fs');
 import { getLanguageModelCache } from './languageModelCache';
 import {snippetAutocompletor} from './SnippetSupport/snippet';
 import {parse as parseYaml} from './languageService/parser/yamlParser';
-import {JSONDocument, getLanguageService as getJsonLanguageService } from 'vscode-json-languageservice';
+import {JSONDocument, getLanguageService as getJsonLanguageService, LanguageSettings } from 'vscode-json-languageservice';
 import { getLineOffsets } from "./languageService/utils/arrUtils";
+import {JSONSchema} from './languageService/jsonSchema'
 import {JSONSchemaService} from './languageService/services/jsonSchemaService'
+import path = require('path');
 var glob = require('glob');
+
+interface ISchemaAssociations {
+	[pattern: string]: string[];
+}
+
+namespace SchemaAssociationNotification {
+	export const type: NotificationType<ISchemaAssociations, any> = new NotificationType('json/schemaAssociations');
+}
 
 namespace VSCodeContentRequest {
 	export const type: RequestType<string, string, any, any> = new RequestType('vscode/content');
@@ -48,9 +58,9 @@ documents.listen(connection);
 
 // After the server has started the client sends an initialize request. The server receives
 // in the passed params the rootPath of the workspace plus the client capabilities.
-let workspaceRoot: string;
+let workspaceRoot: URI;
 connection.onInitialize((params): InitializeResult => {
-	workspaceRoot = params.rootPath;
+	workspaceRoot = URI.parse(params.rootPath);
 	return {
 		capabilities: {
 			hoverProvider: true,
@@ -96,6 +106,15 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 // The settings interface describe the server relevant settings part
 interface Settings {
 	k8s: schemaSettings;
+	json: {
+		schemas: JSONSchemaSettings[];
+	}
+}
+
+interface JSONSchemaSettings {
+	fileMatch?: string[];
+	url?: string;
+	schema?: JSONSchema;
 }
 
 interface schemaSettings {
@@ -104,11 +123,15 @@ interface schemaSettings {
 	kedgeSchemaOn: boolean;
 }
 
+let jsonConfigurationSettings: JSONSchemaSettings[] = void 0;
+let schemaAssociations: ISchemaAssociations = void 0;
+let formatterRegistration: Thenable<Disposable> = null;
+
 let filesToIgnore: Array<string> = [];
 let k8sSchemaOn = true;
 let kedgeSchemaOn = false;
 
-let languageService = getLanguageService(schemaRequestService, workspaceContext, true, false);
+let languageService = getLanguageService(schemaRequestService, workspaceContext);
 let jsonLanguageService = getJsonLanguageService(schemaRequestService);
 
 connection.onDidChangeConfiguration((change) => {
@@ -116,9 +139,49 @@ connection.onDidChangeConfiguration((change) => {
 	filesToIgnore = settings.k8s.filesNotValidating || [];
 	k8sSchemaOn = settings.k8s.k8sSchemaOn;
 	kedgeSchemaOn = settings.k8s.kedgeSchemaOn;
-	languageService = getLanguageService(schemaRequestService, workspaceContext, k8sSchemaOn, kedgeSchemaOn);
-	validateFilesNotInSetting();
+	jsonConfigurationSettings = settings.json && settings.json.schemas;
+	updateConfiguration();
 });
+
+
+function updateConfiguration() {
+	let languageSettings: LanguageSettings = {
+		validate: true,
+		schemas: []
+	};
+	if (schemaAssociations) {
+		for (var pattern in schemaAssociations) {
+			let association = schemaAssociations[pattern];
+			if (Array.isArray(association)) {
+				association.forEach(uri => {
+					languageSettings.schemas.push({ uri, fileMatch: [pattern] });
+				});
+			}
+		}
+	}
+	if (jsonConfigurationSettings) {
+		jsonConfigurationSettings.forEach(schema => {
+			let uri = schema.url;
+			if (!uri && schema.schema) {
+				uri = schema.schema.id;
+			}
+			if (!uri && schema.fileMatch) {
+				uri = 'vscode://schemas/custom/' + encodeURIComponent(schema.fileMatch.join('&'));
+			}
+			if (uri) {
+				if (uri[0] === '.' && workspaceRoot) {
+					// workspace relative path
+					uri = URI.file(path.normalize(path.join(workspaceRoot.fsPath, uri))).toString();
+				}
+				languageSettings.schemas.push({ uri, fileMatch: schema.fileMatch, schema: schema.schema });
+			}
+		});
+	}
+	languageService.configure(languageSettings);
+
+	// Revalidate any open text documents
+	validateFilesNotInSetting();
+}
 
 function clearDiagnostics(){
 	documents.all().forEach(doc => {

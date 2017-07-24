@@ -8,6 +8,12 @@ class schemaValidator {
     constructor(schema, document) {
         this.schema = schema;
         this.errorHandler = new errorHandler_1.ErrorHandler(document);
+        this.validationEnabled = true;
+    }
+    configure(raw) {
+        if (raw) {
+            this.validationEnabled = raw.validate;
+        }
     }
     traverseBackToLocation(node) {
         let rootNode = node;

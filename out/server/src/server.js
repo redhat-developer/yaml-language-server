@@ -11,7 +11,12 @@ const languageModelCache_1 = require("./languageModelCache");
 const yamlParser_1 = require("./languageService/parser/yamlParser");
 const vscode_json_languageservice_1 = require("vscode-json-languageservice");
 const arrUtils_1 = require("./languageService/utils/arrUtils");
+const path = require("path");
 var glob = require('glob');
+var SchemaAssociationNotification;
+(function (SchemaAssociationNotification) {
+    SchemaAssociationNotification.type = new vscode_languageserver_1.NotificationType('json/schemaAssociations');
+})(SchemaAssociationNotification || (SchemaAssociationNotification = {}));
 var VSCodeContentRequest;
 (function (VSCodeContentRequest) {
     VSCodeContentRequest.type = new vscode_languageserver_1.RequestType('vscode/content');
@@ -36,7 +41,7 @@ documents.listen(connection);
 // in the passed params the rootPath of the workspace plus the client capabilities.
 let workspaceRoot;
 connection.onInitialize((params) => {
-    workspaceRoot = params.rootPath;
+    workspaceRoot = uri_1.default.parse(params.rootPath);
     return {
         capabilities: {
             hoverProvider: true,
@@ -77,19 +82,59 @@ let schemaRequestService = (uri) => {
         return Promise.reject(error.responseText || request_light_1.getErrorStatusDescription(error.status) || error.toString());
     });
 };
+let jsonConfigurationSettings = void 0;
+let schemaAssociations = void 0;
+let formatterRegistration = null;
 let filesToIgnore = [];
 let k8sSchemaOn = true;
 let kedgeSchemaOn = false;
-let languageService = yamlLanguageService_1.getLanguageService(schemaRequestService, workspaceContext, true, false);
+let languageService = yamlLanguageService_1.getLanguageService(schemaRequestService, workspaceContext);
 let jsonLanguageService = vscode_json_languageservice_1.getLanguageService(schemaRequestService);
 connection.onDidChangeConfiguration((change) => {
     let settings = change.settings;
     filesToIgnore = settings.k8s.filesNotValidating || [];
     k8sSchemaOn = settings.k8s.k8sSchemaOn;
     kedgeSchemaOn = settings.k8s.kedgeSchemaOn;
-    languageService = yamlLanguageService_1.getLanguageService(schemaRequestService, workspaceContext, k8sSchemaOn, kedgeSchemaOn);
-    validateFilesNotInSetting();
+    jsonConfigurationSettings = settings.json && settings.json.schemas;
+    updateConfiguration();
 });
+function updateConfiguration() {
+    let languageSettings = {
+        validate: true,
+        schemas: []
+    };
+    if (schemaAssociations) {
+        for (var pattern in schemaAssociations) {
+            let association = schemaAssociations[pattern];
+            if (Array.isArray(association)) {
+                association.forEach(uri => {
+                    languageSettings.schemas.push({ uri, fileMatch: [pattern] });
+                });
+            }
+        }
+    }
+    if (jsonConfigurationSettings) {
+        jsonConfigurationSettings.forEach(schema => {
+            let uri = schema.url;
+            if (!uri && schema.schema) {
+                uri = schema.schema.id;
+            }
+            if (!uri && schema.fileMatch) {
+                uri = 'vscode://schemas/custom/' + encodeURIComponent(schema.fileMatch.join('&'));
+            }
+            if (uri) {
+                if (uri[0] === '.' && workspaceRoot) {
+                    // workspace relative path
+                    uri = uri_1.default.file(path.normalize(path.join(workspaceRoot.fsPath, uri))).toString();
+                }
+                languageSettings.schemas.push({ uri, fileMatch: schema.fileMatch, schema: schema.schema });
+            }
+        });
+    }
+    languageService.configure(languageSettings);
+    // Revalidate any open text documents
+    validateFilesNotInSetting();
+}
 function clearDiagnostics() {
     documents.all().forEach(doc => {
         connection.sendDiagnostics({ uri: doc.uri, diagnostics: [] });
