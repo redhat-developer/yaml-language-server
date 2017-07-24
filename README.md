@@ -1,7 +1,6 @@
-[![Build Status](https://travis-ci.org/gorkem/vscode-k8s.svg?branch=master)](https://travis-ci.org/gorkem/vscode-k8s)
+[![Build Status](https://travis-ci.org/JPinkney/yaml-language-server?branch=master)](https://travis-ci.org/JPinkney/yaml-language-server)
 
-# Kubernetes extension for VS Code
-VS Code extension that provides assistance for authoring kubernetes and Openshift configurations.
+# Yaml Language Server
 
 ## Features 
 ![screencast](https://github.com/JPinkney/vscode-k8s/blob/master/images/demo.gif)
@@ -26,19 +25,6 @@ VS Code extension that provides assistance for authoring kubernetes and Openshif
 6. Additional Commands:
     * Commands for allowing the user to turn on/off validation of the specific yaml file they are working on
 
-## Supported VS Code Configuration Settings
-`k8s.filesNotValidating` : List of files you DO NOT want to validate
-
-`k8s.k8sSchemaOn` : Whether the files are being validated against kubernetes schema
-
-`k8s.kedgeSchemaOn` : Whether the files are being validated against kedge schema
-
-NOTE: If both k8sSchemaOn and kedgeSchemaOn are true it defaults to only kubernetes schema so they do not clash. Additionally, if k8sSchemaOn and kedgeSchemaOn are both false it defaults to kubernetes schema. If you want to turn off schema specific features then use the commands for keybindings `extension.k8s.disableValidation`
-
-## Supported VS Code Commands for Keybindings
-`extension.k8s.enableValidation` : Enable Kubernetes Validation for the file you are on
-`extension.k8s.disableValidation` : Disable Kubernetes Validation for the file you are on
-
 ## Developer Support
 
 ### Getting started
@@ -52,18 +38,4 @@ NOTE: If both k8sSchemaOn and kedgeSchemaOn are true it defaults to only kuberne
   cd server
   $ npm install
   ```
-5. Install the dependencies for client
-  ```bash
-  cd ../client
-  $ npm install
-  ```
-6. Open client on VS Code
-  ```bash
-  cd ..
-  code ./client
-  ```
-7. Open server on VS Code
-  ```bash
-  code ./server
-  ```
-  Refer to VS Code [documentation](https://code.visualstudio.com/docs/extensions/debugging-extensions) on how to run and debug the extension
+Refer to VS Code [documentation](https://code.visualstudio.com/docs/extensions/debugging-extensions) on how to run and debug the extension
