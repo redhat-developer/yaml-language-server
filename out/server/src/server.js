@@ -13,10 +13,6 @@ const vscode_json_languageservice_1 = require("vscode-json-languageservice");
 const arrUtils_1 = require("./languageService/utils/arrUtils");
 const path = require("path");
 var glob = require('glob');
-var SchemaAssociationNotification;
-(function (SchemaAssociationNotification) {
-    SchemaAssociationNotification.type = new vscode_languageserver_1.NotificationType('json/schemaAssociations');
-})(SchemaAssociationNotification || (SchemaAssociationNotification = {}));
 var VSCodeContentRequest;
 (function (VSCodeContentRequest) {
     VSCodeContentRequest.type = new vscode_languageserver_1.RequestType('vscode/content');
@@ -83,19 +79,42 @@ let schemaRequestService = (uri) => {
     });
 };
 let jsonConfigurationSettings = void 0;
-let schemaAssociations = void 0;
-let formatterRegistration = null;
-let filesToIgnore = [];
-let k8sSchemaOn = true;
-let kedgeSchemaOn = false;
+let schemasConfigurationSettings = [];
 let languageService = yamlLanguageService_1.getLanguageService(schemaRequestService, workspaceContext);
 let jsonLanguageService = vscode_json_languageservice_1.getLanguageService(schemaRequestService);
 connection.onDidChangeConfiguration((change) => {
     let settings = change.settings;
-    filesToIgnore = settings.k8s.filesNotValidating || [];
-    k8sSchemaOn = settings.k8s.k8sSchemaOn;
-    kedgeSchemaOn = settings.k8s.kedgeSchemaOn;
-    jsonConfigurationSettings = settings.json && settings.json.schemas;
+    jsonConfigurationSettings = settings.k8s.schemas;
+    schemasConfigurationSettings = [];
+    //Changed the name from kedge/kubernetes to schema files
+    for (let schema in jsonConfigurationSettings) {
+        let globPattern = jsonConfigurationSettings[schema];
+        let url = '';
+        if (schema.toLowerCase().trim() === 'kedge') {
+            url = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
+            jsonConfigurationSettings[url] = globPattern;
+            delete jsonConfigurationSettings[schema];
+        }
+        if (schema.toLowerCase().trim() === 'kubernetes') {
+            url = 'http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json';
+            jsonConfigurationSettings[url] = globPattern;
+            delete jsonConfigurationSettings[schema];
+        }
+        let schemaObj = {
+            "fileMatch": [
+                globPattern
+            ],
+            "url": url.length > 0 ? url : schema
+        };
+        schemasConfigurationSettings.push(schemaObj);
+    }
+    // jsonConfigurationSettings is a mapping of Kedge/Kubernetes/Schema to Glob pattern
+    /*
+     * {
+     * 		"Kedge": ["/*"],
+     * 		"http://schemaLocation": "/*"
+     * }
+     */
     updateConfiguration();
 });
 function updateConfiguration() {
@@ -103,18 +122,8 @@ function updateConfiguration() {
         validate: true,
         schemas: []
     };
-    if (schemaAssociations) {
-        for (var pattern in schemaAssociations) {
-            let association = schemaAssociations[pattern];
-            if (Array.isArray(association)) {
-                association.forEach(uri => {
-                    languageSettings.schemas.push({ uri, fileMatch: [pattern] });
-                });
-            }
-        }
-    }
-    if (jsonConfigurationSettings) {
-        jsonConfigurationSettings.forEach(schema => {
+    if (schemasConfigurationSettings) {
+        schemasConfigurationSettings.forEach(schema => {
             let uri = schema.url;
             if (!uri && schema.schema) {
                 uri = schema.schema.id;
@@ -132,8 +141,6 @@ function updateConfiguration() {
         });
     }
     languageService.configure(languageSettings);
-    // Revalidate any open text documents
-    validateFilesNotInSetting();
 }
 function clearDiagnostics() {
     documents.all().forEach(doc => {
@@ -157,10 +164,6 @@ documents.onDidClose((event => {
     cleanPendingValidation(event.document);
     connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
 }));
-function docIsValid(doc) {
-    let docUriFileTypeRemoved = doc.uri.split("//").pop();
-    return filesToIgnore.indexOf(docUriFileTypeRemoved) === -1;
-}
 function triggerValidation(textDocument) {
     cleanPendingValidation(textDocument);
     pendingValidationRequests[textDocument.uri] = setTimeout(() => {
@@ -193,28 +196,20 @@ function validateTextDocument(textDocument) {
                 };
             });
         }
-        if (docIsValid(textDocument)) {
-            let yamlDoc = yaml_ast_parser_beta_1.load(textDocument.getText(), {});
-            languageService.doValidation(textDocument, yamlDoc).then(function (result) {
-                for (let x = 0; x < result.items.length; x++) {
-                    diagnostics.push(result.items[x]);
-                }
-                // Send the computed diagnostics to VSCode.
-                connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-            });
-        }
-        else {
+        let yamlDoc = yaml_ast_parser_beta_1.load(textDocument.getText(), {});
+        languageService.doValidation(textDocument, yamlDoc).then(function (result) {
+            for (let x = 0; x < result.items.length; x++) {
+                diagnostics.push(result.items[x]);
+            }
+            // Send the computed diagnostics to VSCode.
             connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-        }
+        });
     }
 }
 // This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition => {
     let document = documents.get(textDocumentPosition.textDocument.uri);
-    if (docIsValid(document)) {
-        return completionHelper(document, textDocumentPosition);
-    }
-    return [];
+    return completionHelper(document, textDocumentPosition);
 });
 function completionHelper(document, textDocumentPosition) {
     /*

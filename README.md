@@ -25,6 +25,17 @@
 6. Additional Commands:
     * Commands for allowing the user to turn on/off validation of the specific yaml file they are working on
 
+# Language Server Settings
+`k8s.schemas`: The entrance point for new schema.
+```
+k8s.schemas: {
+    "url": "globPattern",
+    "kedge": "globPattern",
+    "kubernetes": "globPattern"
+}
+```
+kedge and kubernetes are optional fields. They do not require a url as the language server will provide that. You just need the key word kedge/kubernetes and a glob pattern.
+
 ## Developer Support
 
 ### Getting started
