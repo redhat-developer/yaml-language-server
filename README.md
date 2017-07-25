@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/JPinkney/yaml-language-server?branch=master)](https://travis-ci.org/JPinkney/yaml-language-server)
+[![Build Status](https://travis-ci.org/JPinkney/yaml-language-server.svg?branch=master)](https://travis-ci.org/JPinkney/yaml-language-server)
 
 # Yaml Language Server
 
