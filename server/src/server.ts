@@ -120,7 +120,7 @@ connection.onDidChangeConfiguration((change) => {
 	let settings = <Settings>change.settings;
 	jsonConfigurationSettings = settings.k8s.schemas;
 	schemasConfigurationSettings = [];
-	
+
 	//Changed the name from kedge/kubernetes to schema files
 	for(let schema in jsonConfigurationSettings){
 		
@@ -140,9 +140,7 @@ connection.onDidChangeConfiguration((change) => {
 		}
 
 		let schemaObj = {
-			"fileMatch": [
-				globPattern
-			],
+			"fileMatch": Array.isArray(globPattern) ? globPattern : [globPattern],
 			"url": url.length > 0 ? url : schema
 		}
 		schemasConfigurationSettings.push(schemaObj);
