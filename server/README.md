@@ -1,3 +1,3 @@
 # Kubernetes language server
 
-This is a language server for managing kubernetes configurations
+This is a yaml server code for managing kubernetes, kedge, and additional json schemas.
