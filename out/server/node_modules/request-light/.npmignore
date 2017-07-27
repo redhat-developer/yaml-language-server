@@ -1,0 +1,6 @@
+.vscode/
+lib/test/
+lib/*.map
+src/
+.eslintrc
+.gitignore

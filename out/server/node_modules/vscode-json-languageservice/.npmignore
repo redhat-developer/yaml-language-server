@@ -1,0 +1,10 @@
+.vscode/
+lib/test/
+lib/**/*.js.map
+lib/*/*.d.ts
+src/
+test/
+build/
+.eslintrc
+.gitignore
+gulpfile.js
