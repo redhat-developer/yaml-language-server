@@ -29,6 +29,14 @@ namespace VSCodeContentRequest {
 	export const type: RequestType<string, string, any, any> = new RequestType('vscode/content');
 }
 
+interface ISchemaAssociations {
+	[pattern: string]: string[];
+}
+
+namespace SchemaAssociationNotification {
+	export const type: NotificationType<ISchemaAssociations, any> = new NotificationType('json/schemaAssociations');
+}
+
 const validationDelayMs = 200;
 let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
 
@@ -61,7 +69,8 @@ connection.onInitialize((params): InitializeResult => {
 			textDocumentSync: TextDocumentSyncKind.Full,
 			// Tell the client that the server support code complete
 			completionProvider: {
-				resolveProvider: true
+				resolveProvider: true,
+				triggerCharacters: [':']
 			}
 		}
 	}
@@ -111,6 +120,7 @@ interface schemaSettings {
 }
 
 let jsonConfigurationSettings: JSONSchemaSettings[] = void 0;
+let schemaAssociations: ISchemaAssociations = void 0;
 let schemasConfigurationSettings = [];
 
 let languageService = getLanguageService(schemaRequestService, workspaceContext);
@@ -157,12 +167,27 @@ connection.onDidChangeConfiguration((change) => {
 	updateConfiguration();
 });
 
+connection.onNotification(SchemaAssociationNotification.type, associations => {
+	schemaAssociations = associations;
+	updateConfiguration();
+});
 
 function updateConfiguration() {
 	let languageSettings: LanguageSettings = {
 		validate: true,
+		allowComments: true,
 		schemas: []
 	};
+	if (schemaAssociations) {
+		for (var pattern in schemaAssociations) {
+			let association = schemaAssociations[pattern];
+			if (Array.isArray(association)) {
+				association.forEach(uri => {
+					languageSettings.schemas.push({ uri, fileMatch: [pattern] });
+				});
+			}
+		}
+	}
 	if (schemasConfigurationSettings) {
 		schemasConfigurationSettings.forEach(schema => {
 			let uri = schema.url;

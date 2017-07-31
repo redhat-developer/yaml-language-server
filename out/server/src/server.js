@@ -17,6 +17,10 @@ var VSCodeContentRequest;
 (function (VSCodeContentRequest) {
     VSCodeContentRequest.type = new vscode_languageserver_1.RequestType('vscode/content');
 })(VSCodeContentRequest || (VSCodeContentRequest = {}));
+var SchemaAssociationNotification;
+(function (SchemaAssociationNotification) {
+    SchemaAssociationNotification.type = new vscode_languageserver_1.NotificationType('json/schemaAssociations');
+})(SchemaAssociationNotification || (SchemaAssociationNotification = {}));
 const validationDelayMs = 200;
 let pendingValidationRequests = {};
 // Create a connection for the server.
@@ -46,7 +50,8 @@ connection.onInitialize((params) => {
             textDocumentSync: vscode_languageserver_1.TextDocumentSyncKind.Full,
             // Tell the client that the server support code complete
             completionProvider: {
-                resolveProvider: true
+                resolveProvider: true,
+                triggerCharacters: [':']
             }
         }
     };
@@ -79,6 +84,7 @@ let schemaRequestService = (uri) => {
     });
 };
 let jsonConfigurationSettings = void 0;
+let schemaAssociations = void 0;
 let schemasConfigurationSettings = [];
 let languageService = yamlLanguageService_1.getLanguageService(schemaRequestService, workspaceContext);
 let jsonLanguageService = vscode_json_languageservice_1.getLanguageService(schemaRequestService);
@@ -115,11 +121,26 @@ connection.onDidChangeConfiguration((change) => {
      */
     updateConfiguration();
 });
+connection.onNotification(SchemaAssociationNotification.type, associations => {
+    schemaAssociations = associations;
+    updateConfiguration();
+});
 function updateConfiguration() {
     let languageSettings = {
         validate: true,
+        allowComments: true,
         schemas: []
     };
+    if (schemaAssociations) {
+        for (var pattern in schemaAssociations) {
+            let association = schemaAssociations[pattern];
+            if (Array.isArray(association)) {
+                association.forEach(uri => {
+                    languageSettings.schemas.push({ uri, fileMatch: [pattern] });
+                });
+            }
+        }
+    }
     if (schemasConfigurationSettings) {
         schemasConfigurationSettings.forEach(schema => {
             let uri = schema.url;
