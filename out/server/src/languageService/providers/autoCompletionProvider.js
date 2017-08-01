@@ -2,7 +2,6 @@
 const yaml_ast_parser_1 = require("yaml-ast-parser");
 const astServices_1 = require("../utils/astServices");
 const astServices_2 = require("../utils/astServices");
-const snippet_1 = require("../../SnippetSupport/snippet");
 const searchService_1 = require("../services/searchService");
 const arrUtils_1 = require("../utils/arrUtils");
 var equal = require('deep-equal');
@@ -45,9 +44,6 @@ class autoCompletionProvider {
                     else {
                         result.items = this.autoCompleteMappingResults(possibleChildren);
                     }
-                    snippet_1.snippetAutocompletor.provideSnippetAutocompletor(document.uri).forEach(compItem => {
-                        result.items.push(compItem);
-                    });
                     return result;
                 });
             }

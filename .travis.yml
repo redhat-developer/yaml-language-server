@@ -22,5 +22,3 @@ deploy:
     branch: master
     tags: false
     repo: JPinkney/yaml-language-server
-
-

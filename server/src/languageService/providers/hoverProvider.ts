@@ -4,7 +4,6 @@ import { Thenable } from '../yamlLanguageService';
 import { findNode } from '../utils/astServices';
 import {IJSONSchemaService}  from '../services/jsonSchemaService';
 import {traverse, generateParents} from '../utils/astServices';
-import {snippetAutocompletor} from '../../SnippetSupport/snippet';
 import { searchService } from "../services/searchService";
 import { removeDuplicates } from "../utils/arrUtils";
 

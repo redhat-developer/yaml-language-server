@@ -16,7 +16,6 @@ import URI from './languageService/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
 import { getLanguageModelCache } from './languageModelCache';
-import {snippetAutocompletor} from './SnippetSupport/snippet';
 import {parse as parseYaml} from './languageService/parser/yamlParser';
 import {JSONDocument, getLanguageService as getJsonLanguageService, LanguageSettings } from 'vscode-json-languageservice';
 import { getLineOffsets } from "./languageService/utils/arrUtils";
