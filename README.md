@@ -45,8 +45,16 @@ kedge and kubernetes are optional fields. They do not require a url as the langu
 2. Fork and clone this repository
 3. `cd vscode-k8s`
 4. Install the dependencies for server
-  ```bash
-  cd server
-  $ npm install
-  ```
+	```bash
+	cd server
+	$ npm install
+	```
+5. Build the language server
+	```bash
+	npm run compile
+	```
+6. The new built server is now location in out/server/src/server.js.
+	```bash
+	node (Yaml Language Server Location)/out/server/src/server.js
+	```
 Refer to VS Code [documentation](https://code.visualstudio.com/docs/extensions/debugging-extensions) on how to run and debug the extension
