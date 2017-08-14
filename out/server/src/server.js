@@ -13,14 +13,14 @@ const vscode_json_languageservice_1 = require("vscode-json-languageservice");
 const arrUtils_1 = require("./languageService/utils/arrUtils");
 const path = require("path");
 var glob = require('glob');
-var VSCodeContentRequest;
-(function (VSCodeContentRequest) {
-    VSCodeContentRequest.type = new vscode_languageserver_1.RequestType('vscode/content');
-})(VSCodeContentRequest || (VSCodeContentRequest = {}));
 var SchemaAssociationNotification;
 (function (SchemaAssociationNotification) {
     SchemaAssociationNotification.type = new vscode_languageserver_1.NotificationType('json/schemaAssociations');
 })(SchemaAssociationNotification || (SchemaAssociationNotification = {}));
+var VSCodeContentRequest;
+(function (VSCodeContentRequest) {
+    VSCodeContentRequest.type = new vscode_languageserver_1.RequestType('vscode/content');
+})(VSCodeContentRequest || (VSCodeContentRequest = {}));
 const validationDelayMs = 200;
 let pendingValidationRequests = {};
 // Create a connection for the server.
@@ -44,14 +44,13 @@ connection.onInitialize((params) => {
     workspaceRoot = uri_1.default.parse(params.rootPath);
     return {
         capabilities: {
+            // Tell the client that the server works in FULL text document sync mode
+            textDocumentSync: documents.syncKind,
             hoverProvider: true,
             documentSymbolProvider: true,
-            // Tell the client that the server works in FULL text document sync mode
-            textDocumentSync: vscode_languageserver_1.TextDocumentSyncKind.Full,
             // Tell the client that the server support code complete
             completionProvider: {
-                resolveProvider: true,
-                triggerCharacters: [':']
+                resolveProvider: true
             }
         }
     };
@@ -77,34 +76,43 @@ let schemaRequestService = (uri) => {
             return error.message;
         });
     }
-    return request_light_1.xhr({ url: uri, followRedirects: 5 }).then(response => {
+    if (uri.indexOf('//schema.management.azure.com/') !== -1) {
+        connection.telemetry.logEvent({
+            key: 'json.schema',
+            value: {
+                schemaURL: uri
+            }
+        });
+    }
+    let headers = { 'Accept-Encoding': 'gzip, deflate' };
+    return request_light_1.xhr({ url: uri, followRedirects: 5, headers }).then(response => {
         return response.responseText;
     }, (error) => {
         return Promise.reject(error.responseText || request_light_1.getErrorStatusDescription(error.status) || error.toString());
     });
 };
-let jsonConfigurationSettings = void 0;
+let yamlConfigurationSettings = void 0;
 let schemaAssociations = void 0;
 let schemasConfigurationSettings = [];
 let languageService = yamlLanguageService_1.getLanguageService(schemaRequestService, workspaceContext);
 let jsonLanguageService = vscode_json_languageservice_1.getLanguageService(schemaRequestService);
 connection.onDidChangeConfiguration((change) => {
     let settings = change.settings;
-    jsonConfigurationSettings = settings.k8s.schemas;
+    yamlConfigurationSettings = settings.yaml.schemas;
     schemasConfigurationSettings = [];
     //Changed the name from kedge/kubernetes to schema files
-    for (let schema in jsonConfigurationSettings) {
-        let globPattern = jsonConfigurationSettings[schema];
+    for (let schema in yamlConfigurationSettings) {
+        let globPattern = yamlConfigurationSettings[schema];
         let url = '';
         if (schema.toLowerCase().trim() === 'kedge') {
             url = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
-            jsonConfigurationSettings[url] = globPattern;
-            delete jsonConfigurationSettings[schema];
+            yamlConfigurationSettings[url] = globPattern;
+            delete yamlConfigurationSettings[schema];
         }
         if (schema.toLowerCase().trim() === 'kubernetes') {
             url = 'http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json';
-            jsonConfigurationSettings[url] = globPattern;
-            delete jsonConfigurationSettings[schema];
+            yamlConfigurationSettings[url] = globPattern;
+            delete yamlConfigurationSettings[schema];
         }
         let schemaObj = {
             "fileMatch": Array.isArray(globPattern) ? globPattern : [globPattern],
@@ -112,7 +120,7 @@ connection.onDidChangeConfiguration((change) => {
         };
         schemasConfigurationSettings.push(schemaObj);
     }
-    // jsonConfigurationSettings is a mapping of Kedge/Kubernetes/Schema to Glob pattern
+    // yamlConfigurationSettings is a mapping of Kedge/Kubernetes/Schema to Glob pattern
     /*
      * {
      * 		"Kedge": ["/*"],
@@ -160,17 +168,8 @@ function updateConfiguration() {
         });
     }
     languageService.configure(languageSettings);
-}
-function clearDiagnostics() {
-    documents.all().forEach(doc => {
-        connection.sendDiagnostics({ uri: doc.uri, diagnostics: [] });
-    });
-}
-function validateFilesNotInSetting() {
-    clearDiagnostics();
-    documents.all().forEach(doc => {
-        triggerValidation(doc);
-    });
+    // Revalidate any open text documents
+    documents.all().forEach(triggerValidation);
 }
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
@@ -198,6 +197,11 @@ function cleanPendingValidation(textDocument) {
     }
 }
 function validateTextDocument(textDocument) {
+    if (textDocument.getText().length === 0) {
+        // ignore empty documents
+        connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
+        return;
+    }
     let yDoc = yaml_ast_parser_beta_1.load(textDocument.getText(), {});
     if (yDoc !== undefined) {
         let diagnostics = [];

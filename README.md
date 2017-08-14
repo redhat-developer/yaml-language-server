@@ -18,17 +18,13 @@
 3. Auto completion:
     * Auto completes on all commands
     * Scalar nodes autocomplete to schema's defaults if they exist
-4. Snippets:
-    * Snippets for creating deployment, deployment config, route, config map, persistent volume claim. *specifically for kubernetes*
-5. Hover support:
+4. Hover support:
     * Hovering over a node shows description *if available*
-6. Additional Commands:
-    * Commands for allowing the user to turn on/off validation of the specific yaml file they are working on
 
 # Language Server Settings
-`k8s.schemas`: The entrance point for new schema.
+`yaml.schemas`: The entrance point for new schema.
 ```
-k8s.schemas: {
+yaml.schemas: {
     "url": "globPattern",
     "kedge": "globPattern",
     "kubernetes": "globPattern"

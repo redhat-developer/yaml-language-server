@@ -24,16 +24,16 @@ import {JSONSchemaService} from './languageService/services/jsonSchemaService'
 import path = require('path');
 var glob = require('glob');
 
-namespace VSCodeContentRequest {
-	export const type: RequestType<string, string, any, any> = new RequestType('vscode/content');
-}
-
 interface ISchemaAssociations {
 	[pattern: string]: string[];
 }
 
 namespace SchemaAssociationNotification {
 	export const type: NotificationType<ISchemaAssociations, any> = new NotificationType('json/schemaAssociations');
+}
+
+namespace VSCodeContentRequest {
+	export const type: RequestType<string, string, any, any> = new RequestType('vscode/content');
 }
 
 const validationDelayMs = 200;
@@ -62,14 +62,13 @@ connection.onInitialize((params): InitializeResult => {
 	workspaceRoot = URI.parse(params.rootPath);
 	return {
 		capabilities: {
+			// Tell the client that the server works in FULL text document sync mode
+			textDocumentSync: documents.syncKind,
 			hoverProvider: true,
 			documentSymbolProvider: true,
-			// Tell the client that the server works in FULL text document sync mode
-			textDocumentSync: TextDocumentSyncKind.Full,
 			// Tell the client that the server support code complete
 			completionProvider: {
-				resolveProvider: true,
-				triggerCharacters: [':']
+				resolveProvider: true
 			}
 		}
 	}
@@ -96,16 +95,26 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 			return error.message;
 		});
 	}
-	return xhr({ url: uri, followRedirects: 5 }).then(response => {
+	if (uri.indexOf('//schema.management.azure.com/') !== -1) {
+		connection.telemetry.logEvent({
+			key: 'json.schema',
+			value: {
+				schemaURL: uri
+			}
+		});
+	}
+	let headers = { 'Accept-Encoding': 'gzip, deflate' };
+	return xhr({ url: uri, followRedirects: 5, headers }).then(response => {
 		return response.responseText;
 	}, (error: XHRResponse) => {
 		return Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString());
 	});
 };
 
+
 // The settings interface describe the server relevant settings part
 interface Settings {
-	k8s: schemaSettings;
+	yaml: schemaSettings;
 }
 
 interface JSONSchemaSettings {
@@ -118,7 +127,7 @@ interface schemaSettings {
 	schemas: JSONSchemaSettings[];
 }
 
-let jsonConfigurationSettings: JSONSchemaSettings[] = void 0;
+let yamlConfigurationSettings: JSONSchemaSettings[] = void 0;
 let schemaAssociations: ISchemaAssociations = void 0;
 let schemasConfigurationSettings = [];
 
@@ -127,25 +136,25 @@ let jsonLanguageService = getJsonLanguageService(schemaRequestService);
 
 connection.onDidChangeConfiguration((change) => {
 	let settings = <Settings>change.settings;
-	jsonConfigurationSettings = settings.k8s.schemas;
+	yamlConfigurationSettings = settings.yaml.schemas;
 	schemasConfigurationSettings = [];
 
 	//Changed the name from kedge/kubernetes to schema files
-	for(let schema in jsonConfigurationSettings){
+	for(let schema in yamlConfigurationSettings){
 		
-		let globPattern = jsonConfigurationSettings[schema];
+		let globPattern = yamlConfigurationSettings[schema];
 
 		let url = '';
 		if(schema.toLowerCase().trim() === 'kedge'){
 			url = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
-			jsonConfigurationSettings[url] = globPattern;
-			delete jsonConfigurationSettings[schema];
+			yamlConfigurationSettings[url] = globPattern;
+			delete yamlConfigurationSettings[schema];
 		}
 
 		if(schema.toLowerCase().trim() === 'kubernetes'){
 			url = 'http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json';
-			jsonConfigurationSettings[url] = globPattern;
-			delete jsonConfigurationSettings[schema];
+			yamlConfigurationSettings[url] = globPattern;
+			delete yamlConfigurationSettings[schema];
 		}
 
 		let schemaObj = {
@@ -156,7 +165,7 @@ connection.onDidChangeConfiguration((change) => {
 
 	}
 
-	// jsonConfigurationSettings is a mapping of Kedge/Kubernetes/Schema to Glob pattern
+	// yamlConfigurationSettings is a mapping of Kedge/Kubernetes/Schema to Glob pattern
 	/*
 	 * {
 	 * 		"Kedge": ["/*"],
@@ -206,30 +215,16 @@ function updateConfiguration() {
 		});
 	}
 	languageService.configure(languageSettings);
-}
 
-function clearDiagnostics(){
-	documents.all().forEach(doc => {
-		connection.sendDiagnostics({ uri: doc.uri, diagnostics: [] });
-	});
-}
-
-function validateFilesNotInSetting(){
-	clearDiagnostics();
-
-	documents.all().forEach(doc => {
-		triggerValidation(doc);
-	});
-	
+	// Revalidate any open text documents
+	documents.all().forEach(triggerValidation);
 }
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent((change) => {
 	if(change.document.getText().length === 0) connection.sendDiagnostics({ uri: change.document.uri, diagnostics: [] });
-
-	triggerValidation(change.document);
-	
+	triggerValidation(change.document);	
 });
 
 documents.onDidClose((event=>{
@@ -254,6 +249,13 @@ function cleanPendingValidation(textDocument: TextDocument): void {
 }
 
 function validateTextDocument(textDocument: TextDocument): void {
+
+	if (textDocument.getText().length === 0) {
+		// ignore empty documents
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
+		return;
+	}
+
 	let yDoc= yamlLoader(textDocument.getText(),{});
 	if(yDoc !== undefined){ 
 		let diagnostics  = [];
