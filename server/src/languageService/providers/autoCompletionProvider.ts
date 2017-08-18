@@ -58,7 +58,9 @@ export class autoCompletionProvider {
                     return result;
 
                 });
-            }        
+            }
+
+            return result;        
         });
     } 
 
