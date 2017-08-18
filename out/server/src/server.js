@@ -99,27 +99,6 @@ let jsonLanguageService = vscode_json_languageservice_1.getLanguageService(schem
 connection.onDidChangeConfiguration((change) => {
     let settings = change.settings;
     yamlConfigurationSettings = settings.yaml.schemas;
-    schemasConfigurationSettings = [];
-    //Changed the name from kedge/kubernetes to schema files
-    for (let schema in yamlConfigurationSettings) {
-        let globPattern = yamlConfigurationSettings[schema];
-        let url = '';
-        if (schema.toLowerCase().trim() === 'kedge') {
-            url = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
-            yamlConfigurationSettings[url] = globPattern;
-            delete yamlConfigurationSettings[schema];
-        }
-        if (schema.toLowerCase().trim() === 'kubernetes') {
-            url = 'http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json';
-            yamlConfigurationSettings[url] = globPattern;
-            delete yamlConfigurationSettings[schema];
-        }
-        let schemaObj = {
-            "fileMatch": Array.isArray(globPattern) ? globPattern : [globPattern],
-            "url": url.length > 0 ? url : schema
-        };
-        schemasConfigurationSettings.push(schemaObj);
-    }
     // yamlConfigurationSettings is a mapping of Kedge/Kubernetes/Schema to Glob pattern
     /*
      * {
@@ -143,8 +122,18 @@ function updateConfiguration() {
         for (var pattern in schemaAssociations) {
             let association = schemaAssociations[pattern];
             if (Array.isArray(association)) {
-                association.forEach(uri => {
-                    languageSettings.schemas.push({ uri, fileMatch: [pattern] });
+                association.forEach(function (uri) {
+                    if (uri.toLowerCase().trim() === "kedge") {
+                        uri = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
+                        languageSettings.schemas.push({ uri, fileMatch: [pattern] });
+                    }
+                    else if (uri.toLowerCase().trim() === "kubernetes") {
+                        uri = 'http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json';
+                        languageSettings.schemas.push({ uri, fileMatch: [pattern] });
+                    }
+                    else {
+                        languageSettings.schemas.push({ uri, fileMatch: [pattern] });
+                    }
                 });
             }
         }
@@ -163,7 +152,17 @@ function updateConfiguration() {
                     // workspace relative path
                     uri = uri_1.default.file(path.normalize(path.join(workspaceRoot.fsPath, uri))).toString();
                 }
-                languageSettings.schemas.push({ uri, fileMatch: schema.fileMatch, schema: schema.schema });
+                if (uri.toLowerCase().trim() === "kedge") {
+                    uri = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
+                    languageSettings.schemas.push({ uri, fileMatch: [pattern] });
+                }
+                else if (uri.toLowerCase().trim() === "kubernetes") {
+                    uri = 'http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json';
+                    languageSettings.schemas.push({ uri, fileMatch: schema.fileMatch });
+                }
+                else {
+                    languageSettings.schemas.push({ uri, fileMatch: schema.fileMatch, schema: schema.schema });
+                }
             }
         });
     }
@@ -214,8 +213,7 @@ function validateTextDocument(textDocument) {
                         start: textDocument.positionAt(mark.position),
                         end: { line: error.mark.line, character: error.mark.column }
                     },
-                    message: error.reason,
-                    source: "k8s"
+                    message: error.reason
                 };
             });
         }

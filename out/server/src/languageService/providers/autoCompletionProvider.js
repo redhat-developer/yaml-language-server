@@ -47,6 +47,7 @@ class autoCompletionProvider {
                     return result;
                 });
             }
+            return result;
         });
     }
     isRootNode(doc, node) {
