@@ -278,6 +278,9 @@ function validateTextDocument(textDocument: TextDocument): void {
 // This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition =>  {
 	let document = documents.get(textDocumentPosition.textDocument.uri);
+	if (document.getText().length === 0) {
+		return;
+	}
 	return completionHelper(document, textDocumentPosition);
 });
 
