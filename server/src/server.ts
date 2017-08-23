@@ -137,7 +137,8 @@ let jsonLanguageService = getJsonLanguageService(schemaRequestService);
 connection.onDidChangeConfiguration((change) => {
 	let settings = <Settings>change.settings;
 	yamlConfigurationSettings = settings.yaml.schemas;
-
+	schemasConfigurationSettings = [];
+	
 	// yamlConfigurationSettings is a mapping of Kedge/Kubernetes/Schema to Glob pattern
 	/*
 	 * {
@@ -145,6 +146,15 @@ connection.onDidChangeConfiguration((change) => {
 	 * 		"http://schemaLocation": "/*" 
 	 * }
 	 */ 
+	for(let url in yamlConfigurationSettings){
+		let globPattern = yamlConfigurationSettings[url];
+		let schemaObj = {
+			"fileMatch": Array.isArray(globPattern) ? globPattern : [globPattern],
+			"url": url
+		}
+		schemasConfigurationSettings.push(schemaObj);
+	}
+
 	updateConfiguration();
 });
 
@@ -162,8 +172,8 @@ function updateConfiguration() {
 	if (schemaAssociations) {
 		for (var pattern in schemaAssociations) {
 			let association = schemaAssociations[pattern];
-			if (Array.isArray(association)) {
-				association.forEach(function(uri){
+			if (Array.isArray(association)) { 
+				association.forEach(function(uri){ 
 					if(uri.toLowerCase().trim() === "kedge"){
 						uri = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
 						languageSettings.schemas.push({ uri, fileMatch: [pattern] });	
@@ -193,7 +203,7 @@ function updateConfiguration() {
 				}
 				if(uri.toLowerCase().trim() === "kedge"){
 					uri = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
-					languageSettings.schemas.push({ uri, fileMatch: [pattern] });	
+					languageSettings.schemas.push({ uri, fileMatch: schema.fileMatch });
 				}else if(uri.toLowerCase().trim() === "kubernetes"){
 					uri = 'http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json';
 					languageSettings.schemas.push({ uri, fileMatch: schema.fileMatch });
@@ -255,13 +265,13 @@ function validateTextDocument(textDocument: TextDocument): void {
 					severity: DiagnosticSeverity.Error,
 					range: {
 								start: textDocument.positionAt(mark.position),
-								end: { line: error.mark.line, character: error.mark.column }
+								end: { line: mark.line, character: mark.column }
 							},
 					message: error.reason
 				}
 			});
 		}
-		
+
 		let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(textDocument.getText(),{});
 		languageService.doValidation(textDocument, yamlDoc).then(function(result){		
 			for(let x = 0; x < result.items.length; x++){
@@ -278,9 +288,6 @@ function validateTextDocument(textDocument: TextDocument): void {
 // This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition =>  {
 	let document = documents.get(textDocumentPosition.textDocument.uri);
-	if (document.getText().length === 0) {
-		return;
-	}
 	return completionHelper(document, textDocumentPosition);
 });
 

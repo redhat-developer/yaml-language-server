@@ -99,6 +99,7 @@ let jsonLanguageService = vscode_json_languageservice_1.getLanguageService(schem
 connection.onDidChangeConfiguration((change) => {
     let settings = change.settings;
     yamlConfigurationSettings = settings.yaml.schemas;
+    schemasConfigurationSettings = [];
     // yamlConfigurationSettings is a mapping of Kedge/Kubernetes/Schema to Glob pattern
     /*
      * {
@@ -106,6 +107,14 @@ connection.onDidChangeConfiguration((change) => {
      * 		"http://schemaLocation": "/*"
      * }
      */
+    for (let url in yamlConfigurationSettings) {
+        let globPattern = yamlConfigurationSettings[url];
+        let schemaObj = {
+            "fileMatch": Array.isArray(globPattern) ? globPattern : [globPattern],
+            "url": url
+        };
+        schemasConfigurationSettings.push(schemaObj);
+    }
     updateConfiguration();
 });
 connection.onNotification(SchemaAssociationNotification.type, associations => {
@@ -154,7 +163,7 @@ function updateConfiguration() {
                 }
                 if (uri.toLowerCase().trim() === "kedge") {
                     uri = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
-                    languageSettings.schemas.push({ uri, fileMatch: [pattern] });
+                    languageSettings.schemas.push({ uri, fileMatch: schema.fileMatch });
                 }
                 else if (uri.toLowerCase().trim() === "kubernetes") {
                     uri = 'http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json';
@@ -211,7 +220,7 @@ function validateTextDocument(textDocument) {
                     severity: vscode_languageserver_1.DiagnosticSeverity.Error,
                     range: {
                         start: textDocument.positionAt(mark.position),
-                        end: { line: error.mark.line, character: error.mark.column }
+                        end: { line: mark.line, character: mark.column }
                     },
                     message: error.reason
                 };
@@ -230,9 +239,6 @@ function validateTextDocument(textDocument) {
 // This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition => {
     let document = documents.get(textDocumentPosition.textDocument.uri);
-    if (document.getText().length === 0) {
-        return;
-    }
     return completionHelper(document, textDocumentPosition);
 });
 function completionHelper(document, textDocumentPosition) {
