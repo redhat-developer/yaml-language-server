@@ -21,4 +21,4 @@ deploy:
   on:
     branch: master
     tags: false
-    repo: JPinkney/yaml-language-server
+    repo: redhat-developer/yaml-language-server
