@@ -1,9 +1,9 @@
-[![Build Status](https://travis-ci.org/JPinkney/yaml-language-server.svg?branch=master)](https://travis-ci.org/JPinkney/yaml-language-server)
+[![Build Status](https://travis-ci.org/redhat-developer/yaml-language-server.svg?branch=master)](https://travis-ci.org/redhat-developer/yaml-language-server)
 
 # Yaml Language Server
 
 ## Features 
-![screencast](https://github.com/JPinkney/vscode-k8s/blob/master/images/demo.gif)
+![screencast](https://github.com/redhat-developer/yaml-language-server/blob/master/images/demo.gif)
 
 1. YAML validation:
     * Detects whether the entire file is valid yaml
