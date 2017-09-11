@@ -51,12 +51,13 @@ suite("Auto Completion Tests", () => {
 
 			it('Autocomplete on root node with word', (done) => {
 				let uri = "file://~/Desktop/vscode-k8s/test.yaml";
-				let content = "apiVers:";
+				let content = "apiVers";
 				let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
 				let yDoc2 = yamlLoader(testTextDocument.getText(),{});
+				
 				let validator = languageService.doComplete(testTextDocument, testTextDocument.positionAt(6), <YAMLDocument>yDoc2);
 				validator.then(function(result){
-					assert.equal(result.items.length, 5);
+					assert.equal(result.items.length, 142);
 					//assert.equal(result.items[0]["label"], "apiVersion");
 				}).then(done, done);
 			});
@@ -68,7 +69,7 @@ suite("Auto Completion Tests", () => {
 				let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 				let validator = languageService.doComplete(testTextDocument, testTextDocument.positionAt(15), <YAMLDocument>yDoc2);
 				validator.then(function(result){
-					assert.equal(result.items.length, 105);
+					assert.equal(result.items.length, 100);
 					//assert.notEqual(result.items.map(x => x["label"]).indexOf("Deployment"), -1);
 				}).then(done, done);
 			});
@@ -88,14 +89,14 @@ suite("Auto Completion Tests", () => {
 			// 	}).then(done, done);
 			// });
 
-			it('Autocomplete on child node with word', (done) => {
+			it('Fail Autocomplete on child node with word', (done) => {
 				let uri = "file://~/Desktop/vscode-k8s/test.yaml";
-				let content = "metadata:\n  genera:";
+				let content = "metadata:\n  generattt";
 				let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
 				let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 				let validator = languageService.doComplete(testTextDocument, testTextDocument.positionAt(18), <YAMLDocument>yDoc2);
 				validator.then(function(result){
-					assert.equal(result.items.length, 5);
+					assert.equal(result.items.length, 0);
 					//assert.equal(result.items[0]["label"], ["generateName"]);
 				}).then(done, done);
 			});
@@ -107,7 +108,7 @@ suite("Auto Completion Tests", () => {
 				let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 				let validator = languageService.doComplete(testTextDocument, testTextDocument.positionAt(18), <YAMLDocument>yDoc2);
 				validator.then(function(result){
-					assert.equal(result.items.length, 147);
+					assert.equal(result.items.length, 142);
 					//assert.notEqual(result.items.map(x => x["label"]).indexOf("allowed"), -1);
 				}).then(done, done);
 			});
@@ -119,7 +120,7 @@ suite("Auto Completion Tests", () => {
 				let yDoc2 = yamlLoader(testTextDocument.getText(),{});
 				let validator = languageService.doComplete(testTextDocument, testTextDocument.positionAt(29), <YAMLDocument>yDoc2);
 				validator.then(function(result){
-					assert.equal(result.items.length, 105);
+					assert.equal(result.items.length, 100);
 					//assert.notEqual(result.items.map(x => x["label"]).indexOf("Deployment"), -1);
 				}).then(done, done);
 			});
