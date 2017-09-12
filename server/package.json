@@ -24,12 +24,26 @@
   },
   "devDependencies": {
     "@types/node": "^6.0.52",
+    "nyc": "^11.2.1",
+    "source-map-support": "^0.4.18",
     "ts-node": "^3.3.0",
     "typescript": "2.1.5"
   },
   "scripts": {
     "compile": "installServerIntoExtension ../out ./package.json ./tsconfig.json && tsc -p .",
     "watch": "installServerIntoExtension ../out ./package.json ./tsconfig.json && tsc --watch -p .",
-    "test": "mocha --require ts-node/register --ui tdd ./test/*.test.ts"
+    "test": "mocha --require ts-node/register --ui tdd ./test/*.test.ts",
+    "coverage": "nyc mocha --require ts-node/register --require source-map-support/register --recursive --ui tdd ./test/*.test.ts"
+  },
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "exclude": [
+      "**/*.d.ts",
+      "test/"
+    ],
+    "all": true
   }
 }
