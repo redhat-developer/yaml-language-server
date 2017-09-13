@@ -1,6 +1,6 @@
 import {YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference} from  'yaml-ast-parser';
 
-export function traverse ( node: YAMLNode, visitor:ASTVisitor){
+export function traverse (node: YAMLNode, visitor:ASTVisitor){
   if(!node || !visitor) return;
   switch(node.kind){
     case Kind.SCALAR:

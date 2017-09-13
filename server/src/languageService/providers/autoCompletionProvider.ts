@@ -3,7 +3,7 @@ import { YAMLDocument, YAMLNode, Kind } from 'yaml-ast-parser';
 import { Thenable } from '../yamlLanguageService';
 import { findNode } from '../utils/astServices';
 import { IJSONSchemaService }  from '../services/jsonSchemaService';
-import { traverse, generateParents } from '../utils/astServices';
+import { generateParents } from '../utils/astServices';
 import { searchService } from "../services/searchService";
 import { getLineOffsets } from "../utils/arrUtils";
 var equal = require('deep-equal');
