@@ -1,3 +1,4 @@
 npm-debug.log
 .vscode
 server/node_modules
+server/

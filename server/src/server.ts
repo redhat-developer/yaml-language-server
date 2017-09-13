@@ -255,7 +255,8 @@ function validateTextDocument(textDocument: TextDocument): void {
 		return;
 	}
 
-	let yDoc= yamlLoader(textDocument.getText(),{});
+	let textDocNewLineEnded = textDocument.getText()[textDocument.getText().length - 1] === "\n" ? textDocument.getText() : textDocument.getText() + "\n";
+	let yDoc = yamlLoader(textDocNewLineEnded,{});
 	if(yDoc !== undefined){ 
 		let diagnostics  = [];
 		if(yDoc.errors.length != 0){
