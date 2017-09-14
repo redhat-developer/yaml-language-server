@@ -35,15 +35,3 @@ export function endsWith(haystack: string, needle: string): boolean {
 export function convertSimple2RegExpPattern(pattern: string): string {
 	return pattern.replace(/[\-\\\{\}\+\?\|\^\$\.\,\[\]\(\)\#\s]/g, '\\$&').replace(/[\*]/g, '.*');
 }
-
-export function repeat(value: string, count: number) {
-	var s = '';
-	while (count > 0) {
-		if ((count & 1) === 1) {
-			s += value;
-		}
-		value += value;
-		count = count >>> 1;
-	}
-	return s;
-}
