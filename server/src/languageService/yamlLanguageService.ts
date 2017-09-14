@@ -1,11 +1,9 @@
 
 import {autoCompletionProvider} from './providers/autoCompletionProvider';
 import {JSONSchemaService} from './services/jsonSchemaService'
-import {validationProvider} from './providers/validationProvider'
 
 import { TextDocument, Position, CompletionList } from 'vscode-languageserver-types';
 import { YAMLDocument} from 'yaml-ast-parser';
-import { hoverProvider } from "./providers/hoverProvider";
 import { JSONSchema } from './jsonSchema';
 import {schemaContributions} from './services/configuration';
 
@@ -94,8 +92,6 @@ export interface SchemaConfiguration {
 export interface LanguageService {
   configure(settings: LanguageSettings): void;
 	doComplete(document: TextDocument, documentPosition: Position, doc): Thenable<CompletionList>;
-  doValidation(document: TextDocument, doc: YAMLDocument): Thenable<CompletionList>;
-  doHover(document: TextDocument, documentPosition: Position, doc: YAMLDocument);
 }
 
 export function getLanguageService(schemaRequestService, workspaceContext): LanguageService {
@@ -104,8 +100,6 @@ export function getLanguageService(schemaRequestService, workspaceContext): Lang
   schemaService.setSchemaContributions(schemaContributions);
 
   let completer = new autoCompletionProvider(schemaService);
-  let validator = new validationProvider(schemaService);
-  let hover = new hoverProvider(schemaService);
   return {
       configure: (settings: LanguageSettings) => {
         schemaService.clearExternalSchemas();
@@ -115,8 +109,6 @@ export function getLanguageService(schemaRequestService, workspaceContext): Lang
           });
         }
       },
-    	doComplete: completer.doComplete.bind(completer),
-      doValidation: validator.doValidation.bind(validator),
-      doHover: hover.doHover.bind(hover)
+    	doComplete: completer.doComplete.bind(completer)
   }
 }
