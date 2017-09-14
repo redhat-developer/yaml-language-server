@@ -138,10 +138,8 @@ let customLanguageService = getCustomLanguageService(schemaRequestService, works
 interface Settings {
 	yaml: {
 		format: { enable: boolean; };
-	};
-	json: {
 		schemas: JSONSchemaSettings[];
-	}
+	};
 	http: {
 		proxy: string;
 		proxyStrictSSL: boolean;
@@ -154,7 +152,7 @@ interface JSONSchemaSettings {
 	schema?: JSONSchema;
 }
 
-let jsonConfigurationSettings: JSONSchemaSettings[] = void 0;
+let yamlConfigurationSettings: JSONSchemaSettings[] = void 0;
 let schemaAssociations: ISchemaAssociations = void 0;
 let formatterRegistration: Thenable<Disposable> = null;
 
@@ -163,7 +161,7 @@ connection.onDidChangeConfiguration((change) => {
 	var settings = <Settings>change.settings;
 	configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
 
-	jsonConfigurationSettings = settings.json && settings.json.schemas;
+	yamlConfigurationSettings = settings.yaml && settings.yaml.schemas;
 	updateConfiguration();
 
 	// dynamically enable & disable the formatter
@@ -198,13 +196,13 @@ function updateConfiguration() {
 			let association = schemaAssociations[pattern];
 			if (Array.isArray(association)) {
 				association.forEach(uri => {
-					languageSettings.schemas.push({ uri, fileMatch: [pattern] });
+					languageSettings = configureSchemas(uri, [pattern], null);
 				});
 			}
 		}
 	}
-	if (jsonConfigurationSettings) {
-		jsonConfigurationSettings.forEach(schema => {
+	if (yamlConfigurationSettings) {
+		yamlConfigurationSettings.forEach(schema => {
 			let uri = schema.url;
 			if (!uri && schema.schema) {
 				uri = schema.schema.id;
@@ -217,7 +215,7 @@ function updateConfiguration() {
 					// workspace relative path
 					uri = URI.file(path.normalize(path.join(workspaceRoot.fsPath, uri))).toString();
 				}
-				languageSettings.schemas.push({ uri, fileMatch: schema.fileMatch, schema: schema.schema });
+				languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema);
 			}
 		});
 	}
@@ -226,6 +224,32 @@ function updateConfiguration() {
 
 	// Revalidate any open text documents
 	documents.all().forEach(triggerValidation);
+}
+
+function configureSchemas(uri, fileMatch, schema){
+	
+	let languageSettings: LanguageSettings = {
+		validate: true,
+		schemas: []
+	};
+	
+	if(uri.toLowerCase().trim() === "kedge"){
+		/*
+			* Kedge schema is currently not working
+			*/
+		//uri = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
+	}else if(uri.toLowerCase().trim() === "kubernetes"){
+		uri = 'http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json';	
+	}
+
+	if(schema === null){
+		languageSettings.schemas.push({ uri, fileMatch: fileMatch });
+	}else{
+		languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema });
+	}
+
+	return languageSettings;
+
 }
 
 // The content of a text document has changed. This event is emitted
@@ -302,9 +326,7 @@ function getJSONDocument(document: TextDocument): YAMLDocument {
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition =>  {
-	console.log("here");
 	let document = documents.get(textDocumentPosition.textDocument.uri);
-	console.log("here2");
 	return completionHelper(document, textDocumentPosition);
 });
 
@@ -327,8 +349,6 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 			end = document.getText().length;
 		}
 		let textLine = document.getText().substring(start, end);
-		
-		console.log("?");
 
 		//Check if the string we are looking at is a node
 		if(textLine.indexOf(":") === -1){
@@ -354,7 +374,6 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 					newText = document.getText().substring(0, start+(textLine.length)) + ":\r\n" + document.getText().substr(end+2);
 				}
 			}
-			console.log("hit here");
 			let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(newText,{});
 			return customLanguageService.doComplete(document, position, yamlDoc);
 		}else{
@@ -362,7 +381,6 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 			//All the nodes are loaded
 			let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(document.getText(),{});
 			position.character = position.character - 1;
-			console.log("No here");
 			return customLanguageService.doComplete(document, position, yamlDoc);
 		}
 
