@@ -9,7 +9,7 @@
 import {
 	createConnection, IConnection,
 	TextDocuments, TextDocument, InitializeParams, InitializeResult, NotificationType, RequestType,
-	DocumentFormattingRequest, Disposable, Range
+	DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter
 } from 'vscode-languageserver';
 
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
@@ -43,8 +43,13 @@ namespace ColorSymbolRequest {
 	export const type: RequestType<string, Range[], any, any> = new RequestType('json/colorSymbols');
 }
 
-// Create a connection for the server
-let connection: IConnection = createConnection();
+// Create a connection for the server.
+let connection: IConnection = null;
+if (process.argv.indexOf('--stdio') == -1) {
+	connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
+} else {
+	connection = createConnection();
+}
 
 console.log = connection.console.log.bind(connection.console);
 console.error = connection.console.error.bind(connection.console);
