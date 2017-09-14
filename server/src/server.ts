@@ -23,6 +23,7 @@ import { getLanguageModelCache } from './languageModelCache';
 import { getLineOffsets } from './languageService/utils/arrUtils';
 import { load as yamlLoader, YAMLDocument as YAMLDoc } from 'yaml-ast-parser'
 import { getLanguageService as getCustomLanguageService } from './languageService/yamlLanguageService'
+var minimatch = require("minimatch")
 
 import * as nls from 'vscode-nls';
 nls.config(process.env['VSCODE_NLS_CONFIG']);
@@ -137,6 +138,7 @@ let languageService = getLanguageService({
 	contributions: []
 });
 
+let KUBERNETES_SCHEMA_URL = "http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.4/kubernetes-model-1.1.4-schema.json";
 let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext);
 
 // The settings interface describes the server relevant settings part
@@ -160,12 +162,14 @@ interface JSONSchemaSettings {
 let yamlConfigurationSettings: JSONSchemaSettings[] = void 0;
 let schemaAssociations: ISchemaAssociations = void 0;
 let formatterRegistration: Thenable<Disposable> = null;
+let specificValidatorPaths = [];
 
 // The settings have changed. Is send on server activation as well.
 connection.onDidChangeConfiguration((change) => {
 	var settings = <Settings>change.settings;
 	configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
 
+	specificValidatorPaths = [];
 	yamlConfigurationSettings = settings.yaml && settings.yaml.schemas;
 	updateConfiguration();
 
@@ -174,11 +178,9 @@ connection.onDidChangeConfiguration((change) => {
 		let enableFormatter = settings && settings.yaml && settings.yaml.format && settings.yaml.format.enable;
 		if (enableFormatter) {
 			if (!formatterRegistration) {
-				console.log('enable');
 				formatterRegistration = connection.client.register(DocumentFormattingRequest.type, { documentSelector: [{ language: 'yaml' }] });
 			}
 		} else if (formatterRegistration) {
-			console.log('enable');
 			formatterRegistration.then(r => r.dispose());
 			formatterRegistration = null;
 		}
@@ -240,11 +242,12 @@ function configureSchemas(uri, fileMatch, schema){
 	
 	if(uri.toLowerCase().trim() === "kedge"){
 		/*
-			* Kedge schema is currently not working
-			*/
+		 * Kedge schema is currently not working
+		 */
+
 		//uri = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
 	}else if(uri.toLowerCase().trim() === "kubernetes"){
-		uri = 'http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json';	
+		uri = KUBERNETES_SCHEMA_URL;	
 	}
 
 	if(schema === null){
@@ -252,6 +255,8 @@ function configureSchemas(uri, fileMatch, schema){
 	}else{
 		languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema });
 	}
+
+	specificValidatorPaths.push(fileMatch);
 
 	return languageSettings;
 
@@ -290,16 +295,58 @@ function triggerValidation(textDocument: TextDocument): void {
 
 function validateTextDocument(textDocument: TextDocument): void {
 	if (textDocument.getText().length === 0) {
-		// ignore empty documents
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
 		return;
 	}
+	
+	if(yamlConfigurationSettings === null){
+		return;
+	}
 
+	if(isKubernetes(textDocument)){
+		return specificYamlValidator(textDocument);
+	}
+
+	return generalYamlValidator(textDocument);
+}
+
+function isKubernetes(textDocument){
+	for(let configOption in yamlConfigurationSettings){
+		let configItem = yamlConfigurationSettings[configOption];
+	
+		for(let globItem in configItem.fileMatch){
+			if(minimatch(textDocument.uri, "*.yaml", { matchBase: true }) && configItem.url && configItem.url === KUBERNETES_SCHEMA_URL){
+				return true;
+			}
+		}
+
+	}
+	return false;
+}
+
+function generalYamlValidator(textDocument: TextDocument){
+	//Validator for regular yaml files
 	let jsonDocument = getJSONDocument(textDocument);
-	languageService.doValidation(textDocument, jsonDocument).then(diagnostics => {
+	languageService.doValidation(textDocument, jsonDocument).then(function(diagnostics) {
+		for(let diagnosticItem in diagnostics){
+			diagnostics[diagnosticItem].severity = 1; //Convert all warnings to errors
+		}
 		// Send the computed diagnostics to VSCode.
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-	});
+	}, function(error){});
+}
+
+function specificYamlValidator(textDocument: TextDocument){
+	//Validator for kubernetes/kedge files
+	let diagnostics = [];
+	let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(textDocument.getText(),{});
+	customLanguageService.doValidation(textDocument, yamlDoc).then(function(result){
+		for(let x = 0; x < result.items.length; x++){
+			diagnostics.push(result.items[x]);
+		}
+		// Send the computed diagnostics to VSCode.
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+	}, function(error){});
 }
 
 connection.onDidChangeWatchedFiles((change) => {
@@ -397,8 +444,17 @@ connection.onCompletionResolve(completionItem => {
 
 connection.onHover(textDocumentPositionParams => {
 	let document = documents.get(textDocumentPositionParams.textDocument.uri);
+	let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(document.getText(),{});
 	let jsonDocument = getJSONDocument(document);
-	return languageService.doHover(document, textDocumentPositionParams.position, jsonDocument);
+
+	if(isKubernetes(textDocumentPositionParams.textDocument)){
+		return customLanguageService.doHover(document, textDocumentPositionParams.position, yamlDoc);
+	}
+
+	let hoverItem = languageService.doHover(document, textDocumentPositionParams.position, jsonDocument);
+	return hoverItem.then(function(result){
+		return result;
+	}, function(error){});
 });
 
 connection.onDocumentSymbol(documentSymbolParams => {
