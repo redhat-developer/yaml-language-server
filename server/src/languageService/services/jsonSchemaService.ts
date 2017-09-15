@@ -70,7 +70,7 @@ export interface ISchemaHandle {
 }
 
 
-class FilePatternAssociation {
+export class FilePatternAssociation {
 
 	private schemas: string[];
 	private combinedSchemaId: string;

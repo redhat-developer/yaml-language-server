@@ -9,7 +9,7 @@
 import {
 	createConnection, IConnection,
 	TextDocuments, TextDocument, InitializeParams, InitializeResult, NotificationType, RequestType,
-	DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter
+	DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter, DiagnosticSeverity
 } from 'vscode-languageserver';
 
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
@@ -26,6 +26,7 @@ import { getLanguageService as getCustomLanguageService } from './languageServic
 var minimatch = require("minimatch")
 
 import * as nls from 'vscode-nls';
+import { FilePatternAssociation } from './languageService/services/jsonSchemaService';
 nls.config(process.env['VSCODE_NLS_CONFIG']);
 
 interface ISchemaAssociations {
@@ -88,7 +89,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 			// Disabled because too JSON centric
 			completionProvider: { resolveProvider: true },
 			hoverProvider: true,
-			documentSymbolProvider: true,
+			documentSymbolProvider: false,
 			documentFormattingProvider: false
 		}
 	};
@@ -202,6 +203,7 @@ connection.onDidChangeConfiguration((change) => {
 // The jsonValidation extension configuration has changed
 connection.onNotification(SchemaAssociationNotification.type, associations => {
 	schemaAssociations = associations;
+	specificValidatorPaths = [];
 	updateConfiguration();
 });
 
@@ -268,7 +270,14 @@ function configureSchemas(uri, fileMatch, schema){
 		languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema });
 	}
 
-	specificValidatorPaths.push(fileMatch);
+	if(fileMatch.constructor === Array && uri === KUBERNETES_SCHEMA_URL){
+		fileMatch.forEach((url) => {
+			specificValidatorPaths.push(url);
+		});
+	}else if(uri === KUBERNETES_SCHEMA_URL){
+		specificValidatorPaths.push(fileMatch);
+	}
+	
 
 	return languageSettings;
 
@@ -306,32 +315,26 @@ function triggerValidation(textDocument: TextDocument): void {
 }
 
 function validateTextDocument(textDocument: TextDocument): void {
-	if (textDocument.getText().length === 0) {
-		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
-		return;
-	}
 	
-	if(yamlConfigurationSettings === null){
+	if (textDocument.getText().length === 0) {
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });		
 		return;
 	}
 
 	if(isKubernetes(textDocument)){
 		return specificYamlValidator(textDocument);
+	}else{
+		return generalYamlValidator(textDocument);
 	}
-
-	return generalYamlValidator(textDocument);
 }
 
 function isKubernetes(textDocument){
-	for(let configOption in yamlConfigurationSettings){
-		let configItem = yamlConfigurationSettings[configOption];
-	
-		for(let globItem in configItem.fileMatch){
-			if(minimatch(textDocument.uri, "*.yaml", { matchBase: true }) && configItem.url && configItem.url === KUBERNETES_SCHEMA_URL){
-				return true;
-			}
+	for(let path in specificValidatorPaths){
+		let globPath = specificValidatorPaths[path];
+		let fpa = new FilePatternAssociation(globPath);
+		if(fpa.matchesPattern(textDocument.uri)){
+			return true;
 		}
-
 	}
 	return false;
 }
@@ -340,12 +343,33 @@ function generalYamlValidator(textDocument: TextDocument){
 	//Validator for regular yaml files
 	let jsonDocument = getJSONDocument(textDocument);
 	languageService.doValidation(textDocument, jsonDocument).then(function(diagnostics) {
+		
 		for(let diagnosticItem in diagnostics){
 			diagnostics[diagnosticItem].severity = 1; //Convert all warnings to errors
 		}
+
 		// Send the computed diagnostics to VSCode.
-		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
 	}, function(error){});
+}
+
+function removeDuplicates(objArray){
+	
+	let nonDuplicateSet = new Set();
+	let nonDuplicateArr = [];
+	for(let obj in objArray){
+
+		let currObj = objArray[obj];
+		let stringifiedObj = JSON.stringify(currObj);
+		if(!nonDuplicateSet.has(stringifiedObj)){
+			nonDuplicateArr.push(currObj);
+			nonDuplicateSet.add(stringifiedObj);
+		}
+
+	}
+
+	return nonDuplicateArr;
+
 }
 
 function specificYamlValidator(textDocument: TextDocument){
@@ -357,7 +381,7 @@ function specificYamlValidator(textDocument: TextDocument){
 			diagnostics.push(result.items[x]);
 		}
 		// Send the computed diagnostics to VSCode.
-		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
 	}, function(error){});
 }
 

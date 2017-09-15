@@ -124,7 +124,5 @@ suite("Auto Completion Tests", () => {
 				}).then(done, done);
 			});
 		});
-
 	});
-
 });
