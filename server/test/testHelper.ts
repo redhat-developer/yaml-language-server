@@ -13,7 +13,6 @@ import URI from '../src/languageService/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
 import {JSONSchemaService} from '../src/languageService/services/jsonSchemaService'
-var glob = require('glob');
 var assert = require('assert');
 
 namespace VSCodeContentRequest {
