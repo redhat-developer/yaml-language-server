@@ -1,28 +1,32 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Joshua Pinkney. All rights reserved.
+ *  Copyright (c) Adam Voss. All rights reserved.
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 'use strict';
 
 import {
-	IPCMessageReader, IPCMessageWriter,
-	createConnection, IConnection, TextDocumentSyncKind,
-	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
-	InitializeParams, InitializeResult, TextDocumentPositionParams,
-	CompletionItem, CompletionItemKind, RequestType, Location, Range, Position, Hover,
-	HoverRequest, NotificationType, Disposable
+	createConnection, IConnection,
+	TextDocuments, TextDocument, InitializeParams, InitializeResult, NotificationType, RequestType,
+	DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter
 } from 'vscode-languageserver';
+
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import {load as yamlLoader, YAMLDocument, YAMLException, YAMLNode, Kind} from 'yaml-ast-parser-beta';
-import {getLanguageService} from './languageService/yamlLanguageService'
-import Strings = require( './languageService/utils/strings');
+import path = require('path');
+import fs = require('fs');
 import URI from './languageService/utils/uri';
 import * as URL from 'url';
-import fs = require('fs');
+import Strings = require('./languageService/utils/strings');
+import { YAMLDocument, JSONSchema, LanguageSettings, getLanguageService } from 'vscode-yaml-languageservice';
 import { getLanguageModelCache } from './languageModelCache';
-import {parse as parseYaml} from './languageService/parser/yamlParser';
-import {JSONDocument, getLanguageService as getJsonLanguageService, LanguageSettings } from 'vscode-json-languageservice';
-import { getLineOffsets } from "./languageService/utils/arrUtils";
-import {JSONSchema} from './languageService/jsonSchema'
-import {JSONSchemaService} from './languageService/services/jsonSchemaService'
-import path = require('path');
-var glob = require('glob');
+import { getLineOffsets } from './languageService/utils/arrUtils';
+import { load as yamlLoader, YAMLDocument as YAMLDoc } from 'yaml-ast-parser';
+import { getLanguageService as getCustomLanguageService } from './languageService/yamlLanguageService';
+var minimatch = require("minimatch")
+
+import * as nls from 'vscode-nls';
+nls.config(process.env['VSCODE_NLS_CONFIG']);
 
 interface ISchemaAssociations {
 	[pattern: string]: string[];
@@ -36,9 +40,9 @@ namespace VSCodeContentRequest {
 	export const type: RequestType<string, string, any, any> = new RequestType('vscode/content');
 }
 
-const validationDelayMs = 200;
-let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
-
+namespace ColorSymbolRequest {
+	export const type: RequestType<string, Range[], any, any> = new RequestType('json/colorSymbols');
+}
 
 // Create a connection for the server.
 let connection: IConnection = null;
@@ -48,6 +52,9 @@ if (process.argv.indexOf('--stdio') == -1) {
 	connection = createConnection();
 }
 
+console.log = connection.console.log.bind(connection.console);
+console.error = connection.console.error.bind(connection.console);
+
 // Create a simple text document manager. The text document manager
 // supports full document sync only
 let documents: TextDocuments = new TextDocuments();
@@ -55,23 +62,36 @@ let documents: TextDocuments = new TextDocuments();
 // for open, change and close text document events
 documents.listen(connection);
 
-// After the server has started the client sends an initialize request. The server receives
+let clientSnippetSupport = false;
+let clientDynamicRegisterSupport = false;
+
+// After the server has started the client sends an initilize request. The server receives
 // in the passed params the rootPath of the workspace plus the client capabilities.
 let workspaceRoot: URI;
-connection.onInitialize((params): InitializeResult => {
+connection.onInitialize((params: InitializeParams): InitializeResult => {
 	workspaceRoot = URI.parse(params.rootPath);
+
+	function hasClientCapability(...keys: string[]) {
+		let c = params.capabilities;
+		for (let i = 0; c && i < keys.length; i++) {
+			c = c[keys[i]];
+		}
+		return !!c;
+	}
+
+	//clientSnippetSupport = hasClientCapability('textDocument', 'completion', 'completionItem', 'snippetSupport');
+	//clientDynamicRegisterSupport = hasClientCapability('workspace', 'symbol', 'dynamicRegistration');
 	return {
 		capabilities: {
 			// Tell the client that the server works in FULL text document sync mode
 			textDocumentSync: documents.syncKind,
+			// Disabled because too JSON centric
+			completionProvider: { resolveProvider: true },
 			hoverProvider: true,
 			documentSymbolProvider: true,
-			// Tell the client that the server support code complete
-			completionProvider: {
-				resolveProvider: true
-			}
+			documentFormattingProvider: false
 		}
-	}
+	};
 });
 
 let workspaceContext = {
@@ -111,10 +131,26 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 	});
 };
 
+// create the YAML language service
+let languageService = getLanguageService({
+	schemaRequestService,
+	workspaceContext,
+	contributions: []
+});
 
-// The settings interface describe the server relevant settings part
+let KUBERNETES_SCHEMA_URL = "http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.4/kubernetes-model-1.1.4-schema.json";
+let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext);
+
+// The settings interface describes the server relevant settings part
 interface Settings {
-	yaml: schemaSettings;
+	yaml: {
+		format: { enable: boolean; };
+		schemas: JSONSchemaSettings[];
+	};
+	http: {
+		proxy: string;
+		proxyStrictSSL: boolean;
+	};
 }
 
 interface JSONSchemaSettings {
@@ -123,41 +159,47 @@ interface JSONSchemaSettings {
 	schema?: JSONSchema;
 }
 
-interface schemaSettings {
-	schemas: JSONSchemaSettings[];
-}
-
 let yamlConfigurationSettings: JSONSchemaSettings[] = void 0;
 let schemaAssociations: ISchemaAssociations = void 0;
-let schemasConfigurationSettings = [];
+let formatterRegistration: Thenable<Disposable> = null;
+let specificValidatorPaths = [];
+let schemaConfigurationSettings = [];
 
-let languageService = getLanguageService(schemaRequestService, workspaceContext);
-let jsonLanguageService = getJsonLanguageService(schemaRequestService);
-
+// The settings have changed. Is send on server activation as well.
 connection.onDidChangeConfiguration((change) => {
-	let settings = <Settings>change.settings;
-	yamlConfigurationSettings = settings.yaml.schemas;
-	schemasConfigurationSettings = [];
-	
-	// yamlConfigurationSettings is a mapping of Kedge/Kubernetes/Schema to Glob pattern
-	/*
-	 * {
-	 * 		"Kedge": ["/*"],
-	 * 		"http://schemaLocation": "/*" 
-	 * }
-	 */ 
+	var settings = <Settings>change.settings;
+	configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
+
+	specificValidatorPaths = [];
+	yamlConfigurationSettings = settings.yaml && settings.yaml.schemas;
+	schemaConfigurationSettings = [];
+
 	for(let url in yamlConfigurationSettings){
 		let globPattern = yamlConfigurationSettings[url];
 		let schemaObj = {
 			"fileMatch": Array.isArray(globPattern) ? globPattern : [globPattern],
 			"url": url
 		}
-		schemasConfigurationSettings.push(schemaObj);
+		schemaConfigurationSettings.push(schemaObj);
 	}
 
 	updateConfiguration();
+
+	// dynamically enable & disable the formatter
+	if (clientDynamicRegisterSupport) {
+		let enableFormatter = settings && settings.yaml && settings.yaml.format && settings.yaml.format.enable;
+		if (enableFormatter) {
+			if (!formatterRegistration) {
+				formatterRegistration = connection.client.register(DocumentFormattingRequest.type, { documentSelector: [{ language: 'yaml' }] });
+			}
+		} else if (formatterRegistration) {
+			formatterRegistration.then(r => r.dispose());
+			formatterRegistration = null;
+		}
+	}
 });
 
+// The jsonValidation extension configuration has changed
 connection.onNotification(SchemaAssociationNotification.type, associations => {
 	schemaAssociations = associations;
 	updateConfiguration();
@@ -166,29 +208,20 @@ connection.onNotification(SchemaAssociationNotification.type, associations => {
 function updateConfiguration() {
 	let languageSettings: LanguageSettings = {
 		validate: true,
-		allowComments: true,
 		schemas: []
 	};
 	if (schemaAssociations) {
 		for (var pattern in schemaAssociations) {
 			let association = schemaAssociations[pattern];
-			if (Array.isArray(association)) { 
-				association.forEach(function(uri){ 
-					if(uri.toLowerCase().trim() === "kedge"){
-						uri = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
-						languageSettings.schemas.push({ uri, fileMatch: [pattern] });	
-					}else if(uri.toLowerCase().trim() === "kubernetes"){
-						uri = 'http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json';
-						languageSettings.schemas.push({ uri, fileMatch: [pattern] });
-					}else{
-						languageSettings.schemas.push({ uri, fileMatch: [pattern] });
-					}
+			if (Array.isArray(association)) {
+				association.forEach(uri => {
+					languageSettings = configureSchemas(uri, [pattern], null);
 				});
 			}
 		}
 	}
-	if (schemasConfigurationSettings) {
-		schemasConfigurationSettings.forEach(schema => {
+	if (schemaConfigurationSettings) {
+		schemaConfigurationSettings.forEach(schema => {
 			let uri = schema.url;
 			if (!uri && schema.schema) {
 				uri = schema.schema.id;
@@ -201,43 +234,60 @@ function updateConfiguration() {
 					// workspace relative path
 					uri = URI.file(path.normalize(path.join(workspaceRoot.fsPath, uri))).toString();
 				}
-				if(uri.toLowerCase().trim() === "kedge"){
-					uri = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
-					languageSettings.schemas.push({ uri, fileMatch: schema.fileMatch });
-				}else if(uri.toLowerCase().trim() === "kubernetes"){
-					uri = 'http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json';
-					languageSettings.schemas.push({ uri, fileMatch: schema.fileMatch });
-				}else{
-					languageSettings.schemas.push({ uri, fileMatch: schema.fileMatch, schema: schema.schema });
-				}				
+				languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema);
 			}
 		});
 	}
 	languageService.configure(languageSettings);
+	customLanguageService.configure(languageSettings);
 
 	// Revalidate any open text documents
 	documents.all().forEach(triggerValidation);
 }
 
+function configureSchemas(uri, fileMatch, schema){
+	
+	let languageSettings: LanguageSettings = {
+		validate: true,
+		schemas: []
+	};
+	
+	if(uri.toLowerCase().trim() === "kedge"){
+		/*
+		 * Kedge schema is currently not working
+		 */
+
+		//uri = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
+	}else if(uri.toLowerCase().trim() === "kubernetes"){
+		uri = KUBERNETES_SCHEMA_URL;	
+	}
+
+	if(schema === null){
+		languageSettings.schemas.push({ uri, fileMatch: fileMatch });
+	}else{
+		languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema });
+	}
+
+	specificValidatorPaths.push(fileMatch);
+
+	return languageSettings;
+
+}
+
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent((change) => {
-	if(change.document.getText().length === 0) connection.sendDiagnostics({ uri: change.document.uri, diagnostics: [] });
-	triggerValidation(change.document);	
+	triggerValidation(change.document);
 });
 
-documents.onDidClose((event=>{
+// a document has closed: clear all diagnostics
+documents.onDidClose(event => {
 	cleanPendingValidation(event.document);
 	connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
-}));
+});
 
-function triggerValidation(textDocument: TextDocument): void {
-	cleanPendingValidation(textDocument);
-	pendingValidationRequests[textDocument.uri] = setTimeout(() => {
-		delete pendingValidationRequests[textDocument.uri];
-		validateTextDocument(textDocument);
-	}, validationDelayMs);
-}
+let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
+const validationDelayMs = 200;
 
 function cleanPendingValidation(textDocument: TextDocument): void {
 	let request = pendingValidationRequests[textDocument.uri];
@@ -247,53 +297,95 @@ function cleanPendingValidation(textDocument: TextDocument): void {
 	}
 }
 
-function validateTextDocument(textDocument: TextDocument): void {
+function triggerValidation(textDocument: TextDocument): void {
+	cleanPendingValidation(textDocument);
+	pendingValidationRequests[textDocument.uri] = setTimeout(() => {
+		delete pendingValidationRequests[textDocument.uri];
+		validateTextDocument(textDocument);
+	}, validationDelayMs);
+}
 
+function validateTextDocument(textDocument: TextDocument): void {
 	if (textDocument.getText().length === 0) {
-		// ignore empty documents
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
 		return;
 	}
+	
+	if(yamlConfigurationSettings === null){
+		return;
+	}
 
-	let textDocNewLineEnded = textDocument.getText()[textDocument.getText().length - 1] === "\n" ? textDocument.getText() : textDocument.getText() + "\n";
-	let yDoc = yamlLoader(textDocNewLineEnded,{});
-	if(yDoc !== undefined){ 
-		let diagnostics  = [];
-		if(yDoc.errors.length != 0){
-			diagnostics = yDoc.errors.map(error =>{
-				let mark = error.mark;
-				let start = textDocument.positionAt(mark.position);
-				let end = { line: mark.line, character: mark.column }
-				/*
-				 * Fix for the case when textDocument.positionAt(mark.position) is > end
-				 */
-				if(end.line < start.line || (end.line <= start.line && end.character < start.line)){
-					let temp = start;
-					start = end;
-					end = temp;
-				}
-				return {
-					severity: DiagnosticSeverity.Error,
-					range: {
-								start: start,
-								end: end
-							},
-					message: error.reason
-				}
-			});
+	if(isKubernetes(textDocument)){
+		return specificYamlValidator(textDocument);
+	}
+
+	return generalYamlValidator(textDocument);
+}
+
+function isKubernetes(textDocument){
+	for(let configOption in yamlConfigurationSettings){
+		let configItem = yamlConfigurationSettings[configOption];
+	
+		for(let globItem in configItem.fileMatch){
+			if(minimatch(textDocument.uri, "*.yaml", { matchBase: true }) && configItem.url && configItem.url === KUBERNETES_SCHEMA_URL){
+				return true;
+			}
 		}
 
-		let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(textDocument.getText(),{});
-		languageService.doValidation(textDocument, yamlDoc).then(function(result){		
-			for(let x = 0; x < result.items.length; x++){
-				diagnostics.push(result.items[x]);
-			}
-			
-			// Send the computed diagnostics to VSCode.
-			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-		});
-			
 	}
+	return false;
+}
+
+function generalYamlValidator(textDocument: TextDocument){
+	//Validator for regular yaml files
+	let jsonDocument = getJSONDocument(textDocument);
+	languageService.doValidation(textDocument, jsonDocument).then(function(diagnostics) {
+		for(let diagnosticItem in diagnostics){
+			diagnostics[diagnosticItem].severity = 1; //Convert all warnings to errors
+		}
+		// Send the computed diagnostics to VSCode.
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+	}, function(error){});
+}
+
+function specificYamlValidator(textDocument: TextDocument){
+	//Validator for kubernetes/kedge files
+	let diagnostics = [];
+	let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(textDocument.getText(),{});
+	customLanguageService.doValidation(textDocument, yamlDoc).then(function(result){
+		for(let x = 0; x < result.items.length; x++){
+			diagnostics.push(result.items[x]);
+		}
+		// Send the computed diagnostics to VSCode.
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+	}, function(error){});
+}
+
+connection.onDidChangeWatchedFiles((change) => {
+	// Monitored files have changed in VSCode
+	let hasChanges = false;
+	change.changes.forEach(c => {
+		if (languageService.resetSchema(c.uri)) {
+			hasChanges = true;
+		}
+	});
+	if (hasChanges) {
+		documents.all().forEach(validateTextDocument);
+	}
+});
+
+let yamlDocuments = getLanguageModelCache<YAMLDocument>(10, 60, document => languageService.parseYAMLDocument(document));
+
+documents.onDidClose(e => {
+	yamlDocuments.onDocumentRemoved(e.document);
+});
+
+connection.onShutdown(() => {
+	yamlDocuments.dispose();
+});
+
+function getJSONDocument(document: TextDocument): YAMLDocument {
+	return yamlDocuments.get(document);
 }
 
 // This handler provides the initial list of the completion items.
@@ -321,7 +413,7 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 			end = document.getText().length;
 		}
 		let textLine = document.getText().substring(start, end);
-		
+
 		//Check if the string we are looking at is a node
 		if(textLine.indexOf(":") === -1){
 			//We need to add the ":" to load the nodes
@@ -346,52 +438,46 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 					newText = document.getText().substring(0, start+(textLine.length)) + ":\r\n" + document.getText().substr(end+2);
 				}
 			}
-
-			let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(newText,{});
-			return languageService.doComplete(document, position, yamlDoc);
+			let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(newText,{});
+			return customLanguageService.doComplete(document, position, yamlDoc);
 		}else{
 
 			//All the nodes are loaded
-			let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
+			let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(document.getText(),{});
 			position.character = position.character - 1;
-			return languageService.doComplete(document, position, yamlDoc);
+			return customLanguageService.doComplete(document, position, yamlDoc);
 		}
 
 }
 
-// This handler resolve additional information for the item selected in
-// the completion list.
-connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
-  return item;
+connection.onCompletionResolve(completionItem => {
+	return languageService.doResolve(completionItem);
 });
 
-let yamlDocuments = getLanguageModelCache<JSONDocument>(10, 60, document => parseYaml(document.getText()));
-
-documents.onDidClose(e => {
-	yamlDocuments.onDocumentRemoved(e.document);
-});
-
-connection.onShutdown(() => {
-	yamlDocuments.dispose();
-});
-
-function getJSONDocument(document: TextDocument): JSONDocument {
-	return yamlDocuments.get(document);
-}
-
-connection.onHover(params => {
-	let document = documents.get(params.textDocument.uri);
-	let yamlDoc:YAMLDocument = <YAMLDocument> yamlLoader(document.getText(),{});
-
-	return languageService.doHover(document, params.position, yamlDoc).then((hoverItem): Hover => {
-		return hoverItem;
-	});
-});
-
-connection.onDocumentSymbol(params => {
-	let document = documents.get(params.textDocument.uri);
+connection.onHover(textDocumentPositionParams => {
+	let document = documents.get(textDocumentPositionParams.textDocument.uri);
+	let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(document.getText(),{});
 	let jsonDocument = getJSONDocument(document);
-	return jsonLanguageService.findDocumentSymbols(document, jsonDocument);
+
+	if(isKubernetes(textDocumentPositionParams.textDocument)){
+		return customLanguageService.doHover(document, textDocumentPositionParams.position, yamlDoc);
+	}
+
+	let hoverItem = languageService.doHover(document, textDocumentPositionParams.position, jsonDocument);
+	return hoverItem.then(function(result){
+		return result;
+	}, function(error){});
+});
+
+connection.onDocumentSymbol(documentSymbolParams => {
+	let document = documents.get(documentSymbolParams.textDocument.uri);
+	let jsonDocument = getJSONDocument(document);
+	return languageService.findDocumentSymbols(document, jsonDocument);
+});
+
+connection.onDocumentFormatting(formatParams => {
+	let document = documents.get(formatParams.textDocument.uri);
+	return languageService.format(document, formatParams.options);
 });
 
 // Listen on the connection

@@ -23,7 +23,6 @@ import * as URL from 'url';
 import fs = require('fs');
 import {JSONSchemaService} from '../src/languageService/services/jsonSchemaService'
 import {schemaService, languageService}  from './testHelper';
-var glob = require('glob');
 var assert = require('assert');
 
 
@@ -225,7 +224,4 @@ suite("Validation Tests", () => {
 			
 		});
 	});
-
-
-
 });
