@@ -21,8 +21,8 @@ import Strings = require('./languageService/utils/strings');
 import { YAMLDocument, JSONSchema, LanguageSettings, getLanguageService } from 'vscode-yaml-languageservice';
 import { getLanguageModelCache } from './languageModelCache';
 import { getLineOffsets } from './languageService/utils/arrUtils';
-import { load as yamlLoader, YAMLDocument as YAMLDoc } from 'yaml-ast-parser'
-import { getLanguageService as getCustomLanguageService } from './languageService/yamlLanguageService'
+import { load as yamlLoader, YAMLDocument as YAMLDoc } from 'yaml-ast-parser';
+import { getLanguageService as getCustomLanguageService } from './languageService/yamlLanguageService';
 var minimatch = require("minimatch")
 
 import * as nls from 'vscode-nls';
@@ -79,8 +79,8 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 		return !!c;
 	}
 
-	clientSnippetSupport = hasClientCapability('textDocument', 'completion', 'completionItem', 'snippetSupport');
-	clientDynamicRegisterSupport = hasClientCapability('workspace', 'symbol', 'dynamicRegistration');
+	//clientSnippetSupport = hasClientCapability('textDocument', 'completion', 'completionItem', 'snippetSupport');
+	//clientDynamicRegisterSupport = hasClientCapability('workspace', 'symbol', 'dynamicRegistration');
 	return {
 		capabilities: {
 			// Tell the client that the server works in FULL text document sync mode
@@ -163,6 +163,7 @@ let yamlConfigurationSettings: JSONSchemaSettings[] = void 0;
 let schemaAssociations: ISchemaAssociations = void 0;
 let formatterRegistration: Thenable<Disposable> = null;
 let specificValidatorPaths = [];
+let schemaConfigurationSettings = [];
 
 // The settings have changed. Is send on server activation as well.
 connection.onDidChangeConfiguration((change) => {
@@ -171,6 +172,17 @@ connection.onDidChangeConfiguration((change) => {
 
 	specificValidatorPaths = [];
 	yamlConfigurationSettings = settings.yaml && settings.yaml.schemas;
+	schemaConfigurationSettings = [];
+
+	for(let url in yamlConfigurationSettings){
+		let globPattern = yamlConfigurationSettings[url];
+		let schemaObj = {
+			"fileMatch": Array.isArray(globPattern) ? globPattern : [globPattern],
+			"url": url
+		}
+		schemaConfigurationSettings.push(schemaObj);
+	}
+
 	updateConfiguration();
 
 	// dynamically enable & disable the formatter
@@ -208,8 +220,8 @@ function updateConfiguration() {
 			}
 		}
 	}
-	if (yamlConfigurationSettings) {
-		yamlConfigurationSettings.forEach(schema => {
+	if (schemaConfigurationSettings) {
+		schemaConfigurationSettings.forEach(schema => {
 			let uri = schema.url;
 			if (!uri && schema.schema) {
 				uri = schema.schema.id;
