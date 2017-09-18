@@ -268,7 +268,14 @@ function configureSchemas(uri, fileMatch, schema){
 		languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema });
 	}
 
-	specificValidatorPaths.push(fileMatch);
+	if(fileMatch.constructor === Array){
+		fileMatch.forEach((url) => {
+			specificValidatorPaths.push(url);
+		});
+	}else{
+		specificValidatorPaths.push(fileMatch);
+	}
+	
 
 	return languageSettings;
 
@@ -311,10 +318,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 	if (textDocument.getText().length === 0) {		
 		return;
 	}
-	
-	if(yamlConfigurationSettings === null){
-		return;
-	}
+
 	if(isKubernetes(textDocument)){
 		return specificYamlValidator(textDocument);
 	}else{
@@ -323,15 +327,10 @@ function validateTextDocument(textDocument: TextDocument): void {
 }
 
 function isKubernetes(textDocument){
-	for(let configOption in yamlConfigurationSettings){
-		let configItem = yamlConfigurationSettings[configOption];
-	
-		for(let globItem in configItem.fileMatch){
-			if(minimatch(textDocument.uri, "*.yaml", { matchBase: true }) && configItem.url && configItem.url === KUBERNETES_SCHEMA_URL){
-				return true;
-			}
+	for(let path in specificValidatorPaths){
+		if(minimatch(textDocument.uri, specificValidatorPaths[path], {matchBase: true})){
+			return true;
 		}
-
 	}
 	return false;
 }
