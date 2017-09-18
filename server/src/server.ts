@@ -345,8 +345,6 @@ function generalYamlValidator(textDocument: TextDocument){
 			diagnostics[diagnosticItem].severity = 1; //Convert all warnings to errors
 		}
 
-		console.log(JSON.stringify(removeDuplicates(diagnostics), null, 4));
-
 		// Send the computed diagnostics to VSCode.
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
 	}, function(error){});
