@@ -314,9 +314,9 @@ function triggerValidation(textDocument: TextDocument): void {
 }
 
 function validateTextDocument(textDocument: TextDocument): void {
-	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
-
-	if (textDocument.getText().length === 0) {		
+	
+	if (textDocument.getText().length === 0) {
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });		
 		return;
 	}
 
@@ -329,7 +329,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 
 function isKubernetes(textDocument){
 	for(let path in specificValidatorPaths){
-		if(minimatch(textDocument.uri, specificValidatorPaths[path])){
+		if(minimatch(textDocument.uri, specificValidatorPaths[path], { matchBase: true })){
 			return true;
 		}
 	}
