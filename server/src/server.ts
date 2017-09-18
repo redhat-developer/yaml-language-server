@@ -9,7 +9,7 @@
 import {
 	createConnection, IConnection,
 	TextDocuments, TextDocument, InitializeParams, InitializeResult, NotificationType, RequestType,
-	DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter
+	DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter, DiagnosticSeverity
 } from 'vscode-languageserver';
 
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
@@ -202,6 +202,7 @@ connection.onDidChangeConfiguration((change) => {
 // The jsonValidation extension configuration has changed
 connection.onNotification(SchemaAssociationNotification.type, associations => {
 	schemaAssociations = associations;
+	specificValidatorPaths = [];
 	updateConfiguration();
 });
 
@@ -328,7 +329,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 
 function isKubernetes(textDocument){
 	for(let path in specificValidatorPaths){
-		if(minimatch(textDocument.uri, specificValidatorPaths[path], {matchBase: true})){
+		if(minimatch(textDocument.uri, specificValidatorPaths[path])){
 			return true;
 		}
 	}
@@ -351,13 +352,40 @@ function specificYamlValidator(textDocument: TextDocument){
 	//Validator for kubernetes/kedge files
 	let diagnostics = [];
 	let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(textDocument.getText(),{});
-	customLanguageService.doValidation(textDocument, yamlDoc).then(function(result){
-		for(let x = 0; x < result.items.length; x++){
-			diagnostics.push(result.items[x]);
+	if(yamlDoc !== undefined){ 
+		let diagnostics  = [];
+		if(yamlDoc.errors.length != 0){
+			diagnostics = yamlDoc.errors.map(error =>{
+				let mark = error.mark;
+				let start = textDocument.positionAt(mark.position);
+				let end = { line: mark.line, character: mark.column }
+				/*
+				 * Fix for the case when textDocument.positionAt(mark.position) is > end
+				 */
+				if(end.line < start.line || (end.line <= start.line && end.character < start.line)){
+					let temp = start;
+					start = end;
+					end = temp;
+				}
+				return {
+					severity: DiagnosticSeverity.Error,
+					range: {
+								start: start,
+								end: end
+							},
+					message: error.reason
+				}
+			});
 		}
-		// Send the computed diagnostics to VSCode.
-		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-	}, function(error){});
+
+		customLanguageService.doValidation(textDocument, yamlDoc).then(function(result){
+			for(let x = 0; x < result.items.length; x++){
+				diagnostics.push(result.items[x]);
+			}
+			// Send the computed diagnostics to VSCode.
+			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+		}, function(error){});
+	}
 }
 
 connection.onDidChangeWatchedFiles((change) => {
