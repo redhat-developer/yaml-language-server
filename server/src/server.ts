@@ -306,23 +306,20 @@ function triggerValidation(textDocument: TextDocument): void {
 }
 
 function validateTextDocument(textDocument: TextDocument): void {
-	if (textDocument.getText().length === 0) {
-		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
+	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
+
+	if (textDocument.getText().length === 0) {		
 		return;
 	}
 	
 	if(yamlConfigurationSettings === null){
 		return;
 	}
-
-	//Clear previously computed results before computing them again
-	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] }); 
-
 	if(isKubernetes(textDocument)){
 		return specificYamlValidator(textDocument);
+	}else{
+		return generalYamlValidator(textDocument);
 	}
-
-	return generalYamlValidator(textDocument);
 }
 
 function isKubernetes(textDocument){
