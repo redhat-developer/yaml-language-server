@@ -340,12 +340,35 @@ function generalYamlValidator(textDocument: TextDocument){
 	//Validator for regular yaml files
 	let jsonDocument = getJSONDocument(textDocument);
 	languageService.doValidation(textDocument, jsonDocument).then(function(diagnostics) {
+		
 		for(let diagnosticItem in diagnostics){
 			diagnostics[diagnosticItem].severity = 1; //Convert all warnings to errors
 		}
+
+		console.log(JSON.stringify(removeDuplicates(diagnostics), null, 4));
+
 		// Send the computed diagnostics to VSCode.
-		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
 	}, function(error){});
+}
+
+function removeDuplicates(objArray){
+	
+	let nonDuplicateSet = new Set();
+	let nonDuplicateArr = [];
+	for(let obj in objArray){
+
+		let currObj = objArray[obj];
+		let stringifiedObj = JSON.stringify(currObj);
+		if(!nonDuplicateSet.has(stringifiedObj)){
+			nonDuplicateArr.push(currObj);
+			nonDuplicateSet.add(stringifiedObj);
+		}
+
+	}
+
+	return nonDuplicateArr;
+
 }
 
 function specificYamlValidator(textDocument: TextDocument){
@@ -383,7 +406,7 @@ function specificYamlValidator(textDocument: TextDocument){
 				diagnostics.push(result.items[x]);
 			}
 			// Send the computed diagnostics to VSCode.
-			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
 		}, function(error){});
 	}
 }
