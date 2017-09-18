@@ -315,6 +315,9 @@ function validateTextDocument(textDocument: TextDocument): void {
 		return;
 	}
 
+	//Clear previously computed results before computing them again
+	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] }); 
+
 	if(isKubernetes(textDocument)){
 		return specificYamlValidator(textDocument);
 	}
