@@ -26,6 +26,7 @@ import { getLanguageService as getCustomLanguageService } from './languageServic
 var minimatch = require("minimatch")
 
 import * as nls from 'vscode-nls';
+import { FilePatternAssociation } from './languageService/services/jsonSchemaService';
 nls.config(process.env['VSCODE_NLS_CONFIG']);
 
 interface ISchemaAssociations {
@@ -88,7 +89,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 			// Disabled because too JSON centric
 			completionProvider: { resolveProvider: true },
 			hoverProvider: true,
-			documentSymbolProvider: true,
+			documentSymbolProvider: false,
 			documentFormattingProvider: false
 		}
 	};
@@ -269,11 +270,11 @@ function configureSchemas(uri, fileMatch, schema){
 		languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema });
 	}
 
-	if(fileMatch.constructor === Array){
+	if(fileMatch.constructor === Array && uri === KUBERNETES_SCHEMA_URL){
 		fileMatch.forEach((url) => {
 			specificValidatorPaths.push(url);
 		});
-	}else{
+	}else if(uri === KUBERNETES_SCHEMA_URL){
 		specificValidatorPaths.push(fileMatch);
 	}
 	
@@ -329,7 +330,9 @@ function validateTextDocument(textDocument: TextDocument): void {
 
 function isKubernetes(textDocument){
 	for(let path in specificValidatorPaths){
-		if(minimatch(textDocument.uri, specificValidatorPaths[path], { matchBase: true })){
+		let globPath = specificValidatorPaths[path];
+		let fpa = new FilePatternAssociation(globPath);
+		if(fpa.matchesPattern(textDocument.uri)){
 			return true;
 		}
 	}
@@ -373,40 +376,13 @@ function specificYamlValidator(textDocument: TextDocument){
 	//Validator for kubernetes/kedge files
 	let diagnostics = [];
 	let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(textDocument.getText(),{});
-	if(yamlDoc !== undefined){ 
-		let diagnostics  = [];
-		if(yamlDoc.errors.length != 0){
-			diagnostics = yamlDoc.errors.map(error =>{
-				let mark = error.mark;
-				let start = textDocument.positionAt(mark.position);
-				let end = { line: mark.line, character: mark.column }
-				/*
-				 * Fix for the case when textDocument.positionAt(mark.position) is > end
-				 */
-				if(end.line < start.line || (end.line <= start.line && end.character < start.line)){
-					let temp = start;
-					start = end;
-					end = temp;
-				}
-				return {
-					severity: DiagnosticSeverity.Error,
-					range: {
-								start: start,
-								end: end
-							},
-					message: error.reason
-				}
-			});
+	customLanguageService.doValidation(textDocument, yamlDoc).then(function(result){
+		for(let x = 0; x < result.items.length; x++){
+			diagnostics.push(result.items[x]);
 		}
-
-		customLanguageService.doValidation(textDocument, yamlDoc).then(function(result){
-			for(let x = 0; x < result.items.length; x++){
-				diagnostics.push(result.items[x]);
-			}
-			// Send the computed diagnostics to VSCode.
-			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
-		}, function(error){});
-	}
+		// Send the computed diagnostics to VSCode.
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
+	}, function(error){});
 }
 
 connection.onDidChangeWatchedFiles((change) => {
