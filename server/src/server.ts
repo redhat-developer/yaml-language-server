@@ -322,9 +322,17 @@ function validateTextDocument(textDocument: TextDocument): void {
 	}
 
 	if(isKubernetes(textDocument)){
-		return specificYamlValidator(textDocument);
+		let generalResults2 = generalYamlValidator(textDocument).then(function(generalResults){
+			let specificResults = specificYamlValidator(textDocument).then(function(specificResults){
+				let generalDiagnostics = generalResults == null ? [] : generalResults;
+				let diagnostics = generalDiagnostics.concat(specificResults.items);
+				connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
+			});
+		});
 	}else{
-		return generalYamlValidator(textDocument);
+		generalYamlValidator(textDocument).then(function(generalResults){
+			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(generalResults) });
+		});
 	}
 }
 
@@ -339,17 +347,21 @@ function isKubernetes(textDocument){
 	return false;
 }
 
-function generalYamlValidator(textDocument: TextDocument){
+function generalYamlValidator(textDocument: TextDocument) {
 	//Validator for regular yaml files
+
 	let jsonDocument = getJSONDocument(textDocument);
-	languageService.doValidation(textDocument, jsonDocument).then(function(diagnostics) {
+	let diagnostics = [];
+	return languageService.doValidation(textDocument, jsonDocument).then(function(results) {
 		
-		for(let diagnosticItem in diagnostics){
-			diagnostics[diagnosticItem].severity = 1; //Convert all warnings to errors
+		for(let diagnosticItem in results){
+			results[diagnosticItem].severity = 1; //Convert all warnings to errors
+			diagnostics.push(results[diagnosticItem]);
 		}
 
+		return diagnostics;
 		// Send the computed diagnostics to VSCode.
-		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
+		//connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
 	}, function(error){});
 }
 
@@ -376,39 +388,15 @@ function specificYamlValidator(textDocument: TextDocument){
 	//Validator for kubernetes/kedge files
 	let diagnostics = [];
 	let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(textDocument.getText(),{});
-	if(yamlDoc !== undefined){ 
-		let diagnostics  = [];
-		if(yamlDoc.errors.length != 0){
-			diagnostics = yamlDoc.errors.map(error =>{
-				let mark = error.mark;
-				let start = textDocument.positionAt(mark.position);
-				let end = { line: mark.line, character: mark.column }
-				/*
-				 * Fix for the case when textDocument.positionAt(mark.position) is > end
-				 */
-				if(end.line < start.line || (end.line <= start.line && end.character < start.line)){
-					let temp = start;
-					start = end;
-					end = temp;
-				}
-				return {
-					severity: DiagnosticSeverity.Error,
-					range: {
-								start: start,
-								end: end
-							},
-					message: error.reason
-				}
-			});
-		}
-		customLanguageService.doValidation(textDocument, yamlDoc).then(function(result){
-			for(let x = 0; x < result.items.length; x++){
-				diagnostics.push(result.items[x]);
-			}
-			// Send the computed diagnostics to VSCode.
-			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
-		}, function(error){});
-	}
+	return customLanguageService.doValidation(textDocument, yamlDoc).then(function(result){
+		// for(let x = 0; x < result.items.length; x++){
+		// 	diagnostics.push(result.items[x]);
+		// }
+		// Send the computed diagnostics to VSCode.
+		return result;
+		//connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
+	}, function(error){});
+	
 }
 
 connection.onDidChangeWatchedFiles((change) => {
