@@ -322,8 +322,8 @@ function validateTextDocument(textDocument: TextDocument): void {
 	}
 
 	if(isKubernetes(textDocument)){
-		let generalResults2 = generalYamlValidator(textDocument).then(function(generalResults){
-			let specificResults = specificYamlValidator(textDocument).then(function(specificResults){
+		generalYamlValidator(textDocument).then(function(generalResults){
+			specificYamlValidator(textDocument).then(function(specificResults){
 				let generalDiagnostics = generalResults == null ? [] : generalResults;
 				let diagnostics = generalDiagnostics.concat(specificResults.items);
 				connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
