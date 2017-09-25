@@ -13,12 +13,10 @@ install:
 - npm install
 - npm run compile
 deploy:
-  provider: releases
-  api_key: ${api_key}
-  file_glob: true
-  file: "./out"
-  skip_cleanup: true
+  provider: npm
+  email: gorkem.ercan@gmail.com
+  api_key:
+    secure: LUnQgBCIWsA+6VTndFjjcwKWdIbdcTLCbxSrzQhoreqs6uNgv0wPf8+H7eEvVTqtVIw9cL2zCI0pMuh4SIjg5pZl2yKxHJNDw32Qlfv/1PeWnHLOX6+EwoF2pHcx+tjXGbbqJM/ONg3xVfDtHi0J+1seLFgaKqWZPiaz5gAj5Dhv8ZAj6F8ZkDFeTO+PNlPhsCwU+ynNTcISUKCXbxfNxxPFvYVvr6boW5LSUk2yfJxD7dKPH7tvxYgpdkbowuFYo33Qz4iwhzfRujG5I6LQQDEZkNnc/oJ/pXWTzmws1bCje7zN5TQ8eqDp3XL5RvZGRsel1vSLqIz5WYWMJ12wkVdOF17XlIgxT1BJ0BBm2L0oz1Oqio3ei8jEuo40TKjcBnBLf5MboBpIXShUJ07CkdJZ5cbZQSmBE7slnxmcKYJyncyaowySMtcKaLldFyGPYm+Xgg/CjPG73wD6ofgV7hkNFFPPx7w/+1qeWFv7J5ii/29qCrNH0zzHI1zxBCoI3pJ+AJexTIRa+Fpa+lkKMhi2i+cTPJrgsvZ9q8H5tY9VWJgYt7eyfNELmVbbIKZYWRkaF3nVeraDTOE5FDiM487FEqs+Sxt9MRm2s3PzReuCo77hgrTA8PPqHSFT6nqMEPFFP+Q+HaXD8FEMOC7HH2sJ5t9MwLSrZA2HEzJkDSI=
   on:
-    branch: master
-    tags: false
+    tags: true
     repo: redhat-developer/yaml-language-server
