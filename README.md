@@ -39,17 +39,16 @@ kedge and kubernetes are optional fields. They do not require a url as the langu
    * latest [Visual Studio Code](https://code.visualstudio.com/)
    * [Node.js](https://nodejs.org/) v6.0.0 or higher
 2. Fork and clone this repository
-3. `cd vscode-k8s`
-4. Install the dependencies for server
+3. Install the dependencies
 	```bash
-	cd server
+    cd yaml-language-server
 	$ npm install
 	```
-5. Build the language server
+4. Build the language server
 	```bash
-	npm run compile
+	$ npm run compile
 	```
-6. The new built server is now location in out/server/src/server.js.
+5. The new built server is now location in out/server/src/server.js.
 	```bash
 	node (Yaml Language Server Location)/out/server/src/server.js
 	```
