@@ -8,11 +8,11 @@
     "node": "*"
   },
   "dependencies": {
-    "@types/mocha": "^2.2.41",
+    "@types/mocha": "2.2.41",
     "deep-equal": "^1.0.1",
     "jsonc-parser": "^0.4.2",
     "minimatch": "^3.0.4",
-    "mocha": "^3.4.2",
+    "mocha": "3.4.2",
     "request-light": "^0.2.0",
     "triesearch": "^1.0.2",
     "vscode-json-languageservice": "2.0.16",
@@ -31,7 +31,7 @@
     "typescript": "2.1.5"
   },
   "scripts": {
-    "compile": "installServerIntoExtension ../out ./package.json ./tsconfig.json && tsc -p .",
+    "compile": "installServerIntoExtension ./out ./package.json ./tsconfig.json && tsc -p .",
     "watch": "installServerIntoExtension ../out ./package.json ./tsconfig.json && tsc --watch -p .",
     "test": "mocha --require ts-node/register --ui tdd ./test/*.test.ts",
     "coverage": "nyc mocha --require ts-node/register --require source-map-support/register --recursive --ui tdd ./test/*.test.ts"

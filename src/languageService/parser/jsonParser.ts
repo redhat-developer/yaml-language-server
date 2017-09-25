@@ -6,6 +6,7 @@
 
 import Json = require('jsonc-parser');
 import { JSONSchema } from '../jsonSchema';
+import * as objects from '../utils/objects';
 
 import * as nls from 'vscode-nls';
 const localize = nls.loadMessageBundle();
@@ -19,12 +20,12 @@ export enum ErrorCode {
 	Undefined = 0,
 	EnumValueMismatch = 1,
 	CommentsNotAllowed = 2,
-    UnexpectedEndOfComment = 0x101,
-    UnexpectedEndOfString = 0x102,
-    UnexpectedEndOfNumber = 0x103,
-    InvalidUnicode = 0x104,
-    InvalidEscapeCharacter = 0x105,
-    InvalidCharacter = 0x106,
+	UnexpectedEndOfComment = 0x101,
+	UnexpectedEndOfString = 0x102,
+	UnexpectedEndOfNumber = 0x103,
+	InvalidUnicode = 0x104,
+	InvalidEscapeCharacter = 0x105,
+	InvalidCharacter = 0x106,
 }
 
 export interface IError {
@@ -219,7 +220,15 @@ export class ASTNode {
 		}
 
 		if (Array.isArray(schema.enum)) {
-			if (schema.enum.indexOf(this.getValue()) === -1) {
+			let val = this.getValue();
+			let enumValueMatch = false;
+			for (let e of schema.enum) {
+				if (objects.equals(val, e)) {
+					enumValueMatch = true;
+					break;
+				}
+			}
+			if (!enumValueMatch) {
 				validationResult.warnings.push({
 					location: { start: this.start, end: this.end },
 					code: ErrorCode.EnumValueMismatch,
@@ -338,7 +347,7 @@ export class ArrayASTNode extends ASTNode {
 		else if (schema.items) {
 			this.items.forEach((item) => {
 				let itemValidationResult = new ValidationResult();
-				item.validate(schema.items, itemValidationResult, matchingSchemas, offset);
+				item.validate(<JSONSchema> schema.items, itemValidationResult, matchingSchemas, offset);
 				validationResult.mergePropertyMatch(itemValidationResult);
 			});
 		}
@@ -578,7 +587,7 @@ export class ObjectASTNode extends ASTNode {
 		let value: any = Object.create(null);
 		this.properties.forEach((p) => {
 			let v = p.value && p.value.getValue();
-			if (v) {
+			if (typeof v !== 'undefined') {
 				value[p.key.getValue()] = v;
 			}
 		});
@@ -661,12 +670,12 @@ export class ObjectASTNode extends ASTNode {
 			});
 		}
 
-		if (schema.additionalProperties) {
+		if (typeof schema.additionalProperties === 'object') {
 			unprocessedProperties.forEach((propertyName: string) => {
 				let child = seenKeys[propertyName];
 				if (child) {
 					let propertyvalidationResult = new ValidationResult();
-					child.validate(schema.additionalProperties, propertyvalidationResult, matchingSchemas, offset);
+					child.validate(<any> schema.additionalProperties, propertyvalidationResult, matchingSchemas, offset);
 					validationResult.mergePropertyMatch(propertyvalidationResult);
 				}
 			});

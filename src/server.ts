@@ -25,6 +25,14 @@ import { load as yamlLoader, YAMLDocument as YAMLDoc } from 'yaml-ast-parser';
 import { getLanguageService as getCustomLanguageService } from './languageService/yamlLanguageService';
 var minimatch = require("minimatch")
 
+/**
+ * DELETE LATER
+ */
+import Parser = require('./languageService/parser/jsonParser');
+import { SymbolInformation, SymbolKind, Location } from 'vscode-languageserver-types';
+import { Thenable } from "./languageService/yamlLanguageService";
+import { IJSONSchemaService } from "./languageService/services/jsonSchemaService";
+
 import * as nls from 'vscode-nls';
 import { FilePatternAssociation } from './languageService/services/jsonSchemaService';
 nls.config(process.env['VSCODE_NLS_CONFIG']);
@@ -89,7 +97,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 			// Disabled because too JSON centric
 			completionProvider: { resolveProvider: true },
 			hoverProvider: true,
-			documentSymbolProvider: false,
+			documentSymbolProvider: true,
 			documentFormattingProvider: false
 		}
 	};
@@ -509,8 +517,8 @@ connection.onHover(textDocumentPositionParams => {
 
 connection.onDocumentSymbol(documentSymbolParams => {
 	let document = documents.get(documentSymbolParams.textDocument.uri);
-	let jsonDocument = getJSONDocument(document);
-	return languageService.findDocumentSymbols(document, jsonDocument);
+	let jsonDocument = languageService.parseYAMLDocument(document).documents[0];
+	return customLanguageService.findDocumentSymbols(document, jsonDocument);
 });
 
 connection.onDocumentFormatting(formatParams => {
