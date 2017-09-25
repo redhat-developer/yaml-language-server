@@ -1,8 +1,8 @@
 {
-  "name": "vscode-k8s",
+  "name": "yaml-language-server",
   "description": "YAML language server",
   "version": "0.0.1",
-  "author": "Gorkem Ercan",
+  "author": "Gorkem Ercan (Red Hat)",
   "license": "MIT",
   "engines": {
     "node": "*"
