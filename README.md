@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/redhat-developer/yaml-language-server.svg?branch=master)](https://travis-ci.org/redhat-developer/yaml-language-server)
 
-# Yaml Language Server
+# YAML Language Server
 
 ## Features
 
@@ -57,4 +57,3 @@ This repository only contains the server implementation. Here are some known cli
 	```bash
 	node (Yaml Language Server Location)/out/server/src/server.js
 	```
-Refer to VS Code [documentation](https://code.visualstudio.com/docs/extensions/debugging-extensions) on how to run and debug the extension

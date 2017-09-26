@@ -1,7 +1,7 @@
 {
   "name": "yaml-language-server",
   "description": "YAML language server",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Gorkem Ercan (Red Hat)",
   "license": "MIT",
   "engines": {
@@ -11,6 +11,10 @@
     "yaml",
     "LSP"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/redhat-developer/yaml-language-server.git"
+  },
   "dependencies": {
     "@types/mocha": "2.2.41",
     "deep-equal": "^1.0.1",
