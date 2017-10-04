@@ -1,11 +1,7 @@
-// 
-// Note: This example test is leveraging the Mocha test framework.
-// Please refer to their documentation on https://mochajs.org/ for help.
-//
-
-// The module 'assert' provides assertion methods from node
-
-
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Red Hat. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 import {
 	IPCMessageReader, IPCMessageWriter,
 	createConnection, IConnection, TextDocumentSyncKind,
@@ -14,7 +10,7 @@ import {
 	CompletionItem, CompletionItemKind, RequestType
 } from 'vscode-languageserver';
 import { autoCompletionProvider } from '../src/languageService/providers/autoCompletionProvider'
-import {load as yamlLoader, YAMLDocument, YAMLException, YAMLNode} from 'yaml-ast-parser-beta';
+import {load as yamlLoader, YAMLDocument, YAMLException, YAMLNode} from 'yaml-ast-parser';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
 import {getLanguageService} from '../src/languageService/yamlLanguageService'
 import Strings = require( '../src/languageService/utils/strings');

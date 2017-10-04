@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Red Hat, Inc. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 import { CompletionItem, CompletionItemKind, CompletionList, Hover, TextDocument, Position, Range, TextEdit, InsertTextFormat } from 'vscode-languageserver-types';
 import { YAMLDocument, YAMLNode, Kind } from 'yaml-ast-parser';
 import { Thenable } from '../yamlLanguageService';

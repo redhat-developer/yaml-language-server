@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Joshua Pinkney. All rights reserved.
+ *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Copyright (c) Adam Voss. All rights reserved.
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -23,16 +23,6 @@ import { getLanguageModelCache } from './languageModelCache';
 import { getLineOffsets } from './languageService/utils/arrUtils';
 import { load as yamlLoader, YAMLDocument as YAMLDoc } from 'yaml-ast-parser';
 import { getLanguageService as getCustomLanguageService } from './languageService/yamlLanguageService';
-var minimatch = require("minimatch")
-
-/**
- * DELETE LATER
- */
-import Parser = require('./languageService/parser/jsonParser');
-import { SymbolInformation, SymbolKind, Location } from 'vscode-languageserver-types';
-import { Thenable } from "./languageService/yamlLanguageService";
-import { IJSONSchemaService } from "./languageService/services/jsonSchemaService";
-
 import * as nls from 'vscode-nls';
 import { FilePatternAssociation } from './languageService/services/jsonSchemaService';
 nls.config(process.env['VSCODE_NLS_CONFIG']);
@@ -88,13 +78,11 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 		return !!c;
 	}
 
-	//clientSnippetSupport = hasClientCapability('textDocument', 'completion', 'completionItem', 'snippetSupport');
-	//clientDynamicRegisterSupport = hasClientCapability('workspace', 'symbol', 'dynamicRegistration');
+	clientSnippetSupport = hasClientCapability('textDocument', 'completion', 'completionItem', 'snippetSupport');
+	clientDynamicRegisterSupport = hasClientCapability('workspace', 'symbol', 'dynamicRegistration');
 	return {
 		capabilities: {
-			// Tell the client that the server works in FULL text document sync mode
 			textDocumentSync: documents.syncKind,
-			// Disabled because too JSON centric
 			completionProvider: { resolveProvider: true },
 			hoverProvider: true,
 			documentSymbolProvider: true,
@@ -262,13 +250,7 @@ function configureSchemas(uri, fileMatch, schema){
 		schemas: []
 	};
 	
-	if(uri.toLowerCase().trim() === "kedge"){
-		/*
-		 * Kedge schema is currently not working
-		 */
-
-		//uri = 'https://raw.githubusercontent.com/surajssd/kedgeSchema/master/configs/appspec.json';
-	}else if(uri.toLowerCase().trim() === "kubernetes"){
+	if(uri.toLowerCase().trim() === "kubernetes"){
 		uri = KUBERNETES_SCHEMA_URL;	
 	}
 
@@ -356,7 +338,6 @@ function isKubernetes(textDocument){
 }
 
 function generalYamlValidator(textDocument: TextDocument) {
-	//Validator for regular yaml files
 
 	let jsonDocument = getJSONDocument(textDocument);
 	let diagnostics = [];
@@ -368,8 +349,6 @@ function generalYamlValidator(textDocument: TextDocument) {
 		}
 
 		return diagnostics;
-		// Send the computed diagnostics to VSCode.
-		//connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
 	}, function(error){});
 }
 
@@ -397,12 +376,7 @@ function specificYamlValidator(textDocument: TextDocument){
 	let diagnostics = [];
 	let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(textDocument.getText(),{});
 	return customLanguageService.doValidation(textDocument, yamlDoc).then(function(result){
-		// for(let x = 0; x < result.items.length; x++){
-		// 	diagnostics.push(result.items[x]);
-		// }
-		// Send the computed diagnostics to VSCode.
 		return result;
-		//connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
 	}, function(error){});
 	
 }

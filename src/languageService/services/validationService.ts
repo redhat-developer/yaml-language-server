@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Red Hat, Inc. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 import { ASTVisitor, generateChildren, generateParents } from '../utils/astServices';
 import { YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference } from 'yaml-ast-parser';
 import { JSONSchema } from "../jsonSchema";
@@ -5,9 +9,9 @@ import { DiagnosticSeverity } from "vscode-languageserver-types/lib/main";
 import { error } from "util";
 import { xhr,configure as getErrorStatusDescription } from 'request-light';
 import { ErrorHandler } from '../utils/errorHandler';
-import {load as yamlLoader, YAMLDocument, YAMLException} from 'yaml-ast-parser-beta';
+import {load as yamlLoader, YAMLDocument, YAMLException} from 'yaml-ast-parser';
 import {searchService} from './searchService'
-import { LanguageSettings } from "../yamlLanguageService";
+import { LanguageSettings } from "vscode-yaml-languageservice";
 
 
 export class schemaValidator {

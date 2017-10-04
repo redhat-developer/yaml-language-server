@@ -11,7 +11,7 @@ import { SymbolInformation, SymbolKind, TextDocument, Range, Location } from 'vs
 import { Thenable } from "../yamlLanguageService";
 import { IJSONSchemaService } from "./jsonSchemaService";
 
-export class JSONDocumentSymbols {
+export class YAMLDocumentSymbols {
 
 	public findDocumentSymbols(document: TextDocument, doc: Parser.JSONDocument): SymbolInformation[] {
 
