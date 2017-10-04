@@ -1,6 +1,10 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Red Hat. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 import { TextDocument } from 'vscode-languageserver';
 import { findNode, generateChildren, generateParents } from '../src/languageService/utils/astServices';
-import { load as yamlLoader, YAMLDocument, YAMLException, YAMLNode, Kind } from 'yaml-ast-parser-beta';
+import { load as yamlLoader, YAMLDocument, YAMLException, YAMLNode, Kind } from 'yaml-ast-parser';
 var assert = require('assert');
 
 suite("AST Services Tests", () => {

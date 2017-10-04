@@ -1,13 +1,13 @@
 import { autoCompletionProvider } from './providers/autoCompletionProvider';
 import { validationProvider } from './providers/validationProvider';
 import { JSONSchemaService } from './services/jsonSchemaService'
-
+import { LanguageSettings } from 'vscode-yaml-languageservice';
 import { TextDocument, Position, CompletionList } from 'vscode-languageserver-types';
 import { YAMLDocument} from 'yaml-ast-parser';
 import { JSONSchema } from './jsonSchema';
 import { schemaContributions } from './services/configuration';
 import { hoverProvider } from "./providers/hoverProvider";
-import { JSONDocumentSymbols } from './services/documentSymbols';
+import { YAMLDocumentSymbols } from './services/documentSymbols';
 
 export type JSONDocument = {"root"}
 export type YAMLDocument = { documents: JSONDocument[]}
@@ -66,18 +66,6 @@ export interface SchemaRequestService {
 	(uri: string): Thenable<string>;
 }
 
-export interface LanguageSettings {
-	/**
-	 * If set, the validator will return syntax errors.
-	 */
-	validate?: boolean;
-
-	/**
-	 * A list of known schemas and/or associations of schemas to file names.
-	 */
-	schemas?: SchemaConfiguration[];
-}
-
 export interface SchemaConfiguration {
 	/**
 	 * The URI of the schema, which is also the identifier of the schema.
@@ -95,7 +83,7 @@ export interface SchemaConfiguration {
 }
 
 export interface LanguageService {
-  configure(settings: LanguageSettings): void;
+  configure(settingss): void;
 	doComplete(document: TextDocument, documentPosition: Position, doc): Thenable<CompletionList>;
   doValidation(document: TextDocument, doc: YAMLDocument);
   doHover(document, position, doc);
@@ -110,10 +98,10 @@ export function getLanguageService(schemaRequestService, workspaceContext): Lang
   let completer = new autoCompletionProvider(schemaService);
   let validator = new validationProvider(schemaService);
   let hover = new hoverProvider(schemaService);
-  let jsonDocumentSymbols = new JSONDocumentSymbols();
+  let jsonDocumentSymbols = new YAMLDocumentSymbols();
 
   return {
-      configure: (settings: LanguageSettings) => {
+      configure: (settings) => {
         schemaService.clearExternalSchemas();
         if (settings.schemas) {
           settings.schemas.forEach(settings => {

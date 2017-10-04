@@ -1,8 +1,10 @@
-
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Red Hat, Inc. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 import {TextDocument, CompletionList} from 'vscode-languageserver-types';
 import {JSONSchema} from "../jsonSchema";
 import {YAMLDocument, YAMLNode, Kind} from 'yaml-ast-parser';
-let AutoComplete = require('triesearch');
 
 export class searchService {
 
