@@ -35,6 +35,7 @@ kedge and kubernetes are optional fields. They do not require a url as the langu
 This repository only contains the server implementation. Here are some known clients consuming this server:
 
 * [Eclipse Che](https://www.eclipse.org/che/)
+* [vscode-yaml](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) for VSCode
 * [ide-yaml](https://atom.io/packages/ide-yaml) for Atom editor
 
 ## Developer Support
