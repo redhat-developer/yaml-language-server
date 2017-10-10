@@ -32,7 +32,7 @@
     "vscode-nls": "^2.0.2",
     "vscode-uri": "1.0.0",
     "vscode-yaml-languageservice": "^0.2.0",
-    "yaml-ast-parser": "^0.0.32"
+    "yaml-ast-parser": "0.0.36"
   },
   "devDependencies": {
     "@types/node": "^6.0.52",

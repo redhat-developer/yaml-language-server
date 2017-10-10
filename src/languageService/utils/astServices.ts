@@ -4,16 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 import {YAMLNode, Kind, YAMLScalar, YAMLSequence, YAMLMapping, YamlMap, YAMLAnchorReference} from  'yaml-ast-parser';
 
-export function traverse (node: YAMLNode, visitor:ASTVisitor){
+export function traverse (node, visitor:ASTVisitor){
   if(!node || !visitor) return;
-  switch(node.kind){
+  switch(node.type){
     case Kind.SCALAR:
-      let scalar = <YAMLScalar> node;
+      let scalar = node;
       if (visitor.visit(scalar)){
       }
       break;
     case Kind.SEQ:
-      let seq = <YAMLSequence> node;
+      let seq = node;
       if(visitor.visit(seq)){
         seq.items.forEach(item=>{
             traverse(item,visitor);
@@ -21,13 +21,13 @@ export function traverse (node: YAMLNode, visitor:ASTVisitor){
       }
       break;
     case Kind.MAPPING:
-      let mapping = <YAMLMapping> node;
+      let mapping = node;
       if(visitor.visit(mapping)){
         traverse(mapping.value,visitor);
       }
       break;
     case Kind.MAP:
-      let map = <YamlMap> node;
+      let map = node;
       if(visitor.visit(map)){
         map.mappings.forEach(mapping=>{
           traverse(mapping,visitor);
@@ -35,7 +35,7 @@ export function traverse (node: YAMLNode, visitor:ASTVisitor){
       }
       break;
     case Kind.ANCHOR_REF:
-      let anchor = <YAMLAnchorReference> node;
+      let anchor = node;
       if(visitor.visit(anchor)){
         traverse(anchor.value,visitor);
       }
@@ -44,17 +44,17 @@ export function traverse (node: YAMLNode, visitor:ASTVisitor){
 }
 
 export class ASTVisitor{
-  public visit(node: YAMLNode) : boolean {
+  public visit(node) : boolean {
     return true;
   };
-  public traverseBackToLocation(node: YAMLNode): void{
+  public traverseBackToLocation(node): void{
   }
 }
 
-export function findNode(node:YAMLNode, offset: number): YAMLNode {
-  let lastNode:YAMLNode;
+export function findNode(node, offset: number) {
+  let lastNode;
   class Finder extends ASTVisitor {
-      visit(node:YAMLNode):boolean {
+      visit(node):boolean {
         if(node.endPosition >= offset && node.startPosition <= offset){
           lastNode=node;
           return true;

@@ -25,6 +25,7 @@ import { load as yamlLoader, YAMLDocument as YAMLDoc } from 'yaml-ast-parser';
 import { getLanguageService as getCustomLanguageService } from './languageService/yamlLanguageService';
 import * as nls from 'vscode-nls';
 import { FilePatternAssociation } from './languageService/services/jsonSchemaService';
+import {parse as parseYAML} from './languageService/parser/yamlParser';
 nls.config(process.env['VSCODE_NLS_CONFIG']);
 
 interface ISchemaAssociations {
@@ -411,6 +412,8 @@ function getJSONDocument(document: TextDocument): YAMLDocument {
 // This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition =>  {
 	let document = documents.get(textDocumentPosition.textDocument.uri);
+	//let jsonDocument = parseYAML(document.getText()).documents[0];
+	//return customLanguageService.newDoComplete(document, textDocumentPosition.position, jsonDocument);
 	return completionHelper(document, textDocumentPosition);
 });
 
@@ -458,14 +461,14 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 					newText = document.getText().substring(0, start+(textLine.length)) + ":\r\n" + document.getText().substr(end+2);
 				}
 			}
-			let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(newText,{});
-			return customLanguageService.doComplete(document, position, yamlDoc);
+			let jsonDocument = parseYAML(newText).documents[0];
+			return customLanguageService.newDoComplete(document, textDocumentPosition.position, jsonDocument);
 		}else{
 
 			//All the nodes are loaded
-			let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(document.getText(),{});
 			position.character = position.character - 1;
-			return customLanguageService.doComplete(document, position, yamlDoc);
+			let jsonDocument = parseYAML(document.getText()).documents[0];
+			return customLanguageService.newDoComplete(document, textDocumentPosition.position, jsonDocument);
 		}
 
 }

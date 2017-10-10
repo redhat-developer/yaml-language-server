@@ -8,9 +8,11 @@ import { JSONSchema } from './jsonSchema';
 import { schemaContributions } from './services/configuration';
 import { hoverProvider } from "./providers/hoverProvider";
 import { YAMLDocumentSymbols } from './services/documentSymbols';
+import { JSONCompletion } from "./services/jsonCompletion";
+import { JSONDocument } from 'vscode-json-languageservice'
 
-export type JSONDocument = {"root"}
-export type YAMLDocument = { documents: JSONDocument[]}
+
+
 
 export interface PromiseConstructor {
     /**
@@ -88,6 +90,7 @@ export interface LanguageService {
   doValidation(document: TextDocument, doc: YAMLDocument);
   doHover(document, position, doc);
   findDocumentSymbols(document: TextDocument, doc);
+  newDoComplete(document: TextDocument, position: Position, doc: JSONDocument): Thenable<CompletionList>;
 }
 
 export function getLanguageService(schemaRequestService, workspaceContext): LanguageService {
@@ -99,6 +102,7 @@ export function getLanguageService(schemaRequestService, workspaceContext): Lang
   let validator = new validationProvider(schemaService);
   let hover = new hoverProvider(schemaService);
   let jsonDocumentSymbols = new YAMLDocumentSymbols();
+  let jsonCompletion = new JSONCompletion(schemaService);
 
   return {
       configure: (settings) => {
@@ -112,6 +116,7 @@ export function getLanguageService(schemaRequestService, workspaceContext): Lang
     	doComplete: completer.doComplete.bind(completer),
       doValidation: validator.doValidation.bind(validator),
       doHover: hover.doHover.bind(hover),
-      findDocumentSymbols: jsonDocumentSymbols.findDocumentSymbols.bind(jsonDocumentSymbols)
+      findDocumentSymbols: jsonDocumentSymbols.findDocumentSymbols.bind(jsonDocumentSymbols),
+      newDoComplete: jsonCompletion.doComplete.bind(jsonCompletion)
   }
 }
