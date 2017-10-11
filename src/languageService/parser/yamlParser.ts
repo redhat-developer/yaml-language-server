@@ -36,73 +36,73 @@ export class SingleYAMLDocument extends JSONDocument {
 	// To get the correct behavior, it probably needs to be aware of
 	// the type of the nodes it is processing since there are no delimiters
 	// like in JSON. (ie. so it correctly returns 'object' vs 'property')
-	public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
-		if (!this.root) {
-			return;
-		}
-		if (offset < this.root.start || offset > this.root.end) {
-			// We somehow are completely outside the document
-			// This is unexpected
-			console.log("Attempting to resolve node outside of document")
-			return null;
-		}
+	// public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
+	// 	if (!this.root) {
+	// 		return;
+	// 	}
+	// 	if (offset < this.root.start || offset > this.root.end) {
+	// 		// We somehow are completely outside the document
+	// 		// This is unexpected
+	// 		console.log("Attempting to resolve node outside of document")
+	// 		return null;
+	// 	}
 
-		const children = this.root.getChildNodes()
+	// 	const children = this.root.getChildNodes()
 
-		function* sliding2(nodes: ASTNode[]) {
-			var i = 0;
-			while (i < nodes.length) {
-				yield [nodes[i], (i === nodes.length) ? null : nodes[i + 1]]
-				i++;
-			}
-		}
+	// 	function* sliding2(nodes: ASTNode[]) {
+	// 		var i = 0;
+	// 		while (i < nodes.length) {
+	// 			yield [nodes[i], (i === nodes.length) ? null : nodes[i + 1]]
+	// 			i++;
+	// 		}
+	// 	}
 
-		const onLaterLine = (offset: number, node: ASTNode) => {
-			const { line: actualLine } = getPosition(offset, this.lines)
-			const { line: nodeEndLine } = getPosition(node.end, this.lines)
+	// 	const onLaterLine = (offset: number, node: ASTNode) => {
+	// 		const { line: actualLine } = getPosition(offset, this.lines)
+	// 		const { line: nodeEndLine } = getPosition(node.end, this.lines)
 
-			return actualLine > nodeEndLine;
-		}
+	// 		return actualLine > nodeEndLine;
+	// 	}
 
-		let findNode = (nodes: ASTNode[]): ASTNode => {
-			if (nodes.length === 0) {
-				return null;
-			}
+	// 	let findNode = (nodes: ASTNode[]): ASTNode => {
+	// 		if (nodes.length === 0) {
+	// 			return null;
+	// 		}
 
-			var gen = sliding2(nodes);
+	// 		var gen = sliding2(nodes);
 
-			let result: IteratorResult<ASTNode[]> = { done: false, value: undefined }
+	// 		let result: IteratorResult<ASTNode[]> = { done: false, value: undefined }
 
-			for (let [first, second] of gen) {
-				const end = (second) ? second.start : first.parent.end
-				if (offset >= first.start && offset <= end) {
-					const children = first.getChildNodes();
+	// 		for (let [first, second] of gen) {
+	// 			const end = (second) ? second.start : first.parent.end
+	// 			if (offset >= first.start && offset <= end) {
+	// 				const children = first.getChildNodes();
 
-					const foundChild = findNode(children)
+	// 				const foundChild = findNode(children)
 
-					if (foundChild) {
-						if (foundChild['isKey'] && foundChild.end < offset) {
-							return foundChild.parent;
-						}
+	// 				if (foundChild) {
+	// 					if (foundChild['isKey'] && foundChild.end < offset) {
+	// 						return foundChild.parent;
+	// 					}
 
-						//if (foundChild.type === "null") {
-						//	return null;
-						//}
-					}
+	// 					//if (foundChild.type === "null") {
+	// 					//	return null;
+	// 					//}
+	// 				}
 
-					if (!foundChild && onLaterLine(offset, first)) {
-						return this.getNodeByIndent(this.lines, offset, this.root)
-					}
+	// 				if (!foundChild && onLaterLine(offset, first)) {
+	// 					return this.getNodeByIndent(this.lines, offset, this.root)
+	// 				}
 
-					return foundChild || first;
-				}
-			}
+	// 				return foundChild || first;
+	// 			}
+	// 		}
 
-			return null;
-		}
+	// 		return null;
+	// 	}
 
-		return findNode(children) || this.root;
-	}
+	// 	return findNode(children) || this.root;
+	// }
 
 	public getNodeFromOffset(offset: number): ASTNode {
 		return this.getNodeFromOffsetEndInclusive(offset);

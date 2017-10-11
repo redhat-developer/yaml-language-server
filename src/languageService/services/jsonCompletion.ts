@@ -344,10 +344,24 @@ export class JSONCompletion {
 		let parentKey: string = null;
 		let valueNode: Parser.ASTNode = null;
 		
-		if (node && (node.type === 'string' || node.type === 'number' || node.type === 'boolean' || node.type === 'null')) {
+		if (node && (node.type === 'string' || node.type === 'number' || node.type === 'boolean')) {
 			offsetForSeparator = node.end;
 			valueNode = node;
 			node = node.parent;
+		}
+
+		if(node && node.type === 'null'){
+			let nodeParent = node.parent;
+			
+			//This is going to be an object for some reason and we need to find the property
+			if(nodeParent && nodeParent.type === "object"){
+				for(let prop in nodeParent["properties"]){
+					let currNode = nodeParent["properties"][prop];
+					if(currNode.key && currNode.key.location === node.location){
+						node = currNode;
+					}
+				}
+			}
 		}
 
 		if (!node) {
@@ -392,15 +406,16 @@ export class JSONCompletion {
 			if (parentKey === '$schema' && !node.parent) {
 				this.addDollarSchemaCompletions(separatorAfter, collector);
 			}
+		}
+		if(node){
 			if (types['boolean']) {
-				this.addBooleanValueCompletion(true, separatorAfter, collector);
-				this.addBooleanValueCompletion(false, separatorAfter, collector);
+			this.addBooleanValueCompletion(true, "", collector);
+			this.addBooleanValueCompletion(false, "", collector);
 			}
 			if (types['null']) {
-				this.addNullValueCompletion(separatorAfter, collector);
+				this.addNullValueCompletion("", collector);
 			}
-		}
-		
+		}		
 	}
 
 	private getContributedValueCompletions(doc: Parser.JSONDocument, node: Parser.ASTNode, offset: number, document: TextDocument, collector: CompletionsCollector, collectionPromises: Thenable<any>[]) {
@@ -566,6 +581,11 @@ export class JSONCompletion {
 			insertTextFormat: InsertTextFormat.Snippet,
 			documentation: ''
 		});
+		collector.add({
+			label: "test",
+			insertText: "test",
+			documentation: ''
+		})
 	}
 
 	private addNullValueCompletion(separatorAfter: string, collector: CompletionsCollector): void {
