@@ -1,5 +1,0 @@
-src/
-test/
-.editorconfig
-Jenkinsfile
-tsconfig.json

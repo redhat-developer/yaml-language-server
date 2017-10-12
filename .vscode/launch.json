@@ -6,10 +6,11 @@
 			"name": "Attach",
 			"type": "node",
 			"request": "attach",
-			"port": 6009,
+			"port": 6010,
 			"sourceMaps": true,
 			"outFiles": [ "${workspaceRoot}/out/server/**/*.js" ],
-			"protocol": "legacy"
+			"protocol": "legacy",
+			"trace": true
 		},
 		{
 			"type": "node",

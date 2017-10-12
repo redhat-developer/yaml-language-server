@@ -35,3 +35,22 @@ export function getLineOffsets(textDocString: String): number[] {
 		
 		return lineOffsets;
 }
+
+export function removeDuplicatesObj(objArray){
+	
+	let nonDuplicateSet = new Set();
+	let nonDuplicateArr = [];
+	for(let obj in objArray){
+
+		let currObj = objArray[obj];
+		let stringifiedObj = JSON.stringify(currObj);
+		if(!nonDuplicateSet.has(stringifiedObj)){
+			nonDuplicateArr.push(currObj);
+			nonDuplicateSet.add(stringifiedObj);
+		}
+
+	}
+
+	return nonDuplicateArr;
+
+}

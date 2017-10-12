@@ -17,10 +17,11 @@ import { stringifyObject } from '../utils/json';
 import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Position, Range, TextEdit } from 'vscode-languageserver-types';
 
 import * as nls from 'vscode-nls';
+import { KubernetesTransformer } from "../kubernetesTransformer";
 const localize = nls.loadMessageBundle();
 
 
-export class JSONCompletion {
+export class YAMLCompletion {
 
 	private schemaService: SchemaService.IJSONSchemaService;
 	private contributions: JSONWorkerContribution[];
@@ -44,7 +45,7 @@ export class JSONCompletion {
 		return this.promise.resolve(item);
 	}
 
-	public doComplete(document: TextDocument, position: Position, doc: Parser.JSONDocument): Thenable<CompletionList> {
+	public doComplete(document: TextDocument, position: Position, doc: Parser.JSONDocument, isKubernetes: Boolean): Thenable<CompletionList> {
 
 		let result: CompletionList = {
 			items: [],
@@ -85,6 +86,11 @@ export class JSONCompletion {
 		};
 
 		return this.schemaService.getSchemaForResource(document.uri).then((schema) => {
+
+			if(isKubernetes){
+            	schema.schema = KubernetesTransformer.doTransformation(schema.schema);
+        	}
+
 			let collectionPromises: Thenable<any>[] = [];
 
 			let addValue = true;
@@ -358,7 +364,7 @@ export class JSONCompletion {
 	}
 
 	private getLabelForValue(value: any): string {
-		let label = JSON.stringify(value);
+		let label = typeof value === "string" ? value : JSON.stringify(value);
 		if (label.length > 57) {
 			return label.substr(0, 57).trim() + '...';
 		}
