@@ -8,6 +8,7 @@ import { JSONSchemaService } from './jsonSchemaService';
 import { JSONDocument, ObjectASTNode, IProblem, ProblemSeverity } from '../parser/jsonParser';
 import { TextDocument, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
 import { PromiseConstructor, Thenable} from '../yamlLanguageService';
+import { KubernetesTransformer } from "../kubernetesTransformer";
 
 export class YAMLValidation {
 	
@@ -22,18 +23,23 @@ export class YAMLValidation {
 		this.validationEnabled = true;
 	}
 
-	public configure = function (raw) {
+	public configure(raw) {
 		if (raw) {
 			this.validationEnabled = raw.validate;
 		}
 	};
 	
-	public doValidation = function (textDocument, yamlDocument) {
+	public doValidation(textDocument, yamlDocument, isKubernetes) {
 		if (!this.validationEnabled) {
 			return this.promise.resolve([]);
 		}
-		return this.jsonSchemaService.getSchemaForResource(textDocument.uri, yamlDocument).then(function (schema) {
+		return this.jsonSchemaService.getSchemaForResource(textDocument.uri).then(function (schema) {
 			if (schema) {
+				
+				if(isKubernetes){
+                    schema.schema = KubernetesTransformer.doTransformation(schema.schema);
+                }
+				
 				if (schema.errors.length && yamlDocument.root) {
 					var astRoot = yamlDocument.root;
 					var property = astRoot.type === 'object' ? astRoot.getFirstProperty('$schema') : null;
