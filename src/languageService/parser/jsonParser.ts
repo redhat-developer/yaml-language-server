@@ -26,10 +26,21 @@ export enum ErrorCode {
 	InvalidUnicode = 0x104,
 	InvalidEscapeCharacter = 0x105,
 	InvalidCharacter = 0x106,
+	PropertyExpected = 0x201,
+	CommaExpected = 0x202,
+	ColonExpected = 0x203,
+	ValueExpected = 0x204,
+	CommaOrCloseBacketExpected = 0x205,
+	CommaOrCloseBraceExpected = 0x206
 }
 
-export interface IError {
+export enum ProblemSeverity {
+	Error, Warning
+}
+
+export interface IProblem {
 	location: IRange;
+	severity: ProblemSeverity;
 	code?: ErrorCode;
 	message: string;
 }
@@ -118,68 +129,69 @@ export class ASTNode {
 		return findNode(this);
 	}
 
-	public validate(schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: IApplicableSchema[], offset: number = -1): void {
-		if (offset !== -1 && !this.contains(offset)) {
+	public validate(schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
+		if (!matchingSchemas.include(this)) {
 			return;
 		}
 
 		if (Array.isArray(schema.type)) {
 			if ((<string[]>schema.type).indexOf(this.type) === -1) {
-				validationResult.warnings.push({
+				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
-					message: schema.errorMessage || localize('typeArrayMismatchWarning', 'Incorrect type. Expected one of {0}', (<string[]>schema.type).join(', '))
+					severity: ProblemSeverity.Warning,
+					message: schema.errorMessage || localize('typeArrayMismatchWarning', 'Incorrect type. Expected one of {0}.', (<string[]>schema.type).join(', '))
 				});
 			}
 		}
 		else if (schema.type) {
 			if (this.type !== schema.type) {
-				validationResult.warnings.push({
+				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
-					message: schema.errorMessage || localize('typeMismatchWarning', 'Incorrect type. Expected "{0}"', schema.type)
+					severity: ProblemSeverity.Warning,
+					message: schema.errorMessage || localize('typeMismatchWarning', 'Incorrect type. Expected "{0}".', schema.type)
 				});
 			}
 		}
 		if (Array.isArray(schema.allOf)) {
 			schema.allOf.forEach((subSchema) => {
-				this.validate(subSchema, validationResult, matchingSchemas, offset);
+				this.validate(subSchema, validationResult, matchingSchemas);
 			});
 		}
 		if (schema.not) {
 			let subValidationResult = new ValidationResult();
-			let subMatchingSchemas: IApplicableSchema[] = [];
-			this.validate(schema.not, subValidationResult, subMatchingSchemas, offset);
-			if (!subValidationResult.hasErrors()) {
-				validationResult.warnings.push({
+			let subMatchingSchemas = matchingSchemas.newSub();
+			this.validate(schema.not, subValidationResult, subMatchingSchemas);
+			if (!subValidationResult.hasProblems()) {
+				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
+					severity: ProblemSeverity.Warning,
 					message: localize('notSchemaWarning', "Matches a schema that is not allowed.")
 				});
 			}
-			if (matchingSchemas) {
-				subMatchingSchemas.forEach((ms) => {
-					ms.inverted = !ms.inverted;
-					matchingSchemas.push(ms);
-				});
-			}
+			subMatchingSchemas.schemas.forEach((ms) => {
+				ms.inverted = !ms.inverted;
+				matchingSchemas.add(ms);
+			});
 		}
 
 		let testAlternatives = (alternatives: JSONSchema[], maxOneMatch: boolean) => {
 			let matches = [];
 
 			// remember the best match that is used for error messages
-			let bestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: IApplicableSchema[]; } = null;
+			let bestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
 			alternatives.forEach((subSchema) => {
 				let subValidationResult = new ValidationResult();
-				let subMatchingSchemas: IApplicableSchema[] = [];
+				let subMatchingSchemas = matchingSchemas.newSub();
 				this.validate(subSchema, subValidationResult, subMatchingSchemas);
-				if (!subValidationResult.hasErrors()) {
+				if (!subValidationResult.hasProblems()) {
 					matches.push(subSchema);
 				}
 				if (!bestMatch) {
 					bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
 				} else {
-					if (!maxOneMatch && !subValidationResult.hasErrors() && !bestMatch.validationResult.hasErrors()) {
+					if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
 						// no errors, both are equally good matches
-						bestMatch.matchingSchemas.push.apply(bestMatch.matchingSchemas, subMatchingSchemas);
+						bestMatch.matchingSchemas.merge(subMatchingSchemas);
 						bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
 						bestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
 					} else {
@@ -189,16 +201,17 @@ export class ASTNode {
 							bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
 						} else if (compareResult === 0) {
 							// there's already a best matching but we are as good
-							bestMatch.matchingSchemas.push.apply(bestMatch.matchingSchemas, subMatchingSchemas);
-							bestMatch.validationResult.mergeEnumValueMismatch(subValidationResult);
+							bestMatch.matchingSchemas.merge(subMatchingSchemas);
+							bestMatch.validationResult.mergeEnumValues(subValidationResult);
 						}
 					}
 				}
 			});
 
 			if (matches.length > 1 && maxOneMatch) {
-				validationResult.warnings.push({
+				validationResult.problems.push({
 					location: { start: this.start, end: this.start + 1 },
+					severity: ProblemSeverity.Warning,
 					message: localize('oneOfWarning', "Matches multiple schemas when only one must validate.")
 				});
 			}
@@ -206,9 +219,7 @@ export class ASTNode {
 				validationResult.merge(bestMatch.validationResult);
 				validationResult.propertiesMatches += bestMatch.validationResult.propertiesMatches;
 				validationResult.propertiesValueMatches += bestMatch.validationResult.propertiesValueMatches;
-				if (matchingSchemas) {
-					matchingSchemas.push.apply(matchingSchemas, bestMatch.matchingSchemas);
-				}
+				matchingSchemas.merge(bestMatch.matchingSchemas);
 			}
 			return matches.length;
 		};
@@ -228,28 +239,26 @@ export class ASTNode {
 					break;
 				}
 			}
+			validationResult.enumValues = schema.enum;
+			validationResult.enumValueMatch = enumValueMatch;
 			if (!enumValueMatch) {
-				validationResult.warnings.push({
+				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
+					severity: ProblemSeverity.Warning,
 					code: ErrorCode.EnumValueMismatch,
-					message: schema.errorMessage || localize('enumWarning', 'Value is not accepted. Valid values: {0}', JSON.stringify(schema.enum))
+					message: schema.errorMessage || localize('enumWarning', 'Value is not accepted. Valid values: {0}.', schema.enum.map(v => JSON.stringify(v)).join(', '))
 				});
-				validationResult.mismatchedEnumValues = schema.enum;
-			} else {
-				validationResult.enumValueMatch = true;
 			}
 		}
 
 		if (schema.deprecationMessage && this.parent) {
-			validationResult.warnings.push({
+			validationResult.problems.push({
 				location: { start: this.parent.start, end: this.parent.end },
+				severity: ProblemSeverity.Warning,
 				message: schema.deprecationMessage
 			});
 		}
-
-		if (matchingSchemas !== null) {
-			matchingSchemas.push({ node: this, schema: schema });
-		}
+		matchingSchemas.add({ node: this, schema: schema });
 	}
 }
 
@@ -316,11 +325,11 @@ export class ArrayASTNode extends ASTNode {
 		return ctn;
 	}
 
-	public validate(schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: IApplicableSchema[], offset: number = -1): void {
-		if (offset !== -1 && !this.contains(offset)) {
+	public validate(schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
+		if (!matchingSchemas.include(this)) {
 			return;
 		}
-		super.validate(schema, validationResult, matchingSchemas, offset);
+		super.validate(schema, validationResult, matchingSchemas);
 
 		if (Array.isArray(schema.items)) {
 			let subSchemas = <JSONSchema[]>schema.items;
@@ -328,41 +337,49 @@ export class ArrayASTNode extends ASTNode {
 				let itemValidationResult = new ValidationResult();
 				let item = this.items[index];
 				if (item) {
-					item.validate(subSchema, itemValidationResult, matchingSchemas, offset);
+					item.validate(subSchema, itemValidationResult, matchingSchemas);
 					validationResult.mergePropertyMatch(itemValidationResult);
 				} else if (this.items.length >= subSchemas.length) {
 					validationResult.propertiesValueMatches++;
 				}
 			});
-
-			if (schema.additionalItems === false && this.items.length > subSchemas.length) {
-				validationResult.warnings.push({
-					location: { start: this.start, end: this.end },
-					message: localize('additionalItemsWarning', 'Array has too many items according to schema. Expected {0} or fewer', subSchemas.length)
-				});
-			} else if (this.items.length >= subSchemas.length) {
-				validationResult.propertiesValueMatches += (this.items.length - subSchemas.length);
+			if (this.items.length > subSchemas.length) {
+				if (typeof schema.additionalItems === 'object') {
+					for (let i = subSchemas.length; i < this.items.length; i++) {
+						let itemValidationResult = new ValidationResult();
+						this.items[i].validate(<any>schema.additionalItems, itemValidationResult, matchingSchemas);
+						validationResult.mergePropertyMatch(itemValidationResult);
+					}
+				} else if (schema.additionalItems === false) {
+					validationResult.problems.push({
+						location: { start: this.start, end: this.end },
+						severity: ProblemSeverity.Warning,
+						message: localize('additionalItemsWarning', 'Array has too many items according to schema. Expected {0} or fewer.', subSchemas.length)
+					});
+				}
 			}
 		}
 		else if (schema.items) {
 			this.items.forEach((item) => {
 				let itemValidationResult = new ValidationResult();
-				item.validate(<JSONSchema> schema.items, itemValidationResult, matchingSchemas, offset);
+				item.validate(<JSONSchema>schema.items, itemValidationResult, matchingSchemas);
 				validationResult.mergePropertyMatch(itemValidationResult);
 			});
 		}
 
 		if (schema.minItems && this.items.length < schema.minItems) {
-			validationResult.warnings.push({
+			validationResult.problems.push({
 				location: { start: this.start, end: this.end },
-				message: localize('minItemsWarning', 'Array has too few items. Expected {0} or more', schema.minItems)
+				severity: ProblemSeverity.Warning,
+				message: localize('minItemsWarning', 'Array has too few items. Expected {0} or more.', schema.minItems)
 			});
 		}
 
 		if (schema.maxItems && this.items.length > schema.maxItems) {
-			validationResult.warnings.push({
+			validationResult.problems.push({
 				location: { start: this.start, end: this.end },
-				message: localize('maxItemsWarning', 'Array has too many items. Expected {0} or fewer', schema.minItems)
+				severity: ProblemSeverity.Warning,
+				message: localize('maxItemsWarning', 'Array has too many items. Expected {0} or fewer.', schema.minItems)
 			});
 		}
 
@@ -374,9 +391,10 @@ export class ArrayASTNode extends ASTNode {
 				return index !== values.lastIndexOf(value);
 			});
 			if (duplicates) {
-				validationResult.warnings.push({
+				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
-					message: localize('uniqueItemsWarning', 'Array has duplicate items')
+					severity: ProblemSeverity.Warning,
+					message: localize('uniqueItemsWarning', 'Array has duplicate items.')
 				});
 			}
 		}
@@ -398,8 +416,8 @@ export class NumberASTNode extends ASTNode {
 		return this.value;
 	}
 
-	public validate(schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: IApplicableSchema[], offset: number = -1): void {
-		if (offset !== -1 && !this.contains(offset)) {
+	public validate(schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
+		if (!matchingSchemas.include(this)) {
 			return;
 		}
 
@@ -411,46 +429,51 @@ export class NumberASTNode extends ASTNode {
 		if (typeIsInteger && this.isInteger === true) {
 			this.type = 'integer';
 		}
-		super.validate(schema, validationResult, matchingSchemas, offset);
+		super.validate(schema, validationResult, matchingSchemas);
 		this.type = 'number';
 
 		let val = this.getValue();
 
 		if (typeof schema.multipleOf === 'number') {
 			if (val % schema.multipleOf !== 0) {
-				validationResult.warnings.push({
+				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
-					message: localize('multipleOfWarning', 'Value is not divisible by {0}', schema.multipleOf)
+					severity: ProblemSeverity.Warning,
+					message: localize('multipleOfWarning', 'Value is not divisible by {0}.', schema.multipleOf)
 				});
 			}
 		}
 
 		if (typeof schema.minimum === 'number') {
 			if (schema.exclusiveMinimum && val <= schema.minimum) {
-				validationResult.warnings.push({
+				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
-					message: localize('exclusiveMinimumWarning', 'Value is below the exclusive minimum of {0}', schema.minimum)
+					severity: ProblemSeverity.Warning,
+					message: localize('exclusiveMinimumWarning', 'Value is below the exclusive minimum of {0}.', schema.minimum)
 				});
 			}
 			if (!schema.exclusiveMinimum && val < schema.minimum) {
-				validationResult.warnings.push({
+				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
-					message: localize('minimumWarning', 'Value is below the minimum of {0}', schema.minimum)
+					severity: ProblemSeverity.Warning,
+					message: localize('minimumWarning', 'Value is below the minimum of {0}.', schema.minimum)
 				});
 			}
 		}
 
 		if (typeof schema.maximum === 'number') {
 			if (schema.exclusiveMaximum && val >= schema.maximum) {
-				validationResult.warnings.push({
+				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
-					message: localize('exclusiveMaximumWarning', 'Value is above the exclusive maximum of {0}', schema.maximum)
+					severity: ProblemSeverity.Warning,
+					message: localize('exclusiveMaximumWarning', 'Value is above the exclusive maximum of {0}.', schema.maximum)
 				});
 			}
 			if (!schema.exclusiveMaximum && val > schema.maximum) {
-				validationResult.warnings.push({
+				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
-					message: localize('maximumWarning', 'Value is above the maximum of {0}', schema.maximum)
+					severity: ProblemSeverity.Warning,
+					message: localize('maximumWarning', 'Value is above the maximum of {0}.', schema.maximum)
 				});
 			}
 		}
@@ -472,32 +495,35 @@ export class StringASTNode extends ASTNode {
 		return this.value;
 	}
 
-	public validate(schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: IApplicableSchema[], offset: number = -1): void {
-		if (offset !== -1 && !this.contains(offset)) {
+	public validate(schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
+		if (!matchingSchemas.include(this)) {
 			return;
 		}
-		super.validate(schema, validationResult, matchingSchemas, offset);
+		super.validate(schema, validationResult, matchingSchemas);
 
 		if (schema.minLength && this.value.length < schema.minLength) {
-			validationResult.warnings.push({
+			validationResult.problems.push({
 				location: { start: this.start, end: this.end },
-				message: localize('minLengthWarning', 'String is shorter than the minimum length of {0}', schema.minLength)
+				severity: ProblemSeverity.Warning,
+				message: localize('minLengthWarning', 'String is shorter than the minimum length of {0}.', schema.minLength)
 			});
 		}
 
 		if (schema.maxLength && this.value.length > schema.maxLength) {
-			validationResult.warnings.push({
+			validationResult.problems.push({
 				location: { start: this.start, end: this.end },
-				message: localize('maxLengthWarning', 'String is longer than the maximum length of {0}', schema.maxLength)
+				severity: ProblemSeverity.Warning,
+				message: localize('maxLengthWarning', 'String is longer than the maximum length of {0}.', schema.maxLength)
 			});
 		}
 
 		if (schema.pattern) {
 			let regex = new RegExp(schema.pattern);
 			if (!regex.test(this.value)) {
-				validationResult.warnings.push({
+				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
-					message: schema.patternErrorMessage || schema.errorMessage || localize('patternWarning', 'String does not match the pattern of "{0}"', schema.pattern)
+					severity: ProblemSeverity.Warning,
+					message: schema.patternErrorMessage || schema.errorMessage || localize('patternWarning', 'String does not match the pattern of "{0}".', schema.pattern)
 				});
 			}
 		}
@@ -535,12 +561,12 @@ export class PropertyASTNode extends ASTNode {
 		return visitor(this) && this.key.visit(visitor) && this.value && this.value.visit(visitor);
 	}
 
-	public validate(schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: IApplicableSchema[], offset: number = -1): void {
-		if (offset !== -1 && !this.contains(offset)) {
+	public validate(schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
+		if (!matchingSchemas.include(this)) {
 			return;
 		}
 		if (this.value) {
-			this.value.validate(schema, validationResult, matchingSchemas, offset);
+			this.value.validate(schema, validationResult, matchingSchemas);
 		}
 	}
 }
@@ -602,12 +628,12 @@ export class ObjectASTNode extends ASTNode {
 		return ctn;
 	}
 
-	public validate(schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: IApplicableSchema[], offset: number = -1): void {
-		if (offset !== -1 && !this.contains(offset)) {
+	public validate(schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
+		if (!matchingSchemas.include(this)) {
 			return;
 		}
 
-		super.validate(schema, validationResult, matchingSchemas, offset);
+		super.validate(schema, validationResult, matchingSchemas);
 		let seenKeys: { [key: string]: ASTNode } = Object.create(null);
 		let unprocessedProperties: string[] = [];
 		this.properties.forEach((node) => {
@@ -621,9 +647,10 @@ export class ObjectASTNode extends ASTNode {
 				if (!seenKeys[propertyName]) {
 					let key = this.parent && this.parent && (<PropertyASTNode>this.parent).key;
 					let location = key ? { start: key.start, end: key.end } : { start: this.start, end: this.start + 1 };
-					validationResult.warnings.push({
+					validationResult.problems.push({
 						location: location,
-						message: localize('MissingRequiredPropWarning', 'Missing property "{0}"', propertyName)
+						severity: ProblemSeverity.Warning,
+						message: localize('MissingRequiredPropWarning', 'Missing property "{0}".', propertyName)
 					});
 				}
 			});
@@ -644,9 +671,9 @@ export class ObjectASTNode extends ASTNode {
 				let prop = schema.properties[propertyName];
 				let child = seenKeys[propertyName];
 				if (child) {
-					let propertyvalidationResult = new ValidationResult();
-					child.validate(prop, propertyvalidationResult, matchingSchemas, offset);
-					validationResult.mergePropertyMatch(propertyvalidationResult);
+					let propertyValidationResult = new ValidationResult();
+					child.validate(prop, propertyValidationResult, matchingSchemas);
+					validationResult.mergePropertyMatch(propertyValidationResult);
 				}
 
 			});
@@ -660,9 +687,9 @@ export class ObjectASTNode extends ASTNode {
 						propertyProcessed(propertyName);
 						let child = seenKeys[propertyName];
 						if (child) {
-							let propertyvalidationResult = new ValidationResult();
-							child.validate(schema.patternProperties[propertyPattern], propertyvalidationResult, matchingSchemas, offset);
-							validationResult.mergePropertyMatch(propertyvalidationResult);
+							let propertyValidationResult = new ValidationResult();
+							child.validate(schema.patternProperties[propertyPattern], propertyValidationResult, matchingSchemas);
+							validationResult.mergePropertyMatch(propertyValidationResult);
 						}
 
 					}
@@ -674,9 +701,9 @@ export class ObjectASTNode extends ASTNode {
 			unprocessedProperties.forEach((propertyName: string) => {
 				let child = seenKeys[propertyName];
 				if (child) {
-					let propertyvalidationResult = new ValidationResult();
-					child.validate(<any> schema.additionalProperties, propertyvalidationResult, matchingSchemas, offset);
-					validationResult.mergePropertyMatch(propertyvalidationResult);
+					let propertyValidationResult = new ValidationResult();
+					child.validate(<any>schema.additionalProperties, propertyValidationResult, matchingSchemas);
+					validationResult.mergePropertyMatch(propertyValidationResult);
 				}
 			});
 		} else if (schema.additionalProperties === false) {
@@ -684,11 +711,19 @@ export class ObjectASTNode extends ASTNode {
 				unprocessedProperties.forEach((propertyName: string) => {
 					let child = seenKeys[propertyName];
 					if (child) {
-						let propertyNode = <PropertyASTNode>child.parent;
-
-						validationResult.warnings.push({
+						let propertyNode = null;
+						if(child.type !== "property"){
+							propertyNode = <PropertyASTNode>child.parent;
+							if(propertyNode.type === "object"){
+								propertyNode = propertyNode.properties[0];
+							}
+						}else{
+							propertyNode = child;
+						}
+						validationResult.problems.push({
 							location: { start: propertyNode.key.start, end: propertyNode.key.end },
-							message: schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed', propertyName)
+							severity: ProblemSeverity.Warning,
+							message: schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName)
 						});
 					}
 				});
@@ -697,17 +732,19 @@ export class ObjectASTNode extends ASTNode {
 
 		if (schema.maxProperties) {
 			if (this.properties.length > schema.maxProperties) {
-				validationResult.warnings.push({
+				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
-					message: localize('MaxPropWarning', 'Object has more properties than limit of {0}', schema.maxProperties)
+					severity: ProblemSeverity.Warning,
+					message: localize('MaxPropWarning', 'Object has more properties than limit of {0}.', schema.maxProperties)
 				});
 			}
 		}
 
 		if (schema.minProperties) {
 			if (this.properties.length < schema.minProperties) {
-				validationResult.warnings.push({
+				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
+					severity: ProblemSeverity.Warning,
 					message: localize('MinPropWarning', 'Object has fewer properties than the required number of {0}', schema.minProperties)
 				});
 			}
@@ -717,22 +754,22 @@ export class ObjectASTNode extends ASTNode {
 			Object.keys(schema.dependencies).forEach((key: string) => {
 				let prop = seenKeys[key];
 				if (prop) {
-					if (Array.isArray(schema.dependencies[key])) {
-						let valueAsArray: string[] = schema.dependencies[key];
-						valueAsArray.forEach((requiredProp: string) => {
+					let propertyDep = schema.dependencies[key]
+					if (Array.isArray(propertyDep)) {
+						propertyDep.forEach((requiredProp: string) => {
 							if (!seenKeys[requiredProp]) {
-								validationResult.warnings.push({
+								validationResult.problems.push({
 									location: { start: this.start, end: this.end },
-									message: localize('RequiredDependentPropWarning', 'Object is missing property {0} required by property {1}', requiredProp, key)
+									severity: ProblemSeverity.Warning,
+									message: localize('RequiredDependentPropWarning', 'Object is missing property {0} required by property {1}.', requiredProp, key)
 								});
 							} else {
 								validationResult.propertiesValueMatches++;
 							}
 						});
-					} else if (schema.dependencies[key]) {
-						let valueAsSchema: JSONSchema = schema.dependencies[key];
+					} else if (propertyDep) {
 						let propertyvalidationResult = new ValidationResult();
-						this.validate(valueAsSchema, propertyvalidationResult, matchingSchemas, offset);
+						this.validate(propertyDep, propertyvalidationResult, matchingSchemas);
 						validationResult.mergePropertyMatch(propertyvalidationResult);
 					}
 				}
@@ -742,7 +779,6 @@ export class ObjectASTNode extends ASTNode {
 }
 
 export interface JSONDocumentConfig {
-	ignoreDanglingComma?: boolean;
 	disallowComments?: boolean;
 }
 
@@ -752,26 +788,68 @@ export interface IApplicableSchema {
 	schema: JSONSchema;
 }
 
+export enum EnumMatch {
+	Key, Enum
+}
+
+export interface ISchemaCollector {
+	schemas: IApplicableSchema[];
+	add(schema: IApplicableSchema): void;
+	merge(other: ISchemaCollector): void;
+	include(node: ASTNode): void;
+	newSub(): ISchemaCollector;
+}
+
+class SchemaCollector implements ISchemaCollector {
+	schemas: IApplicableSchema[] = [];
+	constructor(private focusOffset = -1, private exclude: ASTNode = null) {
+	}
+	add(schema: IApplicableSchema) {
+		this.schemas.push(schema);
+	}
+	merge(other: ISchemaCollector) {
+		this.schemas.push(...other.schemas);
+	}
+	include(node: ASTNode) {
+		return (this.focusOffset === -1 || node.contains(this.focusOffset)) && (node !== this.exclude);
+	}
+	newSub(): ISchemaCollector {
+		return new SchemaCollector(-1, this.exclude);
+	}
+}
+
+class NoOpSchemaCollector implements ISchemaCollector {
+	get schemas() { return []; }
+	add(schema: IApplicableSchema) { }
+	merge(other: ISchemaCollector) { }
+	include(node: ASTNode) { return true; }
+	newSub(): ISchemaCollector { return this; }
+}
+
 export class ValidationResult {
-	public errors: IError[];
-	public warnings: IError[];
+	public problems: IProblem[];
 
 	public propertiesMatches: number;
 	public propertiesValueMatches: number;
+	public primaryValueMatches: number;
 	public enumValueMatch: boolean;
-	public mismatchedEnumValues: any[];
+	public enumValues: any[];
+	public warnings;
+	public errors;
 
 	constructor() {
-		this.errors = [];
-		this.warnings = [];
+		this.problems = [];
 		this.propertiesMatches = 0;
 		this.propertiesValueMatches = 0;
+		this.primaryValueMatches = 0;
 		this.enumValueMatch = false;
-		this.mismatchedEnumValues = null;
+		this.enumValues = null;
+		this.warnings = [];
+		this.errors = [];
 	}
 
-	public hasErrors(): boolean {
-		return !!this.errors.length || !!this.warnings.length;
+	public hasProblems(): boolean {
+		return !!this.problems.length;
 	}
 
 	public mergeAll(validationResults: ValidationResult[]): void {
@@ -781,39 +859,41 @@ export class ValidationResult {
 	}
 
 	public merge(validationResult: ValidationResult): void {
-		this.errors = this.errors.concat(validationResult.errors);
-		this.warnings = this.warnings.concat(validationResult.warnings);
+		this.problems = this.problems.concat(validationResult.problems);
 	}
 
-	public mergeEnumValueMismatch(validationResult: ValidationResult): void {
-		if (this.mismatchedEnumValues && validationResult.mismatchedEnumValues) {
-			this.mismatchedEnumValues = this.mismatchedEnumValues.concat(validationResult.mismatchedEnumValues);
-			for (let warning of this.warnings) {
-				if (warning.code === ErrorCode.EnumValueMismatch) {
-					warning.message = localize('enumWarning', 'Value is not accepted. Valid values: {0}', JSON.stringify(this.mismatchedEnumValues))
+	public mergeEnumValues(validationResult: ValidationResult): void {
+		if (!this.enumValueMatch && !validationResult.enumValueMatch && this.enumValues && validationResult.enumValues) {
+			this.enumValues = this.enumValues.concat(validationResult.enumValues);
+			for (let error of this.problems) {
+				if (error.code === ErrorCode.EnumValueMismatch) {
+					error.message = localize('enumWarning', 'Value is not accepted. Valid values: {0}.', this.enumValues.map(v => JSON.stringify(v)).join(', '));
 				}
 			}
-		} else {
-			this.mismatchedEnumValues = null;
 		}
 	}
-
 
 	public mergePropertyMatch(propertyValidationResult: ValidationResult): void {
 		this.merge(propertyValidationResult);
 		this.propertiesMatches++;
-		if (propertyValidationResult.enumValueMatch || !propertyValidationResult.hasErrors() && propertyValidationResult.propertiesMatches) {
+		if (propertyValidationResult.enumValueMatch || !this.hasProblems() && propertyValidationResult.propertiesMatches) {
 			this.propertiesValueMatches++;
+		}
+		if (propertyValidationResult.enumValueMatch && propertyValidationResult.enumValues && propertyValidationResult.enumValues.length === 1) {
+			this.primaryValueMatches++;
 		}
 	}
 
 	public compare(other: ValidationResult): number {
-		let hasErrors = this.hasErrors();
-		if (hasErrors !== other.hasErrors()) {
-			return hasErrors ? -1 : 1;
+		let hasProblems = this.hasProblems();
+		if (hasProblems !== other.hasProblems()) {
+			return hasProblems ? -1 : 1;
 		}
 		if (this.enumValueMatch !== other.enumValueMatch) {
 			return other.enumValueMatch ? -1 : 1;
+		}
+		if (this.primaryValueMatches !== other.primaryValueMatches) {
+			return this.primaryValueMatches - other.primaryValueMatches;
 		}
 		if (this.propertiesValueMatches !== other.propertiesValueMatches) {
 			return this.propertiesValueMatches - other.propertiesValueMatches;
@@ -824,20 +904,8 @@ export class ValidationResult {
 }
 
 export class JSONDocument {
-	public root: ASTNode;
 
-	private validationResult: ValidationResult;
-
-	constructor(config: JSONDocumentConfig) {
-		this.validationResult = new ValidationResult();
-	}
-
-	public get errors(): IError[] {
-		return this.validationResult.errors;
-	}
-
-	public get warnings(): IError[] {
-		return this.validationResult.warnings;
+	constructor(public readonly root: ASTNode, public readonly syntaxErrors: IProblem[]) {
 	}
 
 	public getNodeFromOffset(offset: number): ASTNode {
@@ -854,29 +922,39 @@ export class JSONDocument {
 		}
 	}
 
-	public validate(schema: JSONSchema, matchingSchemas: IApplicableSchema[] = null, offset: number = -1): void {
-		if (this.root) {
-			this.root.validate(schema, this.validationResult, matchingSchemas, offset);
+	public validate(schema: JSONSchema): IProblem[] {
+		if (this.root && schema) {
+			let validationResult = new ValidationResult();
+			this.root.validate(schema, validationResult, new NoOpSchemaCollector());
+			return validationResult.problems;
 		}
+		return null;
+	}
+
+	public getMatchingSchemas(schema: JSONSchema, focusOffset: number = -1, exclude: ASTNode = null): IApplicableSchema[] {
+		let matchingSchemas = new SchemaCollector(focusOffset, exclude);
+		if (this.root && schema) {
+			this.root.validate(schema, new ValidationResult(), matchingSchemas);
+		}
+		return matchingSchemas.schemas;
 	}
 }
 
 export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
 
-	let _doc = new JSONDocument(config);
-	let _scanner = Json.createScanner(text, false);
+	let problems: IProblem[] = [];
+	let scanner = Json.createScanner(text, false);
 
 	let disallowComments = config && config.disallowComments;
-	let ignoreDanglingComma = config && config.ignoreDanglingComma;
 
 	function _scanNext(): Json.SyntaxKind {
 		while (true) {
-			let token = _scanner.scan();
+			let token = scanner.scan();
 			switch (token) {
 				case Json.SyntaxKind.LineCommentTrivia:
 				case Json.SyntaxKind.BlockCommentTrivia:
 					if (disallowComments) {
-						_error(localize('InvalidCommentTokem', 'Comments are not allowed'), ErrorCode.CommentsNotAllowed);
+						_error(localize('InvalidCommentTokem', 'Comments are not allowed.'), ErrorCode.CommentsNotAllowed);
 					}
 					break;
 				case Json.SyntaxKind.Trivia:
@@ -889,7 +967,7 @@ export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
 	}
 
 	function _accept(token: Json.SyntaxKind): boolean {
-		if (_scanner.getToken() === token) {
+		if (scanner.getToken() === token) {
 			_scanNext();
 			return true;
 		}
@@ -897,10 +975,10 @@ export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
 	}
 
 	function _error<T extends ASTNode>(message: string, code: ErrorCode, node: T = null, skipUntilAfter: Json.SyntaxKind[] = [], skipUntil: Json.SyntaxKind[] = []): T {
-		if (_doc.errors.length === 0 || _doc.errors[0].location.start !== _scanner.getTokenOffset()) {
+		if (problems.length === 0 || problems[0].location.start !== scanner.getTokenOffset()) {
 			// ignore multiple errors on the same offset
-			let start = _scanner.getTokenOffset();
-			let end = _scanner.getTokenOffset() + _scanner.getTokenLength();
+			let start = scanner.getTokenOffset();
+			let end = scanner.getTokenOffset() + scanner.getTokenLength();
 			if (start === end && start > 0) {
 				start--;
 				while (start > 0 && /\s/.test(text.charAt(start))) {
@@ -908,14 +986,14 @@ export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
 				}
 				end = start + 1;
 			}
-			_doc.errors.push({ message, location: { start, end }, code });
+			problems.push({ message, location: { start, end }, code, severity: ProblemSeverity.Error });
 		}
 
 		if (node) {
 			_finalize(node, false);
 		}
 		if (skipUntilAfter.length + skipUntil.length > 0) {
-			let token = _scanner.getToken();
+			let token = scanner.getToken();
 			while (token !== Json.SyntaxKind.EOF) {
 				if (skipUntilAfter.indexOf(token) !== -1) {
 					_scanNext();
@@ -930,21 +1008,21 @@ export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
 	}
 
 	function _checkScanError(): boolean {
-		switch (_scanner.getTokenError()) {
+		switch (scanner.getTokenError()) {
 			case Json.ScanError.InvalidUnicode:
-				_error(localize('InvalidUnicode', 'Invalid unicode sequence in string'), ErrorCode.InvalidUnicode);
+				_error(localize('InvalidUnicode', 'Invalid unicode sequence in string.'), ErrorCode.InvalidUnicode);
 				return true;
 			case Json.ScanError.InvalidEscapeCharacter:
-				_error(localize('InvalidEscapeCharacter', 'Invalid escape character in string'), ErrorCode.InvalidEscapeCharacter);
+				_error(localize('InvalidEscapeCharacter', 'Invalid escape character in string.'), ErrorCode.InvalidEscapeCharacter);
 				return true;
 			case Json.ScanError.UnexpectedEndOfNumber:
-				_error(localize('UnexpectedEndOfNumber', 'Unexpected end of number'), ErrorCode.UnexpectedEndOfNumber);
+				_error(localize('UnexpectedEndOfNumber', 'Unexpected end of number.'), ErrorCode.UnexpectedEndOfNumber);
 				return true;
 			case Json.ScanError.UnexpectedEndOfComment:
-				_error(localize('UnexpectedEndOfComment', 'Unexpected end of comment'), ErrorCode.UnexpectedEndOfComment);
+				_error(localize('UnexpectedEndOfComment', 'Unexpected end of comment.'), ErrorCode.UnexpectedEndOfComment);
 				return true;
 			case Json.ScanError.UnexpectedEndOfString:
-				_error(localize('UnexpectedEndOfString', 'Unexpected end of string'), ErrorCode.UnexpectedEndOfString);
+				_error(localize('UnexpectedEndOfString', 'Unexpected end of string.'), ErrorCode.UnexpectedEndOfString);
 				return true;
 			case Json.ScanError.InvalidCharacter:
 				_error(localize('InvalidCharacter', 'Invalid characters in string. Control characters must be escaped.'), ErrorCode.InvalidCharacter);
@@ -954,7 +1032,7 @@ export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
 	}
 
 	function _finalize<T extends ASTNode>(node: T, scanNext: boolean): T {
-		node.end = _scanner.getTokenOffset() + _scanner.getTokenLength();
+		node.end = scanner.getTokenOffset() + scanner.getTokenLength();
 
 		if (scanNext) {
 			_scanNext();
@@ -964,23 +1042,24 @@ export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
 	}
 
 	function _parseArray(parent: ASTNode, name: Json.Segment): ArrayASTNode {
-		if (_scanner.getToken() !== Json.SyntaxKind.OpenBracketToken) {
+		if (scanner.getToken() !== Json.SyntaxKind.OpenBracketToken) {
 			return null;
 		}
-		let node = new ArrayASTNode(parent, name, _scanner.getTokenOffset());
+		let node = new ArrayASTNode(parent, name, scanner.getTokenOffset());
 		_scanNext(); // consume OpenBracketToken
 
 		let count = 0;
 		if (node.addItem(_parseValue(node, count++))) {
 			while (_accept(Json.SyntaxKind.CommaToken)) {
-				if (!node.addItem(_parseValue(node, count++)) && !ignoreDanglingComma) {
-					_error(localize('ValueExpected', 'Value expected'), ErrorCode.Undefined);
+				if (!node.addItem(_parseValue(node, count++))) {
+					_error(localize('ValueExpected', 'Value expected'), ErrorCode.ValueExpected);
+					// report error, but continue
 				}
 			}
 		}
 
-		if (_scanner.getToken() !== Json.SyntaxKind.CloseBracketToken) {
-			return _error(localize('ExpectedCloseBracket', 'Expected comma or closing bracket'), ErrorCode.Undefined, node);
+		if (scanner.getToken() !== Json.SyntaxKind.CloseBracketToken) {
+			return _error(localize('ExpectedCloseBracket', 'Expected comma or closing bracket'), ErrorCode.CommaOrCloseBacketExpected, node);
 		}
 
 		return _finalize(node, true);
@@ -990,9 +1069,9 @@ export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
 
 		let key = _parseString(null, null, true);
 		if (!key) {
-			if (_scanner.getToken() === Json.SyntaxKind.Unknown) {
+			if (scanner.getToken() === Json.SyntaxKind.Unknown) {
 				// give a more helpful error message
-				let value = _scanner.getTokenValue();
+				let value = scanner.getTokenValue();
 				if (value.match(/^['\w]/)) {
 					_error(localize('DoubleQuotesExpected', 'Property keys must be doublequoted'), ErrorCode.Undefined);
 				}
@@ -1002,54 +1081,63 @@ export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
 		let node = new PropertyASTNode(parent, key);
 
 		if (keysSeen[key.value]) {
-			_doc.warnings.push({ location: { start: node.key.start, end: node.key.end }, message: localize('DuplicateKeyWarning', "Duplicate object key"), code: ErrorCode.Undefined });
+			problems.push({ location: { start: node.key.start, end: node.key.end }, message: localize('DuplicateKeyWarning', "Duplicate object key"), code: ErrorCode.Undefined, severity: ProblemSeverity.Warning });
 		}
 		keysSeen[key.value] = true;
 
-		if (_scanner.getToken() === Json.SyntaxKind.ColonToken) {
-			node.colonOffset = _scanner.getTokenOffset();
+		if (scanner.getToken() === Json.SyntaxKind.ColonToken) {
+			node.colonOffset = scanner.getTokenOffset();
+			_scanNext(); // consume ColonToken
 		} else {
-			return _error(localize('ColonExpected', 'Colon expected'), ErrorCode.Undefined, node, [], [Json.SyntaxKind.CloseBraceToken, Json.SyntaxKind.CommaToken]);
+			_error(localize('ColonExpected', 'Colon expected'), ErrorCode.ColonExpected);
 		}
 
-		_scanNext(); // consume ColonToken
+
 
 		if (!node.setValue(_parseValue(node, key.value))) {
-			return _error(localize('ValueExpected', 'Value expected'), ErrorCode.Undefined, node, [], [Json.SyntaxKind.CloseBraceToken, Json.SyntaxKind.CommaToken]);
+			return _error(localize('ValueExpected', 'Value expected'), ErrorCode.ValueExpected, node, [], [Json.SyntaxKind.CloseBraceToken, Json.SyntaxKind.CommaToken]);
 		}
 		node.end = node.value.end;
 		return node;
 	}
 
 	function _parseObject(parent: ASTNode, name: Json.Segment): ObjectASTNode {
-		if (_scanner.getToken() !== Json.SyntaxKind.OpenBraceToken) {
+		if (scanner.getToken() !== Json.SyntaxKind.OpenBraceToken) {
 			return null;
 		}
-		let node = new ObjectASTNode(parent, name, _scanner.getTokenOffset());
-		_scanNext(); // consume OpenBraceToken
-
+		let node = new ObjectASTNode(parent, name, scanner.getTokenOffset());
 		let keysSeen: any = Object.create(null);
-		if (node.addProperty(_parseProperty(node, keysSeen))) {
-			while (_accept(Json.SyntaxKind.CommaToken)) {
-				if (!node.addProperty(_parseProperty(node, keysSeen)) && !ignoreDanglingComma) {
-					_error(localize('PropertyExpected', 'Property expected'), ErrorCode.Undefined);
+		_scanNext(); // consume OpenBraceToken
+		let needsComma = false;
+
+		while (scanner.getToken() !== Json.SyntaxKind.CloseBraceToken && scanner.getToken() !== Json.SyntaxKind.EOF) {
+			if (scanner.getToken() === Json.SyntaxKind.CommaToken) {
+				if (!needsComma) {
+					_error(localize('PropertyExpected', 'Property expected'), ErrorCode.PropertyExpected);
 				}
+				_scanNext(); // consume comma
+			} else if (needsComma) {
+				_error(localize('ExpectedComma', 'Expected comma'), ErrorCode.CommaExpected, node);
 			}
+			if (!node.addProperty(_parseProperty(node, keysSeen))) {
+				_error(localize('PropertyExpected', 'Property expected'), ErrorCode.PropertyExpected, null, [], [Json.SyntaxKind.CloseBraceToken, Json.SyntaxKind.CommaToken]);
+			}
+			needsComma = true;
 		}
 
-		if (_scanner.getToken() !== Json.SyntaxKind.CloseBraceToken) {
-			return _error(localize('ExpectedCloseBrace', 'Expected comma or closing brace'), ErrorCode.Undefined, node);
+		if (scanner.getToken() !== Json.SyntaxKind.CloseBraceToken) {
+			return _error(localize('ExpectedCloseBrace', 'Expected comma or closing brace'), ErrorCode.CommaOrCloseBraceExpected, node);
 		}
 		return _finalize(node, true);
 	}
 
 	function _parseString(parent: ASTNode, name: Json.Segment, isKey: boolean): StringASTNode {
-		if (_scanner.getToken() !== Json.SyntaxKind.StringLiteral) {
+		if (scanner.getToken() !== Json.SyntaxKind.StringLiteral) {
 			return null;
 		}
 
-		let node = new StringASTNode(parent, name, isKey, _scanner.getTokenOffset());
-		node.value = _scanner.getTokenValue();
+		let node = new StringASTNode(parent, name, isKey, scanner.getTokenOffset());
+		node.value = scanner.getTokenValue();
 
 		_checkScanError();
 
@@ -1057,21 +1145,21 @@ export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
 	}
 
 	function _parseNumber(parent: ASTNode, name: Json.Segment): NumberASTNode {
-		if (_scanner.getToken() !== Json.SyntaxKind.NumericLiteral) {
+		if (scanner.getToken() !== Json.SyntaxKind.NumericLiteral) {
 			return null;
 		}
 
-		let node = new NumberASTNode(parent, name, _scanner.getTokenOffset());
+		let node = new NumberASTNode(parent, name, scanner.getTokenOffset());
 		if (!_checkScanError()) {
-			let tokenValue = _scanner.getTokenValue();
+			let tokenValue = scanner.getTokenValue();
 			try {
 				let numberValue = JSON.parse(tokenValue);
 				if (typeof numberValue !== 'number') {
-					return _error(localize('InvalidNumberFormat', 'Invalid number format'), ErrorCode.Undefined, node);
+					return _error(localize('InvalidNumberFormat', 'Invalid number format.'), ErrorCode.Undefined, node);
 				}
 				node.value = numberValue;
 			} catch (e) {
-				return _error(localize('InvalidNumberFormat', 'Invalid number format'), ErrorCode.Undefined, node);
+				return _error(localize('InvalidNumberFormat', 'Invalid number format.'), ErrorCode.Undefined, node);
 			}
 			node.isInteger = tokenValue.indexOf('.') === -1;
 		}
@@ -1080,15 +1168,15 @@ export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
 
 	function _parseLiteral(parent: ASTNode, name: Json.Segment): ASTNode {
 		let node: ASTNode;
-		switch (_scanner.getToken()) {
+		switch (scanner.getToken()) {
 			case Json.SyntaxKind.NullKeyword:
-				node = new NullASTNode(parent, name, _scanner.getTokenOffset());
+				node = new NullASTNode(parent, name, scanner.getTokenOffset());
 				break;
 			case Json.SyntaxKind.TrueKeyword:
-				node = new BooleanASTNode(parent, name, true, _scanner.getTokenOffset());
+				node = new BooleanASTNode(parent, name, true, scanner.getTokenOffset());
 				break;
 			case Json.SyntaxKind.FalseKeyword:
-				node = new BooleanASTNode(parent, name, false, _scanner.getTokenOffset());
+				node = new BooleanASTNode(parent, name, false, scanner.getTokenOffset());
 				break;
 			default:
 				return null;
@@ -1102,11 +1190,11 @@ export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
 
 	_scanNext();
 
-	_doc.root = _parseValue(null, null);
-	if (!_doc.root) {
-		_error(localize('Invalid symbol', 'Expected a JSON object, array or literal'), ErrorCode.Undefined);
-	} else if (_scanner.getToken() !== Json.SyntaxKind.EOF) {
-		_error(localize('End of file expected', 'End of file expected'), ErrorCode.Undefined);
+	let _root = _parseValue(null, null);
+	if (!_root) {
+		_error(localize('Invalid symbol', 'Expected a JSON object, array or literal.'), ErrorCode.Undefined);
+	} else if (scanner.getToken() !== Json.SyntaxKind.EOF) {
+		_error(localize('End of file expected', 'End of file expected.'), ErrorCode.Undefined);
 	}
-	return _doc;
+	return new JSONDocument(_root, problems);
 }

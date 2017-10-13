@@ -82,11 +82,11 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 };
 
 
-export let languageService = getLanguageService(schemaRequestService, workspaceContext);
+export let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
 export let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
 
-let uri = 'http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.0/kubernetes-model-1.1.0-schema.json';
+let uri = 'http://json.schemastore.org/bowerrc';
 let languageSettings = {
 	schemas: []
 };

@@ -20,11 +20,11 @@ import * as URL from 'url';
 import Strings = require('./languageService/utils/strings');
 import { YAMLDocument, JSONSchema, LanguageSettings, getLanguageService } from 'vscode-yaml-languageservice';
 import { getLanguageModelCache } from './languageModelCache';
-import { getLineOffsets } from './languageService/utils/arrUtils';
-import { load as yamlLoader, YAMLDocument as YAMLDoc } from 'yaml-ast-parser';
+import { getLineOffsets, removeDuplicatesObj } from './languageService/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService } from './languageService/yamlLanguageService';
 import * as nls from 'vscode-nls';
 import { FilePatternAssociation } from './languageService/services/jsonSchemaService';
+import { parse as parseYAML } from './languageService/parser/yamlParser';
 nls.config(process.env['VSCODE_NLS_CONFIG']);
 
 interface ISchemaAssociations {
@@ -129,14 +129,14 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 };
 
 // create the YAML language service
-let languageService = getLanguageService({
+export let languageService = getLanguageService({
 	schemaRequestService,
 	workspaceContext,
 	contributions: []
 });
 
-let KUBERNETES_SCHEMA_URL = "http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.4/kubernetes-model-1.1.4-schema.json";
-let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext);
+export let KUBERNETES_SCHEMA_URL = "http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.4/kubernetes-model-1.1.4-schema.json";
+export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
 
 // The settings interface describes the server relevant settings part
 interface Settings {
@@ -162,7 +162,6 @@ let formatterRegistration: Thenable<Disposable> = null;
 let specificValidatorPaths = [];
 let schemaConfigurationSettings = [];
 
-// The settings have changed. Is send on server activation as well.
 connection.onDidChangeConfiguration((change) => {
 	var settings = <Settings>change.settings;
 	configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
@@ -196,7 +195,6 @@ connection.onDidChangeConfiguration((change) => {
 	}
 });
 
-// The jsonValidation extension configuration has changed
 connection.onNotification(SchemaAssociationNotification.type, associations => {
 	schemaAssociations = associations;
 	specificValidatorPaths = [];
@@ -268,18 +266,13 @@ function configureSchemas(uri, fileMatch, schema){
 		specificValidatorPaths.push(fileMatch);
 	}
 	
-
 	return languageSettings;
-
 }
 
-// The content of a text document has changed. This event is emitted
-// when the text document first opened or when its content has changed.
 documents.onDidChangeContent((change) => {
 	triggerValidation(change.document);
 });
 
-// a document has closed: clear all diagnostics
 documents.onDidClose(event => {
 	cleanPendingValidation(event.document);
 	connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
@@ -311,19 +304,18 @@ function validateTextDocument(textDocument: TextDocument): void {
 		return;
 	}
 
-	if(isKubernetes(textDocument)){
-		generalYamlValidator(textDocument).then(function(generalResults){
-			specificYamlValidator(textDocument).then(function(specificResults){
-				let generalDiagnostics = generalResults == null ? [] : generalResults;
-				let diagnostics = generalDiagnostics.concat(specificResults.items);
-				connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(diagnostics) });
-			});
-		});
-	}else{
-		generalYamlValidator(textDocument).then(function(generalResults){
-			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicates(generalResults) });
-		});
-	}
+	let yamlDocument: YAMLDocument = languageService.parseYAMLDocument(textDocument);
+	let isKubernetesFile = isKubernetes(textDocument);
+	customLanguageService.doValidation(textDocument, yamlDocument, isKubernetesFile).then(function(diagnosticResults){
+
+		let diagnostics = [];
+		for(let diagnosticItem in diagnosticResults){
+			diagnosticResults[diagnosticItem].severity = 1; //Convert all warnings to errors
+			diagnostics.push(diagnosticResults[diagnosticItem]);
+		}
+
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicatesObj(diagnostics) });
+	}, function(error){});
 }
 
 function isKubernetes(textDocument){
@@ -335,50 +327,6 @@ function isKubernetes(textDocument){
 		}
 	}
 	return false;
-}
-
-function generalYamlValidator(textDocument: TextDocument) {
-
-	let jsonDocument = getJSONDocument(textDocument);
-	let diagnostics = [];
-	return languageService.doValidation(textDocument, jsonDocument).then(function(results) {
-		
-		for(let diagnosticItem in results){
-			results[diagnosticItem].severity = 1; //Convert all warnings to errors
-			diagnostics.push(results[diagnosticItem]);
-		}
-
-		return diagnostics;
-	}, function(error){});
-}
-
-function removeDuplicates(objArray){
-	
-	let nonDuplicateSet = new Set();
-	let nonDuplicateArr = [];
-	for(let obj in objArray){
-
-		let currObj = objArray[obj];
-		let stringifiedObj = JSON.stringify(currObj);
-		if(!nonDuplicateSet.has(stringifiedObj)){
-			nonDuplicateArr.push(currObj);
-			nonDuplicateSet.add(stringifiedObj);
-		}
-
-	}
-
-	return nonDuplicateArr;
-
-}
-
-function specificYamlValidator(textDocument: TextDocument){
-	//Validator for kubernetes/kedge files
-	let diagnostics = [];
-	let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(textDocument.getText(),{});
-	return customLanguageService.doValidation(textDocument, yamlDoc).then(function(result){
-		return result;
-	}, function(error){});
-	
 }
 
 connection.onDidChangeWatchedFiles((change) => {
@@ -408,18 +356,13 @@ function getJSONDocument(document: TextDocument): YAMLDocument {
 	return yamlDocuments.get(document);
 }
 
-// This handler provides the initial list of the completion items.
 connection.onCompletion(textDocumentPosition =>  {
-	let document = documents.get(textDocumentPosition.textDocument.uri);
-	return completionHelper(document, textDocumentPosition);
+	let textDocument = documents.get(textDocumentPosition.textDocument.uri);
+	let isKubernetesFile = isKubernetes(textDocument);
+	return completionHelper(textDocument, textDocumentPosition, isKubernetesFile);	
 });
 
-function completionHelper(document: TextDocument, textDocumentPosition){
-		
-		/*
-		* THIS IS A HACKY VERSION. 
-		* Needed to get the parent node from the current node to support live autocompletion
-		*/
+function completionHelper(document: TextDocument, textDocumentPosition, isKubernetes: Boolean){
 
 		//Get the string we are looking at via a substring
 		let linePos = textDocumentPosition.position.line;
@@ -458,14 +401,14 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 					newText = document.getText().substring(0, start+(textLine.length)) + ":\r\n" + document.getText().substr(end+2);
 				}
 			}
-			let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(newText,{});
-			return customLanguageService.doComplete(document, position, yamlDoc);
+			let jsonDocument = parseYAML(newText).documents[0];
+			return customLanguageService.doComplete(document, textDocumentPosition.position, jsonDocument, isKubernetes);
 		}else{
 
 			//All the nodes are loaded
-			let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(document.getText(),{});
 			position.character = position.character - 1;
-			return customLanguageService.doComplete(document, position, yamlDoc);
+			let jsonDocument = parseYAML(document.getText()).documents[0];
+			return customLanguageService.doComplete(document, textDocumentPosition.position, jsonDocument, isKubernetes);
 		}
 
 }
@@ -476,17 +419,9 @@ connection.onCompletionResolve(completionItem => {
 
 connection.onHover(textDocumentPositionParams => {
 	let document = documents.get(textDocumentPositionParams.textDocument.uri);
-	let yamlDoc:YAMLDoc = <YAMLDoc> yamlLoader(document.getText(),{});
-	let jsonDocument = getJSONDocument(document);
-
-	if(isKubernetes(textDocumentPositionParams.textDocument)){
-		return customLanguageService.doHover(document, textDocumentPositionParams.position, yamlDoc);
-	}
-
-	let hoverItem = languageService.doHover(document, textDocumentPositionParams.position, jsonDocument);
-	return hoverItem.then(function(result){
-		return result;
-	}, function(error){});
+	let jsonDocument = parseYAML(document.getText()).documents[0];
+	let isKubernetesFile = isKubernetes(textDocumentPositionParams.textDocument)
+	return customLanguageService.doHover(document, textDocumentPositionParams.position, jsonDocument, isKubernetesFile);
 });
 
 connection.onDocumentSymbol(documentSymbolParams => {
@@ -500,5 +435,4 @@ connection.onDocumentFormatting(formatParams => {
 	return languageService.format(document, formatParams.options);
 });
 
-// Listen on the connection
 connection.listen();
