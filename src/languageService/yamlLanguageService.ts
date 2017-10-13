@@ -9,6 +9,7 @@ import { JSONDocument } from 'vscode-json-languageservice';
 import { YAMLHover } from "./services/yamlHover";
 import { YAMLValidation } from "./services/yamlValidation";
 import { YAMLDocument, Diagnostic } from 'vscode-yaml-languageservice';
+//const jsonValidation_1 = require("vscode-json-languageservice/lib/services/jsonValidation");
 
 export interface PromiseConstructor {
     /**
@@ -83,7 +84,7 @@ export interface SchemaConfiguration {
 export interface LanguageService {
   configure(settings): void;
 	doComplete(document: TextDocument, position: Position, doc, isKubernetes: Boolean): Thenable<CompletionList>;
-  doValidation(document: TextDocument, yamlDocument: YAMLDocument, isKubernetes: Boolean);
+  doValidation(document: TextDocument, yamlDocument: YAMLDocument, isKubernetes: Boolean): Thenable<Diagnostic[]>;
   doHover(document: TextDocument, position: Position, doc, isKubernetes: Boolean);
   findDocumentSymbols(document: TextDocument, doc);
 }
@@ -95,16 +96,15 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
   schemaService.setSchemaContributions(schemaContributions);
 
   let completer = new YAMLCompletion(schemaService, contributions, promise);
-
-  let validator = new YAMLValidation(schemaService, promise);
   let hover = new YAMLHover(schemaService, contributions, promise);
   let yamlDocumentSymbols = new YAMLDocumentSymbols();
-  
-  function doValidation(textDocument: TextDocument, yamlDocument: YAMLDocument, isKubernetes: Boolean) {
-		var validate: (JSONDocument) => Thenable<Diagnostic[]> = validator.doValidation.bind(validator, textDocument)
-		const validationResults = yamlDocument.documents.map(d => validate(d))
-		const resultsPromise = promise.all(validationResults);
-		return resultsPromise.then(res => (<Diagnostic[]>[]).concat(...res))
+  let yamlValidation = new YAMLValidation(schemaService, promise);
+
+  function doValidation(textDocument, yamlDocument) {
+      var validate = yamlValidation.doValidation.bind(yamlValidation, textDocument);
+      const validationResults = yamlDocument.documents.map(d => validate(d));
+      const resultsPromise = promise.all(validationResults);
+      return resultsPromise.then(res => [].concat(...res));
   }
 
   return {
@@ -115,6 +115,7 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
             schemaService.registerExternalSchema(settings.uri, settings.fileMatch, settings.schema);
           });
         }
+        yamlValidation.configure(settings);
       },
     	doComplete: completer.doComplete.bind(completer),
       doValidation: doValidation,

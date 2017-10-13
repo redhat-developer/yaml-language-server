@@ -136,7 +136,7 @@ export let languageService = getLanguageService({
 });
 
 export let KUBERNETES_SCHEMA_URL = "http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.4/kubernetes-model-1.1.4-schema.json";
-export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, [], null);
+export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
 
 // The settings interface describes the server relevant settings part
 interface Settings {
@@ -305,7 +305,8 @@ function validateTextDocument(textDocument: TextDocument): void {
 	}
 
 	let yamlDocument: YAMLDocument = languageService.parseYAMLDocument(textDocument);
-	languageService.doValidation(textDocument, yamlDocument).then(function(diagnosticResults){
+	let isKubernetesFile = isKubernetes(textDocument);
+	customLanguageService.doValidation(textDocument, yamlDocument, isKubernetesFile).then(function(diagnosticResults){
 
 		let diagnostics = [];
 		for(let diagnosticItem in diagnosticResults){
