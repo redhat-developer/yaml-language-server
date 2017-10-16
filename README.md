@@ -25,11 +25,10 @@
 ```
 yaml.schemas: {
     "url": "globPattern",
-    "kedge": "globPattern",
     "kubernetes": "globPattern"
 }
 ```
-kedge and kubernetes are optional fields. They do not require a url as the language server will provide that. You just need the key word kedge/kubernetes and a glob pattern.
+kubernetes is an optional field. It does not require a url as the language server will provide that. You just need the key word kubernetes and a glob pattern.
 
 ## Clients
 This repository only contains the server implementation. Here are some known clients consuming this server:
