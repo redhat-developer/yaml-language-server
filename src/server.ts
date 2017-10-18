@@ -9,7 +9,7 @@
 import {
 	createConnection, IConnection,
 	TextDocuments, TextDocument, InitializeParams, InitializeResult, NotificationType, RequestType,
-	DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter, DiagnosticSeverity
+	DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter, DiagnosticSeverity, Position
 } from 'vscode-languageserver';
 
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
@@ -359,14 +359,17 @@ function getJSONDocument(document: TextDocument): YAMLDocument {
 connection.onCompletion(textDocumentPosition =>  {
 	let textDocument = documents.get(textDocumentPosition.textDocument.uri);
 	let isKubernetesFile = isKubernetes(textDocument);
-	return completionHelper(textDocument, textDocumentPosition, isKubernetesFile);	
+	let completionFix = completionHelper(textDocument, textDocumentPosition.position);
+	let newText = completionFix.newText;
+	let jsonDocument = parseYAML(newText).documents[0];
+	return customLanguageService.doComplete(textDocument, textDocumentPosition.position, jsonDocument, isKubernetesFile);
 });
 
-function completionHelper(document: TextDocument, textDocumentPosition, isKubernetes: Boolean){
+function completionHelper(document: TextDocument, textDocumentPosition: Position){
 
 		//Get the string we are looking at via a substring
-		let linePos = textDocumentPosition.position.line;
-		let position = textDocumentPosition.position;
+		let linePos = textDocumentPosition.line;
+		let position = textDocumentPosition;
 		let lineOffset = getLineOffsets(document.getText()); 
 		let start = lineOffset[linePos]; //Start of where the autocompletion is happening
 		let end = 0; //End of where the autocompletion is happening
@@ -384,14 +387,14 @@ function completionHelper(document: TextDocument, textDocumentPosition, isKubern
 			let newText = "";
 
 			//This is for the empty line case
-			if(textLine.trim().length === 0){
+			let trimmedText = textLine.trim();
+			if(trimmedText.length === 0 || (trimmedText.length === 1 && trimmedText[0] === '-')){
 				//Add a temp node that is in the document but we don't use at all.
 				if(lineOffset[linePos+1]){
 					newText = document.getText().substring(0, start+(textLine.length-1)) + "holder:\r\n" + document.getText().substr(end+2); 
 				}else{
 					newText = document.getText().substring(0, start+(textLine.length)) + "holder:\r\n" + document.getText().substr(end+2); 
 				}
-				
 			//For when missing semi colon case
 			}else{
 				//Add a semicolon to the end of the current line so we can validate the node
@@ -401,14 +404,20 @@ function completionHelper(document: TextDocument, textDocumentPosition, isKubern
 					newText = document.getText().substring(0, start+(textLine.length)) + ":\r\n" + document.getText().substr(end+2);
 				}
 			}
-			let jsonDocument = parseYAML(newText).documents[0];
-			return customLanguageService.doComplete(document, textDocumentPosition.position, jsonDocument, isKubernetes);
+
+			return {
+				"newText": newText,
+				"newPosition": textDocumentPosition
+			}
+			
 		}else{
 
 			//All the nodes are loaded
 			position.character = position.character - 1;
-			let jsonDocument = parseYAML(document.getText()).documents[0];
-			return customLanguageService.doComplete(document, textDocumentPosition.position, jsonDocument, isKubernetes);
+			return {
+				"newText": document.getText(),
+				"newPosition": position
+			}
 		}
 
 }

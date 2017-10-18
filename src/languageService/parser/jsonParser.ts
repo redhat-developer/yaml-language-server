@@ -113,20 +113,32 @@ export class ASTNode {
 	}
 
 	public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
+		let collector = [];
 		let findNode = (node: ASTNode): ASTNode => {
 			if (offset >= node.start && offset <= node.end) {
 				let children = node.getChildNodes();
 				for (let i = 0; i < children.length && children[i].start <= offset; i++) {
 					let item = findNode(children[i]);
 					if (item) {
-						return item;
+						collector.push(item);
 					}
 				}
 				return node;
 			}
 			return null;
 		};
-		return findNode(this);
+		let foundNode = findNode(this);
+		let currMinDist = Number.MAX_VALUE;
+		let currMinNode = null;
+		for(let possibleNode in collector){
+			let currNode = collector[possibleNode];
+			let minDist = (currNode.end - offset) + (offset - currNode.start);
+			if(minDist < currMinDist){
+				currMinNode = currNode;
+				currMinDist = minDist;
+			}
+		}
+		return currMinNode || foundNode;
 	}
 
 	public validate(schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
