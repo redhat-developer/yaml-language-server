@@ -53,13 +53,13 @@ connection.onInitialize((params): InitializeResult => {
 	}
 });
 
-let workspaceContext = {
+export let workspaceContext = {
 	resolveRelativePath: (relativePath: string, resource: string) => {
 		return URL.resolve(resource, relativePath);
 	}
 };
 
-let schemaRequestService = (uri: string): Thenable<string> => {
+export let schemaRequestService = (uri: string): Thenable<string> => {
 	if (Strings.startsWith(uri, 'file://')) {
 		let fsPath = URI.parse(uri).fsPath;
 		return new Promise<string>((c, e) => {
@@ -80,16 +80,3 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 		return Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString());
 	});
 };
-
-
-export let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
-
-export let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
-
-let uri = 'http://json.schemastore.org/bowerrc';
-let languageSettings = {
-	schemas: []
-};
-let fileMatch = ["*.yml", "*.yaml"];
-languageSettings.schemas.push({ uri, fileMatch: fileMatch });
-languageService.configure(languageSettings);

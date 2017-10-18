@@ -16,43 +16,135 @@ import URI from '../src/languageService/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
 import {JSONSchemaService} from '../src/languageService/services/jsonSchemaService'
-import {schemaService, languageService}  from './testHelper';
+import {schemaRequestService, workspaceContext}  from './testHelper';
 import { parse as parseYAML } from '../src/languageService/parser/yamlParser';
 import { YAMLDocument } from 'vscode-yaml-languageservice';
 var assert = require('assert');
 
+let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
+
+let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
+
+let uri = 'http://json.schemastore.org/bowerrc';
+let languageSettings = {
+	schemas: []
+};
+let fileMatch = ["*.yml", "*.yaml"];
+languageSettings.schemas.push({ uri, fileMatch: fileMatch });
+languageService.configure(languageSettings);
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite("Validation Tests", () => {
 
 	// Tests for validator
-	describe('Server - Validation - schemaValidation and schemaValidator files', function() {
-		describe('traverseBackToLocation', function() {
+	describe('Validation', function() {
+		
+		function setup(content: string){
+			return TextDocument.create("file://~/Desktop/vscode-k8s/test.yaml", "yaml", 0, content);
+		}
 
-			//Validating basic nodes
-			describe('Checking basic and advanced structures', function(){
-				it('Basic Validation', (done) => {
+		function parseSetup(content: string){
+			let testTextDocument = setup(content);
+			let yDoc = parseYAML(testTextDocument.getText());
+			return languageService.doValidation(testTextDocument, yDoc, false);
+		}
+
+		//Validating basic nodes
+		describe('Test that validation does not throw errors', function(){
+			
+			it('Do not error when text document is empty', (done) => {
+				let content = ``;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Basic test', (done) => {
+				let content = `analytics: true`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Basic test on nodes with children', (done) => {
+				let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+				let content = `scripts:\n  preinstall: test1\n  postinstall: test2`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Advanced test on nodes with children', (done) => {
+				let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+				let content = `analytics: true\ncwd: this\nscripts:\n  preinstall: test1\n  postinstall: test2`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Type string validates under children', (done) => {
+				let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+				let content = `registry:\n  register: test_url`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});	
+
+			describe('Type tests', function(){
+
+				it('Type String does not error on valid node', (done) => {
+					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+					let content = `cwd: this`;
+					let validator = parseSetup(content);
+					validator.then(function(result){
+						assert.equal(result.length, 0);
+					}).then(done, done);
+				});
+
+				it('Type Boolean does not error on valid node', (done) => {
 					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 					let content = `analytics: true`;
-					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
-					let yDoc2 = parseYAML(testTextDocument.getText());
-					let validator = languageService.doValidation(testTextDocument, yDoc2, false);
+					let validator = parseSetup(content);
 					validator.then(function(result){
 						assert.equal(result.length, 0);
 					}).then(done, done);
 				});
 
-				it('Basic Validation on nodes with children', (done) => {
+				it('Type Number does not error on valid node', (done) => {
 					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
-					let content = `scripts:\n  preinstall: /blah\n  postinstall: /blah`;
-					let testTextDocument = TextDocument.create(uri, "yaml", 1, content);
-					let yDoc2 = parseYAML(testTextDocument.getText());
-					let validator = languageService.doValidation(testTextDocument, yDoc2, false);
+					let content = `timeout: 60000`;
+					let validator = parseSetup(content);
 					validator.then(function(result){
 						assert.equal(result.length, 0);
 					}).then(done, done);
-				});
-			});		
-		});
+				});			
+
+				it('Type Object does not error on valid node', (done) => {
+					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+					let content = `registry:\n  search: test_url`;
+					let validator = parseSetup(content);
+					validator.then(function(result){
+						assert.equal(result.length, 0);
+					}).then(done, done);
+				});		
+
+				it('Type Array does not error on valid node', (done) => {
+					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
+					let content = `resolvers:\n  - test\n  - test\n  - test`;
+					let validator = parseSetup(content);
+					validator.then(function(result){
+						assert.equal(result.length, 0);
+					}).then(done, done);
+				});		
+
+			});
+
+		});	
+	
 	});
 });

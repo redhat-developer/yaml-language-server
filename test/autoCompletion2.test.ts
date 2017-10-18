@@ -26,7 +26,7 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext,
 
 let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
 
-let uri = 'http://json.schemastore.org/bowerrc';
+let uri = 'http://json.schemastore.org/composer';
 let languageSettings = {
 	schemas: []
 };
@@ -36,101 +36,108 @@ languageService.configure(languageSettings);
 
 suite("Auto Completion Tests", () => {
 
-	
-	describe('yamlCompletion with bowerrc', function(){
+	function setup(content: string){
+		return TextDocument.create("file://~/Desktop/vscode-k8s/test.yaml", "yaml", 0, content);
+	}
+
+	function parseSetup(content: string, position){
+		let testTextDocument = setup(content);
+		let yDoc = parseYAML(testTextDocument.getText()).documents[0];
+		return completionHelper(testTextDocument, testTextDocument.positionAt(position), false);
+	}
+
+	describe('yamlCompletion with composer', function(){
 		
 		describe('doComplete', function(){
 			
-			function setup(content: string){
-				return TextDocument.create("file://~/Desktop/vscode-k8s/test.yaml", "yaml", 0, content);
-			}
+			
 
-			function parseSetup(content: string, position){
-				let testTextDocument = setup(content);
-				let yDoc = parseYAML(testTextDocument.getText()).documents[0];
-				return completionHelper(testTextDocument, testTextDocument.positionAt(position), false);
-			}
-
-			it('Autocomplete on root node without word', (done) => {
-				let content = "";
-				let completion = parseSetup(content, 0);
+			it('Array autocomplete without word', (done) => {	
+				let content = "authors:\n  - ";
+				let completion = parseSetup(content, 14);
 				completion.then(function(result){
-                    assert.notEqual(result.items.length, 0);				
+					assert.notEqual(result.items.length, 0);
+				}).then(done, done);
+			});
+			
+			it('Array autocomplete with letter', (done) => {	
+				let content = "authors:\n  - n";
+				let completion = parseSetup(content, 14);
+				completion.then(function(result){
+					assert.notEqual(result.items.length, 0);
 				}).then(done, done);
 			});
 
-			it('Autocomplete on root node with word', (done) => {
-				let content = "analyt";
+			it('Array autocomplete without word (second item)', (done) => {	
+				let content = "authors:\n  - name: test\n    ";
+				let completion = parseSetup(content, 32);
+				completion.then(function(result){
+					assert.notEqual(result.items.length, 0);
+				}).then(done, done);
+			});
+
+			it('Array autocomplete with letter (second item)', (done) => {	
+				let content = "authors:\n  - name: test\n    e";
+				let completion = parseSetup(content, 27);
+				completion.then(function(result){
+					assert.notEqual(result.items.length, 0);
+				}).then(done, done);
+			});
+
+			it('Autocompletion after array', (done) => {	
+				let content = "authors:\n  - name: test\n"
+				let completion = parseSetup(content, 24);
+				completion.then(function(result){
+					assert.notEqual(result.items.length, 0);
+				}).then(done, done);
+			});
+
+			it('Autocompletion after array with depth', (done) => {	
+				let content = "archive:\n  exclude:\n  - test\n"
+				let completion = parseSetup(content, 29);
+				completion.then(function(result){
+					assert.notEqual(result.items.length, 0);
+				}).then(done, done);
+			});
+
+			it('Autocompletion after array with depth', (done) => {	
+				let content = "autoload:\n  classmap:\n  - test\n  exclude-from-classmap:\n  - test\n  "
+				let completion = parseSetup(content, 70);
+				completion.then(function(result){
+					assert.notEqual(result.items.length, 0);
+				}).then(done, done);
+			});
+
+		});
+
+		describe('Failure tests', function(){
+			
+			it('Autocompletion has no results on value when they are not available', (done) => {	
+				let content = "time: "
 				let completion = parseSetup(content, 6);
 				completion.then(function(result){
-					assert.notEqual(result.items.length, 0);
+					assert.equal(result.items.length, 0);
 				}).then(done, done);
 			});
 
-			it('Autocomplete on default value (without value content)', (done) => {
-				let content = "directory: ";
-				let completion = parseSetup(content, 12);
+			it('Autocompletion has no results on value when they are not available (with depth)', (done) => {	
+				let content = "archive:\n  exclude:\n    - test\n    "
+				let completion = parseSetup(content, 33);
 				completion.then(function(result){
-					assert.notEqual(result.items.length, 0);
+					assert.equal(result.items.length, 0);
 				}).then(done, done);
 			});
 
-			it('Autocomplete on default value (with value content)', (done) => {
-				let content = "directory: bow";
-				let completion = parseSetup(content, 15);
+			it('Autocompletion does not complete on wrong spot in array node', (done) => {	
+				let content = "authors:\n  - name: test\n  "
+				let completion = parseSetup(content, 24);
 				completion.then(function(result){
-					assert.notEqual(result.items.length, 0);
+					assert.equal(result.items.length, 0);
 				}).then(done, done);
 			});
 
-			it('Autocomplete on boolean value (without value content)', (done) => {
-				let content = "analytics: ";
-				let completion = parseSetup(content, 11);
-				completion.then(function(result){
-					assert.equal(result.items.length, 2);
-				}).then(done, done);
-			});
-
-			it('Autocomplete on boolean value (with value content)', (done) => {
-				let content = "analytics: fal";
-				let completion = parseSetup(content, 11);
-				completion.then(function(result){
-					assert.equal(result.items.length, 2);
-				}).then(done, done);
-			});
-
-			it('Autocomplete on number value (without value content)', (done) => {
-				let content = "timeout: ";
-				let completion = parseSetup(content, 9);
-				completion.then(function(result){
-					assert.equal(result.items.length, 1);
-				}).then(done, done);
-			});
-
-			it('Autocomplete on number value (with value content)', (done) => {
-				let content = "timeout: 6";
-				let completion = parseSetup(content, 10);
-				completion.then(function(result){
-					assert.equal(result.items.length, 1);
-				}).then(done, done);
-			});
-
-			it('Autocomplete key in middle of file', (done) => {
-				let content = "scripts:\n  post";
-				let completion = parseSetup(content, 11);
-				completion.then(function(result){
-					assert.notEqual(result.items.length, 0);
-				}).then(done, done);
-			});
-
-			it('Autocomplete key in middle of file 2', (done) => {	
-				let content = "scripts:\n  postinstall: /test\n  preinsta";
-				let completion = parseSetup(content, 31);
-				completion.then(function(result){
-					assert.notEqual(result.items.length, 0);
-				}).then(done, done);
-			});
 		});
+
 	});
 });
 
