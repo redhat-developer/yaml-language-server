@@ -54,7 +54,8 @@
     ],
     "exclude": [
       "**/*.d.ts",
-      "test/"
+      "test/",
+      "out"
     ],
     "all": true
   }
