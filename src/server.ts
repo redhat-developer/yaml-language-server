@@ -135,7 +135,7 @@ export let languageService = getLanguageService({
 	contributions: []
 });
 
-export let KUBERNETES_SCHEMA_URL = "http://central.maven.org/maven2/io/fabric8/kubernetes-model/1.1.4/kubernetes-model-1.1.4-schema.json";
+export let KUBERNETES_SCHEMA_URL = "http://central.maven.org/maven2/io/fabric8/kubernetes-model/2.0.0/kubernetes-model-2.0.0-schema.json";
 export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
 
 // The settings interface describes the server relevant settings part
