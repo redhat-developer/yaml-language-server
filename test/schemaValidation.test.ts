@@ -69,7 +69,6 @@ suite("Validation Tests", () => {
 			});
 
 			it('Basic test on nodes with children', (done) => {
-				let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 				let content = `scripts:\n  preinstall: test1\n  postinstall: test2`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
@@ -78,7 +77,6 @@ suite("Validation Tests", () => {
 			});
 
 			it('Advanced test on nodes with children', (done) => {
-				let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 				let content = `analytics: true\ncwd: this\nscripts:\n  preinstall: test1\n  postinstall: test2`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
@@ -87,7 +85,6 @@ suite("Validation Tests", () => {
 			});
 
 			it('Type string validates under children', (done) => {
-				let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 				let content = `registry:\n  register: test_url`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
@@ -98,7 +95,6 @@ suite("Validation Tests", () => {
 			describe('Type tests', function(){
 
 				it('Type String does not error on valid node', (done) => {
-					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 					let content = `cwd: this`;
 					let validator = parseSetup(content);
 					validator.then(function(result){
@@ -107,7 +103,6 @@ suite("Validation Tests", () => {
 				});
 
 				it('Type Boolean does not error on valid node', (done) => {
-					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 					let content = `analytics: true`;
 					let validator = parseSetup(content);
 					validator.then(function(result){
@@ -116,7 +111,6 @@ suite("Validation Tests", () => {
 				});
 
 				it('Type Number does not error on valid node', (done) => {
-					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 					let content = `timeout: 60000`;
 					let validator = parseSetup(content);
 					validator.then(function(result){
@@ -125,7 +119,6 @@ suite("Validation Tests", () => {
 				});			
 
 				it('Type Object does not error on valid node', (done) => {
-					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 					let content = `registry:\n  search: test_url`;
 					let validator = parseSetup(content);
 					validator.then(function(result){
@@ -134,17 +127,91 @@ suite("Validation Tests", () => {
 				});		
 
 				it('Type Array does not error on valid node', (done) => {
-					let uri = "file://~/Desktop/vscode-k8s/test.yaml";
 					let content = `resolvers:\n  - test\n  - test\n  - test`;
 					let validator = parseSetup(content);
 					validator.then(function(result){
 						assert.equal(result.length, 0);
 					}).then(done, done);
-				});		
+				});
 
+				it('Do not error when there are multiple types in schema and theyre valid', (done) => {
+					let content = `license: MIT`;
+					let validator = parseSetup(content);
+					validator.then(function(result){
+						assert.equal(result.length, 0);
+					});
+
+					let content2 = `license: MIT`;
+					let validator2 = parseSetup(content);
+					validator2.then(function(result){
+						assert.equal(result.length, 0);
+					});
+
+					done();
+				});
+				
 			});
 
 		});	
+
+		describe('Test that validation DOES throw errors', function(){
+			it('Error when theres a finished untyped item', (done) => {
+				let content = `cwd: hello\nan`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.notEqual(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Error when theres no value for a node', (done) => {
+				let content = `cwd:`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.notEqual(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Error on incorrect value type (number)', (done) => {
+				let content = `cwd: 100000`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.notEqual(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Error on incorrect value type (boolean)', (done) => {
+				let content = `cwd: False`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.notEqual(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Error on incorrect value type (string)', (done) => {
+				let content = `analytics: hello`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.notEqual(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Error on incorrect value type (object)', (done) => {
+				let content = `scripts: test`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.notEqual(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Error on incorrect value type (array)', (done) => {
+				let content = `resolvers: test`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.notEqual(result.length, 0);
+				}).then(done, done);
+			});
+
+		});
 	
 	});
 });

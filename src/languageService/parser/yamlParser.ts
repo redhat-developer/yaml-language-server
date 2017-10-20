@@ -14,15 +14,15 @@ import { getLineStartPositions, getPosition } from '../utils/documentPositionCal
 export class SingleYAMLDocument extends JSONDocument {
 	private lines;
     public root;
-	public _errors;
-	public _warnings;
+	public errors;
+	public warnings;
 
 	constructor(lines: number[]) {
 		super(null, []);
 		this.lines = lines;
         this.root = null;
-		this._errors = [];
-		this._warnings = [];
+		this.errors = [];
+		this.warnings = [];
 	}
 
 	public getSchemas(schema, doc, node) {
@@ -201,7 +201,7 @@ function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[]){
 
 	if (!_doc.root) {
 		// TODO: When this is true, consider not pushing the other errors.
-		_doc._errors.push({ message: localize('Invalid symbol', 'Expected a YAML object, array or literal'), code: ErrorCode.Undefined, location: { start: yamlDoc.startPosition, end: yamlDoc.endPosition } });
+		_doc.errors.push({ message: localize('Invalid symbol', 'Expected a YAML object, array or literal'), code: ErrorCode.Undefined, location: { start: yamlDoc.startPosition, end: yamlDoc.endPosition } });
 	}
 
 	const duplicateKeyReason = 'duplicate key'
@@ -209,19 +209,21 @@ function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[]){
 	const errors = yamlDoc.errors.filter(e => e.reason !== duplicateKeyReason && !e.isWarning).map(e => convertError(e))
 	const warnings = yamlDoc.errors.filter(e => e.reason === duplicateKeyReason || e.isWarning).map(e => convertError(e))
 
-	errors.forEach(e => _doc._errors.push(e));
-	warnings.forEach(e => _doc._warnings.push(e));
+	errors.forEach(e => _doc.errors.push(e));
+	warnings.forEach(e => _doc.warnings.push(e));
 
 	return _doc;
 }
 
 export class YAMLDocument {
 	public documents: JSONDocument[]
-	private _errors;
-	private _warnings;
+	private errors;
+	private warnings;
 
 	constructor(documents: JSONDocument[]){
 		this.documents = documents;
+		this.errors = [];
+		this.warnings = [];
 	}
 
 	public getNodeFromOffset(offset: number): ASTNode {

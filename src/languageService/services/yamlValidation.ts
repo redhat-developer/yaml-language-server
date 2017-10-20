@@ -14,25 +14,14 @@ export class YAMLValidation {
 	
 	private jsonSchemaService: JSONSchemaService;
 	private promise: PromiseConstructor;
-	private validationEnabled: boolean;
 	private comments: boolean;
 
 	public constructor(jsonSchemaService, promiseConstructor) {
 		this.jsonSchemaService = jsonSchemaService;
 		this.promise = promiseConstructor;
-		this.validationEnabled = true;
 	}
-
-	public configure(raw) {
-		if (raw) {
-			this.validationEnabled = raw.validate;
-		}
-	};
 	
 	public doValidation(textDocument, yamlDocument, isKubernetes) {
-		if (!this.validationEnabled) {
-			return this.promise.resolve([]);
-		}
 		return this.jsonSchemaService.getSchemaForResource(textDocument.uri).then(function (schema) {
 			if (schema) {
 				
@@ -52,7 +41,11 @@ export class YAMLValidation {
 					}
 				}
 				else {
-					yamlDocument.validate(schema.schema);
+					let diagnostics = yamlDocument.validate(schema.schema);
+					for(let diag in diagnostics){
+						let curDiagnostic = diagnostics[diag];
+						yamlDocument.errors.push({ location: { start: curDiagnostic.location.start, end: curDiagnostic.location.end }, message: curDiagnostic.message })
+					}
 				}
 			}
 			var diagnostics = [];
