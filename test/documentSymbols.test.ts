@@ -40,6 +40,13 @@ suite("Document Symbols Tests", () => {
             return languageService.findDocumentSymbols(testTextDocument, jsonDocument);
         }
 
+        it('Document is empty', (done) => {
+            let content = "";
+            let symbols = parseSetup(content);
+            assert.equal(symbols, null);	
+            done();
+        })
+
         it('Simple document symbols', (done) => {
             let content = "cwd: test";
             let symbols = parseSetup(content);
@@ -65,6 +72,20 @@ suite("Document Symbols Tests", () => {
             let content = "scripts:\n  node1: test\n  node2: test";
             let symbols = parseSetup(content);
             assert.equal(symbols.length, 3);	
+            done();			
+        });
+
+        it('Document Symbols with null', (done) => {
+            let content = "apiVersion: null";
+            let symbols = parseSetup(content);
+            assert.equal(symbols.length, 1);	
+            done();			
+        });
+
+        it('Document Symbols with array of strings', (done) => {
+            let content = "items:\n  - test\n  - test";
+            let symbols = parseSetup(content);
+            assert.equal(symbols.length, 1);	
             done();			
         });
 

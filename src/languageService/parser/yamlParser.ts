@@ -226,23 +226,6 @@ export class YAMLDocument {
 		this.warnings = [];
 	}
 
-	public getNodeFromOffset(offset: number): ASTNode {
-		// Depends on the documents being sorted
-		for (let element of this.documents) {
-			if (offset <= element.root.end) {
-				return element.getNodeFromOffset(offset)
-			}
-		}
-
-		return undefined;
-	}
-
-	public validate(schema: JSONSchema, matchingSchemas: IApplicableSchema[] = null, offset: number = -1): void {
-		this.documents.forEach(doc => {
-			doc.validate(schema);
-		});
-	}
-
 }
 
 export function parse(text: string): YAMLDocument {

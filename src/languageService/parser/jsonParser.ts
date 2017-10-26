@@ -112,6 +112,22 @@ export class ASTNode {
 		return findNode(this);
 	}
 
+	public getNodeCollectorCount(offset: number): Number {
+		let collector = [];
+		let findNode = (node: ASTNode): ASTNode => {
+			let children = node.getChildNodes();
+			for (let i = 0; i < children.length; i++) {
+				let item = findNode(children[i]);
+				if (item && item.type === "property") {
+					collector.push(item);
+				}
+			}
+			return node;	
+		};
+		let foundNode = findNode(this);
+		return collector.length;
+	}
+
 	public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
 		let collector = [];
 		let findNode = (node: ASTNode): ASTNode => {
@@ -188,33 +204,93 @@ export class ASTNode {
 
 		let testAlternatives = (alternatives: JSONSchema[], maxOneMatch: boolean) => {
 			let matches = [];
-
+			let allMatches = [];
+			let fallBackMatches = [];
 			// remember the best match that is used for error messages
 			let bestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
+			let fallbackBestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
 			alternatives.forEach((subSchema) => {
 				let subValidationResult = new ValidationResult();
 				let subMatchingSchemas = matchingSchemas.newSub();
 				this.validate(subSchema, subValidationResult, subMatchingSchemas);
-				if (!subValidationResult.hasProblems()) {
-					matches.push(subSchema);
+
+				let holderFound = false;
+				function isHolderFound(node){
+					if(!node || Object.keys(node).length === 0){
+						return;
+					}
+
+					Object.keys(node).forEach(key => {
+						let n: any = node[key];
+						if(key === "holder" && n === null){
+							holderFound = true;
+						}else if(typeof n === "object"){
+							isHolderFound(n);
+						}
+					});
+
 				}
-				if (!bestMatch) {
-					bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-				} else {
-					if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
-						// no errors, both are equally good matches
-						bestMatch.matchingSchemas.merge(subMatchingSchemas);
-						bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
-						bestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
+
+				isHolderFound(this.getValue());
+				
+				let numberOfSubSchemas = subMatchingSchemas.schemas.length - 1;
+				
+				//Case in which everything is valid
+				let firstArg = numberOfSubSchemas === this.getNodeCollectorCount(this.end); 
+				
+				//If holder is found then we can increase number of subschemas
+				let	secondArg = holderFound && numberOfSubSchemas+1 === this.getNodeCollectorCount(this.end);
+
+				//Live type isn't working for kubernetes schema
+				if(firstArg || secondArg){
+					allMatches.push(subSchema);	
+					if (!subValidationResult.hasProblems()) {
+						matches.push(subSchema);
+					}
+					if (!bestMatch) {
+						bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
 					} else {
-						let compareResult = subValidationResult.compare(bestMatch.validationResult);
-						if (compareResult > 0) {
-							// our node is the best matching so far
-							bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-						} else if (compareResult === 0) {
-							// there's already a best matching but we are as good
+						if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
+							// no errors, both are equally good matches
 							bestMatch.matchingSchemas.merge(subMatchingSchemas);
-							bestMatch.validationResult.mergeEnumValues(subValidationResult);
+							bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
+							bestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
+						} else {
+							let compareResult = subValidationResult.compare(bestMatch.validationResult);
+							if (compareResult > 0) {
+								// our node is the best matching so far
+								bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
+							} else if (compareResult === 0) {
+								// there's already a best matching but we are as good
+								bestMatch.matchingSchemas.merge(subMatchingSchemas);
+								bestMatch.validationResult.mergeEnumValues(subValidationResult);
+							}
+						}
+					}
+				}
+
+				if(!(firstArg || secondArg)){
+					if (!subValidationResult.hasProblems()) {
+						fallBackMatches.push(subSchema);
+					}
+					if (!fallbackBestMatch) {
+						fallbackBestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
+					} else {
+						if (!maxOneMatch && !subValidationResult.hasProblems() && !fallbackBestMatch.validationResult.hasProblems()) {
+							// no errors, both are equally good matches
+							fallbackBestMatch.matchingSchemas.merge(subMatchingSchemas);
+							fallbackBestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
+							fallbackBestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
+						} else {
+							let compareResult = subValidationResult.compare(fallbackBestMatch.validationResult);
+							if (compareResult > 0) {
+								// our node is the best matching so far
+								fallbackBestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
+							} else if (compareResult === 0) {
+								// there's already a best matching but we are as good
+								fallbackBestMatch.matchingSchemas.merge(subMatchingSchemas);
+								fallbackBestMatch.validationResult.mergeEnumValues(subValidationResult);
+							}
 						}
 					}
 				}
@@ -226,6 +302,13 @@ export class ASTNode {
 					severity: ProblemSeverity.Warning,
 					message: localize('oneOfWarning', "Matches multiple schemas when only one must validate.")
 				});
+			}
+			if(matches.length === 0){
+				matches = allMatches;
+			}
+			if(matches.length === 0 && allMatches.length === 0){
+				matches = fallBackMatches;
+				bestMatch = fallbackBestMatch
 			}
 			if (bestMatch !== null) {
 				validationResult.merge(bestMatch.validationResult);
@@ -945,10 +1028,20 @@ export class JSONDocument {
 
 	public getMatchingSchemas(schema: JSONSchema, focusOffset: number = -1, exclude: ASTNode = null): IApplicableSchema[] {
 		let matchingSchemas = new SchemaCollector(focusOffset, exclude);
+		let validationResult = new ValidationResult();
 		if (this.root && schema) {
-			this.root.validate(schema, new ValidationResult(), matchingSchemas);
+			this.root.validate(schema, validationResult, matchingSchemas);
 		}
 		return matchingSchemas.schemas;
+	}
+
+	public getValidationProblems(schema: JSONSchema, focusOffset: number = -1, exclude: ASTNode = null) {
+		let matchingSchemas = new SchemaCollector(focusOffset, exclude);
+		let validationResult = new ValidationResult();
+		if (this.root && schema) {
+			this.root.validate(schema, validationResult, matchingSchemas);
+		}
+		return validationResult.problems;
 	}
 }
 
