@@ -15,28 +15,11 @@ export class YAMLDocumentSymbols {
 
 	public findDocumentSymbols(document: TextDocument, doc: Parser.JSONDocument): SymbolInformation[] {
 
-		let root = doc["root"];
-		if (!root) {
+		if(!doc || !doc["root"]){
 			return null;
 		}
-	
-		// special handling for key bindings
-		let resourceString = document.uri;
-		if ((resourceString === 'vscode://defaultsettings/keybindings.json') || Strings.endsWith(resourceString.toLowerCase(), '/user/keybindings.json')) {
-			if (root.type === 'array') {
-				let result: SymbolInformation[] = [];
-				(<Parser.ArrayASTNode>root).items.forEach((item) => {
-					if (item.type === 'object') {
-						let property = (<Parser.ObjectASTNode>item).getFirstProperty('key');
-						if (property && property.value) {
-							let location = Location.create(document.uri, Range.create(document.positionAt(item.start), document.positionAt(item.end)));
-							result.push({ name: property.value.getValue(), kind: SymbolKind.Function, location: location });
-						}
-					}
-				});
-				return result;
-			}
-		}
+
+		let root = doc["root"];
 	
 		let collectOutlineEntries = (result: SymbolInformation[], node: Parser.ASTNode, containerName: string): SymbolInformation[] => {
 			if (node.type === 'array') {

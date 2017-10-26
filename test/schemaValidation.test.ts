@@ -45,21 +45,13 @@ suite("Validation Tests", () => {
 
 		function parseSetup(content: string){
 			let testTextDocument = setup(content);
-			let yDoc = parseYAML(testTextDocument.getText());
+			let yDoc = parseYAML(testTextDocument.getText()).documents[0];
 			return languageService.doValidation(testTextDocument, yDoc, false);
 		}
 
 		//Validating basic nodes
 		describe('Test that validation does not throw errors', function(){
 			
-			it('Do not error when text document is empty', (done) => {
-				let content = ``;
-				let validator = parseSetup(content);
-				validator.then(function(result){
-					assert.equal(result.length, 0);
-				}).then(done, done);
-			});
-
 			it('Basic test', (done) => {
 				let content = `analytics: true`;
 				let validator = parseSetup(content);

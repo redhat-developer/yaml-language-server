@@ -29,24 +29,12 @@ export class YAMLValidation {
                     schema.schema = KubernetesTransformer.doTransformation(schema.schema);
                 }
 				
-				if (schema.errors.length && yamlDocument.root) {
-					var astRoot = yamlDocument.root;
-					var property = astRoot.type === 'object' ? astRoot.getFirstProperty('$schema') : null;
-					if (property) {
-						var node = property.value || property;
-						yamlDocument.warnings.push({ location: { start: node.start, end: node.end }, message: schema.errors[0] });
-					}
-					else {
-						yamlDocument.warnings.push({ location: { start: astRoot.start, end: astRoot.start + 1 }, message: schema.errors[0] });
-					}
+				let diagnostics = yamlDocument.getValidationProblems(schema.schema);
+				for(let diag in diagnostics){
+					let curDiagnostic = diagnostics[diag];
+					yamlDocument.errors.push({ location: { start: curDiagnostic.location.start, end: curDiagnostic.location.end }, message: curDiagnostic.message })
 				}
-				else {
-					let diagnostics = yamlDocument.validate(schema.schema);
-					for(let diag in diagnostics){
-						let curDiagnostic = diagnostics[diag];
-						yamlDocument.errors.push({ location: { start: curDiagnostic.location.start, end: curDiagnostic.location.end }, message: curDiagnostic.message })
-					}
-				}
+				
 			}
 			var diagnostics = [];
 			var added = {};

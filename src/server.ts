@@ -19,7 +19,6 @@ import URI from './languageService/utils/uri';
 import * as URL from 'url';
 import Strings = require('./languageService/utils/strings');
 import { YAMLDocument, JSONSchema, LanguageSettings, getLanguageService } from 'vscode-yaml-languageservice';
-import { getLanguageModelCache } from './languageModelCache';
 import { getLineOffsets, removeDuplicatesObj } from './languageService/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService } from './languageService/yamlLanguageService';
 import * as nls from 'vscode-nls';
@@ -304,7 +303,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 		return;
 	}
 
-	let yamlDocument: YAMLDocument = languageService.parseYAMLDocument(textDocument);
+	let yamlDocument = parseYAML(textDocument.getText()).documents[0];
 	let isKubernetesFile = isKubernetes(textDocument);
 	customLanguageService.doValidation(textDocument, yamlDocument, isKubernetesFile).then(function(diagnosticResults){
 
@@ -341,20 +340,6 @@ connection.onDidChangeWatchedFiles((change) => {
 		documents.all().forEach(validateTextDocument);
 	}
 });
-
-let yamlDocuments = getLanguageModelCache<YAMLDocument>(10, 60, document => languageService.parseYAMLDocument(document));
-
-documents.onDidClose(e => {
-	yamlDocuments.onDocumentRemoved(e.document);
-});
-
-connection.onShutdown(() => {
-	yamlDocuments.dispose();
-});
-
-function getJSONDocument(document: TextDocument): YAMLDocument {
-	return yamlDocuments.get(document);
-}
 
 connection.onCompletion(textDocumentPosition =>  {
 	let textDocument = documents.get(textDocumentPosition.textDocument.uri);

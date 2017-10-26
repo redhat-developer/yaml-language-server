@@ -12,7 +12,6 @@ import SchemaService = require('./jsonSchemaService');
 import { JSONSchema } from '../jsonSchema';
 import { JSONWorkerContribution, CompletionsCollector } from '../jsonContributions';
 import { PromiseConstructor, Thenable } from 'vscode-json-languageservice';
-import { stringifyObject } from '../utils/json';
 
 import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Position, Range, TextEdit } from 'vscode-languageserver-types';
 

@@ -84,7 +84,7 @@ export interface SchemaConfiguration {
 export interface LanguageService {
   configure(settings): void;
 	doComplete(document: TextDocument, position: Position, doc, isKubernetes: Boolean): Thenable<CompletionList>;
-  doValidation(document: TextDocument, yamlDocument: YAMLDocument, isKubernetes: Boolean): Thenable<Diagnostic[]>;
+  doValidation(document: TextDocument, yamlDocument, isKubernetes: Boolean): Thenable<Diagnostic[]>;
   doHover(document: TextDocument, position: Position, doc, isKubernetes: Boolean);
   findDocumentSymbols(document: TextDocument, doc);
 }
@@ -100,13 +100,6 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
   let yamlDocumentSymbols = new YAMLDocumentSymbols();
   let yamlValidation = new YAMLValidation(schemaService, promise);
 
-  function doValidation(textDocument, yamlDocument) {
-      var validate = yamlValidation.doValidation.bind(yamlValidation, textDocument);
-      const validationResults = yamlDocument.documents.map(d => validate(d));
-      const resultsPromise = promise.all(validationResults);
-      return resultsPromise.then(res => [].concat(...res));
-  }
-
   return {
       configure: (settings) => {
         schemaService.clearExternalSchemas();
@@ -117,7 +110,7 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
         }
       },
     	doComplete: completer.doComplete.bind(completer),
-      doValidation: doValidation,
+      doValidation: yamlValidation.doValidation.bind(yamlValidation),
       doHover: hover.doHover.bind(hover),
       findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols)
   }
