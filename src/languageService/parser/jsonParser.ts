@@ -95,6 +95,8 @@ export class ASTNode {
 		return visitor(this);
 	}
 
+	
+
 	public getNodeFromOffset(offset: number): ASTNode {
 		let findNode = (node: ASTNode): ASTNode => {
 			if (offset >= node.start && offset < node.end) {
@@ -126,6 +128,10 @@ export class ASTNode {
 		};
 		let foundNode = findNode(this);
 		return collector.length;
+	}
+
+	public isBoolean(value):boolean {
+		return false;
 	}
 
 	public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
@@ -161,7 +167,7 @@ export class ASTNode {
 		if (!matchingSchemas.include(this)) {
 			return;
 		}
-
+		
 		if (Array.isArray(schema.type)) {
 			if ((<string[]>schema.type).indexOf(this.type) === -1) {
 				validationResult.problems.push({
@@ -172,7 +178,19 @@ export class ASTNode {
 			}
 		}
 		else if (schema.type) {
-			if (this.type !== schema.type) {
+
+			let isValid = true;
+			switch(schema.type){
+				case "boolean":
+					let val = this.getValue() !== null ? this.getValue().toString() : this.getValue(); 
+					isValid = this.isBoolean(val);
+					break;
+				default:
+					isValid = this.type === schema.type;
+					break;
+			}
+
+			if (!isValid) {
 				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
 					severity: ProblemSeverity.Warning,
@@ -381,6 +399,10 @@ export class BooleanASTNode extends ASTNode {
 		return this.value;
 	}
 
+	public isBoolean(value): boolean {
+		let availableBooleans = ['y', 'Y', 'yes', 'Yes', 'YES', 'n', 'N', 'no', 'No', 'NO', 'true', 'true', 'TRUE', 'false', 'False', 'FALSE', 'on', 'On', 'ON', 'off', 'Off', 'OFF'];
+		return availableBooleans.indexOf(value) !== -1;
+	}
 }
 
 export class ArrayASTNode extends ASTNode {
