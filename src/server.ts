@@ -408,7 +408,7 @@ function completionHelper(document: TextDocument, textDocumentPosition: Position
 }
 
 connection.onCompletionResolve(completionItem => {
-	return languageService.doResolve(completionItem);
+	return customLanguageService.doResolve(completionItem);
 });
 
 connection.onHover(textDocumentPositionParams => {
@@ -420,7 +420,7 @@ connection.onHover(textDocumentPositionParams => {
 
 connection.onDocumentSymbol(documentSymbolParams => {
 	let document = documents.get(documentSymbolParams.textDocument.uri);
-	let jsonDocument = languageService.parseYAMLDocument(document).documents[0];
+	let jsonDocument = parseYAML(document.getText()).documents[0];
 	return customLanguageService.findDocumentSymbols(document, jsonDocument);
 });
 

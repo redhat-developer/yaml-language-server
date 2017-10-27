@@ -87,6 +87,7 @@ export interface LanguageService {
   doValidation(document: TextDocument, yamlDocument, isKubernetes: Boolean): Thenable<Diagnostic[]>;
   doHover(document: TextDocument, position: Position, doc, isKubernetes: Boolean);
   findDocumentSymbols(document: TextDocument, doc);
+  doResolve(completionItem);
 }
 
 export function getLanguageService(schemaRequestService, workspaceContext, contributions, promiseConstructor?): LanguageService {
@@ -109,7 +110,8 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
           });
         }
       },
-    	doComplete: completer.doComplete.bind(completer),
+      doComplete: completer.doComplete.bind(completer),
+      doResolve: completer.doResolve.bind(completer),
       doValidation: yamlValidation.doValidation.bind(yamlValidation),
       doHover: hover.doHover.bind(hover),
       findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols)
