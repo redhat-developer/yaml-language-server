@@ -12,6 +12,8 @@ before_install:
 install:
 - npm install
 - npm run compile
+after_script:
+- npm run coveralls
 deploy:
   provider: npm
   email: gorkem.ercan@gmail.com

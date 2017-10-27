@@ -36,6 +36,8 @@
   },
   "devDependencies": {
     "@types/node": "^6.0.52",
+    "coveralls": "^3.0.0",
+    "mocha-lcov-reporter": "^1.3.0",
     "nyc": "^11.2.1",
     "source-map-support": "^0.4.18",
     "ts-node": "^3.3.0",
@@ -45,7 +47,8 @@
     "compile": "installServerIntoExtension ./out ./package.json ./tsconfig.json && tsc -p .",
     "watch": "installServerIntoExtension ./out ./package.json ./tsconfig.json && tsc --watch -p .",
     "test": "mocha --require ts-node/register --ui tdd ./test/*.test.ts",
-    "coverage": "nyc mocha --require ts-node/register --require source-map-support/register --recursive --ui tdd ./test/*.test.ts"
+    "coverage": "nyc mocha --require ts-node/register --require source-map-support/register --recursive --ui tdd ./test/*.test.ts",
+    "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls"
   },
   "nyc": {
     "extension": [
