@@ -130,8 +130,9 @@ export class ASTNode {
 		return collector.length;
 	}
 
-	public isBoolean(value):boolean {
-		return false;
+	public isBoolean(value): boolean {
+		let availableBooleans = ['y', 'Y', 'yes', 'Yes', 'YES', 'n', 'N', 'no', 'No', 'NO', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE', 'on', 'On', 'ON', 'off', 'Off', 'OFF'];
+		return availableBooleans.indexOf(value) !== -1;
 	}
 
 	public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
@@ -397,11 +398,6 @@ export class BooleanASTNode extends ASTNode {
 
 	public getValue(): any {
 		return this.value;
-	}
-
-	public isBoolean(value): boolean {
-		let availableBooleans = ['y', 'Y', 'yes', 'Yes', 'YES', 'n', 'N', 'no', 'No', 'NO', 'true', 'true', 'TRUE', 'false', 'False', 'FALSE', 'on', 'On', 'ON', 'off', 'Off', 'OFF'];
-		return availableBooleans.indexOf(value) !== -1;
 	}
 }
 
