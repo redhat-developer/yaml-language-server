@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {removeDuplicates, getLineOffsets} from '../src/languageService/utils/arrUtils';
+import {removeDuplicates, getLineOffsets, removeDuplicatesObj} from '../src/languageService/utils/arrUtils';
 var assert = require('assert');
 
 suite("Array Utils Tests", () => {
@@ -37,24 +37,20 @@ suite("Array Utils Tests", () => {
                 var obj2 = {
                     "test_key": "test_value"
                 }
-                
+            
                 var obj3 = {
-                    "other_key": "test_value"
-                }
-
-                var obj4 = {
                     "test_key": "test_value"
                 }
 
-                var obj5 = {
+                var obj4 = {
                     "another_key_too": "test_value"
                 }
 
-                var arr = [obj1, obj2];
+                var arr = [obj1, obj2, obj3, obj4];
                 var prop = "test_key";
 
                 var result = removeDuplicates(arr, prop);
-                assert.equal(result.length, 1);
+                assert.equal(result.length, 2);
             });
 
             it('Do NOT remove items without duplication', () => {
@@ -106,6 +102,42 @@ suite("Array Utils Tests", () => {
 
         });
 
+        describe('removeDuplicatesObj', function(){
+            
+            it('Remove one duplicate with property', () => {
+
+                var obj1 = {
+                    "test_key": "test_value"
+                }
+
+                var obj2 = {
+                    "test_key": "test_value"
+                }
+
+                var arr = [obj1, obj2];
+                var result = removeDuplicatesObj(arr);
+                assert.equal(result.length, 1);
+
+            });
+
+            it('Does not remove anything unneccessary', () => {
+                var obj1 = {
+                    "test_key": "test_value"
+                }
+                
+                var obj2 = {
+                    "other_key": "test_value"
+                }
+
+                var arr = [obj1, obj2];
+                var prop = "test_key";
+
+                var result = removeDuplicatesObj(arr);
+                assert.equal(result.length, 2);
+            });        
+
+        });
+            
 	});
 
 });
