@@ -132,7 +132,7 @@ export class ASTNode {
 
 	public isBoolean(value: string): boolean {
 		let availableBooleans = ['true', 'false', 'True', 'False', 'TRUE', 'FALSE', 'y', 'Y', 'yes', 'Yes', 'YES', 'n', 'N', 'no', 'No', 'NO', 'on', 'On', 'ON', 'off', 'Off', 'OFF'];
-		return availableBooleans.indexOf(value.toLowerCase()) !== -1;
+		return availableBooleans.indexOf(value) !== -1;
 	}
 
 	public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
