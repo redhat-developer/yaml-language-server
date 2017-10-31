@@ -52,6 +52,10 @@ export class YAMLCompletion {
 		};
 
 		let offset = document.offsetAt(position);
+		if(document.getText()[offset] === ":"){
+			return;
+		}
+		
 		let node = doc.getNodeFromOffsetEndInclusive(offset);
 		if (this.isInComment(document, node ? node.start : 0, offset)) {
 			return Promise.resolve(result);
