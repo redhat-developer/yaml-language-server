@@ -145,6 +145,12 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 			const name = null;
 			const value = instance.value;
 
+			//This is a patch for redirecting values with these strings to be boolean nodes because its not supported in the parser.
+			let possibleBooleanValues = ['y', 'Y', 'yes', 'Yes', 'YES', 'n', 'N', 'no', 'No', 'NO', 'on', 'On', 'ON', 'off', 'Off', 'OFF'];
+			if(possibleBooleanValues.indexOf(value.toString()) !== -1){
+				return new BooleanASTNode(parent, name, value, node.startPosition, node.endPosition)
+			}
+
 			switch (type) {
 				case Yaml.ScalarType.null: {
 					return new NullASTNode(parent, name, instance.startPosition, instance.endPosition);
