@@ -95,8 +95,6 @@ export class ASTNode {
 		return visitor(this);
 	}
 
-	
-
 	public getNodeFromOffset(offset: number): ASTNode {
 		let findNode = (node: ASTNode): ASTNode => {
 			if (offset >= node.start && offset < node.end) {
@@ -128,11 +126,6 @@ export class ASTNode {
 		};
 		let foundNode = findNode(this);
 		return collector.length;
-	}
-
-	public isBoolean(value: string): boolean {
-		let availableBooleans = ['true', 'false', 'True', 'False', 'TRUE', 'FALSE', 'y', 'Y', 'yes', 'Yes', 'YES', 'n', 'N', 'no', 'No', 'NO', 'on', 'On', 'ON', 'off', 'Off', 'OFF'];
-		return availableBooleans.indexOf(value) !== -1;
 	}
 
 	public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
@@ -179,19 +172,7 @@ export class ASTNode {
 			}
 		}
 		else if (schema.type) {
-
-			let isValid = true;
-			switch(schema.type){
-				case "boolean":
-					let val = this.getValue() !== null ? this.getValue().toString() : this.getValue(); 
-					isValid = this.isBoolean(val);
-					break;
-				default:
-					isValid = this.type === schema.type;
-					break;
-			}
-
-			if (!isValid) {
+			if (this.type !== schema.type) {
 				validationResult.problems.push({
 					location: { start: this.start, end: this.end },
 					severity: ProblemSeverity.Warning,
@@ -389,9 +370,9 @@ export class NullASTNode extends ASTNode {
 
 export class BooleanASTNode extends ASTNode {
 
-	private value: boolean;
+	private value: boolean | string;
 
-	constructor(parent: ASTNode, name: Json.Segment, value: boolean, start: number, end?: number) {
+	constructor(parent: ASTNode, name: Json.Segment, value: boolean | string, start: number, end?: number) {
 		super(parent, 'boolean', name, start, end);
 		this.value = value;
 	}
@@ -399,6 +380,7 @@ export class BooleanASTNode extends ASTNode {
 	public getValue(): any {
 		return this.value;
 	}
+
 }
 
 export class ArrayASTNode extends ASTNode {
@@ -1301,6 +1283,7 @@ export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
 			case Json.SyntaxKind.FalseKeyword:
 				node = new BooleanASTNode(parent, name, false, scanner.getTokenOffset());
 				break;
+
 			default:
 				return null;
 		}

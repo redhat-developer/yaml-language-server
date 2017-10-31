@@ -145,6 +145,11 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 			const name = null;
 			const value = instance.value;
 
+			let possibleBooleanValues = ['true', 'false', 'True', 'False', 'TRUE', 'FALSE', 'y', 'Y', 'yes', 'Yes', 'YES', 'n', 'N', 'no', 'No', 'NO', 'on', 'On', 'ON', 'off', 'Off', 'OFF'];
+			if(possibleBooleanValues.indexOf(value.toString()) !== -1){
+				return new BooleanASTNode(parent, name, value, node.startPosition, node.endPosition)
+			}
+
 			switch (type) {
 				case Yaml.ScalarType.null: {
 					return new NullASTNode(parent, name, instance.startPosition, instance.endPosition);
