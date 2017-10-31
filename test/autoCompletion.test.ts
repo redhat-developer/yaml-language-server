@@ -130,6 +130,22 @@ suite("Auto Completion Tests", () => {
 					assert.notEqual(result.items.length, 0);
 				}).then(done, done);
 			});
+
+			it('Autocomplete does not happen right after :', (done) => {	
+				let content = "analytics:";
+				let completion = parseSetup(content, 9);
+				completion.then(function(result){
+					assert.notEqual(result.items.length, 0);
+				}).then(done, done);
+			});
+
+			it('Autocomplete does not happen right after : under an object', (done) => {	
+				let content = "scripts:\n  postinstall:";
+				let completion = parseSetup(content, 21);
+				completion.then(function(result){
+					assert.notEqual(result.items.length, 0);
+				}).then(done, done);
+			});
 		});
 	});
 });
