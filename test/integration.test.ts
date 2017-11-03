@@ -38,7 +38,7 @@ languageService.configure(languageSettings);
 suite("Kubernetes Integration Tests", () => {
 
 	// Tests for validator
-	describe('Validation with kubernetes', function() {
+	describe('Yaml Validation with kubernetes', function() {
 		
 		function setup(content: string){
 			return TextDocument.create("file://~/Desktop/vscode-k8s/test.yaml", "yaml", 0, content);
