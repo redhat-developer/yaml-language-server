@@ -2,13 +2,13 @@ export class KubernetesTransformer {
 
     public static doTransformation(resolve_kubernetes_schema){
 
-        if(resolve_kubernetes_schema.anyOf === undefined){
+        if(resolve_kubernetes_schema.anyOfMatching === undefined){
             let props = resolve_kubernetes_schema.properties;
-            resolve_kubernetes_schema.anyOf = [];
+            resolve_kubernetes_schema.anyOfMatching = [];
 
             for(let prop in props){
                 let currProps = props[prop];
-                resolve_kubernetes_schema.anyOf.push(currProps);
+                resolve_kubernetes_schema.anyOfMatching.push(currProps);
             }
 
             resolve_kubernetes_schema.properties = {};

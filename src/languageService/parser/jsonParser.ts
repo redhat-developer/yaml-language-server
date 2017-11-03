@@ -204,6 +204,63 @@ export class ASTNode {
 
 		let testAlternatives = (alternatives: JSONSchema[], maxOneMatch: boolean) => {
 			let matches = [];
+
+			// remember the best match that is used for error messages
+			let bestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
+			alternatives.forEach((subSchema) => {
+				let subValidationResult = new ValidationResult();
+				let subMatchingSchemas = matchingSchemas.newSub();
+
+				this.validate(subSchema, subValidationResult, subMatchingSchemas);
+				if (!subValidationResult.hasProblems()) {
+					matches.push(subSchema);
+				}
+				if (!bestMatch) {
+					bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
+				} else {
+					if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
+						// no errors, both are equally good matches
+						bestMatch.matchingSchemas.merge(subMatchingSchemas);
+						bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
+						bestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
+					} else {
+						let compareResult = subValidationResult.compare(bestMatch.validationResult);
+						if (compareResult > 0) {
+							// our node is the best matching so far
+							bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
+						} else if (compareResult === 0) {
+							// there's already a best matching but we are as good
+							bestMatch.matchingSchemas.merge(subMatchingSchemas);
+							bestMatch.validationResult.mergeEnumValues(subValidationResult);
+						}
+					}
+				}
+			});
+
+			if (matches.length > 1 && maxOneMatch) {
+				validationResult.problems.push({
+					location: { start: this.start, end: this.start + 1 },
+					severity: ProblemSeverity.Warning,
+					message: localize('oneOfWarning', "Matches multiple schemas when only one must validate.")
+				});
+			}
+			if (bestMatch !== null) {
+				validationResult.merge(bestMatch.validationResult);
+				validationResult.propertiesMatches += bestMatch.validationResult.propertiesMatches;
+				validationResult.propertiesValueMatches += bestMatch.validationResult.propertiesValueMatches;
+				matchingSchemas.merge(bestMatch.matchingSchemas);
+			}
+			return matches.length;
+		};
+		if (Array.isArray(schema.anyOf)) {
+			testAlternatives(schema.anyOf, false);
+		}
+		if (Array.isArray(schema.oneOf)) {
+			testAlternatives(schema.oneOf, true);
+		}
+
+		let testAlternativesMatching = (alternatives: JSONSchema[]) => {
+			let matches = [];
 			let allMatches = [];
 			let fallBackMatches = [];
 			// remember the best match that is used for error messages
@@ -241,7 +298,6 @@ export class ASTNode {
 				//If holder is found then we can increase number of subschemas
 				let	secondArg = holderFound && numberOfSubSchemas+1 === this.getNodeCollectorCount(this.end);
 
-				//Live type isn't working for kubernetes schema
 				if(firstArg || secondArg){
 					allMatches.push(subSchema);	
 					if (!subValidationResult.hasProblems()) {
@@ -250,7 +306,7 @@ export class ASTNode {
 					if (!bestMatch) {
 						bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
 					} else {
-						if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
+						if (!subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
 							// no errors, both are equally good matches
 							bestMatch.matchingSchemas.merge(subMatchingSchemas);
 							bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
@@ -276,7 +332,7 @@ export class ASTNode {
 					if (!fallbackBestMatch) {
 						fallbackBestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
 					} else {
-						if (!maxOneMatch && !subValidationResult.hasProblems() && !fallbackBestMatch.validationResult.hasProblems()) {
+						if (!subValidationResult.hasProblems() && !fallbackBestMatch.validationResult.hasProblems()) {
 							// no errors, both are equally good matches
 							fallbackBestMatch.matchingSchemas.merge(subMatchingSchemas);
 							fallbackBestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
@@ -296,13 +352,6 @@ export class ASTNode {
 				}
 			});
 
-			if (matches.length > 1 && maxOneMatch) {
-				validationResult.problems.push({
-					location: { start: this.start, end: this.start + 1 },
-					severity: ProblemSeverity.Warning,
-					message: localize('oneOfWarning', "Matches multiple schemas when only one must validate.")
-				});
-			}
 			if(matches.length === 0){
 				matches = allMatches;
 			}
@@ -318,11 +367,9 @@ export class ASTNode {
 			}
 			return matches.length;
 		};
-		if (Array.isArray(schema.anyOf)) {
-			testAlternatives(schema.anyOf, false);
-		}
-		if (Array.isArray(schema.oneOf)) {
-			testAlternatives(schema.oneOf, true);
+
+		if (Array.isArray(schema.anyOfMatching)){
+			testAlternativesMatching(schema.anyOfMatching);
 		}
 
 		if (Array.isArray(schema.enum)) {
