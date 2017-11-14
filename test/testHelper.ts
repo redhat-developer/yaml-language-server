@@ -20,7 +20,7 @@ import {JSONSchemaService} from '../src/languageService/services/jsonSchemaServi
 var assert = require('assert');
 
 namespace VSCodeContentRequest {
-	export const type: RequestType<string, string, any, any> = new RequestType('vscode/content');
+	export const type: RequestType<{}, {}, {}, {}> = new RequestType('vscode/content');
 }
 
 const validationDelayMs = 250;

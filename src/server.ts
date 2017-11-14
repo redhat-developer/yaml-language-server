@@ -31,15 +31,15 @@ interface ISchemaAssociations {
 }
 
 namespace SchemaAssociationNotification {
-	export const type: NotificationType<ISchemaAssociations, any> = new NotificationType('json/schemaAssociations');
+	export const type: NotificationType<{}, {}> = new NotificationType('json/schemaAssociations');
 }
 
 namespace VSCodeContentRequest {
-	export const type: RequestType<string, string, any, any> = new RequestType('vscode/content');
+	export const type: RequestType<{}, {}, {}, {}> = new RequestType('vscode/content');
 }
 
 namespace ColorSymbolRequest {
-	export const type: RequestType<string, Range[], any, any> = new RequestType('json/colorSymbols');
+	export const type: RequestType<{}, {}, {}, {}> = new RequestType('json/colorSymbols');
 }
 
 // Create a connection for the server.
