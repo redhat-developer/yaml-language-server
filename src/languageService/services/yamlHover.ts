@@ -12,6 +12,7 @@ import {PromiseConstructor, Thenable} from 'vscode-json-languageservice';
 
 import {Hover, TextDocument, Position, Range, MarkedString} from 'vscode-languageserver-types';
 import { KubernetesTransformer } from "../kubernetesTransformer";
+import { matchOffsetToDocument } from '../utils/arrUtils';
 
 export class YAMLHover {
 
@@ -28,7 +29,8 @@ export class YAMLHover {
 	public doHover(document: TextDocument, position: Position, doc: Parser.JSONDocument, isKubernetes: Boolean): Thenable<Hover> {
 
 		let offset = document.offsetAt(position);
-		let node = doc.getNodeFromOffset(offset);
+		let currentDoc = matchOffsetToDocument(offset, doc);
+		let node = currentDoc.getNodeFromOffset(offset);
 		if (!node || (node.type === 'object' || node.type === 'array') && offset > node.start + 1 && offset < node.end - 1) {
 			return this.promise.resolve(void 0);
 		}
@@ -72,7 +74,7 @@ export class YAMLHover {
                     schema.schema = KubernetesTransformer.doTransformation(schema.schema);
                 }
 
-				let matchingSchemas = doc.getMatchingSchemas(schema.schema, node.start);
+				let matchingSchemas = currentDoc.getMatchingSchemas(schema.schema, node.start);
 
 				let title: string = null;
 				let markdownDescription: string = null;

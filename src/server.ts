@@ -303,7 +303,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 		return;
 	}
 
-	let yamlDocument = parseYAML(textDocument.getText()).documents[0];
+	let yamlDocument = parseYAML(textDocument.getText());
 	let isKubernetesFile = isKubernetes(textDocument);
 	customLanguageService.doValidation(textDocument, yamlDocument, isKubernetesFile).then(function(diagnosticResults){
 
@@ -346,7 +346,7 @@ connection.onCompletion(textDocumentPosition =>  {
 	let isKubernetesFile = isKubernetes(textDocument);
 	let completionFix = completionHelper(textDocument, textDocumentPosition.position);
 	let newText = completionFix.newText;
-	let jsonDocument = parseYAML(newText).documents[0];
+	let jsonDocument = parseYAML(newText);
 	return customLanguageService.doComplete(textDocument, textDocumentPosition.position, jsonDocument, isKubernetesFile);
 });
 
@@ -413,14 +413,14 @@ connection.onCompletionResolve(completionItem => {
 
 connection.onHover(textDocumentPositionParams => {
 	let document = documents.get(textDocumentPositionParams.textDocument.uri);
-	let jsonDocument = parseYAML(document.getText()).documents[0];
+	let jsonDocument = parseYAML(document.getText());
 	let isKubernetesFile = isKubernetes(textDocumentPositionParams.textDocument)
 	return customLanguageService.doHover(document, textDocumentPositionParams.position, jsonDocument, isKubernetesFile);
 });
 
 connection.onDocumentSymbol(documentSymbolParams => {
 	let document = documents.get(documentSymbolParams.textDocument.uri);
-	let jsonDocument = parseYAML(document.getText()).documents[0];
+	let jsonDocument = parseYAML(document.getText());
 	return customLanguageService.findDocumentSymbols(document, jsonDocument);
 });
 

@@ -15,11 +15,9 @@ export class YAMLDocumentSymbols {
 
 	public findDocumentSymbols(document: TextDocument, doc: Parser.JSONDocument): SymbolInformation[] {
 
-		if(!doc || !doc["root"]){
+		if(!doc || doc["documents"].length === 0){
 			return null;
 		}
-
-		let root = doc["root"];
 	
 		let collectOutlineEntries = (result: SymbolInformation[], node: Parser.ASTNode, containerName: string): SymbolInformation[] => {
 			if (node.type === 'array') {
@@ -41,8 +39,17 @@ export class YAMLDocumentSymbols {
 			}
 			return result;
 		};
-		let result = collectOutlineEntries([], root, void 0);
-		return result;
+
+		let results = [];
+		for(let yamlDoc in doc["documents"]){
+			let currentYAMLDoc = doc["documents"][yamlDoc];
+			if(currentYAMLDoc.root){
+				let result = collectOutlineEntries([], currentYAMLDoc.root, void 0);
+				results = results.concat(result);
+			}
+		}
+		
+		return results;
 	}
 
 	private getSymbolKind(nodeType: string): SymbolKind {

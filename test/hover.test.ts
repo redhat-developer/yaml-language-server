@@ -47,7 +47,7 @@ suite("Hover Tests", () => {
 
 			function parseSetup(content: string, position){
 				let testTextDocument = setup(content);
-                let jsonDocument = parseYAML(testTextDocument.getText()).documents[0];
+                let jsonDocument = parseYAML(testTextDocument.getText());
                 return languageService.doHover(testTextDocument, testTextDocument.positionAt(position), jsonDocument, false);
 			}
 
@@ -100,6 +100,14 @@ suite("Hover Tests", () => {
             it('Hover does not show results when there isnt description field', (done) => {
 				let content = "analytics: true";
 				let hover = parseSetup(content, 3);
+				hover.then(function(result){
+                    assert.notEqual(result.contents.length, 0);				
+				}).then(done, done);
+			});
+			
+			it('Hover on multi document', (done) => {
+				let content = '---\nanalytics: true\n...\n---\njson: test\n...';
+				let hover = parseSetup(content, 30);
 				hover.then(function(result){
                     assert.notEqual(result.contents.length, 0);				
 				}).then(done, done);
