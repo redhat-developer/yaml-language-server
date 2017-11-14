@@ -210,7 +210,7 @@ function updateConfiguration() {
 			let association = schemaAssociations[pattern];
 			if (Array.isArray(association)) {
 				association.forEach(uri => {
-					languageSettings = configureSchemas(uri, [pattern], null);
+					languageSettings = configureSchemas(uri, [pattern], null, languageSettings);
 				});
 			}
 		}
@@ -229,7 +229,7 @@ function updateConfiguration() {
 					// workspace relative path
 					uri = URI.file(path.normalize(path.join(workspaceRoot.fsPath, uri))).toString();
 				}
-				languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema);
+				languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema, languageSettings);
 			}
 		});
 	}
@@ -240,13 +240,8 @@ function updateConfiguration() {
 	documents.all().forEach(triggerValidation);
 }
 
-function configureSchemas(uri, fileMatch, schema){
-	
-	let languageSettings: LanguageSettings = {
-		validate: true,
-		schemas: []
-	};
-	
+function configureSchemas(uri, fileMatch, schema, languageSettings){
+
 	if(uri.toLowerCase().trim() === "kubernetes"){
 		uri = KUBERNETES_SCHEMA_URL;	
 	}

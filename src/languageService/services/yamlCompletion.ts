@@ -95,6 +95,10 @@ export class YAMLCompletion {
 
 		return this.schemaService.getSchemaForResource(document.uri).then((schema) => {
 
+			if(!schema){
+				return null;
+			}
+
 			if(isKubernetes){
             	schema.schema = KubernetesTransformer.doTransformation(schema.schema);
         	}
