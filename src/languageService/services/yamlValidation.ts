@@ -29,31 +29,38 @@ export class YAMLValidation {
                     schema.schema = KubernetesTransformer.doTransformation(schema.schema);
                 }
 				
-				let diagnostics = yamlDocument.getValidationProblems(schema.schema);
-				for(let diag in diagnostics){
-					let curDiagnostic = diagnostics[diag];
-					yamlDocument.errors.push({ location: { start: curDiagnostic.location.start, end: curDiagnostic.location.end }, message: curDiagnostic.message })
+				for(let currentYAMLDoc in yamlDocument.documents){
+					let currentDoc = yamlDocument.documents[currentYAMLDoc];
+					let diagnostics = currentDoc.getValidationProblems(schema.schema);
+					for(let diag in diagnostics){
+						let curDiagnostic = diagnostics[diag];
+						currentDoc.errors.push({ location: { start: curDiagnostic.location.start, end: curDiagnostic.location.end }, message: curDiagnostic.message })
+					}
 				}
+				
 				
 			}
 			var diagnostics = [];
 			var added = {};
-			yamlDocument.errors.concat(yamlDocument.warnings).forEach(function (error, idx) {
-				// remove duplicated messages
-				var signature = error.location.start + ' ' + error.location.end + ' ' + error.message;
-				if (!added[signature]) {
-					added[signature] = true;
-					var range = {
-						start: textDocument.positionAt(error.location.start),
-						end: textDocument.positionAt(error.location.end)
-					};
-					diagnostics.push({
-						severity: idx >= yamlDocument.errors.length ? DiagnosticSeverity.Warning : DiagnosticSeverity.Error,
-						range: range,
-						message: error.message
-					});
-				}
-			});
+			for(let currentYAMLDoc in yamlDocument.documents){
+				let currentDoc = yamlDocument.documents[currentYAMLDoc];
+				currentDoc.errors.concat(currentDoc.warnings).forEach(function (error, idx) {
+					// remove duplicated messages
+					var signature = error.location.start + ' ' + error.location.end + ' ' + error.message;
+					if (!added[signature]) {
+						added[signature] = true;
+						var range = {
+							start: textDocument.positionAt(error.location.start),
+							end: textDocument.positionAt(error.location.end)
+						};
+						diagnostics.push({
+							severity: idx >= currentDoc.errors.length ? DiagnosticSeverity.Warning : DiagnosticSeverity.Error,
+							range: range,
+							message: error.message
+						});
+					}
+				});
+			}
 			return diagnostics;
 		});
 	}

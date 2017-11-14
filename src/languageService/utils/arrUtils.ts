@@ -1,3 +1,6 @@
+import { YAMLDocument } from "vscode-yaml-languageservice/lib/yamlLanguageService";
+import { SingleYAMLDocument } from "../parser/yamlParser";
+
 export function removeDuplicates(arr, prop) {
     var new_arr = [];
     var lookup  = {};
@@ -52,5 +55,18 @@ export function removeDuplicatesObj(objArray){
 	}
 
 	return nonDuplicateArr;
+
+}
+
+export function matchOffsetToDocument(offset: number, jsonDocuments): SingleYAMLDocument {
+	
+	for(let jsonDoc in jsonDocuments.documents){
+		let currJsonDoc = jsonDocuments.documents[jsonDoc];
+		if(currJsonDoc.root && currJsonDoc.root.end >= offset && currJsonDoc.root.start <= offset){
+			return currJsonDoc;
+		}
+	}
+
+	return null;
 
 }

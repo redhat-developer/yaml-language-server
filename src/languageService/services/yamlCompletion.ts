@@ -17,6 +17,7 @@ import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Posit
 
 import * as nls from 'vscode-nls';
 import { KubernetesTransformer } from "../kubernetesTransformer";
+import { matchOffsetToDocument } from '../utils/arrUtils';
 const localize = nls.loadMessageBundle();
 
 
@@ -53,10 +54,14 @@ export class YAMLCompletion {
 
 		let offset = document.offsetAt(position);
 		if(document.getText()[offset] === ":"){
-			return;
+			return null;
 		}
 		
-		let node = doc.getNodeFromOffsetEndInclusive(offset);
+		let currentDoc = matchOffsetToDocument(offset, doc);
+		if(currentDoc === null){
+			return null;
+		}
+		let node = currentDoc.getNodeFromOffsetEndInclusive(offset);
 		if (this.isInComment(document, node ? node.start : 0, offset)) {
 			return Promise.resolve(result);
 		}
@@ -127,7 +132,7 @@ export class YAMLCompletion {
 
 				if (schema) {
 					// property proposals with schema
-					this.getPropertyCompletions(schema, doc, node, addValue, collector);
+					this.getPropertyCompletions(schema, currentDoc, node, addValue, collector);
 				} 
 
 				let location = node.getPath();
@@ -148,10 +153,10 @@ export class YAMLCompletion {
 			// proposals for values
 			let types: { [type: string]: boolean } = {};
 			if (schema) {
-				this.getValueCompletions(schema, doc, node, offset, document, collector, types);
+				this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types);
 			} 
 			if (this.contributions.length > 0) {
-				this.getContributedValueCompletions(doc, node, offset, document, collector, collectionPromises);
+				this.getContributedValueCompletions(currentDoc, node, offset, document, collector, collectionPromises);
 			}
 
 			return this.promise.all(collectionPromises).then(() => {

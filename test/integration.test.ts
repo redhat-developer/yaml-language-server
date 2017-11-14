@@ -46,7 +46,7 @@ suite("Kubernetes Integration Tests", () => {
 
 		function parseSetup(content: string){
 			let testTextDocument = setup(content);
-			let yDoc = parseYAML(testTextDocument.getText()).documents[0];
+			let yDoc = parseYAML(testTextDocument.getText());
 			return languageService.doValidation(testTextDocument, yDoc, true);
 		}
 
@@ -180,6 +180,14 @@ suite("Kubernetes Integration Tests", () => {
 				}).then(done, done);
 			});
 
+			it('Error on incorrect value type in multiple yaml documents', (done) => {
+				let content = `---\napiVersion: v1\n...\n---\napiVersion: False\n...`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.notEqual(result.length, 0);
+				}).then(done, done);
+			});
+
 		});
 	
 	});
@@ -194,7 +202,7 @@ suite("Kubernetes Integration Tests", () => {
 
 			function parseSetup(content: string, position){
 				let testTextDocument = setup(content);
-				let yDoc = parseYAML(testTextDocument.getText()).documents[0];
+				let yDoc = parseYAML(testTextDocument.getText());
 				return completionHelper(testTextDocument, testTextDocument.positionAt(position), false);
 			}
 
@@ -307,13 +315,13 @@ function completionHelper(document: TextDocument, textDocumentPosition, isKubern
 					newText = document.getText().substring(0, start+(textLine.length)) + ":\r\n" + document.getText().substr(end+2);
 				}
 			}
-			let jsonDocument = parseYAML(newText).documents[0];
+			let jsonDocument = parseYAML(newText);
 			return languageService.doComplete(document, position, jsonDocument, isKubernetes);
 		}else{
 
 			//All the nodes are loaded
 			position.character = position.character - 1;
-			let jsonDocument = parseYAML(document.getText()).documents[0];
+			let jsonDocument = parseYAML(document.getText());
 			return languageService.doComplete(document, position, jsonDocument, isKubernetes);
 		}
 

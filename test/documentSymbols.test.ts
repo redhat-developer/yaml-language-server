@@ -36,7 +36,7 @@ suite("Document Symbols Tests", () => {
 
         function parseSetup(content: string){
             let testTextDocument = setup(content);
-            let jsonDocument = parseYAML(testTextDocument.getText()).documents[0];
+            let jsonDocument = parseYAML(testTextDocument.getText());
             return languageService.findDocumentSymbols(testTextDocument, jsonDocument);
         }
 
@@ -100,6 +100,13 @@ suite("Document Symbols Tests", () => {
             let content = "scripts:\n  node1: test\n  node2: test\nauthors:\n  - name: Josh\n  - email: jp";
             let symbols = parseSetup(content);
             assert.equal(symbols.length, 6);	
+            done();			
+        });
+
+        it('Document Symbols with multi documents', (done) => {
+            let content = '---\nanalytics: true\n...\n---\njson: test\n...';
+            let symbols = parseSetup(content);
+            assert.equal(symbols.length, 2);	
             done();			
         });
 
