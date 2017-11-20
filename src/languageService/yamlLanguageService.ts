@@ -109,6 +109,7 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
             schemaService.registerExternalSchema(settings.uri, settings.fileMatch, settings.schema);
           });
         }
+        yamlValidation.configure(settings);
       },
       doComplete: completer.doComplete.bind(completer),
       doResolve: completer.doResolve.bind(completer),
