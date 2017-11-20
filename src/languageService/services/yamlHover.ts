@@ -30,6 +30,9 @@ export class YAMLHover {
 
 		let offset = document.offsetAt(position);
 		let currentDoc = matchOffsetToDocument(offset, doc);
+		if(currentDoc === null){
+			return null;
+		}
 		let node = currentDoc.getNodeFromOffset(offset);
 		if (!node || (node.type === 'object' || node.type === 'array') && offset > node.start + 1 && offset < node.end - 1) {
 			return this.promise.resolve(void 0);
