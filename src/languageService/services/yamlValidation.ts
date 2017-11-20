@@ -9,19 +9,33 @@ import { JSONDocument, ObjectASTNode, IProblem, ProblemSeverity } from '../parse
 import { TextDocument, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
 import { PromiseConstructor, Thenable} from '../yamlLanguageService';
 import { KubernetesTransformer } from "../kubernetesTransformer";
+import { LanguageSettings } from 'vscode-yaml-languageservice/lib/yamlLanguageService';
 
 export class YAMLValidation {
 	
 	private jsonSchemaService: JSONSchemaService;
 	private promise: PromiseConstructor;
 	private comments: boolean;
+	private validationEnabled: boolean;
 
 	public constructor(jsonSchemaService, promiseConstructor) {
 		this.jsonSchemaService = jsonSchemaService;
 		this.promise = promiseConstructor;
+		this.validationEnabled = true;
+	}
+
+	public configure(shouldValidate: LanguageSettings){
+		if(shouldValidate){
+			this.validationEnabled = shouldValidate.validate;
+		}
 	}
 	
 	public doValidation(textDocument, yamlDocument, isKubernetes) {
+
+		if(!this.validationEnabled){
+			return this.promise.resolve([]);
+		}
+
 		return this.jsonSchemaService.getSchemaForResource(textDocument.uri).then(function (schema) {
 			if (schema) {
 				

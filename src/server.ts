@@ -142,6 +142,7 @@ interface Settings {
 	yaml: {
 		format: { enable: boolean; };
 		schemas: JSONSchemaSettings[];
+		validate: boolean
 	};
 	http: {
 		proxy: string;
@@ -160,6 +161,7 @@ let schemaAssociations: ISchemaAssociations = void 0;
 let formatterRegistration: Thenable<Disposable> = null;
 let specificValidatorPaths = [];
 let schemaConfigurationSettings = [];
+let yamlShouldValidate = true;
 
 connection.onDidChangeConfiguration((change) => {
 	var settings = <Settings>change.settings;
@@ -167,6 +169,7 @@ connection.onDidChangeConfiguration((change) => {
 
 	specificValidatorPaths = [];
 	yamlConfigurationSettings = settings.yaml && settings.yaml.schemas;
+	yamlShouldValidate = settings.yaml && settings.yaml.validate;
 	schemaConfigurationSettings = [];
 
 	for(let url in yamlConfigurationSettings){
@@ -202,7 +205,7 @@ connection.onNotification(SchemaAssociationNotification.type, associations => {
 
 function updateConfiguration() {
 	let languageSettings: LanguageSettings = {
-		validate: true,
+		validate: yamlShouldValidate,
 		schemas: []
 	};
 	if (schemaAssociations) {
