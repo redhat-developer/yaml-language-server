@@ -27,7 +27,8 @@ let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext
 
 let uri = 'http://json.schemastore.org/bowerrc';
 let languageSettings = {
-	schemas: []
+	schemas: [],
+	validate: true
 };
 let fileMatch = ["*.yml", "*.yaml"];
 languageSettings.schemas.push({ uri, fileMatch: fileMatch });
