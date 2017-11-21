@@ -55,5 +55,8 @@ This repository only contains the server implementation. Here are some known cli
 	```
 5. The new built server is now location in out/server/src/server.js.
 	```bash
-	node (Yaml Language Server Location)/out/server/src/server.js
+	node (Yaml Language Server Location)/out/server/src/server.js [--stdio]
 	```
+
+### Connecting to the language server via stdio
+We have included the option to connect to the language server via [stdio](https://github.com/redhat-developer/yaml-language-server/blob/681985b5a059c2cb55c8171235b07e1651b6c546/src/server.ts#L46-L51) to help with intergrating the language server into different clients.
