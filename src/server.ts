@@ -162,6 +162,8 @@ let formatterRegistration: Thenable<Disposable> = null;
 let specificValidatorPaths = [];
 let schemaConfigurationSettings = [];
 let yamlShouldValidate = true;
+let hasSchemaStoreBeenAdded = false;
+let schemaStoreSettings = [];
 
 connection.onDidChangeConfiguration((change) => {
 	var settings = <Settings>change.settings;
@@ -180,6 +182,8 @@ connection.onDidChangeConfiguration((change) => {
 		}
 		schemaConfigurationSettings.push(schemaObj);
 	}
+	
+	setSchemaStoreSettingsIfNotSet();
 
 	updateConfiguration();
 
@@ -197,9 +201,50 @@ connection.onDidChangeConfiguration((change) => {
 	}
 });
 
+function setSchemaStoreSettingsIfNotSet(){
+	if(!hasSchemaStoreBeenAdded){
+		getSchemaStoreMatchingSchemas().then(schemaStore => {
+			schemaStoreSettings = schemaStore.schemas;
+			updateConfiguration();
+		});
+		hasSchemaStoreBeenAdded = true;
+	}
+}
+
+function getSchemaStoreMatchingSchemas(){
+	
+	return xhr({ url: "http://schemastore.org/api/json/catalog.json" }).then(response => {
+		
+		let languageSettings= {
+			schemas: []
+		};
+
+		let schemas = JSON.parse(response.responseText);
+		for(let schemaIndex in schemas.schemas){
+			
+			let schema = schemas.schemas[schemaIndex];
+			if(schema && schema.name){
+				
+				if(schema.name.indexOf('.yml') !== -1 || schema.name.indexOf('.yaml') !== -1){
+					languageSettings.schemas.push({ uri: schema.url, fileMatch: schema.fileMatch });
+				}
+			
+			}
+
+		}
+
+		return languageSettings;
+
+	}, (error: XHRResponse) => {
+		return Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString());
+	});
+
+}
+
 connection.onNotification(SchemaAssociationNotification.type, associations => {
 	schemaAssociations = associations;
 	specificValidatorPaths = [];
+	setSchemaStoreSettingsIfNotSet();
 	updateConfiguration();
 });
 
@@ -235,6 +280,9 @@ function updateConfiguration() {
 				languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema, languageSettings);
 			}
 		});
+	}
+	if(schemaStoreSettings){
+		languageSettings.schemas = languageSettings.schemas.concat(schemaStoreSettings);
 	}
 	languageService.configure(languageSettings);
 	customLanguageService.configure(languageSettings);
