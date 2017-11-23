@@ -223,12 +223,8 @@ function getSchemaStoreMatchingSchemas(){
 		for(let schemaIndex in schemas.schemas){
 			
 			let schema = schemas.schemas[schemaIndex];
-			if(schema && schema.name){
-				
-				if(schema.name.indexOf('.yml') !== -1 || schema.name.indexOf('.yaml') !== -1){
-					languageSettings.schemas.push({ uri: schema.url, fileMatch: schema.fileMatch });
-				}
-			
+			if(schema && schema.name && schema.name.indexOf('.yml') !== -1 || schema.name.indexOf('.yaml') !== -1){
+				languageSettings.schemas.push({ uri: schema.url, fileMatch: schema.fileMatch });
 			}
 
 		}
