@@ -162,7 +162,6 @@ let formatterRegistration: Thenable<Disposable> = null;
 let specificValidatorPaths = [];
 let schemaConfigurationSettings = [];
 let yamlShouldValidate = true;
-let hasSchemaStoreBeenAdded = false;
 let schemaStoreSettings = [];
 
 connection.onDidChangeConfiguration((change) => {
@@ -202,12 +201,11 @@ connection.onDidChangeConfiguration((change) => {
 });
 
 function setSchemaStoreSettingsIfNotSet(){
-	if(!hasSchemaStoreBeenAdded){
+	if(schemaStoreSettings.length === 0){
 		getSchemaStoreMatchingSchemas().then(schemaStore => {
 			schemaStoreSettings = schemaStore.schemas;
 			updateConfiguration();
 		});
-		hasSchemaStoreBeenAdded = true;
 	}
 }
 
@@ -223,8 +221,17 @@ function getSchemaStoreMatchingSchemas(){
 		for(let schemaIndex in schemas.schemas){
 			
 			let schema = schemas.schemas[schemaIndex];
-			if(schema && schema.name && schema.name.indexOf('.yml') !== -1 || schema.name.indexOf('.yaml') !== -1){
-				languageSettings.schemas.push({ uri: schema.url, fileMatch: schema.fileMatch });
+			if(schema && schema.fileMatch){
+
+				for(let fileMatch in schema.fileMatch){
+					let currFileMatch = schema.fileMatch[fileMatch];
+
+					if(currFileMatch.indexOf('.yml') !== -1 || currFileMatch.indexOf('.yaml') !== -1){
+						languageSettings.schemas.push({ uri: schema.url, fileMatch: [currFileMatch] });
+					}
+
+				}
+				
 			}
 
 		}
