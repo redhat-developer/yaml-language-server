@@ -239,7 +239,7 @@ function getSchemaStoreMatchingSchemas(){
 		return languageSettings;
 
 	}, (error: XHRResponse) => {
-		return Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString());
+		throw error;
 	});
 
 }
