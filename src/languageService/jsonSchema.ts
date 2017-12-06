@@ -14,11 +14,11 @@ export interface JSONSchema {
 	description?: string;
 	properties?: JSONSchemaMap;
 	patternProperties?: JSONSchemaMap;
-	additionalProperties?: boolean | JSONSchema;
+	additionalProperties?: any;
 	minProperties?: number;
 	maxProperties?: number;
 	dependencies?: JSONSchemaMap | string[];
-	items?: JSONSchema | JSONSchema[];
+	items?: any;
 	minItems?: number;
 	maxItems?: number;
 	uniqueItems?: boolean;
