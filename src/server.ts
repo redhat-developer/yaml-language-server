@@ -111,11 +111,13 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 			let currFolderUri = currFolder["uri"];
 			let currFolderName = currFolder["name"];
 
-			var isUriRegex = new RegExp('^(?:[a-z]+:)?//', 'i');
+			let isUriRegex = new RegExp('^(?:[a-z]+:)?//', 'i');
 			if(uri.indexOf(currFolderName) !== -1 && !uri.match(isUriRegex)){
-				let beforeFolderName = currFolderUri.substring(0, currFolderUri.indexOf(currFolderName));
-				let afterFolderName = uri.substring(uri.indexOf(currFolderName), uri.length);
-				uri = beforeFolderName + "/" + afterFolderName;
+				let beforeFolderName = currFolderUri.split(currFolderName)[0];
+				let uriSplit = uri.split(currFolderName);
+				uriSplit.shift()
+				let afterFolderName = uriSplit.join(currFolderName);
+				uri = beforeFolderName + currFolderName + afterFolderName; 
 			}
 
 		}
