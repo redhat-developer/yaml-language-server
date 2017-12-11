@@ -2,6 +2,7 @@ import { JSONSchemaService } from './services/jsonSchemaService'
 import { LanguageSettings } from 'vscode-yaml-languageservice';
 import { TextDocument, Position, CompletionList } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
+import { schemaContributions } from './services/configuration';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLCompletion } from "./services/yamlCompletion";
 import { JSONDocument } from 'vscode-json-languageservice';
@@ -93,6 +94,7 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
   let promise = promiseConstructor || Promise;
 
   let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
+  schemaService.setSchemaContributions(schemaContributions);
 
   let completer = new YAMLCompletion(schemaService, contributions, promise);
   let hover = new YAMLHover(schemaService, contributions, promise);
