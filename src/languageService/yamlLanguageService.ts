@@ -87,6 +87,7 @@ export interface LanguageService {
   doHover(document: TextDocument, position: Position, doc, isKubernetes: Boolean);
   findDocumentSymbols(document: TextDocument, doc);
   doResolve(completionItem);
+  resetSchema(uri: string): boolean;
 }
 
 export function getLanguageService(schemaRequestService, workspaceContext, contributions, promiseConstructor?): LanguageService {
@@ -113,6 +114,7 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
       doResolve: completer.doResolve.bind(completer),
       doValidation: yamlValidation.doValidation.bind(yamlValidation),
       doHover: hover.doHover.bind(hover),
-      findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols)
+      findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols),
+      resetSchema: (uri: string) => schemaService.onResourceChange(uri)
   }
 }

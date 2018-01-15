@@ -406,7 +406,7 @@ connection.onDidChangeWatchedFiles((change) => {
 	// Monitored files have changed in VSCode
 	let hasChanges = false;
 	change.changes.forEach(c => {
-		if (languageService.resetSchema(c.uri)) {
+		if (customLanguageService.resetSchema(c.uri)) {
 			hasChanges = true;
 		}
 	});
