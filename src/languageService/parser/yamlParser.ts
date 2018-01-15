@@ -186,9 +186,9 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 				new NullASTNode(parent, null, node.startPosition, node.endPosition);
 		}
 		case Yaml.Kind.INCLUDE_REF: {
-			// Issue Warning
-			console.log("Unsupported feature, node kind: " + node.kind);
-			break;
+			const result = new StringASTNode(parent, null, false, node.startPosition, node.endPosition);
+			result.value = node.value;
+			return result;
 		}
 	}
 }

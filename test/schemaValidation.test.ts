@@ -85,6 +85,14 @@ suite("Validation Tests", () => {
 				}).then(done, done);
 			});	
 
+            it('Include with value should not error', (done) => {
+				let content = `customize: !include customize.yaml`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
 			describe('Type tests', function(){
 
 				it('Type String does not error on valid node', (done) => {
@@ -201,6 +209,14 @@ suite("Validation Tests", () => {
 				let validator = parseSetup(content);
 				validator.then(function(result){
 					assert.notEqual(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Include without value should error', (done) => {
+				let content = `customize: !include`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 1);
 				}).then(done, done);
 			});
 
