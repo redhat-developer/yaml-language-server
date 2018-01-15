@@ -9,7 +9,8 @@
 import {
 	createConnection, IConnection,
 	TextDocuments, TextDocument, InitializeParams, InitializeResult, NotificationType, RequestType,
-	DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter, DiagnosticSeverity, Position
+	DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter, DiagnosticSeverity, Position,
+	Proposed, ProposedFeatures
 } from 'vscode-languageserver';
 
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
@@ -45,7 +46,7 @@ namespace ColorSymbolRequest {
 // Create a connection for the server.
 let connection: IConnection = null;
 if (process.argv.indexOf('--stdio') == -1) {
-	connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
+	connection = createConnection(ProposedFeatures.all);
 } else {
 	connection = createConnection();
 }
@@ -62,11 +63,16 @@ documents.listen(connection);
 
 let clientSnippetSupport = false;
 let clientDynamicRegisterSupport = false;
+let hasWorkspaceFolderCapability = false;
 
 // After the server has started the client sends an initilize request. The server receives
 // in the passed params the rootPath of the workspace plus the client capabilities.
+let capabilities;
+let workspaceFolders = [];
 let workspaceRoot: URI;
 connection.onInitialize((params: InitializeParams): InitializeResult => {
+	capabilities = params.capabilities;
+	workspaceFolders = params["workspaceFolders"];
 	workspaceRoot = URI.parse(params.rootPath);
 
 	function hasClientCapability(...keys: string[]) {
@@ -77,6 +83,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 		return !!c;
 	}
 
+	hasWorkspaceFolderCapability = (capabilities as Proposed.WorkspaceFoldersClientCapabilities).workspace && !!(capabilities as Proposed.WorkspaceFoldersClientCapabilities).workspace.workspaceFolders;
 	clientSnippetSupport = hasClientCapability('textDocument', 'completion', 'completionItem', 'snippetSupport');
 	clientDynamicRegisterSupport = hasClientCapability('workspace', 'symbol', 'dynamicRegistration');
 	return {
@@ -97,6 +104,24 @@ let workspaceContext = {
 };
 
 let schemaRequestService = (uri: string): Thenable<string> => {
+	//For the case when we are multi root and specify a workspace location
+	if(hasWorkspaceFolderCapability){
+		for(let folder in workspaceFolders){
+			let currFolder = workspaceFolders[folder];
+			let currFolderUri = currFolder["uri"];
+			let currFolderName = currFolder["name"];
+
+			let isUriRegex = new RegExp('^(?:[a-z]+:)?//', 'i');
+			if(uri.indexOf(currFolderName) !== -1 && !uri.match(isUriRegex)){
+				let beforeFolderName = currFolderUri.split(currFolderName)[0];
+				let uriSplit = uri.split(currFolderName);
+				uriSplit.shift()
+				let afterFolderName = uriSplit.join(currFolderName);
+				uri = beforeFolderName + currFolderName + afterFolderName; 
+			}
+
+		}
+	}
 	if (Strings.startsWith(uri, 'file://')) {
 		let fsPath = URI.parse(uri).fsPath;
 		return new Promise<string>((c, e) => {
@@ -276,7 +301,7 @@ function updateConfiguration() {
 				uri = 'vscode://schemas/custom/' + encodeURIComponent(schema.fileMatch.join('&'));
 			}
 			if (uri) {
-				if (uri[0] === '.' && workspaceRoot) {
+				if (uri[0] === '.' && workspaceRoot && !hasWorkspaceFolderCapability) {
 					// workspace relative path
 					uri = URI.file(path.normalize(path.join(workspaceRoot.fsPath, uri))).toString();
 				}
