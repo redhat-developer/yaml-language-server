@@ -499,7 +499,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 			return null;
 		};
 		if (this.customSchemaProvider) {
-			this.customSchemaProvider(resource).then(schemaUri => {
+			return this.customSchemaProvider(resource).then(schemaUri => {
 				return this.loadSchema(schemaUri).then(unsolvedSchema => this.resolveSchemaContent(unsolvedSchema, schemaUri));
 			}).then(schema => schema, err => {
 				console.log('Fail to provide custom schemas.', err);
