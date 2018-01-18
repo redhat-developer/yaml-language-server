@@ -82,9 +82,9 @@ export interface SchemaConfiguration {
 
 export interface LanguageService {
   configure(settings): void;
-	doComplete(document: TextDocument, position: Position, doc, isKubernetes: Boolean): Thenable<CompletionList>;
-  doValidation(document: TextDocument, yamlDocument, isKubernetes: Boolean): Thenable<Diagnostic[]>;
-  doHover(document: TextDocument, position: Position, doc, isKubernetes: Boolean);
+	doComplete(document: TextDocument, position: Position, doc): Thenable<CompletionList>;
+  doValidation(document: TextDocument, yamlDocument): Thenable<Diagnostic[]>;
+  doHover(document: TextDocument, position: Position, doc);
   findDocumentSymbols(document: TextDocument, doc);
   doResolve(completionItem);
   resetSchema(uri: string): boolean;

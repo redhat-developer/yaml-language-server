@@ -26,7 +26,7 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext,
 
 let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
 
-let uri = "http://central.maven.org/maven2/io/fabric8/kubernetes-model/2.0.0/kubernetes-model-2.0.0-schema.json";
+let uri = "https://github.com/garethr/openshift-json-schema/blob/master/v3.6.0/all.json";
 let languageSettings = {
 	schemas: [],
 	validate: true
@@ -48,7 +48,7 @@ suite("Kubernetes Integration Tests", () => {
 		function parseSetup(content: string){
 			let testTextDocument = setup(content);
 			let yDoc = parseYAML(testTextDocument.getText());
-			return languageService.doValidation(testTextDocument, yDoc, true);
+			return languageService.doValidation(testTextDocument, yDoc);
 		}
 
 		//Validating basic nodes
@@ -204,7 +204,7 @@ suite("Kubernetes Integration Tests", () => {
 			function parseSetup(content: string, position){
 				let testTextDocument = setup(content);
 				let yDoc = parseYAML(testTextDocument.getText());
-				return completionHelper(testTextDocument, testTextDocument.positionAt(position), false);
+				return completionHelper(testTextDocument, testTextDocument.positionAt(position));
 			}
 
 			it('Autocomplete on root node without word', (done) => {
@@ -275,7 +275,7 @@ suite("Kubernetes Integration Tests", () => {
 
 });
 
-function completionHelper(document: TextDocument, textDocumentPosition, isKubernetes: Boolean){
+function completionHelper(document: TextDocument, textDocumentPosition){
 	
 		//Get the string we are looking at via a substring
 		let linePos = textDocumentPosition.line;
@@ -317,13 +317,13 @@ function completionHelper(document: TextDocument, textDocumentPosition, isKubern
 				}
 			}
 			let jsonDocument = parseYAML(newText);
-			return languageService.doComplete(document, position, jsonDocument, isKubernetes);
+			return languageService.doComplete(document, position, jsonDocument);
 		}else{
 
 			//All the nodes are loaded
 			position.character = position.character - 1;
 			let jsonDocument = parseYAML(document.getText());
-			return languageService.doComplete(document, position, jsonDocument, isKubernetes);
+			return languageService.doComplete(document, position, jsonDocument);
 		}
 
 }
