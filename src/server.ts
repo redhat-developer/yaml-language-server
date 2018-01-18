@@ -160,6 +160,7 @@ export let languageService = getLanguageService({
 });
 
 export let KUBERNETES_SCHEMA_URL = "http://central.maven.org/maven2/io/fabric8/kubernetes-model/2.0.0/kubernetes-model-2.0.0-schema.json";
+export let KEDGE_SCHEMA_URL = "https://raw.githubusercontent.com/kedgeproject/json-schema/master/master/kedge-json-schema.json";
 export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
 
 // The settings interface describes the server relevant settings part
@@ -323,6 +324,9 @@ function configureSchemas(uri, fileMatch, schema, languageSettings){
 
 	if(uri.toLowerCase().trim() === "kubernetes"){
 		uri = KUBERNETES_SCHEMA_URL;	
+	}
+	if(uri.toLowerCase().trim() === "kedge"){
+		uri = KEDGE_SCHEMA_URL;
 	}
 
 	if(schema === null){
