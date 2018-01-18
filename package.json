@@ -22,26 +22,27 @@
     "url": "https://github.com/redhat-developer/yaml-language-server.git"
   },
   "dependencies": {
-    "@types/mocha": "2.2.41",
     "deep-equal": "^1.0.1",
     "jsonc-parser": "^0.4.2",
-    "mocha": "3.4.2",
     "request-light": "^0.2.0",
     "vscode-json-languageservice": "2.0.16",
-    "vscode-languageserver": "3.1.0",
+    "vscode-languageserver": "^3.5.0",
+    "vscode-languageserver-types": "^3.5.0",
     "vscode-nls": "^2.0.2",
     "vscode-uri": "1.0.0",
     "vscode-yaml-languageservice": "^0.2.0",
     "yaml-ast-parser": "0.0.36"
   },
   "devDependencies": {
+    "@types/mocha": "2.2.41",
     "@types/node": "^6.0.52",
+    "mocha": "3.4.2",
     "coveralls": "^3.0.0",
     "mocha-lcov-reporter": "^1.3.0",
     "nyc": "^11.2.1",
     "source-map-support": "^0.4.18",
     "ts-node": "^3.3.0",
-    "typescript": "2.1.5"
+    "typescript": "^2.6.1"
   },
   "scripts": {
     "compile": "installServerIntoExtension ./out ./package.json ./tsconfig.json && tsc -p .",
