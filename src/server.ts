@@ -147,7 +147,7 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 		let scheme = URI.parse(uri).scheme.toLowerCase();
 		if (scheme !== 'http' && scheme !== 'https') {
 			// custom scheme
-			return connection.sendRequest(CustomSchemaContentRequest.type, uri);
+			return <Thenable<string>>connection.sendRequest(CustomSchemaContentRequest.type, uri);
 		}
 	}
 	if (uri.indexOf('//schema.management.azure.com/') !== -1) {
