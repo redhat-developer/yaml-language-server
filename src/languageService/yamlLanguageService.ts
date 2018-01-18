@@ -90,10 +90,10 @@ export interface LanguageService {
   resetSchema(uri: string): boolean;
 }
 
-export function getLanguageService(schemaRequestService, workspaceContext, contributions, promiseConstructor?): LanguageService {
+export function getLanguageService(schemaRequestService, workspaceContext, contributions, customSchemaProvider, promiseConstructor?): LanguageService {
   let promise = promiseConstructor || Promise;
 
-  let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
+  let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext, customSchemaProvider);
 
   let completer = new YAMLCompletion(schemaService, contributions, promise);
   let hover = new YAMLHover(schemaService, contributions, promise);

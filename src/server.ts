@@ -39,6 +39,14 @@ namespace VSCodeContentRequest {
 	export const type: RequestType<{}, {}, {}, {}> = new RequestType('vscode/content');
 }
 
+namespace CustomSchemaContentRequest {
+	export const type: RequestType<{}, {}, {}, {}> = new RequestType('custom/schema/content');
+}
+
+namespace CustomSchemaRequest {
+	export const type: RequestType<{}, {}, {}, {}> = new RequestType('custom/schema/request');
+}
+
 namespace ColorSymbolRequest {
 	export const type: RequestType<{}, {}, {}, {}> = new RequestType('json/colorSymbols');
 }
@@ -135,6 +143,12 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 		}, error => {
 			return error.message;
 		});
+	} else {
+		let scheme = URI.parse(uri).scheme.toLowerCase();
+		if (scheme !== 'http' && scheme !== 'https') {
+			// custom scheme
+			return connection.sendRequest(CustomSchemaContentRequest.type, uri);
+		}
 	}
 	if (uri.indexOf('//schema.management.azure.com/') !== -1) {
 		connection.telemetry.logEvent({
@@ -160,7 +174,8 @@ export let languageService = getLanguageService({
 });
 
 export let KUBERNETES_SCHEMA_URL = "http://central.maven.org/maven2/io/fabric8/kubernetes-model/2.0.0/kubernetes-model-2.0.0-schema.json";
-export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
+export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, [],
+	(resource) => connection.sendRequest(CustomSchemaRequest.type, resource));
 
 // The settings interface describes the server relevant settings part
 interface Settings {
