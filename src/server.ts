@@ -39,6 +39,14 @@ namespace VSCodeContentRequest {
 	export const type: RequestType<{}, {}, {}, {}> = new RequestType('vscode/content');
 }
 
+namespace CustomSchemaContentRequest {
+	export const type: RequestType<{}, {}, {}, {}> = new RequestType('custom/schema/content');
+}
+
+namespace CustomSchemaRequest {
+	export const type: RequestType<{}, {}, {}, {}> = new RequestType('custom/schema/request');
+}
+
 namespace ColorSymbolRequest {
 	export const type: RequestType<{}, {}, {}, {}> = new RequestType('json/colorSymbols');
 }
@@ -117,7 +125,7 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 				let uriSplit = uri.split(currFolderName);
 				uriSplit.shift()
 				let afterFolderName = uriSplit.join(currFolderName);
-				uri = beforeFolderName + currFolderName + afterFolderName; 
+				uri = beforeFolderName + currFolderName + afterFolderName;
 			}
 
 		}
@@ -135,6 +143,12 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 		}, error => {
 			return error.message;
 		});
+	} else {
+		let scheme = URI.parse(uri).scheme.toLowerCase();
+		if (scheme !== 'http' && scheme !== 'https') {
+			// custom scheme
+			return <Thenable<string>>connection.sendRequest(CustomSchemaContentRequest.type, uri);
+		}
 	}
 	if (uri.indexOf('//schema.management.azure.com/') !== -1) {
 		connection.telemetry.logEvent({
@@ -161,7 +175,8 @@ export let languageService = getLanguageService({
 
 export let KUBERNETES_SCHEMA_URL = "http://central.maven.org/maven2/io/fabric8/kubernetes-model/2.0.0/kubernetes-model-2.0.0-schema.json";
 export let KEDGE_SCHEMA_URL = "https://raw.githubusercontent.com/kedgeproject/json-schema/master/master/kedge-json-schema.json";
-export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
+export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, [],
+	(resource) => connection.sendRequest(CustomSchemaRequest.type, resource));
 
 // The settings interface describes the server relevant settings part
 interface Settings {
@@ -207,7 +222,7 @@ connection.onDidChangeConfiguration((change) => {
 		}
 		schemaConfigurationSettings.push(schemaObj);
 	}
-	
+
 	setSchemaStoreSettingsIfNotSet();
 
 	updateConfiguration();
@@ -236,16 +251,16 @@ function setSchemaStoreSettingsIfNotSet(){
 }
 
 function getSchemaStoreMatchingSchemas(){
-	
+
 	return xhr({ url: "http://schemastore.org/api/json/catalog.json" }).then(response => {
-		
+
 		let languageSettings= {
 			schemas: []
 		};
 
 		let schemas = JSON.parse(response.responseText);
 		for(let schemaIndex in schemas.schemas){
-			
+
 			let schema = schemas.schemas[schemaIndex];
 			if(schema && schema.fileMatch){
 
@@ -257,7 +272,7 @@ function getSchemaStoreMatchingSchemas(){
 					}
 
 				}
-				
+
 			}
 
 		}
@@ -323,7 +338,7 @@ function updateConfiguration() {
 function configureSchemas(uri, fileMatch, schema, languageSettings){
 
 	if(uri.toLowerCase().trim() === "kubernetes"){
-		uri = KUBERNETES_SCHEMA_URL;	
+		uri = KUBERNETES_SCHEMA_URL;
 	}
 	if(uri.toLowerCase().trim() === "kedge"){
 		uri = KEDGE_SCHEMA_URL;
@@ -342,7 +357,7 @@ function configureSchemas(uri, fileMatch, schema, languageSettings){
 	}else if(uri === KUBERNETES_SCHEMA_URL){
 		specificValidatorPaths.push(fileMatch);
 	}
-	
+
 	return languageSettings;
 }
 
@@ -375,9 +390,9 @@ function triggerValidation(textDocument: TextDocument): void {
 }
 
 function validateTextDocument(textDocument: TextDocument): void {
-	
+
 	if (textDocument.getText().length === 0) {
-		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });		
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
 		return;
 	}
 
@@ -433,7 +448,7 @@ function completionHelper(document: TextDocument, textDocumentPosition: Position
 		//Get the string we are looking at via a substring
 		let linePos = textDocumentPosition.line;
 		let position = textDocumentPosition;
-		let lineOffset = getLineOffsets(document.getText()); 
+		let lineOffset = getLineOffsets(document.getText());
 		let start = lineOffset[linePos]; //Start of where the autocompletion is happening
 		let end = 0; //End of where the autocompletion is happening
 		if(lineOffset[linePos+1]){
@@ -446,7 +461,7 @@ function completionHelper(document: TextDocument, textDocumentPosition: Position
 		//Check if the string we are looking at is a node
 		if(textLine.indexOf(":") === -1){
 			//We need to add the ":" to load the nodes
-					
+
 			let newText = "";
 
 			//This is for the empty line case
@@ -454,9 +469,9 @@ function completionHelper(document: TextDocument, textDocumentPosition: Position
 			if(trimmedText.length === 0 || (trimmedText.length === 1 && trimmedText[0] === '-')){
 				//Add a temp node that is in the document but we don't use at all.
 				if(lineOffset[linePos+1]){
-					newText = document.getText().substring(0, start+(textLine.length-1)) + "holder:\r\n" + document.getText().substr(end+2); 
+					newText = document.getText().substring(0, start+(textLine.length-1)) + "holder:\r\n" + document.getText().substr(end+2);
 				}else{
-					newText = document.getText().substring(0, start+(textLine.length)) + "holder:\r\n" + document.getText().substr(end+2); 
+					newText = document.getText().substring(0, start+(textLine.length)) + "holder:\r\n" + document.getText().substr(end+2);
 				}
 			//For when missing semi colon case
 			}else{
@@ -472,7 +487,7 @@ function completionHelper(document: TextDocument, textDocumentPosition: Position
 				"newText": newText,
 				"newPosition": textDocumentPosition
 			}
-			
+
 		}else{
 
 			//All the nodes are loaded
