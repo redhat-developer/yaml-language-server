@@ -34,7 +34,6 @@ export interface JSONSchema {
 	required?: string[];
 	$ref?: string;
 	anyOf?: JSONSchema[];
-	anyOfMatching?: JSONSchema[]; //This is a custom property that forces all nodes to be inside the properties/items/additionalProperties fields
 	allOf?: JSONSchema[];
 	oneOf?: JSONSchema[];
 	not?: JSONSchema;
@@ -44,6 +43,7 @@ export interface JSONSchema {
 	patternErrorMessage?: string; // VSCode extension
 	deprecationMessage?: string; // VSCode extension
 	enumDescriptions?: string[]; // VSCode extension
+	"x-kubernetes-group-version-kind"?: JSONSchemaMap[];
 }
 
 export interface JSONSchemaMap {

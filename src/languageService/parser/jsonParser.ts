@@ -204,9 +204,13 @@ export class ASTNode {
 
 		let testAlternatives = (alternatives: JSONSchema[], maxOneMatch: boolean) => {
 			let matches = [];
+			let kubernetesMatches = [];
 
 			// remember the best match that is used for error messages
 			let bestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
+
+			// best match that can be overridden in the case that the subschema validates with no errors and has field "x-kubernetes-group-version-kind" in it.
+			let kubernetesBestMatchOverride: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
 			alternatives.forEach((subSchema) => {
 				let subValidationResult = new ValidationResult();
 				let subMatchingSchemas = matchingSchemas.newSub();
@@ -235,9 +239,16 @@ export class ASTNode {
 						}
 					}
 				}
+
+				//If it validated with apiVersion and kind and it has those fields in the schema then we auto select this one as the best case
+				if(subSchema["x-kubernetes-group-version-kind"] && !subValidationResult.hasProblems()){
+					kubernetesBestMatchOverride = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
+					kubernetesMatches = [subSchema];
+				}
+
 			});
 
-			if (matches.length > 1 && maxOneMatch) {
+			if (matches.length > 1 && maxOneMatch && kubernetesMatches.length == 0) {
 				validationResult.problems.push({
 					location: { start: this.start, end: this.start + 1 },
 					severity: ProblemSeverity.Warning,
@@ -249,6 +260,14 @@ export class ASTNode {
 				validationResult.propertiesMatches += bestMatch.validationResult.propertiesMatches;
 				validationResult.propertiesValueMatches += bestMatch.validationResult.propertiesValueMatches;
 				matchingSchemas.merge(bestMatch.matchingSchemas);
+			}
+			if (kubernetesBestMatchOverride != null){
+				validationResult.merge(kubernetesBestMatchOverride.validationResult);
+				validationResult.propertiesMatches += kubernetesBestMatchOverride.validationResult.propertiesMatches;
+				validationResult.propertiesValueMatches += kubernetesBestMatchOverride.validationResult.propertiesValueMatches;
+				matchingSchemas.merge(kubernetesBestMatchOverride.matchingSchemas);
+			
+				return kubernetesMatches.length;
 			}
 			return matches.length;
 		};
@@ -685,7 +704,6 @@ export class ObjectASTNode extends ASTNode {
 			});
 		}
 
-
 		let propertyProcessed = (prop: string) => {
 			let index = unprocessedProperties.indexOf(prop);
 			while (index >= 0) {
@@ -723,6 +741,21 @@ export class ObjectASTNode extends ASTNode {
 
 					}
 				});
+			});
+		}
+		
+		if (Array.isArray(schema["x-kubernetes-group-version-kind"])){
+			schema["x-kubernetes-group-version-kind"].forEach((customObject) => {
+				if (seenKeys["kind"] && seenKeys["apiVersion"] && customObject.Version == seenKeys["kind"].getValue() && customObject.Kind == seenKeys["apiVersion"].getValue()) {
+					//At this point the context is good so we can use this schema
+				}else{
+					//Throw error
+					validationResult.problems.push({
+						location: { start: 0, end: 10 },
+						severity: ProblemSeverity.Warning,
+						message: "I am an error"
+					});
+				}
 			});
 		}
 
