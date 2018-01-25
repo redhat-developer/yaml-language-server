@@ -746,7 +746,7 @@ export class ObjectASTNode extends ASTNode {
 		
 		if (Array.isArray(schema["x-kubernetes-group-version-kind"])){
 			schema["x-kubernetes-group-version-kind"].forEach((customObject) => {
-				if (seenKeys["kind"] && seenKeys["apiVersion"] && customObject.Version == seenKeys["kind"].getValue() && customObject.Kind == seenKeys["apiVersion"].getValue()) {
+				if (seenKeys["kind"] && seenKeys["apiVersion"] && customObject.Version == seenKeys["apiVersion"].getValue() && customObject.Kind == seenKeys["kind"].getValue()) {
 					//At this point the context is good so we can use this schema
 				}else{
 					//Throw error
