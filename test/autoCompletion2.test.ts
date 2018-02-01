@@ -43,7 +43,7 @@ suite("Auto Completion Tests", () => {
 	function parseSetup(content: string, position){
 		let testTextDocument = setup(content);
 		let yDoc = parseYAML(testTextDocument.getText());
-		return completionHelper(testTextDocument, testTextDocument.positionAt(position), false);
+		return completionHelper(testTextDocument, testTextDocument.positionAt(position));
 	}
 
 	describe('yamlCompletion with composer', function(){
@@ -141,7 +141,7 @@ suite("Auto Completion Tests", () => {
 	});
 });
 
-function completionHelper(document: TextDocument, textDocumentPosition, isKubernetes: Boolean){
+function completionHelper(document: TextDocument, textDocumentPosition){
 	
 		//Get the string we are looking at via a substring
 		let linePos = textDocumentPosition.line;
@@ -183,13 +183,13 @@ function completionHelper(document: TextDocument, textDocumentPosition, isKubern
 				}
 			}
 			let jsonDocument = parseYAML(newText);
-			return languageService.doComplete(document, position, jsonDocument, isKubernetes);
+			return languageService.doComplete(document, position, jsonDocument);
 		}else{
 
 			//All the nodes are loaded
 			position.character = position.character - 1;
 			let jsonDocument = parseYAML(document.getText());
-			return languageService.doComplete(document, position, jsonDocument, isKubernetes);
+			return languageService.doComplete(document, position, jsonDocument);
 		}
 
 }

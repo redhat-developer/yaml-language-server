@@ -16,7 +16,6 @@ import { PromiseConstructor, Thenable } from 'vscode-json-languageservice';
 import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Position, Range, TextEdit } from 'vscode-languageserver-types';
 
 import * as nls from 'vscode-nls';
-import { KubernetesTransformer } from "../kubernetesTransformer";
 import { matchOffsetToDocument } from '../utils/arrUtils';
 const localize = nls.loadMessageBundle();
 
@@ -98,10 +97,6 @@ export class YAMLCompletion {
 			if(!schema){
 				return null;
 			}
-
-			if(isKubernetes){
-            	schema.schema = KubernetesTransformer.doTransformation(schema.schema);
-        	}
 
 			let collectionPromises: Thenable<any>[] = [];
 

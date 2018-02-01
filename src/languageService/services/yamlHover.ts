@@ -11,7 +11,6 @@ import {JSONWorkerContribution} from '../jsonContributions';
 import {PromiseConstructor, Thenable} from 'vscode-json-languageservice';
 
 import {Hover, TextDocument, Position, Range, MarkedString} from 'vscode-languageserver-types';
-import { KubernetesTransformer } from "../kubernetesTransformer";
 import { matchOffsetToDocument } from '../utils/arrUtils';
 
 export class YAMLHover {
@@ -72,10 +71,6 @@ export class YAMLHover {
 
 		return this.schemaService.getSchemaForResource(document.uri).then((schema) => {
 			if (schema) {
-
-				if(isKubernetes){
-                    schema.schema = KubernetesTransformer.doTransformation(schema.schema);
-                }
 
 				let matchingSchemas = currentDoc.getMatchingSchemas(schema.schema, node.start);
 

@@ -47,7 +47,7 @@ suite("Validation Tests", () => {
 		function parseSetup(content: string){
 			let testTextDocument = setup(content);
 			let yDoc = parseYAML(testTextDocument.getText());
-			return languageService.doValidation(testTextDocument, yDoc, false);
+			return languageService.doValidation(testTextDocument, yDoc);
 		}
 
 		//Validating basic nodes
