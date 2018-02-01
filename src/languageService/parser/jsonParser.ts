@@ -779,9 +779,40 @@ export class ObjectASTNode extends ASTNode {
 		let seenKeys: { [key: string]: ASTNode } = Object.create(null);
 		let unprocessedProperties: string[] = [];
 		this.properties.forEach((node) => {
+			
 			let key = node.key.value;
-			seenKeys[key] = node.value;
-			unprocessedProperties.push(key);
+
+			//Replace the merge key with the actual values of what the node value points to
+			if(key === "<<" && node.value) {
+
+				switch(node.value.type) {
+					case "object": {
+						node.value["properties"].forEach(propASTNode => {
+							let propKey = propASTNode.key.value;
+							seenKeys[propKey] = propASTNode.value;
+							unprocessedProperties.push(propKey);
+						});
+						break;
+					}
+					case "array": {
+						node.value["items"].forEach(sequenceNode => {
+							sequenceNode["properties"].forEach(propASTNode => {
+								let seqKey = propASTNode.key.value;
+								seenKeys[seqKey] = propASTNode.value;
+								unprocessedProperties.push(seqKey);
+							});
+						});
+						break;
+					}
+					default: {
+						break;
+					}
+				}
+			}else{
+				seenKeys[key] = node.value;
+				unprocessedProperties.push(key);
+			}
+			
 		});
 
 		if (Array.isArray(schema.required)) {
