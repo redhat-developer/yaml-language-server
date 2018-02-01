@@ -782,7 +782,7 @@ export class ObjectASTNode extends ASTNode {
 			
 			let key = node.key.value;
 
-			//Replace the merge key with the actual values of what the node value points to
+			//Replace the merge key with the actual values of what the node value points to in seen keys
 			if(key === "<<" && node.value) {
 
 				switch(node.value.type) {
