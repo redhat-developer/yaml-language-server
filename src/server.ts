@@ -69,7 +69,6 @@ let documents: TextDocuments = new TextDocuments();
 // for open, change and close text document events
 documents.listen(connection);
 
-let clientSnippetSupport = false;
 let clientDynamicRegisterSupport = false;
 let hasWorkspaceFolderCapability = false;
 
@@ -92,7 +91,6 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 	}
 
 	hasWorkspaceFolderCapability = (capabilities as Proposed.WorkspaceFoldersClientCapabilities).workspace && !!(capabilities as Proposed.WorkspaceFoldersClientCapabilities).workspace.workspaceFolders;
-	clientSnippetSupport = hasClientCapability('textDocument', 'completion', 'completionItem', 'snippetSupport');
 	clientDynamicRegisterSupport = hasClientCapability('workspace', 'symbol', 'dynamicRegistration');
 	return {
 		capabilities: {
