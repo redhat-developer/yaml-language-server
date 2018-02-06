@@ -43,7 +43,7 @@ export interface JSONSchema {
 	patternErrorMessage?: string; // VSCode extension
 	deprecationMessage?: string; // VSCode extension
 	enumDescriptions?: string[]; // VSCode extension
-	"x-kubernetes-group-version-kind"?: JSONSchemaMap[];
+	"x-kubernetes-group-version-kind"?; //Kubernetes extension
 }
 
 export interface JSONSchemaMap {

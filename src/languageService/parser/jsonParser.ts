@@ -208,9 +208,7 @@ export class ASTNode {
 
 			// remember the best match that is used for error messages
 			let bestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
-
-			// best match that can be overridden in the case that the subschema validates with no errors and has field "x-kubernetes-group-version-kind" in it.
-			let kubernetesBestMatchOverride: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
+			let kubenetesMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
 			alternatives.forEach((subSchema) => {
 				let subValidationResult = new ValidationResult();
 				let subMatchingSchemas = matchingSchemas.newSub();
@@ -240,15 +238,41 @@ export class ASTNode {
 					}
 				}
 
-				//If it validated with apiVersion and kind and it has those fields in the schema then we auto select this one as the best case
-				if(subSchema["x-kubernetes-group-version-kind"] && !subValidationResult.hasProblems()){
-					kubernetesBestMatchOverride = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-					kubernetesMatches = [subSchema];
+				if (!subValidationResult.hasProblems() && subSchema["x-kubernetes-group-version-kind"]) {
+					kubernetesMatches.push(subSchema);
+				}
+				if (!kubenetesMatch && subSchema["x-kubernetes-group-version-kind"]) {
+					kubenetesMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
+				} else if(subSchema["x-kubernetes-group-version-kind"]) {
+					if (!maxOneMatch && !subValidationResult.hasProblems() && !kubenetesMatch.validationResult.hasProblems()) {
+						// no errors, both are equally good matches
+						kubenetesMatch.matchingSchemas.merge(subMatchingSchemas);
+						kubenetesMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
+						kubenetesMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
+					} else {
+						let compareResult = subValidationResult.compare(kubenetesMatch.validationResult);
+						if (compareResult > 0) {
+							// our node is the best matching so far
+							kubenetesMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
+						} else if (compareResult === 0) {
+							// there's already a best matching but we are as good
+							kubenetesMatch.matchingSchemas.merge(subMatchingSchemas);
+							kubenetesMatch.validationResult.mergeEnumValues(subValidationResult);
+						}
+					}
 				}
 
 			});
 
-			if (matches.length > 1 && maxOneMatch && kubernetesMatches.length == 0) {
+			if (kubenetesMatch !== null) {
+				validationResult.merge(kubenetesMatch.validationResult);
+				validationResult.propertiesMatches += kubenetesMatch.validationResult.propertiesMatches;
+				validationResult.propertiesValueMatches += kubenetesMatch.validationResult.propertiesValueMatches;
+				matchingSchemas.merge(kubenetesMatch.matchingSchemas);
+
+				return kubernetesMatches.length;
+			}
+			if (matches.length > 1 && maxOneMatch) {
 				validationResult.problems.push({
 					location: { start: this.start, end: this.start + 1 },
 					severity: ProblemSeverity.Warning,
@@ -260,14 +284,6 @@ export class ASTNode {
 				validationResult.propertiesMatches += bestMatch.validationResult.propertiesMatches;
 				validationResult.propertiesValueMatches += bestMatch.validationResult.propertiesValueMatches;
 				matchingSchemas.merge(bestMatch.matchingSchemas);
-			}
-			if (kubernetesBestMatchOverride != null){
-				validationResult.merge(kubernetesBestMatchOverride.validationResult);
-				validationResult.propertiesMatches += kubernetesBestMatchOverride.validationResult.propertiesMatches;
-				validationResult.propertiesValueMatches += kubernetesBestMatchOverride.validationResult.propertiesValueMatches;
-				matchingSchemas.merge(kubernetesBestMatchOverride.matchingSchemas);
-			
-				return kubernetesMatches.length;
 			}
 			return matches.length;
 		};
@@ -575,7 +591,7 @@ export class StringASTNode extends ASTNode {
 				});
 			}
 		}
-
+		
 	}
 }
 
@@ -743,21 +759,6 @@ export class ObjectASTNode extends ASTNode {
 				});
 			});
 		}
-		
-		if (Array.isArray(schema["x-kubernetes-group-version-kind"])){
-			schema["x-kubernetes-group-version-kind"].forEach((customObject) => {
-				if (seenKeys["kind"] && seenKeys["apiVersion"] && customObject.Version == seenKeys["apiVersion"].getValue() && customObject.Kind == seenKeys["kind"].getValue()) {
-					//At this point the context is good so we can use this schema
-				}else{
-					//Throw error
-					validationResult.problems.push({
-						location: { start: 0, end: 10 },
-						severity: ProblemSeverity.Warning,
-						message: "I am an error"
-					});
-				}
-			});
-		}
 
 		if (typeof schema.additionalProperties === 'object') {
 			unprocessedProperties.forEach((propertyName: string) => {
@@ -837,6 +838,40 @@ export class ObjectASTNode extends ASTNode {
 				}
 			});
 		}
+
+		//Add the x-kubernetes-group-version-kind to the enum of apiVersion/kind for autocompletion and validation
+		if (schema["x-kubernetes-group-version-kind"]) {
+			Object.keys(schema.properties).forEach((propertyName: string) => {
+				let child = seenKeys[propertyName];
+				if (child && propertyName == "apiVersion") {
+					if(!schema.properties[propertyName].enum){
+						schema.properties[propertyName].enum = [];
+						let enumSet = new Set(); 
+						schema["x-kubernetes-group-version-kind"].forEach(customObj => {
+							if(!enumSet.has(customObj.Version)){
+								schema.properties[propertyName].enum.push(customObj.Version);
+								enumSet.add(customObj.Version);
+							}
+					   	});
+					} 
+					
+				}
+
+				if (child && propertyName == "kind") {
+					if(!schema.properties[propertyName].enum){
+						schema.properties[propertyName].enum = [];
+						let enumSet = new Set(); 
+						schema["x-kubernetes-group-version-kind"].forEach(customObj => {
+							if(!enumSet.has(customObj.Kind)){
+								schema.properties[propertyName].enum.push(customObj.Kind);
+								enumSet.add(customObj.Kind);
+							}
+					    });
+					} 
+				}
+			});
+		}
+		
 	}
 }
 
