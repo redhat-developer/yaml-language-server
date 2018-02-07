@@ -44,7 +44,7 @@ export class YAMLCompletion {
 		return this.promise.resolve(item);
 	}
 
-	public doComplete(document: TextDocument, position: Position, doc: Parser.JSONDocument, isKubernetes: Boolean): Thenable<CompletionList> {
+	public doComplete(document: TextDocument, position: Position, doc: Parser.JSONDocument): Thenable<CompletionList> {
 
 		let result: CompletionList = {
 			items: [],

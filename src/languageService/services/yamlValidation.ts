@@ -29,7 +29,7 @@ export class YAMLValidation {
 		}
 	}
 	
-	public doValidation(textDocument, yamlDocument, isKubernetes) {
+	public doValidation(textDocument, yamlDocument) {
 
 		if(!this.validationEnabled){
 			return this.promise.resolve([]);

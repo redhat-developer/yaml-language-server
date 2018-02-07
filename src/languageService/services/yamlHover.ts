@@ -25,7 +25,7 @@ export class YAMLHover {
 		this.promise = promiseConstructor || Promise;
 	}
 
-	public doHover(document: TextDocument, position: Position, doc: Parser.JSONDocument, isKubernetes: Boolean): Thenable<Hover> {
+	public doHover(document: TextDocument, position: Position, doc: Parser.JSONDocument): Thenable<Hover> {
 
 		let offset = document.offsetAt(position);
 		let currentDoc = matchOffsetToDocument(offset, doc);
