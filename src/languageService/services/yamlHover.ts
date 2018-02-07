@@ -76,7 +76,7 @@ export class YAMLHover {
 
 				let title: string = null;
 				let markdownDescription: string = null;
-				let markdownEnumValueDescription = null, enumValue = null;;
+				let markdownEnumValueDescription = null, enumValue = null;
 				matchingSchemas.every((s) => {
 					if (s.node === node && !s.inverted && s.schema) {
 						title = title || s.schema.title;
@@ -100,7 +100,7 @@ export class YAMLHover {
 				});
 				let result = '';
 				if (title) {
-					result = toMarkdown(title)
+					result = toMarkdown(title);
 				}
 				if (markdownDescription) {
 					if (result.length > 0) {
