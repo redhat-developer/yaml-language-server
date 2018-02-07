@@ -45,6 +45,8 @@ export interface IProblem {
 	message: string;
 }
 
+let isKubernetes = false;
+
 export class ASTNode {
 	public start: number;
 	public end: number;
@@ -204,11 +206,9 @@ export class ASTNode {
 
 		let testAlternatives = (alternatives: JSONSchema[], maxOneMatch: boolean) => {
 			let matches = [];
-			let kubernetesMatches = [];
 
 			// remember the best match that is used for error messages
 			let bestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
-			let kubenetesMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
 			alternatives.forEach((subSchema) => {
 				let subValidationResult = new ValidationResult();
 				let subMatchingSchemas = matchingSchemas.newSub();
@@ -219,7 +219,7 @@ export class ASTNode {
 				}
 				if (!bestMatch) {
 					bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-				} else {
+				}else {
 					if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
 						// no errors, both are equally good matches
 						bestMatch.matchingSchemas.merge(subMatchingSchemas);
@@ -237,42 +237,9 @@ export class ASTNode {
 						}
 					}
 				}
-
-				if (!subValidationResult.hasProblems() && subSchema["x-kubernetes-group-version-kind"]) {
-					kubernetesMatches.push(subSchema);
-				}
-				if (!kubenetesMatch && subSchema["x-kubernetes-group-version-kind"]) {
-					kubenetesMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-				} else if(subSchema["x-kubernetes-group-version-kind"]) {
-					if (!maxOneMatch && !subValidationResult.hasProblems() && !kubenetesMatch.validationResult.hasProblems()) {
-						// no errors, both are equally good matches
-						kubenetesMatch.matchingSchemas.merge(subMatchingSchemas);
-						kubenetesMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
-						kubenetesMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
-					} else {
-						let compareResult = subValidationResult.compare(kubenetesMatch.validationResult);
-						if (compareResult > 0) {
-							// our node is the best matching so far
-							kubenetesMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-						} else if (compareResult === 0) {
-							// there's already a best matching but we are as good
-							kubenetesMatch.matchingSchemas.merge(subMatchingSchemas);
-							kubenetesMatch.validationResult.mergeEnumValues(subValidationResult);
-						}
-					}
-				}
-
 			});
 
-			if (kubenetesMatch !== null) {
-				validationResult.merge(kubenetesMatch.validationResult);
-				validationResult.propertiesMatches += kubenetesMatch.validationResult.propertiesMatches;
-				validationResult.propertiesValueMatches += kubenetesMatch.validationResult.propertiesValueMatches;
-				matchingSchemas.merge(kubenetesMatch.matchingSchemas);
-
-				return kubernetesMatches.length;
-			}
-			if (matches.length > 1 && maxOneMatch) {
+			if (matches.length > 1 && maxOneMatch && !isKubernetes) {
 				validationResult.problems.push({
 					location: { start: this.start, end: this.start + 1 },
 					severity: ProblemSeverity.Warning,
@@ -841,6 +808,7 @@ export class ObjectASTNode extends ASTNode {
 
 		//Add the x-kubernetes-group-version-kind to the enum of apiVersion/kind for autocompletion and validation
 		if (schema["x-kubernetes-group-version-kind"]) {
+			isKubernetes = true;
 			Object.keys(schema.properties).forEach((propertyName: string) => {
 				let child = seenKeys[propertyName];
 				if (child && propertyName == "apiVersion") {
@@ -877,6 +845,7 @@ export class ObjectASTNode extends ASTNode {
 
 export interface JSONDocumentConfig {
 	disallowComments?: boolean;
+	isKubernetes?: boolean;
 }
 
 export interface IApplicableSchema {
@@ -982,9 +951,33 @@ export class ValidationResult {
 	}
 
 	public compare(other: ValidationResult): number {
+		if(isKubernetes){
+			return this.compareKubernetes(other);
+		}
+		return this.compareGeneric(other);
+	}
+
+	public compareGeneric(other: ValidationResult): number {
 		let hasProblems = this.hasProblems();
 		if (hasProblems !== other.hasProblems()) {
 			return hasProblems ? -1 : 1;
+		}
+		if (this.enumValueMatch !== other.enumValueMatch) {
+			return other.enumValueMatch ? -1 : 1;
+		}
+		if (this.propertiesValueMatches !== other.propertiesValueMatches) {
+			return this.propertiesValueMatches - other.propertiesValueMatches;
+		}
+		if (this.primaryValueMatches !== other.primaryValueMatches) {
+			return this.primaryValueMatches - other.primaryValueMatches;
+		}
+		return this.propertiesMatches - other.propertiesMatches;
+	}
+
+	public compareKubernetes(other: ValidationResult): number {
+		let hasProblems = this.hasProblems();
+		if(this.propertiesMatches !== other.propertiesMatches){
+			return this.propertiesMatches - other.propertiesMatches;
 		}
 		if (this.enumValueMatch !== other.enumValueMatch) {
 			return other.enumValueMatch ? -1 : 1;
@@ -994,6 +987,9 @@ export class ValidationResult {
 		}
 		if (this.propertiesValueMatches !== other.propertiesValueMatches) {
 			return this.propertiesValueMatches - other.propertiesValueMatches;
+		}
+		if (hasProblems !== other.hasProblems()) {
+			return hasProblems ? -1 : 1;
 		}
 		return this.propertiesMatches - other.propertiesMatches;
 	}
