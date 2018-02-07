@@ -45,6 +45,8 @@ export interface IProblem {
 	message: string;
 }
 
+let isKubernetes = false;
+
 export class ASTNode {
 	public start: number;
 	public end: number;
@@ -217,7 +219,7 @@ export class ASTNode {
 				}
 				if (!bestMatch) {
 					bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-				} else {
+				}else {
 					if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
 						// no errors, both are equally good matches
 						bestMatch.matchingSchemas.merge(subMatchingSchemas);
@@ -237,7 +239,7 @@ export class ASTNode {
 				}
 			});
 
-			if (matches.length > 1 && maxOneMatch) {
+			if (matches.length > 1 && maxOneMatch && !isKubernetes) {
 				validationResult.problems.push({
 					location: { start: this.start, end: this.start + 1 },
 					severity: ProblemSeverity.Warning,
@@ -257,119 +259,6 @@ export class ASTNode {
 		}
 		if (Array.isArray(schema.oneOf)) {
 			testAlternatives(schema.oneOf, true);
-		}
-
-		let testAlternativesMatching = (alternatives: JSONSchema[]) => {
-			let matches = [];
-			let allMatches = [];
-			let fallBackMatches = [];
-			// remember the best match that is used for error messages
-			let bestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
-			let fallbackBestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
-			alternatives.forEach((subSchema) => {
-				let subValidationResult = new ValidationResult();
-				let subMatchingSchemas = matchingSchemas.newSub();
-				this.validate(subSchema, subValidationResult, subMatchingSchemas);
-
-				let holderFound = false;
-				function isHolderFound(node){
-					if(!node || Object.keys(node).length === 0){
-						return;
-					}
-
-					Object.keys(node).forEach(key => {
-						let n: any = node[key];
-						if(key === "holder" && n === null){
-							holderFound = true;
-						}else if(typeof n === "object"){
-							isHolderFound(n);
-						}
-					});
-
-				}
-
-				isHolderFound(this.getValue());
-				
-				let numberOfSubSchemas = subMatchingSchemas.schemas.length - 1;
-				
-				//Case in which everything is valid
-				let firstArg = numberOfSubSchemas === this.getNodeCollectorCount(this.end); 
-				
-				//If holder is found then we can increase number of subschemas
-				let	secondArg = holderFound && numberOfSubSchemas+1 === this.getNodeCollectorCount(this.end);
-
-				if(firstArg || secondArg){
-					allMatches.push(subSchema);	
-					if (!subValidationResult.hasProblems()) {
-						matches.push(subSchema);
-					}
-					if (!bestMatch) {
-						bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-					} else {
-						if (!subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
-							// no errors, both are equally good matches
-							bestMatch.matchingSchemas.merge(subMatchingSchemas);
-							bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
-							bestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
-						} else {
-							let compareResult = subValidationResult.compare(bestMatch.validationResult);
-							if (compareResult > 0) {
-								// our node is the best matching so far
-								bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-							} else if (compareResult === 0) {
-								// there's already a best matching but we are as good
-								bestMatch.matchingSchemas.merge(subMatchingSchemas);
-								bestMatch.validationResult.mergeEnumValues(subValidationResult);
-							}
-						}
-					}
-				}
-
-				if(!(firstArg || secondArg)){
-					if (!subValidationResult.hasProblems()) {
-						fallBackMatches.push(subSchema);
-					}
-					if (!fallbackBestMatch) {
-						fallbackBestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-					} else {
-						if (!subValidationResult.hasProblems() && !fallbackBestMatch.validationResult.hasProblems()) {
-							// no errors, both are equally good matches
-							fallbackBestMatch.matchingSchemas.merge(subMatchingSchemas);
-							fallbackBestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
-							fallbackBestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
-						} else {
-							let compareResult = subValidationResult.compare(fallbackBestMatch.validationResult);
-							if (compareResult > 0) {
-								// our node is the best matching so far
-								fallbackBestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-							} else if (compareResult === 0) {
-								// there's already a best matching but we are as good
-								fallbackBestMatch.matchingSchemas.merge(subMatchingSchemas);
-								fallbackBestMatch.validationResult.mergeEnumValues(subValidationResult);
-							}
-						}
-					}
-				}
-			});
-
-			if(matches.length === 0){
-				matches = allMatches;
-			}
-			if(matches.length === 0 && allMatches.length === 0){
-				matches = fallBackMatches;
-				bestMatch = fallbackBestMatch
-			}
-			if (bestMatch !== null) {
-				validationResult.merge(bestMatch.validationResult);
-				validationResult.propertiesMatches += bestMatch.validationResult.propertiesMatches;
-				validationResult.propertiesValueMatches += bestMatch.validationResult.propertiesValueMatches;
-				matchingSchemas.merge(bestMatch.matchingSchemas);
-			}
-			return matches.length;
-		};
-
-		if (Array.isArray(schema.anyOfMatching)){
-			testAlternativesMatching(schema.anyOfMatching);
 		}
 
 		if (Array.isArray(schema.enum)) {
@@ -669,7 +558,7 @@ export class StringASTNode extends ASTNode {
 				});
 			}
 		}
-
+		
 	}
 }
 
@@ -829,7 +718,6 @@ export class ObjectASTNode extends ASTNode {
 			});
 		}
 
-
 		let propertyProcessed = (prop: string) => {
 			let index = unprocessedProperties.indexOf(prop);
 			while (index >= 0) {
@@ -948,11 +836,47 @@ export class ObjectASTNode extends ASTNode {
 				}
 			});
 		}
+
+		//Add the x-kubernetes-group-version-kind to the enum of apiVersion/kind for autocompletion and validation
+		if (schema["x-kubernetes-group-version-kind"]) {
+			isKubernetes = true;
+			Object.keys(schema.properties).forEach((propertyName: string) => {
+				let child = seenKeys[propertyName];
+				if (child && propertyName == "apiVersion") {
+					if(!schema.properties[propertyName].enum){
+						schema.properties[propertyName].enum = [];
+						let enumSet = new Set(); 
+						schema["x-kubernetes-group-version-kind"].forEach(customObj => {
+							if(!enumSet.has(customObj.Version)){
+								schema.properties[propertyName].enum.push(customObj.Version);
+								enumSet.add(customObj.Version);
+							}
+					   	});
+					} 
+					
+				}
+
+				if (child && propertyName == "kind") {
+					if(!schema.properties[propertyName].enum){
+						schema.properties[propertyName].enum = [];
+						let enumSet = new Set(); 
+						schema["x-kubernetes-group-version-kind"].forEach(customObj => {
+							if(!enumSet.has(customObj.Kind)){
+								schema.properties[propertyName].enum.push(customObj.Kind);
+								enumSet.add(customObj.Kind);
+							}
+					    });
+					} 
+				}
+			});
+		}
+		
 	}
 }
 
 export interface JSONDocumentConfig {
 	disallowComments?: boolean;
+	isKubernetes?: boolean;
 }
 
 export interface IApplicableSchema {
@@ -1058,9 +982,33 @@ export class ValidationResult {
 	}
 
 	public compare(other: ValidationResult): number {
+		if(isKubernetes){
+			return this.compareKubernetes(other);
+		}
+		return this.compareGeneric(other);
+	}
+
+	public compareGeneric(other: ValidationResult): number {
 		let hasProblems = this.hasProblems();
 		if (hasProblems !== other.hasProblems()) {
 			return hasProblems ? -1 : 1;
+		}
+		if (this.enumValueMatch !== other.enumValueMatch) {
+			return other.enumValueMatch ? -1 : 1;
+		}
+		if (this.propertiesValueMatches !== other.propertiesValueMatches) {
+			return this.propertiesValueMatches - other.propertiesValueMatches;
+		}
+		if (this.primaryValueMatches !== other.primaryValueMatches) {
+			return this.primaryValueMatches - other.primaryValueMatches;
+		}
+		return this.propertiesMatches - other.propertiesMatches;
+	}
+
+	public compareKubernetes(other: ValidationResult): number {
+		let hasProblems = this.hasProblems();
+		if(this.propertiesMatches !== other.propertiesMatches){
+			return this.propertiesMatches - other.propertiesMatches;
 		}
 		if (this.enumValueMatch !== other.enumValueMatch) {
 			return other.enumValueMatch ? -1 : 1;
@@ -1070,6 +1018,9 @@ export class ValidationResult {
 		}
 		if (this.propertiesValueMatches !== other.propertiesValueMatches) {
 			return this.propertiesValueMatches - other.propertiesValueMatches;
+		}
+		if (hasProblems !== other.hasProblems()) {
+			return hasProblems ? -1 : 1;
 		}
 		return this.propertiesMatches - other.propertiesMatches;
 	}

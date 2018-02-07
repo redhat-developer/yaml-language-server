@@ -48,7 +48,7 @@ suite("Hover Tests", () => {
 			function parseSetup(content: string, position){
 				let testTextDocument = setup(content);
                 let jsonDocument = parseYAML(testTextDocument.getText());
-                return languageService.doHover(testTextDocument, testTextDocument.positionAt(position), jsonDocument, false);
+                return languageService.doHover(testTextDocument, testTextDocument.positionAt(position), jsonDocument);
 			}
 
             it('Hover works on array nodes', (done) => {

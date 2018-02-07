@@ -8,7 +8,6 @@ import { JSONSchemaService } from './jsonSchemaService';
 import { JSONDocument, ObjectASTNode, IProblem, ProblemSeverity } from '../parser/jsonParser';
 import { TextDocument, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
 import { PromiseConstructor, Thenable} from '../yamlLanguageService';
-import { KubernetesTransformer } from "../kubernetesTransformer";
 import { LanguageSettings } from 'vscode-yaml-languageservice/lib/yamlLanguageService';
 
 export class YAMLValidation {
@@ -38,10 +37,6 @@ export class YAMLValidation {
 
 		return this.jsonSchemaService.getSchemaForResource(textDocument.uri).then(function (schema) {
 			if (schema) {
-				
-				if(isKubernetes){
-                    schema.schema = KubernetesTransformer.doTransformation(schema.schema);
-                }
 				
 				for(let currentYAMLDoc in yamlDocument.documents){
 					let currentDoc = yamlDocument.documents[currentYAMLDoc];
