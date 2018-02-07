@@ -171,7 +171,7 @@ export let languageService = getLanguageService({
 	contributions: []
 });
 
-export let KUBERNETES_SCHEMA_URL = "http://central.maven.org/maven2/io/fabric8/kubernetes-model/2.0.0/kubernetes-model-2.0.0-schema.json";
+export let KUBERNETES_SCHEMA_URL = "https://raw.githubusercontent.com/garethr/openshift-json-schema/master/v3.6.0-standalone-strict/all.json";
 export let KEDGE_SCHEMA_URL = "https://raw.githubusercontent.com/kedgeproject/json-schema/master/master/kedge-json-schema.json";
 export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, [],
 	(resource) => connection.sendRequest(CustomSchemaRequest.type, resource));
@@ -395,8 +395,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 	}
 
 	let yamlDocument = parseYAML(textDocument.getText());
-	let isKubernetesFile = isKubernetes(textDocument);
-	customLanguageService.doValidation(textDocument, yamlDocument, isKubernetesFile).then(function(diagnosticResults){
+	customLanguageService.doValidation(textDocument, yamlDocument).then(function(diagnosticResults){
 
 		let diagnostics = [];
 		for(let diagnosticItem in diagnosticResults){
@@ -406,17 +405,6 @@ function validateTextDocument(textDocument: TextDocument): void {
 
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicatesObj(diagnostics) });
 	}, function(error){});
-}
-
-function isKubernetes(textDocument){
-	for(let path in specificValidatorPaths){
-		let globPath = specificValidatorPaths[path];
-		let fpa = new FilePatternAssociation(globPath);
-		if(fpa.matchesPattern(textDocument.uri)){
-			return true;
-		}
-	}
-	return false;
 }
 
 connection.onDidChangeWatchedFiles((change) => {
@@ -434,11 +422,10 @@ connection.onDidChangeWatchedFiles((change) => {
 
 connection.onCompletion(textDocumentPosition =>  {
 	let textDocument = documents.get(textDocumentPosition.textDocument.uri);
-	let isKubernetesFile = isKubernetes(textDocument);
 	let completionFix = completionHelper(textDocument, textDocumentPosition.position);
 	let newText = completionFix.newText;
 	let jsonDocument = parseYAML(newText);
-	return customLanguageService.doComplete(textDocument, textDocumentPosition.position, jsonDocument, isKubernetesFile);
+	return customLanguageService.doComplete(textDocument, textDocumentPosition.position, jsonDocument);
 });
 
 function completionHelper(document: TextDocument, textDocumentPosition: Position){
@@ -505,8 +492,7 @@ connection.onCompletionResolve(completionItem => {
 connection.onHover(textDocumentPositionParams => {
 	let document = documents.get(textDocumentPositionParams.textDocument.uri);
 	let jsonDocument = parseYAML(document.getText());
-	let isKubernetesFile = isKubernetes(textDocumentPositionParams.textDocument)
-	return customLanguageService.doHover(document, textDocumentPositionParams.position, jsonDocument, isKubernetesFile);
+	return customLanguageService.doHover(document, textDocumentPositionParams.position, jsonDocument);
 });
 
 connection.onDocumentSymbol(documentSymbolParams => {

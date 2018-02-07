@@ -45,6 +45,8 @@ export interface IProblem {
 	message: string;
 }
 
+let isKubernetes = false;
+
 export class ASTNode {
 	public start: number;
 	public end: number;
@@ -217,7 +219,7 @@ export class ASTNode {
 				}
 				if (!bestMatch) {
 					bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-				} else {
+				}else {
 					if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
 						// no errors, both are equally good matches
 						bestMatch.matchingSchemas.merge(subMatchingSchemas);
@@ -237,7 +239,7 @@ export class ASTNode {
 				}
 			});
 
-			if (matches.length > 1 && maxOneMatch) {
+			if (matches.length > 1 && maxOneMatch && !isKubernetes) {
 				validationResult.problems.push({
 					location: { start: this.start, end: this.start + 1 },
 					severity: ProblemSeverity.Warning,
@@ -257,119 +259,6 @@ export class ASTNode {
 		}
 		if (Array.isArray(schema.oneOf)) {
 			testAlternatives(schema.oneOf, true);
-		}
-
-		let testAlternativesMatching = (alternatives: JSONSchema[]) => {
-			let matches = [];
-			let allMatches = [];
-			let fallBackMatches = [];
-			// remember the best match that is used for error messages
-			let bestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
-			let fallbackBestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
-			alternatives.forEach((subSchema) => {
-				let subValidationResult = new ValidationResult();
-				let subMatchingSchemas = matchingSchemas.newSub();
-				this.validate(subSchema, subValidationResult, subMatchingSchemas);
-
-				let holderFound = false;
-				function isHolderFound(node){
-					if(!node || Object.keys(node).length === 0){
-						return;
-					}
-
-					Object.keys(node).forEach(key => {
-						let n: any = node[key];
-						if(key === "holder" && n === null){
-							holderFound = true;
-						}else if(typeof n === "object"){
-							isHolderFound(n);
-						}
-					});
-
-				}
-
-				isHolderFound(this.getValue());
-				
-				let numberOfSubSchemas = subMatchingSchemas.schemas.length - 1;
-				
-				//Case in which everything is valid
-				let firstArg = numberOfSubSchemas === this.getNodeCollectorCount(this.end); 
-				
-				//If holder is found then we can increase number of subschemas
-				let	secondArg = holderFound && numberOfSubSchemas+1 === this.getNodeCollectorCount(this.end);
-
-				if(firstArg || secondArg){
-					allMatches.push(subSchema);	
-					if (!subValidationResult.hasProblems()) {
-						matches.push(subSchema);
-					}
-					if (!bestMatch) {
-						bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-					} else {
-						if (!subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
-							// no errors, both are equally good matches
-							bestMatch.matchingSchemas.merge(subMatchingSchemas);
-							bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
-							bestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
-						} else {
-							let compareResult = subValidationResult.compare(bestMatch.validationResult);
-							if (compareResult > 0) {
-								// our node is the best matching so far
-								bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-							} else if (compareResult === 0) {
-								// there's already a best matching but we are as good
-								bestMatch.matchingSchemas.merge(subMatchingSchemas);
-								bestMatch.validationResult.mergeEnumValues(subValidationResult);
-							}
-						}
-					}
-				}
-
-				if(!(firstArg || secondArg)){
-					if (!subValidationResult.hasProblems()) {
-						fallBackMatches.push(subSchema);
-					}
-					if (!fallbackBestMatch) {
-						fallbackBestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-					} else {
-						if (!subValidationResult.hasProblems() && !fallbackBestMatch.validationResult.hasProblems()) {
-							// no errors, both are equally good matches
-							fallbackBestMatch.matchingSchemas.merge(subMatchingSchemas);
-							fallbackBestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
-							fallbackBestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
-						} else {
-							let compareResult = subValidationResult.compare(fallbackBestMatch.validationResult);
-							if (compareResult > 0) {
-								// our node is the best matching so far
-								fallbackBestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-							} else if (compareResult === 0) {
-								// there's already a best matching but we are as good
-								fallbackBestMatch.matchingSchemas.merge(subMatchingSchemas);
-								fallbackBestMatch.validationResult.mergeEnumValues(subValidationResult);
-							}
-						}
-					}
-				}
-			});
-
-			if(matches.length === 0){
-				matches = allMatches;
-			}
-			if(matches.length === 0 && allMatches.length === 0){
-				matches = fallBackMatches;
-				bestMatch = fallbackBestMatch
-			}
-			if (bestMatch !== null) {
-				validationResult.merge(bestMatch.validationResult);
-				validationResult.propertiesMatches += bestMatch.validationResult.propertiesMatches;
-				validationResult.propertiesValueMatches += bestMatch.validationResult.propertiesValueMatches;
-				matchingSchemas.merge(bestMatch.matchingSchemas);
-			}
-			return matches.length;
-		};
-
-		if (Array.isArray(schema.anyOfMatching)){
-			testAlternativesMatching(schema.anyOfMatching);
 		}
 
 		if (Array.isArray(schema.enum)) {
@@ -669,7 +558,7 @@ export class StringASTNode extends ASTNode {
 				});
 			}
 		}
-
+		
 	}
 }
 
@@ -829,7 +718,6 @@ export class ObjectASTNode extends ASTNode {
 			});
 		}
 
-
 		let propertyProcessed = (prop: string) => {
 			let index = unprocessedProperties.indexOf(prop);
 			while (index >= 0) {
@@ -948,21 +836,48 @@ export class ObjectASTNode extends ASTNode {
 				}
 			});
 		}
-	}
-}
 
-export interface JSONDocumentConfig {
-	disallowComments?: boolean;
+		//Add the x-kubernetes-group-version-kind to the enum of apiVersion/kind for autocompletion and validation
+		if (schema["x-kubernetes-group-version-kind"]) {
+			isKubernetes = true;
+			Object.keys(schema.properties).forEach((propertyName: string) => {
+				let child = seenKeys[propertyName];
+				if (child && propertyName == "apiVersion") {
+					if(!schema.properties[propertyName].enum){
+						schema.properties[propertyName].enum = [];
+						let enumSet = new Set(); 
+						schema["x-kubernetes-group-version-kind"].forEach(customObj => {
+							if(!enumSet.has(customObj.Version)){
+								schema.properties[propertyName].enum.push(customObj.Version);
+								enumSet.add(customObj.Version);
+							}
+					   	});
+					} 
+					
+				}
+
+				if (child && propertyName == "kind") {
+					if(!schema.properties[propertyName].enum){
+						schema.properties[propertyName].enum = [];
+						let enumSet = new Set(); 
+						schema["x-kubernetes-group-version-kind"].forEach(customObj => {
+							if(!enumSet.has(customObj.Kind)){
+								schema.properties[propertyName].enum.push(customObj.Kind);
+								enumSet.add(customObj.Kind);
+							}
+					    });
+					} 
+				}
+			});
+		}
+		
+	}
 }
 
 export interface IApplicableSchema {
 	node: ASTNode;
 	inverted?: boolean;
 	schema: JSONSchema;
-}
-
-export enum EnumMatch {
-	Key, Enum
 }
 
 export interface ISchemaCollector {
@@ -1058,9 +973,33 @@ export class ValidationResult {
 	}
 
 	public compare(other: ValidationResult): number {
+		if(isKubernetes){
+			return this.compareKubernetes(other);
+		}
+		return this.compareGeneric(other);
+	}
+
+	public compareGeneric(other: ValidationResult): number {
 		let hasProblems = this.hasProblems();
 		if (hasProblems !== other.hasProblems()) {
 			return hasProblems ? -1 : 1;
+		}
+		if (this.enumValueMatch !== other.enumValueMatch) {
+			return other.enumValueMatch ? -1 : 1;
+		}
+		if (this.propertiesValueMatches !== other.propertiesValueMatches) {
+			return this.propertiesValueMatches - other.propertiesValueMatches;
+		}
+		if (this.primaryValueMatches !== other.primaryValueMatches) {
+			return this.primaryValueMatches - other.primaryValueMatches;
+		}
+		return this.propertiesMatches - other.propertiesMatches;
+	}
+
+	public compareKubernetes(other: ValidationResult): number {
+		let hasProblems = this.hasProblems();
+		if(this.propertiesMatches !== other.propertiesMatches){
+			return this.propertiesMatches - other.propertiesMatches;
 		}
 		if (this.enumValueMatch !== other.enumValueMatch) {
 			return other.enumValueMatch ? -1 : 1;
@@ -1070,6 +1009,9 @@ export class ValidationResult {
 		}
 		if (this.propertiesValueMatches !== other.propertiesValueMatches) {
 			return this.propertiesValueMatches - other.propertiesValueMatches;
+		}
+		if (hasProblems !== other.hasProblems()) {
+			return hasProblems ? -1 : 1;
 		}
 		return this.propertiesMatches - other.propertiesMatches;
 	}
@@ -1121,264 +1063,4 @@ export class JSONDocument {
 		}
 		return validationResult.problems;
 	}
-}
-
-export function parse(text: string, config?: JSONDocumentConfig): JSONDocument {
-
-	let problems: IProblem[] = [];
-	let scanner = Json.createScanner(text, false);
-
-	let disallowComments = config && config.disallowComments;
-
-	function _scanNext(): Json.SyntaxKind {
-		while (true) {
-			let token = scanner.scan();
-			switch (token) {
-				case Json.SyntaxKind.LineCommentTrivia:
-				case Json.SyntaxKind.BlockCommentTrivia:
-					if (disallowComments) {
-						_error(localize('InvalidCommentTokem', 'Comments are not allowed.'), ErrorCode.CommentsNotAllowed);
-					}
-					break;
-				case Json.SyntaxKind.Trivia:
-				case Json.SyntaxKind.LineBreakTrivia:
-					break;
-				default:
-					return token;
-			}
-		}
-	}
-
-	function _accept(token: Json.SyntaxKind): boolean {
-		if (scanner.getToken() === token) {
-			_scanNext();
-			return true;
-		}
-		return false;
-	}
-
-	function _error<T extends ASTNode>(message: string, code: ErrorCode, node: T = null, skipUntilAfter: Json.SyntaxKind[] = [], skipUntil: Json.SyntaxKind[] = []): T {
-		if (problems.length === 0 || problems[0].location.start !== scanner.getTokenOffset()) {
-			// ignore multiple errors on the same offset
-			let start = scanner.getTokenOffset();
-			let end = scanner.getTokenOffset() + scanner.getTokenLength();
-			if (start === end && start > 0) {
-				start--;
-				while (start > 0 && /\s/.test(text.charAt(start))) {
-					start--;
-				}
-				end = start + 1;
-			}
-			problems.push({ message, location: { start, end }, code, severity: ProblemSeverity.Error });
-		}
-
-		if (node) {
-			_finalize(node, false);
-		}
-		if (skipUntilAfter.length + skipUntil.length > 0) {
-			let token = scanner.getToken();
-			while (token !== Json.SyntaxKind.EOF) {
-				if (skipUntilAfter.indexOf(token) !== -1) {
-					_scanNext();
-					break;
-				} else if (skipUntil.indexOf(token) !== -1) {
-					break;
-				}
-				token = _scanNext();
-			}
-		}
-		return node;
-	}
-
-	function _checkScanError(): boolean {
-		switch (scanner.getTokenError()) {
-			case Json.ScanError.InvalidUnicode:
-				_error(localize('InvalidUnicode', 'Invalid unicode sequence in string.'), ErrorCode.InvalidUnicode);
-				return true;
-			case Json.ScanError.InvalidEscapeCharacter:
-				_error(localize('InvalidEscapeCharacter', 'Invalid escape character in string.'), ErrorCode.InvalidEscapeCharacter);
-				return true;
-			case Json.ScanError.UnexpectedEndOfNumber:
-				_error(localize('UnexpectedEndOfNumber', 'Unexpected end of number.'), ErrorCode.UnexpectedEndOfNumber);
-				return true;
-			case Json.ScanError.UnexpectedEndOfComment:
-				_error(localize('UnexpectedEndOfComment', 'Unexpected end of comment.'), ErrorCode.UnexpectedEndOfComment);
-				return true;
-			case Json.ScanError.UnexpectedEndOfString:
-				_error(localize('UnexpectedEndOfString', 'Unexpected end of string.'), ErrorCode.UnexpectedEndOfString);
-				return true;
-			case Json.ScanError.InvalidCharacter:
-				_error(localize('InvalidCharacter', 'Invalid characters in string. Control characters must be escaped.'), ErrorCode.InvalidCharacter);
-				return true;
-		}
-		return false;
-	}
-
-	function _finalize<T extends ASTNode>(node: T, scanNext: boolean): T {
-		node.end = scanner.getTokenOffset() + scanner.getTokenLength();
-
-		if (scanNext) {
-			_scanNext();
-		}
-
-		return node;
-	}
-
-	function _parseArray(parent: ASTNode, name: Json.Segment): ArrayASTNode {
-		if (scanner.getToken() !== Json.SyntaxKind.OpenBracketToken) {
-			return null;
-		}
-		let node = new ArrayASTNode(parent, name, scanner.getTokenOffset());
-		_scanNext(); // consume OpenBracketToken
-
-		let count = 0;
-		if (node.addItem(_parseValue(node, count++))) {
-			while (_accept(Json.SyntaxKind.CommaToken)) {
-				if (!node.addItem(_parseValue(node, count++))) {
-					_error(localize('ValueExpected', 'Value expected'), ErrorCode.ValueExpected);
-					// report error, but continue
-				}
-			}
-		}
-
-		if (scanner.getToken() !== Json.SyntaxKind.CloseBracketToken) {
-			return _error(localize('ExpectedCloseBracket', 'Expected comma or closing bracket'), ErrorCode.CommaOrCloseBacketExpected, node);
-		}
-
-		return _finalize(node, true);
-	}
-
-	function _parseProperty(parent: ObjectASTNode, keysSeen: any): PropertyASTNode {
-
-		let key = _parseString(null, null, true);
-		if (!key) {
-			if (scanner.getToken() === Json.SyntaxKind.Unknown) {
-				// give a more helpful error message
-				let value = scanner.getTokenValue();
-				if (value.match(/^['\w]/)) {
-					_error(localize('DoubleQuotesExpected', 'Property keys must be doublequoted'), ErrorCode.Undefined);
-				}
-			}
-			return null;
-		}
-		let node = new PropertyASTNode(parent, key);
-
-		if (keysSeen[key.value]) {
-			problems.push({ location: { start: node.key.start, end: node.key.end }, message: localize('DuplicateKeyWarning', "Duplicate object key"), code: ErrorCode.Undefined, severity: ProblemSeverity.Warning });
-		}
-		keysSeen[key.value] = true;
-
-		if (scanner.getToken() === Json.SyntaxKind.ColonToken) {
-			node.colonOffset = scanner.getTokenOffset();
-			_scanNext(); // consume ColonToken
-		} else {
-			_error(localize('ColonExpected', 'Colon expected'), ErrorCode.ColonExpected);
-		}
-
-
-
-		if (!node.setValue(_parseValue(node, key.value))) {
-			return _error(localize('ValueExpected', 'Value expected'), ErrorCode.ValueExpected, node, [], [Json.SyntaxKind.CloseBraceToken, Json.SyntaxKind.CommaToken]);
-		}
-		node.end = node.value.end;
-		return node;
-	}
-
-	function _parseObject(parent: ASTNode, name: Json.Segment): ObjectASTNode {
-		if (scanner.getToken() !== Json.SyntaxKind.OpenBraceToken) {
-			return null;
-		}
-		let node = new ObjectASTNode(parent, name, scanner.getTokenOffset());
-		let keysSeen: any = Object.create(null);
-		_scanNext(); // consume OpenBraceToken
-		let needsComma = false;
-
-		while (scanner.getToken() !== Json.SyntaxKind.CloseBraceToken && scanner.getToken() !== Json.SyntaxKind.EOF) {
-			if (scanner.getToken() === Json.SyntaxKind.CommaToken) {
-				if (!needsComma) {
-					_error(localize('PropertyExpected', 'Property expected'), ErrorCode.PropertyExpected);
-				}
-				_scanNext(); // consume comma
-			} else if (needsComma) {
-				_error(localize('ExpectedComma', 'Expected comma'), ErrorCode.CommaExpected, node);
-			}
-			if (!node.addProperty(_parseProperty(node, keysSeen))) {
-				_error(localize('PropertyExpected', 'Property expected'), ErrorCode.PropertyExpected, null, [], [Json.SyntaxKind.CloseBraceToken, Json.SyntaxKind.CommaToken]);
-			}
-			needsComma = true;
-		}
-
-		if (scanner.getToken() !== Json.SyntaxKind.CloseBraceToken) {
-			return _error(localize('ExpectedCloseBrace', 'Expected comma or closing brace'), ErrorCode.CommaOrCloseBraceExpected, node);
-		}
-		return _finalize(node, true);
-	}
-
-	function _parseString(parent: ASTNode, name: Json.Segment, isKey: boolean): StringASTNode {
-		if (scanner.getToken() !== Json.SyntaxKind.StringLiteral) {
-			return null;
-		}
-
-		let node = new StringASTNode(parent, name, isKey, scanner.getTokenOffset());
-		node.value = scanner.getTokenValue();
-
-		_checkScanError();
-
-		return _finalize(node, true);
-	}
-
-	function _parseNumber(parent: ASTNode, name: Json.Segment): NumberASTNode {
-		if (scanner.getToken() !== Json.SyntaxKind.NumericLiteral) {
-			return null;
-		}
-
-		let node = new NumberASTNode(parent, name, scanner.getTokenOffset());
-		if (!_checkScanError()) {
-			let tokenValue = scanner.getTokenValue();
-			try {
-				let numberValue = JSON.parse(tokenValue);
-				if (typeof numberValue !== 'number') {
-					return _error(localize('InvalidNumberFormat', 'Invalid number format.'), ErrorCode.Undefined, node);
-				}
-				node.value = numberValue;
-			} catch (e) {
-				return _error(localize('InvalidNumberFormat', 'Invalid number format.'), ErrorCode.Undefined, node);
-			}
-			node.isInteger = tokenValue.indexOf('.') === -1;
-		}
-		return _finalize(node, true);
-	}
-
-	function _parseLiteral(parent: ASTNode, name: Json.Segment): ASTNode {
-		let node: ASTNode;
-		switch (scanner.getToken()) {
-			case Json.SyntaxKind.NullKeyword:
-				node = new NullASTNode(parent, name, scanner.getTokenOffset());
-				break;
-			case Json.SyntaxKind.TrueKeyword:
-				node = new BooleanASTNode(parent, name, true, scanner.getTokenOffset());
-				break;
-			case Json.SyntaxKind.FalseKeyword:
-				node = new BooleanASTNode(parent, name, false, scanner.getTokenOffset());
-				break;
-
-			default:
-				return null;
-		}
-		return _finalize(node, true);
-	}
-
-	function _parseValue(parent: ASTNode, name: Json.Segment): ASTNode {
-		return _parseArray(parent, name) || _parseObject(parent, name) || _parseString(parent, name, false) || _parseNumber(parent, name) || _parseLiteral(parent, name);
-	}
-
-	_scanNext();
-
-	let _root = _parseValue(null, null);
-	if (!_root) {
-		_error(localize('Invalid symbol', 'Expected a JSON object, array or literal.'), ErrorCode.Undefined);
-	} else if (scanner.getToken() !== Json.SyntaxKind.EOF) {
-		_error(localize('End of file expected', 'End of file expected.'), ErrorCode.Undefined);
-	}
-	return new JSONDocument(_root, problems);
 }

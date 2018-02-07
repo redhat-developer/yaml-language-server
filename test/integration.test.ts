@@ -26,7 +26,7 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext,
 
 let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
 
-let uri = "http://central.maven.org/maven2/io/fabric8/kubernetes-model/2.0.0/kubernetes-model-2.0.0-schema.json";
+let uri = "https://gist.githubusercontent.com/JPinkney/c32f25af8e8d7322b38f8c7864fabcfe/raw/6bd43cb27f4e665a8529b2289b42374ae3267195/openshift_schema.json";
 let languageSettings = {
 	schemas: [],
 	validate: true
@@ -48,7 +48,7 @@ suite("Kubernetes Integration Tests", () => {
 		function parseSetup(content: string){
 			let testTextDocument = setup(content);
 			let yDoc = parseYAML(testTextDocument.getText());
-			return languageService.doValidation(testTextDocument, yDoc, true);
+			return languageService.doValidation(testTextDocument, yDoc);
 		}
 
 		//Validating basic nodes
@@ -97,7 +97,7 @@ suite("Kubernetes Integration Tests", () => {
 				});
 
 				it('Type Boolean does not error on valid node', (done) => {
-					let content = `isNonResourceURL: false`;
+					let content = `readOnlyRootFilesystem: false`;
 					let validator = parseSetup(content);
 					validator.then(function(result){
 						assert.equal(result.length, 0);
@@ -133,14 +133,6 @@ suite("Kubernetes Integration Tests", () => {
 		});	
 
 		describe('Test that validation DOES throw errors', function(){
-			it('Error when theres a finished untyped item', (done) => {
-				let content = `api`;
-				let validator = parseSetup(content);
-				validator.then(function(result){
-					assert.notEqual(result.length, 0);
-				}).then(done, done);
-			});
-
 			it('Error when theres no value for a node', (done) => {
 				let content = `apiVersion:`;
 				let validator = parseSetup(content);
@@ -174,7 +166,7 @@ suite("Kubernetes Integration Tests", () => {
 			});
 
 			it('Error on incorrect value type (object)', (done) => {
-				let content = `metadata: hello`;
+				let content = `apiVersion: v1\nkind: Pod\nmetadata:\n  name: False`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
 					assert.notEqual(result.length, 0);
@@ -204,7 +196,7 @@ suite("Kubernetes Integration Tests", () => {
 			function parseSetup(content: string, position){
 				let testTextDocument = setup(content);
 				let yDoc = parseYAML(testTextDocument.getText());
-				return completionHelper(testTextDocument, testTextDocument.positionAt(position), false);
+				return completionHelper(testTextDocument, testTextDocument.positionAt(position));
 			}
 
 			it('Autocomplete on root node without word', (done) => {
@@ -225,15 +217,15 @@ suite("Kubernetes Integration Tests", () => {
 
 			it('Autocomplete on default value (without value content)', (done) => {
 				let content = "apiVersion: ";
-				let completion = parseSetup(content, 12);
+				let completion = parseSetup(content, 10);
 				completion.then(function(result){
 					assert.notEqual(result.items.length, 0);
 				}).then(done, done);
 			});
 
 			it('Autocomplete on default value (with value content)', (done) => {
-				let content = "apiVersion: apps";
-				let completion = parseSetup(content, 15);
+				let content = "apiVersion: v1\nkind: Bin";
+				let completion = parseSetup(content, 19);
 				completion.then(function(result){
 					assert.notEqual(result.items.length, 0);
 				}).then(done, done);
@@ -275,7 +267,7 @@ suite("Kubernetes Integration Tests", () => {
 
 });
 
-function completionHelper(document: TextDocument, textDocumentPosition, isKubernetes: Boolean){
+function completionHelper(document: TextDocument, textDocumentPosition){
 	
 		//Get the string we are looking at via a substring
 		let linePos = textDocumentPosition.line;
@@ -317,13 +309,13 @@ function completionHelper(document: TextDocument, textDocumentPosition, isKubern
 				}
 			}
 			let jsonDocument = parseYAML(newText);
-			return languageService.doComplete(document, position, jsonDocument, isKubernetes);
+			return languageService.doComplete(document, position, jsonDocument);
 		}else{
 
 			//All the nodes are loaded
 			position.character = position.character - 1;
 			let jsonDocument = parseYAML(document.getText());
-			return languageService.doComplete(document, position, jsonDocument, isKubernetes);
+			return languageService.doComplete(document, position, jsonDocument);
 		}
 
 }
