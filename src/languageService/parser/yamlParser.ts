@@ -16,7 +16,6 @@ export class SingleYAMLDocument extends JSONDocument {
     public root;
 	public errors;
 	public warnings;
-	public isKubernetes;
 
 	constructor(lines: number[]) {
 		super(null, []);
@@ -24,7 +23,6 @@ export class SingleYAMLDocument extends JSONDocument {
         this.root = null;
 		this.errors = [];
 		this.warnings = [];
-		this.isKubernetes = [];
 	}
 
 	public getSchemas(schema, doc, node) {
