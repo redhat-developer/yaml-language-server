@@ -26,7 +26,7 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext,
 
 let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
 
-let uri = "https://gist.githubusercontent.com/JPinkney/c32f25af8e8d7322b38f8c7864fabcfe/raw/6bd43cb27f4e665a8529b2289b42374ae3267195/openshift_schema.json";
+let uri = "https://gist.githubusercontent.com/JPinkney/ccaf3909ef811e5657ca2e2e1fa05d76/raw/f85e51bfb67fdb99ab7653c2953b60087cc871ea/openshift_schema_all.json";
 let languageSettings = {
 	schemas: [],
 	validate: true
@@ -48,6 +48,11 @@ suite("Kubernetes Integration Tests", () => {
 		function parseSetup(content: string){
 			let testTextDocument = setup(content);
 			let yDoc = parseYAML(testTextDocument.getText());
+			for(let jsonDoc in yDoc.documents){
+				yDoc.documents[jsonDoc].configureSettings({
+					isKubernetes: true
+				});
+			}
 			return languageService.doValidation(testTextDocument, yDoc);
 		}
 
@@ -121,7 +126,7 @@ suite("Kubernetes Integration Tests", () => {
 				});		
 
 				it('Type Array does not error on valid node', (done) => {
-					let content = `items:\n  - test: test`;
+					let content = `items:\n  - apiVersion: v1`;
 					let validator = parseSetup(content);
 					validator.then(function(result){
 						assert.equal(result.length, 0);
@@ -196,6 +201,11 @@ suite("Kubernetes Integration Tests", () => {
 			function parseSetup(content: string, position){
 				let testTextDocument = setup(content);
 				let yDoc = parseYAML(testTextDocument.getText());
+				for(let jsonDoc in yDoc.documents){
+					yDoc.documents[jsonDoc].configureSettings({
+						isKubernetes: true
+					});
+				}
 				return completionHelper(testTextDocument, testTextDocument.positionAt(position));
 			}
 

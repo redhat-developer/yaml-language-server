@@ -8,7 +8,12 @@ import { JSONDocument } from 'vscode-json-languageservice';
 import { YAMLHover } from "./services/yamlHover";
 import { YAMLValidation } from "./services/yamlValidation";
 import { YAMLDocument, Diagnostic } from 'vscode-yaml-languageservice';
-//const jsonValidation_1 = require("vscode-json-languageservice/lib/services/jsonValidation");
+
+export interface LanguageSettings {
+  validate?: boolean; //Setting for whether we want to validate the schema
+  isKubernetes?: boolean; //If true then its validating against kubernetes
+  schemas?: any[]; //List of schemas
+}
 
 export interface PromiseConstructor {
     /**

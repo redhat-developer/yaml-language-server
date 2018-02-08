@@ -9,6 +9,7 @@ import { JSONSchema } from '../jsonSchema';
 import * as objects from '../utils/objects';
 
 import * as nls from 'vscode-nls';
+import { LanguageSettings } from '../yamlLanguageService';
 const localize = nls.loadMessageBundle();
 
 export interface IRange {
@@ -45,14 +46,12 @@ export interface IProblem {
 	message: string;
 }
 
-let isKubernetes = false;
-
 export class ASTNode {
 	public start: number;
 	public end: number;
 	public type: string;
 	public parent: ASTNode;
-
+	public parserSettings: LanguageSettings;
 	public location: Json.Segment;
 
 	constructor(parent: ASTNode, type: string, location: Json.Segment, start: number, end?: number) {
@@ -61,6 +60,13 @@ export class ASTNode {
 		this.start = start;
 		this.end = end;
 		this.parent = parent;
+		this.parserSettings = {
+			isKubernetes: false
+		};
+	}
+
+	public setParserSettings(parserSettings: LanguageSettings){
+		this.parserSettings = parserSettings;
 	}
 
 	public getPath(): Json.JSONPath {
@@ -219,27 +225,14 @@ export class ASTNode {
 				}
 				if (!bestMatch) {
 					bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-				}else {
-					if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
-						// no errors, both are equally good matches
-						bestMatch.matchingSchemas.merge(subMatchingSchemas);
-						bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
-						bestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
-					} else {
-						let compareResult = subValidationResult.compare(bestMatch.validationResult);
-						if (compareResult > 0) {
-							// our node is the best matching so far
-							bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
-						} else if (compareResult === 0) {
-							// there's already a best matching but we are as good
-							bestMatch.matchingSchemas.merge(subMatchingSchemas);
-							bestMatch.validationResult.mergeEnumValues(subValidationResult);
-						}
-					}
+				} else if(this.parserSettings.isKubernetes) {
+					bestMatch = alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas);
+				} else {
+					bestMatch = genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
 				}
 			});
 
-			if (matches.length > 1 && maxOneMatch && !isKubernetes) {
+			if (matches.length > 1 && maxOneMatch && !this.parserSettings.isKubernetes) {
 				validationResult.problems.push({
 					location: { start: this.start, end: this.start + 1 },
 					severity: ProblemSeverity.Warning,
@@ -789,7 +782,7 @@ export class ObjectASTNode extends ASTNode {
 					}
 				});
 			}
-		}
+		} 
 
 		if (schema.maxProperties) {
 			if (this.properties.length > schema.maxProperties) {
@@ -836,47 +829,7 @@ export class ObjectASTNode extends ASTNode {
 				}
 			});
 		}
-
-		//Add the x-kubernetes-group-version-kind to the enum of apiVersion/kind for autocompletion and validation
-		if (schema["x-kubernetes-group-version-kind"]) {
-			isKubernetes = true;
-			Object.keys(schema.properties).forEach((propertyName: string) => {
-				let child = seenKeys[propertyName];
-				if (child && propertyName == "apiVersion") {
-					if(!schema.properties[propertyName].enum){
-						schema.properties[propertyName].enum = [];
-						let enumSet = new Set(); 
-						schema["x-kubernetes-group-version-kind"].forEach(customObj => {
-							if(!enumSet.has(customObj.Version)){
-								schema.properties[propertyName].enum.push(customObj.Version);
-								enumSet.add(customObj.Version);
-							}
-					   	});
-					} 
-					
-				}
-
-				if (child && propertyName == "kind") {
-					if(!schema.properties[propertyName].enum){
-						schema.properties[propertyName].enum = [];
-						let enumSet = new Set(); 
-						schema["x-kubernetes-group-version-kind"].forEach(customObj => {
-							if(!enumSet.has(customObj.Kind)){
-								schema.properties[propertyName].enum.push(customObj.Kind);
-								enumSet.add(customObj.Kind);
-							}
-					    });
-					} 
-				}
-			});
-		}
-		
 	}
-}
-
-export interface JSONDocumentConfig {
-	disallowComments?: boolean;
-	isKubernetes?: boolean;
 }
 
 export interface IApplicableSchema {
@@ -981,13 +934,6 @@ export class ValidationResult {
 		}
 	}
 
-	public compare(other: ValidationResult): number {
-		if(isKubernetes){
-			return this.compareKubernetes(other);
-		}
-		return this.compareGeneric(other);
-	}
-
 	public compareGeneric(other: ValidationResult): number {
 		let hasProblems = this.hasProblems();
 		if (hasProblems !== other.hasProblems()) {
@@ -1046,6 +992,12 @@ export class JSONDocument {
 		}
 	}
 
+	public configureSettings(parserSettings: LanguageSettings){
+		if(this.root) {
+			this.root.setParserSettings(parserSettings);
+		}
+	}
+
 	public validate(schema: JSONSchema): IProblem[] {
 		if (this.root && schema) {
 			let validationResult = new ValidationResult();
@@ -1072,4 +1024,39 @@ export class JSONDocument {
 		}
 		return validationResult.problems;
 	}
+}
+
+//Alternative comparison is specifically used by the kubernetes/openshift schema but may lead to better results then genericComparison depending on the schema
+function alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas){
+	let compareResult = subValidationResult.compareKubernetes(bestMatch.validationResult);
+	if (compareResult > 0) {
+		// our node is the best matching so far
+		bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
+	} else if (compareResult === 0) {
+		// there's already a best matching but we are as good
+		bestMatch.matchingSchemas.merge(subMatchingSchemas);
+		bestMatch.validationResult.mergeEnumValues(subValidationResult);
+	}
+	return bestMatch;
+}
+
+//genericComparison tries to find the best matching schema using a generic comparison
+function genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas){
+	if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
+		// no errors, both are equally good matches
+		bestMatch.matchingSchemas.merge(subMatchingSchemas);
+		bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
+		bestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
+	} else {
+		let compareResult = subValidationResult.compareGeneric(bestMatch.validationResult);
+		if (compareResult > 0) {
+			// our node is the best matching so far
+			bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
+		} else if (compareResult === 0) {
+			// there's already a best matching but we are as good
+			bestMatch.matchingSchemas.merge(subMatchingSchemas);
+			bestMatch.validationResult.mergeEnumValues(subValidationResult);
+		}
+	}
+	return bestMatch;
 }

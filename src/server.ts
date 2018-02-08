@@ -19,12 +19,13 @@ import fs = require('fs');
 import URI from './languageService/utils/uri';
 import * as URL from 'url';
 import Strings = require('./languageService/utils/strings');
-import { YAMLDocument, JSONSchema, LanguageSettings, getLanguageService } from 'vscode-yaml-languageservice';
+import { YAMLDocument, JSONSchema, getLanguageService } from 'vscode-yaml-languageservice';
 import { getLineOffsets, removeDuplicatesObj } from './languageService/utils/arrUtils';
-import { getLanguageService as getCustomLanguageService } from './languageService/yamlLanguageService';
+import { getLanguageService as getCustomLanguageService, LanguageSettings } from './languageService/yamlLanguageService';
 import * as nls from 'vscode-nls';
 import { FilePatternAssociation } from './languageService/services/jsonSchemaService';
 import { parse as parseYAML } from './languageService/parser/yamlParser';
+import { JSONDocument } from './languageService/parser/jsonParser';
 nls.config(process.env['VSCODE_NLS_CONFIG']);
 
 interface ISchemaAssociations {
@@ -171,7 +172,7 @@ export let languageService = getLanguageService({
 	contributions: []
 });
 
-export let KUBERNETES_SCHEMA_URL = "https://raw.githubusercontent.com/garethr/openshift-json-schema/master/v3.6.0-standalone-strict/all.json";
+export let KUBERNETES_SCHEMA_URL = "https://gist.githubusercontent.com/JPinkney/ccaf3909ef811e5657ca2e2e1fa05d76/raw/f85e51bfb67fdb99ab7653c2953b60087cc871ea/openshift_schema_all.json";
 export let KEDGE_SCHEMA_URL = "https://raw.githubusercontent.com/kedgeproject/json-schema/master/master/kedge-json-schema.json";
 export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, [],
 	(resource) => connection.sendRequest(CustomSchemaRequest.type, resource));
@@ -359,6 +360,25 @@ function configureSchemas(uri, fileMatch, schema, languageSettings){
 	return languageSettings;
 }
 
+function setKubernetesParserOption(jsonDocuments: JSONDocument[], option: boolean){
+	for(let jsonDoc in jsonDocuments){
+		jsonDocuments[jsonDoc].configureSettings({
+			isKubernetes: option
+		});
+	}
+}
+
+function isKubernetes(textDocument){
+	for(let path in specificValidatorPaths){
+		let globPath = specificValidatorPaths[path];
+		let fpa = new FilePatternAssociation(globPath);
+		if(fpa.matchesPattern(textDocument.uri)){
+			return true;
+		}
+	}
+	return false;
+}
+
 documents.onDidChangeContent((change) => {
 	triggerValidation(change.document);
 });
@@ -393,8 +413,9 @@ function validateTextDocument(textDocument: TextDocument): void {
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
 		return;
 	}
-
+ 
 	let yamlDocument = parseYAML(textDocument.getText());
+	isKubernetes(textDocument) ? setKubernetesParserOption(yamlDocument.documents, true) : setKubernetesParserOption(yamlDocument.documents, false);
 	customLanguageService.doValidation(textDocument, yamlDocument).then(function(diagnosticResults){
 
 		let diagnostics = [];
@@ -425,6 +446,7 @@ connection.onCompletion(textDocumentPosition =>  {
 	let completionFix = completionHelper(textDocument, textDocumentPosition.position);
 	let newText = completionFix.newText;
 	let jsonDocument = parseYAML(newText);
+	isKubernetes(textDocument) ? setKubernetesParserOption(jsonDocument.documents, true) : setKubernetesParserOption(jsonDocument.documents, false);
 	return customLanguageService.doComplete(textDocument, textDocumentPosition.position, jsonDocument);
 });
 
@@ -492,6 +514,7 @@ connection.onCompletionResolve(completionItem => {
 connection.onHover(textDocumentPositionParams => {
 	let document = documents.get(textDocumentPositionParams.textDocument.uri);
 	let jsonDocument = parseYAML(document.getText());
+	isKubernetes(document) ? setKubernetesParserOption(jsonDocument.documents, true) : setKubernetesParserOption(jsonDocument.documents, false);
 	return customLanguageService.doHover(document, textDocumentPositionParams.position, jsonDocument);
 });
 
