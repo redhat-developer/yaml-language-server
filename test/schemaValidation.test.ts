@@ -93,6 +93,30 @@ suite("Validation Tests", () => {
 				}).then(done, done);
 			});
 
+			it('Anchor should not not error', (done) => {
+				let content = `default: &DEFAULT\n  name: Anchor\nanchor_test:\n  <<: *DEFAULT`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Anchor with multiple references should not not error', (done) => {
+				let content = `default: &DEFAULT\n  name: Anchor\nanchor_test:\n  <<: *DEFAULT\nanchor_test2:\n  <<: *DEFAULT`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Multiple Anchor in array of references should not not error', (done) => {
+				let content = `default: &DEFAULT\n  name: Anchor\ncustomname: &CUSTOMNAME\n  custom_name: Anchor\nanchor_test:\n  <<: [*DEFAULT, *CUSTOMNAME]`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
 			describe('Type tests', function(){
 
 				it('Type String does not error on valid node', (done) => {
@@ -141,13 +165,6 @@ suite("Validation Tests", () => {
 					validator.then(function(result){
 						assert.equal(result.length, 0);
 					});
-
-					let content2 = `license: MIT`;
-					let validator2 = parseSetup(content);
-					validator2.then(function(result){
-						assert.equal(result.length, 0);
-					});
-
 					done();
 				});
 				

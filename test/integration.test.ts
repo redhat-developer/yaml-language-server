@@ -84,7 +84,7 @@ suite("Kubernetes Integration Tests", () => {
 			});
 
 			it('Type string validates under children', (done) => {
-				let content = `metadata:\n  resourceVersion: test`;
+				let content = `apiVersion: v1\nkind: Pod\nmetadata:\n  resourceVersion: test`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
 					assert.equal(result.length, 0);
@@ -183,6 +183,15 @@ suite("Kubernetes Integration Tests", () => {
 				let validator = parseSetup(content);
 				validator.then(function(result){
 					assert.notEqual(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Property error message should be \"Unexpected property {$property_name}\" when property is not allowed ', (done) => {
+				let content = `unknown_node: test`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 1);
+					assert.equal(result[0].message, "Unexpected property unknown_node");
 				}).then(done, done);
 			});
 
