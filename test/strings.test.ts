@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {startsWith, endsWith, convertSimple2RegExpPattern} from '../src/languageService/utils/strings';
+import {startsWith, endsWith, convertSimple2RegExpPattern} from '../src/languageservice/utils/strings';
 var assert = require('assert');
 
 suite("String Tests", () => {

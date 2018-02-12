@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {equals} from '../src/languageService/utils/objects';
+import {equals} from '../src/languageservice/utils/objects';
 var assert = require('assert');
 
 suite("Object Equals Tests", () => {

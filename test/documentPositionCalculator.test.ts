@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {binarySearch, getLineStartPositions, getPosition, insertionPointReturnValue} from '../src/languageService/utils/documentPositionCalculator';
+import {binarySearch, getLineStartPositions, getPosition, insertionPointReturnValue} from '../src/languageservice/utils/documentPositionCalculator';
 var assert = require('assert');
 
 suite("DocumentPositionCalculator Tests", () => {

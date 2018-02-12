@@ -11,12 +11,12 @@ import {
 } from 'vscode-languageserver';
 import {load as yamlLoader, YAMLDocument, YAMLException, YAMLNode} from 'yaml-ast-parser';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import {getLanguageService} from '../src/languageService/yamlLanguageService'
-import Strings = require( '../src/languageService/utils/strings');
-import URI from '../src/languageService/utils/uri';
+import {getLanguageService} from '../src/languageservice/yamlLanguageService'
+import Strings = require( '../src/languageservice/utils/strings');
+import URI from '../src/languageservice/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
-import {JSONSchemaService} from '../src/languageService/services/jsonSchemaService'
+import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
 var assert = require('assert');
 
 namespace VSCodeContentRequest {

@@ -16,16 +16,16 @@ import {
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
 import path = require('path');
 import fs = require('fs');
-import URI from './languageService/utils/uri';
+import URI from './languageservice/utils/uri';
 import * as URL from 'url';
-import Strings = require('./languageService/utils/strings');
+import Strings = require('./languageservice/utils/strings');
 import { YAMLDocument, JSONSchema, getLanguageService } from 'vscode-yaml-languageservice';
-import { getLineOffsets, removeDuplicatesObj } from './languageService/utils/arrUtils';
-import { getLanguageService as getCustomLanguageService, LanguageSettings } from './languageService/yamlLanguageService';
+import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arrUtils';
+import { getLanguageService as getCustomLanguageService, LanguageSettings } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
-import { FilePatternAssociation } from './languageService/services/jsonSchemaService';
-import { parse as parseYAML } from './languageService/parser/yamlParser';
-import { JSONDocument } from './languageService/parser/jsonParser';
+import { FilePatternAssociation } from './languageservice/services/jsonSchemaService';
+import { parse as parseYAML } from './languageservice/parser/yamlParser';
+import { JSONDocument } from './languageservice/parser/jsonParser';
 nls.config(process.env['VSCODE_NLS_CONFIG']);
 
 interface ISchemaAssociations {

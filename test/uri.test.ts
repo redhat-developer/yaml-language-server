@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import URI from '../src/languageService/utils/uri';
+import URI from '../src/languageservice/utils/uri';
 var path = require('path');
 var assert = require('assert');
 

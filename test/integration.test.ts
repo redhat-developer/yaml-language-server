@@ -10,16 +10,16 @@ import {
 	CompletionItem, CompletionItemKind, RequestType
 } from 'vscode-languageserver';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import {getLanguageService} from '../src/languageService/yamlLanguageService'
-import Strings = require( '../src/languageService/utils/strings');
-import URI from '../src/languageService/utils/uri';
+import {getLanguageService} from '../src/languageservice/yamlLanguageService'
+import Strings = require( '../src/languageservice/utils/strings');
+import URI from '../src/languageservice/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
-import {JSONSchemaService} from '../src/languageService/services/jsonSchemaService'
+import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
 import {schemaRequestService, workspaceContext}  from './testHelper';
-import { parse as parseYAML } from '../src/languageService/parser/yamlParser';
+import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
 import { YAMLDocument } from 'vscode-yaml-languageservice';
-import { getLineOffsets } from "../src/languageService/utils/arrUtils";
+import { getLineOffsets } from "../src/languageservice/utils/arrUtils";
 var assert = require('assert');
 
 let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
