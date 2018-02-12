@@ -20,7 +20,7 @@ export interface IRange {
 export enum ErrorCode {
 	Undefined = 0,
 	EnumValueMismatch = 1,
-	CommentsNotAllowed = 2,
+	CommentsNotAllowed = 2
 }
 
 export enum ProblemSeverity {
