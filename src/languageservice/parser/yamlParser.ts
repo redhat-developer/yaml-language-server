@@ -1,6 +1,5 @@
 'use strict';
 
-import { JSONSchema } from 'vscode-json-languageservice/lib/jsonSchema';
 import { ASTNode, ErrorCode, BooleanASTNode, NullASTNode, ArrayASTNode, NumberASTNode, ObjectASTNode, PropertyASTNode, StringASTNode, IApplicableSchema, JSONDocument } from './jsonParser';
 
 import * as nls from 'vscode-nls';
