@@ -26,7 +26,7 @@ import * as nls from 'vscode-nls';
 import { FilePatternAssociation } from './languageservice/services/jsonSchemaService';
 import { parse as parseYAML } from './languageservice/parser/yamlParser';
 import { JSONDocument } from './languageservice/parser/jsonParser';
-nls.config(process.env['VSCODE_NLS_CONFIG']);
+nls.config(<any>process.env['VSCODE_NLS_CONFIG']);
 
 interface ISchemaAssociations {
 	[pattern: string]: string[];
@@ -91,7 +91,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 		return !!c;
 	}
 
-	hasWorkspaceFolderCapability = (capabilities as Proposed.WorkspaceFoldersClientCapabilities).workspace && !!(capabilities as Proposed.WorkspaceFoldersClientCapabilities).workspace.workspaceFolders;
+	hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
 	clientDynamicRegisterSupport = hasClientCapability('workspace', 'symbol', 'dynamicRegistration');
 	return {
 		capabilities: {
@@ -413,7 +413,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
 		return;
 	}
- 
+
 	let yamlDocument = parseYAML(textDocument.getText());
 	isKubernetes(textDocument) ? setKubernetesParserOption(yamlDocument.documents, true) : setKubernetesParserOption(yamlDocument.documents, false);
 	customLanguageService.doValidation(textDocument, yamlDocument).then(function(diagnosticResults){
