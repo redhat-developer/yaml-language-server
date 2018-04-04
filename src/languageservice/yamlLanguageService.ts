@@ -1,3 +1,8 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Red Hat, Inc. All rights reserved.
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 import { JSONSchemaService } from './services/jsonSchemaService'
 import { LanguageSettings } from 'vscode-yaml-languageservice';
 import { TextDocument, Position, CompletionList } from 'vscode-languageserver-types';
