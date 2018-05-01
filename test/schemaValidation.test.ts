@@ -117,6 +117,14 @@ suite("Validation Tests", () => {
 				}).then(done, done);
 			});
 
+			it('Multiple Anchors being referenced in same level at same time ', (done) => {
+				let content = `default: &DEFAULT\n  name: Anchor\ncustomname: &CUSTOMNAME\n  custom_name: Anchor\nanchor_test:\n  <<: *DEFAULT\n  <<: *CUSTOMNAME\n`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
 			describe('Type tests', function(){
 
 				it('Type String does not error on valid node', (done) => {

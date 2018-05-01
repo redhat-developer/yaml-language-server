@@ -201,7 +201,7 @@ function convertError(e: Yaml.YAMLException) {
 	return { message: `${e.reason}`, location: { start: e.mark.position, end: e.mark.position + e.mark.column, code: ErrorCode.Undefined } }
 }
 
-function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[]){
+function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string){
 	let _doc = new SingleYAMLDocument(startPositions);
 	_doc.root = recursivelyBuildAst(null, yamlDoc)
 
@@ -212,8 +212,18 @@ function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[]){
 
 	const duplicateKeyReason = 'duplicate key'
 
+	//Patch ontop of yaml-ast-parser to disable duplicate key message on merge key
+	let isDuplicateAndNotMergeKey = function(error: Yaml.YAMLException, yamlText: string){
+		let errorConverted = convertError(error);
+		let errorStart = errorConverted.location.start;
+		let errorEnd = errorConverted.location.end;
+		if(error.reason === duplicateKeyReason && yamlText.substring(errorStart, errorEnd) === "<<"){
+			return false;
+		}
+		return true;
+	};
 	const errors = yamlDoc.errors.filter(e => e.reason !== duplicateKeyReason && !e.isWarning).map(e => convertError(e))
-	const warnings = yamlDoc.errors.filter(e => e.reason === duplicateKeyReason || e.isWarning).map(e => convertError(e))
+	const warnings = yamlDoc.errors.filter(e => (e.reason === duplicateKeyReason && isDuplicateAndNotMergeKey(e, text)) || e.isWarning).map(e => convertError(e))
 
 	errors.forEach(e => _doc.errors.push(e));
 	warnings.forEach(e => _doc.warnings.push(e));
@@ -242,5 +252,5 @@ export function parse(text: string): YAMLDocument {
 	const yamlDocs = []
 	Yaml.loadAll(text, doc => yamlDocs.push(doc), {})
 
-	return new YAMLDocument(yamlDocs.map(doc => createJSONDocument(doc, startPositions)));
+	return new YAMLDocument(yamlDocs.map(doc => createJSONDocument(doc, startPositions, text)));
 }
