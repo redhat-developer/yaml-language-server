@@ -217,7 +217,7 @@ function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], te
 		let errorConverted = convertError(error);
 		let errorStart = errorConverted.location.start;
 		let errorEnd = errorConverted.location.end;
-		if(error.reason === duplicateKeyReason && yamlText.substring(errorStart, errorEnd) === "<<"){
+		if(error.reason === duplicateKeyReason && yamlText.substring(errorStart, errorEnd).startsWith("<<")){
 			return false;
 		}
 		return true;
