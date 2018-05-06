@@ -12,19 +12,20 @@ const localize = nls.loadMessageBundle();
 
 import * as Yaml from 'yaml-ast-parser'
 import { Kind } from 'yaml-ast-parser'
+import { Schema, Type } from 'js-yaml';
 
 import { getLineStartPositions, getPosition } from '../utils/documentPositionCalculator'
 
 export class SingleYAMLDocument extends JSONDocument {
 	private lines;
-    public root;
+	public root;
 	public errors;
 	public warnings;
 
 	constructor(lines: number[]) {
 		super(null, []);
 		this.lines = lines;
-        this.root = null;
+		this.root = null;
 		this.errors = [];
 		this.warnings = [];
 	}
@@ -151,7 +152,7 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 
 			//This is a patch for redirecting values with these strings to be boolean nodes because its not supported in the parser.
 			let possibleBooleanValues = ['y', 'Y', 'yes', 'Yes', 'YES', 'n', 'N', 'no', 'No', 'NO', 'on', 'On', 'ON', 'off', 'Off', 'OFF'];
-			if(possibleBooleanValues.indexOf(value.toString()) !== -1){
+			if (possibleBooleanValues.indexOf(value.toString()) !== -1) {
 				return new BooleanASTNode(parent, name, value, node.startPosition, node.endPosition)
 			}
 
@@ -201,7 +202,7 @@ function convertError(e: Yaml.YAMLException) {
 	return { message: `${e.reason}`, location: { start: e.mark.position, end: e.mark.position + e.mark.column, code: ErrorCode.Undefined } }
 }
 
-function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string){
+function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string) {
 	let _doc = new SingleYAMLDocument(startPositions);
 	_doc.root = recursivelyBuildAst(null, yamlDoc)
 
@@ -213,11 +214,11 @@ function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], te
 	const duplicateKeyReason = 'duplicate key'
 
 	//Patch ontop of yaml-ast-parser to disable duplicate key message on merge key
-	let isDuplicateAndNotMergeKey = function(error: Yaml.YAMLException, yamlText: string){
+	let isDuplicateAndNotMergeKey = function (error: Yaml.YAMLException, yamlText: string) {
 		let errorConverted = convertError(error);
 		let errorStart = errorConverted.location.start;
 		let errorEnd = errorConverted.location.end;
-		if(error.reason === duplicateKeyReason && yamlText.substring(errorStart, errorEnd).startsWith("<<")){
+		if (error.reason === duplicateKeyReason && yamlText.substring(errorStart, errorEnd).startsWith("<<")) {
 			return false;
 		}
 		return true;
@@ -236,7 +237,7 @@ export class YAMLDocument {
 	private errors;
 	private warnings;
 
-	constructor(documents: JSONDocument[]){
+	constructor(documents: JSONDocument[]) {
 		this.documents = documents;
 		this.errors = [];
 		this.warnings = [];
@@ -244,13 +245,29 @@ export class YAMLDocument {
 
 }
 
-export function parse(text: string): YAMLDocument {
+export function parse(text: string, customTags = []): YAMLDocument {
 
 	const startPositions = getLineStartPositions(text)
 	// This is documented to return a YAMLNode even though the
 	// typing only returns a YAMLDocument
 	const yamlDocs = []
-	Yaml.loadAll(text, doc => yamlDocs.push(doc), {})
+
+	let schemaWithAdditionalTags = Schema.create(customTags.map((tag) => {
+		const typeInfo = tag.split(' ');
+		return new Type(typeInfo[0], { kind: typeInfo[1] || 'scalar' });
+	}));
+
+	//We need compiledTypeMap to be available from schemaWithAdditionalTags before we add the new custom properties
+	customTags.map((tag) => {
+		const typeInfo = tag.split(' ');
+		schemaWithAdditionalTags.compiledTypeMap[typeInfo[0]] = new Type(typeInfo[0], { kind: typeInfo[1] || 'scalar' });
+	});
+
+	let additionalOptions: Yaml.LoadOptions = {
+		schema: schemaWithAdditionalTags
+	}
+
+	Yaml.loadAll(text, doc => yamlDocs.push(doc), additionalOptions);
 
 	return new YAMLDocument(yamlDocs.map(doc => createJSONDocument(doc, startPositions, text)));
 }

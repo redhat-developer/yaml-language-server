@@ -28,10 +28,13 @@ let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext
 let uri = 'http://json.schemastore.org/bowerrc';
 let languageSettings = {
 	schemas: [],
-	validate: true
+	validate: true,
+	customTags: []
 };
 let fileMatch = ["*.yml", "*.yaml"];
 languageSettings.schemas.push({ uri, fileMatch: fileMatch });
+languageSettings.customTags.push("!Test");
+languageSettings.customTags.push("!Ref sequence");
 languageService.configure(languageSettings);
 
 // Defines a Mocha test suite to group tests of similar kind together
@@ -46,7 +49,7 @@ suite("Validation Tests", () => {
 
 		function parseSetup(content: string){
 			let testTextDocument = setup(content);
-			let yDoc = parseYAML(testTextDocument.getText());
+			let yDoc = parseYAML(testTextDocument.getText(), languageSettings.customTags);
 			return languageService.doValidation(testTextDocument, yDoc);
 		}
 
@@ -117,8 +120,24 @@ suite("Validation Tests", () => {
 				}).then(done, done);
 			});
 
-			it('Multiple Anchors being referenced in same level at same time ', (done) => {
+			it('Multiple Anchors being referenced in same level at same time', (done) => {
 				let content = `default: &DEFAULT\n  name: Anchor\ncustomname: &CUSTOMNAME\n  custom_name: Anchor\nanchor_test:\n  <<: *DEFAULT\n  <<: *CUSTOMNAME\n`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Custom Tags without type', (done) => {
+				let content = `analytics: !Test false`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Custom Tags with type', (done) => {
+				let content = `resolvers: !Ref\n  - test`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
 					assert.equal(result.length, 0);

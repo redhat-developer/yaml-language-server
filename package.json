@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "deep-equal": "^1.0.1",
+    "js-yaml": "^3.11.0",
     "jsonc-parser": "^1.0.3",
     "request-light": "^0.2.2",
     "vscode-json-languageservice": "3.0.12",

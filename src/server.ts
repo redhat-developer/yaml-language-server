@@ -182,7 +182,8 @@ interface Settings {
 	yaml: {
 		format: { enable: boolean; };
 		schemas: JSONSchemaSettings[];
-		validate: boolean
+		validate: boolean;
+		customTags: Array<String>;
 	};
 	http: {
 		proxy: string;
@@ -203,6 +204,7 @@ let specificValidatorPaths = [];
 let schemaConfigurationSettings = [];
 let yamlShouldValidate = true;
 let schemaStoreSettings = [];
+let customTags = [];
 
 connection.onDidChangeConfiguration((change) => {
 	var settings = <Settings>change.settings;
@@ -212,6 +214,7 @@ connection.onDidChangeConfiguration((change) => {
 	yamlConfigurationSettings = settings.yaml && settings.yaml.schemas;
 	yamlShouldValidate = settings.yaml && settings.yaml.validate;
 	schemaConfigurationSettings = [];
+	customTags = settings.yaml && settings.yaml.customTags ? settings.yaml.customTags : [];
 
 	for(let url in yamlConfigurationSettings){
 		let globPattern = yamlConfigurationSettings[url];
@@ -414,7 +417,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 		return;
 	}
 
-	let yamlDocument = parseYAML(textDocument.getText());
+	let yamlDocument = parseYAML(textDocument.getText(), customTags);
 	isKubernetes(textDocument) ? setKubernetesParserOption(yamlDocument.documents, true) : setKubernetesParserOption(yamlDocument.documents, false);
 	customLanguageService.doValidation(textDocument, yamlDocument).then(function(diagnosticResults){
 
