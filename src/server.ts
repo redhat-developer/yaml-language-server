@@ -412,6 +412,10 @@ function triggerValidation(textDocument: TextDocument): void {
 
 function validateTextDocument(textDocument: TextDocument): void {
 
+	if(!textDocument){
+		return;
+	}
+
 	if (textDocument.getText().length === 0) {
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
 		return;
@@ -446,6 +450,11 @@ connection.onDidChangeWatchedFiles((change) => {
 
 connection.onCompletion(textDocumentPosition =>  {
 	let textDocument = documents.get(textDocumentPosition.textDocument.uri);
+
+	if(!textDocument){
+		return;
+	}
+
 	let completionFix = completionHelper(textDocument, textDocumentPosition.position);
 	let newText = completionFix.newText;
 	let jsonDocument = parseYAML(newText);
@@ -518,6 +527,11 @@ connection.onCompletionResolve(completionItem => {
 
 connection.onHover(textDocumentPositionParams => {
 	let document = documents.get(textDocumentPositionParams.textDocument.uri);
+	
+	if(!document){
+		return;
+	}
+
 	let jsonDocument = parseYAML(document.getText());
 	isKubernetes(document) ? setKubernetesParserOption(jsonDocument.documents, true) : setKubernetesParserOption(jsonDocument.documents, false);
 	return customLanguageService.doHover(document, textDocumentPositionParams.position, jsonDocument);
@@ -525,12 +539,22 @@ connection.onHover(textDocumentPositionParams => {
 
 connection.onDocumentSymbol(documentSymbolParams => {
 	let document = documents.get(documentSymbolParams.textDocument.uri);
+
+	if(!document){
+		return;
+	}
+
 	let jsonDocument = parseYAML(document.getText());
 	return customLanguageService.findDocumentSymbols(document, jsonDocument);
 });
 
 connection.onDocumentFormatting(formatParams => {
 	let document = documents.get(formatParams.textDocument.uri);
+
+	if(!document){
+		return;
+	}
+
 	return languageService.format(document, formatParams.options);
 });
 
