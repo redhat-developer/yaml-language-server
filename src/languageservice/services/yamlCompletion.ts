@@ -17,7 +17,6 @@ import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Posit
 
 import * as nls from 'vscode-nls';
 import { matchOffsetToDocument } from '../utils/arrUtils';
-import { stringifyObject } from '../utils/json';
 const localize = nls.loadMessageBundle();
 
 
