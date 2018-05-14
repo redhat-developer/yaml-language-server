@@ -19,6 +19,8 @@
     * Scalar nodes autocomplete to schema's defaults if they exist
 4. Hover support:
     * Hovering over a node shows description *if available*
+5. Document outlining:
+    * Shows a complete document outline of all nodes in the document
 
 ## Language Server Settings
 `yaml.schemas`: The entrance point for new schema.
