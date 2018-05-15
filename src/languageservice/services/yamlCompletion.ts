@@ -25,11 +25,19 @@ export class YAMLCompletion {
 	private schemaService: SchemaService.IJSONSchemaService;
 	private contributions: JSONWorkerContribution[];
 	private promise: PromiseConstructor;
+	private customTags: Array<String>;
 
 	constructor(schemaService: SchemaService.IJSONSchemaService, contributions: JSONWorkerContribution[] = [], promiseConstructor?: PromiseConstructor) {
 		this.schemaService = schemaService;
 		this.contributions = contributions;
 		this.promise = promiseConstructor || Promise;
+		this.customTags = [];
+	}
+
+	public configure(customTags: Array<String>){
+		if(customTags && customTags.length > 0){
+			this.customTags = customTags;
+		}
 	}
 
 	public doResolve(item: CompletionItem): Thenable<CompletionItem> {
@@ -185,6 +193,9 @@ export class YAMLCompletion {
 			if (this.contributions.length > 0) {
 				this.getContributedValueCompletions(currentDoc, node, offset, document, collector, collectionPromises);
 			}
+			if (this.customTags.length > 0) {
+				this.getCustomTagValueCompletions(collector);
+			}
 
 			return this.promise.all(collectionPromises).then(() => {
 				return result;
@@ -322,6 +333,15 @@ export class YAMLCompletion {
 		}
 	}
 
+	private getCustomTagValueCompletions(collector: CompletionsCollector) {	
+		this.customTags.forEach((customTagItem) => {
+			let tagItemSplit = customTagItem.split(" ");
+			if(tagItemSplit && tagItemSplit[0]){
+				this.addCustomTagValueCompletion(collector, " ", tagItemSplit[0]);
+			}
+		});
+	}
+
 	private addSchemaValueCompletions(schema: JSONSchema, collector: CompletionsCollector, types: { [type: string]: boolean }, separatorAfter: string): void {
 		this.addDefaultValueCompletions(schema, collector, separatorAfter);
 		this.addEnumValueCompletions(schema, collector, separatorAfter);
@@ -403,6 +423,16 @@ export class YAMLCompletion {
 			kind: this.getSuggestionKind('null'),
 			label: 'null',
 			insertText: 'null' + separatorAfter,
+			insertTextFormat: InsertTextFormat.Snippet,
+			documentation: ''
+		});
+	}
+
+	private addCustomTagValueCompletion(collector: CompletionsCollector, separatorAfter: string, label: string): void {
+		collector.add({
+			kind: this.getSuggestionKind('string'),
+			label: label,
+			insertText: label + separatorAfter,
 			insertTextFormat: InsertTextFormat.Snippet,
 			documentation: ''
 		});

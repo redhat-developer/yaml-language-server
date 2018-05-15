@@ -297,7 +297,8 @@ connection.onNotification(SchemaAssociationNotification.type, associations => {
 function updateConfiguration() {
 	let languageSettings: LanguageSettings = {
 		validate: yamlShouldValidate,
-		schemas: []
+		schemas: [],
+		customTags: customTags
 	};
 	if (schemaAssociations) {
 		for (var pattern in schemaAssociations) {

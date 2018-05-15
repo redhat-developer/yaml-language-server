@@ -17,7 +17,8 @@ import { YAMLDocument, Diagnostic } from 'vscode-yaml-languageservice';
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
   isKubernetes?: boolean; //If true then its validating against kubernetes
-  schemas?: any[]; //List of schemas
+  schemas?: any[]; //List of schemas,
+  customTags?: Array<String>; //Array of Custom Tags
 }
 
 export interface PromiseConstructor {
@@ -119,6 +120,7 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
           });
         }
         yamlValidation.configure(settings);
+        completer.configure(settings["customTags"]);
       },
       doComplete: completer.doComplete.bind(completer),
       doResolve: completer.doResolve.bind(completer),
