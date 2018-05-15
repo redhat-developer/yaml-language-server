@@ -120,7 +120,8 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
           });
         }
         yamlValidation.configure(settings);
-        completer.configure(settings["customTags"]);
+        let customTagsSetting = settings && settings["customTags"] ? settings["customTags"] : [];
+        completer.configure(customTagsSetting);
       },
       doComplete: completer.doComplete.bind(completer),
       doResolve: completer.doResolve.bind(completer),
