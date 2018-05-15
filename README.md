@@ -23,15 +23,53 @@
     * Shows a complete document outline of all nodes in the document
 
 ## Language Server Settings
-`yaml.schemas`: The entrance point for new schema.
+
+The following settings are supported:
+* `yaml.format.enable`: Enable/disable default YAML formatter
+* `yaml.validate`: Enable/disable validation feature
+* `yaml.schemas`: Helps you associate schemas with files in a glob pattern
+* `yaml.customTags`: Array of custom tags that the parser will validate against. It has two ways to be used. Either an item in the array is a custom tag such as "!Ref" or you can specify the type of the object !Ref should be by doing "!Ref Scalar". For example: ["!Ref", "!Some-Tag Scalar"]. The type of object can be one of Scalar, Sequence, Mapping, Map.
+
+##### Associating a schema to a glob pattern via yaml.schemas: 
+When associating a schema it should follow the format below
 ```
 yaml.schemas: {
     "url": "globPattern",
-    "kubernetes": "globPattern",
+    "Kubernetes": "globPattern",
     "kedge": "globPattern"
 }
 ```
-kubernetes and kedge are optional fields. They do not require URLs as the language server will provide that. You just need the keywords kubernetes/kedge and a glob pattern.
+
+e.g.
+```
+yaml.schemas: {
+    "http://json.schemastore.org/composer": "/*"
+}
+```
+
+e.g.
+
+```
+yaml.schemas: {
+    "kubernetes": "/myYamlFile.yaml"
+}
+```
+e.g.
+```
+yaml.schemas: {
+    "kedge": "/myKedgeApp.yaml"
+}
+```
+
+e.g.
+```
+yaml.schemas: {
+    "http://json.schemastore.org/composer": "/*",
+    "kubernetes": "/myYamlFile.yaml"
+}
+```
+
+`yaml.schemas` extension allows you to specify json schemas that you want to validate against the yaml that you write. Kubernetes and kedge are optional fields. They do not require a url as the language server will provide that. You just need the keywords kubernetes/kedge and a glob pattern.
 
 ## Clients
 This repository only contains the server implementation. Here are some known clients consuming this server:
