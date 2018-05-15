@@ -35,9 +35,7 @@ export class YAMLCompletion {
 	}
 
 	public configure(customTags: Array<String>){
-		if(customTags && customTags.length > 0){
-			this.customTags = customTags;
-		}
+		this.customTags = customTags;
 	}
 
 	public doResolve(item: CompletionItem): Thenable<CompletionItem> {
