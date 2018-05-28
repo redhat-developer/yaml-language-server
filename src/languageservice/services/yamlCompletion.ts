@@ -56,15 +56,15 @@ export class YAMLCompletion {
 			items: [],
 			isIncomplete: false
 		};
-
+		
 		let offset = document.offsetAt(position);
 		if(document.getText()[offset] === ":"){
-			return null;
+			return Promise.resolve(result);
 		}
 		
 		let currentDoc = matchOffsetToDocument(offset, doc);
 		if(currentDoc === null){
-			return null;
+			return Promise.resolve(result);
 		}
 		let node = currentDoc.getNodeFromOffsetEndInclusive(offset);
 		if (this.isInComment(document, node ? node.start : 0, offset)) {
@@ -121,7 +121,7 @@ export class YAMLCompletion {
 		return this.schemaService.getSchemaForResource(document.uri).then((schema) => {
 
 			if(!schema){
-				return null;
+				return Promise.resolve(result);
 			}
 
 			let collectionPromises: Thenable<any>[] = [];

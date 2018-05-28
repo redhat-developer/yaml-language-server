@@ -28,10 +28,14 @@ export class YAMLHover {
 
 	public doHover(document: TextDocument, position: Position, doc: Parser.JSONDocument): Thenable<Hover> {
 
+		if(!document){
+			this.promise.resolve(void 0);
+		}
+
 		let offset = document.offsetAt(position);
 		let currentDoc = matchOffsetToDocument(offset, doc);
 		if(currentDoc === null){
-			return null;
+			return this.promise.resolve(void 0);
 		}
 		let node = currentDoc.getNodeFromOffset(offset);
 		if (!node || (node.type === 'object' || node.type === 'array') && offset > node.start + 1 && offset < node.end - 1) {

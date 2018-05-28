@@ -10,7 +10,7 @@ import {
 	createConnection, IConnection,
 	TextDocuments, TextDocument, InitializeParams, InitializeResult, NotificationType, RequestType,
 	DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter, DiagnosticSeverity, Position,
-	Proposed, ProposedFeatures
+	Proposed, ProposedFeatures, CompletionList
 } from 'vscode-languageserver';
 
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
@@ -451,11 +451,16 @@ connection.onDidChangeWatchedFiles((change) => {
 
 connection.onCompletion(textDocumentPosition =>  {
 	let textDocument = documents.get(textDocumentPosition.textDocument.uri);
+	
+	let result: CompletionList = {
+		items: [],
+		isIncomplete: false
+	};
 
 	if(!textDocument){
-		return;
+		return Promise.resolve(result);
 	}
-
+	
 	let completionFix = completionHelper(textDocument, textDocumentPosition.position);
 	let newText = completionFix.newText;
 	let jsonDocument = parseYAML(newText);
@@ -530,7 +535,7 @@ connection.onHover(textDocumentPositionParams => {
 	let document = documents.get(textDocumentPositionParams.textDocument.uri);
 	
 	if(!document){
-		return;
+		return Promise.resolve(void 0);
 	}
 
 	let jsonDocument = parseYAML(document.getText());
