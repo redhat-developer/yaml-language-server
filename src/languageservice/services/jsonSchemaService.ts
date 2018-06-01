@@ -518,7 +518,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 					return entry.getCombinedSchema(this).getResolvedSchema();
 				}
 			}
-			return null;
+			return this.promise.resolve(null);
 		};
 		if (this.customSchemaProvider) {
 			return this.customSchemaProvider(resource).then(schemaUri => {
