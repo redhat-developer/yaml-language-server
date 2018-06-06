@@ -96,6 +96,14 @@ suite("Validation Tests", () => {
 				}).then(done, done);
 			});
 
+			it('Null scalar value should be treated as string', (done) => {
+				let content = `cwd: Null`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
 			it('Anchor should not not error', (done) => {
 				let content = `default: &DEFAULT\n  name: Anchor\nanchor_test:\n  <<: *DEFAULT`;
 				let validator = parseSetup(content);
