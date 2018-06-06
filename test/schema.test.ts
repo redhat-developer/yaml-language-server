@@ -279,4 +279,14 @@ suite('JSON Schema', () => {
 			testDone(error);
 		});
 	});
+
+	test('Null Schema', function (testDone) {
+		let service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+
+		service.getSchemaForResource('test.json').then((schema) => {
+			assert.equal(schema, null);
+		}).then(() => testDone(), (error) => {
+			testDone(error);
+		});
+	});
 });
