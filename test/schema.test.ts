@@ -289,4 +289,14 @@ suite('JSON Schema', () => {
 			testDone(error);
 		});
 	});
+
+	test('Schema not found', function (testDone) {
+		let service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+
+		service.loadSchema('test.json').then((schema) => {
+			assert.notEqual(schema.errors.length, 0);
+		}).then(() => testDone(), (error) => {
+			testDone(error);
+		});
+	});
 });

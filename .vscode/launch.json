@@ -8,8 +8,8 @@
 			"request": "attach",
 			"port": 6009,
 			"sourceMaps": true,
-			"outFiles": [ "${workspaceRoot}/out/server/**/*.js" ],
-			"protocol": "auto",
+			"outFiles": [ "${workspaceRoot}/out/server/**/*.ts" ],
+			"protocol": "inspector",
 			"trace": true
 		},
 		{

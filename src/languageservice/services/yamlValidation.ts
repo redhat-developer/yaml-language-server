@@ -37,6 +37,9 @@ export class YAMLValidation {
 		}
 
 		return this.jsonSchemaService.getSchemaForResource(textDocument.uri).then(function (schema) {
+			var diagnostics = [];
+			var added = {};
+
 			if (schema) {
 				
 				for(let currentYAMLDoc in yamlDocument.documents){
@@ -47,11 +50,28 @@ export class YAMLValidation {
 						currentDoc.errors.push({ location: { start: curDiagnostic.location.start, end: curDiagnostic.location.end }, message: curDiagnostic.message })
 					}
 				}
-				
-				
+
 			}
-			var diagnostics = [];
-			var added = {};
+			if(schema && schema.errors.length > 0){
+				
+				for(let curDiagnostic of schema.errors){
+					diagnostics.push({
+						severity: DiagnosticSeverity.Error,
+						range: {
+							start: {
+								line: 0,
+								character: 0
+							},
+							end: {
+								line: 0,
+								character: 1
+							}
+						},
+						message: curDiagnostic
+					});
+				}
+
+			}
 			for(let currentYAMLDoc in yamlDocument.documents){
 				let currentDoc = yamlDocument.documents[currentYAMLDoc];
 				currentDoc.errors.concat(currentDoc.warnings).forEach(function (error, idx) {
