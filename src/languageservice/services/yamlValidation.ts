@@ -8,8 +8,7 @@
 import { JSONSchemaService } from './jsonSchemaService';
 import { JSONDocument, ObjectASTNode, IProblem, ProblemSeverity } from '../parser/jsonParser';
 import { TextDocument, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
-import { PromiseConstructor, Thenable} from '../yamlLanguageService';
-import { LanguageSettings } from 'vscode-yaml-languageservice/lib/yamlLanguageService';
+import { PromiseConstructor, Thenable, LanguageSettings} from '../yamlLanguageService';
 
 export class YAMLValidation {
 	

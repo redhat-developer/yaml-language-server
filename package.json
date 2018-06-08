@@ -22,7 +22,7 @@
     "url": "https://github.com/redhat-developer/yaml-language-server.git"
   },
   "dependencies": {
-    "js-yaml": "^3.11.0",
+    "js-yaml": "^3.12.0",
     "jsonc-parser": "^1.0.3",
     "request-light": "^0.2.2",
     "vscode-json-languageservice": "3.0.12",
@@ -30,7 +30,6 @@
     "vscode-languageserver-types": "^3.6.1",
     "vscode-nls": "^3.2.2",
     "vscode-uri": "1.0.3",
-    "vscode-yaml-languageservice": "^0.2.0",
     "yaml-ast-parser": "0.0.40"
   },
   "devDependencies": {

@@ -2,7 +2,6 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { YAMLDocument } from "vscode-yaml-languageservice/lib/yamlLanguageService";
 import { SingleYAMLDocument } from "../parser/yamlParser";
 
 export function removeDuplicates(arr, prop) {

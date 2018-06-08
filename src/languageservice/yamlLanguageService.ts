@@ -4,15 +4,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { JSONSchemaService } from './services/jsonSchemaService'
-import { LanguageSettings } from 'vscode-yaml-languageservice';
-import { TextDocument, Position, CompletionList } from 'vscode-languageserver-types';
+import { TextDocument, Position, CompletionList, FormattingOptions, Diagnostic } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLCompletion } from "./services/yamlCompletion";
 import { JSONDocument } from 'vscode-json-languageservice';
 import { YAMLHover } from "./services/yamlHover";
 import { YAMLValidation } from "./services/yamlValidation";
-import { YAMLDocument, Diagnostic } from 'vscode-yaml-languageservice';
+import { format } from './services/yamlFormatter';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
@@ -99,6 +98,7 @@ export interface LanguageService {
   findDocumentSymbols(document: TextDocument, doc);
   doResolve(completionItem);
   resetSchema(uri: string): boolean;
+  doFormat(document: TextDocument, options: FormattingOptions, customTags: Array<String>);
 }
 
 export function getLanguageService(schemaRequestService, workspaceContext, contributions, customSchemaProvider, promiseConstructor?): LanguageService {
@@ -128,6 +128,7 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
       doValidation: yamlValidation.doValidation.bind(yamlValidation),
       doHover: hover.doHover.bind(hover),
       findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols),
-      resetSchema: (uri: string) => schemaService.onResourceChange(uri)
+      resetSchema: (uri: string) => schemaService.onResourceChange(uri),
+      doFormat: format
   }
 }

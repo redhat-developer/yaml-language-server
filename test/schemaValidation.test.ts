@@ -18,7 +18,6 @@ import fs = require('fs');
 import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
 import {schemaRequestService, workspaceContext}  from './testHelper';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
-import { YAMLDocument } from 'vscode-yaml-languageservice';
 var assert = require('assert');
 
 let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);

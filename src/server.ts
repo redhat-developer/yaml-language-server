@@ -19,13 +19,13 @@ import fs = require('fs');
 import URI from './languageservice/utils/uri';
 import * as URL from 'url';
 import Strings = require('./languageservice/utils/strings');
-import { YAMLDocument, JSONSchema, getLanguageService } from 'vscode-yaml-languageservice';
 import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService, LanguageSettings } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
 import { FilePatternAssociation } from './languageservice/services/jsonSchemaService';
 import { parse as parseYAML } from './languageservice/parser/yamlParser';
 import { JSONDocument } from './languageservice/parser/jsonParser';
+import { JSONSchema } from './languageservice/jsonSchema';
 nls.config(<any>process.env['VSCODE_NLS_CONFIG']);
 
 interface ISchemaAssociations {
@@ -164,13 +164,6 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 		return Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString());
 	});
 };
-
-// create the YAML language service
-export let languageService = getLanguageService({
-	schemaRequestService,
-	workspaceContext,
-	contributions: []
-});
 
 export let KUBERNETES_SCHEMA_URL = "https://gist.githubusercontent.com/JPinkney/ccaf3909ef811e5657ca2e2e1fa05d76/raw/f85e51bfb67fdb99ab7653c2953b60087cc871ea/openshift_schema_all.json";
 export let KEDGE_SCHEMA_URL = "https://raw.githubusercontent.com/kedgeproject/json-schema/master/master/kedge-json-schema.json";
@@ -331,7 +324,6 @@ function updateConfiguration() {
 	if(schemaStoreSettings){
 		languageSettings.schemas = languageSettings.schemas.concat(schemaStoreSettings);
 	}
-	languageService.configure(languageSettings);
 	customLanguageService.configure(languageSettings);
 
 	// Revalidate any open text documents
@@ -561,7 +553,7 @@ connection.onDocumentFormatting(formatParams => {
 		return;
 	}
 
-	return languageService.format(document, formatParams.options);
+	return customLanguageService.doFormat(document, formatParams.options, customTags);
 });
 
 connection.listen();
