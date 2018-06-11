@@ -1,3 +1,11 @@
+#### 0.0.13
+- Show errors if schema cannot be grabbed [#73](https://github.com/redhat-developer/yaml-language-server/issues/73)
+- The validator should support null values [#72](https://github.com/redhat-developer/yaml-language-server/issues/72)
+- Server returning nothing on things such as completion errors Eclipse Che [#66](https://github.com/redhat-developer/yaml-language-server/issues/66)
+- Return promises that resolve to null [#PR-71](https://github.com/redhat-developer/yaml-language-server/pull/71)
+- Remove unused dependency to deep-equal  [#PR-70](https://github.com/redhat-developer/yaml-language-server/pull/70)
+- Added custom tags to autocompletion [#Commit](https://github.com/redhat-developer/yaml-language-server/commit/73c244a3efe09ec4250def78068c54af3acaed58)
+
 #### 0.0.12
 - Support for custom tags [#59](https://github.com/redhat-developer/yaml-language-server/issues/59)
 - Incorrect duplicate key registered when using YAML anchors [#82](https://github.com/redhat-developer/vscode-yaml/issues/82)
