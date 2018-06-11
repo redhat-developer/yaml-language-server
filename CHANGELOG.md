@@ -1,3 +1,7 @@
+#### 0.0.14
+
+Bumped to fix jenkins errors
+
 #### 0.0.13
 - Show errors if schema cannot be grabbed [#73](https://github.com/redhat-developer/yaml-language-server/issues/73)
 - The validator should support null values [#72](https://github.com/redhat-developer/yaml-language-server/issues/72)
