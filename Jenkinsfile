@@ -6,7 +6,7 @@ node('rhel7'){
     stage ('install build requirements'){
         def nodeHome = tool 'nodejs-7.7.4'
         env.PATH="${env.PATH}:${nodeHome}/bin"
-        sh "npm install -g typescript@2.1.5"
+        sh "npm install -g typescript"
     }
 
     stage ('build & test server'){
