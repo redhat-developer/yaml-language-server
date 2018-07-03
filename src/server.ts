@@ -93,7 +93,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 	}
 
 	hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
-	clientDynamicRegisterSupport = hasClientCapability('workspace', 'symbol', 'dynamicRegistration');
+	clientDynamicRegisterSupport = hasClientCapability('textDocument', 'formatting', 'dynamicRegistration');
 	return {
 		capabilities: {
 			textDocumentSync: documents.syncKind,
