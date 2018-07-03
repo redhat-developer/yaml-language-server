@@ -24,6 +24,7 @@
   "dependencies": {
     "js-yaml": "^3.12.0",
     "jsonc-parser": "^1.0.3",
+    "prettier": "github:prettier/prettier#master",
     "request-light": "^0.2.2",
     "vscode-json-languageservice": "3.0.12",
     "vscode-languageserver": "^4.0.0",

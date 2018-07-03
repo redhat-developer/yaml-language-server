@@ -98,7 +98,7 @@ export interface LanguageService {
   findDocumentSymbols(document: TextDocument, doc);
   doResolve(completionItem);
   resetSchema(uri: string): boolean;
-  doFormat(document: TextDocument, options: FormattingOptions, customTags: Array<String>);
+  doFormat(document: TextDocument);
 }
 
 export function getLanguageService(schemaRequestService, workspaceContext, contributions, customSchemaProvider, promiseConstructor?): LanguageService {

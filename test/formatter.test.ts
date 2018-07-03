@@ -50,20 +50,14 @@ suite("Formatter Tests", () => {
             it('Formatting works without custom tags', () => {
                 let content = `cwd: test`;
                 let testTextDocument = setup(content);
-                let edits = languageService.doFormat(testTextDocument, {
-                    insertSpaces: true,
-                    tabSize: 4
-                }, languageSettings.customTags);
+                let edits = languageService.doFormat(testTextDocument);
                 assert.notEqual(edits.length, 0);
             });
 
             it('Formatting works without custom tags', () => {
                 let content = `cwd:       !Test test`;
                 let testTextDocument = setup(content);
-                let edits = languageService.doFormat(testTextDocument, {
-                    insertSpaces: true,
-                    tabSize: 4
-                }, languageSettings.customTags);
+                let edits = languageService.doFormat(testTextDocument);
                 assert.notEqual(edits.length, 0);
             });
 

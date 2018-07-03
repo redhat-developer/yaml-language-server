@@ -9,8 +9,8 @@
 import {
 	createConnection, IConnection,
 	TextDocuments, TextDocument, InitializeParams, InitializeResult, NotificationType, RequestType,
-	DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter, DiagnosticSeverity, Position,
-	Proposed, ProposedFeatures, CompletionList
+	DocumentFormattingRequest, Disposable, Position,
+	ProposedFeatures, CompletionList
 } from 'vscode-languageserver';
 
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
@@ -26,6 +26,7 @@ import { FilePatternAssociation } from './languageservice/services/jsonSchemaSer
 import { parse as parseYAML } from './languageservice/parser/yamlParser';
 import { JSONDocument } from './languageservice/parser/jsonParser';
 import { JSONSchema } from './languageservice/jsonSchema';
+
 nls.config(<any>process.env['VSCODE_NLS_CONFIG']);
 
 interface ISchemaAssociations {
@@ -553,7 +554,7 @@ connection.onDocumentFormatting(formatParams => {
 		return;
 	}
 
-	return customLanguageService.doFormat(document, formatParams.options, customTags);
+	return customLanguageService.doFormat(document);
 });
 
 connection.listen();
