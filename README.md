@@ -28,7 +28,7 @@ The following settings are supported:
 * `yaml.format.enable`: Enable/disable default YAML formatter
 * `yaml.validate`: Enable/disable validation feature
 * `yaml.schemas`: Helps you associate schemas with files in a glob pattern
-* `yaml.customTags`: Array of custom tags that the parser will validate against. It has two ways to be used. Either an item in the array is a custom tag such as "!Ref" or you can specify the type of the object !Ref should be by doing "!Ref Scalar". For example: ["!Ref", "!Some-Tag Scalar"]. The type of object can be one of Scalar, Sequence, Mapping, Map.
+* `yaml.customTags`: Array of custom tags that the parser will validate against. It has two ways to be used. Either an item in the array is a custom tag such as "!Ref" or you can specify the type of the object !Ref should be by doing "!Ref scalar". For example: ["!Ref", "!Some-Tag scalar"]. The type of object can be one of scalar, sequence, mapping, map.
 
 ##### Associating a schema to a glob pattern via yaml.schemas: 
 When associating a schema it should follow the format below
