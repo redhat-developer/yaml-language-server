@@ -1,3 +1,8 @@
+#### 0.0.15
+
+Updated formatter to use prettier [#Commit](https://github.com/redhat-developer/yaml-language-server/commit/feb604c35b8fb11747dfcb79a5d8570bf81b8f67) 
+Fixed dynamic registration of formatter [#74](https://github.com/redhat-developer/yaml-language-server/issues/74)
+
 #### 0.0.14
 
 Bumped to fix jenkins errors
