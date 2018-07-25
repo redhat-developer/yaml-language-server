@@ -55,6 +55,7 @@ suite("Formatter Tests", () => {
                     tabSize: 4
                 }, languageSettings.customTags);
                 assert.notEqual(edits.length, 0);
+                assert.equal(edits[0].newText, "cwd: test\n");
             });
 
             it('Formatting works without custom tags', () => {

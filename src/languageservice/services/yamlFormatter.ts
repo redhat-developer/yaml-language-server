@@ -28,8 +28,8 @@ export function format(document: TextDocument, options: FormattingOptions, custo
 		schema: schemaWithAdditionalTags
 	}
 
-    const documents = [document];
-    jsyaml.loadAll(text, documents, additionalOptions);
+    const documents = []
+    jsyaml.loadAll(text, doc => documents.push(doc), additionalOptions)
 
     const dumpOptions = { indent: options.tabSize, noCompatMode: true };
 
