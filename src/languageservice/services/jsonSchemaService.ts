@@ -104,7 +104,7 @@ export class FilePatternAssociation {
 	constructor(pattern: string) {
 		this.combinedSchemaId = 'schemaservice://combinedSchema/' + encodeURIComponent(pattern);
 		try {
-			this.patternRegExp = new RegExp(Strings.convertSimple2RegExpPattern(pattern) + '$');
+			this.patternRegExp = Strings.convertSimple2RegExp(pattern);
 		} catch (e) {
 			// invalid pattern
 			this.patternRegExp = null;
