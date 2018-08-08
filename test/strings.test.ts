@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {startsWith, endsWith, convertSimple2RegExpPattern} from '../src/languageservice/utils/strings';
+import {startsWith, endsWith, convertSimple2RegExp} from '../src/languageservice/utils/strings';
 var assert = require('assert');
 
 suite("String Tests", () => {
@@ -75,12 +75,22 @@ suite("String Tests", () => {
 
         });
         
-        describe('convertSimple2RegExpPattern', function(){
+        describe('convertSimple2RegExp', function(){
 
-			it('Test of convertSimple2RegExpPattern', () => {
+			it('Test of convertRegexString2RegExp', () => {
 
-                var result = convertSimple2RegExpPattern("/*");
-                assert.equal(result, "/.*");
+                var result = convertSimple2RegExp("/toc\\.yml/i").test("TOC.yml");
+                assert.equal(result, true);
+
+            });
+
+            it('Test of convertGlobalPattern2RegExp', () => {
+
+                var result = convertSimple2RegExp("toc.yml").test("toc.yml");
+                assert.equal(result, true);
+
+                result = convertSimple2RegExp("toc.yml").test("TOC.yml");
+                assert.equal(result, false);
 
             });
 
