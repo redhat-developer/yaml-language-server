@@ -50,7 +50,7 @@ export class YAMLCompletion {
 		return this.promise.resolve(item);
 	}
 
-	public doComplete(document: TextDocument, position: Position, doc: Parser.JSONDocument): Thenable<CompletionList> {
+	public doComplete(document: TextDocument, position: Position, doc): Thenable<CompletionList> {
 
 		let result: CompletionList = {
 			items: [],
@@ -66,6 +66,7 @@ export class YAMLCompletion {
 		if(currentDoc === null){
 			return Promise.resolve(result);
 		}
+		const currentDocIndex = doc.documents.indexOf(currentDoc);
 		let node = currentDoc.getNodeFromOffsetEndInclusive(offset);
 		if (this.isInComment(document, node ? node.start : 0, offset)) {
 			return Promise.resolve(result);
@@ -123,6 +124,10 @@ export class YAMLCompletion {
 			if(!schema){
 				return Promise.resolve(result);
 			}
+			let newSchema = schema; 
+			if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[currentDocIndex]) {
+				newSchema = <SchemaService.ResolvedSchema>{ schema: schema.schema.schemaSequence[currentDocIndex]} ;
+			}
 
 			let collectionPromises: Thenable<any>[] = [];
 
@@ -160,9 +165,9 @@ export class YAMLCompletion {
 					separatorAfter = this.evaluateSeparatorAfter(document, document.offsetAt(overwriteRange.end));
 				}
 
-				if (schema) {
+				if (newSchema) {
 					// property proposals with schema
-					this.getPropertyCompletions(schema, currentDoc, node, addValue, collector, separatorAfter);
+					this.getPropertyCompletions(newSchema, currentDoc, node, addValue, collector, separatorAfter);
 				} 
 
 				let location = node.getPath();
@@ -185,8 +190,8 @@ export class YAMLCompletion {
 
 			// proposals for values
 			let types: { [type: string]: boolean } = {};
-			if (schema) {
-				this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types);
+			if (newSchema) {
+				this.getValueCompletions(newSchema, currentDoc, node, offset, document, collector, types);
 			} 
 			if (this.contributions.length > 0) {
 				this.getContributedValueCompletions(currentDoc, node, offset, document, collector, collectionPromises);
