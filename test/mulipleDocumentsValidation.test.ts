@@ -12,7 +12,7 @@ var assert = require('assert');
 
 let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
-let uri = `file:///${path.join(__dirname, '../../../test/fixtures/customMultipleSchemaSequences.json')}`;
+let uri = `file:///${path.join(__dirname, './fixtures/customMultipleSchemaSequences.json')}`;
 let languageSettings = {
     schemas: [],
     validate: true,
