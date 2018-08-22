@@ -79,7 +79,7 @@ export class YAMLHover {
 			if (schema) {
 				let newSchema = schema; 
 				if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[currentDocIndex]) {
-					newSchema = <SchemaService.ResolvedSchema>{ schema: schema.schema.schemaSequence[currentDocIndex]} ;
+					newSchema = new SchemaService.ResolvedSchema(schema.schema.schemaSequence[currentDocIndex]);
 				}
 				let matchingSchemas = currentDoc.getMatchingSchemas(newSchema.schema, node.start);
 

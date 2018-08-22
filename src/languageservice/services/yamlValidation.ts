@@ -44,13 +44,14 @@ export class YAMLValidation {
 				for(let currentYAMLDoc in yamlDocument.documents){
 					let currentDoc = yamlDocument.documents[currentYAMLDoc];
 					if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[documentIndex]) {
-						newSchema = <ResolvedSchema>{ schema: schema.schema.schemaSequence[documentIndex]} ;
+						newSchema = new ResolvedSchema(schema.schema.schemaSequence[documentIndex]);
 					}
 					let diagnostics = currentDoc.getValidationProblems(newSchema.schema);
 					for(let diag in diagnostics){
 						let curDiagnostic = diagnostics[diag];
 						currentDoc.errors.push({ location: { start: curDiagnostic.location.start, end: curDiagnostic.location.end }, message: curDiagnostic.message })
 					}
+					documentIndex++;
 				}
 
 			}

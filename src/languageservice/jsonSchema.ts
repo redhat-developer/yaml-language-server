@@ -44,7 +44,7 @@ export interface JSONSchema {
 	patternErrorMessage?: string; // VSCode extension
 	deprecationMessage?: string; // VSCode extension
 	enumDescriptions?: string[]; // VSCode extension
-	schemaSequence?: JSONSchema[];
+	schemaSequence?: JSONSchema[]; // extension for multiple schemas related to multiple documents in single yaml file
 	"x-kubernetes-group-version-kind"?; //Kubernetes extension
 }
 

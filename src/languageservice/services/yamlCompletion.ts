@@ -126,7 +126,7 @@ export class YAMLCompletion {
 			}
 			let newSchema = schema; 
 			if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[currentDocIndex]) {
-				newSchema = <SchemaService.ResolvedSchema>{ schema: schema.schema.schemaSequence[currentDocIndex]} ;
+				newSchema = new SchemaService.ResolvedSchema(schema.schema.schemaSequence[currentDocIndex]);
 			}
 
 			let collectionPromises: Thenable<any>[] = [];
