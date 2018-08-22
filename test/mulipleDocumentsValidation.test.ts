@@ -12,7 +12,22 @@ var assert = require('assert');
 
 let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
-let uri = `file:///${path.join(__dirname, './fixtures/customMultipleSchemaSequences.json')}`;
+function toFsPath(str): string {
+	if (typeof str !== 'string') {
+		throw new TypeError(`Expected a string, got ${typeof str}`);
+	}
+
+	let pathName;
+	pathName = path.resolve(str);
+	pathName = pathName.replace(/\\/g, '/');
+	// Windows drive letter must be prefixed with a slash
+	if (pathName[0] !== '/') {
+		pathName = `/${pathName}`;
+	}
+	return encodeURI(`file://${pathName}`).replace(/[?#]/g, encodeURIComponent);
+}
+
+let uri = toFsPath(path.join(__dirname, './fixtures/customMultipleSchemaSequences.json'));
 let languageSettings = {
     schemas: [],
     validate: true,
