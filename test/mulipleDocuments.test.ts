@@ -5,7 +5,6 @@
 import { TextDocument } from 'vscode-languageserver';
 import {getLanguageService} from '../src/languageservice/yamlLanguageService'
 import path = require('path');
-import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
 import {schemaRequestService, workspaceContext}  from './testHelper';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
 var assert = require('assert');
@@ -47,11 +46,17 @@ suite("Multiple Documents Validation Tests", () => {
             return TextDocument.create("file://~/Desktop/vscode-k8s/test.yaml", "yaml", 0, content);
         }
 
-        function parseSetup(content: string){
+        function validatorSetup(content: string){
             const testTextDocument = setup(content);
             const yDoc = parseYAML(testTextDocument.getText(), languageSettings.customTags);
             return languageService.doValidation(testTextDocument, yDoc);
         }
+
+		function hoverSetup(content: string, position){
+			let testTextDocument = setup(content);
+			let jsonDocument = parseYAML(testTextDocument.getText());
+			return languageService.doHover(testTextDocument, testTextDocument.positionAt(position), jsonDocument);
+		}
 
         it('Should validate multiple documents', (done) => {
             const content = `
@@ -60,7 +65,7 @@ age: 22
 ---
 analytics: true
             `;
-            const validator = parseSetup(content);
+            const validator = validatorSetup(content);
             validator.then((result) => {
                 assert.equal(result.length, 0);
             }).then(done, done);
@@ -71,7 +76,7 @@ analytics: true
 age: asd
 ---
 cwd: False`;
-            let validator = parseSetup(content);
+            let validator = validatorSetup(content);
             validator.then(function(result){
 				assert.equal(result.length, 3);
             }).then(done, done);
@@ -82,7 +87,7 @@ cwd: False`;
 age: age
 ---
 analytics: true`;
-			let validator = parseSetup(content);
+			let validator = validatorSetup(content);
 			validator.then(function(result){
 				assert.equal(result.length, 1);
 			}).then(done, done);
@@ -93,9 +98,18 @@ analytics: true`;
 age: 22
 ---
 cwd: False`;
-			let validator = parseSetup(content);
+			let validator = validatorSetup(content);
 			validator.then(function(result){
 				assert.equal(result.length, 1);
+			}).then(done, done);
+		});
+
+		it('Should hover in second document', (done) => {
+			let content = `name: jack\nage: 22\n---\ncwd: False`;
+			let hover = hoverSetup(content, 1 + content.indexOf('age'));
+			hover.then(function(result){
+				assert.notEqual(result.contents.length, 0);
+				assert.equal(result.contents[0], 'The age of this person');
 			}).then(done, done);
 		});
     });

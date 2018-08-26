@@ -6,10 +6,12 @@
 			"type": "object",
 			"properties": {
 				"name": {
-					"type": "string"
+					"type": "string",
+					"description": "The name of this person"
 				},
 				"age": {
-					"type": "number"
+					"type": "number",
+					"description": "The age of this person"
 				}
 			},
 			"required":["name","age"]
