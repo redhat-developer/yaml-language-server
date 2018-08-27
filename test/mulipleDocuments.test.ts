@@ -112,14 +112,5 @@ cwd: False`;
 				assert.equal(result.contents[0], 'The age of this person');
 			}).then(done, done);
 		});
-
-		it('Should hover in second document', (done) => {
-			let content = `name: jack\nage: 22\n---\ncwd: False`;
-			let hover = hoverSetup(content, 1 + content.indexOf('cwd'));
-			hover.then(function(result){
-				assert.notEqual(result.contents.length, 0);
-				assert.equal(result.contents[0].includes('The directory from which bower should ru'), true);
-			}).then(done, done);
-		});
     });
 });
