@@ -1,11 +1,15 @@
+#### 0.0.18
+
+- Fix handling scenario of multiple documents in single yaml file [#81](https://github.com/redhat-developer/yaml-language-server/commit/38da50092285aa499930d0e95fbbd7960b37b670)
+- Support associate schemas with files in a regular expression [#Commit](https://github.com/redhat-developer/yaml-language-server/commit/d4a05e3dd72f55c53f1b0325c521a58f688839c9)
+
 #### 0.0.15
 
-Updated formatter to use prettier [#Commit](https://github.com/redhat-developer/yaml-language-server/commit/feb604c35b8fb11747dfcb79a5d8570bf81b8f67) 
-Fixed dynamic registration of formatter [#74](https://github.com/redhat-developer/yaml-language-server/issues/74)
+- Fixed dynamic registration of formatter [#74](https://github.com/redhat-developer/yaml-language-server/issues/74)
 
 #### 0.0.14
 
-Bumped to fix jenkins errors
+- Bumped to fix jenkins errors
 
 #### 0.0.13
 - Show errors if schema cannot be grabbed [#73](https://github.com/redhat-developer/yaml-language-server/issues/73)
