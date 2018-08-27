@@ -26,7 +26,7 @@ export class YAMLHover {
 		this.promise = promiseConstructor || Promise;
 	}
 
-	public doHover(document: TextDocument, position: Position, doc: Parser.JSONDocument): Thenable<Hover> {
+	public doHover(document: TextDocument, position: Position, doc): Thenable<Hover> {
 
 		if(!document){
 			this.promise.resolve(void 0);
@@ -37,6 +37,7 @@ export class YAMLHover {
 		if(currentDoc === null){
 			return this.promise.resolve(void 0);
 		}
+		const currentDocIndex = doc.documents.indexOf(currentDoc);
 		let node = currentDoc.getNodeFromOffset(offset);
 		if (!node || (node.type === 'object' || node.type === 'array') && offset > node.start + 1 && offset < node.end - 1) {
 			return this.promise.resolve(void 0);
@@ -76,8 +77,11 @@ export class YAMLHover {
 
 		return this.schemaService.getSchemaForResource(document.uri).then((schema) => {
 			if (schema) {
-
-				let matchingSchemas = currentDoc.getMatchingSchemas(schema.schema, node.start);
+				let newSchema = schema; 
+				if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[currentDocIndex]) {
+					newSchema = new SchemaService.ResolvedSchema(schema.schema.schemaSequence[currentDocIndex]);
+				}
+				let matchingSchemas = currentDoc.getMatchingSchemas(newSchema.schema, node.start);
 
 				let title: string = null;
 				let markdownDescription: string = null;

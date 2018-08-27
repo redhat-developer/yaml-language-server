@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { JSONSchemaService } from './jsonSchemaService';
+import { JSONSchemaService, ResolvedSchema } from './jsonSchemaService';
 import { JSONDocument, ObjectASTNode, IProblem, ProblemSeverity } from '../parser/jsonParser';
 import { TextDocument, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
 import { PromiseConstructor, Thenable, LanguageSettings} from '../yamlLanguageService';
@@ -38,22 +38,26 @@ export class YAMLValidation {
 		return this.jsonSchemaService.getSchemaForResource(textDocument.uri).then(function (schema) {
 			var diagnostics = [];
 			var added = {};
-
+			let newSchema = schema;
 			if (schema) {
-				
+				let documentIndex = 0;
 				for(let currentYAMLDoc in yamlDocument.documents){
 					let currentDoc = yamlDocument.documents[currentYAMLDoc];
-					let diagnostics = currentDoc.getValidationProblems(schema.schema);
+					if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[documentIndex]) {
+						newSchema = new ResolvedSchema(schema.schema.schemaSequence[documentIndex]);
+					}
+					let diagnostics = currentDoc.getValidationProblems(newSchema.schema);
 					for(let diag in diagnostics){
 						let curDiagnostic = diagnostics[diag];
 						currentDoc.errors.push({ location: { start: curDiagnostic.location.start, end: curDiagnostic.location.end }, message: curDiagnostic.message })
 					}
+					documentIndex++;
 				}
 
 			}
-			if(schema && schema.errors.length > 0){
+			if(newSchema && newSchema.errors.length > 0){
 				
-				for(let curDiagnostic of schema.errors){
+				for(let curDiagnostic of newSchema.errors){
 					diagnostics.push({
 						severity: DiagnosticSeverity.Error,
 						range: {

@@ -1,0 +1,24 @@
+{
+	"schemaSequence": [
+		{
+			"$schema": "http://json-schema.org/draft-04/schema#",
+			"description": "Person object",
+			"type": "object",
+			"properties": {
+				"name": {
+					"type": "string",
+					"description": "The name of this person"
+				},
+				"age": {
+					"type": "number",
+					"description": "The age of this person"
+				}
+			},
+			"required":["name","age"]
+		},
+		{
+			"$ref": "http://json.schemastore.org/bowerrc"
+		}
+	]
+
+}
