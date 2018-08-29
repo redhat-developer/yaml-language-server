@@ -528,37 +528,42 @@ export class YAMLCompletion {
 		let value;
 		let nValueProposals = 0;
 		if (propertySchema) {
-			if (nValueProposals === 0) {
-				var type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
-				if (!type) {
-					if (propertySchema.properties) {
-						type = 'object';
-					} else if (propertySchema.items) {
-						type = 'array';
+			if (propertySchema.default !== undefined) {
+				value = ` \${1:${propertySchema.default}}`
+			}
+			else {
+				if (nValueProposals === 0) {
+					var type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
+					if (!type) {
+						if (propertySchema.properties) {
+							type = 'object';
+						} else if (propertySchema.items) {
+							type = 'array';
+						}
 					}
-				}
-				switch (type) {
-					case 'boolean':
-						value = ' $1';
-						break;
-					case 'string':
-						value = ' $1';
-						break;
-					case 'object':
-						value = '\n\t';
-						break;
-					case 'array':
-						value = '\n\t- ';
-						break;
-					case 'number':
-					case 'integer':
-						value = ' ${1:0}';
-						break;
-					case 'null':
-						value = ' ${1:null}';
-						break;
-					default:
-						return propertyText;
+					switch (type) {
+						case 'boolean':
+							value = ' $1';
+							break;
+						case 'string':
+							value = ' $1';
+							break;
+						case 'object':
+							value = '\n\t';
+							break;
+						case 'array':
+							value = '\n\t- ';
+							break;
+						case 'number':
+						case 'integer':
+							value = ' ${1:0}';
+							break;
+						case 'null':
+							value = ' ${1:null}';
+							break;
+						default:
+							return propertyText;
+					}
 				}
 			}
 		}
