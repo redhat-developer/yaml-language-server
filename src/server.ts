@@ -489,22 +489,17 @@ function completionHelper(document: TextDocument, textDocumentPosition: Position
 		//We need to add the ":" to load the nodes
 
 		let newText = "";
-		let appendString = "";
 
-		let lastLineTrimmedText = document.getText().substring(lineOffset[linePos - 1], lineOffset[linePos]).trim();
-		if (!lastLineTrimmedText.startsWith("-") || lastLineTrimmedText.indexOf(':')) {
-			appendString = ":";
-		}
 		//This is for the empty line case
 		let trimmedText = textLine.trim();
-		if (trimmedText.length === 0 || (trimmedText.length === 1 && trimmedText[0] === '-')) {
+		if(trimmedText.length === 0 || (trimmedText.length === 1 && trimmedText[0] === '-')){
 			//Add a temp node that is in the document but we don't use at all.
-			newText = document.getText().substring(0, start + textLine.length) + ` holder${appendString}\r\n` + document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
+			newText = document.getText().substring(0, start+textLine.length) + " holder:\r\n" + document.getText().substr(lineOffset[linePos+1] || document.getText().length);
 
-			//For when missing semi colon case
-		} else {
+		//For when missing semi colon case
+		}else{
 			//Add a semicolon to the end of the current line so we can validate the node
-			newText = document.getText().substring(0, start + textLine.length) + `${appendString}\r\n` + document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
+			newText = document.getText().substring(0, start+textLine.length) + ":\r\n" + document.getText().substr(lineOffset[linePos+1] || document.getText().length);
 		}
 
 		return {
