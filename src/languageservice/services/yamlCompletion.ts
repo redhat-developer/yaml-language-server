@@ -229,7 +229,7 @@ export class YAMLCompletion {
 				//  test:
 				//    - item1
 				// it will treated as a property key since `:` has been appended
-				if (node.type === 'object' && node.parent.type === 'array' && s.schema.type !== 'object') {
+				if (node.type === 'object' && node.parent && node.parent.type === 'array' && s.schema.type !== 'object') {
 					this.addSchemaValueCompletions(s.schema, collector, separatorAfter)
 				}
 			} 
@@ -297,7 +297,7 @@ export class YAMLCompletion {
 					if (s.schema.properties) {
 						let propertySchema = s.schema.properties[parentKey];
 						if (propertySchema) {
-							this.addSchemaValueCompletions(propertySchema, collector, separatorAfter, true);
+							this.addSchemaValueCompletions(propertySchema, collector, separatorAfter, false);
 						}
 					}
 				}
