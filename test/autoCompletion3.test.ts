@@ -41,7 +41,7 @@ suite("Auto Completion Tests", () => {
 				return completionHelper(testTextDocument, testTextDocument.positionAt(position));
 			}
 
-			it('Array of enum autocomplete without word', (done) => {
+			it('Array of enum autocomplete without word on array symbol', (done) => {
 				let content = "optionalUnityReferences:\n  -";
 				let completion = parseSetup(content, 29);
 				completion.then(function(result){
