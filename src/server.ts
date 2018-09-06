@@ -177,6 +177,7 @@ interface Settings {
 		schemas: JSONSchemaSettings[];
 		validate: boolean;
 		customTags: Array<String>;
+		schemaStoreEnabled: boolean;
 	};
 	http: {
 		proxy: string;
@@ -198,6 +199,7 @@ let schemaConfigurationSettings = [];
 let yamlShouldValidate = true;
 let schemaStoreSettings = [];
 let customTags = [];
+let schemaStoreEnabled = true;
 
 connection.onDidChangeConfiguration((change) => {
 	var settings = <Settings>change.settings;
@@ -208,6 +210,7 @@ connection.onDidChangeConfiguration((change) => {
 	yamlShouldValidate = settings.yaml && settings.yaml.validate;
 	schemaConfigurationSettings = [];
 	customTags = settings.yaml && settings.yaml.customTags ? settings.yaml.customTags : [];
+	schemaStoreEnabled = settings.yaml && settings.yaml.schemaStoreEnabled;
 
 	for(let url in yamlConfigurationSettings){
 		let globPattern = yamlConfigurationSettings[url];
@@ -237,11 +240,15 @@ connection.onDidChangeConfiguration((change) => {
 });
 
 function setSchemaStoreSettingsIfNotSet(){
-	if(schemaStoreSettings.length === 0){
+	if(schemaStoreEnabled && schemaStoreSettings.length === 0){
 		getSchemaStoreMatchingSchemas().then(schemaStore => {
 			schemaStoreSettings = schemaStore.schemas;
 			updateConfiguration();
 		});
+	} else {
+		//Remove all the schema store schemas
+		schemaStoreSettings = [];
+		updateConfiguration();
 	}
 }
 
