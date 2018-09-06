@@ -189,9 +189,8 @@ export class YAMLCompletion {
 			}
 
 			// proposals for values
-			let types: { [type: string]: boolean } = {};
 			if (newSchema) {
-				this.getValueCompletions(newSchema, currentDoc, node, offset, document, collector, types);
+				this.getValueCompletions(newSchema, currentDoc, node, offset, document, collector);
 			} 
 			if (this.contributions.length > 0) {
 				this.getContributedValueCompletions(currentDoc, node, offset, document, collector, collectionPromises);
@@ -225,11 +224,19 @@ export class YAMLCompletion {
 						}
 					});
 				}
-			}
+				// Error fix
+				// If this is a array of string/boolean/number
+				//  test:
+				//    - item1
+				// it will treated as a property key since `:` has been appended
+				if (node.type === 'object' && node.parent && node.parent.type === 'array' && s.schema.type !== 'object') {
+					this.addSchemaValueCompletions(s.schema, collector, separatorAfter)
+				}
+			} 
 		});
 	}
 
-	private getValueCompletions(schema: SchemaService.ResolvedSchema, doc, node: Parser.ASTNode, offset: number, document: TextDocument, collector: CompletionsCollector, types: { [type: string]: boolean }	): void {
+	private getValueCompletions(schema: SchemaService.ResolvedSchema, doc, node: Parser.ASTNode, offset: number, document: TextDocument, collector: CompletionsCollector): void {
 		let offsetForSeparator = offset;
 		let parentKey: string = null;
 		let valueNode: Parser.ASTNode = null;
@@ -258,7 +265,7 @@ export class YAMLCompletion {
 		}
 
 		if (!node) {
-			this.addSchemaValueCompletions(schema.schema, collector, types, "");
+			this.addSchemaValueCompletions(schema.schema, collector, "");
 			return;
 		}
 		
@@ -281,30 +288,21 @@ export class YAMLCompletion {
 						if (Array.isArray(s.schema.items)) {
 							let index = this.findItemAtOffset(node, document, offset);
 							if (index < s.schema.items.length) {
-								this.addSchemaValueCompletions(s.schema.items[index], collector, types, separatorAfter);
+								this.addSchemaValueCompletions(s.schema.items[index], collector, separatorAfter, true);
 							}
 						} else {
-							this.addSchemaValueCompletions(s.schema.items, collector, types, separatorAfter);
+							this.addSchemaValueCompletions(s.schema.items, collector, separatorAfter, true);
 						}
 					}
 					if (s.schema.properties) {
 						let propertySchema = s.schema.properties[parentKey];
 						if (propertySchema) {
-							this.addSchemaValueCompletions(propertySchema, collector, types, separatorAfter);
+							this.addSchemaValueCompletions(propertySchema, collector, separatorAfter, false);
 						}
 					}
 				}
 			});
 		}
-		if(node){
-			if (types['boolean']) {
-				this.addBooleanValueCompletion(true, collector, separatorAfter);
-				this.addBooleanValueCompletion(false, collector, separatorAfter);
-			}
-			if (types['null']) {
-				this.addNullValueCompletion(collector, separatorAfter);
-			}
-		}		
 	}
 
 	private getContributedValueCompletions(doc: Parser.JSONDocument, node: Parser.ASTNode, offset: number, document: TextDocument, collector: CompletionsCollector, collectionPromises: Thenable<any>[]) {
@@ -345,22 +343,34 @@ export class YAMLCompletion {
 		});
 	}
 
-	private addSchemaValueCompletions(schema: JSONSchema, collector: CompletionsCollector, types: { [type: string]: boolean }, separatorAfter: string): void {
-		this.addDefaultValueCompletions(schema, collector, separatorAfter);
-		this.addEnumValueCompletions(schema, collector, separatorAfter);
-		this.collectTypes(schema, types);
-		if (Array.isArray(schema.allOf)) {
-			schema.allOf.forEach(s => this.addSchemaValueCompletions(s, collector, types, separatorAfter));
+	private addSchemaValueCompletions(schema: JSONSchema, collector: CompletionsCollector, separatorAfter: string, forArrayItem = false): void {
+		let types: { [type: string]: boolean } = {};
+		this.addSchemaValueCompletionsCore(schema, collector, types, separatorAfter, forArrayItem);
+		if (types['boolean']) {
+			this.addBooleanValueCompletion(true, collector, separatorAfter);
+			this.addBooleanValueCompletion(false, collector, separatorAfter);
 		}
-		if (Array.isArray(schema.anyOf)) {
-			schema.anyOf.forEach(s => this.addSchemaValueCompletions(s, collector, types, separatorAfter));
-		}
-		if (Array.isArray(schema.oneOf)) {
-			schema.oneOf.forEach(s => this.addSchemaValueCompletions(s, collector, types, separatorAfter));
+		if (types['null']) {
+			this.addNullValueCompletion(collector, separatorAfter);
 		}
 	}
 
-	private addDefaultValueCompletions(schema: JSONSchema, collector: CompletionsCollector, separatorAfter: string, arrayDepth = 0): void {
+	private addSchemaValueCompletionsCore(schema: JSONSchema, collector: CompletionsCollector, types: { [type: string]: boolean }, separatorAfter: string, forArrayItem = false): void {
+		this.addDefaultValueCompletions(schema, collector, separatorAfter, 0, forArrayItem);
+		this.addEnumValueCompletions(schema, collector, separatorAfter, forArrayItem);
+		this.collectTypes(schema, types);
+		if (Array.isArray(schema.allOf)) {
+			schema.allOf.forEach(s => this.addSchemaValueCompletionsCore(s, collector, types, separatorAfter, forArrayItem));
+		}
+		if (Array.isArray(schema.anyOf)) {
+			schema.anyOf.forEach(s => this.addSchemaValueCompletionsCore(s, collector, types, separatorAfter, forArrayItem));
+		}
+		if (Array.isArray(schema.oneOf)) {
+			schema.oneOf.forEach(s => this.addSchemaValueCompletionsCore(s, collector, types, separatorAfter, forArrayItem));
+		}
+	}
+
+	private addDefaultValueCompletions(schema: JSONSchema, collector: CompletionsCollector, separatorAfter: string, arrayDepth = 0, forArrayItem = false): void {
 		let hasProposals = false;
 		if (schema.default) {
 			let type = schema.type;
@@ -371,8 +381,8 @@ export class YAMLCompletion {
 			}
 			collector.add({
 				kind: this.getSuggestionKind(type),
-				label: this.getLabelForValue(value),
-				insertText: this.getInsertTextForValue(value, separatorAfter),
+				label: forArrayItem ? `- ${this.getLabelForValue(value)}` : this.getLabelForValue(value),
+				insertText: forArrayItem ? `- ${this.getInsertTextForValue(value, separatorAfter)}` : this.getInsertTextForValue(value, separatorAfter),
 				insertTextFormat: InsertTextFormat.Snippet,
 				detail: localize('json.suggest.default', 'Default value'),
 			});
@@ -383,7 +393,7 @@ export class YAMLCompletion {
 		}
 	}
 
-	private addEnumValueCompletions(schema: JSONSchema, collector: CompletionsCollector, separatorAfter: string): void {
+	private addEnumValueCompletions(schema: JSONSchema, collector: CompletionsCollector, separatorAfter: string, forArrayItem = false): void {
 		if (Array.isArray(schema.enum)) {
 			for (let i = 0, length = schema.enum.length; i < length; i++) {
 				let enm = schema.enum[i];
@@ -393,8 +403,8 @@ export class YAMLCompletion {
 				}
 				collector.add({
 					kind: this.getSuggestionKind(schema.type),
-					label: this.getLabelForValue(enm),
-					insertText: this.getInsertTextForValue(enm, separatorAfter),
+					label: forArrayItem ? `- ${this.getLabelForValue(enm)}` : this.getLabelForValue(enm),
+					insertText: forArrayItem ? `- ${this.getInsertTextForValue(enm, separatorAfter)}` : this.getInsertTextForValue(enm, separatorAfter),
 					insertTextFormat: InsertTextFormat.Snippet,
 					documentation
 				});

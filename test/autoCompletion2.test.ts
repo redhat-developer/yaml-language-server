@@ -175,7 +175,7 @@ function completionHelper(document: TextDocument, textDocumentPosition){
 		let trimmedText = textLine.trim();
 		if(trimmedText.length === 0 || (trimmedText.length === 1 && trimmedText[0] === '-')){
 			//Add a temp node that is in the document but we don't use at all.
-			newText = document.getText().substring(0, start+textLine.length) + "holder:\r\n" + document.getText().substr(lineOffset[linePos+1] || document.getText().length);
+			newText = document.getText().substring(0, start + textLine.length) + (trimmedText[0] === '-' && !textLine.endsWith(" ") ? " " : "") + "holder:\r\n" + document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
 			//For when missing semi colon case
 		}else{
 			//Add a semicolon to the end of the current line so we can validate the node
