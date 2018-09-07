@@ -588,6 +588,9 @@ export class YAMLCompletion {
 				}
 			}
 		});
+		if (insertText.trim().length === 0) {
+			insertText = `${indent}\$${insertIndex++}\n`;
+		}
 		insertText = insertText.trimRight() + separatorAfter;
 		return { insertText, insertIndex };
 	}
