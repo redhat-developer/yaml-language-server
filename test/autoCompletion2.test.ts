@@ -49,11 +49,25 @@ suite("Auto Completion Tests", () => {
 
 		describe('doComplete', function(){
 
-
-
 			it('Array autocomplete without word', (done) => {
 				let content = "authors:\n  - ";
 				let completion = parseSetup(content, 14);
+				completion.then(function(result){
+					assert.notEqual(result.items.length, 0);
+				}).then(done, done);
+			});
+
+			it('Array autocomplete without word on array symbol', (done) => {
+				let content = "authors:\n  -";
+				let completion = parseSetup(content, 13);
+				completion.then(function(result){
+					assert.notEqual(result.items.length, 0);
+				}).then(done, done);
+			});
+
+			it('Array autocomplete without word on space before array symbol', (done) => {
+				let content = "authors:\n  - name: test\n  "
+				let completion = parseSetup(content, 24);
 				completion.then(function(result){
 					assert.notEqual(result.items.length, 0);
 				}).then(done, done);
@@ -122,14 +136,6 @@ suite("Auto Completion Tests", () => {
 			it('Autocompletion has no results on value when they are not available (with depth)', (done) => {
 				let content = "archive:\n  exclude:\n    - test\n    "
 				let completion = parseSetup(content, 33);
-				completion.then(function(result){
-					assert.equal(result.items.length, 0);
-				}).then(done, done);
-			});
-
-			it('Autocompletion does not complete on wrong spot in array node', (done) => {
-				let content = "authors:\n  - name: test\n  "
-				let completion = parseSetup(content, 24);
 				completion.then(function(result){
 					assert.equal(result.items.length, 0);
 				}).then(done, done);
