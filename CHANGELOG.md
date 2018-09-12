@@ -1,3 +1,8 @@
+#### 0.0.19
+
+- Support intellisense default value [#86](https://github.com/redhat-developer/yaml-language-server/pull/86)
+- Fix intellisense doesn't work for array item [#85](https://github.com/redhat-developer/yaml-language-server/pull/85)
+
 #### 0.0.18
 
 - Fix handling scenario of multiple documents in single yaml file [#81](https://github.com/redhat-developer/yaml-language-server/commit/38da50092285aa499930d0e95fbbd7960b37b670)
