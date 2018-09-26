@@ -4,7 +4,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { JSONSchemaService } from './services/jsonSchemaService'
-import { TextDocument, Position, CompletionList, FormattingOptions, Diagnostic } from 'vscode-languageserver-types';
+import { TextDocument, Position, CompletionList, Diagnostic } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLCompletion } from "./services/yamlCompletion";
@@ -90,15 +90,21 @@ export interface SchemaConfiguration {
 	schema?: JSONSchema;
 }
 
+export interface CustomFormatterOptions {
+	singleQuote?: boolean;
+	bracketSpacing?: boolean;
+	proseWrap?: string;
+}
+
 export interface LanguageService {
   configure(settings): void;
-	doComplete(document: TextDocument, position: Position, doc): Thenable<CompletionList>;
+  doComplete(document: TextDocument, position: Position, doc): Thenable<CompletionList>;
   doValidation(document: TextDocument, yamlDocument): Thenable<Diagnostic[]>;
   doHover(document: TextDocument, position: Position, doc);
   findDocumentSymbols(document: TextDocument, doc);
   doResolve(completionItem);
   resetSchema(uri: string): boolean;
-  doFormat(document: TextDocument, options: FormattingOptions, customTags: Array<String>);
+  doFormat(document: TextDocument, options: CustomFormatterOptions);
 }
 
 export function getLanguageService(schemaRequestService, workspaceContext, contributions, customSchemaProvider, promiseConstructor?): LanguageService {

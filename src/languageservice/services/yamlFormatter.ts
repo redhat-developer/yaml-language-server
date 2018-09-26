@@ -5,13 +5,14 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { TextDocument, Range, Position, FormattingOptions, TextEdit } from 'vscode-languageserver-types';
+import { TextDocument, Range, Position, TextEdit } from 'vscode-languageserver-types';
+import { CustomFormatterOptions } from '../yamlLanguageService';
 const prettier = require("prettier");
 
-export function format(document: TextDocument, options: FormattingOptions, customTags: Array<String>): TextEdit[] {
+export function format(document: TextDocument, options: CustomFormatterOptions): TextEdit[] {
     const text = document.getText();
 
-	const formatted = prettier.format(text, { parser: "yaml"});
+	const formatted = prettier.format(text, Object.assign(options, { parser: "yaml" }));
 
     return [TextEdit.replace(Range.create(Position.create(0, 0), document.positionAt(text.length)), formatted)];
 }
