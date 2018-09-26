@@ -177,6 +177,7 @@ interface Settings {
 		schemas: JSONSchemaSettings[];
 		validate: boolean;
 		hover: boolean;
+		completion: boolean;
 		customTags: Array<String>;
 	};
 	http: {
@@ -198,6 +199,7 @@ let specificValidatorPaths = [];
 let schemaConfigurationSettings = [];
 let yamlShouldValidate = true;
 let yamlShouldHover = true;
+let yamlShouldCompletion = true;
 let schemaStoreSettings = [];
 let customTags = [];
 
@@ -209,6 +211,7 @@ connection.onDidChangeConfiguration((change) => {
 	yamlConfigurationSettings = settings.yaml && settings.yaml.schemas;
 	yamlShouldValidate = settings.yaml && settings.yaml.validate;
 	yamlShouldHover = settings.yaml && settings.yaml.hover;
+	yamlShouldCompletion = settings.yaml && settings.yaml.completion;
 	schemaConfigurationSettings = [];
 	customTags = settings.yaml && settings.yaml.customTags ? settings.yaml.customTags : [];
 
@@ -294,6 +297,7 @@ function updateConfiguration() {
 	let languageSettings: LanguageSettings = {
 		validate: yamlShouldValidate,
 		hover: yamlShouldHover,
+		completion: yamlShouldCompletion,
 		schemas: [],
 		customTags: customTags
 	};

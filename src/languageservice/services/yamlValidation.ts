@@ -25,7 +25,7 @@ export class YAMLValidation {
 
 	public configure(shouldValidate: LanguageSettings){
 		if(shouldValidate){
-			this.validationEnabled = shouldValidate.validate;
+			this.validationEnabled = shouldValidate.validate || true;
 		}
 	}
 	
