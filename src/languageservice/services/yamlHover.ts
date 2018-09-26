@@ -13,23 +13,32 @@ import {PromiseConstructor, Thenable} from 'vscode-json-languageservice';
 
 import {Hover, TextDocument, Position, Range, MarkedString} from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
+import { LanguageSettings } from '../yamlLanguageService';
 
 export class YAMLHover {
 
 	private schemaService: SchemaService.IJSONSchemaService;
 	private contributions: JSONWorkerContribution[];
 	private promise: PromiseConstructor;
+	private shouldHover: boolean;
 
 	constructor(schemaService: SchemaService.IJSONSchemaService, contributions: JSONWorkerContribution[] = [], promiseConstructor: PromiseConstructor) {
 		this.schemaService = schemaService;
 		this.contributions = contributions;
 		this.promise = promiseConstructor || Promise;
+		this.shouldHover = true;
+	}
+
+	public configure(languageSettings: LanguageSettings){
+		if(languageSettings){
+			this.shouldHover = languageSettings.hover;
+		}
 	}
 
 	public doHover(document: TextDocument, position: Position, doc): Thenable<Hover> {
 
-		if(!document){
-			this.promise.resolve(void 0);
+		if(!this.shouldHover || !document){
+			return this.promise.resolve(void 0);
 		}
 
 		let offset = document.offsetAt(position);
