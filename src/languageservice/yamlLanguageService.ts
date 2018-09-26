@@ -3,7 +3,7 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { JSONSchemaService } from './services/jsonSchemaService'
+import { JSONSchemaService, CustomSchemaProvider } from './services/jsonSchemaService'
 import { TextDocument, Position, CompletionList, FormattingOptions, Diagnostic } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
@@ -92,6 +92,7 @@ export interface SchemaConfiguration {
 
 export interface LanguageService {
   configure(settings): void;
+  registerCustomSchemaProvider(schemaProvider: CustomSchemaProvider): void; // Register a custom schema provider
 	doComplete(document: TextDocument, position: Position, doc): Thenable<CompletionList>;
   doValidation(document: TextDocument, yamlDocument): Thenable<Diagnostic[]>;
   doHover(document: TextDocument, position: Position, doc);
@@ -101,10 +102,10 @@ export interface LanguageService {
   doFormat(document: TextDocument, options: FormattingOptions, customTags: Array<String>);
 }
 
-export function getLanguageService(schemaRequestService, workspaceContext, contributions, customSchemaProvider, promiseConstructor?): LanguageService {
+export function getLanguageService(schemaRequestService, workspaceContext, contributions, promiseConstructor?): LanguageService {
   let promise = promiseConstructor || Promise;
 
-  let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext, customSchemaProvider);
+  let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
 
   let completer = new YAMLCompletion(schemaService, contributions, promise);
   let hover = new YAMLHover(schemaService, contributions, promise);
@@ -122,6 +123,9 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
         yamlValidation.configure(settings);
         let customTagsSetting = settings && settings["customTags"] ? settings["customTags"] : [];
         completer.configure(customTagsSetting);
+      },
+      registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
+        schemaService.registerCustomSchemaProvider(schemaProvider);
       },
       doComplete: completer.doComplete.bind(completer),
       doResolve: completer.doResolve.bind(completer),

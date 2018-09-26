@@ -243,20 +243,24 @@ export class JSONSchemaService implements IJSONSchemaService {
 	private callOnDispose: Function[];
 	private requestService: SchemaRequestService;
 	private promiseConstructor: PromiseConstructor;
-	private customSchemaProvider: CustomSchemaProvider;
+	private customSchemaProvider: CustomSchemaProvider | undefined;
 
-	constructor(requestService: SchemaRequestService, contextService?: WorkspaceContextService, customSchemaProvider?: CustomSchemaProvider, promiseConstructor?: PromiseConstructor) {
+	constructor(requestService: SchemaRequestService, contextService?: WorkspaceContextService, promiseConstructor?: PromiseConstructor) {
 		this.contextService = contextService;
 		this.requestService = requestService;
 		this.promiseConstructor = promiseConstructor || Promise;
 		this.callOnDispose = [];
-		this.customSchemaProvider = customSchemaProvider;
+		this.customSchemaProvider = undefined;
 		this.contributionSchemas = {};
 		this.contributionAssociations = {};
 		this.schemasById = {};
 		this.filePatternAssociations = [];
 		this.filePatternAssociationById = {};
 		this.registeredSchemasIds = {};
+	}
+
+	registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider) {
+		this.customSchemaProvider = customSchemaProvider;
 	}
 
 	public getRegisteredSchemaIds(filter?: (scheme) => boolean): string[] {
