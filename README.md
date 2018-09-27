@@ -25,12 +25,18 @@
 ## Language Server Settings
 
 The following settings are supported:
-* `yaml.format.enable`: Enable/disable default YAML formatter
+* `yaml.format.enable`: Enable/disable default YAML formatter (requires restart)
+* `yaml.format.singleQuote`: Use single quotes instead of double quotes
+* `yaml.format.bracketSpacing`: Print spaces between brackets in objects
+* `yaml.format.proseWrap`: Always: wrap prose if it exeeds the print width, Never: never wrap the prose, Preserve: wrap prose as-is
 * `yaml.validate`: Enable/disable validation feature
+* `yaml.hover`: Enable/disable hover
+* `yaml.completion`: Enable/disable autocompletion
 * `yaml.schemas`: Helps you associate schemas with files in a glob pattern
-* `yaml.customTags`: Array of custom tags that the parser will validate against. It has two ways to be used. Either an item in the array is a custom tag such as "!Ref" or you can specify the type of the object !Ref should be by doing "!Ref scalar". For example: ["!Ref", "!Some-Tag scalar"]. The type of object can be one of scalar, sequence, mapping, map.
-
+* `yaml.customTags`: Array of custom tags that the parser will validate against. It has two ways to be used. Either an item in the array is a custom tag such as "!Ref" or you can specify the type of the object !Ref should be by doing "!Ref Scalar". For example: ["!Ref", "!Some-Tag Scalar"]. The type of object can be one of Scalar, Sequence, Mapping, Map.
 ##### Associating a schema to a glob pattern via yaml.schemas: 
+yaml.schemas applies a schema to a file. In other words, the schema (placed on the left) is applied to the glob pattern on the right. Your schema can be local or online. Your schema must be a relative path and not an absolute path.
+
 When associating a schema it should follow the format below
 ```
 yaml.schemas: {
