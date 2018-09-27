@@ -28,7 +28,8 @@ let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext
 let uri = "https://gist.githubusercontent.com/JPinkney/ccaf3909ef811e5657ca2e2e1fa05d76/raw/f85e51bfb67fdb99ab7653c2953b60087cc871ea/openshift_schema_all.json";
 let languageSettings = {
 	schemas: [],
-	validate: true
+	validate: true,
+	completion: true
 };
 let fileMatch = ["*.yml", "*.yaml"];
 languageSettings.schemas.push({ uri, fileMatch: fileMatch });
