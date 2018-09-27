@@ -17,6 +17,7 @@ import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Posit
 
 import * as nls from 'vscode-nls';
 import { matchOffsetToDocument } from '../utils/arrUtils';
+import { LanguageSettings } from '../yamlLanguageService';
 const localize = nls.loadMessageBundle();
 
 
@@ -26,15 +27,20 @@ export class YAMLCompletion {
 	private contributions: JSONWorkerContribution[];
 	private promise: PromiseConstructor;
 	private customTags: Array<String>;
+	private completion: boolean;
 
 	constructor(schemaService: SchemaService.IJSONSchemaService, contributions: JSONWorkerContribution[] = [], promiseConstructor?: PromiseConstructor) {
 		this.schemaService = schemaService;
 		this.contributions = contributions;
 		this.promise = promiseConstructor || Promise;
 		this.customTags = [];
+		this.completion = true;
 	}
 
-	public configure(customTags: Array<String>){
+	public configure(languageSettings: LanguageSettings, customTags: Array<String>){
+		if (languageSettings) {
+			this.completion = languageSettings.completion;
+		}
 		this.customTags = customTags;
 	}
 
@@ -56,6 +62,10 @@ export class YAMLCompletion {
 			items: [],
 			isIncomplete: false
 		};
+
+		if (!this.completion) {
+			return Promise.resolve(result);
+		}
 		
 		let offset = document.offsetAt(position);
 		if(document.getText()[offset] === ":"){

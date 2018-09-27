@@ -15,6 +15,8 @@ import { format } from './services/yamlFormatter';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
+  hover?: boolean; //Setting for whether we want to have hover results
+  completion?: boolean; //Setting for whether we want to have completion results
   isKubernetes?: boolean; //If true then its validating against kubernetes
   schemas?: any[]; //List of schemas,
   customTags?: Array<String>; //Array of Custom Tags
@@ -120,8 +122,9 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
           });
         }
         yamlValidation.configure(settings);
+        hover.configure(settings);
         let customTagsSetting = settings && settings["customTags"] ? settings["customTags"] : [];
-        completer.configure(customTagsSetting);
+        completer.configure(settings, customTagsSetting);
       },
       doComplete: completer.doComplete.bind(completer),
       doResolve: completer.doResolve.bind(completer),
