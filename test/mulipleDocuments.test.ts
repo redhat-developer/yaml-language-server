@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { TextDocument } from 'vscode-languageserver';
-import {getLanguageService} from '../src/languageservice/yamlLanguageService'
+import {getLanguageService, LanguageSettings} from '../src/languageservice/yamlLanguageService'
 import path = require('path');
 import {schemaRequestService, workspaceContext}  from './testHelper';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
@@ -27,10 +27,11 @@ function toFsPath(str): string {
 }
 
 let uri = toFsPath(path.join(__dirname, './fixtures/customMultipleSchemaSequences.json'));
-let languageSettings = {
+let languageSettings: LanguageSettings = {
     schemas: [],
     validate: true,
-    customTags: []
+	customTags: [],
+	hover: true
 };
 let fileMatch = ["*.yml", "*.yaml"];
 languageSettings.schemas.push({ uri, fileMatch: fileMatch });

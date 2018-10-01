@@ -3,6 +3,7 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
 import { JSONSchemaService, CustomSchemaProvider } from './services/jsonSchemaService'
 import { TextDocument, Position, CompletionList, FormattingOptions, Diagnostic } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
@@ -15,6 +16,8 @@ import { format } from './services/yamlFormatter';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
+  hover?: boolean; //Setting for whether we want to have hover results
+  completion?: boolean; //Setting for whether we want to have completion results
   isKubernetes?: boolean; //If true then its validating against kubernetes
   schemas?: any[]; //List of schemas,
   customTags?: Array<String>; //Array of Custom Tags
@@ -90,6 +93,12 @@ export interface SchemaConfiguration {
 	schema?: JSONSchema;
 }
 
+export interface CustomFormatterOptions {
+	singleQuote?: boolean;
+	bracketSpacing?: boolean;
+	proseWrap?: string;
+}
+
 export interface LanguageService {
   configure(settings): void;
   registerCustomSchemaProvider(schemaProvider: CustomSchemaProvider): void; // Register a custom schema provider
@@ -99,7 +108,7 @@ export interface LanguageService {
   findDocumentSymbols(document: TextDocument, doc);
   doResolve(completionItem);
   resetSchema(uri: string): boolean;
-  doFormat(document: TextDocument, options: FormattingOptions, customTags: Array<String>);
+  doFormat(document: TextDocument, options: CustomFormatterOptions);
 }
 
 export function getLanguageService(schemaRequestService, workspaceContext, contributions, promiseConstructor?): LanguageService {
@@ -121,8 +130,9 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
           });
         }
         yamlValidation.configure(settings);
+        hover.configure(settings);
         let customTagsSetting = settings && settings["customTags"] ? settings["customTags"] : [];
-        completer.configure(customTagsSetting);
+        completer.configure(settings, customTagsSetting);
       },
       registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
         schemaService.registerCustomSchemaProvider(schemaProvider);

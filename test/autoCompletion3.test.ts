@@ -20,7 +20,8 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext,
 
 let uri = 'http://json.schemastore.org/asmdef';
 let languageSettings = {
-	schemas: []
+	schemas: [],
+	completion: true
 };
 let fileMatch = ["*.yml", "*.yaml"];
 languageSettings.schemas.push({ uri, fileMatch: fileMatch });

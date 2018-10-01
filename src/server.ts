@@ -20,7 +20,7 @@ import URI from './languageservice/utils/uri';
 import * as URL from 'url';
 import Strings = require('./languageservice/utils/strings');
 import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arrUtils';
-import { getLanguageService as getCustomLanguageService, LanguageSettings } from './languageservice/yamlLanguageService';
+import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
 import { FilePatternAssociation, CustomSchemaProvider } from './languageservice/services/jsonSchemaService';
 import { parse as parseYAML } from './languageservice/parser/yamlParser';
@@ -176,9 +176,13 @@ export let customLanguageService = getCustomLanguageService(schemaRequestService
 // The settings interface describes the server relevant settings part
 interface Settings {
 	yaml: {
-		format: { enable: boolean; };
+		format: CustomFormatterOptions & {
+			enable: boolean;
+		};
 		schemas: JSONSchemaSettings[];
 		validate: boolean;
+		hover: boolean;
+		completion: boolean;
 		customTags: Array<String>;
 	};
 	http: {
@@ -199,6 +203,13 @@ let formatterRegistration: Thenable<Disposable> = null;
 let specificValidatorPaths = [];
 let schemaConfigurationSettings = [];
 let yamlShouldValidate = true;
+let yamlFormatterSettings = {
+	singleQuote: false,
+	bracketSpacing: true,
+	proseWrap: "preserve"
+} as CustomFormatterOptions;
+let yamlShouldHover = true;
+let yamlShouldCompletion = true;
 let schemaStoreSettings = [];
 let customTags = [];
 
@@ -209,8 +220,15 @@ connection.onDidChangeConfiguration((change) => {
 	specificValidatorPaths = [];
 	yamlConfigurationSettings = settings.yaml && settings.yaml.schemas;
 	yamlShouldValidate = settings.yaml && settings.yaml.validate;
+	yamlShouldHover = settings.yaml && settings.yaml.hover;
+	yamlShouldCompletion = settings.yaml && settings.yaml.completion;
 	schemaConfigurationSettings = [];
 	customTags = settings.yaml && settings.yaml.customTags ? settings.yaml.customTags : [];
+	yamlFormatterSettings = settings.yaml && {
+		singleQuote: settings.yaml.format.singleQuote || false,
+		bracketSpacing: settings.yaml.format.bracketSpacing || true,
+		proseWrap: settings.yaml.format.proseWrap || "preserve"	
+	};
 
 	for(let url in yamlConfigurationSettings){
 		let globPattern = yamlConfigurationSettings[url];
@@ -298,6 +316,8 @@ connection.onNotification(DynamicCustomSchemaRequestRegistration.type, () => {
 function updateConfiguration() {
 	let languageSettings: LanguageSettings = {
 		validate: yamlShouldValidate,
+		hover: yamlShouldHover,
+		completion: yamlShouldCompletion,
 		schemas: [],
 		customTags: customTags
 	};
@@ -451,7 +471,7 @@ connection.onDidChangeWatchedFiles((change) => {
 
 connection.onCompletion(textDocumentPosition =>  {
 	let textDocument = documents.get(textDocumentPosition.textDocument.uri);
-	
+
 	let result: CompletionList = {
 		items: [],
 		isIncomplete: false
@@ -460,7 +480,7 @@ connection.onCompletion(textDocumentPosition =>  {
 	if(!textDocument){
 		return Promise.resolve(result);
 	}
-	
+
 	let completionFix = completionHelper(textDocument, textDocumentPosition.position);
 	let newText = completionFix.newText;
 	let jsonDocument = parseYAML(newText);
@@ -533,7 +553,7 @@ connection.onCompletionResolve(completionItem => {
 
 connection.onHover(textDocumentPositionParams => {
 	let document = documents.get(textDocumentPositionParams.textDocument.uri);
-	
+
 	if(!document){
 		return Promise.resolve(void 0);
 	}
@@ -561,7 +581,7 @@ connection.onDocumentFormatting(formatParams => {
 		return;
 	}
 
-	return customLanguageService.doFormat(document, formatParams.options, customTags);
+	return customLanguageService.doFormat(document, yamlFormatterSettings);
 });
 
 connection.listen();
