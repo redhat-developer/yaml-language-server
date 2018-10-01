@@ -1,3 +1,9 @@
+#### 0.1.0
+
+- Added a new formatter that uses prettier [#Commit](https://github.com/redhat-developer/yaml-language-server/commit/a5092e3d33a2e208bfea7941076518dedd2aba7b)
+- Added a registration for custom schema provider extension [#Commit](https://github.com/redhat-developer/yaml-language-server/commit/c82830b2e1933fae6197d09e85b1e637b46b3896)
+-Add ability to toggle hover and autocompletion [#Commit](https://github.com/redhat-developer/yaml-language-server/commit/0e4192cfacbbb5d442f817a7337d388ac3d01eff)
+
 #### 0.0.19
 
 - Support intellisense default value [#86](https://github.com/redhat-developer/yaml-language-server/pull/86)
