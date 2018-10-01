@@ -22,7 +22,7 @@ import Strings = require('./languageservice/utils/strings');
 import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
-import { FilePatternAssociation } from './languageservice/services/jsonSchemaService';
+import { FilePatternAssociation, CustomSchemaProvider } from './languageservice/services/jsonSchemaService';
 import { parse as parseYAML } from './languageservice/parser/yamlParser';
 import { JSONDocument } from './languageservice/parser/jsonParser';
 import { JSONSchema } from './languageservice/jsonSchema';
@@ -34,6 +34,10 @@ interface ISchemaAssociations {
 
 namespace SchemaAssociationNotification {
 	export const type: NotificationType<{}, {}> = new NotificationType('json/schemaAssociations');
+}
+
+namespace DynamicCustomSchemaRequestRegistration {
+	export const type: NotificationType<{}, {}> = new NotificationType('yaml/registerCustomSchemaRequest');
 }
 
 namespace VSCodeContentRequest {
@@ -167,8 +171,7 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 
 export let KUBERNETES_SCHEMA_URL = "https://gist.githubusercontent.com/JPinkney/ccaf3909ef811e5657ca2e2e1fa05d76/raw/f85e51bfb67fdb99ab7653c2953b60087cc871ea/openshift_schema_all.json";
 export let KEDGE_SCHEMA_URL = "https://raw.githubusercontent.com/kedgeproject/json-schema/master/master/kedge-json-schema.json";
-export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, [],
-	(resource) => connection.sendRequest(CustomSchemaRequest.type, resource));
+export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
 
 // The settings interface describes the server relevant settings part
 interface Settings {
@@ -303,6 +306,11 @@ connection.onNotification(SchemaAssociationNotification.type, associations => {
 	specificValidatorPaths = [];
 	setSchemaStoreSettingsIfNotSet();
 	updateConfiguration();
+});
+
+connection.onNotification(DynamicCustomSchemaRequestRegistration.type, () => {
+	const schemaProvider = ((resource) => connection.sendRequest(CustomSchemaRequest.type, resource)) as CustomSchemaProvider;
+	customLanguageService.registerCustomSchemaProvider(schemaProvider);
 });
 
 function updateConfiguration() {
