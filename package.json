@@ -8,10 +8,16 @@
     {
       "name": "Joshua Pinkney",
       "email": "joshpinkney@gmail.com"
+    },
+    {
+      "name": "Google LLC"
     }
   ],
   "engines": {
     "node": "*"
+  },
+  "bin": {
+    "yaml-language-server": "./out/server/src/server.js"
   },
   "keywords": [
     "yaml",
