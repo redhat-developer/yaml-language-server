@@ -63,6 +63,47 @@ suite("Validation Tests", () => {
 				}).then(done, done);
 			});
 
+			it('Test that boolean value in quotations is not interpreted as boolean i.e. it errors', (done) => {
+				let content = `analytics: "no"`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.notEqual(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Test that boolean value without quotations is valid', (done) => {
+				let content = `analytics: no`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Test that boolean is valid when inside strings', (done) => {
+				let content = `cwd: "no"`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Test that boolean is invalid when no strings present and schema wants string', (done) => {
+				let content = `cwd: no`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.notEqual(result.length, 0);
+				}).then(done, done);
+			});
+
+			it('Basic test', (done) => {
+				let content = `analytics: true`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 0);
+				}).then(done, done);
+			});
+
+
 			it('Basic test on nodes with children', (done) => {
 				let content = `scripts:\n  preinstall: test1\n  postinstall: test2`;
 				let validator = parseSetup(content);
