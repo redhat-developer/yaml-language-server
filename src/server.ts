@@ -218,17 +218,21 @@ connection.onDidChangeConfiguration((change) => {
 	configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
 
 	specificValidatorPaths = [];
-	yamlConfigurationSettings = settings.yaml && settings.yaml.schemas;
-	yamlShouldValidate = settings.yaml && settings.yaml.validate;
-	yamlShouldHover = settings.yaml && settings.yaml.hover;
-	yamlShouldCompletion = settings.yaml && settings.yaml.completion;
+	if (settings.yaml) {
+		yamlConfigurationSettings = settings.yaml.schemas;
+		yamlShouldValidate = settings.yaml.validate;
+		yamlShouldHover = settings.yaml.hover;
+		yamlShouldCompletion = settings.yaml.completion;
+		customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
+		yamlFormatterSettings = {
+			singleQuote: settings.yaml.format.singleQuote || false,
+			proseWrap: settings.yaml.format.proseWrap || "preserve"
+		};
+		if (settings.yaml.format.bracketSpacing === false) {
+			yamlFormatterSettings.bracketSpacing = false;
+		}
+	}
 	schemaConfigurationSettings = [];
-	customTags = settings.yaml && settings.yaml.customTags ? settings.yaml.customTags : [];
-	yamlFormatterSettings = settings.yaml && {
-		singleQuote: settings.yaml.format.singleQuote || false,
-		bracketSpacing: settings.yaml.format.bracketSpacing || true,
-		proseWrap: settings.yaml.format.proseWrap || "preserve"	
-	};
 
 	for(let url in yamlConfigurationSettings){
 		let globPattern = yamlConfigurationSettings[url];
