@@ -6,8 +6,8 @@
 'use strict';
 
 
-import Parser = require('../parser/jsonParser');
-import SchemaService = require('./jsonSchemaService');
+import * as Parser from '../parser/jsonParser';
+import * as SchemaService from './jsonSchemaService';
 import {JSONWorkerContribution} from '../jsonContributions';
 import {PromiseConstructor, Thenable} from 'vscode-json-languageservice';
 
@@ -61,7 +61,7 @@ export class YAMLHover {
 				node = propertyNode.value;
 				if (!node) {
 					return this.promise.resolve(void 0);
-				}	
+				}
 			}
 		}
 
@@ -86,7 +86,7 @@ export class YAMLHover {
 
 		return this.schemaService.getSchemaForResource(document.uri).then((schema) => {
 			if (schema) {
-				let newSchema = schema; 
+				let newSchema = schema;
 				if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[currentDocIndex]) {
 					newSchema = new SchemaService.ResolvedSchema(schema.schema.schemaSequence[currentDocIndex]);
 				}
