@@ -5,11 +5,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { JSONSchemaService, CustomSchemaProvider } from './services/jsonSchemaService'
-import { TextDocument, Position, CompletionList, FormattingOptions, Diagnostic } from 'vscode-languageserver-types';
+import { TextDocument, Position, CompletionList, Diagnostic } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLCompletion } from "./services/yamlCompletion";
-import { JSONDocument } from 'vscode-json-languageservice';
 import { YAMLHover } from "./services/yamlHover";
 import { YAMLValidation } from "./services/yamlValidation";
 import { format } from './services/yamlFormatter';

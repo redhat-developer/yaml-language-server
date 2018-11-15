@@ -6,9 +6,9 @@
 'use strict';
 
 
-import Parser = require('../parser/jsonParser');
-import Json = require('jsonc-parser');
-import SchemaService = require('./jsonSchemaService');
+import * as Parser from '../parser/jsonParser';
+import * as Json from 'jsonc-parser';
+import * as SchemaService from './jsonSchemaService';
 import { JSONSchema } from '../jsonSchema';
 import { JSONWorkerContribution, CompletionsCollector } from '../jsonContributions';
 import { PromiseConstructor, Thenable } from 'vscode-json-languageservice';
@@ -66,12 +66,12 @@ export class YAMLCompletion {
 		if (!this.completion) {
 			return Promise.resolve(result);
 		}
-		
+
 		let offset = document.offsetAt(position);
 		if(document.getText()[offset] === ":"){
 			return Promise.resolve(result);
 		}
-		
+
 		let currentDoc = matchOffsetToDocument(offset, doc);
 		if(currentDoc === null){
 			return Promise.resolve(result);
@@ -134,7 +134,7 @@ export class YAMLCompletion {
 			if(!schema){
 				return Promise.resolve(result);
 			}
-			let newSchema = schema; 
+			let newSchema = schema;
 			if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[currentDocIndex]) {
 				newSchema = new SchemaService.ResolvedSchema(schema.schema.schemaSequence[currentDocIndex]);
 			}
@@ -178,7 +178,7 @@ export class YAMLCompletion {
 				if (newSchema) {
 					// property proposals with schema
 					this.getPropertyCompletions(newSchema, currentDoc, node, addValue, collector, separatorAfter);
-				} 
+				}
 
 				let location = node.getPath();
 				this.contributions.forEach((contribution) => {
@@ -192,7 +192,7 @@ export class YAMLCompletion {
 						kind: CompletionItemKind.Property,
 						label: this.getLabelForValue(currentWord),
 						insertText: this.getInsertTextForProperty(currentWord, null, false, separatorAfter),
-						insertTextFormat: InsertTextFormat.Snippet, 
+						insertTextFormat: InsertTextFormat.Snippet,
 						documentation: ''
 					});
 				}
@@ -201,7 +201,7 @@ export class YAMLCompletion {
 			// proposals for values
 			if (newSchema) {
 				this.getValueCompletions(newSchema, currentDoc, node, offset, document, collector);
-			} 
+			}
 			if (this.contributions.length > 0) {
 				this.getContributedValueCompletions(currentDoc, node, offset, document, collector, collectionPromises);
 			}
@@ -242,7 +242,7 @@ export class YAMLCompletion {
 				if (node.type === 'object' && node.parent && node.parent.type === 'array' && s.schema.type !== 'object') {
 					this.addSchemaValueCompletions(s.schema, collector, separatorAfter)
 				}
-			} 
+			}
 		});
 	}
 
@@ -250,7 +250,7 @@ export class YAMLCompletion {
 		let offsetForSeparator = offset;
 		let parentKey: string = null;
 		let valueNode: Parser.ASTNode = null;
-		
+
 		if (node && (node.type === 'string' || node.type === 'number' || node.type === 'boolean')) {
 			offsetForSeparator = node.end;
 			valueNode = node;
@@ -259,7 +259,7 @@ export class YAMLCompletion {
 
 		if(node && node.type === 'null'){
 			let nodeParent = node.parent;
-			
+
 			/*
 			 * This is going to be an object for some reason and we need to find the property
 			 * Its an issue with the null node
@@ -278,7 +278,7 @@ export class YAMLCompletion {
 			this.addSchemaValueCompletions(schema.schema, collector, "");
 			return;
 		}
-		
+
 		if ((node.type === 'property') && offset > (<Parser.PropertyASTNode>node).colonOffset) {
 			let propertyNode = <Parser.PropertyASTNode>node;
 			let valueNode = propertyNode.value;
@@ -353,7 +353,7 @@ export class YAMLCompletion {
 		}
 	}
 
-	private getCustomTagValueCompletions(collector: CompletionsCollector) {	
+	private getCustomTagValueCompletions(collector: CompletionsCollector) {
 		this.customTags.forEach((customTagItem) => {
 			let tagItemSplit = customTagItem.split(" ");
 			if(tagItemSplit && tagItemSplit[0]){
@@ -533,7 +533,7 @@ export class YAMLCompletion {
 	}
 
 	private getInsertTextForPlainText(text: string): string {
-		return text.replace(/[\\\$\}]/g, '\\$&');   // escape $, \ and } 
+		return text.replace(/[\\\$\}]/g, '\\$&');   // escape $, \ and }
 	}
 
 	private getInsertTextForValue(value: any, separatorAfter: string): string {
