@@ -37,6 +37,25 @@ The following settings are supported:
 ##### Associating a schema to a glob pattern via yaml.schemas: 
 yaml.schemas applies a schema to a file. In other words, the schema (placed on the left) is applied to the glob pattern on the right. Your schema can be local or online. Your schema path must be relative to the project root and not an absolute path to the schema.
 
+For example:
+If you have project structure
+
+myProject
+
+&nbsp;&nbsp;&nbsp;> myYamlFile.yaml
+
+you can do 
+
+```
+yaml.schemas: {
+    "http://json.schemastore.org/composer": "/myYamlFile.yaml"
+}
+```
+
+and that will associate the composer schema with myYamlFile.yaml.
+
+## More examples of schema association:
+
 When associating a schema it should follow the format below
 ```
 yaml.schemas: {
