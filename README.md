@@ -102,6 +102,7 @@ This repository only contains the server implementation. Here are some known cli
 * [Eclipse Che](https://www.eclipse.org/che/)
 * [vscode-yaml](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) for VSCode
 * [ide-yaml](https://atom.io/packages/ide-yaml) for Atom editor
+* [coc-yaml](https://github.com/neoclide/coc-yaml) for [coc.nvim](https://github.com/neoclide/coc.nvim)
 
 ## Developer Support
 
