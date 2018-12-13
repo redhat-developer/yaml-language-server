@@ -200,7 +200,7 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 }
 
 function convertError(e: Yaml.YAMLException) {
-	return { message: `${e.reason}`, location: { start: e.mark.position, end: e.mark.position + e.mark.column, code: ErrorCode.Undefined } }
+	return { message: `${e.reason}`, location: { start: e.mark.position - e.mark.column, end: e.mark.position, code: ErrorCode.Undefined } }
 }
 
 function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string) {
