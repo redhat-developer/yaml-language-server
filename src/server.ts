@@ -224,13 +224,15 @@ connection.onDidChangeConfiguration((change) => {
 		yamlShouldHover = settings.yaml.hover;
 		yamlShouldCompletion = settings.yaml.completion;
 		customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
-		yamlFormatterSettings = {
-			singleQuote: settings.yaml.format.singleQuote || false,
-			proseWrap: settings.yaml.format.proseWrap || "preserve"
-		};
-		if (settings.yaml.format.bracketSpacing === false) {
-			yamlFormatterSettings.bracketSpacing = false;
-		}
+		if (settings.yaml.format) {
+			yamlFormatterSettings = {
+				singleQuote: settings.yaml.format.singleQuote || false,
+				proseWrap: settings.yaml.format.proseWrap || "preserve"
+			};
+			if (settings.yaml.format.bracketSpacing === false) {
+				yamlFormatterSettings.bracketSpacing = false;
+			}
+		}		
 	}
 	schemaConfigurationSettings = [];
 
