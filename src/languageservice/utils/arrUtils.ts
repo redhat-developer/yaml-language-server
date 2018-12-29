@@ -73,3 +73,22 @@ export function matchOffsetToDocument(offset: number, jsonDocuments): SingleYAML
 	return null;
 
 }
+
+export function filterInvalidCustomTags(customTags: String[]): String[] {
+	const validCustomTags = ['mapping', 'scalar', 'sequence'];
+
+	return customTags.filter(tag => {
+		if (typeof tag === 'string') {
+			const typeInfo = tag.split(' ');
+			const type = (typeInfo[1] && typeInfo[1].toLowerCase()) || 'scalar';
+
+			// We need to check if map is a type because map will throw an error within the yaml-ast-parser
+			if (type === 'map') {
+				return false;
+			}
+
+			return validCustomTags.indexOf(type) !== -1;
+		}
+		return false;
+	});
+}

@@ -16,6 +16,7 @@ import { Schema, Type } from 'js-yaml';
 
 import { getLineStartPositions, getPosition } from '../utils/documentPositionCalculator'
 import { parseYamlBoolean } from './scalar-type';
+import { filterInvalidCustomTags } from '../utils/arrUtils';
 
 export class SingleYAMLDocument extends JSONDocument {
 	private lines;
@@ -251,17 +252,19 @@ export function parse(text: string, customTags = []): YAMLDocument {
 	const startPositions = getLineStartPositions(text)
 	// This is documented to return a YAMLNode even though the
 	// typing only returns a YAMLDocument
-	const yamlDocs = []
+	const yamlDocs = [];
 
-	let schemaWithAdditionalTags = Schema.create(customTags.map((tag) => {
+	const filteredTags = filterInvalidCustomTags(customTags);
+
+	let schemaWithAdditionalTags = Schema.create(filteredTags.map((tag) => {
 		const typeInfo = tag.split(' ');
-		return new Type(typeInfo[0], { kind: typeInfo[1] || 'scalar' });
+		return new Type(typeInfo[0], { kind: (typeInfo[1] && typeInfo[1].toLowerCase()) || 'scalar' });
 	}));
 
 	//We need compiledTypeMap to be available from schemaWithAdditionalTags before we add the new custom properties
-	customTags.map((tag) => {
+	filteredTags.map((tag) => {
 		const typeInfo = tag.split(' ');
-		schemaWithAdditionalTags.compiledTypeMap[typeInfo[0]] = new Type(typeInfo[0], { kind: typeInfo[1] || 'scalar' });
+		schemaWithAdditionalTags.compiledTypeMap[typeInfo[0]] = new Type(typeInfo[0], { kind: (typeInfo[1] && typeInfo[1].toLowerCase()) || 'scalar' });
 	});
 
 	let additionalOptions: Yaml.LoadOptions = {
