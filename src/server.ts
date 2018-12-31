@@ -184,6 +184,7 @@ interface Settings {
 		hover: boolean;
 		completion: boolean;
 		customTags: Array<String>;
+		schemaStore: boolean;
 	};
 	http: {
 		proxy: string;
@@ -212,6 +213,7 @@ let yamlShouldHover = true;
 let yamlShouldCompletion = true;
 let schemaStoreSettings = [];
 let customTags = [];
+let schemaStoreEnabled = true;
 
 connection.onDidChangeConfiguration((change) => {
 	var settings = <Settings>change.settings;
@@ -224,6 +226,7 @@ connection.onDidChangeConfiguration((change) => {
 		yamlShouldHover = settings.yaml.hover;
 		yamlShouldCompletion = settings.yaml.completion;
 		customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
+		schemaStoreEnabled = settings.yaml.schemaStore;
 		if (settings.yaml.format) {
 			yamlFormatterSettings = {
 				singleQuote: settings.yaml.format.singleQuote || false,
@@ -263,12 +266,21 @@ connection.onDidChangeConfiguration((change) => {
 	}
 });
 
-function setSchemaStoreSettingsIfNotSet(){
-	if(schemaStoreSettings.length === 0){
+/**
+ * This function helps set the schema store if it hasn't already been set
+ * 	AND the schema store setting is enabled. If the schema store setting
+ * 	is not enabled we need to clear the schemas.
+ */
+function setSchemaStoreSettingsIfNotSet() {
+	const schemaStoreIsSet = (schemaStoreSettings.length !== 0);
+	if (schemaStoreEnabled && !schemaStoreIsSet) {
 		getSchemaStoreMatchingSchemas().then(schemaStore => {
 			schemaStoreSettings = schemaStore.schemas;
 			updateConfiguration();
 		});
+	} else if (!schemaStoreEnabled) {
+		schemaStoreSettings = [];
+		updateConfiguration();
 	}
 }
 
