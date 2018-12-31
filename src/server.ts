@@ -87,23 +87,14 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 	workspaceFolders = params["workspaceFolders"];
 	workspaceRoot = URI.parse(params.rootPath);
 
-	function hasClientCapability(...keys: string[]) {
-		let c = params.capabilities;
-		for (let i = 0; c && i < keys.length; i++) {
-			c = c[keys[i]];
-		}
-		return !!c;
-	}
-
 	hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
-	clientDynamicRegisterSupport = hasClientCapability('textDocument', 'formatting', 'dynamicRegistration');
 	return {
 		capabilities: {
 			textDocumentSync: documents.syncKind,
 			completionProvider: { resolveProvider: true },
 			hoverProvider: true,
 			documentSymbolProvider: true,
-			documentFormattingProvider: false
+			documentFormattingProvider: true
 		}
 	};
 });
@@ -248,19 +239,6 @@ connection.onDidChangeConfiguration((change) => {
 	setSchemaStoreSettingsIfNotSet();
 
 	updateConfiguration();
-
-	// dynamically enable & disable the formatter
-	if (clientDynamicRegisterSupport) {
-		let enableFormatter = settings && settings.yaml && settings.yaml.format && settings.yaml.format.enable;
-		if (enableFormatter) {
-			if (!formatterRegistration) {
-				formatterRegistration = connection.client.register(DocumentFormattingRequest.type, { documentSelector: [{ language: 'yaml' }] });
-			}
-		} else if (formatterRegistration) {
-			formatterRegistration.then(r => r.dispose());
-			formatterRegistration = null;
-		}
-	}
 });
 
 function setSchemaStoreSettingsIfNotSet(){
@@ -587,7 +565,12 @@ connection.onDocumentFormatting(formatParams => {
 		return;
 	}
 
-	return customLanguageService.doFormat(document, yamlFormatterSettings);
+	const customFormatterSettings = {
+		tabWidth: formatParams.options.tabSize,
+		...yamlFormatterSettings
+	}
+
+	return customLanguageService.doFormat(document, customFormatterSettings);
 });
 
 connection.listen();
