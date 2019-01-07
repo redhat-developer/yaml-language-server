@@ -184,7 +184,9 @@ interface Settings {
 		hover: boolean;
 		completion: boolean;
 		customTags: Array<String>;
-		schemaStore: boolean;
+		schemaStore: {
+			enable: boolean
+		}
 	};
 	http: {
 		proxy: string;
@@ -226,7 +228,9 @@ connection.onDidChangeConfiguration((change) => {
 		yamlShouldHover = settings.yaml.hover;
 		yamlShouldCompletion = settings.yaml.completion;
 		customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
-		schemaStoreEnabled = settings.yaml.schemaStore;
+		if (settings.yaml.schemaStore) {
+			schemaStoreEnabled = settings.yaml.schemaStore.enable;
+		}
 		if (settings.yaml.format) {
 			yamlFormatterSettings = {
 				singleQuote: settings.yaml.format.singleQuote || false,
