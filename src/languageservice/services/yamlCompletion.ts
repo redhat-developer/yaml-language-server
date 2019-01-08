@@ -107,7 +107,7 @@ export class YAMLCompletion {
 				let existing = proposed[suggestion.label];
 				if (!existing) {
 					proposed[suggestion.label] = suggestion;
-					if (overwriteRange) {
+					if (overwriteRange && overwriteRange.isSingleLine) {
 						suggestion.textEdit = TextEdit.replace(overwriteRange, suggestion.insertText);
 					}
 					result.items.push(suggestion);
