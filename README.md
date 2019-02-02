@@ -33,7 +33,35 @@ The following settings are supported:
 * `yaml.hover`: Enable/disable hover
 * `yaml.completion`: Enable/disable autocompletion
 * `yaml.schemas`: Helps you associate schemas with files in a glob pattern
-* `yaml.customTags`: Array of custom tags that the parser will validate against. It has two ways to be used. Either an item in the array is a custom tag such as "!Ref" or you can specify the type of the object !Ref should be by doing "!Ref Scalar". For example: ["!Ref", "!Some-Tag Scalar"]. The type of object can be one of Scalar, Sequence, Mapping, Map.
+* `yaml.customTags`: Array of custom tags that the parser will validate against. It has two ways to be used. Either an item in the array is a custom tag such as "!Ref" and it will automatically map !Ref to scalar or you can specify the type of the object !Ref should be e.g. "!Ref sequence". The type of object can be either scalar (for strings and booleans), sequence (for arrays), map (for objects).
+
+##### Adding custom tags
+
+In order to use the custom tags in your YAML file you need to first specify the custom tags in the setting of your code editor. For example, we can have the following custom tags:
+
+```YAML
+"yaml.customTags": [
+    "!Scalar-example scalar",
+    "!Seq-example sequence",
+    "!Mapping-example mapping"
+]
+```
+
+The !Scalar-example would map to a scalar custom tag, the !Seq-example would map to a sequence custom tag, the !Mapping-example would map to a mapping custom tag.
+
+We can then use the newly defined custom tags inside our YAML file:
+
+```YAML
+some_key: !Scalar-example some_value
+some_sequence: !Seq-example
+  - some_seq_key_1: some_seq_value_1
+  - some_seq_key_2: some_seq_value_2
+some_mapping: !Mapping-example
+  some_mapping_key_1: some_mapping_value_1
+  some_mapping_key_2: some_mapping_value_2
+```
+
+
 ##### Associating a schema to a glob pattern via yaml.schemas: 
 yaml.schemas applies a schema to a file. In other words, the schema (placed on the left) is applied to the glob pattern on the right. Your schema can be local or online. Your schema path must be relative to the project root and not an absolute path to the schema.
 
