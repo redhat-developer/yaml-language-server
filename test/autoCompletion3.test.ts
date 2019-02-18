@@ -65,6 +65,16 @@ suite("Auto Completion Tests", () => {
 					assert.notEqual(result.items.length, 0);
 				}).then(done, done);
 			});
+
+			it('Array of enum autocomplete with multiline text', (done) => {
+				let content = "optionalUnityReferences:\n  - T\n    e\n";
+				let completion = parseSetup(content, 31);
+				completion.then(function(result){
+					assert.notEqual(result.items.length, 0);
+					// textEdit must be single line
+					assert.equal(result.items[0].textEdit, undefined)
+				}).then(done, done);
+			});
 		});
 	});
 });
