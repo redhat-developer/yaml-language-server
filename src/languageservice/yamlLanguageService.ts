@@ -93,9 +93,10 @@ export interface SchemaConfiguration {
 }
 
 export interface CustomFormatterOptions {
-	singleQuote?: boolean;
-	bracketSpacing?: boolean;
-	proseWrap?: string;
+  singleQuote?: boolean;
+  bracketSpacing?: boolean;
+  proseWrap?: string;
+  printWidth?: number;
 }
 
 export interface LanguageService {

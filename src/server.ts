@@ -167,9 +167,7 @@ export let customLanguageService = getCustomLanguageService(schemaRequestService
 // The settings interface describes the server relevant settings part
 interface Settings {
 	yaml: {
-		format: CustomFormatterOptions & {
-			enable: boolean;
-		};
+		format: CustomFormatterOptions;
 		schemas: JSONSchemaSettings[];
 		validate: boolean;
 		hover: boolean;
@@ -200,7 +198,8 @@ let yamlShouldValidate = true;
 let yamlFormatterSettings = {
 	singleQuote: false,
 	bracketSpacing: true,
-	proseWrap: "preserve"
+	proseWrap: "preserve",
+	printWidth: 80
 } as CustomFormatterOptions;
 let yamlShouldHover = true;
 let yamlShouldCompletion = true;
@@ -225,7 +224,8 @@ connection.onDidChangeConfiguration((change) => {
 		if (settings.yaml.format) {
 			yamlFormatterSettings = {
 				singleQuote: settings.yaml.format.singleQuote || false,
-				proseWrap: settings.yaml.format.proseWrap || "preserve"
+				proseWrap: settings.yaml.format.proseWrap || "preserve",
+				printWidth: settings.yaml.format.printWidth || 80
 			};
 			if (settings.yaml.format.bracketSpacing === false) {
 				yamlFormatterSettings.bracketSpacing = false;
