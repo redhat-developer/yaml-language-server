@@ -62,6 +62,16 @@ suite("Formatter Tests", () => {
                 assert.notEqual(edits.length, 0);
             });
 
+            it('Formatting wraps text', () => {
+                let content = `comments: >
+                test test test test test test test test test test test test`;
+                let testTextDocument = setup(content);
+                let edits = languageService.doFormat(testTextDocument, {
+                    printWidth: 20,
+                    proseWrap: "always"
+                });
+                assert.equal(edits[0].newText, "comments: >\n  test test test\n  test test test\n  test test test\n  test test test\n");
+            });
         });
 
     });
