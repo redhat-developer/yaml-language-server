@@ -11,7 +11,7 @@ import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLCompletion } from "./services/yamlCompletion";
 import { YAMLHover } from "./services/yamlHover";
 import { YAMLValidation } from "./services/yamlValidation";
-import { format, YAMLFormatter } from './services/yamlFormatter';
+import { YAMLFormatter } from './services/yamlFormatter';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
