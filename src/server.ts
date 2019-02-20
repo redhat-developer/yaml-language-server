@@ -199,7 +199,8 @@ let yamlFormatterSettings = {
 	singleQuote: false,
 	bracketSpacing: true,
 	proseWrap: "preserve",
-	printWidth: 80
+	printWidth: 80,
+	enable: true
 } as CustomFormatterOptions;
 let yamlShouldHover = true;
 let yamlShouldCompletion = true;
@@ -229,6 +230,9 @@ connection.onDidChangeConfiguration((change) => {
 			};
 			if (settings.yaml.format.bracketSpacing === false) {
 				yamlFormatterSettings.bracketSpacing = false;
+			}
+			if (settings.yaml.format.enable) {
+				yamlFormatterSettings.enable = settings.yaml.format.enable || true;
 			}
 		}		
 	}

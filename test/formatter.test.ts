@@ -10,7 +10,7 @@ import {
     CompletionItem, CompletionItemKind, RequestType
 } from 'vscode-languageserver';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import { getLanguageService } from '../src/languageservice/yamlLanguageService'
+import { getLanguageService, LanguageSettings } from '../src/languageservice/yamlLanguageService'
 import Strings = require('../src/languageservice/utils/strings');
 import URI from '../src/languageservice/utils/uri';
 import * as URL from 'url';
@@ -25,10 +25,11 @@ let languageService = getLanguageService(schemaRequestService, workspaceContext,
 let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
 
 let uri = 'http://json.schemastore.org/bowerrc';
-let languageSettings = {
+let languageSettings: LanguageSettings = {
     schemas: [],
     validate: true,
-    customTags: []
+    customTags: [],
+    format: true
 };
 let fileMatch = ["*.yml", "*.yaml"];
 languageSettings.schemas.push({ uri, fileMatch: fileMatch });
