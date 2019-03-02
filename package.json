@@ -17,7 +17,7 @@
     "node": "*"
   },
   "bin": {
-    "yaml-language-server": "./out/server/src/server.js"
+    "yaml-language-server": "./bin/yaml-language-server"
   },
   "keywords": [
     "yaml",
