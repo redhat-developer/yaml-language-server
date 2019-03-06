@@ -10,8 +10,7 @@ import { ASTNode, ErrorCode, BooleanASTNode, NullASTNode, ArrayASTNode, NumberAS
 import * as nls from 'vscode-nls';
 const localize = nls.loadMessageBundle();
 
-import * as Yaml from 'yaml-ast-parser'
-import { Kind } from 'yaml-ast-parser'
+import * as Yaml from 'yaml-ast-parser-custom-tags'
 import { Schema, Type } from 'js-yaml';
 
 import { getLineStartPositions, getPosition } from '../utils/documentPositionCalculator'
