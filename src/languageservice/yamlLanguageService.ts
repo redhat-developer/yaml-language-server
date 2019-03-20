@@ -11,12 +11,13 @@ import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLCompletion } from "./services/yamlCompletion";
 import { YAMLHover } from "./services/yamlHover";
 import { YAMLValidation } from "./services/yamlValidation";
-import { format } from './services/yamlFormatter';
+import { YAMLFormatter } from './services/yamlFormatter';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
   hover?: boolean; //Setting for whether we want to have hover results
   completion?: boolean; //Setting for whether we want to have completion results
+  format?: boolean; //Setting for whether we want to have the formatter or not
   isKubernetes?: boolean; //If true then its validating against kubernetes
   schemas?: any[]; //List of schemas,
   customTags?: Array<String>; //Array of Custom Tags
@@ -97,6 +98,7 @@ export interface CustomFormatterOptions {
   bracketSpacing?: boolean;
   proseWrap?: string;
   printWidth?: number;
+  enable?: boolean;
 }
 
 export interface LanguageService {
@@ -120,6 +122,7 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
   let hover = new YAMLHover(schemaService, contributions, promise);
   let yamlDocumentSymbols = new YAMLDocumentSymbols();
   let yamlValidation = new YAMLValidation(schemaService, promise);
+  let formatter = new YAMLFormatter();
 
   return {
       configure: (settings) => {
@@ -133,6 +136,7 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
         hover.configure(settings);
         let customTagsSetting = settings && settings["customTags"] ? settings["customTags"] : [];
         completer.configure(settings, customTagsSetting);
+        formatter.configure(settings);
       },
       registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
         schemaService.registerCustomSchemaProvider(schemaProvider);
@@ -143,6 +147,6 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
       doHover: hover.doHover.bind(hover),
       findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols),
       resetSchema: (uri: string) => schemaService.onResourceChange(uri),
-      doFormat: format
+      doFormat: formatter.format.bind(formatter)
   }
 }
