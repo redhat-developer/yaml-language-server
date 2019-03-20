@@ -224,15 +224,17 @@ connection.onDidChangeConfiguration((change) => {
 		}
 		if (settings.yaml.format) {
 			yamlFormatterSettings = {
-				singleQuote: settings.yaml.format.singleQuote || false,
 				proseWrap: settings.yaml.format.proseWrap || "preserve",
 				printWidth: settings.yaml.format.printWidth || 80
 			};
-			if (settings.yaml.format.bracketSpacing === false) {
-				yamlFormatterSettings.bracketSpacing = false;
+			if (settings.yaml.format.singleQuote !== undefined) {
+				yamlFormatterSettings.singleQuote = settings.yaml.format.singleQuote;
 			}
-			if (settings.yaml.format.enable) {
-				yamlFormatterSettings.enable = settings.yaml.format.enable || true;
+			if (settings.yaml.format.bracketSpacing !== undefined) {
+				yamlFormatterSettings.bracketSpacing = settings.yaml.format.bracketSpacing;
+			}
+			if (settings.yaml.format.enable !== undefined) {
+				yamlFormatterSettings.enable = settings.yaml.format.enable;
 			}
 		}		
 	}
@@ -323,8 +325,10 @@ function updateConfiguration() {
 		hover: yamlShouldHover,
 		completion: yamlShouldCompletion,
 		schemas: [],
-		customTags: customTags
+		customTags: customTags,
+		format: yamlFormatterSettings.enable
 	};
+
 	if (schemaAssociations) {
 		for (var pattern in schemaAssociations) {
 			let association = schemaAssociations[pattern];
