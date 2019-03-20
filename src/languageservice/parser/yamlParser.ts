@@ -10,8 +10,7 @@ import { ASTNode, ErrorCode, BooleanASTNode, NullASTNode, ArrayASTNode, NumberAS
 import * as nls from 'vscode-nls';
 const localize = nls.loadMessageBundle();
 
-import * as Yaml from 'yaml-ast-parser'
-import { Kind } from 'yaml-ast-parser'
+import * as Yaml from 'yaml-ast-parser-custom-tags'
 import { Schema, Type } from 'js-yaml';
 
 import { getLineStartPositions, getPosition } from '../utils/documentPositionCalculator'
@@ -261,10 +260,25 @@ export function parse(text: string, customTags = []): YAMLDocument {
 		return new Type(typeInfo[0], { kind: (typeInfo[1] && typeInfo[1].toLowerCase()) || 'scalar' });
 	}));
 
-	//We need compiledTypeMap to be available from schemaWithAdditionalTags before we add the new custom properties
-	filteredTags.map((tag) => {
+	/**
+	 * Collect the additional tags into a map of string to possible tag types
+	 */
+	const tagWithAdditionalItems = new Map<string, string[]>();
+	filteredTags.forEach(tag => {
 		const typeInfo = tag.split(' ');
-		schemaWithAdditionalTags.compiledTypeMap[typeInfo[0]] = new Type(typeInfo[0], { kind: (typeInfo[1] && typeInfo[1].toLowerCase()) || 'scalar' });
+		const tagName = typeInfo[0];
+		const tagType = (typeInfo[1] && typeInfo[1].toLowerCase()) || 'scalar';
+		if (tagWithAdditionalItems.has(tagName)) {
+			tagWithAdditionalItems.set(tagName, tagWithAdditionalItems.get(tagName).concat([tagType]));
+		} else {
+			tagWithAdditionalItems.set(tagName, [tagType]);
+		}
+	});
+
+	tagWithAdditionalItems.forEach((additionalTagKinds, key) => {
+		const newTagType = new Type(key, { kind: additionalTagKinds[0] || 'scalar' });
+		newTagType.additionalKinds = additionalTagKinds;
+		schemaWithAdditionalTags.compiledTypeMap[key] = newTagType;
 	});
 
 	let additionalOptions: Yaml.LoadOptions = {

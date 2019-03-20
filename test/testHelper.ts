@@ -9,7 +9,6 @@ import {
 	InitializeParams, InitializeResult, TextDocumentPositionParams,
 	CompletionItem, CompletionItemKind, RequestType
 } from 'vscode-languageserver';
-import {load as yamlLoader, YAMLDocument, YAMLException, YAMLNode} from 'yaml-ast-parser';
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
 import {getLanguageService} from '../src/languageservice/yamlLanguageService'
 import Strings = require( '../src/languageservice/utils/strings');
