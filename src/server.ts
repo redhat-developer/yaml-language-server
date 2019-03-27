@@ -91,7 +91,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 	return {
 		capabilities: {
 			textDocumentSync: documents.syncKind,
-			completionProvider: { triggerCharacters: [' '], resolveProvider: true },
+			completionProvider: { resolveProvider: true },
 			hoverProvider: true,
 			documentSymbolProvider: true,
 			documentFormattingProvider: true
