@@ -1,3 +1,8 @@
+#### 0.4.0
+- Allow custom tags to have multiple types [#77](https://github.com/redhat-developer/yaml-language-server/issues/77)
+- Made the formatter respect the yaml.format.enable setting [#PR](https://github.com/redhat-developer/yaml-language-server/pull/126)
+- yaml-language-server command is now executable [#PR](https://github.com/redhat-developer/yaml-language-server/pull/130)
+
 #### 0.3.2
 
 - Only set CompletionItem.textEdit if it encompasses a single line [#139](https://github.com/redhat-developer/vscode-yaml/issues/139)
