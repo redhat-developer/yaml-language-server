@@ -2,22 +2,10 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {
-    IPCMessageReader, IPCMessageWriter,
-    createConnection, IConnection, TextDocumentSyncKind,
-    TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
-    InitializeParams, InitializeResult, TextDocumentPositionParams,
-    CompletionItem, CompletionItemKind, RequestType
-} from 'vscode-languageserver';
-import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
+import { TextDocument } from 'vscode-languageserver';
 import { getLanguageService, LanguageSettings } from '../src/languageservice/yamlLanguageService'
-import Strings = require('../src/languageservice/utils/strings');
-import URI from '../src/languageservice/utils/uri';
-import * as URL from 'url';
-import fs = require('fs');
 import { JSONSchemaService } from '../src/languageservice/services/jsonSchemaService'
 import { schemaRequestService, workspaceContext } from './testHelper';
-import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
 var assert = require('assert');
 
 let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);

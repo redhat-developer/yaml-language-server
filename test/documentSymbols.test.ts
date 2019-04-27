@@ -2,28 +2,12 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {
-	IPCMessageReader, IPCMessageWriter,
-	createConnection, IConnection, TextDocumentSyncKind,
-	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
-	InitializeParams, InitializeResult, TextDocumentPositionParams,
-	RequestType
-} from 'vscode-languageserver';
-import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
+import { TextDocument } from 'vscode-languageserver';
 import {getLanguageService} from '../src/languageservice/yamlLanguageService'
-import Strings = require( '../src/languageservice/utils/strings');
-import URI from '../src/languageservice/utils/uri';
-import * as URL from 'url';
-import fs = require('fs');
 import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
 import {schemaRequestService, workspaceContext}  from './testHelper';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
-import { getLineOffsets } from "../src/languageservice/utils/arrUtils";
 var assert = require('assert');
-
-let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
-
-let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
 
 suite("Document Symbols Tests", () => {
 	
@@ -36,6 +20,7 @@ suite("Document Symbols Tests", () => {
         function parseSetup(content: string){
             let testTextDocument = setup(content);
             let jsonDocument = parseYAML(testTextDocument.getText());
+            let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
             return languageService.findDocumentSymbols(testTextDocument, jsonDocument);
         }
 

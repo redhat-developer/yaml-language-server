@@ -22,11 +22,6 @@ namespace VSCodeContentRequest {
 	export const type: RequestType<{}, {}, {}, {}> = new RequestType('vscode/content');
 }
 
-const validationDelayMs = 250;
-let pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = {};
-let validDocuments: Array<String>;
-
-
 // Create a connection for the server.
 let connection: IConnection = null;
 if (process.argv.indexOf('--stdio') == -1) {
@@ -35,11 +30,8 @@ if (process.argv.indexOf('--stdio') == -1) {
 	connection = createConnection();
 }
 
-// After the server has started the client sends an initialize request. The server receives
-// in the passed params the rootPath of the workspace plus the client capabilities.
 let workspaceRoot: string;
 connection.onInitialize((params): InitializeResult => {
-	workspaceRoot = params.rootPath;
 	return {
 		capabilities: {
 			// Tell the client that the server works in FULL text document sync mode

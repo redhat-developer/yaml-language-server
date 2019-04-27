@@ -184,7 +184,7 @@ suite('JSON Schema', () => {
 				}
 			}
 		});
-
+	
 		service.getResolvedSchema('main').then(fs => {
 			let section = fs.getSection(['child', 'grandchild']);
 			assert.equal(section.description, 'Meaning of Life');

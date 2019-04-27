@@ -23,8 +23,6 @@ var assert = require('assert');
 
 let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
-let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
-
 let uri = 'http://json.schemastore.org/bowerrc';
 let languageSettings = {
 	schemas: [],
@@ -35,7 +33,6 @@ languageSettings.schemas.push({ uri, fileMatch: fileMatch });
 languageService.configure(languageSettings);
 
 suite("Auto Completion Tests", () => {
-
 
 	describe('yamlCompletion with bowerrc', function(){
 
@@ -57,6 +54,35 @@ suite("Auto Completion Tests", () => {
 				completion.then(function(result){
                     assert.notEqual(result.items.length, 0);
 				}).then(done, done);
+
+				let service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+
+				service.setSchemaContributions({
+					schemas: {
+						"main": {
+							id: 'main',
+							type: 'object',
+							properties: {
+								child: {
+									type: 'object',
+									properties: {
+										'grandchild': {
+											type: 'number',
+											description: 'Meaning of Life'
+										}
+									}
+								}
+							}
+						}
+					}
+				});
+
+				service.getResolvedSchema('main').then(fs => {
+					let section = fs.getSection(['child', 'grandchild']);
+					assert.equal(section.description, 'Meaning of Life');
+				}).then(() => testDone(), (error) => {
+					testDone(error);
+				});
 			});
 
 			it('Autocomplete on root node with word', (done) => {
