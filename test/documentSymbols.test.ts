@@ -2,98 +2,121 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { TextDocument } from 'vscode-languageserver';
-import {getLanguageService} from '../src/languageservice/yamlLanguageService'
-import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-import {schemaRequestService, workspaceContext}  from './testHelper';
-import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
-var assert = require('assert');
+import { getLanguageService } from "../src/languageservice/yamlLanguageService";
+import {
+	schemaRequestService,
+	workspaceContext,
+	setupTextDocument
+} from "./testHelper";
+import { parse as parseYAML } from "../src/languageservice/parser/yamlParser";
+import { SymbolInformation } from "vscode-json-languageservice";
+var assert = require("assert");
 
 suite("Document Symbols Tests", () => {
-	
-	describe('Document Symbols Tests', function(){
-				
-        function setup(content: string){
-            return TextDocument.create("file://~/Desktop/vscode-k8s/test.yaml", "yaml", 0, content);
-        }
+	describe("Document Symbols Tests", function() {
+		function parseSetup(content: string): SymbolInformation[] {
+			let testTextDocument = setupTextDocument(content);
+			let jsonDocument = parseYAML(testTextDocument.getText());
+			let languageService = getLanguageService(
+				schemaRequestService,
+				workspaceContext,
+				[],
+				null
+			);
+			return languageService.findDocumentSymbols(
+				testTextDocument,
+				jsonDocument
+			);
+		}
 
-        function parseSetup(content: string){
-            let testTextDocument = setup(content);
-            let jsonDocument = parseYAML(testTextDocument.getText());
-            let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
-            return languageService.findDocumentSymbols(testTextDocument, jsonDocument);
-        }
+		it("Document is empty", done => {
+			let content = "";
+			let symbols = parseSetup(content);
+			assert.equal(symbols, null);
+			done();
+		});
 
-        it('Document is empty', (done) => {
-            let content = "";
-            let symbols = parseSetup(content);
-            assert.equal(symbols, null);	
-            done();
-        })
+		it("Simple document symbols", done => {
+			let content = "cwd: test";
+			let symbols = parseSetup(content);
+			assert.equal(symbols.length, 1);
+			assert.equal(symbols[0].name, "cwd");
+			done();
+		});
 
-        it('Simple document symbols', (done) => {
-            let content = "cwd: test";
-            let symbols = parseSetup(content);
-            assert.equal(symbols.length, 1);	
-            done();			
-        });
+		it("Document Symbols with number", done => {
+			let content = "node1: 10000";
+			let symbols = parseSetup(content);
+			assert.equal(symbols.length, 1);
+			assert.equal(symbols[0].name, "node1");
+			done();
+		});
 
-        it('Document Symbols with number', (done) => {
-            let content = "node1: 10000";
-            let symbols = parseSetup(content);
-            assert.equal(symbols.length, 1);	
-            done();			
-        });
+		it("Document Symbols with boolean", done => {
+			let content = "node1: False";
+			let symbols = parseSetup(content);
+			assert.equal(symbols.length, 1);
+			assert.equal(symbols[0].name, "node1");
+			done();
+		});
 
-        it('Document Symbols with boolean', (done) => {
-            let content = "node1: False";
-            let symbols = parseSetup(content);
-            assert.equal(symbols.length, 1);	
-            done();			
-        });
+		it("Document Symbols with object", done => {
+			let content = "scripts:\n  node1: test\n  node2: test";
+			let symbols = parseSetup(content);
+			assert.equal(symbols.length, 3);
+			assert.equal(symbols[0].name, "scripts");
+			assert.equal(symbols[1].name, "node1");
+			assert.equal(symbols[2].name, "node2");
+			done();
+		});
 
-        it('Document Symbols with object', (done) => {
-            let content = "scripts:\n  node1: test\n  node2: test";
-            let symbols = parseSetup(content);
-            assert.equal(symbols.length, 3);	
-            done();			
-        });
+		it("Document Symbols with null", done => {
+			let content = "apiVersion: null";
+			let symbols = parseSetup(content);
+			assert.equal(symbols.length, 1);
+			assert.equal(symbols[0].name, "apiVersion");
+			done();
+		});
 
-        it('Document Symbols with null', (done) => {
-            let content = "apiVersion: null";
-            let symbols = parseSetup(content);
-            assert.equal(symbols.length, 1);	
-            done();			
-        });
+		it("Document Symbols with array of strings", done => {
+			let content = "items:\n  - test\n  - test";
+			let symbols = parseSetup(content);
+			assert.equal(symbols.length, 1);
+			assert.equal(symbols[0].name, "items");
+			done();
+		});
 
-        it('Document Symbols with array of strings', (done) => {
-            let content = "items:\n  - test\n  - test";
-            let symbols = parseSetup(content);
-            assert.equal(symbols.length, 1);	
-            done();			
-        });
+		it("Document Symbols with array", done => {
+			let content = "authors:\n  - name: Josh\n  - email: jp";
+			let symbols = parseSetup(content);
+			assert.equal(symbols.length, 3);
+			assert.equal(symbols[0].name, "authors");
+			assert.equal(symbols[1].name, "name");
+			assert.equal(symbols[2].name, "email");
+			done();
+		});
 
-        it('Document Symbols with array', (done) => {
-            let content = "authors:\n  - name: Josh\n  - email: jp";
-            let symbols = parseSetup(content);
-            assert.equal(symbols.length, 3);	
-            done();			
-        });
-    
-        it('Document Symbols with object and array', (done) => {
-            let content = "scripts:\n  node1: test\n  node2: test\nauthors:\n  - name: Josh\n  - email: jp";
-            let symbols = parseSetup(content);
-            assert.equal(symbols.length, 6);	
-            done();			
-        });
+		it("Document Symbols with object and array", done => {
+			let content =
+				"scripts:\n  node1: test\n  node2: test\nauthors:\n  - name: Josh\n  - email: jp";
+			let symbols = parseSetup(content);
+			assert.equal(symbols.length, 6);
+			assert.equal(symbols[0].name, "scripts");
+			assert.equal(symbols[1].name, "node1");
+			assert.equal(symbols[2].name, "node2");
+			assert.equal(symbols[3].name, "authors");
+			assert.equal(symbols[4].name, "name");
+			assert.equal(symbols[5].name, "email");
+			done();
+		});
 
-        it('Document Symbols with multi documents', (done) => {
-            let content = '---\nanalytics: true\n...\n---\njson: test\n...';
-            let symbols = parseSetup(content);
-            assert.equal(symbols.length, 2);	
-            done();			
-        });
-
-    });
-    
+		it("Document Symbols with multi documents", done => {
+			let content = "---\nanalytics: true\n...\n---\njson: test\n...";
+			let symbols = parseSetup(content);
+			assert.equal(symbols.length, 2);
+			assert.equal(symbols[0].name, "analytics");
+			assert.equal(symbols[1].name, "json");
+			done();
+		});
+	});
 });

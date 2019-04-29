@@ -8,6 +8,10 @@
 		"$schema": {
 			"type": "string"
 		},
+		"cwd": {
+			"type": "string",
+			"description": "Current working directory"
+		},
 		"contentVersion": {
 			"type": "string",
 			"pattern": "(^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$)",
@@ -19,6 +23,23 @@
 				"$ref": "#/definitions/parameter"
 			},
 			"description": "Collection of parameters to pass into a template"
+		},
+		"authors": {
+			"type": "array",
+			"items": {
+				"type": "string",
+				"properties": {
+					"name": {
+						"type": "string",
+						"description": "This is my name"
+					},
+					"email": {
+						"type": "string",
+						"description": "This is my email"
+					}
+				}
+			},
+			"description": "Authors"
 		}
 	},
 	"required": [

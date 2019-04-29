@@ -3,46 +3,62 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import {
-	IPCMessageReader, IPCMessageWriter,
-	createConnection, IConnection, TextDocumentSyncKind,
-	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
-	InitializeParams, InitializeResult, TextDocumentPositionParams,
-	CompletionItem, CompletionItemKind, RequestType
-} from 'vscode-languageserver';
-import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import {getLanguageService} from '../src/languageservice/yamlLanguageService'
-import Strings = require( '../src/languageservice/utils/strings');
-import URI from '../src/languageservice/utils/uri';
-import * as URL from 'url';
-import fs = require('fs');
-import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-var assert = require('assert');
+	IPCMessageReader,
+	IPCMessageWriter,
+	createConnection,
+	IConnection,
+	TextDocumentSyncKind,
+	TextDocument,
+	InitializeResult,
+	RequestType
+} from "vscode-languageserver";
+import {
+	xhr,
+	XHRResponse,
+	getErrorStatusDescription
+} from "request-light";
+import {
+	getLanguageService,
+	LanguageSettings
+} from "../src/languageservice/yamlLanguageService";
+import Strings = require("../src/languageservice/utils/strings");
+import URI from "../src/languageservice/utils/uri";
+import * as URL from "url";
+import fs = require("fs");
+import path = require("path");
 
 namespace VSCodeContentRequest {
-	export const type: RequestType<{}, {}, {}, {}> = new RequestType('vscode/content');
+	export const type: RequestType<{}, {}, {}, {}> = new RequestType(
+		"vscode/content"
+	);
 }
 
 // Create a connection for the server.
 let connection: IConnection = null;
-if (process.argv.indexOf('--stdio') == -1) {
-	connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
+if (process.argv.indexOf("--stdio") == -1) {
+	connection = createConnection(
+		new IPCMessageReader(process),
+		new IPCMessageWriter(process)
+	);
 } else {
 	connection = createConnection();
 }
 
 let workspaceRoot: string;
-connection.onInitialize((params): InitializeResult => {
-	return {
-		capabilities: {
-			// Tell the client that the server works in FULL text document sync mode
-			textDocumentSync: TextDocumentSyncKind.Full,
-			// Tell the client that the server support code complete
-			completionProvider: {
-				resolveProvider: false
+connection.onInitialize(
+	(params): InitializeResult => {
+		return {
+			capabilities: {
+				// Tell the client that the server works in FULL text document sync mode
+				textDocumentSync: TextDocumentSyncKind.Full,
+				// Tell the client that the server support code complete
+				completionProvider: {
+					resolveProvider: false
+				}
 			}
-		}
+		};
 	}
-});
+);
 
 export let workspaceContext = {
 	resolveRelativePath: (relativePath: string, resource: string) => {
@@ -51,23 +67,69 @@ export let workspaceContext = {
 };
 
 export let schemaRequestService = (uri: string): Thenable<string> => {
-	if (Strings.startsWith(uri, 'file://')) {
+	if (Strings.startsWith(uri, "file://")) {
 		let fsPath = URI.parse(uri).fsPath;
 		return new Promise<string>((c, e) => {
-			fs.readFile(fsPath, 'UTF-8', (err, result) => {
-				err ? e('') : c(result.toString());
+			fs.readFile(fsPath, "UTF-8", (err, result) => {
+				err ? e("") : c(result.toString());
 			});
 		});
-	} else if (Strings.startsWith(uri, 'vscode://')) {
-		return connection.sendRequest(VSCodeContentRequest.type, uri).then(responseText => {
-			return responseText;
-		}, error => {
-			return error.message;
-		});
+	} else if (Strings.startsWith(uri, "vscode://")) {
+		return connection.sendRequest(VSCodeContentRequest.type, uri).then(
+			responseText => {
+				return responseText;
+			},
+			error => {
+				return error.message;
+			}
+		);
 	}
-	return xhr({ url: uri, followRedirects: 5 }).then(response => {
-		return response.responseText;
-	}, (error: XHRResponse) => {
-		return Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString());
-	});
+	return xhr({ url: uri, followRedirects: 5 }).then(
+		response => {
+			return response.responseText;
+		},
+		(error: XHRResponse) => {
+			return Promise.reject(
+				error.responseText ||
+					getErrorStatusDescription(error.status) ||
+					error.toString()
+			);
+		}
+	);
 };
+
+export function toFsPath(str): string {
+	if (typeof str !== "string") {
+		throw new TypeError(`Expected a string, got ${typeof str}`);
+	}
+
+	let pathName;
+	pathName = path.resolve(str);
+	pathName = pathName.replace(/\\/g, "/");
+	// Windows drive letter must be prefixed with a slash
+	if (pathName[0] !== "/") {
+		pathName = `/${pathName}`;
+	}
+	return encodeURI(`file://${pathName}`).replace(/[?#]/g, encodeURIComponent);
+}
+
+export function configureLanguageService(languageSettings: LanguageSettings) {
+	let languageService = getLanguageService(
+		schemaRequestService,
+		workspaceContext,
+		[],
+		null
+	);
+
+	languageService.configure(languageSettings);
+	return languageService;
+}
+
+export function setupTextDocument(content: string) {
+	return TextDocument.create(
+		"file://~/Desktop/vscode-k8s/test.yaml",
+		"yaml",
+		0,
+		content
+	);
+}
