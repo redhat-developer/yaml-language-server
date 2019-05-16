@@ -705,4 +705,5 @@ export class YAMLCompletion {
 				return '';
 		}
 	}
+	
 }
