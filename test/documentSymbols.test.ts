@@ -2,27 +2,25 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { getLanguageService } from "../src/languageservice/yamlLanguageService";
 import {
-	schemaRequestService,
-	workspaceContext,
-	setupTextDocument
+	setupTextDocument,
+	configureLanguageService
 } from "./testHelper";
 import { parse as parseYAML } from "../src/languageservice/parser/yamlParser";
 import { SymbolInformation } from "vscode-json-languageservice";
+import { ServiceSetup } from '../src/serviceSetup';
 var assert = require("assert");
 
 suite("Document Symbols Tests", () => {
 	describe("Document Symbols Tests", function() {
+
 		function parseSetup(content: string): SymbolInformation[] {
 			let testTextDocument = setupTextDocument(content);
 			let jsonDocument = parseYAML(testTextDocument.getText());
-			let languageService = getLanguageService(
-				schemaRequestService,
-				workspaceContext,
-				[],
-				null
-			);
+
+			let languageSettingsSetup = new ServiceSetup();	
+			let languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+
 			return languageService.findDocumentSymbols(
 				testTextDocument,
 				jsonDocument

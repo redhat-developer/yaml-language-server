@@ -29,7 +29,7 @@ export class ServiceSetup {
 
     withCompletion() {
         this.languageSettings.completion = true;
-        return this.languageSettings;
+        return this;
     }
 
     withFormat() {

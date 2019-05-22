@@ -2,41 +2,30 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {
-	getLanguageService,
-	LanguageSettings
-} from "../src/languageservice/yamlLanguageService";
 import path = require("path");
 import {
-	schemaRequestService,
-	workspaceContext,
 	toFsPath,
-	setupTextDocument
+	setupTextDocument,
+	configureLanguageService
 } from "./testHelper";
 import { parse as parseYAML } from "../src/languageservice/parser/yamlParser";
+import { ServiceSetup } from '../src/serviceSetup';
 var assert = require("assert");
 
-let languageService = getLanguageService(
-	schemaRequestService,
-	workspaceContext,
-	[],
-	null
-);
 
 let uri = toFsPath(
 	path.join(__dirname, "./fixtures/customMultipleSchemaSequences.json")
 );
-let languageSettings: LanguageSettings = {
-	schemas: [],
-	validate: true,
-	customTags: [],
-	hover: true
-};
 let fileMatch = ["*.yml", "*.yaml"];
-languageSettings.schemas.push({ uri, fileMatch: fileMatch });
-languageSettings.customTags.push("!Test");
-languageSettings.customTags.push("!Ref sequence");
-languageService.configure(languageSettings);
+let languageSettingsSetup = new ServiceSetup()
+	.withValidate()
+	.withHover()
+	.withCustomTags(['!Test', '!Ref sequence'])
+	.withSchemaFileMatch({ uri, fileMatch: fileMatch });
+let languageService = configureLanguageService(
+	languageSettingsSetup.languageSettings
+);
+
 // Defines a Mocha test suite to group tests of similar kind together
 suite("Multiple Documents Validation Tests", () => {
 	// Tests for validator
@@ -45,7 +34,7 @@ suite("Multiple Documents Validation Tests", () => {
 			const testTextDocument = setupTextDocument(content);
 			const yDoc = parseYAML(
 				testTextDocument.getText(),
-				languageSettings.customTags
+				languageSettingsSetup.languageSettings.customTags
 			);
 			return languageService.doValidation(testTextDocument, yDoc);
 		}

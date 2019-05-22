@@ -3,37 +3,26 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import {
-	IPCMessageReader, IPCMessageWriter,
-	createConnection, IConnection, TextDocumentSyncKind,
-	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
-	InitializeParams, InitializeResult, TextDocumentPositionParams,
-	CompletionItem, CompletionItemKind, RequestType
+	TextDocument
 } from 'vscode-languageserver';
-import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import {getLanguageService} from '../src/languageservice/yamlLanguageService'
-import Strings = require( '../src/languageservice/utils/strings');
-import URI from '../src/languageservice/utils/uri';
-import * as URL from 'url';
-import fs = require('fs');
-import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-import {schemaRequestService, workspaceContext}  from './testHelper';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
 import { getLineOffsets } from "../src/languageservice/utils/arrUtils";
+import { ServiceSetup } from '../src/serviceSetup';
+import { configureLanguageService } from './testHelper';
+import { completionAdjustor } from '../src/languageservice/utils/completionHelper';
 var assert = require('assert');
 
-let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
-
-let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
-
-let uri = "https://gist.githubusercontent.com/JPinkney/ccaf3909ef811e5657ca2e2e1fa05d76/raw/f85e51bfb67fdb99ab7653c2953b60087cc871ea/openshift_schema_all.json";
-let languageSettings = {
-	schemas: [],
-	validate: true,
-	completion: true
-};
+let url = 'https://raw.githubusercontent.com/garethr/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json';
 let fileMatch = ["*.yml", "*.yaml"];
-languageSettings.schemas.push({ uri, fileMatch: fileMatch });
-languageService.configure(languageSettings);
+let languageSettingsSetup = new ServiceSetup()
+	.withValidate()
+	.withCompletion()
+	.withSchemaFileMatch({ uri: url, fileMatch: fileMatch });
+let languageService = configureLanguageService(
+	languageSettingsSetup.languageSettings
+);
+
+// Grab kubernetes url or inline it
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite("Kubernetes Integration Tests", () => {
@@ -209,13 +198,15 @@ suite("Kubernetes Integration Tests", () => {
 
 			function parseSetup(content: string, position){
 				let testTextDocument = setup(content);
-				let yDoc = parseYAML(testTextDocument.getText());
-				for(let jsonDoc in yDoc.documents){
-					yDoc.documents[jsonDoc].configureSettings({
+				
+				const completionAdjusted = completionAdjustor(testTextDocument, testTextDocument.positionAt(position));
+				let jsonDocument = parseYAML(completionAdjusted.newText);
+				for(let jsonDoc in jsonDocument.documents){
+					jsonDocument.documents[jsonDoc].configureSettings({
 						isKubernetes: true
 					});
 				}
-				return completionHelper(testTextDocument, testTextDocument.positionAt(position));
+    			return languageService.doComplete(testTextDocument, completionAdjusted.newPosition, jsonDocument);
 			}
 
 			it('Autocomplete on root node without word', (done) => {

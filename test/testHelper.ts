@@ -44,9 +44,8 @@ if (process.argv.indexOf("--stdio") == -1) {
 	connection = createConnection();
 }
 
-let workspaceRoot: string;
 connection.onInitialize(
-	(params): InitializeResult => {
+	(): InitializeResult => {
 		return {
 			capabilities: {
 				// Tell the client that the server works in FULL text document sync mode

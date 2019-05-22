@@ -2,39 +2,21 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {
-	IPCMessageReader, IPCMessageWriter,
-	createConnection, IConnection, TextDocumentSyncKind,
-	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
-	InitializeParams, InitializeResult, TextDocumentPositionParams,
-	CompletionItem, CompletionItemKind, RequestType
-} from 'vscode-languageserver';
-import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import {getLanguageService} from '../src/languageservice/yamlLanguageService'
-import Strings = require( '../src/languageservice/utils/strings');
-import URI from '../src/languageservice/utils/uri';
-import * as URL from 'url';
-import fs = require('fs');
-import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-import {schemaRequestService, workspaceContext}  from './testHelper';
+import { TextDocument } from 'vscode-languageserver';
+import { configureLanguageService }  from './testHelper';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
+import { ServiceSetup } from '../src/serviceSetup';
 var assert = require('assert');
 
-let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
-
-let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
-
 let uri = 'http://json.schemastore.org/bowerrc';
-let languageSettings = {
-	schemas: [],
-	validate: true,
-	customTags: []
-};
 let fileMatch = ["*.yml", "*.yaml"];
-languageSettings.schemas.push({ uri, fileMatch: fileMatch });
-languageSettings.customTags.push("!Test");
-languageSettings.customTags.push("!Ref sequence");
-languageService.configure(languageSettings);
+let languageSettingsSetup = new ServiceSetup()
+	.withValidate()
+	.withCustomTags(['!Test', '!Ref sequence'])
+	.withSchemaFileMatch({ uri, fileMatch: fileMatch });
+let languageService = configureLanguageService(
+	languageSettingsSetup.languageSettings
+);
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite("Validation Tests", () => {
@@ -48,7 +30,7 @@ suite("Validation Tests", () => {
 
 		function parseSetup(content: string){
 			let testTextDocument = setup(content);
-			let yDoc = parseYAML(testTextDocument.getText(), languageSettings.customTags);
+			let yDoc = parseYAML(testTextDocument.getText(), languageSettingsSetup.languageSettings.customTags);
 			return languageService.doValidation(testTextDocument, yDoc);
 		}
 
