@@ -2,10 +2,11 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { configureLanguageService, setupTextDocument } from "./testHelper";
+import { configureLanguageService, setupTextDocument, createJSONLanguageService } from "./testHelper";
 import { parse as parseYAML } from "../src/languageservice/parser/yamlParser";
 import { ServiceSetup } from "../src/serviceSetup";
 var assert = require("assert");
+const jsonLanguageService = createJSONLanguageService();
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite("Custom Tag tests Tests", () => {
@@ -20,8 +21,8 @@ suite("Custom Tag tests Tests", () => {
 	function parseSetup(content: string, customTags: string[]) {
 		let testTextDocument = setupTextDocument(content);
 		let languageService = createLanguageServiceWithCustomTags(customTags);
-		let yDoc = parseYAML(testTextDocument.getText(), customTags);
-		return languageService.doValidation(testTextDocument, yDoc);
+		let yDoc = parseYAML(jsonLanguageService, testTextDocument.getText(), customTags);
+		return languageService.doValidation(jsonLanguageService, testTextDocument, yDoc);
 	}
 
 	describe("Test that validation does not throw errors", function() {

@@ -23,6 +23,7 @@ import {
 } from "../src/languageservice/yamlLanguageService";
 import Strings = require("../src/languageservice/utils/strings");
 import URI from "../src/languageservice/utils/uri";
+import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';
 import * as URL from "url";
 import fs = require("fs");
 import path = require("path");
@@ -122,6 +123,13 @@ export function configureLanguageService(languageSettings: LanguageSettings) {
 
 	languageService.configure(languageSettings);
 	return languageService;
+}
+
+export function createJSONLanguageService() {
+	return getJSONLanguageService({
+		schemaRequestService,
+		workspaceContext
+	});
 }
 
 export function setupTextDocument(content: string) {

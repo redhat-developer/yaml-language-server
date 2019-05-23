@@ -1,8 +1,9 @@
+import { SingleYAMLDocument } from '../parser/yamlParser';
+
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { SingleYAMLDocument } from "../parser/yamlParser";
 
 export function removeDuplicates(arr, prop) {
     var new_arr = [];
@@ -61,17 +62,17 @@ export function removeDuplicatesObj(objArray){
 
 }
 
-export function matchOffsetToDocument(offset: number, jsonDocuments): SingleYAMLDocument {
+export function matchOffsetToDocument(offset: number, jsonDocuments) {
 	
 	for(let jsonDoc in jsonDocuments.documents){
-		let currJsonDoc = jsonDocuments.documents[jsonDoc];
+		let currJsonDoc: SingleYAMLDocument = jsonDocuments.documents[jsonDoc];
 		if(currJsonDoc.root && currJsonDoc.root.end >= offset && currJsonDoc.root.start <= offset){
 			return currJsonDoc;
 		}
 	}
 
-	return null;
-
+	// TODO: Fix this so that it returns the correct document
+	return jsonDocuments.documents[0];
 }
 
 export function filterInvalidCustomTags(customTags: String[]): String[] {

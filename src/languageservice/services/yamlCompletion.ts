@@ -11,7 +11,7 @@ import * as Json from 'jsonc-parser';
 import * as SchemaService from './jsonSchemaService';
 import { JSONSchema } from '../jsonSchema';
 import { JSONWorkerContribution, CompletionsCollector } from '../jsonContributions';
-import { PromiseConstructor, Thenable } from 'vscode-json-languageservice';
+import { PromiseConstructor, Thenable, ASTNode } from 'vscode-json-languageservice';
 
 import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Position, Range, TextEdit, InsertTextFormat } from 'vscode-languageserver-types';
 
@@ -76,8 +76,39 @@ export class YAMLCompletion {
 		if(currentDoc === null){
 			return Promise.resolve(result);
 		}
+
+		currentDoc.getNodeFromOffset = function(offset: number) {
+			let collector = [];
+			let findNode = (node: ASTNode): ASTNode => {
+				if (offset >= node.offset && offset <= node.length) {
+					let children = node.children;
+					for (let i = 0; i < children.length && children[i].offset <= offset; i++) {
+						let item = findNode(children[i]);
+						if (item) {
+							collector.push(item);
+						}
+					}
+					return node;
+				}
+				return null;
+			};
+			let foundNode = findNode(currentDoc.root);
+			let currMinDist = Number.MAX_VALUE;
+			let currMinNode = null;
+			for(let possibleNode in collector){
+				let currNode = collector[possibleNode];
+				let minDist = (currNode.end - offset) + (offset - currNode.start);
+				if(minDist < currMinDist){
+					currMinNode = currNode;
+					currMinDist = minDist;
+				}
+			}
+			return currMinNode || foundNode;
+		}
+		
 		const currentDocIndex = doc.documents.indexOf(currentDoc);
-		let node = currentDoc.getNodeFromOffsetEndInclusive(offset);
+		let node = currentDoc.getNodeFromOffset(offset);
+		
 		if (this.isInComment(document, node ? node.start : 0, offset)) {
 			return Promise.resolve(result);
 		}

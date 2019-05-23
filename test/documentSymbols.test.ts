@@ -4,24 +4,27 @@
  *--------------------------------------------------------------------------------------------*/
 import {
 	setupTextDocument,
-	configureLanguageService
+	configureLanguageService,
+	createJSONLanguageService
 } from "./testHelper";
 import { parse as parseYAML } from "../src/languageservice/parser/yamlParser";
 import { SymbolInformation } from "vscode-json-languageservice";
 import { ServiceSetup } from '../src/serviceSetup';
 var assert = require("assert");
+const jsonLanguageService = createJSONLanguageService();
 
 suite("Document Symbols Tests", () => {
 	describe("Document Symbols Tests", function() {
 
 		function parseSetup(content: string): SymbolInformation[] {
 			let testTextDocument = setupTextDocument(content);
-			let jsonDocument = parseYAML(testTextDocument.getText());
+			let jsonDocument = parseYAML(jsonLanguageService, testTextDocument.getText());
 
 			let languageSettingsSetup = new ServiceSetup();	
 			let languageService = configureLanguageService(languageSettingsSetup.languageSettings);
 
 			return languageService.findDocumentSymbols(
+				jsonLanguageService,
 				testTextDocument,
 				jsonDocument
 			);

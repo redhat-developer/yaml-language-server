@@ -6,7 +6,8 @@ import path = require("path");
 import {
 	toFsPath,
 	configureLanguageService,
-	setupTextDocument
+	setupTextDocument,
+	createJSONLanguageService
 } from "./testHelper";
 import { parse as parseYAML } from "../src/languageservice/parser/yamlParser";
 import { ServiceSetup } from "../src/serviceSetup";
@@ -15,9 +16,7 @@ var assert = require("assert");
 /**
  * Setup the schema we are going to use with the language settings
  */
-let uri = toFsPath(
-	path.join(__dirname, "./fixtures/deploymentParameters.json")
-);
+let uri = 'http://json.schemastore.org/bowerrc';
 let fileMatch = ["*.yml", "*.yaml"];
 let languageSettingsSetup = new ServiceSetup()
 	.withHover()
@@ -25,13 +24,21 @@ let languageSettingsSetup = new ServiceSetup()
 let languageService = configureLanguageService(
 	languageSettingsSetup.languageSettings
 );
+const jsonLanguageService = createJSONLanguageService();
 
 suite("Hover Tests", () => {
 	describe("Hover", function() {
 		function parseSetup(content: string, position) {
 			let testTextDocument = setupTextDocument(content);
-			let jsonDocument = parseYAML(testTextDocument.getText());
+			let jsonDocument = parseYAML(jsonLanguageService, testTextDocument.getText());
+			jsonLanguageService.configure({
+				schemas: [{
+					fileMatch,
+					uri
+				}]
+			})
 			return languageService.doHover(
+				jsonLanguageService,
 				testTextDocument,
 				testTextDocument.positionAt(position),
 				jsonDocument

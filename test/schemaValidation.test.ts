@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { TextDocument } from 'vscode-languageserver';
-import { configureLanguageService }  from './testHelper';
+import { configureLanguageService, createJSONLanguageService }  from './testHelper';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
 import { ServiceSetup } from '../src/serviceSetup';
 var assert = require('assert');
@@ -17,6 +17,14 @@ let languageSettingsSetup = new ServiceSetup()
 let languageService = configureLanguageService(
 	languageSettingsSetup.languageSettings
 );
+const jsonLanguageService = createJSONLanguageService();
+jsonLanguageService.configure({
+	schemas: [{
+		uri,
+		fileMatch
+	}],
+	validate: true
+})
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite("Validation Tests", () => {
@@ -30,8 +38,8 @@ suite("Validation Tests", () => {
 
 		function parseSetup(content: string){
 			let testTextDocument = setup(content);
-			let yDoc = parseYAML(testTextDocument.getText(), languageSettingsSetup.languageSettings.customTags);
-			return languageService.doValidation(testTextDocument, yDoc);
+			let yDoc = parseYAML(jsonLanguageService, testTextDocument.getText(), languageSettingsSetup.languageSettings.customTags);
+			return languageService.doValidation(jsonLanguageService, testTextDocument, yDoc);
 		}
 
 		//Validating basic nodes
@@ -103,7 +111,7 @@ suite("Validation Tests", () => {
 			});
 
 			it('Type string validates under children', (done) => {
-				let content = `registry:\n  register: test_url`;
+				let content = `registry:\n  register: file://my_test`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
 					assert.equal(result.length, 0);
@@ -201,7 +209,7 @@ suite("Validation Tests", () => {
 				});			
 
 				it('Type Object does not error on valid node', (done) => {
-					let content = `registry:\n  search: test_url`;
+					let content = `registry:\n  search: file://some_location`;
 					let validator = parseSetup(content);
 					validator.then(function(result){
 						assert.equal(result.length, 0);

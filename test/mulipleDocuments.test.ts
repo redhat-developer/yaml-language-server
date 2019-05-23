@@ -6,7 +6,8 @@ import path = require("path");
 import {
 	toFsPath,
 	setupTextDocument,
-	configureLanguageService
+	configureLanguageService,
+	createJSONLanguageService
 } from "./testHelper";
 import { parse as parseYAML } from "../src/languageservice/parser/yamlParser";
 import { ServiceSetup } from '../src/serviceSetup';
@@ -25,6 +26,7 @@ let languageSettingsSetup = new ServiceSetup()
 let languageService = configureLanguageService(
 	languageSettingsSetup.languageSettings
 );
+const jsonLanguageService = createJSONLanguageService();
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite("Multiple Documents Validation Tests", () => {
@@ -33,10 +35,11 @@ suite("Multiple Documents Validation Tests", () => {
 		function validatorSetup(content: string) {
 			const testTextDocument = setupTextDocument(content);
 			const yDoc = parseYAML(
+				jsonLanguageService,
 				testTextDocument.getText(),
 				languageSettingsSetup.languageSettings.customTags
 			);
-			return languageService.doValidation(testTextDocument, yDoc);
+			return languageService.doValidation(jsonLanguageService, testTextDocument, yDoc);
 		}
 
 		it("Should validate multiple documents", done => {

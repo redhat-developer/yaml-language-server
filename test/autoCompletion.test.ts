@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { setupTextDocument, configureLanguageService }  from './testHelper';
+import { setupTextDocument, configureLanguageService, createJSONLanguageService }  from './testHelper';
 import { completionAdjustor } from '../src/languageservice/utils/completionHelper';
 import { ServiceSetup } from '../src/serviceSetup';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
@@ -16,6 +16,7 @@ let languageSettingsSetup = new ServiceSetup()
 let languageService = configureLanguageService(
 	languageSettingsSetup.languageSettings
 );
+const jsonLanguageService = createJSONLanguageService();
 
 suite("Auto Completion Tests", () => {
 
@@ -26,7 +27,7 @@ suite("Auto Completion Tests", () => {
 			function parseSetup(content: string, position){
 				let testTextDocument = setupTextDocument(content);
 				const completionAdjusted = completionAdjustor(testTextDocument, testTextDocument.positionAt(position));
-				let jsonDocument = parseYAML(completionAdjusted.newText);
+				let jsonDocument = parseYAML(jsonLanguageService, completionAdjusted.newText);
     			return languageService.doComplete(testTextDocument, completionAdjusted.newPosition, jsonDocument);
 			}
 

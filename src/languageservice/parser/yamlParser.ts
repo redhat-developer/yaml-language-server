@@ -5,10 +5,9 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { ASTNode, ErrorCode, BooleanASTNode, NullASTNode, ArrayASTNode, NumberASTNode, ObjectASTNode, PropertyASTNode, StringASTNode, IApplicableSchema, JSONDocument } from './jsonParser';
-
 import * as nls from 'vscode-nls';
-const localize = nls.loadMessageBundle();
+
+import { JSONDocument, LanguageService, ASTNode, Diagnostic, Range } from 'vscode-json-languageservice';
 
 import * as Yaml from 'yaml-ast-parser-custom-tags'
 import { Schema, Type } from 'js-yaml';
@@ -16,70 +15,18 @@ import { Schema, Type } from 'js-yaml';
 import { getLineStartPositions, getPosition } from '../utils/documentPositionCalculator'
 import { parseYamlBoolean } from './scalar-type';
 import { filterInvalidCustomTags } from '../utils/arrUtils';
+import { StringASTNodeImpl, ObjectASTNodeImpl, PropertyASTNodeImpl, ArrayASTNodeImpl, NullASTNodeImpl, BooleanASTNodeImpl, NumberASTNodeImpl } from './jsonParser2';
 
-export class SingleYAMLDocument extends JSONDocument {
-	private lines;
+export class SingleYAMLDocument {
 	public root;
 	public errors;
 	public warnings;
+	public jsonDoc: JSONDocument;
 
-	constructor(lines: number[]) {
-		super(null, []);
-		this.lines = lines;
+	constructor() {
 		this.root = null;
 		this.errors = [];
 		this.warnings = [];
-	}
-
-	public getSchemas(schema, doc, node) {
-		let matchingSchemas = [];
-		doc.validate(schema, matchingSchemas, node.start);
-		return matchingSchemas;
-	}
-
-	public getNodeFromOffset(offset: number): ASTNode {
-		return this.getNodeFromOffsetEndInclusive(offset);
-	}
-
-	private getNodeByIndent = (lines: number[], offset: number, node: ASTNode) => {
-
-		const { line, column: indent } = getPosition(offset, this.lines)
-
-		const children = node.getChildNodes()
-
-		function findNode(children) {
-			for (var idx = 0; idx < children.length; idx++) {
-				var child = children[idx];
-
-				const { line: childLine, column: childCol } = getPosition(child.start, lines);
-
-				if (childCol > indent) {
-					return null;
-				}
-
-				const newChildren = child.getChildNodes()
-				const foundNode = findNode(newChildren)
-
-				if (foundNode) {
-					return foundNode;
-				}
-
-				// We have the right indentation, need to return based on line
-				if (childLine == line) {
-					return child;
-				}
-				if (childLine > line) {
-					// Get previous
-					(idx - 1) >= 0 ? children[idx - 1] : child;
-				}
-				// Else continue loop to try next element
-			}
-
-			// Special case, we found the correct
-			return children[children.length - 1]
-		}
-
-		return findNode(children) || node
 	}
 }
 
@@ -94,11 +41,11 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 		case Yaml.Kind.MAP: {
 			const instance = <Yaml.YamlMap>node;
 
-			const result = new ObjectASTNode(parent, null, node.startPosition, node.endPosition)
-			result.addProperty
+			const result = new ObjectASTNodeImpl(parent, node.startPosition);
+			result.length = node.endPosition - node.startPosition;
 
 			for (const mapping of instance.mappings) {
-				result.addProperty(<PropertyASTNode>recursivelyBuildAst(result, mapping))
+				result.properties.push(<PropertyASTNodeImpl>recursivelyBuildAst(result, mapping))
 			}
 
 			return result;
@@ -109,23 +56,27 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 
 			// Technically, this is an arbitrary node in YAML
 			// I doubt we would get a better string representation by parsing it
-			const keyNode = new StringASTNode(null, null, true, key.startPosition, key.endPosition);
+			const keyNode = new StringASTNodeImpl(null, key.startPosition, key.endPosition - key.startPosition);
 			keyNode.value = key.value;
 
-			const result = new PropertyASTNode(parent, keyNode)
-			result.end = instance.endPosition
+			const result = new PropertyASTNodeImpl(<ObjectASTNodeImpl>parent, key.endPosition);
+			result.keyNode = keyNode;
+			// result.end = instance.endPosition
 
-			const valueNode = (instance.value) ? recursivelyBuildAst(result, instance.value) : new NullASTNode(parent, key.value, instance.endPosition, instance.endPosition)
-			valueNode.location = key.value
+			const valueNode = (instance.value) ? recursivelyBuildAst(result, instance.value) : new NullASTNodeImpl(parent, instance.endPosition);
+			// valueNode.location = key.value
 
-			result.setValue(valueNode)
 
+			result.valueNode = valueNode;
+			// result.setValue(valueNode)
+
+			// TODO: Fix this whole section
 			return result;
 		}
 		case Yaml.Kind.SEQ: {
 			const instance = <Yaml.YAMLSequence>node;
 
-			const result = new ArrayASTNode(parent, null, instance.startPosition, instance.endPosition);
+			const result = new ArrayASTNodeImpl(parent, instance.startPosition);
 
 			let count = 0;
 			for (const item of instance.items) {
@@ -135,10 +86,11 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 
 				// Be aware of https://github.com/nodeca/js-yaml/issues/321
 				// Cannot simply work around it here because we need to know if we are in Flow or Block
-				var itemNode = (item === null) ? new NullASTNode(parent, null, instance.endPosition, instance.endPosition) : recursivelyBuildAst(result, item);
+				var itemNode = (item === null) ? new NullASTNodeImpl(parent, instance.endPosition) : recursivelyBuildAst(result, item);
 
-				itemNode.location = count++;
-				result.addItem(itemNode);
+				// TODO find what this is
+				// itemNode.location = count++;
+				result.items.push(itemNode);
 			}
 
 			return result;
@@ -148,36 +100,35 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 			const type = Yaml.determineScalarType(instance)
 
 			// The name is set either by the sequence or the mapping case.
-			const name = null;
 			const value = instance.value;
 
 			//This is a patch for redirecting values with these strings to be boolean nodes because its not supported in the parser.
 			let possibleBooleanValues = ['y', 'Y', 'yes', 'Yes', 'YES', 'n', 'N', 'no', 'No', 'NO', 'on', 'On', 'ON', 'off', 'Off', 'OFF'];
 			if (instance.plainScalar && possibleBooleanValues.indexOf(value.toString()) !== -1) {
-				return new BooleanASTNode(parent, name, parseYamlBoolean(value), node.startPosition, node.endPosition)
+				return new BooleanASTNodeImpl(parent, parseYamlBoolean(value), node.startPosition);
 			}
 
 			switch (type) {
 				case Yaml.ScalarType.null: {
-					return new StringASTNode(parent, name, false, instance.startPosition, instance.endPosition);
+					return new StringASTNodeImpl(parent, instance.startPosition, instance.endPosition - instance.startPosition);
 				}
 				case Yaml.ScalarType.bool: {
-					return new BooleanASTNode(parent, name, Yaml.parseYamlBoolean(value), node.startPosition, node.endPosition)
+					return new BooleanASTNodeImpl(parent, Yaml.parseYamlBoolean(value), node.startPosition);
 				}
 				case Yaml.ScalarType.int: {
-					const result = new NumberASTNode(parent, name, node.startPosition, node.endPosition);
+					const result = new NumberASTNodeImpl(parent, node.startPosition);
 					result.value = Yaml.parseYamlInteger(value);
 					result.isInteger = true;
 					return result;
 				}
 				case Yaml.ScalarType.float: {
-					const result = new NumberASTNode(parent, name, node.startPosition, node.endPosition);
+					const result = new NumberASTNodeImpl(parent, node.startPosition);
 					result.value = Yaml.parseYamlFloat(value);
 					result.isInteger = false;
 					return result;
 				}
 				case Yaml.ScalarType.string: {
-					const result = new StringASTNode(parent, name, false, node.startPosition, node.endPosition);
+					const result = new StringASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
 					result.value = node.value;
 					return result;
 				}
@@ -189,10 +140,10 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 			const instance = (<Yaml.YAMLAnchorReference>node).value
 
 			return recursivelyBuildAst(parent, instance) ||
-				new NullASTNode(parent, null, node.startPosition, node.endPosition);
+				new NullASTNodeImpl(parent, node.startPosition);
 		}
 		case Yaml.Kind.INCLUDE_REF: {
-			const result = new StringASTNode(parent, null, false, node.startPosition, node.endPosition);
+			const result = new StringASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
 			result.value = node.value;
 			return result;
 		}
@@ -200,53 +151,59 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 }
 
 function convertError(e: Yaml.YAMLException) {
-	return { message: `${e.reason}`, location: { start: e.mark.position, end: e.mark.position + e.mark.column, code: ErrorCode.Undefined } }
+	const r = Range.create(e.mark.position, 0, e.mark.position, e.mark.column);
+	return { message: `${e.reason}`, range: r }
 }
 
-function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string) {
-	let _doc = new SingleYAMLDocument(startPositions);
-	_doc.root = recursivelyBuildAst(null, yamlDoc)
+function createJSONDocument(jsonLanguageService: LanguageService, yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string): SingleYAMLDocument {
+	let newYAMLDocument = new SingleYAMLDocument();
 
-	if (!_doc.root) {
+	const root = recursivelyBuildAst(null, yamlDoc);
+
+	if (!root) {
 		// TODO: When this is true, consider not pushing the other errors.
-		_doc.errors.push({ message: localize('Invalid symbol', 'Expected a YAML object, array or literal'), code: ErrorCode.Undefined, location: { start: yamlDoc.startPosition, end: yamlDoc.endPosition } });
+		newYAMLDocument.errors.push({ message: 'Expected a YAML object, array or literal', code: 0, location: { start: yamlDoc.startPosition, end: yamlDoc.endPosition } });
 	}
 
-	const duplicateKeyReason = 'duplicate key'
+	const fixedErrs = fixedErrors(yamlDoc.errors, text);
+	let _doc = jsonLanguageService.newJSONDocument(root, fixedErrs);
 
-	//Patch ontop of yaml-ast-parser to disable duplicate key message on merge key
-	let isDuplicateAndNotMergeKey = function (error: Yaml.YAMLException, yamlText: string) {
-		let errorConverted = convertError(error);
-		let errorStart = errorConverted.location.start;
-		let errorEnd = errorConverted.location.end;
-		if (error.reason === duplicateKeyReason && yamlText.substring(errorStart, errorEnd).startsWith("<<")) {
-			return false;
+	newYAMLDocument.jsonDoc = _doc;
+	newYAMLDocument.root = root;
+
+	return newYAMLDocument;
+}
+
+function fixedErrors(errors: Yaml.YAMLException[], text: string) {
+	const errArr = [];
+	for (const e of errors) {
+		if (e.reason !== duplicateKeyReason || (e.reason === duplicateKeyReason && !isDuplicateMergeOrAnchor(e, text))) {
+			errArr.push(convertError(e));
 		}
-		return true;
-	};
-	const errors = yamlDoc.errors.filter(e => e.reason !== duplicateKeyReason && !e.isWarning).map(e => convertError(e))
-	const warnings = yamlDoc.errors.filter(e => (e.reason === duplicateKeyReason && isDuplicateAndNotMergeKey(e, text)) || e.isWarning).map(e => convertError(e))
+	}
+	return errArr;
+}
 
-	errors.forEach(e => _doc.errors.push(e));
-	warnings.forEach(e => _doc.warnings.push(e));
-
-	return _doc;
+const duplicateKeyReason = 'duplicate key'
+function isDuplicateMergeOrAnchor(error: Yaml.YAMLException, yamlText: string) {
+	let errorConverted = convertError(error);
+	let errorStart = errorConverted.range.start.character;
+	let errorEnd = errorConverted.range.end.character;
+	if (error.reason === duplicateKeyReason && yamlText.substring(errorStart, errorEnd).startsWith("<<")) {
+		return false;
+	}
+	return true;
 }
 
 export class YAMLDocument {
-	public documents: JSONDocument[]
-	private errors;
-	private warnings;
+	public documents: SingleYAMLDocument[]
 
-	constructor(documents: JSONDocument[]) {
+	constructor(documents: SingleYAMLDocument[]) {
 		this.documents = documents;
-		this.errors = [];
-		this.warnings = [];
 	}
-
 }
 
-export function parse(text: string, customTags = []): YAMLDocument {
+export function parse(jsonLanguageService: LanguageService, text: string, customTags = []): YAMLDocument {
 
 	const startPositions = getLineStartPositions(text)
 	// This is documented to return a YAMLNode even though the
@@ -287,5 +244,5 @@ export function parse(text: string, customTags = []): YAMLDocument {
 
 	Yaml.loadAll(text, doc => yamlDocs.push(doc), additionalOptions);
 
-	return new YAMLDocument(yamlDocs.map(doc => createJSONDocument(doc, startPositions, text)));
+	return new YAMLDocument(yamlDocs.map(doc => createJSONDocument(jsonLanguageService, doc, [], text)));
 }

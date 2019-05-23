@@ -9,6 +9,8 @@ import { JSONSchemaService, ResolvedSchema } from './jsonSchemaService';
 import { JSONDocument, ObjectASTNode, IProblem, ProblemSeverity } from '../parser/jsonParser';
 import { TextDocument, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
 import { PromiseConstructor, Thenable, LanguageSettings} from '../yamlLanguageService';
+import { LanguageService } from 'vscode-json-languageservice';
+import { SingleYAMLDocument } from '../parser/yamlParser';
 
 export class YAMLValidation {
 	
@@ -28,73 +30,43 @@ export class YAMLValidation {
 			this.validationEnabled = shouldValidate.validate;
 		}
 	}
-	
-	public doValidation(textDocument, yamlDocument) {
+
+	public doValidation(jsonLanguageService: LanguageService, textDocument, yamlDocument) {
 
 		if(!this.validationEnabled){
 			return this.promise.resolve([]);
 		}
 
-		return this.jsonSchemaService.getSchemaForResource(textDocument.uri).then(function (schema) {
-			var diagnostics = [];
-			var added = {};
-			let newSchema = schema;
-			if (schema) {
-				let documentIndex = 0;
-				for(let currentYAMLDoc in yamlDocument.documents){
-					let currentDoc = yamlDocument.documents[currentYAMLDoc];
-					if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[documentIndex]) {
-						newSchema = new ResolvedSchema(schema.schema.schemaSequence[documentIndex]);
-					}
-					let diagnostics = currentDoc.getValidationProblems(newSchema.schema);
-					for(let diag in diagnostics){
-						let curDiagnostic = diagnostics[diag];
-						currentDoc.errors.push({ location: { start: curDiagnostic.location.start, end: curDiagnostic.location.end }, message: curDiagnostic.message })
-					}
-					documentIndex++;
-				}
+		let validationResult = [];
+		for(let currentYAMLDoc in yamlDocument.documents){
+			let currentDoc: SingleYAMLDocument = yamlDocument.documents[currentYAMLDoc];
 
-			}
-			if(newSchema && newSchema.errors.length > 0){
-				
-				for(let curDiagnostic of newSchema.errors){
-					diagnostics.push({
-						severity: DiagnosticSeverity.Error,
-						range: {
-							start: {
-								line: 0,
-								character: 0
-							},
-							end: {
-								line: 0,
-								character: 1
-							}
-						},
-						message: curDiagnostic
-					});
-				}
+			validationResult.push(currentDoc.errors);
+			validationResult.push(currentDoc.warnings);
+			validationResult.push(currentDoc.jsonDoc['syntaxErrors']);
 
+			const validation = jsonLanguageService.doValidation(textDocument, currentDoc.jsonDoc);
+			validationResult.push(validation);
+		}
+		
+		
+		return Promise.all(validationResult).then(resolvedValidation => {
+			let joinedResolvedArray = [];
+			for (const resolvedArr of resolvedValidation) {
+				joinedResolvedArray = joinedResolvedArray.concat(resolvedArr);
 			}
-			for(let currentYAMLDoc in yamlDocument.documents){
-				let currentDoc = yamlDocument.documents[currentYAMLDoc];
-				currentDoc.errors.concat(currentDoc.warnings).forEach(function (error, idx) {
-					// remove duplicated messages
-					var signature = error.location.start + ' ' + error.location.end + ' ' + error.message;
-					if (!added[signature]) {
-						added[signature] = true;
-						var range = {
-							start: textDocument.positionAt(error.location.start),
-							end: textDocument.positionAt(error.location.end)
-						};
-						diagnostics.push({
-							severity: idx >= currentDoc.errors.length ? DiagnosticSeverity.Warning : DiagnosticSeverity.Error,
-							range: range,
-							message: error.message
-						});
-					}
-				});
+			
+			const foundSignatures = new Set();
+			const duplicateMessagesRemoved = [];
+			for (const err of joinedResolvedArray as Diagnostic[]) {
+				const errSig = err.range.start.line + ' ' + err.range.start.character + ' ' + err.message;
+				if (!foundSignatures.has(errSig)) {
+					duplicateMessagesRemoved.push(err);
+					foundSignatures.add(errSig);
+				}
 			}
-			return diagnostics;
-		});
+			return duplicateMessagesRemoved;
+		})
 	}
+
 }
