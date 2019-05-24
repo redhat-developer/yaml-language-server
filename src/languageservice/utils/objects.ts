@@ -4,6 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
+import { JSONSchemaRef } from 'vscode-json-languageservice/lib/umd/jsonSchema';
+
 export function equals(one: any, other: any): boolean {
     if (one === other) {
         return true;
@@ -55,4 +57,19 @@ export function equals(one: any, other: any): boolean {
         }
     }
     return true;
+}
+
+export function isDefined(val: any): val is object {
+	return typeof val !== 'undefined';
+}
+
+export function isBoolean(val: any): val is boolean {
+	return typeof val === 'boolean';
+}
+
+export function asSchema(schema: JSONSchemaRef) {
+	if (isBoolean(schema)) {
+		return schema ? {} : { "not": {} };
+	}
+	return schema;
 }

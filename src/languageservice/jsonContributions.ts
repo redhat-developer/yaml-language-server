@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import {Thenable, MarkedString, CompletionItem} from 'vscode-json-languageservice';
+import { MarkedString, CompletionItem} from 'vscode-json-languageservice';
 
 export interface JSONWorkerContribution {
 	getInfoContribution(uri: string, location: JSONPath): Thenable<MarkedString[]>;

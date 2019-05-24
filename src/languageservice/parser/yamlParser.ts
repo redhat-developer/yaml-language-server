@@ -5,14 +5,11 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import * as nls from 'vscode-nls';
-
-import { JSONDocument, LanguageService, ASTNode, Diagnostic, Range } from 'vscode-json-languageservice';
+import { JSONDocument, LanguageService, ASTNode, Range } from 'vscode-json-languageservice';
 
 import * as Yaml from 'yaml-ast-parser-custom-tags'
 import { Schema, Type } from 'js-yaml';
 
-import { getLineStartPositions, getPosition } from '../utils/documentPositionCalculator'
 import { parseYamlBoolean } from './scalar-type';
 import { filterInvalidCustomTags } from '../utils/arrUtils';
 import { StringASTNodeImpl, ObjectASTNodeImpl, PropertyASTNodeImpl, ArrayASTNodeImpl, NullASTNodeImpl, BooleanASTNodeImpl, NumberASTNodeImpl } from './jsonParser2';
@@ -54,42 +51,58 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 			const instance = <Yaml.YAMLMapping>node;
 			const key = instance.key;
 
+
+			/**
+			 * PropertyNode
+			 * 	keyNode: StringASTNode
+			 * 	valueNode: Some other node type | NullASTNode
+			 * 
+			 * In YAML
+			 *  key: value
+			 * 
+			 * The property node wraps it all
+			 * The key node is the key
+			 * the value node is the value
+			 * 
+			 */
+			const result = new PropertyASTNodeImpl(<ObjectASTNodeImpl>parent, instance.startPosition);
+			result.length = instance.endPosition;
+
 			// Technically, this is an arbitrary node in YAML
 			// I doubt we would get a better string representation by parsing it
-			const keyNode = new StringASTNodeImpl(null, key.startPosition, key.endPosition - key.startPosition);
+			const keyNode = new StringASTNodeImpl(result, key.startPosition, key.endPosition - key.startPosition);
 			keyNode.value = key.value;
-
-			const result = new PropertyASTNodeImpl(<ObjectASTNodeImpl>parent, key.endPosition);
+			
 			result.keyNode = keyNode;
 			// result.end = instance.endPosition
 
-			const valueNode = (instance.value) ? recursivelyBuildAst(result, instance.value) : new NullASTNodeImpl(parent, instance.endPosition);
-			// valueNode.location = key.value
-
+			let valueNode;
+			if (instance.value) {
+				valueNode = recursivelyBuildAst(result, instance.value);
+			} else {
+				let nullNode = new NullASTNodeImpl(parent, instance.endPosition);
+				nullNode.length = instance.endPosition - key.endPosition;
+				valueNode = nullNode;
+			}
 
 			result.valueNode = valueNode;
-			// result.setValue(valueNode)
 
-			// TODO: Fix this whole section
 			return result;
 		}
 		case Yaml.Kind.SEQ: {
 			const instance = <Yaml.YAMLSequence>node;
 
 			const result = new ArrayASTNodeImpl(parent, instance.startPosition);
+			result.length = instance.endPosition;
 
-			let count = 0;
 			for (const item of instance.items) {
-				if (item === null && count === instance.items.length - 1) {
+				if (item === null) {
 					break;
 				}
 
 				// Be aware of https://github.com/nodeca/js-yaml/issues/321
 				// Cannot simply work around it here because we need to know if we are in Flow or Block
 				var itemNode = (item === null) ? new NullASTNodeImpl(parent, instance.endPosition) : recursivelyBuildAst(result, item);
-
-				// TODO find what this is
-				// itemNode.location = count++;
 				result.items.push(itemNode);
 			}
 
@@ -205,7 +218,6 @@ export class YAMLDocument {
 
 export function parse(jsonLanguageService: LanguageService, text: string, customTags = []): YAMLDocument {
 
-	const startPositions = getLineStartPositions(text)
 	// This is documented to return a YAMLNode even though the
 	// typing only returns a YAMLDocument
 	const yamlDocs = [];

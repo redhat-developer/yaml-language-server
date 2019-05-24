@@ -7,7 +7,7 @@
 
 import * as SchemaService from './jsonSchemaService';
 import {JSONWorkerContribution} from '../jsonContributions';
-import {PromiseConstructor, Thenable, ASTNode} from 'vscode-json-languageservice';
+import {PromiseConstructor, ASTNode} from 'vscode-json-languageservice';
 
 import { Hover, TextDocument, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';

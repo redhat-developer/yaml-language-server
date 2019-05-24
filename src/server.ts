@@ -22,9 +22,7 @@ import Strings = require('./languageservice/utils/strings');
 import { removeDuplicatesObj } from './languageservice/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
-import { FilePatternAssociation, CustomSchemaProvider } from './languageservice/services/jsonSchemaService';
 import { parse as parseYAML } from './languageservice/parser/yamlParser';
-import { JSONDocument } from './languageservice/parser/jsonParser';
 import { JSONSchema } from './languageservice/jsonSchema';
 import { completionAdjustor } from './languageservice/utils/completionHelper';
 import { getLanguageService } from 'vscode-json-languageservice';
@@ -321,8 +319,8 @@ connection.onNotification(SchemaAssociationNotification.type, associations => {
 });
 
 connection.onNotification(DynamicCustomSchemaRequestRegistration.type, () => {
-	const schemaProvider = ((resource) => connection.sendRequest(CustomSchemaRequest.type, resource)) as CustomSchemaProvider;
-	customLanguageService.registerCustomSchemaProvider(schemaProvider);
+	// const schemaProvider = ((resource) => connection.sendRequest(CustomSchemaRequest.type, resource)) as CustomSchemaProvider;
+	// customLanguageService.registerCustomSchemaProvider(schemaProvider);
 });
 
 function updateConfiguration() {
@@ -398,24 +396,24 @@ function configureSchemas(uri, fileMatch, schema, languageSettings){
 	return languageSettings;
 }
 
-function setKubernetesParserOption(jsonDocuments: JSONDocument[], option: boolean){
-	for(let jsonDoc in jsonDocuments){
-		jsonDocuments[jsonDoc].configureSettings({
-			isKubernetes: option
-		});
-	}
-}
+// function setKubernetesParserOption(jsonDocuments: JSONDocument[], option: boolean){
+// 	for(let jsonDoc in jsonDocuments){
+// 		jsonDocuments[jsonDoc].configureSettings({
+// 			isKubernetes: option
+// 		});
+// 	}
+// }
 
-function isKubernetes(textDocument){
-	for(let path in specificValidatorPaths){
-		let globPath = specificValidatorPaths[path];
-		let fpa = new FilePatternAssociation(globPath);
-		if(fpa.matchesPattern(textDocument.uri)){
-			return true;
-		}
-	}
-	return false;
-}
+// function isKubernetes(textDocument){
+// 	for(let path in specificValidatorPaths){
+// 		let globPath = specificValidatorPaths[path];
+// 		let fpa = new FilePatternAssociation(globPath);
+// 		if(fpa.matchesPattern(textDocument.uri)){
+// 			return true;
+// 		}
+// 	}
+// 	return false;
+// }
 
 documents.onDidChangeContent((change) => {
 	triggerValidation(change.document);

@@ -6,9 +6,8 @@
 'use strict';
 
 import { JSONSchemaService, ResolvedSchema } from './jsonSchemaService';
-import { JSONDocument, ObjectASTNode, IProblem, ProblemSeverity } from '../parser/jsonParser';
 import { TextDocument, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
-import { PromiseConstructor, Thenable, LanguageSettings} from '../yamlLanguageService';
+import { LanguageSettings} from '../yamlLanguageService';
 import { LanguageService } from 'vscode-json-languageservice';
 import { SingleYAMLDocument } from '../parser/yamlParser';
 

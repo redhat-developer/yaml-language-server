@@ -272,7 +272,7 @@ suite('JSON Schema', () => {
 
 		service.registerExternalSchema(id, ['*.json'], schema);
 
-		service.getSchemaForResource('test.json').then((schema) => {
+		service.getSchemaForResource('test.json', undefined).then((schema) => {
 			let section = schema.getSection(['child', 'grandchild']);
 			assert.equal(section.description, 'Meaning of Life');
 		}).then(() => testDone(), (error) => {
@@ -283,7 +283,7 @@ suite('JSON Schema', () => {
 	test('Null Schema', function (testDone) {
 		let service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
 
-		service.getSchemaForResource('test.json').then((schema) => {
+		service.getSchemaForResource('test.json', undefined).then((schema) => {
 			assert.equal(schema, null);
 		}).then(() => testDone(), (error) => {
 			testDone(error);

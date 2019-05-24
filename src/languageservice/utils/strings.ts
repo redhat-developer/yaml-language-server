@@ -42,6 +42,10 @@ function convertGlobalPattern2RegExp(pattern: string): RegExp {
 	return new RegExp(pattern.replace(/[\-\\\{\}\+\?\|\^\$\.\,\[\]\(\)\#\s]/g, '\\$&').replace(/[\*]/g, '.*') + '$');
 }
 
+export function convertSimple2RegExpPattern(pattern: string): string {
+	return pattern.replace(/[\-\\\{\}\+\?\|\^\$\.\,\[\]\(\)\#\s]/g, '\\$&').replace(/[\*]/g, '.*');
+}
+
 function convertRegexString2RegExp(pattern: string, flag: string): RegExp {
 	return new RegExp(pattern, flag);
 }

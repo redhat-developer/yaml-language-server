@@ -5,14 +5,13 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import * as Parser from '../parser/jsonParser';
-
 import { SymbolInformation, SymbolKind, TextDocument, Range, Location } from 'vscode-languageserver-types';
 import { LanguageService } from 'vscode-json-languageservice';
+import { JSONDoc } from './yamlCompletion';
 
 export class YAMLDocumentSymbols {
 
-	public findDocumentSymbols(jsonLanguageService: LanguageService, document: TextDocument, doc: Parser.JSONDocument): SymbolInformation[] {
+	public findDocumentSymbols(jsonLanguageService: LanguageService, document: TextDocument, doc: JSONDoc): SymbolInformation[] {
 
 		if(!doc || doc["documents"].length === 0){
 			return null;
