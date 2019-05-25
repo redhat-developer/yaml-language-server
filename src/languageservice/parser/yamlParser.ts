@@ -66,7 +66,7 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 			 * 
 			 */
 			const result = new PropertyASTNodeImpl(<ObjectASTNodeImpl>parent, instance.startPosition);
-			result.length = instance.endPosition;
+			result.length = parent.length;
 
 			// Technically, this is an arbitrary node in YAML
 			// I doubt we would get a better string representation by parsing it
@@ -255,6 +255,11 @@ export function parse(jsonLanguageService: LanguageService, text: string, custom
 	}
 
 	Yaml.loadAll(text, doc => yamlDocs.push(doc), additionalOptions);
+
+	if (yamlDocs.length === 0) {
+		const newDoc = new SingleYAMLDocument();
+		return new YAMLDocument([newDoc]);
+	}
 
 	return new YAMLDocument(yamlDocs.map(doc => createJSONDocument(jsonLanguageService, doc, [], text)));
 }

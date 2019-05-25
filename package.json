@@ -54,8 +54,8 @@
   "scripts": {
     "compile": "installServerIntoExtension ./out ./package.json ./tsconfig.json && tsc -p .",
     "watch": "installServerIntoExtension ./out ./package.json ./tsconfig.json && tsc --watch -p .",
-    "test": "mocha --require ts-node/register --ui tdd ./test/*.test.ts",
-    "coverage": "nyc mocha --require ts-node/register --require source-map-support/register --recursive --ui tdd ./test/*.test.ts",
+    "test": "mocha --require ts-node/register --ui tdd ./test/autoCompletion*.test.ts",
+    "coverage": "nyc mocha --require ts-node/register --require source-map-support/register --recursive --ui tdd ./test/autoCompletion2.test.ts",
     "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls"
   },
   "nyc": {

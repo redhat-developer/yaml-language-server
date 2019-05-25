@@ -493,9 +493,9 @@ connection.onCompletion(textDocumentPosition =>  {
 		return Promise.resolve(result);
 	}
 
-	let completionFix = completionAdjustor(textDocument, textDocumentPosition.position);
-	let newText = completionFix.newText;
-	let jsonDocument = parseYAML(jsonLanguageService, newText);
+	//let completionFix = completionAdjustor(textDocument, textDocumentPosition.position);
+	//let newText = completionFix.newText;
+	let jsonDocument = parseYAML(jsonLanguageService, textDocument.getText());
 	// isKubernetes(textDocument) ? setKubernetesParserOption(jsonDocument.documents, true) : setKubernetesParserOption(jsonDocument.documents, false);
 	return customLanguageService.doComplete(textDocument, textDocumentPosition.position, jsonDocument);
 });

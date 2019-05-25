@@ -17,6 +17,12 @@ let languageService = configureLanguageService(
 	languageSettingsSetup.languageSettings
 );
 const jsonLanguageService = createJSONLanguageService();
+jsonLanguageService.configure({
+	schemas: [{
+		fileMatch,
+		uri
+	}]
+})
 
 suite("Auto Completion Tests", () => {
 
@@ -26,26 +32,31 @@ suite("Auto Completion Tests", () => {
 
 			function parseSetup(content: string, position){
 				let testTextDocument = setupTextDocument(content);
-				const completionAdjusted = completionAdjustor(testTextDocument, testTextDocument.positionAt(position));
-				let jsonDocument = parseYAML(jsonLanguageService, completionAdjusted.newText);
-    			return languageService.doComplete(testTextDocument, completionAdjusted.newPosition, jsonDocument);
+				const x = jsonLanguageService.parseJSONDocument(testTextDocument);
+				jsonLanguageService.doComplete(testTextDocument, testTextDocument.positionAt(position), x).then(x => {
+					const b = x;
+					console.log(b);
+					console.log(testTextDocument);
+				});
+				let jsonDocument = parseYAML(jsonLanguageService, content);
+    			return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), jsonDocument);
 			}
 
-			it('Autocomplete on root node without word', (done) => {
-				let content = "";
-				let completion = parseSetup(content, 0);
-				completion.then(function(result){
-                    assert.notEqual(result.items.length, 0);
-				}).then(done, done);
-			});
+			// it('Autocomplete on root node without word', (done) => {
+			// 	let content = "";
+			// 	let completion = parseSetup(content, 0);
+			// 	completion.then(function(result){
+            //         assert.notEqual(result.items.length, 0);
+			// 	}).then(done, done);
+			// });
 
-			it('Autocomplete on root node with word', (done) => {
-				let content = "analyt";
-				let completion = parseSetup(content, 6);
-				completion.then(function(result){
-					assert.notEqual(result.items.length, 0);
-				}).then(done, done);
-			});
+			// it('Autocomplete on root node with word', (done) => {
+			// 	let content = "analyt";
+			// 	let completion = parseSetup(content, 7);
+			// 	completion.then(function(result){
+			// 		assert.notEqual(result.items.length, 0);
+			// 	}).then(done, done);
+			// });
 
 			it('Autocomplete on default value (without value content)', (done) => {
 				let content = "directory: ";

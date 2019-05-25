@@ -27,9 +27,8 @@ suite("Auto Completion Tests", () => {
 
 			function parseSetup(content: string, position){
 				let testTextDocument = setupTextDocument(content);
-				const completionAdjusted = completionAdjustor(testTextDocument, testTextDocument.positionAt(position));
-				let jsonDocument = parseYAML(jsonLanguageService, completionAdjusted.newText);
-    			return languageService.doComplete(testTextDocument, completionAdjusted.newPosition, jsonDocument);
+				let jsonDocument = parseYAML(jsonLanguageService, content);
+    			return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), jsonDocument);
 			}
 
 			it('Array of enum autocomplete without word on array symbol', (done) => {
