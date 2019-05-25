@@ -16,8 +16,8 @@ import URI from '../src/languageservice/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
 import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-import {schemaRequestService, workspaceContext}  from './testHelper';
-import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
+import {schemaRequestService, workspaceContext, createJSONLanguageService}  from './testHelper';
+import { parse as parseYAML } from '../src/languageservice/parser/yamlParser2';
 import { getLineOffsets } from "../src/languageservice/utils/arrUtils";
 var assert = require('assert');
 
@@ -36,7 +36,8 @@ suite("Document Symbols Tests", () => {
         function parseSetup(content: string){
             let testTextDocument = setup(content);
             let jsonDocument = parseYAML(testTextDocument.getText());
-            return languageService.findDocumentSymbols(testTextDocument, jsonDocument);
+            const jsonLanguageService = createJSONLanguageService();
+            return languageService.findDocumentSymbols(jsonLanguageService, testTextDocument, jsonDocument);
         }
 
         it('Document is empty', (done) => {

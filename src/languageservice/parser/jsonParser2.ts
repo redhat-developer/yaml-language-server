@@ -56,8 +56,8 @@ export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
 
 	public type: 'null' = 'null';
 	public value: null = null;
-	constructor(parent: ASTNode, offset: number) {
-		super(parent, offset);
+	constructor(parent: ASTNode, offset: number, length?: number) {
+		super(parent, offset, length);
 	}
 }
 
@@ -66,8 +66,8 @@ export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
 	public type: 'boolean' = 'boolean';
 	public value: boolean;
 
-	constructor(parent: ASTNode, boolValue: boolean, offset: number) {
-		super(parent, offset);
+	constructor(parent: ASTNode, boolValue: boolean, offset: number, length?: number) {
+		super(parent, offset, length);
 		this.value = boolValue;
 	}
 }
@@ -77,8 +77,8 @@ export class ArrayASTNodeImpl extends ASTNodeImpl implements ArrayASTNode {
 	public type: 'array' = 'array';
 	public items: ASTNode[];
 
-	constructor(parent: ASTNode, offset: number) {
-		super(parent, offset);
+	constructor(parent: ASTNode, offset: number, length?: number) {
+		super(parent, offset, length);
 		this.items = [];
 	}
 
@@ -93,8 +93,8 @@ export class NumberASTNodeImpl extends ASTNodeImpl implements NumberASTNode {
 	public isInteger: boolean;
 	public value: number;
 
-	constructor(parent: ASTNode, offset: number) {
-		super(parent, offset);
+	constructor(parent: ASTNode, offset: number, length?: number) {
+		super(parent, offset, length);
 		this.isInteger = true;
 		this.value = Number.NaN;
 	}
@@ -116,8 +116,8 @@ export class PropertyASTNodeImpl extends ASTNodeImpl implements PropertyASTNode 
 	public valueNode: ASTNode;
 	public colonOffset: number;
 
-	constructor(parent: ObjectASTNode, offset: number) {
-		super(parent, offset);
+	constructor(parent: ObjectASTNode, offset: number, length?: number) {
+		super(parent, offset, length);
 		this.colonOffset = -1;
 	}
 
@@ -130,8 +130,8 @@ export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
 	public type: 'object' = 'object';
 	public properties: PropertyASTNode[];
 
-	constructor(parent: ASTNode, offset: number) {
-		super(parent, offset);
+	constructor(parent: ASTNode, offset: number, length?: number) {
+		super(parent, offset, length);
 
 		this.properties = [];
 	}

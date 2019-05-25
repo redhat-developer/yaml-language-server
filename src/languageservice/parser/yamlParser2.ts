@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { ASTNode, ErrorCode, BooleanASTNode, NullASTNode, ArrayASTNode, NumberASTNode, ObjectASTNode, PropertyASTNode, StringASTNode, IApplicableSchema, JSONDocument } from './jsonParser';
+import { JSONDocument, NullASTNodeImpl, PropertyASTNodeImpl, StringASTNodeImpl, ObjectASTNodeImpl, NumberASTNodeImpl, ArrayASTNodeImpl, BooleanASTNodeImpl } from './jsonParser2';
 
 import * as nls from 'vscode-nls';
 const localize = nls.loadMessageBundle();
@@ -16,6 +16,7 @@ import { Schema, Type } from 'js-yaml';
 import { getLineStartPositions, getPosition } from '../utils/documentPositionCalculator'
 import { parseYamlBoolean } from './scalar-type';
 import { filterInvalidCustomTags } from '../utils/arrUtils';
+import { ASTNode, ErrorCode } from '../jsonLanguageTypes';
 
 export class SingleYAMLDocument extends JSONDocument {
 	private lines;
@@ -37,50 +38,6 @@ export class SingleYAMLDocument extends JSONDocument {
 		return matchingSchemas;
 	}
 
-	public getNodeFromOffset(offset: number): ASTNode {
-		return this.getNodeFromOffsetEndInclusive(offset);
-	}
-
-	private getNodeByIndent = (lines: number[], offset: number, node: ASTNode) => {
-
-		const { line, column: indent } = getPosition(offset, this.lines)
-
-		const children = node.getChildNodes()
-
-		function findNode(children) {
-			for (var idx = 0; idx < children.length; idx++) {
-				var child = children[idx];
-
-				const { line: childLine, column: childCol } = getPosition(child.start, lines);
-
-				if (childCol > indent) {
-					return null;
-				}
-
-				const newChildren = child.getChildNodes()
-				const foundNode = findNode(newChildren)
-
-				if (foundNode) {
-					return foundNode;
-				}
-
-				// We have the right indentation, need to return based on line
-				if (childLine == line) {
-					return child;
-				}
-				if (childLine > line) {
-					// Get previous
-					(idx - 1) >= 0 ? children[idx - 1] : child;
-				}
-				// Else continue loop to try next element
-			}
-
-			// Special case, we found the correct
-			return children[children.length - 1]
-		}
-
-		return findNode(children) || node
-	}
 }
 
 
@@ -94,11 +51,10 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 		case Yaml.Kind.MAP: {
 			const instance = <Yaml.YamlMap>node;
 
-			const result = new ObjectASTNode(parent, null, node.startPosition, node.endPosition)
-			result.addProperty
+			const result = new ObjectASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
 
 			for (const mapping of instance.mappings) {
-				result.addProperty(<PropertyASTNode>recursivelyBuildAst(result, mapping))
+				result.properties.push(<PropertyASTNodeImpl>recursivelyBuildAst(result, mapping))
 			}
 
 			return result;
@@ -107,25 +63,25 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 			const instance = <Yaml.YAMLMapping>node;
 			const key = instance.key;
 
+			const result = new PropertyASTNodeImpl(parent as ObjectASTNodeImpl, instance.startPosition, instance.endPosition - instance.startPosition);
+
 			// Technically, this is an arbitrary node in YAML
 			// I doubt we would get a better string representation by parsing it
-			const keyNode = new StringASTNode(null, null, true, key.startPosition, key.endPosition);
+			const keyNode = new StringASTNodeImpl(null, key.startPosition, key.endPosition - key.startPosition);
 			keyNode.value = key.value;
 
-			const result = new PropertyASTNode(parent, keyNode)
-			result.end = instance.endPosition
+			const valueNode = (instance.value) ? recursivelyBuildAst(result, instance.value) : new NullASTNodeImpl(parent, instance.endPosition, 0)
+			//valueNode.location = key.value;
 
-			const valueNode = (instance.value) ? recursivelyBuildAst(result, instance.value) : new NullASTNode(parent, key.value, instance.endPosition, instance.endPosition)
-			valueNode.location = key.value
-
-			result.setValue(valueNode)
+			result.keyNode = keyNode;
+			result.valueNode = valueNode;
 
 			return result;
 		}
 		case Yaml.Kind.SEQ: {
 			const instance = <Yaml.YAMLSequence>node;
 
-			const result = new ArrayASTNode(parent, null, instance.startPosition, instance.endPosition);
+			const result = new ArrayASTNodeImpl(parent, instance.startPosition, instance.endPosition - instance.startPosition);
 
 			let count = 0;
 			for (const item of instance.items) {
@@ -135,10 +91,10 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 
 				// Be aware of https://github.com/nodeca/js-yaml/issues/321
 				// Cannot simply work around it here because we need to know if we are in Flow or Block
-				var itemNode = (item === null) ? new NullASTNode(parent, null, instance.endPosition, instance.endPosition) : recursivelyBuildAst(result, item);
+				var itemNode = (item === null) ? new NullASTNodeImpl(parent, instance.endPosition, 0) : recursivelyBuildAst(result, item);
 
-				itemNode.location = count++;
-				result.addItem(itemNode);
+				// itemNode.location = count++;
+				result.children.push(itemNode);
 			}
 
 			return result;
@@ -154,30 +110,30 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 			//This is a patch for redirecting values with these strings to be boolean nodes because its not supported in the parser.
 			let possibleBooleanValues = ['y', 'Y', 'yes', 'Yes', 'YES', 'n', 'N', 'no', 'No', 'NO', 'on', 'On', 'ON', 'off', 'Off', 'OFF'];
 			if (instance.plainScalar && possibleBooleanValues.indexOf(value.toString()) !== -1) {
-				return new BooleanASTNode(parent, name, parseYamlBoolean(value), node.startPosition, node.endPosition)
+				return new BooleanASTNodeImpl(parent, parseYamlBoolean(value), node.startPosition, node.endPosition - node.startPosition);
 			}
 
 			switch (type) {
 				case Yaml.ScalarType.null: {
-					return new StringASTNode(parent, name, false, instance.startPosition, instance.endPosition);
+					return new StringASTNodeImpl(parent, instance.startPosition, instance.endPosition - instance.startPosition);
 				}
 				case Yaml.ScalarType.bool: {
-					return new BooleanASTNode(parent, name, Yaml.parseYamlBoolean(value), node.startPosition, node.endPosition)
+					return new BooleanASTNodeImpl(parent, Yaml.parseYamlBoolean(value), node.startPosition, node.endPosition - node.startPosition);
 				}
 				case Yaml.ScalarType.int: {
-					const result = new NumberASTNode(parent, name, node.startPosition, node.endPosition);
+					const result = new NumberASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
 					result.value = Yaml.parseYamlInteger(value);
 					result.isInteger = true;
 					return result;
 				}
 				case Yaml.ScalarType.float: {
-					const result = new NumberASTNode(parent, name, node.startPosition, node.endPosition);
+					const result = new NumberASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
 					result.value = Yaml.parseYamlFloat(value);
 					result.isInteger = false;
 					return result;
 				}
 				case Yaml.ScalarType.string: {
-					const result = new StringASTNode(parent, name, false, node.startPosition, node.endPosition);
+					const result = new StringASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
 					result.value = node.value;
 					return result;
 				}
@@ -189,10 +145,10 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 			const instance = (<Yaml.YAMLAnchorReference>node).value
 
 			return recursivelyBuildAst(parent, instance) ||
-				new NullASTNode(parent, null, node.startPosition, node.endPosition);
+				new NullASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
 		}
 		case Yaml.Kind.INCLUDE_REF: {
-			const result = new StringASTNode(parent, null, false, node.startPosition, node.endPosition);
+			const result = new StringASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
 			result.value = node.value;
 			return result;
 		}
