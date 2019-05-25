@@ -78,9 +78,9 @@ export class YAMLCompletion {
 		}
 		const currentDocIndex = doc.documents.indexOf(currentDoc);
 		let node = currentDoc.getNodeFromOffsetEndInclusive(offset);
-		if (this.isInComment(document, node ? node.start : 0, offset)) {
-			return Promise.resolve(result);
-		}
+		// if (this.isInComment(document, node ? node.start : 0, offset)) {
+		// 	return Promise.resolve(result);
+		// }
 
 		let currentWord = this.getCurrentWord(document, offset);
 
@@ -522,15 +522,15 @@ export class YAMLCompletion {
 		return 0;
 	}
 
-	private isInComment(document: TextDocument, start: number, offset: number) {
-		let scanner = Json.createScanner(document.getText(), false);
-		scanner.setPosition(start);
-		let token = scanner.scan();
-		while (token !== Json.SyntaxKind.EOF && (scanner.getTokenOffset() + scanner.getTokenLength() < offset)) {
-			token = scanner.scan();
-		}
-		return (token === Json.SyntaxKind.LineCommentTrivia || token === Json.SyntaxKind.BlockCommentTrivia) && scanner.getTokenOffset() <= offset;
-	}
+	// private isInComment(document: TextDocument, start: number, offset: number) {
+	// 	let scanner = Json.createScanner(document.getText(), false);
+	// 	scanner.setPosition(start);
+	// 	let token = scanner.scan();
+	// 	while (token !== Json.SyntaxKind.EOF && (scanner.getTokenOffset() + scanner.getTokenLength() < offset)) {
+	// 		token = scanner.scan();
+	// 	}
+	// 	return (token === Json.SyntaxKind.LineCommentTrivia || token === Json.SyntaxKind.BlockCommentTrivia) && scanner.getTokenOffset() <= offset;
+	// }
 
 	private getInsertTextForPlainText(text: string): string {
 		return text.replace(/[\\\$\}]/g, '\\$&');   // escape $, \ and }
@@ -692,17 +692,18 @@ export class YAMLCompletion {
 	}
 
 	private evaluateSeparatorAfter(document: TextDocument, offset: number) {
-		let scanner = Json.createScanner(document.getText(), true);
-		scanner.setPosition(offset);
-		let token = scanner.scan();
-		switch (token) {
-			case Json.SyntaxKind.CommaToken:
-			case Json.SyntaxKind.CloseBraceToken:
-			case Json.SyntaxKind.CloseBracketToken:
-			case Json.SyntaxKind.EOF:
-				return '';
-			default:
-				return '';
-		}
+		// let scanner = Json.createScanner(document.getText(), true);
+		// scanner.setPosition(offset);
+		// let token = scanner.scan();
+		// switch (token) {
+		// 	case Json.SyntaxKind.CommaToken:
+		// 	case Json.SyntaxKind.CloseBraceToken:
+		// 	case Json.SyntaxKind.CloseBracketToken:
+		// 	case Json.SyntaxKind.EOF:
+		// 		return '';
+		// 	default:
+		// 		return '';
+		// }
+		return '';
 	}
 }
