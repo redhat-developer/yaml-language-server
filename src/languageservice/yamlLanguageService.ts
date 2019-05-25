@@ -12,6 +12,7 @@ import { YAMLCompletion } from "./services/yamlCompletion";
 import { YAMLHover } from "./services/yamlHover";
 import { YAMLValidation } from "./services/yamlValidation";
 import { YAMLFormatter } from './services/yamlFormatter';
+import { LanguageService as JSONLanguageService } from 'vscode-json-languageservice';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
@@ -107,7 +108,7 @@ export interface LanguageService {
 	doComplete(document: TextDocument, position: Position, doc): Thenable<CompletionList>;
   doValidation(document: TextDocument, yamlDocument): Thenable<Diagnostic[]>;
   doHover(document: TextDocument, position: Position, doc);
-  findDocumentSymbols(document: TextDocument, doc);
+  findDocumentSymbols(jsonLanguageService: JSONLanguageService, document: TextDocument, doc);
   doResolve(completionItem);
   resetSchema(uri: string): boolean;
   doFormat(document: TextDocument, options: CustomFormatterOptions);

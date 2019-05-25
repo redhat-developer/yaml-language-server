@@ -26,6 +26,7 @@ import { FilePatternAssociation, CustomSchemaProvider } from './languageservice/
 import { parse as parseYAML } from './languageservice/parser/yamlParser';
 import { JSONDocument } from './languageservice/parser/jsonParser';
 import { JSONSchema } from './languageservice/jsonSchema';
+import { createJSONLanguageService } from '../test/testHelper';
 nls.config(<any>process.env['VSCODE_NLS_CONFIG']);
 
 interface ISchemaAssociations {
@@ -579,7 +580,8 @@ connection.onDocumentSymbol(documentSymbolParams => {
 	}
 
 	let jsonDocument = parseYAML(document.getText());
-	return customLanguageService.findDocumentSymbols(document, jsonDocument);
+	const jsonLanguageService = createJSONLanguageService();
+	return customLanguageService.findDocumentSymbols(jsonLanguageService, document, jsonDocument);
 });
 
 connection.onDocumentFormatting(formatParams => {
