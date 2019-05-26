@@ -364,8 +364,9 @@ function updateConfiguration() {
 			jsonLanguageService.configure({
 				schemas: [{
 					fileMatch: ['*.yaml', '*.yml'],
-					uri: 'https://gist.githubusercontent.com/JPinkney/db62cf5f52780f62c1e303f08ecb5a19/raw/3ab2a4739e2c955eae3b0977c76cc0fd65dc977b/test.json'
-				}]
+					uri: 'http://json.schemastore.org/composer'
+				}],
+				validate: true
 			})
 		});
 	}
@@ -462,9 +463,9 @@ function validateTextDocument(textDocument: TextDocument): void {
 		return;
 	}
 
-	let yamlDocument = parseYAML(textDocument.getText(), customTags);
+	let yamlDocument = parseYAML2(textDocument.getText(), customTags);
 	// isKubernetes(textDocument) ? setKubernetesParserOption(yamlDocument.documents, true) : setKubernetesParserOption(yamlDocument.documents, false);
-	customLanguageService.doValidation(textDocument, yamlDocument).then(function(diagnosticResults){
+	customLanguageService.doValidation(jsonLanguageService, textDocument, yamlDocument).then(function(diagnosticResults){
 
 		let diagnostics = [];
 		for(let diagnosticItem in diagnosticResults){

@@ -16,8 +16,8 @@ import URI from '../src/languageservice/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
 import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-import {schemaRequestService, workspaceContext}  from './testHelper';
-import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
+import {schemaRequestService, workspaceContext, createJSONLanguageService}  from './testHelper';
+import { parse as parseYAML } from '../src/languageservice/parser/yamlParser2';
 var assert = require('assert');
 
 let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
@@ -47,7 +47,11 @@ suite("Validation Tests", () => {
 		function parseSetup(content: string){
 			let testTextDocument = setup(content);
 			let yDoc = parseYAML(testTextDocument.getText(), languageSettings.customTags);
-			return languageService.doValidation(testTextDocument, yDoc);
+			const jsonLanguageService = createJSONLanguageService();
+			jsonLanguageService.configure({
+				validate: true
+			})
+			return languageService.doValidation(jsonLanguageService, testTextDocument, yDoc);
 		}
 
 		//Validating basic nodes

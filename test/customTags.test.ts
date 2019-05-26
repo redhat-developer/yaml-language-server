@@ -16,8 +16,8 @@ import URI from '../src/languageservice/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
 import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-import {schemaRequestService, workspaceContext}  from './testHelper';
-import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
+import {schemaRequestService, workspaceContext, createJSONLanguageService}  from './testHelper';
+import { parse as parseYAML } from '../src/languageservice/parser/yamlParser2';
 var assert = require('assert');
 
 function createLanguageServiceWithCustomTags(customTags) {
@@ -46,7 +46,11 @@ suite("Custom Tag tests Tests", () => {
         let testTextDocument = setup(content);
         let languageService = createLanguageServiceWithCustomTags(customTags);
         let yDoc = parseYAML(testTextDocument.getText(), customTags);
-        return languageService.doValidation(testTextDocument, yDoc);
+        const jsonLanguageService = createJSONLanguageService();
+        jsonLanguageService.configure({
+            validate: true
+        })
+        return languageService.doValidation(jsonLanguageService, testTextDocument, yDoc);
     }
     
     describe('Test that validation does not throw errors', function(){
