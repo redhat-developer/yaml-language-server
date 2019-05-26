@@ -505,7 +505,7 @@ export class JSONSchemaService implements IJSONSchemaService {
 				}
 				collectEntries(next.items, next.additionalProperties, next.not);
 				collectMapEntries(next.definitions, next.properties, next.patternProperties, <JSONSchemaMap>next.dependencies);
-				collectArrayEntries(next.anyOf, next.allOf, next.oneOf, <JSONSchema[]>next.items, next.schemaSequence);
+				collectArrayEntries(next.anyOf, next.allOf, next.oneOf, <JSONSchema[]>next.items);
 			}
 			return this.promise.all(openPromises);
 		};

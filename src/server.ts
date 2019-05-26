@@ -24,9 +24,10 @@ import { getLanguageService as getCustomLanguageService, LanguageSettings, Custo
 import * as nls from 'vscode-nls';
 import { FilePatternAssociation, CustomSchemaProvider } from './languageservice/services/jsonSchemaService';
 import { parse as parseYAML } from './languageservice/parser/yamlParser';
+import { parse as parseYAML2 } from './languageservice/parser/yamlParser2';
 import { JSONDocument } from './languageservice/parser/jsonParser';
 import { JSONSchema } from './languageservice/jsonSchema';
-import { createJSONLanguageService } from '../test/testHelper';
+import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';
 nls.config(<any>process.env['VSCODE_NLS_CONFIG']);
 
 interface ISchemaAssociations {
@@ -164,6 +165,10 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 export let KUBERNETES_SCHEMA_URL = "https://gist.githubusercontent.com/JPinkney/ccaf3909ef811e5657ca2e2e1fa05d76/raw/f85e51bfb67fdb99ab7653c2953b60087cc871ea/openshift_schema_all.json";
 export let KEDGE_SCHEMA_URL = "https://raw.githubusercontent.com/kedgeproject/json-schema/master/master/kedge-json-schema.json";
 export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
+export let jsonLanguageService = getJSONLanguageService({
+	schemaRequestService,
+	workspaceContext
+});
 
 // The settings interface describes the server relevant settings part
 interface Settings {
@@ -356,6 +361,12 @@ function updateConfiguration() {
 				}
 				languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema, languageSettings);
 			}
+			jsonLanguageService.configure({
+				schemas: [{
+					fileMatch: ['*.yaml', '*.yml'],
+					uri: 'https://gist.githubusercontent.com/JPinkney/db62cf5f52780f62c1e303f08ecb5a19/raw/3ab2a4739e2c955eae3b0977c76cc0fd65dc977b/test.json'
+				}]
+			})
 		});
 	}
 	if(schemaStoreSettings){
@@ -393,13 +404,13 @@ function configureSchemas(uri, fileMatch, schema, languageSettings){
 	return languageSettings;
 }
 
-function setKubernetesParserOption(jsonDocuments: JSONDocument[], option: boolean){
-	for(let jsonDoc in jsonDocuments){
-		jsonDocuments[jsonDoc].configureSettings({
-			isKubernetes: option
-		});
-	}
-}
+// function setKubernetesParserOption(jsonDocuments: JSONDocument[], option: boolean){
+// 	for(let jsonDoc in jsonDocuments){
+// 		jsonDocuments[jsonDoc].configureSettings({
+// 			isKubernetes: option
+// 		});
+// 	}
+// }
 
 function isKubernetes(textDocument){
 	for(let path in specificValidatorPaths){
@@ -452,7 +463,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 	}
 
 	let yamlDocument = parseYAML(textDocument.getText(), customTags);
-	isKubernetes(textDocument) ? setKubernetesParserOption(yamlDocument.documents, true) : setKubernetesParserOption(yamlDocument.documents, false);
+	// isKubernetes(textDocument) ? setKubernetesParserOption(yamlDocument.documents, true) : setKubernetesParserOption(yamlDocument.documents, false);
 	customLanguageService.doValidation(textDocument, yamlDocument).then(function(diagnosticResults){
 
 		let diagnostics = [];
@@ -493,7 +504,7 @@ connection.onCompletion(textDocumentPosition =>  {
 	let completionFix = completionHelper(textDocument, textDocumentPosition.position);
 	let newText = completionFix.newText;
 	let jsonDocument = parseYAML(newText);
-	isKubernetes(textDocument) ? setKubernetesParserOption(jsonDocument.documents, true) : setKubernetesParserOption(jsonDocument.documents, false);
+	// isKubernetes(textDocument) ? setKubernetesParserOption(jsonDocument.documents, true) : setKubernetesParserOption(jsonDocument.documents, false);
 	return customLanguageService.doComplete(textDocument, textDocumentPosition.position, jsonDocument);
 });
 
@@ -567,9 +578,9 @@ connection.onHover(textDocumentPositionParams => {
 		return Promise.resolve(void 0);
 	}
 
-	let jsonDocument = parseYAML(document.getText());
-	isKubernetes(document) ? setKubernetesParserOption(jsonDocument.documents, true) : setKubernetesParserOption(jsonDocument.documents, false);
-	return customLanguageService.doHover(document, textDocumentPositionParams.position, jsonDocument);
+	let jsonDocument = parseYAML2(document.getText());
+	// isKubernetes(document) ? setKubernetesParserOption(jsonDocument.documents, true) : setKubernetesParserOption(jsonDocument.documents, false);
+	return customLanguageService.doHover(jsonLanguageService, document, textDocumentPositionParams.position, jsonDocument);
 });
 
 connection.onDocumentSymbol(documentSymbolParams => {
@@ -579,8 +590,7 @@ connection.onDocumentSymbol(documentSymbolParams => {
 		return;
 	}
 
-	let jsonDocument = parseYAML(document.getText());
-	const jsonLanguageService = createJSONLanguageService();
+	let jsonDocument = parseYAML2(document.getText());
 	return customLanguageService.findDocumentSymbols(jsonLanguageService, document, jsonDocument);
 });
 

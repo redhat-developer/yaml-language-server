@@ -5,7 +5,8 @@
 import { TextDocument } from 'vscode-languageserver';
 import {getLanguageService, LanguageSettings} from '../src/languageservice/yamlLanguageService'
 import path = require('path');
-import {schemaRequestService, workspaceContext}  from './testHelper';
+import {schemaRequestService, workspaceContext, createJSONLanguageService}  from './testHelper';
+import { parse as parseYAML2 } from '../src/languageservice/parser/yamlParser2';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
 var assert = require('assert');
 
@@ -55,8 +56,15 @@ suite("Multiple Documents Validation Tests", () => {
 
 		function hoverSetup(content: string, position){
 			let testTextDocument = setup(content);
-			let jsonDocument = parseYAML(testTextDocument.getText());
-			return languageService.doHover(testTextDocument, testTextDocument.positionAt(position), jsonDocument);
+			let jsonDocument = parseYAML2(testTextDocument.getText());
+			const jsonLanguageService = createJSONLanguageService();
+			jsonLanguageService.configure({
+				schemas: [{
+					fileMatch,
+					uri
+				}]
+			});
+			return languageService.doHover(jsonLanguageService, testTextDocument, testTextDocument.positionAt(position), jsonDocument);
 		}
 
         it('Should validate multiple documents', (done) => {

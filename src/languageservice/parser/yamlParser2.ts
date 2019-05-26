@@ -67,7 +67,7 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 
 			// Technically, this is an arbitrary node in YAML
 			// I doubt we would get a better string representation by parsing it
-			const keyNode = new StringASTNodeImpl(null, key.startPosition, key.endPosition - key.startPosition);
+			const keyNode = new StringASTNodeImpl(result, key.startPosition, key.endPosition - key.startPosition);
 			keyNode.value = key.value;
 
 			const valueNode = (instance.value) ? recursivelyBuildAst(result, instance.value) : new NullASTNodeImpl(parent, instance.endPosition, 0)

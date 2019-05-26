@@ -16,8 +16,8 @@ import URI from '../src/languageservice/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
 import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-import {schemaRequestService, workspaceContext}  from './testHelper';
-import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
+import {schemaRequestService, workspaceContext, createJSONLanguageService}  from './testHelper';
+import { parse as parseYAML } from '../src/languageservice/parser/yamlParser2';
 import { getLineOffsets } from "../src/languageservice/utils/arrUtils";
 var assert = require('assert');
 
@@ -47,8 +47,15 @@ suite("Hover Tests", () => {
 
 			function parseSetup(content: string, position){
 				let testTextDocument = setup(content);
-                let jsonDocument = parseYAML(testTextDocument.getText());
-                return languageService.doHover(testTextDocument, testTextDocument.positionAt(position), jsonDocument);
+				let jsonDocument = parseYAML(testTextDocument.getText());
+				const jsonLanguageService = createJSONLanguageService();
+				jsonLanguageService.configure({
+					schemas: [{
+						fileMatch,
+						uri
+					}]
+				})
+                return languageService.doHover(jsonLanguageService, testTextDocument, testTextDocument.positionAt(position), jsonDocument);
 			}
 
             it('Hover works on array nodes', (done) => {

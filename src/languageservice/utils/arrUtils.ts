@@ -61,18 +61,32 @@ export function removeDuplicatesObj(objArray){
 
 }
 
-export function matchOffsetToDocument(offset: number, jsonDocuments): SingleYAMLDocument {
+export function matchOffsetToDocument(offset: number, jsonDocuments) {
 	
 	for(let jsonDoc in jsonDocuments.documents){
-		let currJsonDoc = jsonDocuments.documents[jsonDoc];
+		let currJsonDoc: SingleYAMLDocument = jsonDocuments.documents[jsonDoc];
 		if(currJsonDoc.root && currJsonDoc.root.end >= offset && currJsonDoc.root.start <= offset){
 			return currJsonDoc;
 		}
 	}
 
-	return null;
-
+	// TODO: Fix this so that it returns the correct document
+	return jsonDocuments.documents[0];
 }
+
+export function matchOffsetToDocument2(offset: number, jsonDocuments) {
+	
+	for(let jsonDoc of jsonDocuments.documents){
+		if(jsonDoc.root && jsonDoc.root.offset <= offset && (jsonDoc.root.length + jsonDoc.root.offset) >= offset){
+			return jsonDoc;
+		}
+	}
+
+	// TODO: Fix this so that it returns the correct document
+	return null;
+}
+
+
 
 export function filterInvalidCustomTags(customTags: String[]): String[] {
 	const validCustomTags = ['mapping', 'scalar', 'sequence'];

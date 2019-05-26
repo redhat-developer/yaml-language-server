@@ -107,7 +107,7 @@ export interface LanguageService {
   registerCustomSchemaProvider(schemaProvider: CustomSchemaProvider): void; // Register a custom schema provider
 	doComplete(document: TextDocument, position: Position, doc): Thenable<CompletionList>;
   doValidation(document: TextDocument, yamlDocument): Thenable<Diagnostic[]>;
-  doHover(document: TextDocument, position: Position, doc);
+  doHover(jsonLanguageService: JSONLanguageService, document: TextDocument, position: Position, doc);
   findDocumentSymbols(jsonLanguageService: JSONLanguageService, document: TextDocument, doc);
   doResolve(completionItem);
   resetSchema(uri: string): boolean;
