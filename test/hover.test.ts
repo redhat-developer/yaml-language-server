@@ -1,18 +1,17 @@
-import { ServiceSetup } from './utils/serviceSetup';
-import { createJSONLanguageService, configureLanguageService, setupTextDocument } from './utils/testHelper';
-import { parse } from '../src/languageservice/parser/yamlParser07';
-
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import { ServiceSetup } from './utils/serviceSetup';
+import { createJSONLanguageService, configureLanguageService, setupTextDocument } from './utils/testHelper';
+import { parse } from '../src/languageservice/parser/yamlParser07';
 var assert = require("assert");
 
 /**
  * Setup the schema we are going to use with the language settings
  */
-let bowerURI = 'http://json.schemastore.org/bowerrc';
-let composerURI = 'http://json.schemastore.org/composer';
+const bowerURI = 'http://json.schemastore.org/bowerrc';
+const composerURI = 'http://json.schemastore.org/composer';
 let fileMatch = ["*.yml", "*.yaml"];
 let languageSettingsSetup = new ServiceSetup()
 	.withHover()
