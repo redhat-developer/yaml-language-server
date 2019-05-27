@@ -12,7 +12,7 @@ import * as prettier from 'prettier';
 export class YAMLFormatter {
 
     private formatterEnabled: boolean = true;
-    
+
     public configure(shouldFormat: LanguageSettings) {
         if (shouldFormat) {
             this.formatterEnabled = shouldFormat.format;
@@ -26,9 +26,9 @@ export class YAMLFormatter {
         }
 
         const text = document.getText();
-    
-        const formatted = prettier.format(text, Object.assign(options, { parser: "yaml" as prettier.BuiltInParserName }));
-    
+
+        const formatted = prettier.format(text, Object.assign(options, { parser: 'yaml' as prettier.BuiltInParserName }));
+
         return [TextEdit.replace(Range.create(Position.create(0, 0), document.positionAt(text.length)), formatted)];
     }
 

@@ -5,7 +5,6 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-
 import * as Parser from '../parser/jsonParser2';
 import * as SchemaService from './jsonSchemaService';
 import {JSONWorkerContribution} from '../jsonContributions';
@@ -17,36 +16,36 @@ import { LanguageSettings } from '../yamlLanguageService';
 
 export class YAMLHover {
 
-	private schemaService: SchemaService.IJSONSchemaService;
-	private contributions: JSONWorkerContribution[];
-	private promise: PromiseConstructor;
-	private shouldHover: boolean;
+    private schemaService: SchemaService.IJSONSchemaService;
+    private contributions: JSONWorkerContribution[];
+    private promise: PromiseConstructor;
+    private shouldHover: boolean;
 
-	constructor(schemaService: SchemaService.IJSONSchemaService, contributions: JSONWorkerContribution[] = [], promiseConstructor: PromiseConstructor) {
-		this.schemaService = schemaService;
-		this.contributions = contributions;
-		this.promise = promiseConstructor || Promise;
-		this.shouldHover = true;
-	}
+    constructor(schemaService: SchemaService.IJSONSchemaService, contributions: JSONWorkerContribution[] = [], promiseConstructor: PromiseConstructor) {
+        this.schemaService = schemaService;
+        this.contributions = contributions;
+        this.promise = promiseConstructor || Promise;
+        this.shouldHover = true;
+    }
 
-	public configure(languageSettings: LanguageSettings){
-		if(languageSettings){
-			this.shouldHover = languageSettings.hover;
-		}
-	}
+    public configure(languageSettings: LanguageSettings) {
+        if (languageSettings) {
+            this.shouldHover = languageSettings.hover;
+        }
+    }
 
-	public doHover(jsonLanguageService: LanguageService, document: TextDocument, position: Position, doc): Thenable<Hover> {
+    public doHover(jsonLanguageService: LanguageService, document: TextDocument, position: Position, doc): Thenable<Hover> {
 
-		if(!this.shouldHover || !document){
-			return this.promise.resolve(void 0);
-		}
+        if (!this.shouldHover || !document) {
+            return this.promise.resolve(void 0);
+        }
 
-		let offset = document.offsetAt(position);
-		let currentDoc = matchOffsetToDocument2(offset, doc);
-		if(currentDoc === null){
-			return this.promise.resolve(void 0);
-		}
-		
-		return jsonLanguageService.doHover(document, position, currentDoc);
-	}
+        const offset = document.offsetAt(position);
+        const currentDoc = matchOffsetToDocument2(offset, doc);
+        if (currentDoc === null) {
+            return this.promise.resolve(void 0);
+        }
+
+        return jsonLanguageService.doHover(document, position, currentDoc);
+    }
 }

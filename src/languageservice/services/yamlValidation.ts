@@ -11,53 +11,57 @@ import { PromiseConstructor, LanguageSettings} from '../yamlLanguageService';
 import { LanguageService } from 'vscode-json-languageservice';
 
 export class YAMLValidation {
-	
-	private jsonSchemaService: JSONSchemaService;
-	private promise: PromiseConstructor;
-	private comments: boolean;
-	private validationEnabled: boolean;
 
-	public constructor(jsonSchemaService, promiseConstructor) {
-		this.jsonSchemaService = jsonSchemaService;
-		this.promise = promiseConstructor;
-		this.validationEnabled = true;
-	}
+    private jsonSchemaService: JSONSchemaService;
+    private promise: PromiseConstructor;
+    private comments: boolean;
+    private validationEnabled: boolean;
 
-	public configure(shouldValidate: LanguageSettings){
-		if(shouldValidate){
-			this.validationEnabled = shouldValidate.validate;
-		}
-	}
-	
-	public doValidation(jsonLanguageService: LanguageService, textDocument, yamlDocument) {
+    public constructor(jsonSchemaService, promiseConstructor) {
+        this.jsonSchemaService = jsonSchemaService;
+        this.promise = promiseConstructor;
+        this.validationEnabled = true;
+    }
 
-		if(!this.validationEnabled){
-			return this.promise.resolve([]);
-		}
+    public configure(shouldValidate: LanguageSettings){
+        if (shouldValidate) {
+            this.validationEnabled = shouldValidate.validate;
+        }
+    }
 
-		let validationResult = [];
-		for(let currentYAMLDoc of yamlDocument.documents){
-			const validation = jsonLanguageService.doValidation(textDocument, currentYAMLDoc);
-			validationResult.push(validation);
-		}
-		
-		
-		return Promise.all(validationResult).then(resolvedValidation => {
-			let joinedResolvedArray = [];
-			for (const resolvedArr of resolvedValidation) {
-				joinedResolvedArray = joinedResolvedArray.concat(resolvedArr);
-			}
-			
-			const foundSignatures = new Set();
-			const duplicateMessagesRemoved = [];
-			for (const err of joinedResolvedArray as Diagnostic[]) {
-				const errSig = err.range.start.line + ' ' + err.range.start.character + ' ' + err.message;
-				if (!foundSignatures.has(errSig)) {
-					duplicateMessagesRemoved.push(err);
-					foundSignatures.add(errSig);
-				}
-			}
-			return duplicateMessagesRemoved;
-		})
-	}
+    public doValidation(jsonLanguageService: LanguageService, textDocument, yamlDocument) {
+
+        if(!this.validationEnabled){
+            return this.promise.resolve([]);
+        }
+
+        let validationResult = [];
+        for(let currentYAMLDoc of yamlDocument.documents){
+            const validation = jsonLanguageService.doValidation(textDocument, currentYAMLDoc);
+
+            if (currentYAMLDoc.errors.length > 0) {
+                validationResult.push(currentYAMLDoc.errors);
+            }
+
+            validationResult.push(validation);
+        }
+        
+        return Promise.all(validationResult).then(resolvedValidation => {
+            let joinedResolvedArray = [];
+            for (const resolvedArr of resolvedValidation) {
+                joinedResolvedArray = joinedResolvedArray.concat(resolvedArr);
+            }
+            
+            const foundSignatures = new Set();
+            const duplicateMessagesRemoved = [];
+            for (const err of joinedResolvedArray as Diagnostic[]) {
+                const errSig = err.range.start.line + ' ' + err.range.start.character + ' ' + err.message;
+                if (!foundSignatures.has(errSig)) {
+                    duplicateMessagesRemoved.push(err);
+                    foundSignatures.add(errSig);
+                }
+            }
+            return duplicateMessagesRemoved;
+        })
+    }
 }

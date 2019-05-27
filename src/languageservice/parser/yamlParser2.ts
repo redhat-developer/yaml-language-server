@@ -156,7 +156,7 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 }
 
 function convertError(e: Yaml.YAMLException) {
-	return { message: `${e.reason}`, location: { start: e.mark.position, end: e.mark.position + e.mark.column, code: ErrorCode.Undefined } }
+	return { message: `${e.reason}`, range: { start: e.mark.position, end: e.mark.position + e.mark.column, code: ErrorCode.Undefined } }
 }
 
 function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string) {
@@ -173,8 +173,8 @@ function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], te
 	//Patch ontop of yaml-ast-parser to disable duplicate key message on merge key
 	let isDuplicateAndNotMergeKey = function (error: Yaml.YAMLException, yamlText: string) {
 		let errorConverted = convertError(error);
-		let errorStart = errorConverted.location.start;
-		let errorEnd = errorConverted.location.end;
+		let errorStart = errorConverted.range.start;
+		let errorEnd = errorConverted.range.end;
 		if (error.reason === duplicateKeyReason && yamlText.substring(errorStart, errorEnd).startsWith("<<")) {
 			return false;
 		}

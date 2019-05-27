@@ -12,20 +12,20 @@ import { LanguageService } from 'vscode-json-languageservice';
 
 export class YAMLDocumentSymbols {
 
-	public findDocumentSymbols(jsonLanguageService: LanguageService, document: TextDocument, doc: Parser.JSONDocument): SymbolInformation[] {
+    public findDocumentSymbols(jsonLanguageService: LanguageService, document: TextDocument, doc: Parser.JSONDocument): SymbolInformation[] {
 
-		if(!doc || doc["documents"].length === 0){
-			return null;
-		}
+        if (!doc || doc['documents'].length === 0) {
+            return null;
+        }
 
-		let results = [];
-		for(let yamlDoc of doc["documents"]){
-			if(yamlDoc.root){
-				results = results.concat(jsonLanguageService.findDocumentSymbols(document, yamlDoc));
-			}
-		}
+        let results = [];
+        for (const yamlDoc of doc['documents']) {
+            if (yamlDoc.root) {
+                results = results.concat(jsonLanguageService.findDocumentSymbols(document, yamlDoc));
+            }
+        }
 
-		return results;
-	}
+        return results;
+    }
 
 }

@@ -18,6 +18,7 @@ import fs = require('fs');
 import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
 import {schemaRequestService, workspaceContext, createJSONLanguageService}  from './testHelper';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
+import { parse as parseYAML2 } from '../src/languageservice/parser/yamlParser2';
 import { getLineOffsets } from "../src/languageservice/utils/arrUtils";
 var assert = require('assert');
 
@@ -47,15 +48,19 @@ suite("Kubernetes Integration Tests", () => {
 
 		function parseSetup(content: string){
 			let testTextDocument = setup(content);
-			let yDoc = parseYAML(testTextDocument.getText());
-			for(let jsonDoc in yDoc.documents){
-				yDoc.documents[jsonDoc].configureSettings({
-					isKubernetes: true
-				});
-			}
+			let yDoc = parseYAML2(testTextDocument.getText());
+			// for(let jsonDoc in yDoc.documents){
+			// 	yDoc.documents[jsonDoc].configureSettings({
+			// 		isKubernetes: true
+			// 	});
+			// }
 			const jsonLanguageService = createJSONLanguageService();
 			jsonLanguageService.configure({
-				validate: true
+				validate: true,
+				schemas: [{
+					fileMatch,
+					uri
+				}]
 			})
 			return languageService.doValidation(jsonLanguageService, testTextDocument, yDoc);
 		}
