@@ -28,14 +28,11 @@
     "url": "https://github.com/redhat-developer/yaml-language-server.git"
   },
   "dependencies": {
-    "js-yaml": "^3.12.0",
-    "jsonc-parser": "^2.1.0",
-    "prettier": "^1.15.2",
-    "request-light": "^0.2.3",
+    "prettier": "^1.17.1",
+    "request-light": "^0.2.4",
     "vscode-json-languageservice": "3.2.0",
-    "vscode-languageserver": "^4.0.0",
+    "vscode-languageserver": "^5.2.1",
     "vscode-languageserver-types": "^3.14.0",
-    "vscode-nls": "^3.2.2",
     "vscode-uri": "^1.0.6",
     "yaml-ast-parser-custom-tags": "0.0.43"
   },
@@ -43,10 +40,10 @@
     "@types/mocha": "2.2.48",
     "@types/node": "^9.4.7",
     "@types/prettier": "^1.13.2",
-    "coveralls": "^3.0.0",
+    "coveralls": "^3.0.3",
     "mocha": "5.0.4",
     "mocha-lcov-reporter": "^1.3.0",
-    "nyc": "^11.6.0",
+    "nyc": "^14.1.1",
     "source-map-support": "^0.5.4",
     "ts-node": "^5.0.1",
     "typescript": "^2.7.2"
