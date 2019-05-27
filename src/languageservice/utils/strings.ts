@@ -5,47 +5,47 @@
 'use strict';
 
 export function startsWith(haystack: string, needle: string): boolean {
-	if (haystack.length < needle.length) {
-		return false;
-	}
+    if (haystack.length < needle.length) {
+        return false;
+    }
 
-	for (let i = 0; i < needle.length; i++) {
-		if (haystack[i] !== needle[i]) {
-			return false;
-		}
-	}
+    for (let i = 0; i < needle.length; i++) {
+        if (haystack[i] !== needle[i]) {
+            return false;
+        }
+    }
 
-	return true;
+    return true;
 }
 
 /**
  * Determines if haystack ends with needle.
  */
 export function endsWith(haystack: string, needle: string): boolean {
-	let diff = haystack.length - needle.length;
-	if (diff > 0) {
-		return haystack.lastIndexOf(needle) === diff;
-	} else if (diff === 0) {
-		return haystack === needle;
-	} else {
-		return false;
-	}
+    const diff = haystack.length - needle.length;
+    if (diff > 0) {
+        return haystack.lastIndexOf(needle) === diff;
+    } else if (diff === 0) {
+        return haystack === needle;
+    } else {
+        return false;
+    }
 }
 
 export function convertSimple2RegExp(pattern: string): RegExp {
-	var match = pattern.match(new RegExp('^/(.*?)/([gimy]*)$'));
-	return match ? convertRegexString2RegExp(match[1], match[2])
-		:  convertGlobalPattern2RegExp(pattern)
+    const match = pattern.match(new RegExp('^/(.*?)/([gimy]*)$'));
+    return match ? convertRegexString2RegExp(match[1], match[2])
+        :  convertGlobalPattern2RegExp(pattern);
 }
 
 function convertGlobalPattern2RegExp(pattern: string): RegExp {
-	return new RegExp(pattern.replace(/[\-\\\{\}\+\?\|\^\$\.\,\[\]\(\)\#\s]/g, '\\$&').replace(/[\*]/g, '.*') + '$');
+    return new RegExp(pattern.replace(/[\-\\\{\}\+\?\|\^\$\.\,\[\]\(\)\#\s]/g, '\\$&').replace(/[\*]/g, '.*') + '$');
 }
 
 function convertRegexString2RegExp(pattern: string, flag: string): RegExp {
-	return new RegExp(pattern, flag);
+    return new RegExp(pattern, flag);
 }
 
 export function convertSimple2RegExpPattern(pattern: string): string {
-	return pattern.replace(/[\-\\\{\}\+\?\|\^\$\.\,\[\]\(\)\#\s]/g, '\\$&').replace(/[\*]/g, '.*');
+    return pattern.replace(/[\-\\\{\}\+\?\|\^\$\.\,\[\]\(\)\#\s]/g, '\\$&').replace(/[\*]/g, '.*');
 }
