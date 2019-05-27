@@ -1,124 +1,207 @@
+import { ServiceSetup } from './utils/serviceSetup';
+import { createJSONLanguageService, configureLanguageService, setupTextDocument } from './utils/testHelper';
+import { parse } from '../src/languageservice/parser/yamlParser07';
+
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {
-	IPCMessageReader, IPCMessageWriter,
-	createConnection, IConnection, TextDocumentSyncKind,
-	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
-	InitializeParams, InitializeResult, TextDocumentPositionParams,
-	RequestType
-} from 'vscode-languageserver';
-import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import {getLanguageService, LanguageSettings} from '../src/languageservice/yamlLanguageService'
-import Strings = require( '../src/languageservice/utils/strings');
-import URI from '../src/languageservice/utils/uri';
-import * as URL from 'url';
-import fs = require('fs');
-import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-import {schemaRequestService, workspaceContext, createJSONLanguageService}  from './utils/testHelper';
-import { parse as parseYAML } from '../src/languageservice/parser/yamlParser07';
-import { getLineOffsets } from "../src/languageservice/utils/arrUtils";
-var assert = require('assert');
+var assert = require("assert");
 
-let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
-
-let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
-
-let uri = 'http://json.schemastore.org/bowerrc';
-let languageSettings: LanguageSettings = {
-	schemas: [],
-	hover: true
-};
+/**
+ * Setup the schema we are going to use with the language settings
+ */
+let bowerURI = 'http://json.schemastore.org/bowerrc';
+let composerURI = 'http://json.schemastore.org/composer';
 let fileMatch = ["*.yml", "*.yaml"];
-languageSettings.schemas.push({ uri, fileMatch: fileMatch });
-languageService.configure(languageSettings);
+let languageSettingsSetup = new ServiceSetup()
+	.withHover()
+	.withSchemaFileMatch({ uri: bowerURI, fileMatch: fileMatch });
+let languageService = configureLanguageService(
+	languageSettingsSetup.languageSettings
+);
 
 suite("Hover Tests", () => {
+	describe("Hover", function() {
+		function parseSetup(content: string, position, schemaURI: string) {
+			let testTextDocument = setupTextDocument(content);
+			let jsonDocument = parse(testTextDocument.getText());
+			const jsonLanguageService = createJSONLanguageService();
+			jsonLanguageService.configure({
+				schemas: [{
+					fileMatch,
+					uri: schemaURI
+				}]
+			})
+			return languageService.doHover(
+				jsonLanguageService,
+				testTextDocument,
+				testTextDocument.positionAt(position),
+				jsonDocument
+			);
+		}
 
-	
-	describe('Yaml Hover with bowerrc', function(){
-		
-		describe('doComplete', function(){
-			
-			function setup(content: string){
-				return TextDocument.create("file://~/Desktop/vscode-k8s/test.yaml", "yaml", 0, content);
-			}
+		it("Hover on key on root", done => {
+			let content = "cwd: test";
+			let hover = parseSetup(content, 1, bowerURI);
+			hover
+				.then(function(result) {
+					assert.equal(result.contents.length, 1);
+					assert.equal(
+						result.contents[0],
+						"The directory from which bower should run\\. All relative paths will be calculated according to this setting\\."
+					);
+				})
+				.then(done, done);
+		});
 
-			function parseSetup(content: string, position){
-				let testTextDocument = setup(content);
-				let jsonDocument = parseYAML(testTextDocument.getText());
-				const jsonLanguageService = createJSONLanguageService();
-				jsonLanguageService.configure({
-					schemas: [{
-						fileMatch,
-						uri
-					}]
-				});
-				return languageService.doHover(jsonLanguageService, testTextDocument, testTextDocument.positionAt(position), jsonDocument);
-			}
+		it("Hover on value on root", done => {
+			let content = "cwd: test";
+			let hover = parseSetup(content, 6, bowerURI);
+			hover
+				.then(function(result) {
+					assert.equal(result.contents.length, 1);
+					assert.equal(
+						result.contents[0],
+						"The directory from which bower should run\\. All relative paths will be calculated according to this setting\\."
+					);
+				})
+				.then(done, done);
+		});
 
-			it('Hover on key on root', (done) => {
-				let content = "cwd: test";
-				let hover = parseSetup(content, 1);
-				hover.then(function(result){
-                    assert.notEqual(result.contents.length, 0);				
-				}).then(done, done);
-            });
-            
-            it('Hover on value on root', (done) => {
-				let content = "cwd: test";
-				let hover = parseSetup(content, 6);
-				hover.then(function(result){
-                    assert.notEqual(result.contents.length, 0);				
-				}).then(done, done);
-            });
+		it("Hover on key with depth", done => {
+			let content = "scripts:\n  postinstall: test";
+			let hover = parseSetup(content, 15, bowerURI);
+			hover
+				.then(function(result) {
+					assert.equal(result.contents.length, 1);
+					assert.equal(
+						result.contents[0],
+						"A script to run after install"
+					);
+				})
+				.then(done, done);
+		});
 
-            it('Hover on key with depth', (done) => {
-				let content = "scripts:\n  postinstall: test";
-				let hover = parseSetup(content, 15);
-				hover.then(function(result){
-                    assert.notEqual(result.contents.length, 0);				
-				}).then(done, done);
-            });
+		it("Hover on value with depth", done => {
+			let content = "scripts:\n  postinstall: test";
+			let hover = parseSetup(content, 26, bowerURI);
+			hover
+				.then(function(result) {
+					assert.equal(result.contents.length, 1);
+					assert.equal(
+						result.contents[0],
+						"A script to run after install"
+					);
+				})
+				.then(done, done);
+		});
 
-            it('Hover on value with depth', (done) => {
-				let content = "scripts:\n  postinstall: test";
-				let hover = parseSetup(content, 26);
-				hover.then(function(result){
-                    assert.notEqual(result.contents.length, 0);				
-				}).then(done, done);
-            });
+		it("Hover works on both root node and child nodes works", done => {
+			let content = "scripts:\n  postinstall: test";
 
-            it('Hover works on both root node and child nodes works', (done) => {
-				let content = "scripts:\n  postinstall: test";
-                
-                let firstHover = parseSetup(content, 3);
-                firstHover.then(function(result){
-                    assert.notEqual(result.contents.length, 0);
-                });
-                
-                let secondHover = parseSetup(content, 15);
-				secondHover.then(function(result){
-                    assert.notEqual(result.contents.length, 0);				
-				}).then(done, done);
-            });
-
-            it('Hover does not show results when there isnt description field', (done) => {
-				let content = "analytics: true";
-				let hover = parseSetup(content, 3);
-				hover.then(function(result){
-                    assert.notEqual(result.contents.length, 0);				
-				}).then(done, done);
+			let firstHover = parseSetup(content, 3, bowerURI);
+			firstHover.then(function(result) {
+				assert.equal(result.contents.length, 1);
+				assert.equal(
+					result.contents[0],
+					"Contains custom hooks used to trigger other automated tools"
+				);
 			});
-			
-			it('Hover on multi document', (done) => {
-				let content = '---\nanalytics: true\n...\n---\njson: test\n...';
-				let hover = parseSetup(content, 30);
-				hover.then(function(result){
-                    assert.notEqual(result.contents.length, 0);				
-				}).then(done, done);
-            });
+
+			let secondHover = parseSetup(content, 15, bowerURI);
+			secondHover
+				.then(function(result) {
+					assert.equal(result.contents.length, 1);
+					assert.equal(
+						result.contents[0],
+						"A script to run after install"
+					);
+				})
+				.then(done, done);
+		});
+
+		it("Hover does not show results when there isnt description field", done => {
+			let content = "analytics: true";
+			let hover = parseSetup(content, 3, bowerURI);
+			hover
+				.then(function(result) {
+					assert.equal(result.contents.length, 1);
+					assert.equal(result.contents[0], "");
+				})
+				.then(done, done);
+		});
+
+		it("Hover on first document in multi document", done => {
+			let content = "---\nanalytics: true\n...\n---\njson: test\n...";
+			let hover = parseSetup(content, 10, bowerURI);
+			hover
+				.then(function(result) {
+					assert.equal(result.contents.length, 1);
+					assert.equal(
+						result.contents[0],
+						""
+					);
+				})
+				.then(done, done);
+		});
+
+		it("Hover on second document in multi document", done => {
+			let content = "---\nanalytics: true\n...\n---\njson: test\n...";
+			let hover = parseSetup(content, 30, bowerURI);
+			hover
+				.then(function(result) {
+					assert.equal(result.contents.length, 1);
+					assert.equal(
+						result.contents[0],
+						"A file path to the Bower configuration file"
+					);
+				})
+				.then(done, done);
+		});
+
+		it("Hover should not return anything on key", done => {
+			let content = "my_unknown_hover: test";
+			let hover = parseSetup(content, 1, bowerURI);
+			hover
+				.then(function(result) {
+					assert.equal(result.contents.length, 1);
+					assert.equal(result.contents[0], "");
+				})
+				.then(done, done);
+		});
+
+		it("Hover should not return anything on value", done => {
+			let content = "my_unknown_hover: test";
+			let hover = parseSetup(content, 21, bowerURI);
+			hover
+				.then(function(result) {
+					assert.equal(result.contents.length, 1);
+					assert.equal(result.contents[0], "");
+				})
+				.then(done, done);
+		});
+
+		it("Hover works on array nodes", done => {
+			let content = "authors:\n  - name: Josh";
+			let hover = parseSetup(content, 14, composerURI);
+			hover
+				.then(function(result) {
+					assert.notEqual(result.contents.length, 0);
+					assert.equal(result.contents[0], "Full name of the author\\.");
+				})
+				.then(done, done);
+		});
+
+		it("Hover works on additional array nodes", done => {
+			let content = "authors:\n  - name: Josh\n  - email: jp";
+			let hover = parseSetup(content, 28, composerURI);
+			hover
+				.then(function(result) {
+					assert.notEqual(result.contents.length, 0);
+					assert.equal(result.contents[0], "Email address of the author\\.");
+				})
+				.then(done, done);
 		});
 	});
 });

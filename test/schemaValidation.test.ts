@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { TextDocument } from 'vscode-languageserver';
-import { createJSONLanguageService, configureLanguageService}  from './utils/testHelper';
+import { createJSONLanguageService, configureLanguageService, setupTextDocument}  from './utils/testHelper';
 import { createExpectedError } from './utils/verifyError';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser07';
 import { ServiceSetup } from './utils/serviceSetup';
@@ -35,12 +35,8 @@ suite("Validation Tests", () => {
 	// Tests for validator
 	describe('Validation', function() {
 		
-		function setup(content: string){
-			return TextDocument.create("file://~/Desktop/vscode-k8s/test.yaml", "yaml", 0, content);
-		}
-
 		function parseSetup(content: string){
-			let testTextDocument = setup(content);
+			let testTextDocument = setupTextDocument(content);
 			let yDoc = parseYAML(testTextDocument.getText(), languageSettingsSetup.languageSettings.customTags);
 			return languageService.doValidation(jsonLanguageService, testTextDocument, yDoc);
 		}
