@@ -9,8 +9,7 @@ import * as Parser from '../parser/jsonParser04';
 import * as Json from 'jsonc-parser';
 import * as SchemaService from './jsonSchemaService';
 import { JSONSchema } from '../jsonSchema04';
-import { JSONWorkerContribution, CompletionsCollector } from '../jsonContributions';
-import { PromiseConstructor, Thenable } from 'vscode-json-languageservice';
+import { PromiseConstructor, Thenable, JSONWorkerContribution, CompletionsCollector } from 'vscode-json-languageservice';
 
 import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Position, Range, TextEdit, InsertTextFormat } from 'vscode-languageserver-types';
 

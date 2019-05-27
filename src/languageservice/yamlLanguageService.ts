@@ -121,7 +121,7 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
   let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
 
   let completer = new YAMLCompletion(schemaService, contributions, promise);
-  let hover = new YAMLHover(schemaService, contributions, promise);
+  let hover = new YAMLHover(promise);
   let yamlDocumentSymbols = new YAMLDocumentSymbols();
   let yamlValidation = new YAMLValidation(promise);
   let formatter = new YAMLFormatter();

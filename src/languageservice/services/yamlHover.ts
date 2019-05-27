@@ -6,8 +6,7 @@
 'use strict';
 
 import * as SchemaService from './jsonSchemaService';
-import {JSONWorkerContribution} from '../jsonContributions';
-import {PromiseConstructor, Thenable, LanguageService} from 'vscode-json-languageservice';
+import {PromiseConstructor, Thenable, LanguageService, JSONWorkerContribution} from 'vscode-json-languageservice';
 
 import { Hover, TextDocument, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument2 } from '../utils/arrUtils';
@@ -15,14 +14,10 @@ import { LanguageSettings } from '../yamlLanguageService';
 
 export class YAMLHover {
 
-    private schemaService: SchemaService.IJSONSchemaService;
-    private contributions: JSONWorkerContribution[];
     private promise: PromiseConstructor;
     private shouldHover: boolean;
 
-    constructor(schemaService: SchemaService.IJSONSchemaService, contributions: JSONWorkerContribution[] = [], promiseConstructor: PromiseConstructor) {
-        this.schemaService = schemaService;
-        this.contributions = contributions;
+    constructor(promiseConstructor: PromiseConstructor) {
         this.promise = promiseConstructor || Promise;
         this.shouldHover = true;
     }
