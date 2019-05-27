@@ -6,7 +6,7 @@
 'use strict';
 
 import * as Json from 'jsonc-parser';
-import {JSONSchema, JSONSchemaMap} from '../jsonSchema';
+import {JSONSchema, JSONSchemaMap} from '../jsonSchema04';
 import URI from 'vscode-uri';
 import * as Strings from '../utils/strings';
 import {SchemaRequestService, WorkspaceContextService, PromiseConstructor, Thenable} from '../yamlLanguageService';

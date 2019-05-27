@@ -1,13 +1,14 @@
 /*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
 import * as Json from 'jsonc-parser';
-import { JSONSchema, JSONSchemaRef } from '../jsonSchema2';
+import { JSONSchema, JSONSchemaRef } from '../jsonSchema07';
 import { isNumber, equals, isString, isDefined, isBoolean } from '../utils/objects';
-import { ASTNode, ObjectASTNode, ArrayASTNode, BooleanASTNode, NumberASTNode, StringASTNode, NullASTNode, PropertyASTNode, JSONPath, ErrorCode } from '../jsonLanguageTypes';
-
+import { ASTNode, ObjectASTNode, ArrayASTNode, BooleanASTNode, NumberASTNode, StringASTNode, NullASTNode, PropertyASTNode } from '../jsonASTTypes';
+import { ErrorCode, JSONPath } from 'vscode-json-languageservice';
 import * as nls from 'vscode-nls';
 import Uri from 'vscode-uri';
 import { TextDocument, Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';

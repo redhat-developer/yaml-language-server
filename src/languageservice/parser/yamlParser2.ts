@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { JSONDocument, NullASTNodeImpl, PropertyASTNodeImpl, StringASTNodeImpl, ObjectASTNodeImpl, NumberASTNodeImpl, ArrayASTNodeImpl, BooleanASTNodeImpl } from './jsonParser2';
+import { JSONDocument, NullASTNodeImpl, PropertyASTNodeImpl, StringASTNodeImpl, ObjectASTNodeImpl, NumberASTNodeImpl, ArrayASTNodeImpl, BooleanASTNodeImpl } from './jsonParser07';
 
 import * as nls from 'vscode-nls';
 const localize = nls.loadMessageBundle();
@@ -13,10 +13,11 @@ const localize = nls.loadMessageBundle();
 import * as Yaml from 'yaml-ast-parser-custom-tags'
 import { Schema, Type } from 'js-yaml';
 
-import { getLineStartPositions, getPosition } from '../utils/documentPositionCalculator'
+import { getLineStartPositions } from '../utils/documentPositionCalculator'
 import { parseYamlBoolean } from './scalar-type';
 import { filterInvalidCustomTags } from '../utils/arrUtils';
-import { ASTNode, ErrorCode } from '../jsonLanguageTypes';
+import { ASTNode } from '../jsonASTTypes';
+import { ErrorCode } from 'vscode-json-languageservice';
 
 export class SingleYAMLDocument extends JSONDocument {
 	private lines;

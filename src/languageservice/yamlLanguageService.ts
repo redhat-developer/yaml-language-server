@@ -6,7 +6,7 @@
 
 import { JSONSchemaService, CustomSchemaProvider } from './services/jsonSchemaService'
 import { TextDocument, Position, CompletionList, Diagnostic } from 'vscode-languageserver-types';
-import { JSONSchema } from './jsonSchema';
+import { JSONSchema } from './jsonSchema04';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLCompletion } from "./services/yamlCompletion";
 import { YAMLHover } from "./services/yamlHover";
@@ -109,6 +109,7 @@ export interface LanguageService {
   doValidation(jsonLanguageService: JSONLanguageService, document: TextDocument, yamlDocument): Thenable<Diagnostic[]>;
   doHover(jsonLanguageService: JSONLanguageService, document: TextDocument, position: Position, doc);
   findDocumentSymbols(jsonLanguageService: JSONLanguageService, document: TextDocument, doc);
+  findDocumentSymbols2(jsonLanguageService: JSONLanguageService, document: TextDocument, doc);
   doResolve(completionItem);
   resetSchema(uri: string): boolean;
   doFormat(document: TextDocument, options: CustomFormatterOptions);
@@ -122,7 +123,7 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
   let completer = new YAMLCompletion(schemaService, contributions, promise);
   let hover = new YAMLHover(schemaService, contributions, promise);
   let yamlDocumentSymbols = new YAMLDocumentSymbols();
-  let yamlValidation = new YAMLValidation(schemaService, promise);
+  let yamlValidation = new YAMLValidation(promise);
   let formatter = new YAMLFormatter();
 
   return {
@@ -147,6 +148,7 @@ export function getLanguageService(schemaRequestService, workspaceContext, contr
       doValidation: yamlValidation.doValidation.bind(yamlValidation),
       doHover: hover.doHover.bind(hover),
       findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols),
+      findDocumentSymbols2: yamlDocumentSymbols.findHierarchicalDocumentSymbols.bind(yamlDocumentSymbols),
       resetSchema: (uri: string) => schemaService.onResourceChange(uri),
       doFormat: formatter.format.bind(formatter)
   }

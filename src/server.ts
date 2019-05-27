@@ -10,7 +10,7 @@ import {
 	createConnection, IConnection,
 	TextDocuments, TextDocument, InitializeParams, InitializeResult, NotificationType, RequestType,
 	DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter, DiagnosticSeverity, Position,
-	Proposed, ProposedFeatures, CompletionList
+	Proposed, ProposedFeatures, CompletionList, DocumentRangeFormattingRequest
 } from 'vscode-languageserver';
 
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
@@ -25,8 +25,8 @@ import * as nls from 'vscode-nls';
 import { FilePatternAssociation, CustomSchemaProvider } from './languageservice/services/jsonSchemaService';
 import { parse as parseYAML } from './languageservice/parser/yamlParser';
 import { parse as parseYAML2 } from './languageservice/parser/yamlParser2';
-import { JSONDocument } from './languageservice/parser/jsonParser';
-import { JSONSchema } from './languageservice/jsonSchema';
+import { JSONDocument } from './languageservice/parser/jsonParser04';
+import { JSONSchema } from './languageservice/jsonSchema04';
 import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';
 nls.config(<any>process.env['VSCODE_NLS_CONFIG']);
 
@@ -78,6 +78,7 @@ documents.listen(connection);
 
 let clientDynamicRegisterSupport = false;
 let hasWorkspaceFolderCapability = false;
+let hierarchicalDocumentSymbolSupport = false;
 
 // After the server has started the client sends an initilize request. The server receives
 // in the passed params the rootPath of the workspace plus the client capabilities.
@@ -89,7 +90,21 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 	workspaceFolders = params["workspaceFolders"];
 	workspaceRoot = URI.parse(params.rootPath);
 
+	function getClientCapability<T>(name: string, def: T) {
+		const keys = name.split('.');
+		let c: any = params.capabilities;
+		for (let i = 0; c && i < keys.length; i++) {
+			if (!c.hasOwnProperty(keys[i])) {
+				return def;
+			}
+			c = c[keys[i]];
+		}
+		return c;
+	}
+
+	hierarchicalDocumentSymbolSupport = getClientCapability('textDocument.documentSymbol.hierarchicalDocumentSymbolSupport', false);
 	hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
+	clientDynamicRegisterSupport = getClientCapability('workspace.symbol.dynamicRegistration', false);
 	return {
 		capabilities: {
 			textDocumentSync: documents.syncKind,
@@ -258,6 +273,19 @@ connection.onDidChangeConfiguration((change) => {
 	setSchemaStoreSettingsIfNotSet();
 
 	updateConfiguration();
+
+	// dynamically enable & disable the formatter
+	if (clientDynamicRegisterSupport) {
+		const enableFormatter = settings && settings.yaml && settings.yaml.format && settings.yaml.format.enable;
+		if (enableFormatter) {
+			if (!formatterRegistration) {
+				formatterRegistration = connection.client.register(DocumentRangeFormattingRequest.type, { documentSelector: [{ language: 'json' }, { language: 'jsonc' }] });
+			}
+		} else if (formatterRegistration) {
+			formatterRegistration.then(r => r.dispose());
+			formatterRegistration = null;
+		}
+	}
 });
 
 /**
@@ -590,9 +618,14 @@ connection.onDocumentSymbol(documentSymbolParams => {
 	if(!document){
 		return;
 	}
+	
+	const jsonDocument = parseYAML2(document.getText());
+	if (hierarchicalDocumentSymbolSupport) {
+		return customLanguageService.findDocumentSymbols2(jsonLanguageService, document, jsonDocument);
+	} else {
+		return customLanguageService.findDocumentSymbols(jsonLanguageService, document, jsonDocument);
+	}
 
-	let jsonDocument = parseYAML2(document.getText());
-	return customLanguageService.findDocumentSymbols(jsonLanguageService, document, jsonDocument);
 });
 
 connection.onDocumentFormatting(formatParams => {

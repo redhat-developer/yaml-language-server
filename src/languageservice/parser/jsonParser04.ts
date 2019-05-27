@@ -6,7 +6,7 @@
 'use strict';
 
 import * as Json from 'jsonc-parser';
-import { JSONSchema } from '../jsonSchema';
+import { JSONSchema } from '../jsonSchema04';
 import * as objects from '../utils/objects';
 
 import * as nls from 'vscode-nls';

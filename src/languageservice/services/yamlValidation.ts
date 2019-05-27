@@ -5,20 +5,16 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { JSONSchemaService } from './jsonSchemaService';
 import { Diagnostic } from 'vscode-languageserver-types';
 import { PromiseConstructor, LanguageSettings} from '../yamlLanguageService';
 import { LanguageService } from 'vscode-json-languageservice';
 
 export class YAMLValidation {
 
-    private jsonSchemaService: JSONSchemaService;
     private promise: PromiseConstructor;
-    private comments: boolean;
     private validationEnabled: boolean;
 
-    public constructor(jsonSchemaService, promiseConstructor) {
-        this.jsonSchemaService = jsonSchemaService;
+    public constructor(promiseConstructor: PromiseConstructor) {
         this.promise = promiseConstructor;
         this.validationEnabled = true;
     }
@@ -31,12 +27,12 @@ export class YAMLValidation {
 
     public doValidation(jsonLanguageService: LanguageService, textDocument, yamlDocument) {
 
-        if(!this.validationEnabled){
+        if (!this.validationEnabled) {
             return this.promise.resolve([]);
         }
 
         let validationResult = [];
-        for(let currentYAMLDoc of yamlDocument.documents){
+        for (let currentYAMLDoc of yamlDocument.documents) {
             const validation = jsonLanguageService.doValidation(textDocument, currentYAMLDoc);
 
             if (currentYAMLDoc.errors.length > 0) {

@@ -5,12 +5,11 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import * as Parser from '../parser/jsonParser2';
 import * as SchemaService from './jsonSchemaService';
 import {JSONWorkerContribution} from '../jsonContributions';
 import {PromiseConstructor, Thenable, LanguageService} from 'vscode-json-languageservice';
 
-import {Hover, TextDocument, Position, Range, MarkedString} from 'vscode-languageserver-types';
+import { Hover, TextDocument, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument2 } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
 

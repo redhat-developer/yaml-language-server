@@ -5,9 +5,9 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import * as Parser from '../parser/jsonParser2';
+import * as Parser from '../parser/jsonParser07';
 
-import { SymbolInformation, TextDocument } from 'vscode-languageserver-types';
+import { SymbolInformation, TextDocument, DocumentSymbol } from 'vscode-languageserver-types';
 import { LanguageService } from 'vscode-json-languageservice';
 
 export class YAMLDocumentSymbols {
@@ -22,6 +22,22 @@ export class YAMLDocumentSymbols {
         for (const yamlDoc of doc['documents']) {
             if (yamlDoc.root) {
                 results = results.concat(jsonLanguageService.findDocumentSymbols(document, yamlDoc));
+            }
+        }
+
+        return results;
+    }
+
+    public findHierarchicalDocumentSymbols(jsonLanguageService: LanguageService, document: TextDocument, doc: Parser.JSONDocument): DocumentSymbol[] {
+
+        if (!doc || doc['documents'].length === 0) {
+            return null;
+        }
+
+        let results = [];
+        for (const yamlDoc of doc['documents']) {
+            if (yamlDoc.root) {
+                results = results.concat(jsonLanguageService.findDocumentSymbols2(document, yamlDoc));
             }
         }
 

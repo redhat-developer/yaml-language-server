@@ -5,11 +5,10 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-
-import * as Parser from '../parser/jsonParser';
+import * as Parser from '../parser/jsonParser04';
 import * as Json from 'jsonc-parser';
 import * as SchemaService from './jsonSchemaService';
-import { JSONSchema } from '../jsonSchema';
+import { JSONSchema } from '../jsonSchema04';
 import { JSONWorkerContribution, CompletionsCollector } from '../jsonContributions';
 import { PromiseConstructor, Thenable } from 'vscode-json-languageservice';
 
