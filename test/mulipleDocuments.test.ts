@@ -6,8 +6,8 @@ import { TextDocument } from 'vscode-languageserver';
 import {getLanguageService, LanguageSettings} from '../src/languageservice/yamlLanguageService'
 import path = require('path');
 import {schemaRequestService, workspaceContext, createJSONLanguageService}  from './testHelper';
-import { parse as parseYAML2 } from '../src/languageservice/parser/yamlParser2';
-import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
+import { parse as parseYAML2 } from '../src/languageservice/parser/yamlParser07';
+import { parse as parseYAML } from '../src/languageservice/parser/yamlParser04';
 var assert = require('assert');
 
 let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);

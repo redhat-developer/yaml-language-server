@@ -23,8 +23,8 @@ import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arr
 import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
 import { FilePatternAssociation, CustomSchemaProvider } from './languageservice/services/jsonSchemaService';
-import { parse as parseYAML } from './languageservice/parser/yamlParser';
-import { parse as parseYAML2 } from './languageservice/parser/yamlParser2';
+import { parse as parseYAML } from './languageservice/parser/yamlParser04';
+import { parse as parseYAML2 } from './languageservice/parser/yamlParser07';
 import { JSONDocument } from './languageservice/parser/jsonParser04';
 import { JSONSchema } from './languageservice/jsonSchema04';
 import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';

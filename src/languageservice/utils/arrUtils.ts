@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { SingleYAMLDocument } from '../parser/yamlParser';
+import { SingleYAMLDocument } from '../parser/yamlParser04';
 
 export function removeDuplicates(arr, prop) {
     const new_arr = [];

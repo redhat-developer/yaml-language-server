@@ -17,7 +17,7 @@ import * as URL from 'url';
 import fs = require('fs');
 import { JSONSchemaService } from '../src/languageservice/services/jsonSchemaService'
 import { schemaRequestService, workspaceContext } from './testHelper';
-import { parse as parseYAML } from '../src/languageservice/parser/yamlParser';
+import { parse as parseYAML } from '../src/languageservice/parser/yamlParser04';
 var assert = require('assert');
 
 let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
