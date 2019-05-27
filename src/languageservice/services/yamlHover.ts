@@ -5,9 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import * as SchemaService from './jsonSchemaService';
-import {PromiseConstructor, Thenable, LanguageService, JSONWorkerContribution} from 'vscode-json-languageservice';
-
+import { PromiseConstructor, Thenable, LanguageService } from 'vscode-json-languageservice';
 import { Hover, TextDocument, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument2 } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
