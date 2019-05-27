@@ -2,54 +2,29 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {
-	IPCMessageReader, IPCMessageWriter,
-	createConnection, IConnection, TextDocumentSyncKind,
-	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
-	InitializeParams, InitializeResult, TextDocumentPositionParams,
-	CompletionItem, CompletionItemKind, RequestType
-} from 'vscode-languageserver';
-import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import {getLanguageService} from '../src/languageservice/yamlLanguageService'
-import Strings = require( '../src/languageservice/utils/strings');
-import URI from '../src/languageservice/utils/uri';
-import * as URL from 'url';
-import fs = require('fs');
-import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-import {schemaRequestService, workspaceContext, createJSONLanguageService}  from './utils/testHelper';
+import { createJSONLanguageService, setupTextDocument, configureLanguageService}  from './utils/testHelper';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser07';
+import { ServiceSetup } from './utils/serviceSetup';
+import { createExpectedError } from './utils/verifyError';
 var assert = require('assert');
 
-function createLanguageServiceWithCustomTags(customTags) {
-    let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
+let languageSettingsSetup = new ServiceSetup()
+	.withValidate()
+let languageService = configureLanguageService(
+	languageSettingsSetup.languageSettings
+);
 
-    let languageSettings = {
-        schemas: [],
-        validate: true,
-        customTags: customTags
-    };
-    const uri = 'http://json.schemastore.org/bowerrc';
-    let fileMatch = ["*.yml", "*.yaml"];
-    languageSettings.schemas.push({ uri, fileMatch: fileMatch });
-    languageService.configure(languageSettings);
-    return languageService;
-}
+const jsonLanguageService = createJSONLanguageService();
+jsonLanguageService.configure({
+    validate: true
+})
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite("Custom Tag tests Tests", () => {
 
-    function setup(content: string){
-        return TextDocument.create("file://~/Desktop/vscode-k8s/test.yaml", "yaml", 0, content);
-    }
-
     function parseSetup(content: string, customTags: string[]){
-        let testTextDocument = setup(content);
-        let languageService = createLanguageServiceWithCustomTags(customTags);
+        let testTextDocument = setupTextDocument(content);
         let yDoc = parseYAML(testTextDocument.getText(), customTags);
-        const jsonLanguageService = createJSONLanguageService();
-        jsonLanguageService.configure({
-            validate: true
-        })
         return languageService.doValidation(jsonLanguageService, testTextDocument, yDoc);
     }
     
@@ -100,7 +75,13 @@ suite("Custom Tag tests Tests", () => {
             let content = "!test";
             let validator = parseSetup(content, []);
             validator.then(function(result){
-                assert.equal(result.length, 2);
+                assert.equal(result.length, 1);
+
+                // TODO fix the ranges here
+                assert.equal(
+                    result[0],
+                    createExpectedError("unknown tag <!test>", 0, 0, 0, 0)
+                )
             }).then(done, done);
         });
     });

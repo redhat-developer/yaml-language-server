@@ -134,9 +134,11 @@ export function createJSONLanguageService() {
 
 export function setupTextDocument(content: string) {
 	return TextDocument.create(
-		"file://~/Desktop/vscode-k8s/test.yaml",
+		TEST_URI,
 		"yaml",
 		0,
 		content
 	);
 }
+
+export const TEST_URI = 'file://~/Desktop/vscode-k8s/test.yaml';
