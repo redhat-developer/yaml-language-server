@@ -1,5 +1,11 @@
 {
     "defaultSeverity": "error",
+    "linterOptions": {
+      "exclude": [
+        "test/**",
+        "src/**"
+      ]
+    },
     "rules": {
       "arrow-parens": [
         true,
