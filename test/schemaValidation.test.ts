@@ -2,39 +2,32 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {
-	IPCMessageReader, IPCMessageWriter,
-	createConnection, IConnection, TextDocumentSyncKind,
-	TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
-	InitializeParams, InitializeResult, TextDocumentPositionParams,
-	CompletionItem, CompletionItemKind, RequestType
-} from 'vscode-languageserver';
-import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import {getLanguageService} from '../src/languageservice/yamlLanguageService'
-import Strings = require( '../src/languageservice/utils/strings');
-import URI from '../src/languageservice/utils/uri';
-import * as URL from 'url';
-import fs = require('fs');
-import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-import {schemaRequestService, workspaceContext, createJSONLanguageService}  from './testHelper';
+import { TextDocument } from 'vscode-languageserver';
+import { createJSONLanguageService, configureLanguageService}  from './utils/testHelper';
+import { createExpectedError } from './utils/verifyError';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser07';
+import { ServiceSetup } from './utils/serviceSetup';
+import { StringTypeError, BooleanTypeError, ArrayTypeError, ObjectTypeError, IncludeWithoutValueError, ColonMissingError, BlockMappingEntryError } from './utils/errorMessages';
 var assert = require('assert');
 
-let languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
-
-let schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
-
 let uri = 'http://json.schemastore.org/bowerrc';
-let languageSettings = {
-	schemas: [],
-	validate: true,
-	customTags: []
-};
 let fileMatch = ["*.yml", "*.yaml"];
-languageSettings.schemas.push({ uri, fileMatch: fileMatch });
-languageSettings.customTags.push("!Test");
-languageSettings.customTags.push("!Ref sequence");
-languageService.configure(languageSettings);
+let languageSettingsSetup = new ServiceSetup()
+	.withValidate()
+	.withCustomTags(['!Test', '!Ref sequence'])
+	.withSchemaFileMatch({ uri, fileMatch: fileMatch });
+let languageService = configureLanguageService(
+	languageSettingsSetup.languageSettings
+);
+const jsonLanguageService = createJSONLanguageService();
+jsonLanguageService.configure({
+	schemas: [{
+		uri,
+		fileMatch
+	}],
+	validate: true
+})
+
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite("Validation Tests", () => {
@@ -48,15 +41,7 @@ suite("Validation Tests", () => {
 
 		function parseSetup(content: string){
 			let testTextDocument = setup(content);
-			let yDoc = parseYAML(testTextDocument.getText(), languageSettings.customTags);
-			const jsonLanguageService = createJSONLanguageService();
-			jsonLanguageService.configure({
-				schemas: [{
-					fileMatch,
-					uri
-				}],
-				validate: true
-			})
+			let yDoc = parseYAML(testTextDocument.getText(), languageSettingsSetup.languageSettings.customTags);
 			return languageService.doValidation(jsonLanguageService, testTextDocument, yDoc);
 		}
 
@@ -68,14 +53,6 @@ suite("Validation Tests", () => {
 				let validator = parseSetup(content);
 				validator.then(function(result){
 					assert.equal(result.length, 0);
-				}).then(done, done);
-			});
-
-			it('Test that boolean value in quotations is not interpreted as boolean i.e. it errors', (done) => {
-				let content = `analytics: "no"`;
-				let validator = parseSetup(content);
-				validator.then(function(result){
-					assert.notEqual(result.length, 0);
 				}).then(done, done);
 			});
 
@@ -95,14 +72,6 @@ suite("Validation Tests", () => {
 				}).then(done, done);
 			});
 
-			it('Test that boolean is invalid when no strings present and schema wants string', (done) => {
-				let content = `cwd: no`;
-				let validator = parseSetup(content);
-				validator.then(function(result){
-					assert.notEqual(result.length, 0);
-				}).then(done, done);
-			});
-
 			it('Basic test', (done) => {
 				let content = `analytics: true`;
 				let validator = parseSetup(content);
@@ -110,7 +79,6 @@ suite("Validation Tests", () => {
 					assert.equal(result.length, 0);
 				}).then(done, done);
 			});
-
 
 			it('Basic test on nodes with children', (done) => {
 				let content = `scripts:\n  preinstall: test1\n  postinstall: test2`;
@@ -129,7 +97,7 @@ suite("Validation Tests", () => {
 			});
 
 			it('Type string validates under children', (done) => {
-				let content = `registry:\n  register: test_url`;
+				let content = `registry:\n  register: file://test_url`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
 					assert.equal(result.length, 0);
@@ -227,7 +195,7 @@ suite("Validation Tests", () => {
 				});			
 
 				it('Type Object does not error on valid node', (done) => {
-					let content = `registry:\n  search: test_url`;
+					let content = `registry:\n  search: file://test_url`;
 					let validator = parseSetup(content);
 					validator.then(function(result){
 						assert.equal(result.length, 0);
@@ -247,8 +215,7 @@ suite("Validation Tests", () => {
 					let validator = parseSetup(content);
 					validator.then(function(result){
 						assert.equal(result.length, 0);
-					});
-					done();
+					}).then(done, done);
 				});
 				
 			});
@@ -260,7 +227,15 @@ suite("Validation Tests", () => {
 				let content = `cwd: hello\nan`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
-					assert.notEqual(result.length, 0);
+					assert.equal(result.length, 2);
+					assert.deepEqual(
+						result[0],
+						createExpectedError(BlockMappingEntryError, 1, 13, 1, 13)
+					);
+					assert.deepEqual(
+						result[1],
+						createExpectedError(ColonMissingError, 1, 13, 1, 13)
+					);
 				}).then(done, done);
 			});
 
@@ -268,7 +243,11 @@ suite("Validation Tests", () => {
 				let content = `cwd:`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
-					assert.notEqual(result.length, 0);
+					assert.equal(result.length, 1);
+					assert.deepEqual(
+						result[0],
+						createExpectedError(StringTypeError, 0, 4, 0, 4)
+					)
 				}).then(done, done);
 			});
 
@@ -276,7 +255,11 @@ suite("Validation Tests", () => {
 				let content = `cwd: 100000`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
-					assert.notEqual(result.length, 0);
+					assert.equal(result.length, 1);
+					assert.deepEqual(
+						result[0],
+						createExpectedError(StringTypeError, 0, 5, 0, 11)
+					)
 				}).then(done, done);
 			});
 
@@ -284,7 +267,11 @@ suite("Validation Tests", () => {
 				let content = `cwd: False`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
-					assert.notEqual(result.length, 0);
+					assert.equal(result.length, 1);
+					assert.deepEqual(
+						result[0],
+						createExpectedError(StringTypeError, 0, 5, 0, 10)
+					)
 				}).then(done, done);
 			});
 
@@ -292,7 +279,11 @@ suite("Validation Tests", () => {
 				let content = `analytics: hello`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
-					assert.notEqual(result.length, 0);
+					assert.equal(result.length, 1);
+					assert.deepEqual(
+						result[0],
+						createExpectedError(BooleanTypeError, 0, 11, 0, 16)
+					)
 				}).then(done, done);
 			});
 
@@ -300,7 +291,11 @@ suite("Validation Tests", () => {
 				let content = `scripts: test`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
-					assert.notEqual(result.length, 0);
+					assert.equal(result.length, 1);
+					assert.deepEqual(
+						result[0],
+						createExpectedError(ObjectTypeError, 0, 9, 0, 13),
+					)
 				}).then(done, done);
 			});
 
@@ -308,7 +303,11 @@ suite("Validation Tests", () => {
 				let content = `resolvers: test`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
-					assert.notEqual(result.length, 0);
+					assert.equal(result.length, 1);
+					assert.deepEqual(
+						result[0],
+						createExpectedError(ArrayTypeError, 0, 11, 0, 15)
+					)
 				}).then(done, done);
 			});
 
@@ -317,10 +316,37 @@ suite("Validation Tests", () => {
 				let validator = parseSetup(content);
 				validator.then(function(result){
 					assert.equal(result.length, 1);
+					assert.deepEqual(
+						result[0],
+						createExpectedError(IncludeWithoutValueError, 0, 19, 0, 19)
+					)
+				}).then(done, done);
+			});
+
+			it('Test that boolean value in quotations is not interpreted as boolean i.e. it errors', (done) => {
+				let content = `analytics: "no"`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 1);
+					assert.deepEqual(
+						result[0],
+						createExpectedError(BooleanTypeError, 0, 11, 0, 15)
+					)
+				}).then(done, done);
+			});
+
+			it('Test that boolean is invalid when no strings present and schema wants string', (done) => {
+				let content = `cwd: no`;
+				let validator = parseSetup(content);
+				validator.then(function(result){
+					assert.equal(result.length, 1);
+					assert.deepEqual(
+						result[0],
+						createExpectedError(StringTypeError, 0, 5, 0, 7)
+					)
 				}).then(done, done);
 			});
 
 		});
-	
 	});
 });

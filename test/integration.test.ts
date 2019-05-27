@@ -16,7 +16,7 @@ import URI from '../src/languageservice/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
 import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-import {schemaRequestService, workspaceContext, createJSONLanguageService}  from './testHelper';
+import {schemaRequestService, workspaceContext, createJSONLanguageService}  from './utils/testHelper';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser04';
 import { parse as parseYAML2 } from '../src/languageservice/parser/yamlParser07';
 import { getLineOffsets } from "../src/languageservice/utils/arrUtils";

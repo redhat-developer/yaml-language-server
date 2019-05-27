@@ -11,7 +11,7 @@ import {
 } from 'vscode-languageserver';
 import {getLanguageService} from '../src/languageservice/yamlLanguageService'
 import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-import {schemaRequestService, workspaceContext}  from './testHelper';
+import {schemaRequestService, workspaceContext}  from './utils/testHelper';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser04';
 import { getLineOffsets } from '../src/languageservice/utils/arrUtils';
 var assert = require('assert');

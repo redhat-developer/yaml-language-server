@@ -16,7 +16,7 @@ import URI from '../src/languageservice/utils/uri';
 import * as URL from 'url';
 import fs = require('fs');
 import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService'
-import {schemaRequestService, workspaceContext}  from './testHelper';
+import {schemaRequestService, workspaceContext}  from './utils/testHelper';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser04';
 import { getLineOffsets } from '../src/languageservice/utils/arrUtils';
 var assert = require('assert');
