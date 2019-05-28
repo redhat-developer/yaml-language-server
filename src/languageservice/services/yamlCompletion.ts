@@ -125,6 +125,10 @@ export class YAMLCompletion {
                 result.items.length
         };
 
+        if (this.customTags.length > 0) {
+            this.getCustomTagValueCompletions(collector);
+        }
+
         return this.schemaService.getSchemaForResource(document.uri).then(schema => {
 
             if (!schema){
@@ -198,9 +202,6 @@ export class YAMLCompletion {
             }
             if (this.contributions.length > 0) {
                 this.getContributedValueCompletions(currentDoc, node, offset, document, collector, collectionPromises);
-            }
-            if (this.customTags.length > 0) {
-                this.getCustomTagValueCompletions(collector);
             }
 
             return this.promise.all(collectionPromises).then(() =>
