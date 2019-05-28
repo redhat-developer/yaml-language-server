@@ -11,7 +11,7 @@ import * as SchemaService from './jsonSchemaService';
 import { JSONSchema } from '../jsonSchema04';
 import { PromiseConstructor, Thenable, JSONWorkerContribution, CompletionsCollector } from 'vscode-json-languageservice';
 
-import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Position, Range, TextEdit, InsertTextFormat } from 'vscode-languageserver-types';
+import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Position, Range, TextEdit, InsertTextFormat, MarkupContent } from 'vscode-languageserver-types';
 
 import * as nls from 'vscode-nls';
 import { matchOffsetToDocument, filterInvalidCustomTags } from '../utils/arrUtils';
@@ -418,12 +418,38 @@ export class YAMLCompletion {
             });
             hasProposals = true;
         }
+        if (Array.isArray(schema['examples'])) {
+            schema['examples'].forEach(example => {
+                let type = schema.type;
+                let value = example;
+                for (let i = arrayDepth; i > 0; i--) {
+                    value = [value];
+                    type = 'array';
+                }
+                collector.add({
+                    kind: this.getSuggestionKind(type),
+                    label: this.getLabelForValue(value),
+                    insertText: this.getInsertTextForValue(value, separatorAfter),
+                    insertTextFormat: InsertTextFormat.Snippet
+                });
+                hasProposals = true;
+            });
+        }
         if (!hasProposals && schema.items && !Array.isArray(schema.items)) {
             this.addDefaultValueCompletions(schema.items, collector, separatorAfter, arrayDepth + 1);
         }
     }
 
     private addEnumValueCompletions(schema: JSONSchema, collector: CompletionsCollector, separatorAfter: string, forArrayItem = false): void {
+        if (isDefined(schema['const'])) {
+            collector.add({
+                kind: this.getSuggestionKind(schema.type),
+                label: this.getLabelForValue(schema['const']),
+                insertText: this.getInsertTextForValue(schema['const'], separatorAfter),
+                insertTextFormat: InsertTextFormat.Snippet,
+                documentation: schema.description
+            });
+        }
         if (Array.isArray(schema.enum)) {
             for (let i = 0, length = schema.enum.length; i < length; i++) {
                 const enm = schema.enum[i];
@@ -721,4 +747,10 @@ export class YAMLCompletion {
         // }
         return '';
     }
+
+}
+
+// tslint:disable-next-line: no-any
+function isDefined(val: any): val is object {
+    return val !== undefined;
 }
