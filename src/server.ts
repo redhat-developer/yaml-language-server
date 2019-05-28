@@ -274,7 +274,7 @@ connection.onDidChangeConfiguration(change => {
         const enableFormatter = settings && settings.yaml && settings.yaml.format && settings.yaml.format.enable;
         if (enableFormatter) {
             if (!formatterRegistration) {
-                formatterRegistration = connection.client.register(DocumentRangeFormattingRequest.type, { documentSelector: [{ language: 'json' }, { language: 'jsonc' }] });
+                formatterRegistration = connection.client.register(DocumentRangeFormattingRequest.type, { documentSelector: [{ language: 'yaml' }] });
             }
         } else if (formatterRegistration) {
             formatterRegistration.then(r => r.dispose());
