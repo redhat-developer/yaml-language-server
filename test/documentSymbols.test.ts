@@ -246,58 +246,58 @@ suite("Document Symbols Tests", () => {
         it('Document Symbols with array', () => {
             let content = "authors:\n  - name: Josh\n  - email: jp";
             let symbols = parseHierarchicalSetup(content);
-            const child1 = createExpectedDocumentSymbol("0", SymbolKind.Module, 1, 4, 1, 8, 1, 4, 1, 8);
-            const child2 = createExpectedDocumentSymbol("1", SymbolKind.Module, 2, 4, 2, 13, 2, 4, 2, 13);
-            const children = [child1, child2];
+
+            const object1 = createExpectedDocumentSymbol("name", SymbolKind.String, 1, 4, 1, 14, 1, 4, 1, 8);
+            const arrayChild1 = createExpectedDocumentSymbol("0", SymbolKind.Module, 1, 4, 1, 14, 1, 4, 1, 14, [object1]);
+
+            const object2 = createExpectedDocumentSymbol("email", SymbolKind.String, 2, 4, 2, 13, 2, 4, 2, 9);
+            const arrayChild2 = createExpectedDocumentSymbol("1", SymbolKind.Module, 2, 4, 2, 13, 2, 4, 2, 13, [object2]);
+            const children = [arrayChild1, arrayChild2];
             assert.deepEqual(
                 symbols[0],
-                createExpectedDocumentSymbol("authors", SymbolKind.Array, 0, 0, 2, 13, 0, 0, 0, 7)
+                createExpectedDocumentSymbol("authors", SymbolKind.Array, 0, 0, 2, 13, 0, 0, 0, 7, children)
             );
         });
     
-        // it('Document Symbols with object and array', () => {
-        //     let content = "scripts:\n  node1: test\n  node2: test\nauthors:\n  - name: Josh\n  - email: jp";
-        //     let symbols = parseHierarchicalSetup(content);
-        //     assert.equal(symbols.length, 6);
-        //     assert.deepEqual(
-        //         symbols[0],
-        //         createExpectedSymbolInformation("scripts", 2, undefined, TEST_URI, 0, 0, 2, 13)
-        //     );
-        //     assert.deepEqual(
-        //         symbols[1],
-        //         createExpectedSymbolInformation("node1", 15, "scripts", TEST_URI, 1, 2, 1, 13)
-        //     );
-        //     assert.deepEqual(
-        //         symbols[2],
-        //         createExpectedSymbolInformation("node2", 15, "scripts", TEST_URI, 2, 2, 2, 13)
-        //     );
-        //     assert.deepEqual(
-        //         symbols[3],
-        //         createExpectedSymbolInformation("authors", 18, undefined, TEST_URI, 3, 0, 5, 13)
-        //     );
-        //     assert.deepEqual(
-        //         symbols[4],
-        //         createExpectedSymbolInformation("name", 15, "authors", TEST_URI, 4, 4, 4, 14)
-        //     );
-        //     assert.deepEqual(
-        //         symbols[5],
-        //         createExpectedSymbolInformation("email", 15, "authors", TEST_URI, 5, 4, 5, 13)
-        //     );
-        // });
+        it('Document Symbols with object and array', () => {
+            let content = "scripts:\n  node1: test\n  node2: test\nauthors:\n  - name: Josh\n  - email: jp";
+            let symbols = parseHierarchicalSetup(content);
+            assert.equal(symbols.length, 2);
 
-        // it('Document Symbols with multi documents', () => {
-        //     let content = '---\nanalytics: true\n...\n---\njson: test\n...';
-        //     let symbols = parseHierarchicalSetup(content);
-        //     assert.equal(symbols.length, 2);
-        //     assert.deepEqual(
-        //         symbols[0],
-        //         createExpectedSymbolInformation("analytics", 17, undefined, TEST_URI, 1, 0, 1, 15)
-        //     );
-        //     assert.deepEqual(
-        //         symbols[1],
-        //         createExpectedSymbolInformation("json", 15, undefined, TEST_URI, 4, 0, 4, 10)
-        //     );
-        // });
+            const child1 = createExpectedDocumentSymbol("node1", SymbolKind.String, 1, 2, 1, 13, 1, 2, 1, 7);
+            const child2 = createExpectedDocumentSymbol("node2", SymbolKind.String, 2, 2, 2, 13, 2, 2, 2, 7);
+            const children = [child1, child2];
+            assert.deepEqual(
+                symbols[0],
+                createExpectedDocumentSymbol("scripts", SymbolKind.Module, 0, 0, 2, 13, 0, 0, 0, 7, children)
+            );
+
+            const object1 = createExpectedDocumentSymbol("name", SymbolKind.String, 4, 4, 4, 14, 4, 4, 4, 8);
+            const arrayChild1 = createExpectedDocumentSymbol("0", SymbolKind.Module, 4, 4, 4, 14, 4, 4, 4, 14, [object1]);
+
+            const object2 = createExpectedDocumentSymbol("email", SymbolKind.String, 5, 4, 5, 13, 5, 4, 5, 9);
+            const arrayChild2 = createExpectedDocumentSymbol("1", SymbolKind.Module, 5, 4, 5, 13, 5, 4, 5, 13, [object2]);
+            const children2 = [arrayChild1, arrayChild2];
+
+            assert.deepEqual(
+                symbols[1],
+                createExpectedDocumentSymbol("authors", SymbolKind.Array, 3, 0, 5, 13, 3, 0, 3, 7, children2)
+            );
+        });
+
+        it('Document Symbols with multi documents', () => {
+            let content = '---\nanalytics: true\n...\n---\njson: test\n...';
+            let symbols = parseHierarchicalSetup(content);
+            assert.equal(symbols.length, 2);
+            assert.deepEqual(
+                symbols[0],
+                createExpectedDocumentSymbol("analytics", SymbolKind.Boolean, 1, 0, 1, 15, 1, 0, 1, 9)
+            );
+            assert.deepEqual(
+                symbols[1],
+                createExpectedDocumentSymbol("json", SymbolKind.String, 4, 0, 4, 10, 4, 0, 4, 4)
+            );
+        });
 
     });
 

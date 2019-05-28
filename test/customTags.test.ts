@@ -76,9 +76,7 @@ suite("Custom Tag tests Tests", () => {
             let validator = parseSetup(content, []);
             validator.then(function(result){
                 assert.equal(result.length, 1);
-
-                // TODO fix the ranges here
-                assert.equal(
+                assert.deepEqual(
                     result[0],
                     createExpectedError("unknown tag <!test>", 0, 0, 0, 0)
                 )

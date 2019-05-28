@@ -195,12 +195,12 @@ suite("Kubernetes Integration Tests", () => {
 				}).then(done, done);
 			});
 
-			it('Property error message should be \"Unexpected property {$property_name}\" when property is not allowed ', (done) => {
+			it('Property error message should be \"Property unknown_node is not allowed.\" when property is not allowed ', (done) => {
 				let content = `unknown_node: test`;
 				let validator = parseSetup(content);
 				validator.then(function(result){
 					assert.equal(result.length, 1);
-					assert.equal(result[0].message, "Unexpected property unknown_node");
+					assert.equal(result[0].message, "Property unknown_node is not allowed.");
 				}).then(done, done);
 			});
 

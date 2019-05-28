@@ -157,14 +157,18 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 }
 
 function convertError(e: Yaml.YAMLException) {
+
+	const line = e.mark.line === 0 ? 0 : e.mark.line - 1;
+	const character = e.mark.position + e.mark.column === 0 ? 0 : e.mark.position + e.mark.column - 1
+
 	return { message: `${e.reason}`, range: { 
 		start: {
-			line: e.mark.line - 1,
-			character: e.mark.position + e.mark.column - 1
+			line,
+			character
 		},
 		end: {
-			line: e.mark.line - 1,
-			character: e.mark.position + e.mark.column - 1
+			line,
+			character
 		},
 	},
 	 severity: 2 
