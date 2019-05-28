@@ -174,9 +174,8 @@ const schemaRequestService = (uri: string): Thenable<string> => {
         Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString()));
 };
 
-// tslint:disable-next-line: max-line-length
-export let KUBERNETES_SCHEMA_URL = 'https://gist.githubusercontent.com/JPinkney/ccaf3909ef811e5657ca2e2e1fa05d76/raw/f85e51bfb67fdb99ab7653c2953b60087cc871ea/openshift_schema_all.json';
-export let KEDGE_SCHEMA_URL = 'https://raw.githubusercontent.com/kedgeproject/json-schema/master/master/kedge-json-schema.json';
+export let KUBERNETES_SCHEMA_URL = "https://raw.githubusercontent.com/garethr/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json";
+export let KEDGE_SCHEMA_URL = "https://raw.githubusercontent.com/kedgeproject/json-schema/master/master/kedge-json-schema.json";
 export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
 export let jsonLanguageService = getJSONLanguageService({
     schemaRequestService,
