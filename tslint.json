@@ -1,8 +1,8 @@
 {
+    "_comment": "Options have been extended and modified from tslint in theia-ide/theia project https://github.com/theia-ide/theia/blob/master/configs/errors.tslint.json",
     "defaultSeverity": "error",
     "linterOptions": {
       "exclude": [
-        "src/**",
         "node_modules/**"
       ]
     },
@@ -51,7 +51,7 @@
       ],
       "quotemark": [
         true,
-        "double",
+        "single",
         "avoid-escape",
         "avoid-template"
       ],

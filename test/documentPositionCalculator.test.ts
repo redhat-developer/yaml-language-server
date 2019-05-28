@@ -2,14 +2,14 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {binarySearch, getLineStartPositions, getPosition, insertionPointReturnValue} from "../src/languageservice/utils/documentPositionCalculator";
-const assert = require("assert");
+import {binarySearch, getLineStartPositions, getPosition, insertionPointReturnValue} from '../src/languageservice/utils/documentPositionCalculator';
+const assert = require('assert');
 
-suite("DocumentPositionCalculator Tests", () => {
+suite('DocumentPositionCalculator Tests', () => {
 
-        describe("binarySearch", function (){
+        describe('binarySearch', function (){
 
-            it("Binary Search where we are looking for element to the left of center", () => {
+            it('Binary Search where we are looking for element to the left of center', () => {
 
                 const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
                 const find = 2;
@@ -19,7 +19,7 @@ suite("DocumentPositionCalculator Tests", () => {
 
             });
 
-            it("Binary Search where we are looking for element to the right of center", () => {
+            it('Binary Search where we are looking for element to the right of center', () => {
 
                 const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
                 const find = 8;
@@ -29,7 +29,7 @@ suite("DocumentPositionCalculator Tests", () => {
 
             });
 
-            it("Binary Search found at first check", () => {
+            it('Binary Search found at first check', () => {
 
                 const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
                 const find = 5;
@@ -39,7 +39,7 @@ suite("DocumentPositionCalculator Tests", () => {
 
             });
 
-            it("Binary Search item not found", () => {
+            it('Binary Search item not found', () => {
 
                 const arr = [1];
                 const find = 5;
@@ -51,11 +51,11 @@ suite("DocumentPositionCalculator Tests", () => {
 
         });
 
-        describe("getLineStartPositions", function (){
+        describe('getLineStartPositions', function (){
 
-            it("getLineStartPositions with windows newline", () => {
+            it('getLineStartPositions with windows newline', () => {
 
-                const test_str = "test: test\r\ntest: test";
+                const test_str = 'test: test\r\ntest: test';
 
                 const result = getLineStartPositions(test_str);
                 assert.equal(result[0], 0);
@@ -63,9 +63,9 @@ suite("DocumentPositionCalculator Tests", () => {
 
             });
 
-            it("getLineStartPositions with normal newline", () => {
+            it('getLineStartPositions with normal newline', () => {
 
-                const test_str = "test: test\ntest: test";
+                const test_str = 'test: test\ntest: test';
 
                 const result = getLineStartPositions(test_str);
                 assert.equal(result[0], 0);
@@ -75,11 +75,11 @@ suite("DocumentPositionCalculator Tests", () => {
 
         });
 
-        describe("getPosition", function (){
+        describe('getPosition', function (){
 
-            it("getPosition", () => {
+            it('getPosition', () => {
 
-                const test_str = "test: test\r\ntest: test";
+                const test_str = 'test: test\r\ntest: test';
 
                 const startPositions = getLineStartPositions(test_str);
                 const result = getPosition(0, startPositions);
@@ -89,9 +89,9 @@ suite("DocumentPositionCalculator Tests", () => {
 
             });
 
-            it("getPosition when not found", () => {
+            it('getPosition when not found', () => {
 
-                const test_str = "test: test\ntest: test";
+                const test_str = 'test: test\ntest: test';
 
                 const startPositions = getLineStartPositions(test_str);
                 const result = getPosition(5, startPositions);

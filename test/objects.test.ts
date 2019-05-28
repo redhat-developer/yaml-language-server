@@ -2,12 +2,12 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { equals } from "../src/languageservice/utils/objects";
-const assert = require("assert");
+import { equals } from '../src/languageservice/utils/objects';
+const assert = require('assert');
 
-suite("Object Equals Tests", () => {
-    describe("Equals", function () {
-        it("Both are null", () => {
+suite('Object Equals Tests', () => {
+    describe('Equals', function () {
+        it('Both are null', () => {
             const one = null;
             const other = null;
 
@@ -15,7 +15,7 @@ suite("Object Equals Tests", () => {
             assert.equal(result, true);
         });
 
-        it("One is null the other is true", () => {
+        it('One is null the other is true', () => {
             const one = null;
             const other = true;
 
@@ -23,33 +23,33 @@ suite("Object Equals Tests", () => {
             assert.equal(result, false);
         });
 
-        it("One is string the other is boolean", () => {
-            const one = "test";
+        it('One is string the other is boolean', () => {
+            const one = 'test';
             const other = false;
 
             const result = equals(one, other);
             assert.equal(result, false);
         });
 
-        it("One is not object", () => {
-            const one = "test";
+        it('One is not object', () => {
+            const one = 'test';
             const other = false;
 
             const result = equals(one, other);
             assert.equal(result, false);
         });
 
-        it("One is array the other is not", () => {
+        it('One is array the other is not', () => {
             const one = new Proxy([], {});
             const other = Object.keys({
-                1: "2",
-                2: "3"
+                1: '2',
+                2: '3'
             });
             const result = equals(one, other);
             assert.equal(result, false);
         });
 
-        it("Both are arrays of different length", () => {
+        it('Both are arrays of different length', () => {
             const one = [1, 2, 3];
             const other = [1, 2, 3, 4];
 
@@ -57,7 +57,7 @@ suite("Object Equals Tests", () => {
             assert.equal(result, false);
         });
 
-        it("Both are arrays of same elements but in different order", () => {
+        it('Both are arrays of same elements but in different order', () => {
             const one = [1, 2, 3];
             const other = [3, 2, 1];
 
@@ -65,7 +65,7 @@ suite("Object Equals Tests", () => {
             assert.equal(result, false);
         });
 
-        it("Arrays that are equal", () => {
+        it('Arrays that are equal', () => {
             const one = [1, 2, 3];
             const other = [1, 2, 3];
 
@@ -73,7 +73,7 @@ suite("Object Equals Tests", () => {
             assert.equal(result, true);
         });
 
-        it("Objects that are equal", () => {
+        it('Objects that are equal', () => {
             const one = {
                 test: 1
             };
@@ -85,7 +85,7 @@ suite("Object Equals Tests", () => {
             assert.equal(result, true);
         });
 
-        it("Objects that have same keys but different values", () => {
+        it('Objects that have same keys but different values', () => {
             const one = {
                 test: 1
             };
@@ -97,7 +97,7 @@ suite("Object Equals Tests", () => {
             assert.equal(result, false);
         });
 
-        it("Objects that have different keys", () => {
+        it('Objects that have different keys', () => {
             const one = {
                 test_one: 1
             };

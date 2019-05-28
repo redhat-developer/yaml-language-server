@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DocumentSymbol, SymbolKind } from "vscode-languageserver-types";
+import { DocumentSymbol, SymbolKind } from 'vscode-languageserver-types';
 
 export function createExpectedError(
     message: string,

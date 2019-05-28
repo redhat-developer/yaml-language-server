@@ -6,90 +6,90 @@ import {
     removeDuplicates,
     getLineOffsets,
     removeDuplicatesObj
-} from "../src/languageservice/utils/arrUtils";
-const assert = require("assert");
+} from '../src/languageservice/utils/arrUtils';
+const assert = require('assert');
 
-suite("Array Utils Tests", () => {
-    describe("Server - Array Utils", function () {
-        describe("removeDuplicates", function () {
-            it("Remove one duplicate with property", () => {
+suite('Array Utils Tests', () => {
+    describe('Server - Array Utils', function () {
+        describe('removeDuplicates', function () {
+            it('Remove one duplicate with property', () => {
                 const obj1 = {
-                    test_key: "test_value"
+                    test_key: 'test_value'
                 };
 
                 const obj2 = {
-                    test_key: "test_value"
+                    test_key: 'test_value'
                 };
 
                 const arr = [obj1, obj2];
-                const prop = "test_key";
+                const prop = 'test_key';
 
                 const result = removeDuplicates(arr, prop);
                 assert.equal(result.length, 1);
             });
 
-            it("Remove multiple duplicates with property", () => {
+            it('Remove multiple duplicates with property', () => {
                 const obj1 = {
-                    test_key: "test_value"
+                    test_key: 'test_value'
                 };
 
                 const obj2 = {
-                    test_key: "test_value"
+                    test_key: 'test_value'
                 };
 
                 const obj3 = {
-                    test_key: "test_value"
+                    test_key: 'test_value'
                 };
 
                 const obj4 = {
-                    another_key_too: "test_value"
+                    another_key_too: 'test_value'
                 };
 
                 const arr = [obj1, obj2, obj3, obj4];
-                const prop = "test_key";
+                const prop = 'test_key';
 
                 const result = removeDuplicates(arr, prop);
                 assert.equal(result.length, 2);
             });
 
-            it("Do NOT remove items without duplication", () => {
+            it('Do NOT remove items without duplication', () => {
                 const obj1 = {
-                    first_key: "test_value"
+                    first_key: 'test_value'
                 };
 
                 const obj2 = {
-                    second_key: "test_value"
+                    second_key: 'test_value'
                 };
 
                 const arr = [obj1, obj2];
-                const prop = "first_key";
+                const prop = 'first_key';
 
                 const result = removeDuplicates(arr, prop);
                 assert.equal(result.length, 2);
             });
         });
 
-        describe("getLineOffsets", function () {
-            it("No offset", () => {
-                const offsets = getLineOffsets("");
+        describe('getLineOffsets', function () {
+            it('No offset', () => {
+                const offsets = getLineOffsets('');
                 assert.equal(offsets.length, 0);
             });
 
-            it("One offset", () => {
-                const offsets = getLineOffsets("test_offset");
+            it('One offset', () => {
+                const offsets = getLineOffsets('test_offset');
                 assert.equal(offsets.length, 1);
                 assert.equal(offsets[0], 0);
             });
 
-            it("One offset with \\r\\n", () => {
-                const offsets = getLineOffsets("first_offset\r\n");
+            it('One offset with \\r\\n', () => {
+                const offsets = getLineOffsets('first_offset\r\n');
                 assert.equal(offsets.length, 2);
                 assert.equal(offsets[0], 0);
             });
 
-            it("Multiple offsets", () => {
+            it('Multiple offsets', () => {
                 const offsets = getLineOffsets(
-                    "first_offset\n  second_offset\n    third_offset"
+                    'first_offset\n  second_offset\n    third_offset'
                 );
                 assert.equal(offsets.length, 3);
                 assert.equal(offsets[0], 0);
@@ -98,14 +98,14 @@ suite("Array Utils Tests", () => {
             });
         });
 
-        describe("removeDuplicatesObj", function () {
-            it("Remove one duplicate with property", () => {
+        describe('removeDuplicatesObj', function () {
+            it('Remove one duplicate with property', () => {
                 const obj1 = {
-                    test_key: "test_value"
+                    test_key: 'test_value'
                 };
 
                 const obj2 = {
-                    test_key: "test_value"
+                    test_key: 'test_value'
                 };
 
                 const arr = [obj1, obj2];
@@ -113,13 +113,13 @@ suite("Array Utils Tests", () => {
                 assert.equal(result.length, 1);
             });
 
-            it("Does not remove anything unneccessary", () => {
+            it('Does not remove anything unneccessary', () => {
                 const obj1 = {
-                    test_key: "test_value"
+                    test_key: 'test_value'
                 };
 
                 const obj2 = {
-                    other_key: "test_value"
+                    other_key: 'test_value'
                 };
 
                 const arr = [obj1, obj2];

@@ -31,8 +31,8 @@ export class YAMLValidation {
             return this.promise.resolve([]);
         }
 
-        let validationResult = [];
-        for (let currentYAMLDoc of yamlDocument.documents) {
+        const validationResult = [];
+        for (const currentYAMLDoc of yamlDocument.documents) {
             const validation = jsonLanguageService.doValidation(textDocument, currentYAMLDoc);
 
             if (currentYAMLDoc.errors.length > 0) {
@@ -41,13 +41,13 @@ export class YAMLValidation {
 
             validationResult.push(validation);
         }
-        
+
         return Promise.all(validationResult).then(resolvedValidation => {
             let joinedResolvedArray = [];
             for (const resolvedArr of resolvedValidation) {
                 joinedResolvedArray = joinedResolvedArray.concat(resolvedArr);
             }
-            
+
             const foundSignatures = new Set();
             const duplicateMessagesRemoved = [];
             for (const err of joinedResolvedArray as Diagnostic[]) {
@@ -58,6 +58,6 @@ export class YAMLValidation {
                 }
             }
             return duplicateMessagesRemoved;
-        })
+        });
     }
 }

@@ -11,32 +11,32 @@ import {
     TextDocument,
     InitializeResult,
     RequestType
-} from "vscode-languageserver";
+} from 'vscode-languageserver';
 import {
     xhr,
     XHRResponse,
     getErrorStatusDescription
-} from "request-light";
+} from 'request-light';
 import {
     getLanguageService,
     LanguageSettings
-} from "../../src/languageservice/yamlLanguageService";
-import Strings = require("../../src/languageservice/utils/strings");
-import URI from "../../src/languageservice/utils/uri";
-import { getLanguageService as getJSONLanguageService } from "vscode-json-languageservice";
-import * as URL from "url";
-import fs = require("fs");
-import path = require("path");
+} from '../../src/languageservice/yamlLanguageService';
+import Strings = require('../../src/languageservice/utils/strings');
+import URI from '../../src/languageservice/utils/uri';
+import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';
+import * as URL from 'url';
+import fs = require('fs');
+import path = require('path');
 
 namespace VSCodeContentRequest {
     export const type: RequestType<{}, {}, {}, {}> = new RequestType(
-        "vscode/content"
+        'vscode/content'
     );
 }
 
 // Create a connection for the server.
 let connection: IConnection = null;
-if (process.argv.indexOf("--stdio") === -1) {
+if (process.argv.indexOf('--stdio') === -1) {
     connection = createConnection(
         new IPCMessageReader(process),
         new IPCMessageWriter(process)
@@ -64,14 +64,14 @@ export let workspaceContext = {
 };
 
 export let schemaRequestService = (uri: string): Thenable<string> => {
-    if (Strings.startsWith(uri, "file://")) {
+    if (Strings.startsWith(uri, 'file://')) {
         const fsPath = URI.parse(uri).fsPath;
         return new Promise<string>((c, e) => {
-            fs.readFile(fsPath, "UTF-8", (err, result) => {
-                err ? e("") : c(result.toString());
+            fs.readFile(fsPath, 'UTF-8', (err, result) => {
+                err ? e('') : c(result.toString());
             });
         });
-    } else if (Strings.startsWith(uri, "vscode://")) {
+    } else if (Strings.startsWith(uri, 'vscode://')) {
         return connection.sendRequest(VSCodeContentRequest.type, uri).then(
             responseText => responseText,
             error => error.message
@@ -89,15 +89,15 @@ export let schemaRequestService = (uri: string): Thenable<string> => {
 };
 
 export function toFsPath(str): string {
-    if (typeof str !== "string") {
+    if (typeof str !== 'string') {
         throw new TypeError(`Expected a string, got ${typeof str}`);
     }
 
     let pathName;
     pathName = path.resolve(str);
-    pathName = pathName.replace(/\\/g, "/");
+    pathName = pathName.replace(/\\/g, '/');
     // Windows drive letter must be prefixed with a slash
-    if (pathName[0] !== "/") {
+    if (pathName[0] !== '/') {
         pathName = `/${pathName}`;
     }
     return encodeURI(`file://${pathName}`).replace(/[?#]/g, encodeURIComponent);
@@ -125,10 +125,10 @@ export function createJSONLanguageService() {
 export function setupTextDocument(content: string) {
     return TextDocument.create(
         TEST_URI,
-        "yaml",
+        'yaml',
         0,
         content
     );
 }
 
-export const TEST_URI = "file://~/Desktop/vscode-k8s/test.yaml";
+export const TEST_URI = 'file://~/Desktop/vscode-k8s/test.yaml';

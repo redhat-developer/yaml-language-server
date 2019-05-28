@@ -8,33 +8,33 @@ import {
     TextDocuments, TextDocument, Diagnostic, DiagnosticSeverity,
     InitializeParams, InitializeResult, TextDocumentPositionParams,
     CompletionItem, CompletionItemKind, RequestType
-} from "vscode-languageserver";
-import {getLanguageService} from "../src/languageservice/yamlLanguageService";
-import {JSONSchemaService} from "../src/languageservice/services/jsonSchemaService";
-import {schemaRequestService, workspaceContext}  from "./utils/testHelper";
-import { parse as parseYAML } from "../src/languageservice/parser/yamlParser04";
-import { getLineOffsets } from "../src/languageservice/utils/arrUtils";
-const assert = require("assert");
+} from 'vscode-languageserver';
+import {getLanguageService} from '../src/languageservice/yamlLanguageService';
+import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService';
+import {schemaRequestService, workspaceContext}  from './utils/testHelper';
+import { parse as parseYAML } from '../src/languageservice/parser/yamlParser04';
+import { getLineOffsets } from '../src/languageservice/utils/arrUtils';
+const assert = require('assert');
 
 const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
-const uri = "http://json.schemastore.org/asmdef";
+const uri = 'http://json.schemastore.org/asmdef';
 const languageSettings = {
     schemas: [],
     completion: true
 };
-const fileMatch = ["*.yml", "*.yaml"];
+const fileMatch = ['*.yml', '*.yaml'];
 languageSettings.schemas.push({ uri, fileMatch: fileMatch });
 languageService.configure(languageSettings);
 
-suite("Auto Completion Tests", () => {
+suite('Auto Completion Tests', () => {
 
-    describe("yamlCompletion with asmdef", function (){
+    describe('yamlCompletion with asmdef', function (){
 
-        describe("doComplete", function (){
+        describe('doComplete', function (){
 
             function setup(content: string){
-                return TextDocument.create("file://~/Desktop/vscode-k8s/test.yaml", "yaml", 0, content);
+                return TextDocument.create('file://~/Desktop/vscode-k8s/test.yaml', 'yaml', 0, content);
             }
 
             function parseSetup(content: string, position){
@@ -42,32 +42,32 @@ suite("Auto Completion Tests", () => {
                 return completionHelper(testTextDocument, testTextDocument.positionAt(position));
             }
 
-            it("Array of enum autocomplete without word on array symbol", done => {
-                const content = "optionalUnityReferences:\n  -";
+            it('Array of enum autocomplete without word on array symbol', done => {
+                const content = 'optionalUnityReferences:\n  -';
                 const completion = parseSetup(content, 29);
                 completion.then(function (result){
                     assert.notEqual(result.items.length, 0);
                 }).then(done, done);
             });
 
-            it("Array of enum autocomplete without word", done => {
-                const content = "optionalUnityReferences:\n  - ";
+            it('Array of enum autocomplete without word', done => {
+                const content = 'optionalUnityReferences:\n  - ';
                 const completion = parseSetup(content, 30);
                 completion.then(function (result){
                     assert.notEqual(result.items.length, 0);
                 }).then(done, done);
             });
 
-            it("Array of enum autocomplete with letter", done => {
-                const content = "optionalUnityReferences:\n  - T";
+            it('Array of enum autocomplete with letter', done => {
+                const content = 'optionalUnityReferences:\n  - T';
                 const completion = parseSetup(content, 31);
                 completion.then(function (result){
                     assert.notEqual(result.items.length, 0);
                 }).then(done, done);
             });
 
-            it("Array of enum autocomplete with multiline text", done => {
-                const content = "optionalUnityReferences:\n  - T\n    e\n";
+            it('Array of enum autocomplete with multiline text', done => {
+                const content = 'optionalUnityReferences:\n  - T\n    e\n';
                 const completion = parseSetup(content, 31);
                 completion.then(function (result){
                     assert.notEqual(result.items.length, 0);
@@ -104,22 +104,22 @@ function completionHelper(document: TextDocument, textDocumentPosition){
     const textLine = document.getText().substring(start, end);
 
     //Check if the string we are looking at is a node
-    if (textLine.indexOf(":") === -1){
+    if (textLine.indexOf(':') === -1){
         //We need to add the ":" to load the nodes
 
-        let newText = "";
+        let newText = '';
 
         //This is for the empty line case
         const trimmedText = textLine.trim();
-        if (trimmedText.length === 0 || (trimmedText.length === 1 && trimmedText[0] === "-")){
+        if (trimmedText.length === 0 || (trimmedText.length === 1 && trimmedText[0] === '-')){
             //Add a temp node that is in the document but we don't use at all.
             newText = document.getText().substring(0,
-                start + textLine.length) + (trimmedText[0] === "-" && !textLine.endsWith(" ") ? " " : "") + "holder:\r\n" +
+                start + textLine.length) + (trimmedText[0] === '-' && !textLine.endsWith(' ') ? ' ' : '') + 'holder:\r\n' +
                 document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
             //For when missing semi colon case
         }else{
             //Add a semicolon to the end of the current line so we can validate the node
-            newText = document.getText().substring(0, start + textLine.length) + ":\r\n" + document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
+            newText = document.getText().substring(0, start + textLine.length) + ':\r\n' + document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
         }
         const jsonDocument = parseYAML(newText);
         return languageService.doComplete(document, position, jsonDocument);

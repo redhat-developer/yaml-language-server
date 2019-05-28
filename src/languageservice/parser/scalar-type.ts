@@ -1,6 +1,6 @@
 /**
  * Parse a boolean according to the specification
- * 
+ *
  * Return:
  *  true if its a true value
  *  false if its a false value
@@ -11,5 +11,5 @@ export function parseYamlBoolean(input: string): boolean {
     } else if (['false', 'False', 'FALSE', 'n', 'N', 'no', 'No', 'NO', 'off', 'Off', 'OFF'].lastIndexOf(input) >= 0) {
         return false;
     }
-    throw `Invalid boolean "${input}"`
+    throw `Invalid boolean "${input}"`;
 }
