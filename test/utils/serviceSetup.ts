@@ -1,11 +1,15 @@
-import { LanguageSettings } from '../../src/languageservice/yamlLanguageService';
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Red Hat. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+import { LanguageSettings } from "../../src/languageservice/yamlLanguageService";
 
 export class ServiceSetup {
 
     /*
      * By default the service setup is going to have everything disabled
      * and each test is going to enable a feature with a with function call
-     */ 
+     */
     languageSettings: LanguageSettings = {
         validate: false,
         hover: false,
@@ -45,7 +49,7 @@ export class ServiceSetup {
         uri: string,
         fileMatch: string[]
     }) {
-        this.languageSettings.schemas.push(schemaFileMatch)
+        this.languageSettings.schemas.push(schemaFileMatch);
         return this;
     }
 
