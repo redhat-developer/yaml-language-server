@@ -114,7 +114,7 @@ yaml.schemas: {
 }
 ```
 
-`yaml.schemas` allows you to specify json schemas that you want to validate against the yaml that you write. Kubernetes is an optional field. They do not require a url as the language server will provide that. You just need the keyword kubernetes and a glob pattern.
+`yaml.schemas` allows you to specify json schemas that you want to validate against the yaml that you write. Kubernetes is an optional field. It does not require a url as the language server will provide that. You just need the keyword kubernetes and a glob pattern.
 
 ## Clients
 This repository only contains the server implementation. Here are some known clients consuming this server:
