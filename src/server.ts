@@ -161,7 +161,6 @@ let schemaRequestService = (uri: string): Thenable<string> => {
 };
 
 export let KUBERNETES_SCHEMA_URL = "https://raw.githubusercontent.com/garethr/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json";
-export let KEDGE_SCHEMA_URL = "https://raw.githubusercontent.com/kedgeproject/json-schema/master/master/kedge-json-schema.json";
 export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
 
 // The settings interface describes the server relevant settings part
@@ -370,9 +369,6 @@ function configureSchemas(uri, fileMatch, schema, languageSettings){
 
 	if(uri.toLowerCase().trim() === "kubernetes"){
 		uri = KUBERNETES_SCHEMA_URL;
-	}
-	if(uri.toLowerCase().trim() === "kedge"){
-		uri = KEDGE_SCHEMA_URL;
 	}
 
 	if(schema === null){
