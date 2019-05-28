@@ -25,7 +25,7 @@ suite('Custom Tag tests Tests', () => {
     function parseSetup(content: string, customTags: string[]){
         const testTextDocument = setupTextDocument(content);
         const yDoc = parseYAML(testTextDocument.getText(), customTags);
-        return languageService.doValidation(jsonLanguageService, testTextDocument, yDoc);
+        return languageService.doValidation(jsonLanguageService, testTextDocument, yDoc, false);
     }
 
     describe('Test that validation does not throw errors', function (){

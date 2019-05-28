@@ -109,9 +109,9 @@ export interface CustomFormatterOptions {
 
 export interface LanguageService {
   configure(settings): void;
-  registerCustomSchemaProvider(schemaProvider: CustomSchemaProvider): void; // Register a custom schema provider
+  registerCustomSchemaProvider(schemaProvider: CustomSchemaProvider): void;
   doComplete(document: TextDocument, position: Position, doc): Thenable<CompletionList>;
-  doValidation(jsonLanguageService: JSONLanguageService, document: TextDocument, yamlDocument): Thenable<Diagnostic[]>;
+  doValidation(jsonLanguageService: JSONLanguageService, document: TextDocument, yamlDocument, isKubernetes: boolean): Thenable<Diagnostic[]>;
   doHover(jsonLanguageService: JSONLanguageService, document: TextDocument, position: Position, doc);
   findDocumentSymbols(jsonLanguageService: JSONLanguageService, document: TextDocument, doc);
   findDocumentSymbols2(jsonLanguageService: JSONLanguageService, document: TextDocument, doc);

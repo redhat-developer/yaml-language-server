@@ -9,8 +9,7 @@
 import {
     createConnection, IConnection,
     TextDocuments, TextDocument, InitializeParams, InitializeResult, NotificationType, RequestType,
-    DocumentFormattingRequest, Disposable, Range, IPCMessageReader, IPCMessageWriter, DiagnosticSeverity, Position,
-    Proposed, ProposedFeatures, CompletionList, DocumentRangeFormattingRequest
+    Disposable, Position, ProposedFeatures, CompletionList, DocumentRangeFormattingRequest
 } from 'vscode-languageserver';
 
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
@@ -22,10 +21,9 @@ import Strings = require('./languageservice/utils/strings');
 import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
-import { FilePatternAssociation, CustomSchemaProvider } from './languageservice/services/jsonSchemaService';
+import { CustomSchemaProvider, FilePatternAssociation } from './languageservice/services/jsonSchemaService';
 import { parse as parseYAML } from './languageservice/parser/yamlParser04';
 import { parse as parseYAML2 } from './languageservice/parser/yamlParser07';
-import { JSONDocument } from './languageservice/parser/jsonParser04';
 import { JSONSchema } from './languageservice/jsonSchema04';
 import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';
 // tslint:disable-next-line: no-any
@@ -174,8 +172,8 @@ const schemaRequestService = (uri: string): Thenable<string> => {
         Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString()));
 };
 
-export let KUBERNETES_SCHEMA_URL = "https://raw.githubusercontent.com/garethr/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json";
-export let KEDGE_SCHEMA_URL = "https://raw.githubusercontent.com/kedgeproject/json-schema/master/master/kedge-json-schema.json";
+export let KUBERNETES_SCHEMA_URL = 'https://raw.githubusercontent.com/garethr/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json';
+export let KEDGE_SCHEMA_URL = 'https://raw.githubusercontent.com/kedgeproject/json-schema/master/master/kedge-json-schema.json';
 export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
 export let jsonLanguageService = getJSONLanguageService({
     schemaRequestService,
@@ -389,7 +387,7 @@ function updateConfiguration() {
             jsonLanguageService.configure({
                 schemas: [{
                     fileMatch: ['*.yaml', '*.yml'],
-                    uri: 'http://json.schemastore.org/composer'
+                    uri: 'https://raw.githubusercontent.com/garethr/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json'
                 }],
                 validate: true
             });
@@ -430,13 +428,13 @@ function configureSchemas(uri, fileMatch, schema, languageSettings){
     return languageSettings;
 }
 
-// function setKubernetesParserOption(jsonDocuments: JSONDocument[], option: boolean){
-// 	for(let jsonDoc in jsonDocuments){
-// 		jsonDocuments[jsonDoc].configureSettings({
-// 			isKubernetes: option
-// 		});
-// 	}
-// }
+function setKubernetesParserOption(jsonDocuments, option: boolean){
+    for (const jsonDoc in jsonDocuments){
+        jsonDocuments[jsonDoc].configureSettings({
+            isKubernetes: option
+        });
+    }
+}
 
 function isKubernetes(textDocument){
     for (const path in specificValidatorPaths){
@@ -489,8 +487,7 @@ function validateTextDocument(textDocument: TextDocument): void {
     }
 
     const yamlDocument = parseYAML2(textDocument.getText(), customTags);
-    // isKubernetes(textDocument) ? setKubernetesParserOption(yamlDocument.documents, true) : setKubernetesParserOption(yamlDocument.documents, false);
-    customLanguageService.doValidation(jsonLanguageService, textDocument, yamlDocument).then(function (diagnosticResults){
+    customLanguageService.doValidation(jsonLanguageService, textDocument, yamlDocument, isKubernetes(textDocument)).then(function (diagnosticResults){
 
         const diagnostics = [];
         for (const diagnosticItem in diagnosticResults){
@@ -530,7 +527,7 @@ connection.onCompletion(textDocumentPosition =>  {
     const completionFix = completionHelper(textDocument, textDocumentPosition.position);
     const newText = completionFix.newText;
     const jsonDocument = parseYAML(newText);
-    // isKubernetes(textDocument) ? setKubernetesParserOption(jsonDocument.documents, true) : setKubernetesParserOption(jsonDocument.documents, false);
+    isKubernetes(textDocument) ? setKubernetesParserOption(jsonDocument.documents, true) : setKubernetesParserOption(jsonDocument.documents, false);
     return customLanguageService.doComplete(textDocument, textDocumentPosition.position, jsonDocument);
 });
 
@@ -595,8 +592,7 @@ function completionHelper(document: TextDocument, textDocumentPosition: Position
 
 }
 
-connection.onCompletionResolve(completionItem =>
-    customLanguageService.doResolve(completionItem));
+connection.onCompletionResolve(completionItem => customLanguageService.doResolve(completionItem));
 
 connection.onHover(textDocumentPositionParams => {
     const document = documents.get(textDocumentPositionParams.textDocument.uri);
@@ -606,7 +602,6 @@ connection.onHover(textDocumentPositionParams => {
     }
 
     const jsonDocument = parseYAML2(document.getText());
-    // isKubernetes(document) ? setKubernetesParserOption(jsonDocument.documents, true) : setKubernetesParserOption(jsonDocument.documents, false);
     return customLanguageService.doHover(jsonLanguageService, document, textDocumentPositionParams.position, jsonDocument);
 });
 

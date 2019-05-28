@@ -14,6 +14,8 @@ export class YAMLValidation {
     private promise: PromiseConstructor;
     private validationEnabled: boolean;
 
+    private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
+
     public constructor(promiseConstructor: PromiseConstructor) {
         this.promise = promiseConstructor;
         this.validationEnabled = true;
@@ -25,7 +27,7 @@ export class YAMLValidation {
         }
     }
 
-    public doValidation(jsonLanguageService: LanguageService, textDocument, yamlDocument) {
+    public doValidation(jsonLanguageService: LanguageService, textDocument, yamlDocument, isKubernetes: boolean = false) {
 
         if (!this.validationEnabled) {
             return this.promise.resolve([]);
@@ -51,6 +53,16 @@ export class YAMLValidation {
             const foundSignatures = new Set();
             const duplicateMessagesRemoved = [];
             for (const err of joinedResolvedArray as Diagnostic[]) {
+
+                /**
+                 * A patch ontop of the validation that removes the
+                 * 'Matches many schemas' error for kubernetes
+                 * for a better user experience.
+                 */
+                if (isKubernetes && err.message === this.MATCHES_MULTIPLE) {
+                    continue;
+                }
+
                 const errSig = err.range.start.line + ' ' + err.range.start.character + ' ' + err.message;
                 if (!foundSignatures.has(errSig)) {
                     duplicateMessagesRemoved.push(err);
@@ -60,4 +72,5 @@ export class YAMLValidation {
             return duplicateMessagesRemoved;
         });
     }
+
 }
