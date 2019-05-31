@@ -256,14 +256,23 @@ connection.onDidChangeConfiguration(change => {
     }
     schemaConfigurationSettings = [];
 
+    const jsonSchemas = [];
     for (const url in yamlConfigurationSettings){
         const globPattern = yamlConfigurationSettings[url];
+        const checkedURL = url.toLowerCase() === 'kubernetes' ? KUBERNETES_SCHEMA_URL : url;
         const schemaObj = {
             'fileMatch': Array.isArray(globPattern) ? globPattern : [globPattern],
-            'url': url
+            'uri': checkedURL
         };
+        jsonSchemas.push(schemaObj);
         schemaConfigurationSettings.push(schemaObj);
     }
+
+    jsonLanguageService.configure({
+        schemas: jsonSchemas,
+        validate: settings.yaml.validate,
+        allowComments: true
+    });
 
     setSchemaStoreSettingsIfNotSet();
 
@@ -370,7 +379,7 @@ function updateConfiguration() {
     }
     if (schemaConfigurationSettings) {
         schemaConfigurationSettings.forEach(schema => {
-            let uri = schema.url;
+            let uri = schema.uri;
             if (!uri && schema.schema) {
                 uri = schema.schema.id;
             }
@@ -384,13 +393,6 @@ function updateConfiguration() {
                 }
                 languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema, languageSettings);
             }
-            jsonLanguageService.configure({
-                schemas: [{
-                    fileMatch: ['*.yaml', '*.yml'],
-                    uri: 'https://raw.githubusercontent.com/garethr/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json'
-                }],
-                validate: true
-            });
         });
     }
     if (schemaStoreSettings){

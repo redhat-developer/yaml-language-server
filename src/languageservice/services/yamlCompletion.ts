@@ -685,7 +685,7 @@ export class YAMLCompletion {
 
         const propertyText = this.getInsertTextForValue(key, '');
         // if (!addValue) {
-        // 	return propertyText;
+        //     return propertyText;
         // }
         const resultText = propertyText + ':';
 
