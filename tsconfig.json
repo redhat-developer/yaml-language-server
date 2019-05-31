@@ -6,7 +6,8 @@
 		"moduleResolution": "node",
 		"sourceMap": true,
 		"lib" : [ "es2016" ],
-		"outDir": "./out/server"
+		"outDir": "./out/server",
+		"alwaysStrict": true
 	},
 	"exclude": [
 		"node_modules",
