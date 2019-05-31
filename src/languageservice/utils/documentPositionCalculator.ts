@@ -3,28 +3,28 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-"use strict"
+'use strict';
 
 export function insertionPointReturnValue(pt: number) {
-    return ((-pt) - 1)
+    return ((-pt) - 1);
 }
 
 export function binarySearch(array: number[], sought: number) {
 
-    let lower = 0
-    let upper = array.length - 1
+    let lower = 0;
+    let upper = array.length - 1;
 
     while (lower <= upper) {
-        let idx = Math.floor((lower + upper) / 2)
-        const value = array[idx]
+        const idx = Math.floor((lower + upper) / 2);
+        const value = array[idx];
 
         if (value === sought) {
             return idx;
         }
 
         if (lower === upper) {
-            const insertionPoint = (value < sought) ? idx + 1 : idx
-            return insertionPointReturnValue(insertionPoint)
+            const insertionPoint = (value < sought) ? idx + 1 : idx;
+            return insertionPointReturnValue(insertionPoint);
         }
 
         if (sought > value) {
@@ -37,12 +37,12 @@ export function binarySearch(array: number[], sought: number) {
 
 export function getLineStartPositions(text: string) {
     const lineStartPositions = [0];
-    for (var i = 0; i < text.length; i++) {
+    for (let i = 0; i < text.length; i++) {
         const c = text[i];
 
         if (c === '\r') {
             // Check for Windows encoding, otherwise we are old Mac
-            if (i + 1 < text.length && text[i + 1] == '\n') {
+            if (i + 1 < text.length && text[i + 1] === '\n') {
                 i++;
             }
 
@@ -56,12 +56,12 @@ export function getLineStartPositions(text: string) {
 }
 
 export function getPosition(pos: number, lineStartPositions: number[]){
-    let line = binarySearch(lineStartPositions, pos)
+    let line = binarySearch(lineStartPositions, pos);
 
     if (line < 0){
         const insertionPoint = -1 * line - 1;
         line = insertionPoint - 1;
     }
 
-    return {line, column: pos - lineStartPositions[line]}
+    return {line, column: pos - lineStartPositions[line]};
 }

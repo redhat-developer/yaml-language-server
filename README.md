@@ -2,6 +2,8 @@
 
 # YAML Language Server
 
+Supports JSON Schema 7 and below.
+
 ## Features
 
 1. YAML validation:

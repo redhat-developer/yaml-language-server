@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
+// tslint:disable-next-line: no-any
 export function equals(one: any, other: any): boolean {
     if (one === other) {
         return true;
@@ -21,7 +22,7 @@ export function equals(one: any, other: any): boolean {
         return false;
     }
 
-    var i: number,
+    let i: number,
         key: string;
 
     if (Array.isArray(one)) {
@@ -34,13 +35,13 @@ export function equals(one: any, other: any): boolean {
             }
         }
     } else {
-        var oneKeys: string[] = [];
+        const oneKeys: string[] = [];
 
         for (key in one) {
             oneKeys.push(key);
         }
         oneKeys.sort();
-        var otherKeys: string[] = [];
+        const otherKeys: string[] = [];
         for (key in other) {
             otherKeys.push(key);
         }
@@ -55,4 +56,24 @@ export function equals(one: any, other: any): boolean {
         }
     }
     return true;
+}
+
+// tslint:disable-next-line: no-any
+export function isNumber(val: any): val is number {
+    return typeof val === 'number';
+}
+
+// tslint:disable-next-line: no-any
+export function isDefined(val: any): val is object {
+    return typeof val !== 'undefined';
+}
+
+// tslint:disable-next-line: no-any
+export function isBoolean(val: any): val is boolean {
+    return typeof val === 'boolean';
+}
+
+// tslint:disable-next-line: no-any
+export function isString(val: any): val is string {
+    return typeof val === 'string';
 }
