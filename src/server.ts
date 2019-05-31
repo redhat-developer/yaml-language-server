@@ -172,8 +172,7 @@ const schemaRequestService = (uri: string): Thenable<string> => {
         Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString()));
 };
 
-export let KUBERNETES_SCHEMA_URL = 'https://raw.githubusercontent.com/garethr/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json';
-export let KEDGE_SCHEMA_URL = 'https://raw.githubusercontent.com/kedgeproject/json-schema/master/master/kedge-json-schema.json';
+export let KUBERNETES_SCHEMA_URL = "https://raw.githubusercontent.com/garethr/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json";
 export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
 export let jsonLanguageService = getJSONLanguageService({
     schemaRequestService,
@@ -406,28 +405,25 @@ function updateConfiguration() {
 
 function configureSchemas(uri, fileMatch, schema, languageSettings){
 
-    if (uri.toLowerCase().trim() === 'kubernetes'){
-        uri = KUBERNETES_SCHEMA_URL;
-    }
-    if (uri.toLowerCase().trim() === 'kedge'){
-        uri = KEDGE_SCHEMA_URL;
-    }
+	if(uri.toLowerCase().trim() === "kubernetes"){
+		uri = KUBERNETES_SCHEMA_URL;
+	}
 
-    if (schema === null){
-        languageSettings.schemas.push({ uri, fileMatch: fileMatch });
-    }else{
-        languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema });
-    }
+	if(schema === null){
+		languageSettings.schemas.push({ uri, fileMatch: fileMatch });
+	}else{
+		languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema });
+	}
 
-    if (fileMatch.constructor === Array && uri === KUBERNETES_SCHEMA_URL){
-        fileMatch.forEach(url => {
-            specificValidatorPaths.push(url);
-        });
-    }else if (uri === KUBERNETES_SCHEMA_URL){
-        specificValidatorPaths.push(fileMatch);
-    }
+	if(fileMatch.constructor === Array && uri === KUBERNETES_SCHEMA_URL){
+		fileMatch.forEach((url) => {
+			specificValidatorPaths.push(url);
+		});
+	}else if(uri === KUBERNETES_SCHEMA_URL){
+		specificValidatorPaths.push(fileMatch);
+	}
 
-    return languageSettings;
+	return languageSettings;
 }
 
 function setKubernetesParserOption(jsonDocuments, option: boolean){

@@ -90,8 +90,7 @@ When associating a schema it should follow the format below
 ```
 yaml.schemas: {
     "url": "globPattern",
-    "Kubernetes": "globPattern",
-    "kedge": "globPattern"
+    "Kubernetes": "globPattern"
 }
 ```
 
@@ -112,19 +111,12 @@ yaml.schemas: {
 e.g.
 ```
 yaml.schemas: {
-    "kedge": "/myKedgeApp.yaml"
-}
-```
-
-e.g.
-```
-yaml.schemas: {
     "http://json.schemastore.org/composer": "/*",
     "kubernetes": "/myYamlFile.yaml"
 }
 ```
 
-`yaml.schemas` extension allows you to specify json schemas that you want to validate against the yaml that you write. Kubernetes and kedge are optional fields. They do not require a url as the language server will provide that. You just need the keywords kubernetes/kedge and a glob pattern.
+`yaml.schemas` allows you to specify json schemas that you want to validate against the yaml that you write. Kubernetes is an optional field. It does not require a url as the language server will provide that. You just need the keyword kubernetes and a glob pattern.
 
 ## Clients
 This repository only contains the server implementation. Here are some known clients consuming this server:
