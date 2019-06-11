@@ -46,7 +46,9 @@
     "nyc": "^14.1.1",
     "source-map-support": "^0.5.4",
     "ts-node": "^5.0.1",
-    "typescript": "^2.7.2"
+    "typescript": "^3.5.1",
+    "typescript-tslint-plugin": "^0.4.0",
+    "tslint": "5.17.0"
   },
   "scripts": {
     "compile": "installServerIntoExtension ./out ./package.json ./tsconfig.json && tsc -p .",
