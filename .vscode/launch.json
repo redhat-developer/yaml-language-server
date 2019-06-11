@@ -1,9 +1,9 @@
 {
 	"version": "0.2.0",
-	// List of configurations. Add new configurations or edit existing ones.
 	"configurations": [
+		// An attach configuration that attaches the debugger to a running server
 		{
-			"name": "Attach",
+			"name": "Attach to server",
 			"type": "node",
 			"request": "attach",
 			"port": 6009,
@@ -12,6 +12,7 @@
 			"protocol": "inspector",
 			"trace": true
 		},
+		// A launch configuration that compiles the server and runs mocha unit tests
 		{
 			"type": "node",
 			"request": "launch",
@@ -27,7 +28,7 @@
 				"ts-node/register",
 				"${workspaceRoot}/test/*.test.ts"
 			],
-			"preLaunchTask": "npm"
+			"preLaunchTask": "watch typescript"
 		}
 	]
 }

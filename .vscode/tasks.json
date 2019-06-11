@@ -1,9 +1,23 @@
 {
-	"version": "0.1.0",
-	"command": "npm",
-	"isShellCommand": true,
-	"showOutput": "silent",
-	"args": ["run", "watch"],
-	"isBackground": true,
-	"problemMatcher": "$tsc-watch"
+	// See https://go.microsoft.com/fwlink/?LinkId=733558
+	// for the documentation about the tasks.json format
+	"version": "2.0.0",
+	"tasks": [
+		// A task runner that calls a custom npm script that compiles the server in watch mode.
+		{
+			"label": "watch typescript",
+			// the command is a shell script
+			"type": "shell",
+			// we run the custom npm script "watch" as defined in package.json
+			"command": "npm run watch",
+			// show the output window only if unrecognized errors occur.
+			"presentation": {
+				"reveal": "silent",
+			},
+			// the tsc compiler is started in watching mode
+			"isBackground": true,
+			// use the standard tsc in watch mode problem matcher to find compile problems in the output.
+			"problemMatcher": "$tsc-watch"
+		}
+	]
 }
