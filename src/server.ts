@@ -17,7 +17,6 @@ import path = require('path');
 import fs = require('fs');
 import URI from './languageservice/utils/uri';
 import * as URL from 'url';
-import Strings = require('./languageservice/utils/strings');
 import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
@@ -138,8 +137,10 @@ const schemaRequestService = (uri: string): Thenable<string> => {
         }
     }
 
+    const scheme = URI.parse(uri).scheme.toLowerCase();
+
     // If the requested schema is a local file, read and return the file contents
-    if (Strings.startsWith(uri, 'file://')) {
+    if (scheme === 'file') {
         const fsPath = URI.parse(uri).fsPath;
 
         return new Promise<string>((c, e) => {
@@ -154,36 +155,32 @@ const schemaRequestService = (uri: string): Thenable<string> => {
     // VS Code schema content requests are forwarded to the client through LSP
     // This is a non-standard LSP extension introduced by the JSON language server
     // See https://github.com/microsoft/vscode/blob/master/extensions/json-language-features/server/README.md
-    else if (Strings.startsWith(uri, 'vscode://')) {
+    if (scheme === 'vscode') {
         return connection.sendRequest(VSCodeContentRequest.type, uri)
                          .then(responseText => responseText, error => error.message);
     }
 
-    // Neither local file nor VS Code schema request
-    else {
-        const scheme = URI.parse(uri).scheme.toLowerCase();
-
-        // Not an HTTP(S) request either, so send it off as a custom request
-        if (scheme !== 'http' && scheme !== 'https') {
-            return <Thenable<string>> connection.sendRequest(CustomSchemaContentRequest.type, uri);
+    // HTTP(S) requests are sent and the response result is either the schema content or an error
+    if (scheme === 'http' || scheme === 'https') {
+        // If it's an HTTP(S) request to Microsoft Azure, log the request
+        if (uri.indexOf('//schema.management.azure.com/') !== -1) {
+            connection.telemetry.logEvent({
+                key: 'json.schema',
+                value: {
+                    schemaURL: uri
+                }
+            });
         }
+
+        // Send the HTTP(S) schema content request and return the result
+        const headers = { 'Accept-Encoding': 'gzip, deflate' };
+        return xhr({ url: uri, followRedirects: 5, headers }).then(response =>
+            response.responseText, (error: XHRResponse) =>
+            Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString()));
     }
 
-    // If it's an HTTP(S) request to Microsoft Azure, log the request
-    if (uri.indexOf('//schema.management.azure.com/') !== -1) {
-        connection.telemetry.logEvent({
-            key: 'json.schema',
-            value: {
-                schemaURL: uri
-            }
-        });
-    }
-
-    // Send the HTTP(S) schema content request and return the result
-    const headers = { 'Accept-Encoding': 'gzip, deflate' };
-    return xhr({ url: uri, followRedirects: 5, headers }).then(response =>
-        response.responseText, (error: XHRResponse) =>
-        Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString()));
+    // Neither local file nor VS Code, nor HTTP(S) schema request, so send it off as a custom request
+    return <Thenable<string>> connection.sendRequest(CustomSchemaContentRequest.type, uri);
 };
 
 export let KUBERNETES_SCHEMA_URL = 'https://raw.githubusercontent.com/garethr/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json';
