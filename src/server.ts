@@ -464,7 +464,7 @@ function configureSchemas(uri: string, fileMatch: string[], schema: any, languag
     return languageSettings;
 }
 
-function setKubernetesParserOption(jsonDocuments: import('./languageservice/parser/jsonParser04').JSONDocument[], option: boolean) {
+function setKubernetesParserOption(jsonDocuments: any, option: boolean) {
     for (const jsonDoc in jsonDocuments) {
         jsonDocuments[jsonDoc].configureSettings({
             isKubernetes: option
