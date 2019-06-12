@@ -152,7 +152,7 @@ const schemaRequestService = (uri: string): Thenable<string> => {
         });
     }
 
-    // VS Code schema content requests are forwarded to the client through LSP
+    // vscode schema content requests are forwarded to the client through LSP
     // This is a non-standard LSP extension introduced by the JSON language server
     // See https://github.com/microsoft/vscode/blob/master/extensions/json-language-features/server/README.md
     if (scheme === 'vscode') {
@@ -179,7 +179,7 @@ const schemaRequestService = (uri: string): Thenable<string> => {
             Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString()));
     }
 
-    // Neither local file nor VS Code, nor HTTP(S) schema request, so send it off as a custom request
+    // Neither local file nor vscode, nor HTTP(S) schema request, so send it off as a custom request
     return <Thenable<string>> connection.sendRequest(CustomSchemaContentRequest.type, uri);
 };
 
@@ -235,7 +235,7 @@ let customTags = [];
 let schemaStoreEnabled = true;
 
 /**
- * Run when the VS Code configuration is changed
+ * Run when the editor configuration is changed
  * The client syncs the 'yaml', 'http.proxy', 'http.proxyStrictSSL' settings sections
  * Update relevant settings with fallback to defaults if needed
  */
@@ -537,7 +537,7 @@ function validateTextDocument(textDocument: TextDocument): void {
 }
 
 /**
- * Called when a monitored file is changed in VS Code
+ * Called when a monitored file is changed in an editor
  * Revalidates the entire document
  */
 connection.onDidChangeWatchedFiles(change => {
@@ -555,7 +555,7 @@ connection.onDidChangeWatchedFiles(change => {
 });
 
 /**
- * Called when auto-complete is triggered in VS Code
+ * Called when auto-complete is triggered in an editor
  * Returns a list of valid completion items
  */
 connection.onCompletion(textDocumentPosition => {
@@ -646,7 +646,7 @@ function completionHelper(document: TextDocument, textDocumentPosition: Position
 connection.onCompletionResolve(completionItem => customLanguageService.doResolve(completionItem));
 
 /**
- * Called when the user hovers with their mouse over a keyword in VS Code
+ * Called when the user hovers with their mouse over a keyword
  * Returns an informational tooltip
  */
 connection.onHover(textDocumentPositionParams => {
@@ -661,8 +661,8 @@ connection.onHover(textDocumentPositionParams => {
 });
 
 /**
- * Called when the code outline in VS Code needs to be populated
- * Returns a list of symbols that is then shown in the code outline panel
+ * Called when the code outline in an editor needs to be populated
+ * Returns a list of symbols that is then shown in the code outline
  */
 connection.onDocumentSymbol(documentSymbolParams => {
     const document = documents.get(documentSymbolParams.textDocument.uri);
