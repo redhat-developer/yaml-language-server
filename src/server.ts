@@ -91,24 +91,9 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
     capabilities = params.capabilities;
     workspaceFolders = params['workspaceFolders'];
     workspaceRoot = URI.parse(params.rootPath);
-
-    // Check if a dot-separated string matches one of client capabilities
-    function getClientCapability<T>(name: string, def: T) {
-        const keys = name.split('.');
-        // tslint:disable-next-line: no-any
-        let c: any = params.capabilities;
-        for (let i = 0; c && i < keys.length; i++) {
-            if (!c.hasOwnProperty(keys[i])) {
-                return def;
-            }
-            c = c[keys[i]];
-        }
-        return c as T;
-    }
-
-    hierarchicalDocumentSymbolSupport = getClientCapability('textDocument.documentSymbol.hierarchicalDocumentSymbolSupport', false);
+    hierarchicalDocumentSymbolSupport = capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport;
     hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
-    clientDynamicRegisterSupport = getClientCapability('workspace.symbol.dynamicRegistration', false);
+    clientDynamicRegisterSupport = capabilities.workspace.symbol.dynamicRegistration;
 
     return {
         capabilities: {
