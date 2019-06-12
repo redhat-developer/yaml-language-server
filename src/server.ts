@@ -90,9 +90,9 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
     capabilities = params.capabilities;
     workspaceFolders = params['workspaceFolders'];
     workspaceRoot = URI.parse(params.rootPath);
-    hierarchicalDocumentSymbolSupport = capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport;
-    hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
-    clientDynamicRegisterSupport = capabilities.workspace.symbol.dynamicRegistration;
+    hierarchicalDocumentSymbolSupport = !!capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport;
+    hasWorkspaceFolderCapability = !!capabilities.workspace.workspaceFolders;
+    clientDynamicRegisterSupport = !!capabilities.workspace.symbol.dynamicRegistration;
 
     return {
         capabilities: {
@@ -110,31 +110,45 @@ const workspaceContext = {
         URL.resolve(resource, relativePath)
 };
 
-/**
- * Handles schema content requests given the schema URI
- * @param uri can be a local file, vscode request, http(s) request or a custom request
- */
-const schemaRequestService = (uri: string): Thenable<string> => {
-    // If multi-root workspaces are supported
-    if (hasWorkspaceFolderCapability) {
+const relativeToAbsolutePath = (uri: string): string => {
+    // If multi-root workspaces aren't supported or working with a single root folder
+    if (!hasWorkspaceFolderCapability || workspaceFolders.length === 1) {
+        if (workspaceRoot) {
+            // workspace relative path
+            return URI.file(path.normalize(path.join(workspaceRoot.fsPath, uri))).toString();
+        }
+    } else {
         // Iterate through all of the workspace root folders
         for (const folder in workspaceFolders) {
             const currFolder = workspaceFolders[folder];
             const currFolderUri = currFolder['uri'];
             const currFolderName = currFolder['name'];
-            const isUriRegex = new RegExp('^(?:[a-z]+:)?//', 'i');
 
             // If the requested schema URI contains one of the workspace root folders
-            // And is not a proper URI, meaning it is a relative file path
-            // Convert it into a proper absolute path URI
-            if (uri.indexOf(currFolderName) !== -1 && !uri.match(isUriRegex)) {
+            // Convert it into a proper absolute path URI with the root folder path
+            if (uri.indexOf(currFolderName) !== -1) {
                 const beforeFolderName = currFolderUri.split(currFolderName)[0];
                 const uriSplit = uri.split(currFolderName);
                 uriSplit.shift();
                 const afterFolderName = uriSplit.join(currFolderName);
-                uri = beforeFolderName + currFolderName + afterFolderName;
+                return (beforeFolderName + currFolderName + afterFolderName);
             }
         }
+    }
+
+    // Fallback in case nothing could be applied
+    return uri;
+};
+
+/**
+ * Handles schema content requests given the schema URI
+ * @param uri can be a local file, vscode request, http(s) request or a custom request
+ */
+const schemaRequestService = (uri: string): Thenable<string> => {
+    // If the requested schema URI is a relative file path
+    // Convert it into a proper absolute path URI
+    if (uri[0] === '.') {
+        uri = relativeToAbsolutePath(uri);
     }
 
     const scheme = URI.parse(uri).scheme.toLowerCase();
@@ -144,11 +158,11 @@ const schemaRequestService = (uri: string): Thenable<string> => {
         const fsPath = URI.parse(uri).fsPath;
 
         return new Promise<string>((c, e) => {
-            fs.readFile(fsPath, 'UTF-8', (err, result) => {
+            fs.readFile(fsPath, 'UTF-8', (err, result) =>
                 // If there was an error reading the file, return empty error message
                 // Otherwise return the file contents as a string
-                err ? e('') : c(result.toString());
-            });
+                err ? e('') : c(result.toString())
+            );
         });
     }
 
@@ -274,22 +288,30 @@ connection.onDidChangeConfiguration(change => {
             }
         }
     }
+
     schemaConfigurationSettings = [];
 
-    const jsonSchemas = [];
     for (const url in yamlConfigurationSettings) {
         const globPattern = yamlConfigurationSettings[url];
-        const checkedURL = url.toLowerCase() === 'kubernetes' ? KUBERNETES_SCHEMA_URL : url;
+        let checkedURL: string;
+
+        if (url.toLowerCase() === 'kubernetes') {
+            checkedURL = KUBERNETES_SCHEMA_URL;
+        } else if (url[0] === '.') {
+            checkedURL = relativeToAbsolutePath(url);
+        } else {
+            checkedURL = url;
+        }
+
         const schemaObj = {
             'fileMatch': Array.isArray(globPattern) ? globPattern : [globPattern],
             'uri': checkedURL
         };
-        jsonSchemas.push(schemaObj);
         schemaConfigurationSettings.push(schemaObj);
     }
 
     jsonLanguageService.configure({
-        schemas: jsonSchemas,
+        schemas: schemaConfigurationSettings,
         validate: settings.yaml.validate,
         allowComments: true
     });
@@ -408,6 +430,7 @@ function updateConfiguration() {
             }
         }
     }
+
     if (schemaConfigurationSettings) {
         schemaConfigurationSettings.forEach(schema => {
             let uri = schema.uri;
@@ -418,17 +441,19 @@ function updateConfiguration() {
                 uri = 'vscode://schemas/custom/' + encodeURIComponent(schema.fileMatch.join('&'));
             }
             if (uri) {
-                if (uri[0] === '.' && workspaceRoot && !hasWorkspaceFolderCapability) {
-                    // workspace relative path
-                    uri = URI.file(path.normalize(path.join(workspaceRoot.fsPath, uri))).toString();
+                if (uri[0] === '.') {
+                    uri = relativeToAbsolutePath(uri);
                 }
+
                 languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema, languageSettings);
             }
         });
     }
+
     if (schemaStoreSettings) {
         languageSettings.schemas = languageSettings.schemas.concat(schemaStoreSettings);
     }
+
     customLanguageService.configure(languageSettings);
 
     // Revalidate any open text documents
