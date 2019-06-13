@@ -570,6 +570,7 @@ connection.onDidChangeWatchedFiles(change => {
 
     change.changes.forEach(c => {
         if (customLanguageService.resetSchema(c.uri)) {
+            jsonLanguageService.resetSchema(c.uri);
             hasChanges = true;
         }
     });
