@@ -89,7 +89,7 @@ let hierarchicalDocumentSymbolSupport = false;
 connection.onInitialize((params: InitializeParams): InitializeResult => {
     capabilities = params.capabilities;
     workspaceFolders = params['workspaceFolders'];
-    workspaceRoot = URI.parse(params.rootPath);
+    workspaceRoot = URI.parse(params.rootUri);
     hierarchicalDocumentSymbolSupport = !!capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport;
     hasWorkspaceFolderCapability = !!capabilities.workspace.workspaceFolders;
     clientDynamicRegisterSupport = !!capabilities.workspace.symbol.dynamicRegistration;
@@ -188,9 +188,9 @@ const schemaRequestService = (uri: string): Thenable<string> => {
 
         // Send the HTTP(S) schema content request and return the result
         const headers = { 'Accept-Encoding': 'gzip, deflate' };
-        return xhr({ url: uri, followRedirects: 5, headers }).then(response =>
-            response.responseText, (error: XHRResponse) =>
-            Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString()));
+        return xhr({ url: uri, followRedirects: 5, headers })
+               .then(response => response.responseText,
+                    (error: XHRResponse) => Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString()));
     }
 
     // Neither local file nor vscode, nor HTTP(S) schema request, so send it off as a custom request
