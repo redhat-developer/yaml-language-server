@@ -529,9 +529,16 @@ export class JSONSchemaService implements IJSONSchemaService {
             return this.promise.resolve(null);
         };
         if (this.customSchemaProvider) {
-            return this.customSchemaProvider(resource).then(schemaUri =>
-                this.loadSchema(schemaUri).then(unsolvedSchema => this.resolveSchemaContent(unsolvedSchema, schemaUri))).then(schema => schema, err =>
-                resolveSchema());
+            return this.customSchemaProvider(resource)
+                       .then(schemaUri => {
+                           if (!schemaUri) {
+                               return resolveSchema();
+                           }
+
+                           this.loadSchema(schemaUri)
+                               .then(unsolvedSchema => this.resolveSchemaContent(unsolvedSchema, schemaUri))
+                        })
+                       .then(schema => schema, err => resolveSchema());
         } else {
             return resolveSchema();
         }
