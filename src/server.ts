@@ -7,8 +7,7 @@
 'use strict';
 
 import {
-    createConnection, IConnection,
-    TextDocuments, TextDocument, InitializeParams, InitializeResult, NotificationType, RequestType,
+    createConnection, IConnection, TextDocuments, TextDocument, InitializeParams, InitializeResult,
     Disposable, Position, ProposedFeatures, CompletionList, DocumentRangeFormattingRequest, ClientCapabilities, WorkspaceFolder
 } from 'vscode-languageserver';
 
@@ -25,35 +24,12 @@ import { parse as parseYAML } from './languageservice/parser/yamlParser04';
 import { parse as parseYAML2 } from './languageservice/parser/yamlParser07';
 import { JSONSchema } from './languageservice/jsonSchema04';
 import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';
+import { VSCodeContentRequest, CustomSchemaContentRequest, SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest } from './requestTypes';
 // tslint:disable-next-line: no-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
 
 interface ISchemaAssociations {
     [pattern: string]: string[];
-}
-
-namespace SchemaAssociationNotification {
-    export const type: NotificationType<{ }, { }> = new NotificationType('json/schemaAssociations');
-}
-
-namespace DynamicCustomSchemaRequestRegistration {
-    export const type: NotificationType<{ }, { }> = new NotificationType('yaml/registerCustomSchemaRequest');
-}
-
-namespace VSCodeContentRequest {
-    export const type: RequestType<{ }, { }, { }, { }> = new RequestType('vscode/content');
-}
-
-namespace CustomSchemaContentRequest {
-    export const type: RequestType<{ }, { }, { }, { }> = new RequestType('custom/schema/content');
-}
-
-namespace CustomSchemaRequest {
-    export const type: RequestType<{ }, { }, { }, { }> = new RequestType('custom/schema/request');
-}
-
-namespace ColorSymbolRequest {
-    export const type: RequestType<{ }, { }, { }, { }> = new RequestType('json/colorSymbols');
 }
 
 // Create a connection for the server.
