@@ -52,10 +52,9 @@ const documents: TextDocuments = new TextDocuments();
 documents.listen(connection);
 
 let capabilities: ClientCapabilities;
+let workspaceRoot: URI = null;
 let workspaceFolders: WorkspaceFolder[] = [];
-let workspaceRoot: URI;
 let clientDynamicRegisterSupport = false;
-let hasWorkspaceFolderCapability = false;
 let hierarchicalDocumentSymbolSupport = false;
 
 /**
@@ -64,10 +63,9 @@ let hierarchicalDocumentSymbolSupport = false;
  */
 connection.onInitialize((params: InitializeParams): InitializeResult => {
     capabilities = params.capabilities;
-    workspaceFolders = params['workspaceFolders'];
     workspaceRoot = URI.parse(params.rootUri);
+    workspaceFolders = params.workspaceFolders;
     hierarchicalDocumentSymbolSupport = !!capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport;
-    hasWorkspaceFolderCapability = !!capabilities.workspace.workspaceFolders;
     clientDynamicRegisterSupport = !!capabilities.workspace.symbol.dynamicRegistration;
 
     return {
@@ -86,30 +84,26 @@ const workspaceContext = {
         URL.resolve(resource, relativePath)
 };
 
-export const relativeToAbsolutePath = (uri: string): string => {
-    // If multi-root workspaces aren't supported or working with a single root folder
-    if (!hasWorkspaceFolderCapability || workspaceFolders.length === 1) {
-        if (workspaceRoot) {
-            // workspace relative path
-            return URI.file(path.normalize(path.join(workspaceRoot.fsPath, uri))).toString();
-        }
-    } else {
-        // Iterate through all of the workspace root folders
-        for (const folder in workspaceFolders) {
-            const currFolder = workspaceFolders[folder];
-            const currFolderUri = currFolder['uri'];
-            const currFolderName = currFolder['name'];
+export const isRelativePath = (path: string): boolean => {
+    const relativePathRegex = /^(((\.\.?)|([\w-\. ]+))(\/|\\\\?))*[\w-\. ]*\.[\w-]+$/i;
+    return relativePathRegex.test(path);
+};
 
-            // If the requested schema URI contains one of the workspace root folders
-            // Convert it into a proper absolute path URI with the root folder path
-            if (uri.indexOf(currFolderName) !== -1) {
-                const beforeFolderName = currFolderUri.split(currFolderName)[0];
-                const uriSplit = uri.split(currFolderName);
-                uriSplit.shift();
-                const afterFolderName = uriSplit.join(currFolderName);
-                return (beforeFolderName + currFolderName + afterFolderName);
-            }
+export const relativeToAbsolutePath = (uri: string): string => {
+    // Iterate through all of the workspace root folders
+    for (const folder of workspaceFolders) {
+        // If the requested schema URI specifies a workspace root folder
+        // Convert it into an absolute path with the appropriate root folder path
+        if (uri.startsWith(folder.name)) {
+            const beforeFolderName = folder.uri.split(folder.name)[0];
+            return (beforeFolderName + uri);
         }
+    }
+
+    // If a root folder was not specified, resolve the relative URI
+    // Against the location of the workspace file instead
+    if (workspaceRoot) {
+        return URI.file(path.join(workspaceRoot.fsPath, uri)).toString();
     }
 
     // Fallback in case nothing could be applied
@@ -217,7 +211,7 @@ connection.onDidChangeConfiguration(change => {
 
         if (url.toLowerCase() === 'kubernetes') {
             checkedURL = KUBERNETES_SCHEMA_URL;
-        } else if (url[0] === '.') {
+        } else if (isRelativePath(url)) {
             checkedURL = relativeToAbsolutePath(url);
         } else {
             checkedURL = url;
@@ -361,7 +355,7 @@ function updateConfiguration() {
                 uri = 'vscode://schemas/custom/' + encodeURIComponent(schema.fileMatch.join('&'));
             }
             if (uri) {
-                if (uri[0] === '.') {
+                if (isRelativePath(uri)) {
                     uri = relativeToAbsolutePath(uri);
                 }
 

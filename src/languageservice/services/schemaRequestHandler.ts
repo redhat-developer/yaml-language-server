@@ -3,7 +3,7 @@ import { IConnection } from 'vscode-languageserver';
 import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
 import fs = require('fs');
 
-import { relativeToAbsolutePath } from '../../server';
+import { relativeToAbsolutePath, isRelativePath } from '../../server';
 import { VSCodeContentRequest, CustomSchemaContentRequest } from '../../requestTypes';
 
 /**
@@ -11,9 +11,13 @@ import { VSCodeContentRequest, CustomSchemaContentRequest } from '../../requestT
  * @param uri can be a local file, vscode request, http(s) request or a custom request
  */
 export const schemaRequestHandler = (connection: IConnection, uri: string): Thenable<string> => {
+    if (!uri) {
+        return Promise.reject('No schema specified');
+    }
+
     // If the requested schema URI is a relative file path
     // Convert it into a proper absolute path URI
-    if (uri[0] === '.') {
+    if (isRelativePath(uri)) {
         uri = relativeToAbsolutePath(uri);
     }
 
@@ -55,10 +59,10 @@ export const schemaRequestHandler = (connection: IConnection, uri: string): Then
         // Send the HTTP(S) schema content request and return the result
         const headers = { 'Accept-Encoding': 'gzip, deflate' };
         return xhr({ url: uri, followRedirects: 5, headers })
-            .then(response => response.responseText,
+               .then(response => response.responseText,
                     (error: XHRResponse) => Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString()));
     }
 
     // Neither local file nor vscode, nor HTTP(S) schema request, so send it off as a custom request
-    return <Thenable<string>> connection.sendRequest(CustomSchemaContentRequest.type, uri);
+    return connection.sendRequest(CustomSchemaContentRequest.type, uri) as Thenable<string>;
 };
