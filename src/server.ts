@@ -11,9 +11,8 @@ import {
     Disposable, Position, ProposedFeatures, CompletionList, DocumentRangeFormattingRequest, ClientCapabilities, WorkspaceFolder
 } from 'vscode-languageserver';
 
-import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
+import { xhr, XHRResponse, configure as configureHttpRequests } from 'request-light';
 import path = require('path');
-import fs = require('fs');
 import URI from './languageservice/utils/uri';
 import * as URL from 'url';
 import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arrUtils';
@@ -24,7 +23,8 @@ import { parse as parseYAML } from './languageservice/parser/yamlParser04';
 import { parse as parseYAML2 } from './languageservice/parser/yamlParser07';
 import { JSONSchema } from './languageservice/jsonSchema04';
 import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';
-import { VSCodeContentRequest, CustomSchemaContentRequest, SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest } from './requestTypes';
+import { SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest } from './requestTypes';
+import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
 // tslint:disable-next-line: no-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
 
@@ -86,7 +86,7 @@ const workspaceContext = {
         URL.resolve(resource, relativePath)
 };
 
-const relativeToAbsolutePath = (uri: string): string => {
+export const relativeToAbsolutePath = (uri: string): string => {
     // If multi-root workspaces aren't supported or working with a single root folder
     if (!hasWorkspaceFolderCapability || workspaceFolders.length === 1) {
         if (workspaceRoot) {
@@ -116,63 +116,7 @@ const relativeToAbsolutePath = (uri: string): string => {
     return uri;
 };
 
-/**
- * Handles schema content requests given the schema URI
- * @param uri can be a local file, vscode request, http(s) request or a custom request
- */
-const schemaRequestService = (uri: string): Thenable<string> => {
-    // If the requested schema URI is a relative file path
-    // Convert it into a proper absolute path URI
-    if (uri[0] === '.') {
-        uri = relativeToAbsolutePath(uri);
-    }
-
-    const scheme = URI.parse(uri).scheme.toLowerCase();
-
-    // If the requested schema is a local file, read and return the file contents
-    if (scheme === 'file') {
-        const fsPath = URI.parse(uri).fsPath;
-
-        return new Promise<string>((c, e) => {
-            fs.readFile(fsPath, 'UTF-8', (err, result) =>
-                // If there was an error reading the file, return empty error message
-                // Otherwise return the file contents as a string
-                err ? e('') : c(result.toString())
-            );
-        });
-    }
-
-    // vscode schema content requests are forwarded to the client through LSP
-    // This is a non-standard LSP extension introduced by the JSON language server
-    // See https://github.com/microsoft/vscode/blob/master/extensions/json-language-features/server/README.md
-    if (scheme === 'vscode') {
-        return connection.sendRequest(VSCodeContentRequest.type, uri)
-                         .then(responseText => responseText, error => error.message);
-    }
-
-    // HTTP(S) requests are sent and the response result is either the schema content or an error
-    if (scheme === 'http' || scheme === 'https') {
-        // If it's an HTTP(S) request to Microsoft Azure, log the request
-        if (uri.indexOf('//schema.management.azure.com/') !== -1) {
-            connection.telemetry.logEvent({
-                key: 'json.schema',
-                value: {
-                    schemaURL: uri
-                }
-            });
-        }
-
-        // Send the HTTP(S) schema content request and return the result
-        const headers = { 'Accept-Encoding': 'gzip, deflate' };
-        return xhr({ url: uri, followRedirects: 5, headers })
-               .then(response => response.responseText,
-                    (error: XHRResponse) => Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString()));
-    }
-
-    // Neither local file nor vscode, nor HTTP(S) schema request, so send it off as a custom request
-    return <Thenable<string>> connection.sendRequest(CustomSchemaContentRequest.type, uri);
-};
-
+const schemaRequestService = schemaRequestHandler.bind(this, connection);
 export let KUBERNETES_SCHEMA_URL = 'https://raw.githubusercontent.com/garethr/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json';
 export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
 export let jsonLanguageService = getJSONLanguageService({
