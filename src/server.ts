@@ -15,7 +15,7 @@ import {
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
 import path = require('path');
 import fs = require('fs');
-import URI from './languageservice/utils/uri';
+import { URI } from 'vscode-uri';
 import * as URL from 'url';
 import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions } from './languageservice/yamlLanguageService';
