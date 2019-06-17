@@ -1,5 +1,5 @@
 import { WorkspaceFolder } from 'vscode-languageserver';
-import { join, normalize } from 'path';
+import { join } from 'path';
 import URI from './uri';
 
 export const isRelativePath = (path: string): boolean => {
@@ -21,7 +21,7 @@ export const relativeToAbsolutePath = (workspaceFolders: WorkspaceFolder[], work
     // If a root folder was not specified, resolve the relative URI
     // Against the location of the workspace file instead
     if (workspaceRoot) {
-        return URI.file(normalize(join(workspaceRoot.fsPath, uri))).toString();
+        return URI.file(join(workspaceRoot.fsPath, uri)).toString();
     }
 
     // Fallback in case nothing could be applied
