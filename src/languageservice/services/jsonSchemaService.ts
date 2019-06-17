@@ -288,7 +288,17 @@ export class JSONSchemaService implements IJSONSchemaService {
 
     private normalizeId(id: string) {
         // remove trailing '#', normalize drive capitalization
-        return URI.parse(id).toString();
+        let normalized: string;
+
+        try {
+            normalized = URI.parse(id).toString();
+        } catch (err) {
+            if (err instanceof URIError) {
+                // id is not a proper URI, return as is
+                normalized = id;
+            }
+        }
+        return normalized;
     }
 
     public setSchemaContributions(schemaContributions: ISchemaContributions): void {
