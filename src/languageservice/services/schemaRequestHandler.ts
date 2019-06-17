@@ -3,8 +3,9 @@ import { IConnection } from 'vscode-languageserver';
 import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
 import fs = require('fs');
 
-import { relativeToAbsolutePath, isRelativePath } from '../../server';
+
 import { VSCodeContentRequest, CustomSchemaContentRequest } from '../../requestTypes';
+import { isRelativePath, relativeToAbsolutePath } from '../utils/paths';
 
 /**
  * Handles schema content requests given the schema URI
@@ -18,7 +19,7 @@ export const schemaRequestHandler = (connection: IConnection, uri: string): Then
     // If the requested schema URI is a relative file path
     // Convert it into a proper absolute path URI
     if (isRelativePath(uri)) {
-        uri = relativeToAbsolutePath(uri);
+        uri = relativeToAbsolutePath(this.workspaceFolders, this.workspaceRoot, uri);
     }
 
     const scheme = URI.parse(uri).scheme.toLowerCase();

@@ -12,7 +12,6 @@ import {
 } from 'vscode-languageserver';
 
 import { xhr, XHRResponse, configure as configureHttpRequests } from 'request-light';
-import path = require('path');
 import URI from './languageservice/utils/uri';
 import * as URL from 'url';
 import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arrUtils';
@@ -25,6 +24,7 @@ import { JSONSchema } from './languageservice/jsonSchema04';
 import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';
 import { SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest } from './requestTypes';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
+import { isRelativePath, relativeToAbsolutePath } from './languageservice/utils/paths';
 // tslint:disable-next-line: no-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
 
@@ -40,32 +40,6 @@ const JSON_SCHEMASTORE_URL = 'http://schemastore.org/api/json/catalog.json';
 const workspaceContext = {
     resolveRelativePath: (relativePath: string, resource: string) =>
         URL.resolve(resource, relativePath)
-};
-
-export const isRelativePath = (path: string): boolean => {
-    const relativePathRegex = /^(((\.\.?)|([\w-\. ]+))(\/|\\\\?))*[\w-\. ]*\.[\w-]+$/i;
-    return relativePathRegex.test(path);
-};
-
-export const relativeToAbsolutePath = (uri: string): string => {
-    // Iterate through all of the workspace root folders
-    for (const folder of workspaceFolders) {
-        // If the requested schema URI specifies a workspace root folder
-        // Convert it into an absolute path with the appropriate root folder path
-        if (uri.startsWith(folder.name)) {
-            const beforeFolderName = folder.uri.split(folder.name)[0];
-            return (beforeFolderName + uri);
-        }
-    }
-
-    // If a root folder was not specified, resolve the relative URI
-    // Against the location of the workspace file instead
-    if (workspaceRoot) {
-        return URI.file(path.join(workspaceRoot.fsPath, uri)).toString();
-    }
-
-    // Fallback in case nothing could be applied
-    return uri;
 };
 
 function is_EOL(c: number) {
@@ -146,6 +120,16 @@ let hierarchicalDocumentSymbolSupport = false;
 /****************************
  * Reusable helper functions
  ****************************/
+
+const checkSchemaURI = (uri: string): string => {
+    if (uri.trim().toLowerCase() === 'kubernetes') {
+        return KUBERNETES_SCHEMA_URL;
+    } else if (isRelativePath(uri)) {
+        return relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);
+    } else {
+        return uri;
+    }
+};
 
 /**
  * This function helps set the schema store if it hasn't already been set
@@ -235,7 +219,7 @@ function updateConfiguration() {
             }
             if (uri) {
                 if (isRelativePath(uri)) {
-                    uri = relativeToAbsolutePath(uri);
+                    uri = relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);
                 }
 
                 languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema, languageSettings);
@@ -261,9 +245,7 @@ function updateConfiguration() {
  * @param languageSettings current server settings
  */
 function configureSchemas(uri: string, fileMatch: string[], schema: any, languageSettings: LanguageSettings) {
-    if (uri.toLowerCase().trim() === 'kubernetes') {
-        uri = KUBERNETES_SCHEMA_URL;
-    }
+    uri = checkSchemaURI(uri);
 
     if (schema === null) {
         languageSettings.schemas.push({ uri, fileMatch: fileMatch });
@@ -451,21 +433,12 @@ connection.onDidChangeConfiguration(change => {
 
     schemaConfigurationSettings = [];
 
-    for (const url in yamlConfigurationSettings) {
-        const globPattern = yamlConfigurationSettings[url];
-        let checkedURL: string;
-
-        if (url.toLowerCase() === 'kubernetes') {
-            checkedURL = KUBERNETES_SCHEMA_URL;
-        } else if (isRelativePath(url)) {
-            checkedURL = relativeToAbsolutePath(url);
-        } else {
-            checkedURL = url;
-        }
+    for (const uri in yamlConfigurationSettings) {
+        const globPattern = yamlConfigurationSettings[uri];
 
         const schemaObj = {
             'fileMatch': Array.isArray(globPattern) ? globPattern : [globPattern],
-            'uri': checkedURL
+            'uri': checkSchemaURI(uri)
         };
         schemaConfigurationSettings.push(schemaObj);
     }
