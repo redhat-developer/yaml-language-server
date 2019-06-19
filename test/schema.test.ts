@@ -17,11 +17,14 @@ const fixtureDocuments = {
     'http://schema.management.azure.com/schemas/2014-04-01/SuccessBricks.ClearDB.json': 'SuccessBricks.ClearDB.json',
     'http://schema.management.azure.com/schemas/2015-08-01/Microsoft.Compute.json': 'Microsoft.Compute.json'
 };
+
 const requestServiceMock = function (uri: string): Promise<string> {
     if (uri.length && uri[uri.length - 1] === '#') {
         uri = uri.substr(0, uri.length - 1);
     }
+
     const fileName = fixtureDocuments[uri];
+
     if (fileName) {
         return new Promise<string>((c, e) => {
             const fixturePath = path.join(__dirname, './fixtures', fileName);

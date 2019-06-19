@@ -22,7 +22,7 @@ import {
     LanguageSettings
 } from '../../src/languageservice/yamlLanguageService';
 import Strings = require('../../src/languageservice/utils/strings');
-import URI from '../../src/languageservice/utils/uri';
+import { URI } from 'vscode-uri';
 import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';
 import * as URL from 'url';
 import fs = require('fs');

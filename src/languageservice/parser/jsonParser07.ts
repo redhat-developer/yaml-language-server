@@ -10,7 +10,7 @@ import { isNumber, equals, isString, isDefined, isBoolean } from '../utils/objec
 import { ASTNode, ObjectASTNode, ArrayASTNode, BooleanASTNode, NumberASTNode, StringASTNode, NullASTNode, PropertyASTNode } from '../jsonASTTypes';
 import { ErrorCode, JSONPath } from 'vscode-json-languageservice';
 import * as nls from 'vscode-nls';
-import Uri from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import { TextDocument, Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 
 const localize = nls.loadMessageBundle();
@@ -649,7 +649,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
                         errorMessage = localize('uriEmpty', 'URI expected.');
                     } else {
                         try {
-                            const uri = Uri.parse(node.value);
+                            const uri = URI.parse(node.value);
                             if (!uri.scheme && schema.format === 'uri') {
                                 errorMessage = localize('uriSchemeMissing', 'URI with a scheme is expected.');
                             }

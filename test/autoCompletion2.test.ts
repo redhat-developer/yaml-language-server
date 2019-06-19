@@ -12,7 +12,7 @@ import {
 import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
 import {getLanguageService} from '../src/languageservice/yamlLanguageService';
 import Strings = require( '../src/languageservice/utils/strings');
-import URI from '../src/languageservice/utils/uri';
+import { URI } from 'vscode-uri';
 import * as URL from 'url';
 import fs = require('fs');
 import {JSONSchemaService} from '../src/languageservice/services/jsonSchemaService';
