@@ -1,6 +1,6 @@
 import { WorkspaceFolder } from 'vscode-languageserver';
 import { join, normalize } from 'path';
-import URI from './uri';
+import { URI } from 'vscode-uri';
 
 export const isRelativePath = (path: string): boolean => {
     const relativePathRegex = /^(((\.\.?)|([\w-\. ]+))(\/|\\\\?))*[\w-\. ]*\.[\w-]+$/i;

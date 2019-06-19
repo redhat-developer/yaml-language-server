@@ -1,4 +1,4 @@
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import { IConnection } from 'vscode-languageserver';
 import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
 import fs = require('fs');

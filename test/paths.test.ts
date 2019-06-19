@@ -3,7 +3,7 @@ import { WorkspaceFolder } from 'vscode-languageserver';
 import { join } from 'path';
 
 import { relativeToAbsolutePath, isRelativePath } from '../src/languageservice/utils/paths';
-import URI from '../src/languageservice/utils/uri';
+import { URI } from 'vscode-uri';
 
 class TestWorkspace {
     folders: WorkspaceFolder[];

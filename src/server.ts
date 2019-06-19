@@ -12,7 +12,6 @@ import {
 } from 'vscode-languageserver';
 
 import { xhr, XHRResponse, configure as configureHttpRequests } from 'request-light';
-import URI from './languageservice/utils/uri';
 import * as URL from 'url';
 import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions } from './languageservice/yamlLanguageService';
@@ -25,6 +24,7 @@ import { getLanguageService as getJSONLanguageService } from 'vscode-json-langua
 import { SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest } from './requestTypes';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
 import { isRelativePath, relativeToAbsolutePath } from './languageservice/utils/paths';
+import { URI } from 'vscode-uri';
 // tslint:disable-next-line: no-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
 
