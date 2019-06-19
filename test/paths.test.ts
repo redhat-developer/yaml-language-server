@@ -1,5 +1,7 @@
-import assert = require('assert');
+import * as assert from 'assert';
 import { WorkspaceFolder } from 'vscode-languageserver';
+import { join } from 'path';
+
 import { relativeToAbsolutePath, isRelativePath } from '../src/languageservice/utils/paths';
 import URI from '../src/languageservice/utils/uri';
 
@@ -11,342 +13,184 @@ class TestWorkspace {
         this.folders = workspaceFolders;
         this.root = URI.parse(workspaceRoot);
     }
+
+    resolve(relPath: string): string {
+        return relativeToAbsolutePath(this.folders, this.root, relPath);
+    }
 }
 
-const resolve = (ws: TestWorkspace, relPath: string): string =>
-    relativeToAbsolutePath(ws.folders, ws.root, relPath);
+const ws1 = new TestWorkspace([
+    {
+        uri: 'file:///home/aFolder/',
+        name: 'aFolder'
+    }
+],
+'file:///home/aFolder/');
+
+const ws2 = new TestWorkspace([
+    {
+        uri: 'file:///usr/testuser/projects/workspace/folder-1/',
+        name: 'folder-1'
+    },
+    {
+        uri: 'file:///usr/testuser/projects/workspace/folder-2/',
+        name: 'folder-2'
+    },
+    {
+        uri: 'file:///usr/testuser/projects/workspace/folder-3/',
+        name: 'folder-3'
+    }
+],
+'file:///usr/testuser/projects/workspace/');
+
+const ws3 = new TestWorkspace([
+    {
+        uri: 'file:///c%3A/Users/testuser/dev/carrots',
+        name: 'carrots'
+    },
+    {
+        uri: 'file:///c%3A/Users/testuser/dev/potatoes',
+        name: 'potatoes'
+    }
+],
+'file:///c%3A/Users/testuser/dev/potatoes');
+
+const checkBadPath = (path: string): void => {
+    it('Rejects "' + path + '"', () => {
+        assert(!isRelativePath(path));
+    });
+};
+
+const checkGoodPath = (path: string, expect1: string, expect2: string, expect3: string): void => {
+    describe('Relative path = "' + path + '"', () => {
+        it('Recognises relative path', () => {
+            assert(isRelativePath(path));
+        });
+
+        it('Resolves relative path in single-root workspace', () => {
+            assert.equal(ws1.resolve(path), expect1);
+        });
+
+        it('Resolves relative path in multi-root workspace', () => {
+            assert.equal(ws2.resolve(path), expect2);
+        });
+
+        it('Resolves relative path in multi-root nested workspace', () => {
+            assert.equal(ws3.resolve(path), expect3);
+        });
+    });
+};
 
 suite('File path tests', () => {
-    describe('Relative path checking and resolution', () => {
-        it('Rejects "//notpath/file.json"', () => {
-            assert(!isRelativePath('//notpath/file.json'));
-        });
+    describe('Recognises not relative paths', () => {
+        checkBadPath(join('/', 'file.json'));
+        checkBadPath(join('/', 'absolutepath', 'file.json.'));
+        checkBadPath(join('//', 'notrelativepath', 'file.json'));
+        checkBadPath(join('C:', 'notrelativepath', 'file.json'));
+        checkBadPath(join('directory.json', '/'));
+        checkBadPath(join('.', 'dir', 'subdir', '/'));
+    });
 
-        it('Rejects "/file.json"', () => {
-            assert(!isRelativePath('/file.json'));
-        });
+    describe('Recognises and correctly resolves relative paths', () => {
+        checkGoodPath('file.json',
+                      'file:///home/aFolder/file.json',
+                      'file:///usr/testuser/projects/workspace/file.json',
+                      'file:///c%3A/Users/testuser/dev/potatoes/file.json');
 
-        it('Rejects "directory.json/"', () => {
-            assert(!isRelativePath('directory.json/'));
-        });
+        checkGoodPath('file.long.extension.json',
+                      'file:///home/aFolder/file.long.extension.json',
+                      'file:///usr/testuser/projects/workspace/file.long.extension.json',
+                      'file:///c%3A/Users/testuser/dev/potatoes/file.long.extension.json');
 
-        it('Rejects "./folder/notfile.json/"', () => {
-            assert(!isRelativePath('./folder/notfile.json/'));
-        });
+        checkGoodPath(join('.', 'file.json'),
+                      'file:///home/aFolder/file.json',
+                      'file:///usr/testuser/projects/workspace/file.json',
+                      'file:///c%3A/Users/testuser/dev/potatoes/file.json');
 
-        it('Rejects "/absolute/path.json"', () => {
-            assert(!isRelativePath('/absolute/path.json'));
-        });
+        checkGoodPath(join('.', 'folder', 'file.json'),
+                      'file:///home/aFolder/folder/file.json',
+                      'file:///usr/testuser/projects/workspace/folder/file.json',
+                      'file:///c%3A/Users/testuser/dev/potatoes/folder/file.json');
 
-        it('Rejects "C:\\notrelative\\path.json"', () => {
-            assert(!isRelativePath('C:\\notrelative\\path.json'));
-        });
+        checkGoodPath(join('.', 'long', 'path', 'to', 'file.json'),
+                      'file:///home/aFolder/long/path/to/file.json',
+                      'file:///usr/testuser/projects/workspace/long/path/to/file.json',
+                      'file:///c%3A/Users/testuser/dev/potatoes/long/path/to/file.json');
 
-        const ws1 = new TestWorkspace([
-            {
-                uri: 'file:///home/aFolder/',
-                name: 'aFolder'
-            }
-        ],
-        'file:///home/aFolder/');
+        checkGoodPath(join('..', 'file.json'),
+                      'file:///home/file.json',
+                      'file:///usr/testuser/projects/file.json',
+                      'file:///c%3A/Users/testuser/dev/file.json');
 
-        const ws2 = new TestWorkspace([
-            {
-                uri: 'file:///usr/testuser/projects/workspace/folder-1/',
-                name: 'folder-1'
-            },
-            {
-                uri: 'file:///usr/testuser/projects/workspace/folder-2/',
-                name: 'folder-2'
-            },
-            {
-                uri: 'file:///usr/testuser/projects/workspace/folder-3/',
-                name: 'folder-3'
-            }
-        ],
-        'file:///usr/testuser/projects/workspace/');
+        checkGoodPath(join('.', 'relativepath', '..', 'file.json'),
+                      'file:///home/aFolder/file.json',
+                      'file:///usr/testuser/projects/workspace/file.json',
+                      'file:///c%3A/Users/testuser/dev/potatoes/file.json');
 
-        const ws3 = new TestWorkspace([
-            {
-                uri: 'file:///c%3A/Users/testuser/dev/carrots',
-                name: 'carrots'
-            },
-            {
-                uri: 'file:///c%3A/Users/testuser/dev/potatoes',
-                name: 'potatoes'
-            }
-        ],
-        'file:///c%3A/Users/testuser/dev/potatoes');
-
-        describe('Relative path = "file.json"', () => {
-            it('Recognises relative path', () => {
-                assert(isRelativePath('file.json'));
-            });
-
-            it('Resolves relative path in single-root workspace', () => {
-                assert.equal(resolve(ws1, 'file.json'),
-                            'file:///home/aFolder/file.json');
-            });
-
-            it('Resolves relative path in multi-root workspace', () => {
-                assert.equal(resolve(ws2, 'file.json'),
-                            'file:///usr/testuser/projects/workspace/file.json');
-            });
-
-            it('Resolves relative path in multi-root nested workspace', () => {
-                assert.equal(resolve(ws3, 'file.json'),
-                            'file:///c%3A/Users/testuser/dev/potatoes/file.json');
-            });
-        });
-
-        describe('Relative path = "file.long.extension.json"', () => {
-            it('Recognises relative path', () => {
-                assert(isRelativePath('file.long.extension.json'));
-            });
-
-            it('Resolves relative path in single-root workspace', () => {
-                assert.equal(resolve(ws1, 'file.long.extension.json'),
-                            'file:///home/aFolder/file.long.extension.json');
-            });
-
-            it('Resolves relative path in multi-root workspace', () => {
-                assert.equal(resolve(ws2, 'file.long.extension.json'),
-                            'file:///usr/testuser/projects/workspace/file.long.extension.json');
-            });
-
-            it('Resolves relative path in multi-root nested workspace', () => {
-                assert.equal(resolve(ws3, 'file.long.extension.json'),
-                            'file:///c%3A/Users/testuser/dev/potatoes/file.long.extension.json');
-            });
-        });
-
-        describe('Relative path = "./file.json"', () => {
-            let relPath: string;
-
-            if (process.platform !== 'win32') {
-                relPath = './file.json';
-            } else {
-                relPath = '.\\file.json';
-            }
-
-            it('Recognises relative path', () => {
-                assert(isRelativePath(relPath));
-            });
-
-            it('Resolves relative path in single-root workspace', () => {
-                assert.equal(resolve(ws1, relPath),
-                            'file:///home/aFolder/file.json');
-            });
-
-            it('Resolves relative path in multi-root workspace', () => {
-                assert.equal(resolve(ws2, relPath),
-                            'file:///usr/testuser/projects/workspace/file.json');
-            });
-
-            it('Resolves relative path in multi-root nested workspace', () => {
-                assert.equal(resolve(ws3, relPath),
-                            'file:///c%3A/Users/testuser/dev/potatoes/file.json');
-            });
-        });
-
-        describe('Relative path = "./folder/file.json"', () => {
-            let relPath: string;
-
-            if (process.platform !== 'win32') {
-                relPath = './folder/file.json';
-            } else {
-                relPath = '.\\folder\\file.json';
-            }
-
-            it('Recognises relative path', () => {
-                assert(isRelativePath(relPath));
-            });
-
-            it('Resolves relative path in single-root workspace', () => {
-                assert.equal(resolve(ws1, relPath),
-                            'file:///home/aFolder/folder/file.json');
-            });
-
-            it('Resolves relative path in multi-root workspace', () => {
-                assert.equal(resolve(ws2, relPath),
-                            'file:///usr/testuser/projects/workspace/folder/file.json');
-            });
-
-            it('Resolves relative path in multi-root nested workspace', () => {
-                assert.equal(resolve(ws3, relPath),
-                            'file:///c%3A/Users/testuser/dev/potatoes/folder/file.json');
-            });
-        });
-
-        describe('Relative path = "./long/path/to/file.json"', () => {
-            let relPath: string;
-
-            if (process.platform !== 'win32') {
-                relPath = './long/path/to/file.json';
-            } else {
-                relPath = '.\\long\\path\\to\\file.json';
-            }
-
-            it('Recognises relative path', () => {
-                assert(isRelativePath(relPath));
-            });
-
-            it('Resolves relative path in single-root workspace', () => {
-                assert.equal(resolve(ws1, relPath),
-                            'file:///home/aFolder/long/path/to/file.json');
-            });
-
-            it('Resolves relative path in multi-root workspace', () => {
-                assert.equal(resolve(ws2, relPath),
-                            'file:///usr/testuser/projects/workspace/long/path/to/file.json');
-            });
-
-            it('Resolves relative path in multi-root nested workspace', () => {
-                assert.equal(resolve(ws3, relPath),
-                            'file:///c%3A/Users/testuser/dev/potatoes/long/path/to/file.json');
-            });
-        });
-
-        describe('Relative path = "../file.json"', () => {
-            let relPath: string;
-
-            if (process.platform !== 'win32') {
-                relPath = '../file.json';
-            } else {
-                relPath = '..\\file.json';
-            }
-
-            it('Recognises relative path', () => {
-                assert(isRelativePath(relPath));
-            });
-
-            it('Resolves relative path in single-root workspace', () => {
-                assert.equal(resolve(ws1, relPath),
-                            'file:///home/file.json');
-            });
-
-            it('Resolves relative path in multi-root workspace', () => {
-                assert.equal(resolve(ws2, relPath),
-                            'file:///usr/testuser/projects/file.json');
-            });
-
-            it('Resolves relative path in multi-root nested workspace', () => {
-                assert.equal(resolve(ws3, relPath),
-                            'file:///c%3A/Users/testuser/dev/file.json');
-            });
-        });
-
-        describe('Relative path = "./relative/../file.json"', () => {
-            let relPath: string;
-
-            if (process.platform !== 'win32') {
-                relPath = './relative/../file.json';
-            } else {
-                relPath = '.\\relative\\..\\file.json';
-            }
-
-            it('Recognises relative path', () => {
-                assert(isRelativePath(relPath));
-            });
-
-            it('Resolves relative path in single-root workspace', () => {
-                assert.equal(resolve(ws1, relPath),
-                            'file:///home/aFolder/file.json');
-            });
-
-            it('Resolves relative path in multi-root workspace', () => {
-                assert.equal(resolve(ws2, relPath),
-                            'file:///usr/testuser/projects/workspace/file.json');
-            });
-
-            it('Resolves relative path in multi-root nested workspace', () => {
-                assert.equal(resolve(ws3, relPath),
-                            'file:///c%3A/Users/testuser/dev/potatoes/file.json');
-            });
-        });
-
-        describe('Relative path = "..\\..\\also\\relative\\file.json"', () => {
-            let relPath: string;
-
-            if (process.platform !== 'win32') {
-                relPath = '../../also/relative/file.json';
-            } else {
-                relPath = '..\\..\\also\\relative\\file.json';
-            }
-
-            it('Recognises relative path', () => {
-                assert(isRelativePath(relPath));
-            });
-
-            it('Resolves relative path in single-root workspace', () => {
-                assert.equal(resolve(ws1, relPath),
-                            'file:///also/relative/file.json');
-            });
-
-            it('Resolves relative path in multi-root workspace', () => {
-                assert.equal(resolve(ws2, relPath),
-                            'file:///usr/testuser/also/relative/file.json');
-            });
-
-            it('Resolves relative path in multi-root nested workspace', () => {
-                assert.equal(resolve(ws3, relPath),
-                            'file:///c%3A/Users/testuser/also/relative/file.json');
-            });
-        });
+        checkGoodPath(join('..', '..', 'relative', 'path', 'file.json'),
+                      'file:///relative/path/file.json',
+                      'file:///usr/testuser/relative/path/file.json',
+                      'file:///c%3A/Users/testuser/relative/path/file.json');
 
         describe('Relative path = a workspace folder', () => {
-            it('Recognises relative path "aFolder/file.json"', () => {
-                assert(isRelativePath('aFolder/file.json'));
+            const path1 = join('aFolder', 'file.json');
+            const path2 = join('folder-2', 'file.json');
+            const path3 = join('carrots', 'file.json');
+
+            it('Recognises relative path "' + path1 + '"', () => {
+                assert(isRelativePath(path1));
             });
 
-            it('Resolves "aFolder/file.json" in single-root workspace', () => {
-                assert.equal(resolve(ws1, 'aFolder/file.json'),
+            it('Resolves "' + path1 + '" in single-root workspace', () => {
+                assert.equal(ws1.resolve(path1),
                             'file:///home/aFolder/file.json');
             });
 
-            it('Resolves "folder-2/file.json" in multi-root workspace', () => {
-                assert.equal(resolve(ws2, 'folder-2/file.json'),
+            it('Resolves "' + path2 + '" in multi-root workspace', () => {
+                assert.equal(ws2.resolve(path2),
                             'file:///usr/testuser/projects/workspace/folder-2/file.json');
             });
 
-            it('Resolves "carrots/file.json" in multi-root nested workspace', () => {
-                assert.equal(resolve(ws3, 'carrots/file.json'),
+            it('Resolves "' + path3 + '" in multi-root nested workspace', () => {
+                assert.equal(ws3.resolve(path3),
                             'file:///c%3A/Users/testuser/dev/carrots/file.json');
             });
         });
 
         describe('Path with mixed delimiters (Windows only)', () => {
-            it('Recognises relative path "some/strange\\but/functional\\path\\file.json"', function () {
+            const path = 'some/strange\\but/functional\\path\\file.json';
+
+            it('Recognises relative path "' + path + '"', function () {
                 if (process.platform !== 'win32') {
                     this.skip();
                 } else {
-                    assert(isRelativePath('some/strange\\but/functional\\path\\file.json'));
+                    assert(isRelativePath(path));
                 }
             });
 
-            it('Resolves "some/strange\\but/functional\\path\\file.json" in single-root workspace', function () {
+            it('Resolves "' + path + '" in single-root workspace', function () {
                 if (process.platform !== 'win32') {
                     this.skip();
                 } else {
-                    assert.equal(resolve(ws1, 'some/strange\\but/functional\\path\\file.json'),
+                    assert.equal(ws1.resolve(path),
                                 'file:///home/aFolder/some/strange/but/functional/path/file.json');
                 }
             });
 
-            it('Resolves "some/strange\\but/functional\\path\\file.json" in multi-root workspace', function () {
+            it('Resolves "' + path + '" in multi-root workspace', function () {
                 if (process.platform !== 'win32') {
                     this.skip();
                 } else {
-                    assert.equal(resolve(ws2, 'some/strange\\but/functional\\path\\file.json'),
+                    assert.equal(ws2.resolve(path),
                                 'file:///usr/testuser/projects/workspace/some/strange/but/functional/path/file.json');
                 }
             });
 
-            it('Resolves "some/strange\\but/functional\\path\\file.json" in multi-root nested workspace', function () {
+            it('Resolves "' + path + '" in multi-root nested workspace', function () {
                 if (process.platform !== 'win32') {
                     this.skip();
                 } else {
-                    assert.equal(resolve(ws3, 'some/strange\\but/functional\\path\\file.json'),
+                    assert.equal(ws3.resolve(path),
                                 'file:///c%3A/Users/testuser/dev/potatoes/some/strange/but/functional/path/file.json');
                 }
             });
