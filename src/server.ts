@@ -7,15 +7,11 @@
 'use strict';
 
 import {
-    createConnection, IConnection,
-    TextDocuments, TextDocument, InitializeParams, InitializeResult, NotificationType, RequestType,
+    createConnection, IConnection, TextDocuments, TextDocument, InitializeParams, InitializeResult,
     Disposable, Position, ProposedFeatures, CompletionList, DocumentRangeFormattingRequest, ClientCapabilities, WorkspaceFolder
 } from 'vscode-languageserver';
 
-import { xhr, XHRResponse, configure as configureHttpRequests, getErrorStatusDescription } from 'request-light';
-import path = require('path');
-import fs = require('fs');
-import { URI } from 'vscode-uri';
+import { xhr, XHRResponse, configure as configureHttpRequests } from 'request-light';
 import * as URL from 'url';
 import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions } from './languageservice/yamlLanguageService';
@@ -25,170 +21,37 @@ import { parse as parseYAML } from './languageservice/parser/yamlParser04';
 import { parse as parseYAML2 } from './languageservice/parser/yamlParser07';
 import { JSONSchema } from './languageservice/jsonSchema04';
 import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';
+import { SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest } from './requestTypes';
+import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
+import { isRelativePath, relativeToAbsolutePath } from './languageservice/utils/paths';
+import { URI } from 'vscode-uri';
 // tslint:disable-next-line: no-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
 
-interface ISchemaAssociations {
-    [pattern: string]: string[];
-}
+/****************
+ * Constants
+ ****************/
+const KUBERNETES_SCHEMA_URL = 'https://raw.githubusercontent.com/garethr/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json';
+const JSON_SCHEMASTORE_URL = 'http://schemastore.org/api/json/catalog.json';
 
-namespace SchemaAssociationNotification {
-    export const type: NotificationType<{ }, { }> = new NotificationType('json/schemaAssociations');
-}
-
-namespace DynamicCustomSchemaRequestRegistration {
-    export const type: NotificationType<{ }, { }> = new NotificationType('yaml/registerCustomSchemaRequest');
-}
-
-namespace VSCodeContentRequest {
-    export const type: RequestType<{ }, { }, { }, { }> = new RequestType('vscode/content');
-}
-
-namespace CustomSchemaContentRequest {
-    export const type: RequestType<{ }, { }, { }, { }> = new RequestType('custom/schema/content');
-}
-
-namespace CustomSchemaRequest {
-    export const type: RequestType<{ }, { }, { }, { }> = new RequestType('custom/schema/request');
-}
-
-namespace ColorSymbolRequest {
-    export const type: RequestType<{ }, { }, { }, { }> = new RequestType('json/colorSymbols');
-}
-
-// Create a connection for the server.
-let connection: IConnection = null;
-
-if (process.argv.indexOf('--stdio') === -1) {
-    connection = createConnection(ProposedFeatures.all);
-} else {
-    connection = createConnection();
-}
-
-console.log = connection.console.log.bind(connection.console);
-console.error = connection.console.error.bind(connection.console);
-
-// Create a simple text document manager. The text document manager
-// supports full document sync only
-const documents: TextDocuments = new TextDocuments();
-// Make the text document manager listen on the connection
-// for open, change and close text document events
-documents.listen(connection);
-
-let capabilities: ClientCapabilities;
-let workspaceFolders: WorkspaceFolder[] = [];
-let workspaceRoot: URI;
-let clientDynamicRegisterSupport = false;
-let hasWorkspaceFolderCapability = false;
-let hierarchicalDocumentSymbolSupport = false;
-
-/**
- * Run when the client connects to the server after it is activated.
- * The server receives the root path(s) of the workspace and the client capabilities.
- */
-connection.onInitialize((params: InitializeParams): InitializeResult => {
-    capabilities = params.capabilities;
-    workspaceFolders = params['workspaceFolders'];
-    workspaceRoot = URI.parse(params.rootPath);
-    hierarchicalDocumentSymbolSupport = capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport;
-    hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
-    clientDynamicRegisterSupport = capabilities.workspace.symbol.dynamicRegistration;
-
-    return {
-        capabilities: {
-            textDocumentSync: documents.syncKind,
-            completionProvider: { resolveProvider: true },
-            hoverProvider: true,
-            documentSymbolProvider: true,
-            documentFormattingProvider: true
-        }
-    };
-});
-
+/**************************
+ * Generic helper functions
+ **************************/
 const workspaceContext = {
     resolveRelativePath: (relativePath: string, resource: string) =>
         URL.resolve(resource, relativePath)
 };
 
-/**
- * Handles schema content requests given the schema URI
- * @param uri can be a local file, vscode request, http(s) request or a custom request
- */
-const schemaRequestService = (uri: string): Thenable<string> => {
-    // If multi-root workspaces are supported
-    if (hasWorkspaceFolderCapability) {
-        // Iterate through all of the workspace root folders
-        for (const folder in workspaceFolders) {
-            const currFolder = workspaceFolders[folder];
-            const currFolderUri = currFolder['uri'];
-            const currFolderName = currFolder['name'];
-            const isUriRegex = new RegExp('^(?:[a-z]+:)?//', 'i');
+function is_EOL(c: number) {
+    return (c === 0x0A/* LF */) || (c === 0x0D/* CR */);
+}
 
-            // If the requested schema URI contains one of the workspace root folders
-            // And is not a proper URI, meaning it is a relative file path
-            // Convert it into a proper absolute path URI
-            if (uri.indexOf(currFolderName) !== -1 && !uri.match(isUriRegex)) {
-                const beforeFolderName = currFolderUri.split(currFolderName)[0];
-                const uriSplit = uri.split(currFolderName);
-                uriSplit.shift();
-                const afterFolderName = uriSplit.join(currFolderName);
-                uri = beforeFolderName + currFolderName + afterFolderName;
-            }
-        }
-    }
-
-    const scheme = URI.parse(uri).scheme.toLowerCase();
-
-    // If the requested schema is a local file, read and return the file contents
-    if (scheme === 'file') {
-        const fsPath = URI.parse(uri).fsPath;
-
-        return new Promise<string>((c, e) => {
-            fs.readFile(fsPath, 'UTF-8', (err, result) => {
-                // If there was an error reading the file, return empty error message
-                // Otherwise return the file contents as a string
-                err ? e('') : c(result.toString());
-            });
-        });
-    }
-
-    // vscode schema content requests are forwarded to the client through LSP
-    // This is a non-standard LSP extension introduced by the JSON language server
-    // See https://github.com/microsoft/vscode/blob/master/extensions/json-language-features/server/README.md
-    if (scheme === 'vscode') {
-        return connection.sendRequest(VSCodeContentRequest.type, uri)
-                         .then(responseText => responseText, error => error.message);
-    }
-
-    // HTTP(S) requests are sent and the response result is either the schema content or an error
-    if (scheme === 'http' || scheme === 'https') {
-        // If it's an HTTP(S) request to Microsoft Azure, log the request
-        if (uri.indexOf('//schema.management.azure.com/') !== -1) {
-            connection.telemetry.logEvent({
-                key: 'json.schema',
-                value: {
-                    schemaURL: uri
-                }
-            });
-        }
-
-        // Send the HTTP(S) schema content request and return the result
-        const headers = { 'Accept-Encoding': 'gzip, deflate' };
-        return xhr({ url: uri, followRedirects: 5, headers }).then(response =>
-            response.responseText, (error: XHRResponse) =>
-            Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString()));
-    }
-
-    // Neither local file nor vscode, nor HTTP(S) schema request, so send it off as a custom request
-    return <Thenable<string>> connection.sendRequest(CustomSchemaContentRequest.type, uri);
-};
-
-export let KUBERNETES_SCHEMA_URL = 'https://raw.githubusercontent.com/garethr/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json';
-export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
-export let jsonLanguageService = getJSONLanguageService({
-    schemaRequestService,
-    workspaceContext
-});
+/********************
+ * Helper interfaces
+ ********************/
+interface ISchemaAssociations {
+    [pattern: string]: string[];
+}
 
 // Client settings interface to grab settings relevant for the language server
 interface Settings {
@@ -215,6 +78,11 @@ interface JSONSchemaSettings {
     schema?: JSONSchema;
 }
 
+/****************
+ * Variables
+ ****************/
+
+// Language server configuration
 let yamlConfigurationSettings: JSONSchemaSettings[] = void 0;
 let schemaAssociations: ISchemaAssociations = void 0;
 let formatterRegistration: Thenable<Disposable> = null;
@@ -234,83 +102,34 @@ let schemaStoreSettings = [];
 let customTags = [];
 let schemaStoreEnabled = true;
 
-/**
- * Run when the editor configuration is changed
- * The client syncs the 'yaml', 'http.proxy', 'http.proxyStrictSSL' settings sections
- * Update relevant settings with fallback to defaults if needed
- */
-connection.onDidChangeConfiguration(change => {
-    const settings = change.settings as Settings;
-    configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
+// File validation helpers
+const pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = { };
+const validationDelayMs = 200;
 
-    specificValidatorPaths = [];
-    if (settings.yaml) {
-        yamlConfigurationSettings = settings.yaml.schemas;
-        yamlShouldValidate = settings.yaml.validate;
-        yamlShouldHover = settings.yaml.hover;
-        yamlShouldCompletion = settings.yaml.completion;
-        customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
+// Create a simple text document manager. The text document manager
+// supports full document sync only
+const documents: TextDocuments = new TextDocuments();
 
-        if (settings.yaml.schemaStore) {
-            schemaStoreEnabled = settings.yaml.schemaStore.enable;
-        }
+// Language client configuration
+let capabilities: ClientCapabilities;
+let workspaceRoot: URI = null;
+let workspaceFolders: WorkspaceFolder[] = [];
+let clientDynamicRegisterSupport = false;
+let hierarchicalDocumentSymbolSupport = false;
 
-        if (settings.yaml.format) {
-            yamlFormatterSettings = {
-                proseWrap: settings.yaml.format.proseWrap || 'preserve',
-                printWidth: settings.yaml.format.printWidth || 80
-            };
+/****************************
+ * Reusable helper functions
+ ****************************/
 
-            if (settings.yaml.format.singleQuote !== undefined) {
-                yamlFormatterSettings.singleQuote = settings.yaml.format.singleQuote;
-            }
-
-            if (settings.yaml.format.bracketSpacing !== undefined) {
-                yamlFormatterSettings.bracketSpacing = settings.yaml.format.bracketSpacing;
-            }
-
-            if (settings.yaml.format.enable !== undefined) {
-                yamlFormatterSettings.enable = settings.yaml.format.enable;
-            }
-        }
+const checkSchemaURI = (uri: string): string => {
+    if (uri.trim().toLowerCase() === 'kubernetes') {
+        return KUBERNETES_SCHEMA_URL;
+    } else if (isRelativePath(uri)) {
+        return relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);
+    } else {
+        return uri;
     }
-    schemaConfigurationSettings = [];
-
-    const jsonSchemas = [];
-    for (const url in yamlConfigurationSettings) {
-        const globPattern = yamlConfigurationSettings[url];
-        const checkedURL = url.toLowerCase() === 'kubernetes' ? KUBERNETES_SCHEMA_URL : url;
-        const schemaObj = {
-            'fileMatch': Array.isArray(globPattern) ? globPattern : [globPattern],
-            'uri': checkedURL
-        };
-        jsonSchemas.push(schemaObj);
-        schemaConfigurationSettings.push(schemaObj);
-    }
-
-    jsonLanguageService.configure({
-        schemas: jsonSchemas,
-        validate: settings.yaml.validate,
-        allowComments: true
-    });
-
-    setSchemaStoreSettingsIfNotSet();
-    updateConfiguration();
-
-    // dynamically enable & disable the formatter
-    if (clientDynamicRegisterSupport) {
-        const enableFormatter = settings && settings.yaml && settings.yaml.format && settings.yaml.format.enable;
-
-        if (enableFormatter) {
-            if (!formatterRegistration) {
-                formatterRegistration = connection.client.register(DocumentRangeFormattingRequest.type, { documentSelector: [{ language: 'yaml' }] });
-            }
-        } else if (formatterRegistration) {
-            formatterRegistration.then(r => r.dispose());
-            formatterRegistration = null;
-        }
-    }
-});
+};
 
 /**
  * This function helps set the schema store if it hasn't already been set
@@ -335,7 +154,7 @@ function setSchemaStoreSettingsIfNotSet() {
  * When the schema store is enabled, download and store YAML schema associations
  */
 function getSchemaStoreMatchingSchemas() {
-    return xhr({ url: 'http://schemastore.org/api/json/catalog.json' }).then(response => {
+    return xhr({ url: JSON_SCHEMASTORE_URL }).then(response => {
         const languageSettings = {
             schemas: []
         };
@@ -365,26 +184,6 @@ function getSchemaStoreMatchingSchemas() {
 }
 
 /**
- * Received a notification from the client with schema associations from other extensions
- * Update the associations in the server
- */
-connection.onNotification(SchemaAssociationNotification.type, associations => {
-    schemaAssociations = associations;
-    specificValidatorPaths = [];
-    setSchemaStoreSettingsIfNotSet();
-    updateConfiguration();
-});
-
-/**
- * Received a notification from the client that it can accept custom schema requests
- * Register the custom schema provider and use it for requests of unknown scheme
- */
-connection.onNotification(DynamicCustomSchemaRequestRegistration.type, () => {
-    const schemaProvider = (resource => connection.sendRequest(CustomSchemaRequest.type, resource)) as CustomSchemaProvider;
-    customLanguageService.registerCustomSchemaProvider(schemaProvider);
-});
-
-/**
  * Called when server settings or schema associations are changed
  * Re-creates schema associations and revalidates any open YAML files
  */
@@ -408,6 +207,7 @@ function updateConfiguration() {
             }
         }
     }
+
     if (schemaConfigurationSettings) {
         schemaConfigurationSettings.forEach(schema => {
             let uri = schema.uri;
@@ -418,17 +218,19 @@ function updateConfiguration() {
                 uri = 'vscode://schemas/custom/' + encodeURIComponent(schema.fileMatch.join('&'));
             }
             if (uri) {
-                if (uri[0] === '.' && workspaceRoot && !hasWorkspaceFolderCapability) {
-                    // workspace relative path
-                    uri = URI.file(path.normalize(path.join(workspaceRoot.fsPath, uri))).toString();
+                if (isRelativePath(uri)) {
+                    uri = relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);
                 }
+
                 languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema, languageSettings);
             }
         });
     }
+
     if (schemaStoreSettings) {
         languageSettings.schemas = languageSettings.schemas.concat(schemaStoreSettings);
     }
+
     customLanguageService.configure(languageSettings);
 
     // Revalidate any open text documents
@@ -443,9 +245,7 @@ function updateConfiguration() {
  * @param languageSettings current server settings
  */
 function configureSchemas(uri: string, fileMatch: string[], schema: any, languageSettings: LanguageSettings) {
-    if (uri.toLowerCase().trim() === 'kubernetes') {
-        uri = KUBERNETES_SCHEMA_URL;
-    }
+    uri = checkSchemaURI(uri);
 
     if (schema === null) {
         languageSettings.schemas.push({ uri, fileMatch: fileMatch });
@@ -464,14 +264,6 @@ function configureSchemas(uri: string, fileMatch: string[], schema: any, languag
     return languageSettings;
 }
 
-function setKubernetesParserOption(jsonDocuments: any, option: boolean) {
-    for (const jsonDoc in jsonDocuments) {
-        jsonDocuments[jsonDoc].configureSettings({
-            isKubernetes: option
-        });
-    }
-}
-
 function isKubernetes(textDocument: TextDocument) {
     for (const path in specificValidatorPaths) {
         const globPath = specificValidatorPaths[path];
@@ -483,18 +275,6 @@ function isKubernetes(textDocument: TextDocument) {
     }
     return false;
 }
-
-documents.onDidChangeContent(change => {
-    triggerValidation(change.document);
-});
-
-documents.onDidClose(event => {
-    cleanPendingValidation(event.document);
-    connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
-});
-
-const pendingValidationRequests: { [uri: string]: NodeJS.Timer; } = { };
-const validationDelayMs = 200;
 
 function cleanPendingValidation(textDocument: TextDocument): void {
     const request = pendingValidationRequests[textDocument.uri];
@@ -536,6 +316,166 @@ function validateTextDocument(textDocument: TextDocument): void {
     }, function (error) { });
 }
 
+/*************
+ * Main setup
+ *************/
+
+// Create a connection for the server.
+let connection: IConnection = null;
+
+if (process.argv.indexOf('--stdio') === -1) {
+    connection = createConnection(ProposedFeatures.all);
+} else {
+    connection = createConnection();
+}
+
+console.log = connection.console.log.bind(connection.console);
+console.error = connection.console.error.bind(connection.console);
+
+// Make the text document manager listen on the connection
+// for open, change and close text document events
+documents.listen(connection);
+
+const schemaRequestService = schemaRequestHandler.bind(this, connection);
+
+export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
+export let jsonLanguageService = getJSONLanguageService({
+    schemaRequestService,
+    workspaceContext
+});
+
+/***********************
+ * Connection listeners
+ **********************/
+
+/**
+ * Run when the client connects to the server after it is activated.
+ * The server receives the root path(s) of the workspace and the client capabilities.
+ */
+connection.onInitialize((params: InitializeParams): InitializeResult => {
+    capabilities = params.capabilities;
+    workspaceRoot = URI.parse(params.rootUri);
+    workspaceFolders = params.workspaceFolders;
+    hierarchicalDocumentSymbolSupport = !!capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport;
+    clientDynamicRegisterSupport = !!capabilities.workspace.symbol.dynamicRegistration;
+
+    return {
+        capabilities: {
+            textDocumentSync: documents.syncKind,
+            completionProvider: { resolveProvider: true },
+            hoverProvider: true,
+            documentSymbolProvider: true,
+            documentFormattingProvider: true
+        }
+    };
+});
+
+/**
+ * Received a notification from the client with schema associations from other extensions
+ * Update the associations in the server
+ */
+connection.onNotification(SchemaAssociationNotification.type, associations => {
+    schemaAssociations = associations;
+    specificValidatorPaths = [];
+    setSchemaStoreSettingsIfNotSet();
+    updateConfiguration();
+});
+
+/**
+ * Received a notification from the client that it can accept custom schema requests
+ * Register the custom schema provider and use it for requests of unknown scheme
+ */
+connection.onNotification(DynamicCustomSchemaRequestRegistration.type, () => {
+    const schemaProvider = (resource => connection.sendRequest(CustomSchemaRequest.type, resource)) as CustomSchemaProvider;
+    customLanguageService.registerCustomSchemaProvider(schemaProvider);
+});
+
+/**
+ * Run when the editor configuration is changed
+ * The client syncs the 'yaml', 'http.proxy', 'http.proxyStrictSSL' settings sections
+ * Update relevant settings with fallback to defaults if needed
+ */
+connection.onDidChangeConfiguration(change => {
+    const settings = change.settings as Settings;
+    configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
+
+    specificValidatorPaths = [];
+    if (settings.yaml) {
+        yamlConfigurationSettings = settings.yaml.schemas;
+        yamlShouldValidate = settings.yaml.validate;
+        yamlShouldHover = settings.yaml.hover;
+        yamlShouldCompletion = settings.yaml.completion;
+        customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
+
+        if (settings.yaml.schemaStore) {
+            schemaStoreEnabled = settings.yaml.schemaStore.enable;
+        }
+
+        if (settings.yaml.format) {
+            yamlFormatterSettings = {
+                proseWrap: settings.yaml.format.proseWrap || 'preserve',
+                printWidth: settings.yaml.format.printWidth || 80
+            };
+
+            if (settings.yaml.format.singleQuote !== undefined) {
+                yamlFormatterSettings.singleQuote = settings.yaml.format.singleQuote;
+            }
+
+            if (settings.yaml.format.bracketSpacing !== undefined) {
+                yamlFormatterSettings.bracketSpacing = settings.yaml.format.bracketSpacing;
+            }
+
+            if (settings.yaml.format.enable !== undefined) {
+                yamlFormatterSettings.enable = settings.yaml.format.enable;
+            }
+        }
+    }
+
+    schemaConfigurationSettings = [];
+
+    for (const uri in yamlConfigurationSettings) {
+        const globPattern = yamlConfigurationSettings[uri];
+
+        const schemaObj = {
+            'fileMatch': Array.isArray(globPattern) ? globPattern : [globPattern],
+            'uri': checkSchemaURI(uri)
+        };
+        schemaConfigurationSettings.push(schemaObj);
+    }
+
+    jsonLanguageService.configure({
+        schemas: schemaConfigurationSettings,
+        validate: settings.yaml.validate,
+        allowComments: true
+    });
+
+    setSchemaStoreSettingsIfNotSet();
+    updateConfiguration();
+
+    // dynamically enable & disable the formatter
+    if (clientDynamicRegisterSupport) {
+        const enableFormatter = settings && settings.yaml && settings.yaml.format && settings.yaml.format.enable;
+
+        if (enableFormatter) {
+            if (!formatterRegistration) {
+                formatterRegistration = connection.client.register(DocumentRangeFormattingRequest.type, { documentSelector: [{ language: 'yaml' }] });
+            }
+        } else if (formatterRegistration) {
+            formatterRegistration.then(r => r.dispose());
+            formatterRegistration = null;
+        }
+    }
+});
+
+documents.onDidChangeContent(change => {
+    triggerValidation(change.document);
+});
+
+documents.onDidClose(event => {
+    cleanPendingValidation(event.document);
+    connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
+});
+
 /**
  * Called when a monitored file is changed in an editor
  * Revalidates the entire document
@@ -545,6 +485,7 @@ connection.onDidChangeWatchedFiles(change => {
 
     change.changes.forEach(c => {
         if (customLanguageService.resetSchema(c.uri)) {
+            jsonLanguageService.resetSchema(c.uri);
             hasChanges = true;
         }
     });
@@ -573,13 +514,9 @@ connection.onCompletion(textDocumentPosition => {
     const completionFix = completionHelper(textDocument, textDocumentPosition.position);
     const newText = completionFix.newText;
     const jsonDocument = parseYAML(newText);
-    isKubernetes(textDocument) ? setKubernetesParserOption(jsonDocument.documents, true) : setKubernetesParserOption(jsonDocument.documents, false);
+    setKubernetesParserOption(jsonDocument.documents, isKubernetes(textDocument));
     return customLanguageService.doComplete(textDocument, textDocumentPosition.position, jsonDocument);
 });
-
-function is_EOL(c: number) {
-    return (c === 0x0A/* LF */) || (c === 0x0D/* CR */);
-}
 
 /**
  * Called by onCompletion
@@ -636,6 +573,15 @@ function completionHelper(document: TextDocument, textDocumentPosition: Position
             'newText': document.getText(),
             'newPosition': position
         };
+    }
+}
+
+// Called by onCompletion
+function setKubernetesParserOption(jsonDocuments: any, option: boolean) {
+    for (const jsonDoc in jsonDocuments) {
+        jsonDocuments[jsonDoc].configureSettings({
+            isKubernetes: option
+        });
     }
 }
 
