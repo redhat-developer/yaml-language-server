@@ -1,5 +1,5 @@
 import { WorkspaceFolder } from 'vscode-languageserver';
-import { join } from 'path';
+import { join, normalize } from 'path';
 import URI from './uri';
 
 export const isRelativePath = (path: string): boolean => {
@@ -13,8 +13,11 @@ export const relativeToAbsolutePath = (workspaceFolders: WorkspaceFolder[], work
         // If the requested schema URI specifies a workspace root folder
         // Convert it into an absolute path with the appropriate root folder path
         if (uri.startsWith(folder.name)) {
-            const beforeFolderName = folder.uri.split(folder.name)[0];
-            return (beforeFolderName + uri);
+            const pathToFolder = URI.parse(folder.uri).fsPath;
+            const withoutFolderPrefix = uri.split(folder.name);
+            withoutFolderPrefix.shift();
+
+            return URI.file(join(pathToFolder, withoutFolderPrefix.join())).toString();
         }
     }
 
@@ -25,5 +28,5 @@ export const relativeToAbsolutePath = (workspaceFolders: WorkspaceFolder[], work
     }
 
     // Fallback in case nothing could be applied
-    return uri;
+    return normalize(uri);
 };
