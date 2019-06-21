@@ -19,6 +19,7 @@
   "bin": {
     "yaml-language-server": "./bin/yaml-language-server"
   },
+  "main": "./out/server/src/index.js",
   "keywords": [
     "yaml",
     "LSP"
