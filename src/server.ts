@@ -14,7 +14,7 @@ import {
 import { xhr, XHRResponse, configure as configureHttpRequests } from 'request-light';
 import * as URL from 'url';
 import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arrUtils';
-import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions } from './languageservice/yamlLanguageService';
+import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions, WorkspaceContextService } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
 import { CustomSchemaProvider, FilePatternAssociation } from './languageservice/services/jsonSchemaService';
 import { parse as parseYAML } from './languageservice/parser/yamlParser04';
@@ -37,7 +37,7 @@ const JSON_SCHEMASTORE_URL = 'http://schemastore.org/api/json/catalog.json';
 /**************************
  * Generic helper functions
  **************************/
-const workspaceContext = {
+const workspaceContext: WorkspaceContextService = {
     resolveRelativePath: (relativePath: string, resource: string) =>
         URL.resolve(resource, relativePath)
 };
