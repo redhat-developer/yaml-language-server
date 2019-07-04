@@ -12,7 +12,7 @@ import { YAMLCompletion } from './services/yamlCompletion';
 import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
-import { LanguageService as JSONLanguageService } from 'vscode-json-languageservice';
+import { LanguageService as JSONLanguageService, JSONWorkerContribution } from 'vscode-json-languageservice';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
@@ -120,7 +120,10 @@ export interface LanguageService {
   doFormat(document: TextDocument, options: CustomFormatterOptions);
 }
 
-export function getLanguageService(schemaRequestService, workspaceContext, contributions, promiseConstructor?): LanguageService {
+export function getLanguageService(schemaRequestService: SchemaRequestService,
+    workspaceContext: WorkspaceContextService,
+    contributions: JSONWorkerContribution[],
+    promiseConstructor?: PromiseConstructor ): LanguageService {
   const promise = promiseConstructor || Promise;
 
   const schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
