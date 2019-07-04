@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { JSONSchemaService, CustomSchemaProvider } from './services/jsonSchemaService';
-import { TextDocument, Position, CompletionList, Diagnostic } from 'vscode-languageserver-types';
+import { TextDocument, Position, CompletionList, Diagnostic, Hover, SymbolInformation, DocumentSymbol, CompletionItem, TextEdit } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema04';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLCompletion } from './services/yamlCompletion';
@@ -108,16 +108,16 @@ export interface CustomFormatterOptions {
 }
 
 export interface LanguageService {
-  configure(settings): void;
+  configure(settings: LanguageSettings): void;
   registerCustomSchemaProvider(schemaProvider: CustomSchemaProvider): void;
   doComplete(document: TextDocument, position: Position, doc): Thenable<CompletionList>;
   doValidation(jsonLanguageService: JSONLanguageService, document: TextDocument, yamlDocument, isKubernetes: boolean): Thenable<Diagnostic[]>;
-  doHover(jsonLanguageService: JSONLanguageService, document: TextDocument, position: Position, doc);
-  findDocumentSymbols(jsonLanguageService: JSONLanguageService, document: TextDocument, doc);
-  findDocumentSymbols2(jsonLanguageService: JSONLanguageService, document: TextDocument, doc);
-  doResolve(completionItem);
+  doHover(jsonLanguageService: JSONLanguageService, document: TextDocument, position: Position, doc): Thenable<Hover | null>;
+  findDocumentSymbols(jsonLanguageService: JSONLanguageService, document: TextDocument, doc): SymbolInformation[];
+  findDocumentSymbols2(jsonLanguageService: JSONLanguageService, document: TextDocument, doc): DocumentSymbol[];
+  doResolve(completionItem): Thenable<CompletionItem>;
   resetSchema(uri: string): boolean;
-  doFormat(document: TextDocument, options: CustomFormatterOptions);
+  doFormat(document: TextDocument, options: CustomFormatterOptions): TextEdit[];
 }
 
 export function getLanguageService(schemaRequestService: SchemaRequestService,
