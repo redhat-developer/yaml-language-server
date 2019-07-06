@@ -6,28 +6,30 @@
 'use strict';
 
 import { Diagnostic } from 'vscode-languageserver-types';
-import { PromiseConstructor, LanguageSettings} from '../yamlLanguageService';
+import { PromiseConstructor, LanguageSettings } from '../yamlLanguageService';
 import { LanguageService } from 'vscode-json-languageservice';
 
 export class YAMLValidation {
 
     private promise: PromiseConstructor;
     private validationEnabled: boolean;
+    private jsonLanguageService: LanguageService;
 
     private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
-    public constructor(promiseConstructor: PromiseConstructor) {
+    public constructor(promiseConstructor: PromiseConstructor, jsonLanguageService: LanguageService) {
         this.promise = promiseConstructor;
         this.validationEnabled = true;
+        this.jsonLanguageService = jsonLanguageService;
     }
 
-    public configure(shouldValidate: LanguageSettings){
+    public configure(shouldValidate: LanguageSettings) {
         if (shouldValidate) {
             this.validationEnabled = shouldValidate.validate;
         }
     }
 
-    public doValidation(jsonLanguageService: LanguageService, textDocument, yamlDocument, isKubernetes: boolean = false) {
+    public doValidation(textDocument, yamlDocument, isKubernetes: boolean = false) {
 
         if (!this.validationEnabled) {
             return this.promise.resolve([]);
@@ -35,7 +37,7 @@ export class YAMLValidation {
 
         const validationResult = [];
         for (const currentYAMLDoc of yamlDocument.documents) {
-            const validation = jsonLanguageService.doValidation(textDocument, currentYAMLDoc);
+            const validation = this.jsonLanguageService.doValidation(textDocument, currentYAMLDoc);
 
             if (currentYAMLDoc.errors.length > 0) {
                 validationResult.push(currentYAMLDoc.errors);

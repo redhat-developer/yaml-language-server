@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { getLanguageService } from '../src/languageservice/yamlLanguageService';
-import { schemaRequestService, workspaceContext, createJSONLanguageService, setupTextDocument, TEST_URI }  from './utils/testHelper';
+import { schemaRequestService, workspaceContext, setupTextDocument, TEST_URI }  from './utils/testHelper';
 import { parse as parseYAML } from '../src/languageservice/parser/yamlParser07';
 import { createExpectedSymbolInformation, createExpectedDocumentSymbol } from './utils/verifyError';
 import { DocumentSymbol, SymbolKind } from 'vscode-languageserver-types';
@@ -13,13 +13,12 @@ const languageService = getLanguageService(schemaRequestService, workspaceContex
 
 suite('Document Symbols Tests', () => {
 
-    describe('Document Symbols Tests (Non Hierarchical)', function (){
+    describe('Document Symbols Tests (Non Hierarchical)', function () {
 
-        function parseNonHierarchicalSetup(content: string){
+        function parseNonHierarchicalSetup(content: string) {
             const testTextDocument = setupTextDocument(content);
             const jsonDocument = parseYAML(testTextDocument.getText());
-            const jsonLanguageService = createJSONLanguageService();
-            return languageService.findDocumentSymbols(jsonLanguageService, testTextDocument, jsonDocument);
+            return languageService.findDocumentSymbols(testTextDocument, jsonDocument);
         }
 
         it('Document is empty', done => {
@@ -161,13 +160,12 @@ suite('Document Symbols Tests', () => {
 
     });
 
-    describe('Document Symbols Tests (Hierarchical)', function (){
+    describe('Document Symbols Tests (Hierarchical)', function () {
 
         function parseHierarchicalSetup(content: string): DocumentSymbol[] {
             const testTextDocument = setupTextDocument(content);
             const jsonDocument = parseYAML(testTextDocument.getText());
-            const jsonLanguageService = createJSONLanguageService();
-            return languageService.findDocumentSymbols2(jsonLanguageService, testTextDocument, jsonDocument);
+            return languageService.findDocumentSymbols2(testTextDocument, jsonDocument);
         }
 
         it('Document is empty', done => {

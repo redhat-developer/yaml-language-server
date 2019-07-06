@@ -34,7 +34,7 @@ export class YAMLCompletion {
         this.completion = true;
     }
 
-    public configure(languageSettings: LanguageSettings, customTags: Array<String>){
+    public configure(languageSettings: LanguageSettings, customTags: Array<String>) {
         if (languageSettings) {
             this.completion = languageSettings.completion;
         }
@@ -65,12 +65,12 @@ export class YAMLCompletion {
         }
 
         const offset = document.offsetAt(position);
-        if (document.getText()[offset] === ':'){
+        if (document.getText()[offset] === ':') {
             return Promise.resolve(result);
         }
 
         const currentDoc = matchOffsetToDocument(offset, doc);
-        if (currentDoc === null){
+        if (currentDoc === null) {
             return Promise.resolve(result);
         }
         const currentDocIndex = doc.documents.indexOf(currentDoc);
@@ -82,7 +82,7 @@ export class YAMLCompletion {
         const currentWord = this.getCurrentWord(document, offset);
 
         let overwriteRange = null;
-        if (node && node.type === 'null'){
+        if (node && node.type === 'null') {
             const nodeStartPos = document.positionAt(node.start);
             nodeStartPos.character += 1;
             const nodeEndPos = document.positionAt(node.end);
@@ -98,7 +98,7 @@ export class YAMLCompletion {
             overwriteRange = Range.create(document.positionAt(overwriteStart), position);
         }
 
-        const proposed: { [key: string]: CompletionItem } = {};
+        const proposed: { [key: string]: CompletionItem } = { };
         const collector: CompletionsCollector = {
             add: (suggestion: CompletionItem) => {
                 const existing = proposed[suggestion.label];
@@ -131,7 +131,7 @@ export class YAMLCompletion {
 
         return this.schemaService.getSchemaForResource(document.uri).then(schema => {
 
-            if (!schema){
+            if (!schema) {
                 return Promise.resolve(result);
             }
             const newSchema = schema;
@@ -146,10 +146,10 @@ export class YAMLCompletion {
             if (node) {
 
                 if (node.type === 'string') {
-                    const stringNode = <Parser.StringASTNode>node;
+                    const stringNode = <Parser.StringASTNode> node;
                     if (stringNode.isKey) {
-                        addValue = !(node.parent && ((<Parser.PropertyASTNode>node.parent).value));
-                        currentProperty = node.parent ? <Parser.PropertyASTNode>node.parent : null;
+                        addValue = !(node.parent && ((<Parser.PropertyASTNode> node.parent).value));
+                        currentProperty = node.parent ? <Parser.PropertyASTNode> node.parent : null;
                         currentKey = document.getText().substring(node.start + 1, node.end - 1);
                         if (node.parent) {
                             node = node.parent.parent;
@@ -161,7 +161,7 @@ export class YAMLCompletion {
             // proposals for properties
             if (node && node.type === 'object') {
                 // don't suggest properties that are already present
-                const properties = (<Parser.ObjectASTNode>node).properties;
+                const properties = (<Parser.ObjectASTNode> node).properties;
                 properties.forEach(p => {
                     if (!currentProperty || currentProperty !== p) {
                         proposed[p.key.value] = CompletionItem.create('__');
@@ -257,17 +257,17 @@ export class YAMLCompletion {
             node = node.parent;
         }
 
-        if (node && node.type === 'null'){
+        if (node && node.type === 'null') {
             const nodeParent = node.parent;
 
             /*
              * This is going to be an object for some reason and we need to find the property
              * Its an issue with the null node
              */
-            if (nodeParent && nodeParent.type === 'object'){
-                for (const prop in nodeParent['properties']){
+            if (nodeParent && nodeParent.type === 'object') {
+                for (const prop in nodeParent['properties']) {
                     const currNode = nodeParent['properties'][prop];
-                    if (currNode.key && currNode.key.location === node.location){
+                    if (currNode.key && currNode.key.location === node.location) {
                         node = currNode;
                     }
                 }
@@ -279,8 +279,8 @@ export class YAMLCompletion {
             return;
         }
 
-        if ((node.type === 'property') && offset > (<Parser.PropertyASTNode>node).colonOffset) {
-            const propertyNode = <Parser.PropertyASTNode>node;
+        if ((node.type === 'property') && offset > (<Parser.PropertyASTNode> node).colonOffset) {
+            const propertyNode = <Parser.PropertyASTNode> node;
             const valueNode = propertyNode.value;
             if (valueNode && offset > valueNode.end) {
                 return; // we are past the value node
@@ -343,10 +343,10 @@ export class YAMLCompletion {
             if (node.type === 'string' || node.type === 'number' || node.type === 'boolean' || node.type === 'null') {
                 node = node.parent;
             }
-            if ((node.type === 'property') && offset > (<Parser.PropertyASTNode>node).colonOffset) {
-                const parentKey = (<Parser.PropertyASTNode>node).key.value;
+            if ((node.type === 'property') && offset > (<Parser.PropertyASTNode> node).colonOffset) {
+                const parentKey = (<Parser.PropertyASTNode> node).key.value;
 
-                const valueNode = (<Parser.PropertyASTNode>node).value;
+                const valueNode = (<Parser.PropertyASTNode> node).value;
                 if (!valueNode || offset <= valueNode.end) {
                     const location = node.parent.getPath();
                     this.contributions.forEach(contribution => {
@@ -370,7 +370,7 @@ export class YAMLCompletion {
     }
 
     private addSchemaValueCompletions(schema: JSONSchema, collector: CompletionsCollector, separatorAfter: string, forArrayItem = false): void {
-        const types: { [type: string]: boolean } = {};
+        const types: { [type: string]: boolean } = { };
         this.addSchemaValueCompletionsCore(schema, collector, types, separatorAfter, forArrayItem);
         if (types['boolean']) {
             this.addBooleanValueCompletion(true, collector, separatorAfter);
@@ -521,7 +521,7 @@ export class YAMLCompletion {
     private getSuggestionKind(type: any): CompletionItemKind {
         if (Array.isArray(type)) {
             // tslint:disable-next-line: no-any
-            const array = <any[]>type;
+            const array = <any[]> type;
             type = array.length > 0 ? array[0] : null;
         }
         if (!type) {
