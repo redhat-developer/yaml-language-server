@@ -17,24 +17,18 @@ const fileMatch = ['*.yml', '*.yaml'];
 const languageSettingsSetup = new ServiceSetup()
     .withHover()
     .withSchemaFileMatch({ uri: bowerURI, fileMatch: fileMatch });
-const languageService = configureLanguageService(
-    languageSettingsSetup.languageSettings
-);
 
 suite('Hover Tests', () => {
     describe('Hover', function () {
         function parseSetup(content: string, position, schemaURI: string) {
             const testTextDocument = setupTextDocument(content);
             const jsonDocument = parse(testTextDocument.getText());
-            const jsonLanguageService = createJSONLanguageService();
-            jsonLanguageService.configure({
-                schemas: [{
-                    fileMatch,
-                    uri: schemaURI
-                }]
-            });
+            languageSettingsSetup.languageSettings.schemas = [{
+                fileMatch,
+                uri: schemaURI
+            }];
+            const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
             return languageService.doHover(
-                jsonLanguageService,
                 testTextDocument,
                 testTextDocument.positionAt(position),
                 jsonDocument

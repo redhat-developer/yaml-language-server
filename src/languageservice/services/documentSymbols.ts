@@ -12,7 +12,13 @@ import { LanguageService } from 'vscode-json-languageservice';
 
 export class YAMLDocumentSymbols {
 
-    public findDocumentSymbols(jsonLanguageService: LanguageService, document: TextDocument, doc: Parser.JSONDocument): SymbolInformation[] {
+    private jsonLanguageService: LanguageService;
+
+    constructor(jsonLanguageService: LanguageService) {
+        this.jsonLanguageService = jsonLanguageService;
+    }
+
+    public findDocumentSymbols(document: TextDocument, doc: Parser.JSONDocument): SymbolInformation[] {
 
         if (!doc || doc['documents'].length === 0) {
             return null;
@@ -21,14 +27,14 @@ export class YAMLDocumentSymbols {
         let results = [];
         for (const yamlDoc of doc['documents']) {
             if (yamlDoc.root) {
-                results = results.concat(jsonLanguageService.findDocumentSymbols(document, yamlDoc));
+                results = results.concat(this.jsonLanguageService.findDocumentSymbols(document, yamlDoc));
             }
         }
 
         return results;
     }
 
-    public findHierarchicalDocumentSymbols(jsonLanguageService: LanguageService, document: TextDocument, doc: Parser.JSONDocument): DocumentSymbol[] {
+    public findHierarchicalDocumentSymbols(document: TextDocument, doc: Parser.JSONDocument): DocumentSymbol[] {
 
         if (!doc || doc['documents'].length === 0) {
             return null;
@@ -37,7 +43,7 @@ export class YAMLDocumentSymbols {
         let results = [];
         for (const yamlDoc of doc['documents']) {
             if (yamlDoc.root) {
-                results = results.concat(jsonLanguageService.findDocumentSymbols2(document, yamlDoc));
+                results = results.concat(this.jsonLanguageService.findDocumentSymbols2(document, yamlDoc));
             }
         }
 

@@ -20,7 +20,6 @@ import { CustomSchemaProvider, FilePatternAssociation } from './languageservice/
 import { parse as parseYAML } from './languageservice/parser/yamlParser04';
 import { parse as parseYAML2 } from './languageservice/parser/yamlParser07';
 import { JSONSchema } from './languageservice/jsonSchema04';
-import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';
 import { SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest } from './requestTypes';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
 import { isRelativePath, relativeToAbsolutePath } from './languageservice/utils/paths';
@@ -304,7 +303,7 @@ function validateTextDocument(textDocument: TextDocument): void {
     }
 
     const yamlDocument = parseYAML2(textDocument.getText(), customTags);
-    customLanguageService.doValidation(jsonLanguageService, textDocument, yamlDocument, isKubernetes(textDocument))
+    customLanguageService.doValidation(textDocument, yamlDocument, isKubernetes(textDocument))
                          .then(function (diagnosticResults) {
         const diagnostics = [];
         for (const diagnosticItem in diagnosticResults) {
@@ -338,11 +337,7 @@ documents.listen(connection);
 
 const schemaRequestService = schemaRequestHandler.bind(this, connection);
 
-export let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
-export let jsonLanguageService = getJSONLanguageService({
-    schemaRequestService,
-    workspaceContext
-});
+export const customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
 
 /***********************
  * Connection listeners
@@ -443,12 +438,6 @@ connection.onDidChangeConfiguration(change => {
         schemaConfigurationSettings.push(schemaObj);
     }
 
-    jsonLanguageService.configure({
-        schemas: schemaConfigurationSettings,
-        validate: settings.yaml.validate,
-        allowComments: true
-    });
-
     setSchemaStoreSettingsIfNotSet();
     updateConfiguration();
 
@@ -485,7 +474,6 @@ connection.onDidChangeWatchedFiles(change => {
 
     change.changes.forEach(c => {
         if (customLanguageService.resetSchema(c.uri)) {
-            jsonLanguageService.resetSchema(c.uri);
             hasChanges = true;
         }
     });
@@ -603,7 +591,7 @@ connection.onHover(textDocumentPositionParams => {
     }
 
     const jsonDocument = parseYAML2(document.getText());
-    return customLanguageService.doHover(jsonLanguageService, document, textDocumentPositionParams.position, jsonDocument);
+    return customLanguageService.doHover(document, textDocumentPositionParams.position, jsonDocument);
 });
 
 /**
@@ -619,9 +607,9 @@ connection.onDocumentSymbol(documentSymbolParams => {
 
     const jsonDocument = parseYAML2(document.getText());
     if (hierarchicalDocumentSymbolSupport) {
-        return customLanguageService.findDocumentSymbols2(jsonLanguageService, document, jsonDocument);
+        return customLanguageService.findDocumentSymbols2(document, jsonDocument);
     } else {
-        return customLanguageService.findDocumentSymbols(jsonLanguageService, document, jsonDocument);
+        return customLanguageService.findDocumentSymbols(document, jsonDocument);
     }
 
 });

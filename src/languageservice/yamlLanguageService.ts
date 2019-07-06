@@ -12,7 +12,7 @@ import { YAMLCompletion } from './services/yamlCompletion';
 import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
-import { LanguageService as JSONLanguageService, JSONWorkerContribution } from 'vscode-json-languageservice';
+import { LanguageService as JSONLanguageService, getLanguageService as getJSONLanguageService, JSONWorkerContribution } from 'vscode-json-languageservice';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
@@ -111,10 +111,10 @@ export interface LanguageService {
   configure(settings: LanguageSettings): void;
   registerCustomSchemaProvider(schemaProvider: CustomSchemaProvider): void;
   doComplete(document: TextDocument, position: Position, doc): Thenable<CompletionList>;
-  doValidation(jsonLanguageService: JSONLanguageService, document: TextDocument, yamlDocument, isKubernetes: boolean): Thenable<Diagnostic[]>;
-  doHover(jsonLanguageService: JSONLanguageService, document: TextDocument, position: Position, doc): Thenable<Hover | null>;
-  findDocumentSymbols(jsonLanguageService: JSONLanguageService, document: TextDocument, doc): SymbolInformation[];
-  findDocumentSymbols2(jsonLanguageService: JSONLanguageService, document: TextDocument, doc): DocumentSymbol[];
+  doValidation(document: TextDocument, yamlDocument, isKubernetes: boolean): Thenable<Diagnostic[]>;
+  doHover(document: TextDocument, position: Position, doc): Thenable<Hover | null>;
+  findDocumentSymbols(document: TextDocument, doc): SymbolInformation[];
+  findDocumentSymbols2(document: TextDocument, doc): DocumentSymbol[];
   doResolve(completionItem): Thenable<CompletionItem>;
   resetSchema(uri: string): boolean;
   doFormat(document: TextDocument, options: CustomFormatterOptions): TextEdit[];
@@ -125,17 +125,21 @@ export function getLanguageService(schemaRequestService: SchemaRequestService,
     contributions: JSONWorkerContribution[],
     promiseConstructor?: PromiseConstructor ): LanguageService {
   const promise = promiseConstructor || Promise;
+  const jsonLanguageService = getJSONLanguageService({
+    schemaRequestService,
+    workspaceContext
+   });
 
   const schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
-
   const completer = new YAMLCompletion(schemaService, contributions, promise);
-  const hover = new YAMLHover(promise);
-  const yamlDocumentSymbols = new YAMLDocumentSymbols();
-  const yamlValidation = new YAMLValidation(promise);
+  const hover = new YAMLHover(promise, jsonLanguageService);
+  const yamlDocumentSymbols = new YAMLDocumentSymbols(jsonLanguageService);
+  const yamlValidation = new YAMLValidation(promise, jsonLanguageService);
   const formatter = new YAMLFormatter();
 
   return {
-      configure: settings => {
+        configure: settings => {
+        jsonLanguageService.configure(settings);
         schemaService.clearExternalSchemas();
         if (settings.schemas) {
           settings.schemas.forEach(settings => {
@@ -157,7 +161,11 @@ export function getLanguageService(schemaRequestService: SchemaRequestService,
       doHover: hover.doHover.bind(hover),
       findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols),
       findDocumentSymbols2: yamlDocumentSymbols.findHierarchicalDocumentSymbols.bind(yamlDocumentSymbols),
-      resetSchema: (uri: string) => schemaService.onResourceChange(uri),
+      resetSchema: (uri: string) => {
+          jsonLanguageService.resetSchema(uri);
+          return  schemaService.onResourceChange(uri);
+      },
+
       doFormat: formatter.format.bind(formatter)
   };
 }
