@@ -8,17 +8,15 @@
 
 import {
     createConnection, IConnection, TextDocuments, TextDocument, InitializeParams, InitializeResult,
-    Disposable, Position, ProposedFeatures, CompletionList, DocumentRangeFormattingRequest, ClientCapabilities, WorkspaceFolder
+    Disposable, ProposedFeatures, CompletionList, DocumentRangeFormattingRequest, ClientCapabilities, WorkspaceFolder
 } from 'vscode-languageserver';
 
 import { xhr, XHRResponse, configure as configureHttpRequests } from 'request-light';
 import * as URL from 'url';
-import { getLineOffsets, removeDuplicatesObj } from './languageservice/utils/arrUtils';
+import { removeDuplicatesObj } from './languageservice/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions, WorkspaceContextService } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
 import { CustomSchemaProvider, FilePatternAssociation } from './languageservice/services/jsonSchemaService';
-import { parse as parseYAML } from './languageservice/parser/yamlParser04';
-import { parse as parseYAML2 } from './languageservice/parser/yamlParser07';
 import { JSONSchema } from './languageservice/jsonSchema04';
 import { SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest } from './requestTypes';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
@@ -40,10 +38,6 @@ const workspaceContext: WorkspaceContextService = {
     resolveRelativePath: (relativePath: string, resource: string) =>
         URL.resolve(resource, relativePath)
 };
-
-function is_EOL(c: number) {
-    return (c === 0x0A/* LF */) || (c === 0x0D/* CR */);
-}
 
 /********************
  * Helper interfaces
@@ -302,8 +296,7 @@ function validateTextDocument(textDocument: TextDocument): void {
         return;
     }
 
-    const yamlDocument = parseYAML2(textDocument.getText(), customTags);
-    customLanguageService.doValidation(textDocument, yamlDocument, isKubernetes(textDocument))
+       customLanguageService.doValidation(textDocument, isKubernetes(textDocument))
                          .then(function (diagnosticResults) {
         const diagnostics = [];
         for (const diagnosticItem in diagnosticResults) {
@@ -498,80 +491,8 @@ connection.onCompletion(textDocumentPosition => {
     if (!textDocument) {
         return Promise.resolve(result);
     }
-
-    const completionFix = completionHelper(textDocument, textDocumentPosition.position);
-    const newText = completionFix.newText;
-    const jsonDocument = parseYAML(newText);
-    setKubernetesParserOption(jsonDocument.documents, isKubernetes(textDocument));
-    return customLanguageService.doComplete(textDocument, textDocumentPosition.position, jsonDocument);
+    return customLanguageService.doComplete(textDocument, textDocumentPosition.position, isKubernetes(textDocument));
 });
-
-/**
- * Called by onCompletion
- * Corrects simple syntax mistakes to load possible nodes even if a semicolon is missing
- */
-function completionHelper(document: TextDocument, textDocumentPosition: Position) {
-    // Get the string we are looking at via a substring
-    const linePos = textDocumentPosition.line;
-    const position = textDocumentPosition;
-    const lineOffset = getLineOffsets(document.getText());
-    const start = lineOffset[linePos]; // Start of where the autocompletion is happening
-    let end = 0; // End of where the autocompletion is happening
-
-    if (lineOffset[linePos + 1]) {
-        end = lineOffset[linePos + 1];
-    } else {
-        end = document.getText().length;
-    }
-
-    while (end - 1 >= 0 && is_EOL(document.getText().charCodeAt(end - 1))) {
-        end--;
-    }
-
-    const textLine = document.getText().substring(start, end);
-
-    // Check if the string we are looking at is a node
-    if (textLine.indexOf(':') === -1) {
-        // We need to add the ":" to load the nodes
-        let newText = '';
-
-        // This is for the empty line case
-        const trimmedText = textLine.trim();
-        if (trimmedText.length === 0 || (trimmedText.length === 1 && trimmedText[0] === '-')) {
-            // Add a temp node that is in the document but we don't use at all.
-            newText = document.getText().substring(0, start + textLine.length) +
-                (trimmedText[0] === '-' && !textLine.endsWith(' ') ? ' ' : '') + 'holder:\r\n' +
-                document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
-
-        // For when missing semi colon case
-        } else {
-            // Add a semicolon to the end of the current line so we can validate the node
-            newText = document.getText().substring(0, start + textLine.length) + ':\r\n' + document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
-        }
-
-        return {
-            'newText': newText,
-            'newPosition': textDocumentPosition
-        };
-    } else {
-        // All the nodes are loaded
-        position.character = position.character - 1;
-
-        return {
-            'newText': document.getText(),
-            'newPosition': position
-        };
-    }
-}
-
-// Called by onCompletion
-function setKubernetesParserOption(jsonDocuments: any, option: boolean) {
-    for (const jsonDoc in jsonDocuments) {
-        jsonDocuments[jsonDoc].configureSettings({
-            isKubernetes: option
-        });
-    }
-}
 
 /**
  * Like onCompletion, but called only for currently selected completion item
@@ -590,8 +511,7 @@ connection.onHover(textDocumentPositionParams => {
         return Promise.resolve(void 0);
     }
 
-    const jsonDocument = parseYAML2(document.getText());
-    return customLanguageService.doHover(document, textDocumentPositionParams.position, jsonDocument);
+    return customLanguageService.doHover(document, textDocumentPositionParams.position);
 });
 
 /**
@@ -605,11 +525,10 @@ connection.onDocumentSymbol(documentSymbolParams => {
         return;
     }
 
-    const jsonDocument = parseYAML2(document.getText());
     if (hierarchicalDocumentSymbolSupport) {
-        return customLanguageService.findDocumentSymbols2(document, jsonDocument);
+        return customLanguageService.findDocumentSymbols2(document);
     } else {
-        return customLanguageService.findDocumentSymbols(document, jsonDocument);
+        return customLanguageService.findDocumentSymbols(document);
     }
 
 });

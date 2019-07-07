@@ -110,11 +110,11 @@ export interface CustomFormatterOptions {
 export interface LanguageService {
   configure(settings: LanguageSettings): void;
   registerCustomSchemaProvider(schemaProvider: CustomSchemaProvider): void;
-  doComplete(document: TextDocument, position: Position, doc): Thenable<CompletionList>;
-  doValidation(document: TextDocument, yamlDocument, isKubernetes: boolean): Thenable<Diagnostic[]>;
-  doHover(document: TextDocument, position: Position, doc): Thenable<Hover | null>;
-  findDocumentSymbols(document: TextDocument, doc): SymbolInformation[];
-  findDocumentSymbols2(document: TextDocument, doc): DocumentSymbol[];
+  doComplete(document: TextDocument, position: Position, isKubernetes: boolean): Thenable<CompletionList>;
+  doValidation(document: TextDocument, isKubernetes: boolean): Thenable<Diagnostic[]>;
+  doHover(document: TextDocument, position: Position): Thenable<Hover | null>;
+  findDocumentSymbols(document: TextDocument): SymbolInformation[];
+  findDocumentSymbols2(document: TextDocument): DocumentSymbol[];
   doResolve(completionItem): Thenable<CompletionItem>;
   resetSchema(uri: string): boolean;
   doFormat(document: TextDocument, options: CustomFormatterOptions): TextEdit[];

@@ -9,6 +9,7 @@ import { PromiseConstructor, Thenable, LanguageService } from 'vscode-json-langu
 import { Hover, TextDocument, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument2 } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
+import { parse as parseYAML } from '../parser/yamlParser07';
 
 export class YAMLHover {
 
@@ -28,12 +29,12 @@ export class YAMLHover {
         }
     }
 
-    public doHover(document: TextDocument, position: Position, doc): Thenable<Hover> {
+    public doHover(document: TextDocument, position: Position): Thenable<Hover> {
 
         if (!this.shouldHover || !document) {
             return this.promise.resolve(void 0);
         }
-
+        const doc = parseYAML(document.getText());
         const offset = document.offsetAt(position);
         const currentDoc = matchOffsetToDocument2(offset, doc);
         if (currentDoc === null) {

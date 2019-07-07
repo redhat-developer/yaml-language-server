@@ -2,12 +2,12 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {binarySearch, getLineStartPositions, getPosition, insertionPointReturnValue} from '../src/languageservice/utils/documentPositionCalculator';
+import { binarySearch, getLineStartPositions, getPosition, insertionPointReturnValue } from '../src/languageservice/utils/documentPositionCalculator';
 const assert = require('assert');
 
 suite('DocumentPositionCalculator Tests', () => {
 
-        describe('binarySearch', function (){
+        describe('binarySearch', function () {
 
             it('Binary Search where we are looking for element to the left of center', () => {
 
@@ -51,7 +51,7 @@ suite('DocumentPositionCalculator Tests', () => {
 
         });
 
-        describe('getLineStartPositions', function (){
+        describe('getLineStartPositions', function () {
 
             it('getLineStartPositions with windows newline', () => {
 
@@ -75,7 +75,7 @@ suite('DocumentPositionCalculator Tests', () => {
 
         });
 
-        describe('getPosition', function (){
+        describe('getPosition', function () {
 
             it('getPosition', () => {
 
