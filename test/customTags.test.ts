@@ -2,15 +2,14 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { createJSONLanguageService, setupTextDocument, configureLanguageService }  from './utils/testHelper';
-import { parse as parseYAML } from '../src/languageservice/parser/yamlParser07';
+import { setupTextDocument, configureLanguageService }  from './utils/testHelper';
 import { ServiceSetup } from './utils/serviceSetup';
 import { createExpectedError } from './utils/verifyError';
 const assert = require('assert');
 
 const languageSettingsSetup = new ServiceSetup()
     .withValidate();
-const languageService = configureLanguageService(
+let languageService = configureLanguageService(
     languageSettingsSetup.languageSettings
 );
 
@@ -19,8 +18,9 @@ suite('Custom Tag tests Tests', () => {
 
     function parseSetup(content: string, customTags: string[]) {
         const testTextDocument = setupTextDocument(content);
-        const yDoc = parseYAML(testTextDocument.getText(), customTags);
-        return languageService.doValidation(testTextDocument, yDoc, false);
+        languageSettingsSetup.languageSettings.customTags = customTags;
+        languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+        return languageService.doValidation(testTextDocument, false);
     }
 
     describe('Test that validation does not throw errors', function () {

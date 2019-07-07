@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { equals } from '../src/languageservice/utils/objects';
-const assert = require('assert');
+import assert = require('assert');
 
 suite('Object Equals Tests', () => {
     describe('Equals', function () {

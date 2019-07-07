@@ -4,10 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 import { getLanguageService } from '../src/languageservice/yamlLanguageService';
 import { schemaRequestService, workspaceContext, setupTextDocument, TEST_URI }  from './utils/testHelper';
-import { parse as parseYAML } from '../src/languageservice/parser/yamlParser07';
 import { createExpectedSymbolInformation, createExpectedDocumentSymbol } from './utils/verifyError';
 import { DocumentSymbol, SymbolKind } from 'vscode-languageserver-types';
-const assert = require('assert');
+import assert = require('assert');
 
 const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
@@ -17,8 +16,7 @@ suite('Document Symbols Tests', () => {
 
         function parseNonHierarchicalSetup(content: string) {
             const testTextDocument = setupTextDocument(content);
-            const jsonDocument = parseYAML(testTextDocument.getText());
-            return languageService.findDocumentSymbols(testTextDocument, jsonDocument);
+            return languageService.findDocumentSymbols(testTextDocument );
         }
 
         it('Document is empty', done => {
@@ -164,8 +162,7 @@ suite('Document Symbols Tests', () => {
 
         function parseHierarchicalSetup(content: string): DocumentSymbol[] {
             const testTextDocument = setupTextDocument(content);
-            const jsonDocument = parseYAML(testTextDocument.getText());
-            return languageService.findDocumentSymbols2(testTextDocument, jsonDocument);
+            return languageService.findDocumentSymbols2(testTextDocument);
         }
 
         it('Document is empty', done => {

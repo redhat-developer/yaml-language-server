@@ -2,13 +2,10 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { TextDocument } from 'vscode-languageserver';
-import {getLanguageService, LanguageSettings} from '../src/languageservice/yamlLanguageService';
+import { getLanguageService, LanguageSettings } from '../src/languageservice/yamlLanguageService';
 import path = require('path');
-import {schemaRequestService, workspaceContext, createJSONLanguageService}  from './utils/testHelper';
-import { parse as parseYAML2 } from '../src/languageservice/parser/yamlParser07';
-import { parse as parseYAML } from '../src/languageservice/parser/yamlParser04';
-const assert = require('assert');
+import { schemaRequestService, workspaceContext, createJSONLanguageService }  from './utils/testHelper';
+import assert = require('assert');
 
 const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 

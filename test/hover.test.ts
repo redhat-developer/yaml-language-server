@@ -3,8 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { ServiceSetup } from './utils/serviceSetup';
-import { createJSONLanguageService, configureLanguageService, setupTextDocument } from './utils/testHelper';
-import { parse } from '../src/languageservice/parser/yamlParser07';
+import { configureLanguageService, setupTextDocument } from './utils/testHelper';
 import { MarkedString } from '../src';
 import assert = require('assert');
 
@@ -22,7 +21,6 @@ suite('Hover Tests', () => {
     describe('Hover', function () {
         function parseSetup(content: string, position, schemaURI: string) {
             const testTextDocument = setupTextDocument(content);
-            const jsonDocument = parse(testTextDocument.getText());
             languageSettingsSetup.languageSettings.schemas = [{
                 fileMatch,
                 uri: schemaURI
@@ -30,8 +28,7 @@ suite('Hover Tests', () => {
             const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
             return languageService.doHover(
                 testTextDocument,
-                testTextDocument.positionAt(position),
-                jsonDocument
+                testTextDocument.positionAt(position)
             );
         }
 

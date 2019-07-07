@@ -4,10 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 import { configureLanguageService, setupTextDocument }  from './utils/testHelper';
 import { createExpectedError } from './utils/verifyError';
-import { parse as parseYAML } from '../src/languageservice/parser/yamlParser07';
 import { ServiceSetup } from './utils/serviceSetup';
 import { StringTypeError, BooleanTypeError, ArrayTypeError, ObjectTypeError, IncludeWithoutValueError, ColonMissingError, BlockMappingEntryError } from './utils/errorMessages';
-const assert = require('assert');
+import assert = require('assert');
 
 const uri = 'http://json.schemastore.org/bowerrc';
 const fileMatch = ['*.yml', '*.yaml'];
@@ -27,8 +26,7 @@ suite('Validation Tests', () => {
 
         function parseSetup(content: string) {
             const testTextDocument = setupTextDocument(content);
-            const yDoc = parseYAML(testTextDocument.getText(), languageSettingsSetup.languageSettings.customTags);
-            return languageService.doValidation(testTextDocument, yDoc, false);
+            return languageService.doValidation(testTextDocument, false);
         }
 
         //Validating basic nodes

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import { configureLanguageService, setupTextDocument } from './utils/testHelper';
 import { ServiceSetup } from './utils/serviceSetup';
-const assert = require('assert');
+import assert = require('assert');
 
 const languageSettingsSetup = new ServiceSetup()
     .withFormat();
