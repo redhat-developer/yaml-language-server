@@ -1,3 +1,8 @@
+#### 0.5.0
+- Fixed offset of undefined when hovering [#162](https://github.com/redhat-developer/yaml-language-server/issues/162)
+- Fixed relative path schema loading [#154](https://github.com/redhat-developer/yaml-language-server/issues/154)
+- Realigned features of YAML Language Server with JSON Language Server [#142](https://github.com/redhat-developer/yaml-language-server/issues/142)
+
 #### 0.4.1
 - Updated the kubernetes schema to be an upstream one [#PR](https://github.com/redhat-developer/yaml-language-server/pull/108)
 
