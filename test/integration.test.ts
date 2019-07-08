@@ -5,6 +5,7 @@
 import { getLanguageService, LanguageSettings } from '../src/languageservice/yamlLanguageService';
 import { schemaRequestService, workspaceContext, setupTextDocument }  from './utils/testHelper';
 import assert = require('assert');
+import { MarkedString } from '../src';
 
 const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
@@ -12,7 +13,8 @@ const uri = 'https://raw.githubusercontent.com/garethr/kubernetes-json-schema/ma
 const languageSettings: LanguageSettings = {
     schemas: [],
     validate: true,
-    completion: true
+    completion: true,
+    hover: true
 };
 const fileMatch = ['*.yml', '*.yaml'];
 languageSettings.schemas.push({ uri, fileMatch: fileMatch });
@@ -257,6 +259,22 @@ suite('Kubernetes Integration Tests', () => {
                     assert.notEqual(result.items.length, 0);
                 }).then(done, done);
             });
+        });
+    });
+
+    describe('yamlHover with kubernetes', function () {
+
+        function parseSetup(content: string, offset: number) {
+            const testTextDocument = setupTextDocument(content);
+            return languageService.doHover(testTextDocument, testTextDocument.positionAt(offset));
+        }
+
+        it('Hover on incomplete kubernetes document', done => {
+            const content = 'apiVersion: v1\nmetadata:\n  name: test\nkind: Deployment\nspec:\n   ';
+            const hover = parseSetup(content, 58);
+            hover.then(function (result) {
+                assert.equal((result.contents as MarkedString[]).length, 1);
+            }).then(done, done);
         });
     });
 
