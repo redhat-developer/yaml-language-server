@@ -1,7 +1,7 @@
 {
   "name": "yaml-language-server",
   "description": "YAML language server",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "author": "Gorkem Ercan (Red Hat)",
   "license": "MIT",
   "contributors": [
@@ -35,7 +35,8 @@
     "vscode-languageserver": "^5.2.1",
     "vscode-languageserver-types": "^3.14.0",
     "vscode-uri": "^2.0.2",
-    "yaml-ast-parser-custom-tags": "0.0.43"
+    "yaml-ast-parser-custom-tags": "0.0.43",
+    "js-yaml": "^3.13.1"
   },
   "devDependencies": {
     "@types/mocha": "2.2.48",
@@ -47,9 +48,9 @@
     "nyc": "^14.1.1",
     "source-map-support": "^0.5.4",
     "ts-node": "^5.0.1",
+    "tslint": "5.17.0",
     "typescript": "^3.5.1",
-    "typescript-tslint-plugin": "^0.4.0",
-    "tslint": "5.17.0"
+    "typescript-tslint-plugin": "^0.4.0"
   },
   "scripts": {
     "compile": "installServerIntoExtension ./out ./package.json ./tsconfig.json && tsc -p .",
