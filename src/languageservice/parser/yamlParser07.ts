@@ -24,13 +24,15 @@ export class SingleYAMLDocument extends JSONDocument {
     public root;
     public errors;
     public warnings;
+    public isKubernetes: boolean;
 
-    constructor(lines: number[]) {
+    constructor(lines: number[], kubernetes = false) {
         super(null, []);
         this.lines = lines;
         this.root = null;
         this.errors = [];
         this.warnings = [];
+        this.isKubernetes = kubernetes;
     }
 
     public getSchemas(schema, doc, node) {
@@ -174,8 +176,8 @@ function convertError(e: Yaml.YAMLException) {
     };
 }
 
-function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string) {
-    const _doc = new SingleYAMLDocument(startPositions);
+function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string, isKubernetes: boolean) {
+    const _doc = new SingleYAMLDocument(startPositions, isKubernetes);
     _doc.root = recursivelyBuildAst(null, yamlDoc);
 
     if (!_doc.root) {
@@ -207,11 +209,11 @@ function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], te
 }
 
 export class YAMLDocument {
-    public documents: JSONDocument[];
+    public documents: SingleYAMLDocument[];
     private errors;
     private warnings;
 
-    constructor(documents: JSONDocument[]) {
+    constructor(documents: SingleYAMLDocument[]) {
         this.documents = documents;
         this.errors = [];
         this.warnings = [];
@@ -219,7 +221,7 @@ export class YAMLDocument {
 
 }
 
-export function parse(text: string, customTags = []): YAMLDocument {
+export function parse(text: string, customTags = [], isKubernetes = false): YAMLDocument {
 
     const startPositions = getLineStartPositions(text);
     // This is documented to return a YAMLNode even though the
@@ -260,5 +262,5 @@ export function parse(text: string, customTags = []): YAMLDocument {
 
     Yaml.loadAll(text, doc => yamlDocs.push(doc), additionalOptions);
 
-    return new YAMLDocument(yamlDocs.map(doc => createJSONDocument(doc, startPositions, text)));
+    return new YAMLDocument(yamlDocs.map(doc => createJSONDocument(doc, startPositions, text, isKubernetes)));
 }

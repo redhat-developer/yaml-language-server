@@ -300,4 +300,24 @@ suite('JSON Schema', () => {
             testDone(error);
         });
     });
+
+    test('Schema with non uri registers correctly', function (testDone) {
+        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        const non_uri = 'non_uri';
+        service.registerExternalSchema(non_uri, ['*.yml', '*.yaml'], {
+           'properties': {
+              'test_node': {
+                  'description': 'my test_node description',
+                  'enum': [
+                      'test 1',
+                      'test 2'
+                  ]
+              }
+           }
+        });
+       service.getResolvedSchema(non_uri).then(schema => {
+        assert.notEqual(schema, undefined);
+        testDone();
+       });
+    });
 });
