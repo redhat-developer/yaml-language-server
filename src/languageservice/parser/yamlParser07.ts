@@ -26,13 +26,12 @@ export class SingleYAMLDocument extends JSONDocument {
     public warnings;
     public isKubernetes: boolean;
 
-    constructor(lines: number[], kubernetes = false) {
+    constructor(lines: number[]) {
         super(null, []);
         this.lines = lines;
         this.root = null;
         this.errors = [];
         this.warnings = [];
-        this.isKubernetes = kubernetes;
     }
 
     public getSchemas(schema, doc, node) {
@@ -176,8 +175,8 @@ function convertError(e: Yaml.YAMLException) {
     };
 }
 
-function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string, isKubernetes: boolean) {
-    const _doc = new SingleYAMLDocument(startPositions, isKubernetes);
+function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string) {
+    const _doc = new SingleYAMLDocument(startPositions);
     _doc.root = recursivelyBuildAst(null, yamlDoc);
 
     if (!_doc.root) {
@@ -221,7 +220,7 @@ export class YAMLDocument {
 
 }
 
-export function parse(text: string, customTags = [], isKubernetes = false): YAMLDocument {
+export function parse(text: string, customTags = []): YAMLDocument {
 
     const startPositions = getLineStartPositions(text);
     // This is documented to return a YAMLNode even though the
@@ -262,5 +261,5 @@ export function parse(text: string, customTags = [], isKubernetes = false): YAML
 
     Yaml.loadAll(text, doc => yamlDocs.push(doc), additionalOptions);
 
-    return new YAMLDocument(yamlDocs.map(doc => createJSONDocument(doc, startPositions, text, isKubernetes)));
+    return new YAMLDocument(yamlDocs.map(doc => createJSONDocument(doc, startPositions, text)));
 }
