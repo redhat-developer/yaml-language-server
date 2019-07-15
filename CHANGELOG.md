@@ -1,3 +1,6 @@
+#### 0.5.2
+- Adds in custom kubernetes schema comparator
+
 #### 0.5.1
 - Adds in missing js-yaml dependency
 
