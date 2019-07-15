@@ -41,6 +41,7 @@ export class YAMLValidation {
         const yamlDocument: YAMLDocument = parseYAML(textDocument.getText(), this.customTags);
         const validationResult: Diagnostic[] = [];
         for (const currentYAMLDoc of yamlDocument.documents) {
+            currentYAMLDoc.isKubernetes = isKubernetes;
             const validation = await this.jsonLanguageService.doValidation(textDocument, currentYAMLDoc);
             const syd = currentYAMLDoc as unknown as SingleYAMLDocument;
             if (syd.errors.length > 0) {
