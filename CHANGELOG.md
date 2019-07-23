@@ -1,3 +1,6 @@
+#### 0.5.3
+- Make prettier an optional dependency because of issues with webpack
+
 #### 0.5.2
 - Adds in custom kubernetes schema comparator
 
