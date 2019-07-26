@@ -440,7 +440,12 @@ connection.onDidChangeConfiguration(change => {
 
         if (enableFormatter) {
             if (!formatterRegistration) {
-                formatterRegistration = connection.client.register(DocumentRangeFormattingRequest.type, { documentSelector: [{ language: 'yaml' }] });
+                formatterRegistration = connection.client.register(DocumentRangeFormattingRequest.type, {
+                    documentSelector: [
+                        { language: 'yaml', scheme: 'file' },
+                        { language: 'yaml', scheme: 'untitled' }
+                    ]
+                });
             }
         } else if (formatterRegistration) {
             formatterRegistration.then(r => r.dispose());
