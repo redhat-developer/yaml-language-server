@@ -23,3 +23,7 @@ export namespace CustomSchemaRequest {
 export namespace ColorSymbolRequest {
     export const type: RequestType<{ }, { }, { }, { }> = new RequestType('json/colorSymbols');
 }
+
+export namespace WorkspaceFilesRequest {
+    export const type: RequestType<{ }, { }, { }, { }> = new RequestType('custom/workspace/yamlfiles');
+}
