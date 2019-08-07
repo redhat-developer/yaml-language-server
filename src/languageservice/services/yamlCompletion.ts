@@ -178,7 +178,7 @@ export class YAMLCompletion {
 
                 if (newSchema) {
                     // property proposals with schema
-                    this.getPropertyCompletions(newSchema, currentDoc, node, addValue, collector, separatorAfter);
+                    this.getPropertyCompletions(document, newSchema, currentDoc, node, addValue, collector, separatorAfter);
                 }
 
                 const location = node.getPath();
@@ -212,7 +212,7 @@ export class YAMLCompletion {
         });
     }
 
-    private getPropertyCompletions(schema: SchemaService.ResolvedSchema,
+private getPropertyCompletions(document: TextDocument, schema: SchemaService.ResolvedSchema,
         doc,
         node: Parser.ASTNode,
         addValue: boolean,
@@ -227,10 +227,21 @@ export class YAMLCompletion {
                     Object.keys(schemaProperties).forEach((key: string) => {
                         const propertySchema = schemaProperties[key];
                         if (!propertySchema.deprecationMessage && !propertySchema['doNotSuggest']) {
+                            let identCompensation = '';
+                            if (node.parent && node.parent.type === 'array') {
+                                // because there is a slash '-' to prevent the properties generated to have the correct
+                                // indent
+                                const sourceText = document.getText();
+                                const indexOfSlash = sourceText.lastIndexOf('-', node.start - 1);
+                                if (indexOfSlash > 0) {
+                                    // add one space to compensate the '-'
+                                    identCompensation = ' ' +  sourceText.slice(indexOfSlash + 1, node.start);
+                                }
+                            }
                             collector.add({
                                 kind: CompletionItemKind.Property,
                                 label: key,
-                                insertText: this.getInsertTextForProperty(key, propertySchema, addValue, separatorAfter),
+                                insertText: this.getInsertTextForProperty(key, propertySchema, addValue, separatorAfter, identCompensation + '\t'),
                                 insertTextFormat: InsertTextFormat.Snippet,
                                 documentation: propertySchema.description || ''
                             });
@@ -684,7 +695,8 @@ export class YAMLCompletion {
         return { insertText, insertIndex };
     }
 
-    private getInsertTextForProperty(key: string, propertySchema: JSONSchema, addValue: boolean, separatorAfter: string): string {
+    private getInsertTextForProperty(key: string, propertySchema: JSONSchema, addValue: boolean, separatorAfter: string,
+                                     ident: string = '\t'): string {
 
         const propertyText = this.getInsertTextForValue(key, '');
         // if (!addValue) {
@@ -696,14 +708,11 @@ export class YAMLCompletion {
         if (propertySchema) {
             if (propertySchema.default !== undefined) {
                 value = ` \${1:${propertySchema.default}}`;
-            }
-            else if (propertySchema.properties) {
-                return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter).insertText}`;
-            }
-            else if (propertySchema.items) {
-                return `${resultText}\n\t- ${this.getInsertTextForArray(propertySchema.items, separatorAfter).insertText}`;
-            }
-            else {
+            } else if (propertySchema.properties) {
+                return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter, ident).insertText}`;
+            } else if (propertySchema.items) {
+                return `${resultText}\n\t- ${this.getInsertTextForArray(propertySchema.items, separatorAfter, ident).insertText}`;
+            } else {
                 const type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
                 switch (type) {
                     case 'boolean':
