@@ -235,7 +235,7 @@ private getPropertyCompletions(document: TextDocument, schema: SchemaService.Res
                                 const indexOfSlash = sourceText.lastIndexOf('-', node.start - 1);
                                 if (indexOfSlash > 0) {
                                     // add one space to compensate the '-'
-                                    identCompensation = ' ' +  sourceText.slice(indexOfSlash + 1, node.start);    
+                                    identCompensation = ' ' +  sourceText.slice(indexOfSlash + 1, node.start);
                                 }
                             }
                             collector.add({
