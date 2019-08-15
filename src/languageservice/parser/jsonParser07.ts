@@ -251,7 +251,7 @@ export class ValidationResult {
         if (propertyValidationResult.enumValueMatch || !propertyValidationResult.hasProblems() && propertyValidationResult.propertiesMatches) {
             this.propertiesValueMatches++;
         }
-        if (propertyValidationResult.enumValueMatch && propertyValidationResult.enumValues && propertyValidationResult.enumValues.length === 1) {
+        if (propertyValidationResult.enumValueMatch && propertyValidationResult.enumValues) {
             this.primaryValueMatches++;
         }
     }
