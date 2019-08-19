@@ -20,18 +20,18 @@ languageService.configure(languageSettings);
 
 suite('Auto Completion Tests', () => {
 
+    function setup(content: string) {
+        return TextDocument.create('file://~/Desktop/vscode-k8s/test.yaml', 'yaml', 0, content);
+    }
+
+    function parseSetup(content: string, position) {
+        const testTextDocument = setup(content);
+        return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
+    }
+
     describe('yamlCompletion with bowerrc', function () {
 
         describe('doComplete', function () {
-
-            function setup(content: string) {
-                return TextDocument.create('file://~/Desktop/vscode-k8s/test.yaml', 'yaml', 0, content);
-            }
-
-            function parseSetup(content: string, position) {
-                const testTextDocument = setup(content);
-                return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
-            }
 
             it('Autocomplete on root node without word', done => {
                 const content = '';
@@ -142,6 +142,64 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 34);
                 completion.then(function (result) {
                     assert.notEqual(result.items.length, 0);
+                }).then(done, done);
+            });
+        });
+
+        describe('Autocompletion using custom provided schema', function () {
+            it('Test that properties that have multiple enums get auto completed properly', done => {
+                const schema = {
+                    'definitions': {
+                        'ImageBuild': {
+                            'type': 'object',
+                            'properties': {
+                                'kind': {
+                                    'type': 'string',
+                                    'enum': [
+                                        'ImageBuild',
+                                        'ImageBuilder'
+                                    ]
+                                }
+                            }
+                        },
+                        'ImageStream': {
+                            'type': 'object',
+                            'properties': {
+                                'kind': {
+                                    'type': 'string',
+                                    'enum': [
+                                        'ImageStream',
+                                        'ImageStreamBuilder'
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    'oneOf': [
+                        {
+                            '$ref': '#/definitions/ImageBuild'
+                        },
+                        {
+                            '$ref': '#/definitions/ImageStream'
+                        }
+                    ]
+                };
+                languageService.configure({
+                    schemas: [{
+                        uri: 'file://test.yaml',
+                        fileMatch: ['*.yaml', '*.yml'],
+                        schema
+                    }],
+                    completion: true
+                });
+                const content = 'kind: ';
+                const validator = parseSetup(content, 6);
+                validator.then(function (result) {
+                    assert.equal(result.items.length, 4);
+                    assert.equal(result.items[0].label, 'ImageBuild');
+                    assert.equal(result.items[1].label, 'ImageBuilder');
+                    assert.equal(result.items[2].label, 'ImageStream');
+                    assert.equal(result.items[3].label, 'ImageStreamBuilder');
                 }).then(done, done);
             });
         });

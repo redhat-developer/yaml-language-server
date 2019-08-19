@@ -211,13 +211,17 @@ export class ValidationResult {
     // tslint:disable-next-line: no-any
     public enumValues: any[];
 
-    constructor() {
+    constructor(isKubernetes: boolean) {
         this.problems = [];
         this.propertiesMatches = 0;
         this.propertiesValueMatches = 0;
         this.primaryValueMatches = 0;
         this.enumValueMatch = false;
-        this.enumValues = null;
+        if (isKubernetes) {
+            this.enumValues = [];
+        } else {
+            this.enumValues = null;
+        }
     }
 
     public hasProblems(): boolean {
@@ -239,7 +243,7 @@ export class ValidationResult {
             this.enumValues = this.enumValues.concat(validationResult.enumValues);
             for (const error of this.problems) {
                 if (error.code === ErrorCode.EnumValueMismatch) {
-                    error.message = localize('enumWarning', 'Value is not accepted. Valid values: {0}.', this.enumValues.map(v => JSON.stringify(v)).join(', '));
+                    error.message = localize('enumWarning', 'Value is not accepted. Valid values: {0}.', [...new Set(this.enumValues)].map(v => JSON.stringify(v)).join(', '));
                 }
             }
         }
@@ -344,7 +348,7 @@ export class JSONDocument {
 
     public validate(textDocument: TextDocument, schema: JSONSchema): Diagnostic[] {
         if (this.root && schema) {
-            const validationResult = new ValidationResult();
+            const validationResult = new ValidationResult(this.isKubernetes);
             validate(this.root, schema, validationResult, NoOpSchemaCollector.instance, this.isKubernetes);
             return validationResult.problems.map(p => {
                 const range = Range.create(textDocument.positionAt(p.location.offset), textDocument.positionAt(p.location.offset + p.location.length));
@@ -357,7 +361,7 @@ export class JSONDocument {
     public getMatchingSchemas(schema: JSONSchema, focusOffset: number = -1, exclude: ASTNode = null): IApplicableSchema[] {
         const matchingSchemas = new SchemaCollector(focusOffset, exclude);
         if (this.root && schema) {
-            validate(this.root, schema, new ValidationResult(), matchingSchemas, this.isKubernetes);
+            validate(this.root, schema, new ValidationResult(this.isKubernetes), matchingSchemas, this.isKubernetes);
         }
         return matchingSchemas.schemas;
     }
@@ -420,7 +424,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
         }
         const notSchema = asSchema(schema.not);
         if (notSchema) {
-            const subValidationResult = new ValidationResult();
+            const subValidationResult = new ValidationResult(isKubernetes);
             const subMatchingSchemas = matchingSchemas.newSub();
             validate(node, notSchema, subValidationResult, subMatchingSchemas, isKubernetes);
             if (!subValidationResult.hasProblems()) {
@@ -443,7 +447,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
             let bestMatch: { schema: JSONSchema; validationResult: ValidationResult; matchingSchemas: ISchemaCollector; } = null;
             for (const subSchemaRef of alternatives) {
                 const subSchema = asSchema(subSchemaRef);
-                const subValidationResult = new ValidationResult();
+                const subValidationResult = new ValidationResult(isKubernetes);
                 const subMatchingSchemas = matchingSchemas.newSub();
                 validate(node, subSchema, subValidationResult, subMatchingSchemas, isKubernetes);
                 if (!subValidationResult.hasProblems()) {
@@ -481,7 +485,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
         }
 
         const testBranch = (schema: JSONSchemaRef) => {
-            const subValidationResult = new ValidationResult();
+            const subValidationResult = new ValidationResult(isKubernetes);
             const subMatchingSchemas = matchingSchemas.newSub();
 
             validate(node, asSchema(schema), subValidationResult, subMatchingSchemas, isKubernetes);
@@ -494,7 +498,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
 
         const testCondition = (ifSchema: JSONSchemaRef, thenSchema?: JSONSchemaRef, elseSchema?: JSONSchemaRef) => {
             const subSchema = asSchema(ifSchema);
-            const subValidationResult = new ValidationResult();
+            const subValidationResult = new ValidationResult(isKubernetes);
             const subMatchingSchemas = matchingSchemas.newSub();
 
             validate(node, subSchema, subValidationResult, subMatchingSchemas, isKubernetes);
@@ -707,11 +711,12 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
             for (let index = 0; index < subSchemas.length; index++) {
                 const subSchemaRef = subSchemas[index];
                 const subSchema = asSchema(subSchemaRef);
-                const itemValidationResult = new ValidationResult();
+                const itemValidationResult = new ValidationResult(isKubernetes);
                 const item = node.items[index];
                 if (item) {
                     validate(item, subSchema, itemValidationResult, matchingSchemas, isKubernetes);
                     validationResult.mergePropertyMatch(itemValidationResult);
+                    validationResult.mergeEnumValues(itemValidationResult);
                 } else if (node.items.length >= subSchemas.length) {
                     validationResult.propertiesValueMatches++;
                 }
@@ -719,10 +724,11 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
             if (node.items.length > subSchemas.length) {
                 if (typeof schema.additionalItems === 'object') {
                     for (let i = subSchemas.length; i < node.items.length; i++) {
-                        const itemValidationResult = new ValidationResult();
+                        const itemValidationResult = new ValidationResult(isKubernetes);
 // tslint:disable-next-line: no-any
                         validate(node.items[i], <any>schema.additionalItems, itemValidationResult, matchingSchemas, isKubernetes);
                         validationResult.mergePropertyMatch(itemValidationResult);
+                        validationResult.mergeEnumValues(itemValidationResult);
                     }
                 } else if (schema.additionalItems === false) {
                     validationResult.problems.push({
@@ -736,9 +742,10 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
             const itemSchema = asSchema(schema.items);
             if (itemSchema) {
                 for (const item of node.items) {
-                    const itemValidationResult = new ValidationResult();
+                    const itemValidationResult = new ValidationResult(isKubernetes);
                     validate(item, itemSchema, itemValidationResult, matchingSchemas, isKubernetes);
                     validationResult.mergePropertyMatch(itemValidationResult);
+                    validationResult.mergeEnumValues(itemValidationResult);
                 }
             }
         }
@@ -746,7 +753,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
         const containsSchema = asSchema(schema.contains);
         if (containsSchema) {
             const doesContain = node.items.some(item => {
-                const itemValidationResult = new ValidationResult();
+                const itemValidationResult = new ValidationResult(isKubernetes);
                 validate(item, containsSchema, itemValidationResult, NoOpSchemaCollector.instance, isKubernetes);
                 return !itemValidationResult.hasProblems();
             });
@@ -841,9 +848,10 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
                             validationResult.propertiesValueMatches++;
                         }
                     } else {
-                        const propertyValidationResult = new ValidationResult();
+                        const propertyValidationResult = new ValidationResult(isKubernetes);
                         validate(child, propertySchema, propertyValidationResult, matchingSchemas, isKubernetes);
                         validationResult.mergePropertyMatch(propertyValidationResult);
+                        validationResult.mergeEnumValues(propertyValidationResult);
                     }
                 }
 
@@ -872,9 +880,10 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
                                     validationResult.propertiesValueMatches++;
                                 }
                             } else {
-                                const propertyValidationResult = new ValidationResult();
+                                const propertyValidationResult = new ValidationResult(isKubernetes);
                                 validate(child, propertySchema, propertyValidationResult, matchingSchemas, isKubernetes);
                                 validationResult.mergePropertyMatch(propertyValidationResult);
+                                validationResult.mergeEnumValues(propertyValidationResult);
                             }
                         }
                     }
@@ -886,10 +895,11 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
             for (const propertyName of unprocessedProperties) {
                 const child = seenKeys[propertyName];
                 if (child) {
-                    const propertyValidationResult = new ValidationResult();
+                    const propertyValidationResult = new ValidationResult(isKubernetes);
 // tslint:disable-next-line: no-any
                     validate(child, <any>schema.additionalProperties, propertyValidationResult, matchingSchemas, isKubernetes);
                     validationResult.mergePropertyMatch(propertyValidationResult);
+                    validationResult.mergeEnumValues(propertyValidationResult);
                 }
             }
         } else if (schema.additionalProperties === false) {
@@ -956,9 +966,10 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
                     } else {
                         const propertySchema = asSchema(propertyDep);
                         if (propertySchema) {
-                            const propertyValidationResult = new ValidationResult();
+                            const propertyValidationResult = new ValidationResult(isKubernetes);
                             validate(node, propertySchema, propertyValidationResult, matchingSchemas, isKubernetes);
                             validationResult.mergePropertyMatch(propertyValidationResult);
+                            validationResult.mergeEnumValues(propertyValidationResult);
                         }
                     }
                 }

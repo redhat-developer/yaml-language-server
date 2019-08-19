@@ -332,5 +332,66 @@ suite('Validation Tests', () => {
             });
 
         });
+
+        describe('Test with custom schemas', function () {
+            function parseSetup(content: string) {
+                const testTextDocument = setupTextDocument(content);
+                return languageService.doValidation(testTextDocument, true);
+            }
+
+            it('Test that properties that match multiple enums get validated properly', done => {
+                const schema = {
+                    'definitions': {
+                        'ImageStreamImport': {
+                            'type': 'object',
+                            'properties': {
+                                'kind': {
+                                    'type': 'string',
+                                    'enum': [
+                                        'ImageStreamImport'
+                                    ]
+                                }
+                            }
+                        },
+                        'ImageStreamLayers': {
+                            'type': 'object',
+                            'properties': {
+                                'kind': {
+                                    'type': 'string',
+                                    'enum': [
+                                        'ImageStreamLayers'
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    'oneOf': [
+                        {
+                            '$ref': '#/definitions/ImageStreamImport'
+                        },
+                        {
+                            '$ref': '#/definitions/ImageStreamLayers'
+                        }
+                    ]
+                };
+                languageService.configure({
+                    schemas: [{
+                        uri: 'file://test.yaml',
+                        fileMatch: ['*.yaml', '*.yml'],
+                        schema
+                    }],
+                    validate: true,
+                    isKubernetes: true
+                });
+                const content = 'kind: ';
+                const validator = parseSetup(content);
+                validator.then(function (result) {
+                    assert.equal(result.length, 2);
+                    // tslint:disable-next-line:quotemark
+                    assert.equal(result[1].message, `Value is not accepted. Valid values: "ImageStreamImport", "ImageStreamLayers".`);
+                }).then(done, done);
+            });
+
+        });
     });
 });
