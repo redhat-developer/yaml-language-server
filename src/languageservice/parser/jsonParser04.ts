@@ -926,7 +926,7 @@ export class ValidationResult {
         if (propertyValidationResult.enumValueMatch || !this.hasProblems() && propertyValidationResult.propertiesMatches) {
             this.propertiesValueMatches++;
         }
-        if (propertyValidationResult.enumValueMatch && propertyValidationResult.enumValues && propertyValidationResult.enumValues.length === 1) {
+        if (propertyValidationResult.enumValueMatch && propertyValidationResult.enumValues) {
             this.primaryValueMatches++;
         }
     }
@@ -950,7 +950,7 @@ export class ValidationResult {
 
     public compareKubernetes(other: ValidationResult): number {
         const hasProblems = this.hasProblems();
-        if (this.propertiesMatches !== other.propertiesMatches){
+        if (this.propertiesMatches !== other.propertiesMatches) {
             return this.propertiesMatches - other.propertiesMatches;
         }
         if (this.enumValueMatch !== other.enumValueMatch) {
