@@ -1,3 +1,10 @@
+#### 0.5.4
+- Fix for autocompletion not working when there are multiple enums available
+- Fix for showing the correct validation when a key has an associated null value for kubernetes
+- Add Eclipse Wild Web Developer as client
+- Fix for Array item properties being created with the wrong indent
+- Update of various dependencies
+
 #### 0.5.3
 - Make prettier an optional dependency because of issues with webpack
 
