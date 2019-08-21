@@ -342,7 +342,11 @@ export const customLanguageService = getCustomLanguageService(schemaRequestServi
  */
 connection.onInitialize((params: InitializeParams): InitializeResult => {
     capabilities = params.capabilities;
-    workspaceRoot = URI.parse(params.rootUri);
+
+    // Only try to parse the workspace root if its not null. Otherwise initialize will fail
+    if (params.rootUri) {
+        workspaceRoot = URI.parse(params.rootUri);
+    }
     workspaceFolders = params.workspaceFolders;
     hierarchicalDocumentSymbolSupport = !!capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport;
     clientDynamicRegisterSupport = !!capabilities.workspace.symbol.dynamicRegistration;
