@@ -1,3 +1,6 @@
+#### 0.5.5
+- Fix for language server initialize erroring when rootURI is not set
+
 #### 0.5.4
 - Fix for autocompletion not working when there are multiple enums available
 - Fix for showing the correct validation when a key has an associated null value for kubernetes
