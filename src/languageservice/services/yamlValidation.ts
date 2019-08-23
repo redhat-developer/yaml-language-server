@@ -10,6 +10,7 @@ import { PromiseConstructor, LanguageSettings } from '../yamlLanguageService';
 import { LanguageService } from 'vscode-json-languageservice';
 import { parse as parseYAML, YAMLDocument } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser04';
+import { CustomSchemaProvider } from './jsonSchemaService';
 
 export class YAMLValidation {
 
@@ -17,6 +18,7 @@ export class YAMLValidation {
     private validationEnabled: boolean;
     private jsonLanguageService: LanguageService;
     private customTags: String[];
+    public customSchemaProvider: CustomSchemaProvider = null;
 
     private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
@@ -42,6 +44,19 @@ export class YAMLValidation {
         const validationResult: Diagnostic[] = [];
         for (const currentYAMLDoc of yamlDocument.documents) {
             currentYAMLDoc.isKubernetes = isKubernetes;
+
+            if (this.customSchemaProvider) {
+                const uri = await this.customSchemaProvider(textDocument.uri);
+                this.jsonLanguageService.configure({
+                    validate: true,
+                    schemas: [
+                        {
+                            fileMatch: ['*.yaml', '*.yml'],
+                            uri: uri
+                        }
+                    ]
+                });
+            }
             const validation = await this.jsonLanguageService.doValidation(textDocument, currentYAMLDoc);
             const syd = currentYAMLDoc as unknown as SingleYAMLDocument;
             if (syd.errors.length > 0) {

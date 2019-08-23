@@ -154,6 +154,8 @@ export function getLanguageService(schemaRequestService: SchemaRequestService,
       },
       registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
         schemaService.registerCustomSchemaProvider(schemaProvider);
+        hover.customSchemaProvider = schemaProvider;
+        yamlValidation.customSchemaProvider = schemaProvider;
       },
       doComplete: completer.doComplete.bind(completer),
       doResolve: completer.doResolve.bind(completer),
