@@ -45,14 +45,16 @@ export class YAMLHover {
 
         if (this.customSchemaProvider) {
             return this.customSchemaProvider(document.uri).then(schemaURI => {
-                this.jsonLanguageService.configure({
-                    schemas: [
-                        {
-                            fileMatch: ['*.yaml', '*.yml'],
-                            uri: schemaURI
-                        }
-                    ]
-                });
+                if (schemaURI) {
+                    this.jsonLanguageService.configure({
+                        schemas: [
+                            {
+                                fileMatch: ['*.yaml', '*.yml'],
+                                uri: schemaURI
+                            }
+                        ]
+                    });
+                }
                 return this.jsonLanguageService.doHover(document, position, currentDoc);
             });
         }
