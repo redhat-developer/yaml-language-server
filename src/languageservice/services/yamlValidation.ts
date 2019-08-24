@@ -47,15 +47,17 @@ export class YAMLValidation {
 
             if (this.customSchemaProvider) {
                 const uri = await this.customSchemaProvider(textDocument.uri);
-                this.jsonLanguageService.configure({
-                    validate: true,
-                    schemas: [
-                        {
-                            fileMatch: ['*.yaml', '*.yml'],
-                            uri: uri
-                        }
-                    ]
-                });
+                if (uri) {
+                    this.jsonLanguageService.configure({
+                        validate: true,
+                        schemas: [
+                            {
+                                fileMatch: ['*.yaml', '*.yml'],
+                                uri: uri
+                            }
+                        ]
+                    });
+                }
             }
             const validation = await this.jsonLanguageService.doValidation(textDocument, currentYAMLDoc);
             const syd = currentYAMLDoc as unknown as SingleYAMLDocument;
