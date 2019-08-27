@@ -528,7 +528,7 @@ export class JSONSchemaService implements IJSONSchemaService {
         return resolveRefs(schema, schema, schemaURL).then(_ => new ResolvedSchema(schema, resolveErrors));
     }
 
-    public getSchemaForResource(resource: string, doc): Thenable<ResolvedSchema> {
+    public getSchemaForResource(resource: string, doc = undefined): Thenable<ResolvedSchema> {
         const resolveSchema = () => {
             // check for matching file names, last to first
             for (let i = this.filePatternAssociations.length - 1; i >= 0; i--) {
