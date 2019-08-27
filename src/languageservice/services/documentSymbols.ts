@@ -8,14 +8,15 @@
 import { parse as parseYAML } from '../parser/yamlParser07';
 
 import { SymbolInformation, TextDocument, DocumentSymbol } from 'vscode-languageserver-types';
-import { LanguageService } from 'vscode-json-languageservice';
+import { JSONSchemaService } from './jsonSchemaService';
+import { JSONDocumentSymbols } from 'vscode-json-languageservice/lib/umd/services/jsonDocumentSymbols';
 
 export class YAMLDocumentSymbols {
 
-    private jsonLanguageService: LanguageService;
+    private jsonDocumentSymbols;
 
-    constructor(jsonLanguageService: LanguageService) {
-        this.jsonLanguageService = jsonLanguageService;
+    constructor(schemaService: JSONSchemaService) {
+        this.jsonDocumentSymbols = new JSONDocumentSymbols(schemaService);
     }
 
     public findDocumentSymbols(document: TextDocument): SymbolInformation[] {
@@ -28,7 +29,7 @@ export class YAMLDocumentSymbols {
         let results = [];
         for (const yamlDoc of doc['documents']) {
             if (yamlDoc.root) {
-                results = results.concat(this.jsonLanguageService.findDocumentSymbols(document, yamlDoc));
+                results = results.concat(this.jsonDocumentSymbols.findDocumentSymbols(document, yamlDoc));
             }
         }
 
@@ -44,7 +45,7 @@ export class YAMLDocumentSymbols {
         let results = [];
         for (const yamlDoc of doc['documents']) {
             if (yamlDoc.root) {
-                results = results.concat(this.jsonLanguageService.findDocumentSymbols2(document, yamlDoc));
+                results = results.concat(this.jsonDocumentSymbols.findDocumentSymbols2(document, yamlDoc));
             }
         }
 

@@ -56,7 +56,8 @@ export interface IJSONSchemaService {
     /**
      * Looks up the appropriate schema for the given URI
      */
-    getSchemaForResource(resource: string): Thenable<ResolvedSchema>;
+    // tslint:disable-next-line: no-any
+    getSchemaForResource(resource: string, document?: any): Thenable<ResolvedSchema>;
 
     /**
      * Returns all registered schema ids
@@ -527,7 +528,7 @@ export class JSONSchemaService implements IJSONSchemaService {
         return resolveRefs(schema, schema, schemaURL).then(_ => new ResolvedSchema(schema, resolveErrors));
     }
 
-    public getSchemaForResource(resource: string ): Thenable<ResolvedSchema> {
+    public getSchemaForResource(resource: string, doc): Thenable<ResolvedSchema> {
         const resolveSchema = () => {
             // check for matching file names, last to first
             for (let i = this.filePatternAssociations.length - 1; i >= 0; i--) {
