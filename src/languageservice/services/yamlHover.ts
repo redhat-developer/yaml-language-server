@@ -10,19 +10,19 @@ import { Hover, TextDocument, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument2 } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
 import { parse as parseYAML } from '../parser/yamlParser07';
-import { CustomSchemaProvider } from './jsonSchemaService';
+import { JSONSchemaService } from './jsonSchemaService';
+import { JSONHover } from 'vscode-json-languageservice/lib/umd/services/jsonHover';
 
 export class YAMLHover {
 
     private promise: PromiseConstructor;
     private shouldHover: boolean;
-    private jsonLanguageService: LanguageService;
-    public customSchemaProvider: CustomSchemaProvider = null;
+    private jsonHover;
 
-    constructor(promiseConstructor: PromiseConstructor, jsonLanguageService: LanguageService) {
+    constructor(schemaService: JSONSchemaService, promiseConstructor: PromiseConstructor) {
         this.promise = promiseConstructor || Promise;
         this.shouldHover = true;
-        this.jsonLanguageService = jsonLanguageService;
+        this.jsonHover = new JSONHover(schemaService, [], Promise);
     }
 
     public configure(languageSettings: LanguageSettings) {
@@ -43,22 +43,6 @@ export class YAMLHover {
             return this.promise.resolve(void 0);
         }
 
-        if (this.customSchemaProvider) {
-            return this.customSchemaProvider(document.uri).then(schemaURI => {
-                if (schemaURI) {
-                    this.jsonLanguageService.configure({
-                        schemas: [
-                            {
-                                fileMatch: ['*.yaml', '*.yml'],
-                                uri: schemaURI
-                            }
-                        ]
-                    });
-                }
-                return this.jsonLanguageService.doHover(document, position, currentDoc);
-            });
-        }
-
-        return this.jsonLanguageService.doHover(document, position, currentDoc);
+        return this.jsonHover.doHover(document, position, currentDoc);
     }
 }

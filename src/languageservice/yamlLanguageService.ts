@@ -125,21 +125,16 @@ export function getLanguageService(schemaRequestService: SchemaRequestService,
     contributions: JSONWorkerContribution[],
     promiseConstructor?: PromiseConstructor ): LanguageService {
   const promise = promiseConstructor || Promise;
-  const jsonLanguageService = getJSONLanguageService({
-    schemaRequestService,
-    workspaceContext
-   });
 
   const schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
   const completer = new YAMLCompletion(schemaService, contributions, promise);
-  const hover = new YAMLHover(promise, jsonLanguageService);
-  const yamlDocumentSymbols = new YAMLDocumentSymbols(jsonLanguageService);
-  const yamlValidation = new YAMLValidation(promise, jsonLanguageService);
+  const hover = new YAMLHover(schemaService, promise);
+  const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
+  const yamlValidation = new YAMLValidation(schemaService, promise);
   const formatter = new YAMLFormatter();
 
   return {
         configure: settings => {
-        jsonLanguageService.configure(settings);
         schemaService.clearExternalSchemas();
         if (settings.schemas) {
           settings.schemas.forEach(settings => {
@@ -154,8 +149,6 @@ export function getLanguageService(schemaRequestService: SchemaRequestService,
       },
       registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
         schemaService.registerCustomSchemaProvider(schemaProvider);
-        hover.customSchemaProvider = schemaProvider;
-        yamlValidation.customSchemaProvider = schemaProvider;
       },
       doComplete: completer.doComplete.bind(completer),
       doResolve: completer.doResolve.bind(completer),
@@ -163,11 +156,7 @@ export function getLanguageService(schemaRequestService: SchemaRequestService,
       doHover: hover.doHover.bind(hover),
       findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols),
       findDocumentSymbols2: yamlDocumentSymbols.findHierarchicalDocumentSymbols.bind(yamlDocumentSymbols),
-      resetSchema: (uri: string) => {
-          jsonLanguageService.resetSchema(uri);
-          return  schemaService.onResourceChange(uri);
-      },
-
+      resetSchema: (uri: string) => schemaService.onResourceChange(uri),
       doFormat: formatter.format.bind(formatter)
   };
 }

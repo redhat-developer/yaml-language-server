@@ -7,25 +7,24 @@
 
 import { Diagnostic, TextDocument } from 'vscode-languageserver-types';
 import { PromiseConstructor, LanguageSettings } from '../yamlLanguageService';
-import { LanguageService } from 'vscode-json-languageservice';
 import { parse as parseYAML, YAMLDocument } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser04';
-import { CustomSchemaProvider } from './jsonSchemaService';
+import { JSONSchemaService } from './jsonSchemaService';
+import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
 
 export class YAMLValidation {
 
     private promise: PromiseConstructor;
     private validationEnabled: boolean;
-    private jsonLanguageService: LanguageService;
     private customTags: String[];
-    public customSchemaProvider: CustomSchemaProvider = null;
+    private jsonValidation;
 
     private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
-    public constructor(promiseConstructor: PromiseConstructor, jsonLanguageService: LanguageService) {
-        this.promise = promiseConstructor;
+    public constructor(schemaService: JSONSchemaService, promiseConstructor: PromiseConstructor) {
+        this.promise = promiseConstructor || Promise;
         this.validationEnabled = true;
-        this.jsonLanguageService = jsonLanguageService;
+        this.jsonValidation = new JSONValidation(schemaService, this.promise);
     }
 
     public configure(settings: LanguageSettings) {
@@ -45,21 +44,7 @@ export class YAMLValidation {
         for (const currentYAMLDoc of yamlDocument.documents) {
             currentYAMLDoc.isKubernetes = isKubernetes;
 
-            if (this.customSchemaProvider) {
-                const uri = await this.customSchemaProvider(textDocument.uri);
-                if (uri) {
-                    this.jsonLanguageService.configure({
-                        validate: true,
-                        schemas: [
-                            {
-                                fileMatch: ['*.yaml', '*.yml'],
-                                uri: uri
-                            }
-                        ]
-                    });
-                }
-            }
-            const validation = await this.jsonLanguageService.doValidation(textDocument, currentYAMLDoc);
+            const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
             const syd = currentYAMLDoc as unknown as SingleYAMLDocument;
             if (syd.errors.length > 0) {
                 validationResult.push(...syd.errors);
