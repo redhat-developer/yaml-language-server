@@ -1,3 +1,10 @@
+#### 0.5.7
+- Fix for custom schema contributor API [#PR](https://github.com/redhat-developer/yaml-language-server/pull/177)
+- Disable range formatter in initialize [#PR](https://github.com/redhat-developer/yaml-language-server/pull/178)
+
+#### 0.5.6
+- Include the package-lock.json
+
 #### 0.5.5
 - Fix for language server initialize erroring when rootURI is not set
 
