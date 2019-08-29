@@ -357,7 +357,8 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
             completionProvider: { resolveProvider: true },
             hoverProvider: true,
             documentSymbolProvider: true,
-            documentFormattingProvider: true
+            documentFormattingProvider: true,
+            documentRangeFormattingProvider: false
         }
     };
 });
