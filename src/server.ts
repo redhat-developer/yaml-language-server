@@ -8,7 +8,7 @@
 
 import {
     createConnection, IConnection, TextDocuments, TextDocument, InitializeParams, InitializeResult,
-    Disposable, ProposedFeatures, CompletionList, DocumentRangeFormattingRequest, ClientCapabilities, WorkspaceFolder
+    Disposable, ProposedFeatures, CompletionList, ClientCapabilities, WorkspaceFolder, DocumentFormattingRequest
 } from 'vscode-languageserver';
 
 import { xhr, XHRResponse, configure as configureHttpRequests } from 'request-light';
@@ -357,7 +357,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
             completionProvider: { resolveProvider: true },
             hoverProvider: true,
             documentSymbolProvider: true,
-            documentFormattingProvider: true,
+            documentFormattingProvider: false,
             documentRangeFormattingProvider: false
         }
     };
@@ -445,10 +445,9 @@ connection.onDidChangeConfiguration(change => {
 
         if (enableFormatter) {
             if (!formatterRegistration) {
-                formatterRegistration = connection.client.register(DocumentRangeFormattingRequest.type, {
+                formatterRegistration = connection.client.register(DocumentFormattingRequest.type, {
                     documentSelector: [
-                        { language: 'yaml', scheme: 'file' },
-                        { language: 'yaml', scheme: 'untitled' }
+                        { language: 'yaml' }
                     ]
                 });
             }
