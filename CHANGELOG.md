@@ -1,3 +1,7 @@
+#### 0.5.8
+- Remove document range formatter registration [#PR](https://github.com/redhat-developer/yaml-language-server/pull/179)
+- Catch errors that happen when schema store schemas cannot be grabbed [#PR](https://github.com/redhat-developer/yaml-language-server/pull/183)
+
 #### 0.5.7
 - Fix for custom schema contributor API [#PR](https://github.com/redhat-developer/yaml-language-server/pull/177)
 - Disable range formatter in initialize [#PR](https://github.com/redhat-developer/yaml-language-server/pull/178)
