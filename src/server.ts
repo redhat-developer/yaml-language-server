@@ -136,7 +136,7 @@ function setSchemaStoreSettingsIfNotSet() {
         getSchemaStoreMatchingSchemas().then(schemaStore => {
             schemaStoreSettings = schemaStore.schemas;
             updateConfiguration();
-        });
+        }).catch((error: XHRResponse) => { });
     } else if (!schemaStoreEnabled) {
         schemaStoreSettings = [];
         updateConfiguration();
@@ -171,8 +171,6 @@ function getSchemaStoreMatchingSchemas() {
 
         return languageSettings;
 
-    }, (error: XHRResponse) => {
-        throw error;
     });
 }
 
