@@ -8,14 +8,14 @@
 import { parse as parseYAML } from '../parser/yamlParser07';
 
 import { SymbolInformation, TextDocument, DocumentSymbol } from 'vscode-languageserver-types';
-import { JSONSchemaService } from './jsonSchemaService';
+import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONDocumentSymbols } from 'vscode-json-languageservice/lib/umd/services/jsonDocumentSymbols';
 
 export class YAMLDocumentSymbols {
 
     private jsonDocumentSymbols;
 
-    constructor(schemaService: JSONSchemaService) {
+    constructor(schemaService: YAMLSchemaService) {
         this.jsonDocumentSymbols = new JSONDocumentSymbols(schemaService);
     }
 

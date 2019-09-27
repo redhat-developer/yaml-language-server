@@ -8,24 +8,25 @@
 import * as Parser from '../parser/jsonParser04';
 import { parse as parseYAML } from '../parser/yamlParser04';
 import * as Json from 'jsonc-parser';
-import * as SchemaService from './jsonSchemaService';
+import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONSchema } from '../jsonSchema04';
 import { PromiseConstructor, Thenable, JSONWorkerContribution, CompletionsCollector } from 'vscode-json-languageservice';
 import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Position, Range, TextEdit, InsertTextFormat } from 'vscode-languageserver-types';
 import * as nls from 'vscode-nls';
 import { getLineOffsets, matchOffsetToDocument, filterInvalidCustomTags } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
+import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 const localize = nls.loadMessageBundle();
 
 export class YAMLCompletion {
 
-    private schemaService: SchemaService.IJSONSchemaService;
+    private schemaService: YAMLSchemaService;
     private contributions: JSONWorkerContribution[];
     private promise: PromiseConstructor;
     private customTags: Array<String>;
     private completion: boolean;
 
-    constructor(schemaService: SchemaService.IJSONSchemaService, contributions: JSONWorkerContribution[] = [], promiseConstructor?: PromiseConstructor) {
+    constructor(schemaService: YAMLSchemaService, contributions: JSONWorkerContribution[] = [], promiseConstructor?: PromiseConstructor) {
         this.schemaService = schemaService;
         this.contributions = contributions;
         this.promise = promiseConstructor || Promise;
@@ -132,7 +133,7 @@ export class YAMLCompletion {
             this.getCustomTagValueCompletions(collector);
         }
 
-        return this.schemaService.getSchemaForResource(document.uri).then(schema => {
+        return this.schemaService.getSchemaForResource(document.uri, currentDoc).then(schema => {
 
             if (!schema) {
                 return Promise.resolve(result);
@@ -212,7 +213,7 @@ export class YAMLCompletion {
         });
     }
 
-private getPropertyCompletions(document: TextDocument, schema: SchemaService.ResolvedSchema,
+private getPropertyCompletions(document: TextDocument, schema: ResolvedSchema,
         doc,
         node: Parser.ASTNode,
         addValue: boolean,
@@ -260,7 +261,7 @@ private getPropertyCompletions(document: TextDocument, schema: SchemaService.Res
         });
     }
 
-    private getValueCompletions(schema: SchemaService.ResolvedSchema, doc, node: Parser.ASTNode, offset: number, document: TextDocument, collector: CompletionsCollector): void {
+    private getValueCompletions(schema: ResolvedSchema, doc, node: Parser.ASTNode, offset: number, document: TextDocument, collector: CompletionsCollector): void {
         let offsetForSeparator = offset;
         let parentKey: string = null;
         let valueNode: Parser.ASTNode = null;

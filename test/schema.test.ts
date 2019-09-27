@@ -1,8 +1,8 @@
 'use strict';
 
 import assert = require('assert');
-import * as SchemaService from '../src/languageservice/services/jsonSchemaService';
-import * as JsonSchema from '../src/languageservice/jsonSchema04';
+import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
+import * as JsonSchema from '../src/languageservice/jsonSchema07';
 import fs = require('fs');
 import url = require('url');
 import path = require('path');
@@ -43,7 +43,7 @@ const workspaceContext = {
 
 suite('JSON Schema', () => {
     test('Resolving $refs', function (testDone) {
-        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
         service.setSchemaContributions({
             schemas: {
                 'https://myschemastore/main': {
@@ -75,7 +75,7 @@ suite('JSON Schema', () => {
     });
 
     test('Resolving $refs 2', function (testDone) {
-        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
         service.setSchemaContributions({
             schemas: {
                 'http://json.schemastore.org/swagger-2.0': {
@@ -114,7 +114,7 @@ suite('JSON Schema', () => {
     });
 
     test('Resolving $refs 3', function (testDone) {
-        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
         service.setSchemaContributions({
             schemas: {
                 'https://myschemastore/main/schema1.json': {
@@ -164,7 +164,7 @@ suite('JSON Schema', () => {
     });
 
     test('FileSchema', function (testDone) {
-        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
         service.setSchemaContributions({
             schemas: {
@@ -195,7 +195,7 @@ suite('JSON Schema', () => {
     });
 
     test('Array FileSchema', function (testDone) {
-        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
         service.setSchemaContributions({
             schemas: {
@@ -229,7 +229,7 @@ suite('JSON Schema', () => {
     });
 
     test('Missing subschema', function (testDone) {
-        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
         service.setSchemaContributions({
             schemas: {
@@ -254,7 +254,7 @@ suite('JSON Schema', () => {
     });
 
     test('Preloaded Schema', function (testDone) {
-        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
         const id = 'https://myschemastore/test1';
         const schema: JsonSchema.JSONSchema = {
             type: 'object',
@@ -282,7 +282,7 @@ suite('JSON Schema', () => {
     });
 
     test('Null Schema', function (testDone) {
-        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
         service.getSchemaForResource('test.json').then(schema => {
             assert.equal(schema, null);
@@ -292,7 +292,7 @@ suite('JSON Schema', () => {
     });
 
     test('Schema not found', function (testDone) {
-        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
         service.loadSchema('test.json').then(schema => {
             assert.notEqual(schema.errors.length, 0);
@@ -302,7 +302,7 @@ suite('JSON Schema', () => {
     });
 
     test('Schema with non uri registers correctly', function (testDone) {
-        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
         const non_uri = 'non_uri';
         service.registerExternalSchema(non_uri, ['*.yml', '*.yaml'], {
            'properties': {

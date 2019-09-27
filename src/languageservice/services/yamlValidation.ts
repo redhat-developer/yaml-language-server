@@ -9,7 +9,7 @@ import { Diagnostic, TextDocument } from 'vscode-languageserver-types';
 import { PromiseConstructor, LanguageSettings } from '../yamlLanguageService';
 import { parse as parseYAML, YAMLDocument } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser04';
-import { JSONSchemaService } from './jsonSchemaService';
+import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
 
 export class YAMLValidation {
@@ -21,7 +21,7 @@ export class YAMLValidation {
 
     private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
-    public constructor(schemaService: JSONSchemaService, promiseConstructor: PromiseConstructor) {
+    public constructor(schemaService: YAMLSchemaService, promiseConstructor: PromiseConstructor) {
         this.promise = promiseConstructor || Promise;
         this.validationEnabled = true;
         this.jsonValidation = new JSONValidation(schemaService, this.promise);
