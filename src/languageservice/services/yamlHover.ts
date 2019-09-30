@@ -10,7 +10,7 @@ import { Hover, TextDocument, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument2 } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
 import { parse as parseYAML } from '../parser/yamlParser07';
-import { JSONSchemaService } from './jsonSchemaService';
+import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONHover } from 'vscode-json-languageservice/lib/umd/services/jsonHover';
 
 export class YAMLHover {
@@ -19,7 +19,7 @@ export class YAMLHover {
     private shouldHover: boolean;
     private jsonHover;
 
-    constructor(schemaService: JSONSchemaService, promiseConstructor: PromiseConstructor) {
+    constructor(schemaService: YAMLSchemaService, promiseConstructor: PromiseConstructor) {
         this.promise = promiseConstructor || Promise;
         this.shouldHover = true;
         this.jsonHover = new JSONHover(schemaService, [], Promise);

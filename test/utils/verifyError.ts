@@ -71,7 +71,7 @@ export function createExpectedDocumentSymbol(
     endLineSelection: number,
     endCharacterSelection: number,
     children: DocumentSymbol[] = []
-) {
+): DocumentSymbol {
     return {
         name,
         kind,

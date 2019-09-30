@@ -4,7 +4,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { JSONSchemaService, CustomSchemaProvider } from './services/jsonSchemaService';
+import { YAMLSchemaService, CustomSchemaProvider } from './services/yamlSchemaService';
 import { TextDocument, Position, CompletionList, Diagnostic, Hover, SymbolInformation, DocumentSymbol, CompletionItem, TextEdit } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema04';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
@@ -126,7 +126,7 @@ export function getLanguageService(schemaRequestService: SchemaRequestService,
     promiseConstructor?: PromiseConstructor ): LanguageService {
   const promise = promiseConstructor || Promise;
 
-  const schemaService = new JSONSchemaService(schemaRequestService, workspaceContext);
+  const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
   const completer = new YAMLCompletion(schemaService, contributions, promise);
   const hover = new YAMLHover(schemaService, promise);
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
