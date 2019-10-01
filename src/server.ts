@@ -349,7 +349,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
     }
     workspaceFolders = params.workspaceFolders;
     hierarchicalDocumentSymbolSupport = !!capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport;
-    clientDynamicRegisterSupport = !!capabilities.workspace.symbol.dynamicRegistration;
+    clientDynamicRegisterSupport = !!(capabilities.textDocument.rangeFormatting && capabilities.textDocument.rangeFormatting.dynamicRegistration);
 
     return {
         capabilities: {
