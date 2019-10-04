@@ -6,6 +6,7 @@
 'use strict';
 
 import * as Json from 'jsonc-parser';
+import * as yaml from 'js-yaml';
 import {JSONSchema, JSONSchemaMap} from '../jsonSchema04';
 import { URI } from 'vscode-uri';
 import * as Strings from '../utils/strings';
@@ -400,9 +401,17 @@ export class JSONSchemaService implements IJSONSchemaService {
 
                 let schemaContent: JSONSchema = {};
                 const jsonErrors = [];
+                let errors = [];
                 schemaContent = Json.parse(content, jsonErrors);
-                const errors = jsonErrors.length ?
-                [localize('json.schema.invalidFormat', "Unable to parse content from '{0}': {1}.", toDisplayString(url), getParseErrorMessage(jsonErrors[0]))] : [];
+                if (jsonErrors.length) {
+                    errors = [localize('json.schema.invalidFormat', "Unable to parse content from '{0}': {1}.", toDisplayString(url), getParseErrorMessage(jsonErrors[0]))];
+                    try {
+                        schemaContent = yaml.safeLoad(content);
+                        errors = [];
+                    } catch (yamlError) {
+                        errors.push(localize('json.schema.invalidFormat', "Unable to parse content from '{0}': {1}.", toDisplayString(url), yamlError));
+                    }
+                }
                 return new UnresolvedSchema(schemaContent, errors);
             },
             // tslint:disable-next-line: no-any
