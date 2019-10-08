@@ -22,6 +22,7 @@ import * as nls from 'vscode-nls';
 import { convertSimple2RegExpPattern } from '../utils/strings';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonParser07';
+import * as yaml from 'js-yaml';
 
 const localize = nls.loadMessageBundle();
 
@@ -83,6 +84,8 @@ export class YAMLSchemaService extends JSONSchemaService {
   private customSchemaProvider: CustomSchemaProvider | undefined;
   private filePatternAssociations: JSONSchemaService.FilePatternAssociation[];
   private contextService: WorkspaceContextService;
+  private customSchemaProvider: CustomSchemaProvider | undefined;
+  private requestService: SchemaRequestService;
 
   constructor(
     requestService: SchemaRequestService,
@@ -91,6 +94,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   ) {
     super(requestService, contextService, promiseConstructor);
     this.customSchemaProvider = undefined;
+    this.requestService = requestService;
   }
 
   registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider): void {
@@ -488,13 +492,59 @@ export class YAMLSchemaService extends JSONSchemaService {
     }
   }
 
+  /*
+   * Everything below here is needed because we're importing from vscode-json-languageservice umd and we need
+   * to provide a wrapper around the javascript methods we are calling since they have no type
+   */
+
   getOrAddSchemaHandle(id: string, unresolvedSchemaContent?: JSONSchema): SchemaHandle {
     return super.getOrAddSchemaHandle(id, unresolvedSchemaContent);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  loadSchema(schemaUri: string): Thenable<any> {
-    return super.loadSchema(schemaUri);
+  loadSchema(schemaUri: string): Thenable<UnresolvedSchema> {
+    const requestService = this.requestService;
+    return super.loadSchema(schemaUri).then((unresolvedJsonSchema: UnresolvedSchema) => {
+      // If json-language-server failed to parse the schema, attempt to parse it as YAML instead.
+      if (unresolvedJsonSchema.errors && unresolvedJsonSchema.schema === undefined) {
+        return requestService(schemaUri).then(
+          (content) => {
+            if (!content) {
+              const errorMessage = localize(
+                'json.schema.nocontent',
+                "Unable to load schema from '{0}': No content.",
+                toDisplayString(schemaUri)
+              );
+              return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
+            }
+
+            try {
+              const schemaContent: JSONSchema = yaml.safeLoad(content);
+              return new UnresolvedSchema(schemaContent, []);
+            } catch (yamlError) {
+              const errorMessage = localize(
+                'json.schema.invalidFormat',
+                "Unable to parse content from '{0}': {1}.",
+                toDisplayString(schemaUri),
+                yamlError
+              );
+              return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
+            }
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (error: any) => {
+            let errorMessage = error.toString();
+            const errorSplit = error.toString().split('Error: ');
+            if (errorSplit.length > 1) {
+              // more concise error message, URL and context are attached by caller anyways
+              errorMessage = errorSplit[1];
+            }
+            return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
+          }
+        );
+      }
+
+      return unresolvedJsonSchema;
+    });
   }
 
   registerExternalSchema(uri: string, filePatterns?: string[], unresolvedSchema?: JSONSchema): SchemaHandle {
@@ -521,4 +571,16 @@ export class YAMLSchemaService extends JSONSchemaService {
   onResourceChange(uri: string): boolean {
     return super.onResourceChange(uri);
   }
+}
+
+function toDisplayString(url: string): string {
+  try {
+    const uri = URI.parse(url);
+    if (uri.scheme === 'file') {
+      return uri.fsPath;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return url;
 }
