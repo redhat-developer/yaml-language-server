@@ -349,11 +349,16 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
     }
     workspaceFolders = params.workspaceFolders || [];
 
-    if (capabilities.textDocument) {
-      const { documentSymbol, rangeFormatting } = capabilities.textDocument;
-      hierarchicalDocumentSymbolSupport = !!(documentSymbol && documentSymbol.hierarchicalDocumentSymbolSupport);
-      clientDynamicRegisterSupport = !!(rangeFormatting && rangeFormatting.dynamicRegistration);
-    }
+    hierarchicalDocumentSymbolSupport = !!(
+      capabilities.textDocument &&
+      capabilities.textDocument.documentSymbol &&
+      capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport
+    );
+    clientDynamicRegisterSupport = !!(
+      capabilities.textDocument &&
+      capabilities.textDocument.rangeFormatting &&
+      capabilities.textDocument.rangeFormatting.dynamicRegistration
+    );
 
     return {
         capabilities: {
