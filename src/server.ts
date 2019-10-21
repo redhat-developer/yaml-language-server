@@ -347,9 +347,12 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
     if (params.rootUri) {
         workspaceRoot = URI.parse(params.rootUri);
     }
-    workspaceFolders = params.workspaceFolders;
-    hierarchicalDocumentSymbolSupport = !!capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport;
-    clientDynamicRegisterSupport = !!(capabilities.textDocument.rangeFormatting && capabilities.textDocument.rangeFormatting.dynamicRegistration);
+    workspaceFolders = params.workspaceFolders || [];
+
+    const { documentSymbol, rangeFormatting } = capabilities.textDocument || {};
+
+    hierarchicalDocumentSymbolSupport = !!(documentSymbol && documentSymbol.hierarchicalDocumentSymbolSupport);
+    clientDynamicRegisterSupport = !!(rangeFormatting && rangeFormatting.dynamicRegistration);
 
     return {
         capabilities: {
