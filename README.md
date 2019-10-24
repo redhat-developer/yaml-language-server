@@ -126,6 +126,7 @@ This repository only contains the server implementation. Here are some known cli
 * [ide-yaml](https://atom.io/packages/ide-yaml) for Atom editor
 * [coc-yaml](https://github.com/neoclide/coc-yaml) for [coc.nvim](https://github.com/neoclide/coc.nvim)
 * [Eclipse Wild Web Developer](https://marketplace.eclipse.org/content/eclipse-wild-web-developer-web-development-eclipse-ide) for Eclipse IDE
+* [lsp-mode](https://github.com/emacs-lsp/lsp-mode) for Emacs
 
 ## Developer Support
 
