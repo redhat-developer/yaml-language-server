@@ -1,5 +1,5 @@
 {
-	"oneOf": [
+	"schemaSequence": [
 		{
 			"$schema": "http://json-schema.org/draft-04/schema#",
 			"description": "Person object",
@@ -14,7 +14,7 @@
 					"description": "The age of this person"
 				}
 			},
-			"required":["name","age"]
+			"required": ["name","age"]
 		},
 		{
 			"$ref": "http://json.schemastore.org/bowerrc"

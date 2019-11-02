@@ -41,8 +41,10 @@ export class YAMLValidation {
         }
         const yamlDocument: YAMLDocument = parseYAML(textDocument.getText(), this.customTags);
         const validationResult: Diagnostic[] = [];
+        let index = 0;
         for (const currentYAMLDoc of yamlDocument.documents) {
             currentYAMLDoc.isKubernetes = isKubernetes;
+            currentYAMLDoc.currentDocIndex = index;
 
             const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
             const syd = currentYAMLDoc as unknown as SingleYAMLDocument;
@@ -51,6 +53,7 @@ export class YAMLValidation {
             }
 
             validationResult.push(...validation);
+            index++;
         }
 
         const foundSignatures = new Set();

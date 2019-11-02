@@ -43,6 +43,8 @@ export class YAMLHover {
             return this.promise.resolve(void 0);
         }
 
+        const currentDocIndex = doc.documents.indexOf(currentDoc);
+        currentDoc.currentDocIndex = currentDocIndex;
         return this.jsonHover.doHover(document, position, currentDoc);
     }
 }
