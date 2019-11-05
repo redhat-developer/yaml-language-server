@@ -64,7 +64,8 @@ export interface JSONSchema {
         markdownDescription?: string;
         // tslint:disable-next-line: no-any
         body?: any;
-        bodyText?: string; }[]; // VSCode extension: body: a object that will be converted to a JSON string. bodyText: text with \t and \n
+        bodyText?: string;
+    }[]; // VSCode extension: body: a object that will be converted to a JSON string. bodyText: text with \t and \n
 
     errorMessage?: string; // VSCode extension
     patternErrorMessage?: string; // VSCode extension

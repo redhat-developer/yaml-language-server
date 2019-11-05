@@ -8,7 +8,7 @@
 import { Diagnostic, TextDocument } from 'vscode-languageserver-types';
 import { PromiseConstructor, LanguageSettings } from '../yamlLanguageService';
 import { parse as parseYAML, YAMLDocument } from '../parser/yamlParser07';
-import { SingleYAMLDocument } from '../parser/yamlParser04';
+import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
 
