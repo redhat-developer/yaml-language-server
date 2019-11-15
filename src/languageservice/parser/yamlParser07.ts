@@ -25,6 +25,7 @@ export class SingleYAMLDocument extends JSONDocument {
     public errors;
     public warnings;
     public isKubernetes: boolean;
+    public currentDocIndex: number;
 
     constructor(lines: number[]) {
         super(null, []);

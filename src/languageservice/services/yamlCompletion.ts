@@ -133,6 +133,7 @@ export class YAMLCompletion {
             this.getCustomTagValueCompletions(collector);
         }
 
+        currentDoc.currentDocIndex = currentDocIndex;
         return this.schemaService.getSchemaForResource(document.uri, currentDoc).then(schema => {
 
             if (!schema) {
