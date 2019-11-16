@@ -8,12 +8,41 @@
 import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema07';
 import { SchemaRequestService, WorkspaceContextService, PromiseConstructor, Thenable } from '../yamlLanguageService';
 import { UnresolvedSchema, ResolvedSchema, JSONSchemaService,
-    SchemaDependencies, FilePatternAssociation, ISchemaContributions } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
+    SchemaDependencies, ISchemaContributions } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 
 import * as nls from 'vscode-nls';
+import { convertSimple2RegExpPattern } from '../utils/strings';
 const localize = nls.loadMessageBundle();
 
 export declare type CustomSchemaProvider = (uri: string) => Thenable<string>;
+
+export class FilePatternAssociation {
+
+    private schemas: string[];
+    private patternRegExp: RegExp;
+
+    constructor(pattern: string) {
+        try {
+            this.patternRegExp = new RegExp(convertSimple2RegExpPattern(pattern) + '$');
+        } catch (e) {
+            // invalid pattern
+            this.patternRegExp = null;
+        }
+        this.schemas = [];
+    }
+
+    public addSchema(id: string) {
+        this.schemas.push(id);
+    }
+
+    public matchesPattern(fileName: string): boolean {
+        return this.patternRegExp && this.patternRegExp.test(fileName);
+    }
+
+    public getSchemas() {
+        return this.schemas;
+    }
+}
 
 export class YAMLSchemaService extends JSONSchemaService {
 
