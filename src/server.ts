@@ -16,13 +16,12 @@ import * as URL from 'url';
 import { removeDuplicatesObj } from './languageservice/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions, WorkspaceContextService } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
-import { CustomSchemaProvider } from './languageservice/services/yamlSchemaService';
+import { CustomSchemaProvider, FilePatternAssociation } from './languageservice/services/yamlSchemaService';
 import { JSONSchema } from './languageservice/jsonSchema04';
 import { SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest } from './requestTypes';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
 import { isRelativePath, relativeToAbsolutePath } from './languageservice/utils/paths';
 import { URI } from 'vscode-uri';
-import { FilePatternAssociation } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 
 // tslint:disable-next-line: no-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
