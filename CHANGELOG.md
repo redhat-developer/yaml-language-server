@@ -1,3 +1,6 @@
+#### 0.6.1
+- Fix for setting kubernetes in yaml.schemas gives error [#202](https://github.com/redhat-developer/yaml-language-server/issues/202)
+
 #### 0.6.0
 - Fix for schema sequence custom property [#PR](https://github.com/redhat-developer/yaml-language-server/pull/197)
 - Fix for obeying the initialization specification [#PR](https://github.com/redhat-developer/yaml-language-server/pull/193)
