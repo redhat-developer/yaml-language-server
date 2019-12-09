@@ -13,6 +13,19 @@ import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
 import { LanguageService as JSONLanguageService, getLanguageService as getJSONLanguageService, JSONWorkerContribution } from 'vscode-json-languageservice';
+import { YAMLSnippetRegistry } from './services/yamlSnippetRegistry';
+
+export enum SnippetContext {
+  any = 'any',
+  scalar = 'scalar',
+  object = 'object',
+  array = 'array'
+}
+
+export interface YAMLSnippet {
+  snippet: string;
+  context: SnippetContext;
+}
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
@@ -118,6 +131,8 @@ export interface LanguageService {
   doResolve(completionItem): Thenable<CompletionItem>;
   resetSchema(uri: string): boolean;
   doFormat(document: TextDocument, options: CustomFormatterOptions): TextEdit[];
+  addSnippet(snippetTitle: string, snippet: YAMLSnippet): void;
+  removeSnippet(snippetTitle: string): void;
 }
 
 export function getLanguageService(schemaRequestService: SchemaRequestService,
@@ -126,8 +141,9 @@ export function getLanguageService(schemaRequestService: SchemaRequestService,
     promiseConstructor?: PromiseConstructor ): LanguageService {
   const promise = promiseConstructor || Promise;
 
+  const serverSideSnippetsRegistry = new YAMLSnippetRegistry();
   const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
-  const completer = new YAMLCompletion(schemaService, contributions, promise);
+  const completer = new YAMLCompletion(schemaService, serverSideSnippetsRegistry, contributions, promise);
   const hover = new YAMLHover(schemaService, promise);
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
   const yamlValidation = new YAMLValidation(schemaService, promise);
@@ -157,6 +173,8 @@ export function getLanguageService(schemaRequestService: SchemaRequestService,
       findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols),
       findDocumentSymbols2: yamlDocumentSymbols.findHierarchicalDocumentSymbols.bind(yamlDocumentSymbols),
       resetSchema: (uri: string) => schemaService.onResourceChange(uri),
-      doFormat: formatter.format.bind(formatter)
+      doFormat: formatter.format.bind(formatter),
+      addSnippet: (snippetTitle: string, snippet: YAMLSnippet) => serverSideSnippetsRegistry.addSnippet(snippetTitle, snippet),
+      removeSnippet: (snippetTitle: string) => serverSideSnippetsRegistry.removeSnippet(snippetTitle)
   };
 }

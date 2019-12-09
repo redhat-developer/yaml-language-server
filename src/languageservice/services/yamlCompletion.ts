@@ -6,16 +6,18 @@
 'use strict';
 
 import * as Parser from '../parser/jsonParser04';
-import { parse as parseYAML } from '../parser/yamlParser04';
 import * as Json from 'jsonc-parser';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONSchema } from '../jsonSchema04';
 import { PromiseConstructor, Thenable, JSONWorkerContribution, CompletionsCollector } from 'vscode-json-languageservice';
 import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, Position, Range, TextEdit, InsertTextFormat } from 'vscode-languageserver-types';
 import * as nls from 'vscode-nls';
-import { getLineOffsets, matchOffsetToDocument, filterInvalidCustomTags } from '../utils/arrUtils';
-import { LanguageSettings } from '../yamlLanguageService';
+import { matchOffsetToDocument, filterInvalidCustomTags } from '../utils/arrUtils';
+import { LanguageSettings, SnippetContext, YAMLSnippet } from '../yamlLanguageService';
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
+import { YAMLSnippetRegistry } from './yamlSnippetRegistry';
+import { determineNodeContext } from '../utils/node-contexts';
+import { completionHelper, parseFixedYAML } from '../utils/completion-utils';
 const localize = nls.loadMessageBundle();
 
 export class YAMLCompletion {
@@ -25,13 +27,15 @@ export class YAMLCompletion {
     private promise: PromiseConstructor;
     private customTags: Array<String>;
     private completion: boolean;
+    private snippetRegistry: YAMLSnippetRegistry;
 
-    constructor(schemaService: YAMLSchemaService, contributions: JSONWorkerContribution[] = [], promiseConstructor?: PromiseConstructor) {
+    constructor(schemaService: YAMLSchemaService, snippetRegistry: YAMLSnippetRegistry, contributions: JSONWorkerContribution[] = [], promiseConstructor?: PromiseConstructor) {
         this.schemaService = schemaService;
         this.contributions = contributions;
         this.promise = promiseConstructor || Promise;
         this.customTags = [];
         this.completion = true;
+        this.snippetRegistry = snippetRegistry;
     }
 
     public configure(languageSettings: LanguageSettings, customTags: Array<String>) {
@@ -63,9 +67,7 @@ export class YAMLCompletion {
         if (!this.completion) {
             return Promise.resolve(result);
         }
-        const completionFix = this.completionHelper(document, position);
-        const newText = completionFix.newText;
-        const doc = parseYAML(newText);
+        const doc = parseFixedYAML(document, position);
         this.setKubernetesParserOption(doc.documents, isKubernetes);
 
         const offset = document.offsetAt(position);
@@ -134,11 +136,20 @@ export class YAMLCompletion {
         }
 
         currentDoc.currentDocIndex = currentDocIndex;
+
         return this.schemaService.getSchemaForResource(document.uri, currentDoc).then(schema => {
 
             if (!schema) {
+                // If there is no schema then we can just get the snippets and match them on context
+                this.getAvailableSnippets(node, collector);
                 return Promise.resolve(result);
             }
+
+            /**
+             * Next we would need to check if there is a schema available. If there is then
+             * we should _technically_ get rid of the available snippets and recalculate with more
+             * context. If there isn't then we can just return our snippets as the only things available
+             */
             const newSchema = schema;
 
             // tslint:disable-next-line: no-any
@@ -214,7 +225,46 @@ export class YAMLCompletion {
         });
     }
 
-private getPropertyCompletions(document: TextDocument, schema: ResolvedSchema,
+    private getAvailableSnippets(node: Parser.ASTNode, collector: CompletionsCollector) {
+        const registeredSnippets = this.snippetRegistry.getSnippets();
+
+        const snippets = Array.from(registeredSnippets.values());
+
+        this.addSnippetForContext(snippets, SnippetContext.any, collector);
+
+        const nodeContext = determineNodeContext(node);
+        switch (nodeContext) {
+            case 'object': {
+                this.addSnippetForContext(snippets, SnippetContext.object, collector);
+                break;
+            }
+            case 'array': {
+                this.addSnippetForContext(snippets, SnippetContext.array, collector);
+                break;
+            }
+            case 'scalar': {
+                this.addSnippetForContext(snippets, SnippetContext.scalar, collector);
+                break;
+            }
+            default: {
+                // do nothing because the context isn't known
+                break;
+            }
+        }
+    }
+
+    private addSnippetForContext(snippets: YAMLSnippet[], context: SnippetContext, collector: CompletionsCollector) {
+        snippets.forEach(snip => {
+            if (snip.context === context) {
+                collector.add({
+                    label: snip.snippet.toString(),
+                    kind: CompletionItemKind.Snippet
+                } as CompletionItem);
+            }
+        });
+    }
+
+    private getPropertyCompletions(document: TextDocument, schema: ResolvedSchema,
         doc,
         node: Parser.ASTNode,
         addValue: boolean,
@@ -761,67 +811,6 @@ private getPropertyCompletions(document: TextDocument, schema: ResolvedSchema,
         // 		return '';
         // }
         return '';
-    }
-
-    /**
-     * Corrects simple syntax mistakes to load possible nodes even if a semicolon is missing
-     */
-    private completionHelper(document: TextDocument, textDocumentPosition: Position) {
-        // Get the string we are looking at via a substring
-        const linePos = textDocumentPosition.line;
-        const position = textDocumentPosition;
-        const lineOffset = getLineOffsets(document.getText());
-        const start = lineOffset[linePos]; // Start of where the autocompletion is happening
-        let end = 0; // End of where the autocompletion is happening
-
-        if (lineOffset[linePos + 1]) {
-            end = lineOffset[linePos + 1];
-        } else {
-            end = document.getText().length;
-        }
-
-        while (end - 1 >= 0 && this.is_EOL(document.getText().charCodeAt(end - 1))) {
-            end--;
-        }
-
-        const textLine = document.getText().substring(start, end);
-
-        // Check if the string we are looking at is a node
-        if (textLine.indexOf(':') === -1) {
-            // We need to add the ":" to load the nodes
-            let newText = '';
-
-            // This is for the empty line case
-            const trimmedText = textLine.trim();
-            if (trimmedText.length === 0 || (trimmedText.length === 1 && trimmedText[0] === '-')) {
-                // Add a temp node that is in the document but we don't use at all.
-                newText = document.getText().substring(0, start + textLine.length) +
-                    (trimmedText[0] === '-' && !textLine.endsWith(' ') ? ' ' : '') + 'holder:\r\n' +
-                    document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
-
-                // For when missing semi colon case
-            } else {
-                // Add a semicolon to the end of the current line so we can validate the node
-                newText = document.getText().substring(0, start + textLine.length) + ':\r\n' + document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
-            }
-
-            return {
-                'newText': newText,
-                'newPosition': textDocumentPosition
-            };
-        } else {
-            // All the nodes are loaded
-            position.character = position.character - 1;
-
-            return {
-                'newText': document.getText(),
-                'newPosition': position
-            };
-        }
-    }
-
-    private is_EOL(c: number) {
-        return (c === 0x0A/* LF */) || (c === 0x0D/* CR */);
     }
 
     // Called by onCompletion
