@@ -45,6 +45,9 @@ export class FilePatternAssociation {
 }
 
 export class YAMLSchemaService extends JSONSchemaService {
+    // To allow to use schemasById from super.
+// tslint:disable-next-line: no-any
+    [x: string]: any;
 
     private customSchemaProvider: CustomSchemaProvider | undefined;
     private filePatternAssociations: FilePatternAssociation[];
@@ -234,6 +237,26 @@ export class YAMLSchemaService extends JSONSchemaService {
         } else {
             return resolveSchema();
         }
+    }
+    /**
+     * Save a schema with schema ID and schema content.
+     * Overrides previous schemas set for that schema ID.
+     */
+    public async saveSchema(schemaId: string, schemaContent: JSONSchema): Promise<void> {
+        const id = this.normalizeId(schemaId);
+        this.getOrAddSchemaHandle(id, schemaContent);
+        return Promise.resolve(undefined);
+    }
+
+    /**
+     * Delete a schema with schema ID.
+     */
+    public async deleteSchema(schemaId: string): Promise<void> {
+        const id = this.normalizeId(schemaId);
+        if ( this.schemasById[id] ) {
+            delete this.schemasById[id];
+        }
+        return Promise.resolve(undefined);
     }
 
     /**

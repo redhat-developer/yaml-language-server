@@ -6,7 +6,7 @@
 
 import { YAMLSchemaService, CustomSchemaProvider } from './services/yamlSchemaService';
 import { TextDocument, Position, CompletionList, Diagnostic, Hover, SymbolInformation, DocumentSymbol, CompletionItem, TextEdit } from 'vscode-languageserver-types';
-import { JSONSchema } from './jsonSchema04';
+import { JSONSchema } from './jsonSchema07';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLCompletion } from './services/yamlCompletion';
 import { YAMLHover } from './services/yamlHover';

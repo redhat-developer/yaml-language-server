@@ -2,8 +2,8 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { JSONSchemaService } from '../services/jsonSchemaService';
-import { JSONSchema } from '../jsonSchema04';
+import { JSONSchema } from '../jsonSchema07';
+import { YAMLSchemaService } from '../services/yamlSchemaService';
 
 export enum MODIFICATION_ACTIONS {
     'delete',
@@ -31,7 +31,7 @@ export class SchemaModification {
     /**
      * Add content to a specified schema at a specified path
      */
-    public async addContent(schemaService: JSONSchemaService, additions: SchemaAdditions) {
+    public async addContent(schemaService: YAMLSchemaService, additions: SchemaAdditions) {
         const schema = await schemaService.getResolvedSchema(additions.schema);
         if (schema) {
             const resolvedSchemaLocation = this.resolveJSONSchemaToSection(schema.schema, additions.path);
@@ -46,7 +46,7 @@ export class SchemaModification {
     /**
      * Delete content in a specified schema at a specified path
      */
-    public async deleteContent(schemaService: JSONSchemaService, deletions: SchemaDeletions) {
+    public async deleteContent(schemaService: YAMLSchemaService, deletions: SchemaDeletions) {
         const schema = await schemaService.getResolvedSchema(deletions.schema);
         if (schema) {
             const resolvedSchemaLocation = this.resolveJSONSchemaToSection(schema.schema, deletions.path);

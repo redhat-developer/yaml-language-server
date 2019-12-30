@@ -329,8 +329,9 @@ suite('JSON Schema', () => {
         assert.notEqual(schema, undefined);
         testDone();
        });
+    });
     test('Modifying schema', async () => {
-        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
         service.setSchemaContributions({
             schemas: {
                 'https://myschemastore/main/schema1.json': {
@@ -377,7 +378,7 @@ suite('JSON Schema', () => {
     });
 
     test('Deleting schema', async () => {
-        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
         service.setSchemaContributions({
             schemas: {
                 'https://myschemastore/main/schema1.json': {
@@ -421,7 +422,7 @@ suite('JSON Schema', () => {
     });
 
     test('Modifying schema works with kubernetes resolution', async () => {
-        const service = new SchemaService.JSONSchemaService(schemaRequestServiceForURL, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
         service.registerExternalSchema(KUBERNETES_SCHEMA_URL);
 
         const schemaModification = new SchemaModification();
@@ -441,7 +442,7 @@ suite('JSON Schema', () => {
     });
 
     test('Deleting schema works with Kubernetes resolution', async () => {
-        const service = new SchemaService.JSONSchemaService(schemaRequestServiceForURL, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
         service.registerExternalSchema(KUBERNETES_SCHEMA_URL);
 
         const schemaModification = new SchemaModification();
@@ -457,7 +458,7 @@ suite('JSON Schema', () => {
     });
 
     test('Adding a brand new schema', async () => {
-        const service = new SchemaService.JSONSchemaService(schemaRequestServiceForURL, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
         service.saveSchema('hello_world', {
             enum: [
                 'test1',
@@ -470,7 +471,7 @@ suite('JSON Schema', () => {
     });
 
     test('Deleting an existing schema', async () => {
-        const service = new SchemaService.JSONSchemaService(schemaRequestServiceForURL, workspaceContext);
+        const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
         service.saveSchema('hello_world', {
             enum: [
                 'test1',
