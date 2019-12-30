@@ -22,7 +22,7 @@ import { SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, 
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
 import { isRelativePath, relativeToAbsolutePath } from './languageservice/utils/paths';
 import { URI } from 'vscode-uri';
-
+import { resolveURL } from './languageservice/utils/kubernetesResolver';
 // tslint:disable-next-line: no-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
 
@@ -236,8 +236,23 @@ function updateConfiguration() {
  * @param schema schema id
  * @param languageSettings current server settings
  */
-function configureSchemas(uri: string, fileMatch: string[], schema: any, languageSettings: LanguageSettings) {
-    uri = checkSchemaURI(uri);
+function configureSchemas(uri, fileMatch, schema, languageSettings){
+
+    uri = resolveURL(uri);
+
+    if (schema === null){
+        languageSettings.schemas.push({ uri, fileMatch: fileMatch });
+    }else {
+        languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema });
+    }
+
+    if (fileMatch.constructor === Array && uri === KUBERNETES_SCHEMA_URL){
+        fileMatch.forEach(url => {
+            specificValidatorPaths.push(url);
+        });
+    }else if (uri === KUBERNETES_SCHEMA_URL) {
+        specificValidatorPaths.push(fileMatch);
+    }
 
     if (schema === null) {
         languageSettings.schemas.push({ uri, fileMatch: fileMatch });

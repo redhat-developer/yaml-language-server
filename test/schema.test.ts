@@ -6,6 +6,9 @@ import * as JsonSchema from '../src/languageservice/jsonSchema07';
 import fs = require('fs');
 import url = require('url');
 import path = require('path');
+import { SchemaModification, MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/apis/schemaModification';
+import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/kubernetesResolver';
+import { XHRResponse, xhr } from 'request-light';
 
 const fixtureDocuments = {
     'http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json': 'deploymentTemplate.json',
@@ -39,6 +42,13 @@ const requestServiceMock = function (uri: string): Promise<string> {
 const workspaceContext = {
     resolveRelativePath: (relativePath: string, resource: string) =>
         url.resolve(resource, relativePath)
+};
+
+const schemaRequestServiceForURL = (uri: string): Thenable<string> => {
+    const headers = { 'Accept-Encoding': 'gzip, deflate' };
+    return xhr({ url: uri, followRedirects: 5, headers }).then(response =>
+        response.responseText, (error: XHRResponse) =>
+        Promise.reject(error.responseText || error.toString()));
 };
 
 suite('JSON Schema', () => {
@@ -319,5 +329,158 @@ suite('JSON Schema', () => {
         assert.notEqual(schema, undefined);
         testDone();
        });
+    test('Modifying schema', async () => {
+        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        service.setSchemaContributions({
+            schemas: {
+                'https://myschemastore/main/schema1.json': {
+                    type: 'object',
+                    properties: {
+                        apiVersion: {
+                            type: 'string',
+                            enum: [
+                                'v1'
+                            ]
+                        },
+                        kind: {
+                            type: 'string',
+                            enum: [
+                                'Pod'
+                            ]
+                        }
+                    }
+                }
+            }
+        });
+
+        const schemaModification = new SchemaModification();
+        await schemaModification.addContent(service, {
+            action: MODIFICATION_ACTIONS.add,
+            path: 'properties/apiVersion',
+            key: 'enum',
+            content: [
+                'v2',
+                'v3',
+            ],
+            schema: 'https://myschemastore/main/schema1.json'
+        });
+
+        const fs = await service.getResolvedSchema('https://myschemastore/main/schema1.json');
+        assert.deepEqual(fs.schema.properties['apiVersion'], {
+            type: 'string',
+            enum: ['v2', 'v3']
+        });
+        assert.deepEqual(fs.schema.properties['kind'], {
+            type: 'string',
+            enum: ['Pod']
+        });
+    });
+
+    test('Deleting schema', async () => {
+        const service = new SchemaService.JSONSchemaService(requestServiceMock, workspaceContext);
+        service.setSchemaContributions({
+            schemas: {
+                'https://myschemastore/main/schema1.json': {
+                    type: 'object',
+                    properties: {
+                        apiVersion: {
+                            type: 'string',
+                            enum: [
+                                'v1'
+                            ]
+                        },
+                        kind: {
+                            type: 'string',
+                            enum: [
+                                'Pod'
+                            ]
+                        }
+                    }
+                }
+            }
+        });
+
+        const schemaModification = new SchemaModification();
+        await schemaModification.deleteContent(service, {
+            action: MODIFICATION_ACTIONS.delete,
+            path: 'properties',
+            key: 'apiVersion',
+            schema: 'https://myschemastore/main/schema1.json'
+        } as SchemaDeletions);
+
+        const fs = await service.getResolvedSchema('https://myschemastore/main/schema1.json');
+        assert.notDeepEqual(fs.schema.properties['apiVersion'], {
+            type: 'string',
+            enum: ['v2', 'v3']
+        });
+        assert.equal(fs.schema.properties['apiVersion'], undefined);
+        assert.deepEqual(fs.schema.properties['kind'], {
+            type: 'string',
+            enum: ['Pod']
+        });
+    });
+
+    test('Modifying schema works with kubernetes resolution', async () => {
+        const service = new SchemaService.JSONSchemaService(schemaRequestServiceForURL, workspaceContext);
+        service.registerExternalSchema(KUBERNETES_SCHEMA_URL);
+
+        const schemaModification = new SchemaModification();
+        await schemaModification.addContent(service, {
+            action: MODIFICATION_ACTIONS.add,
+            path: 'oneOf/0/properties/kind',
+            key: 'enum',
+            content: [
+                'v2',
+                'v3',
+            ],
+            schema: KUBERNETES_SCHEMA_URL
+        });
+
+        const fs = await service.getResolvedSchema(KUBERNETES_SCHEMA_URL);
+        assert.deepEqual(fs.schema.oneOf[0].properties['kind']['enum'], ['v2', 'v3']);
+    });
+
+    test('Deleting schema works with Kubernetes resolution', async () => {
+        const service = new SchemaService.JSONSchemaService(schemaRequestServiceForURL, workspaceContext);
+        service.registerExternalSchema(KUBERNETES_SCHEMA_URL);
+
+        const schemaModification = new SchemaModification();
+        await schemaModification.deleteContent(service, {
+            action: MODIFICATION_ACTIONS.delete,
+            path: 'oneOf/0/properties/kind',
+            key: 'enum',
+            schema: KUBERNETES_SCHEMA_URL
+        });
+
+        const fs = await service.getResolvedSchema(KUBERNETES_SCHEMA_URL);
+        assert.equal(fs.schema.oneOf[0].properties['kind']['enum'], undefined);
+    });
+
+    test('Adding a brand new schema', async () => {
+        const service = new SchemaService.JSONSchemaService(schemaRequestServiceForURL, workspaceContext);
+        service.saveSchema('hello_world', {
+            enum: [
+                'test1',
+                'test2'
+            ]
+        });
+
+        const hello_world_schema = await service.getResolvedSchema('hello_world');
+        assert.deepEqual(hello_world_schema.schema.enum, ['test1', 'test2']);
+    });
+
+    test('Deleting an existing schema', async () => {
+        const service = new SchemaService.JSONSchemaService(schemaRequestServiceForURL, workspaceContext);
+        service.saveSchema('hello_world', {
+            enum: [
+                'test1',
+                'test2'
+            ]
+        });
+
+        await service.deleteSchema('hello_world');
+
+        const hello_world_schema = await service.getResolvedSchema('hello_world');
+        assert.equal(hello_world_schema, null);
     });
 });
