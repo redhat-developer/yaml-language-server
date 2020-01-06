@@ -6,9 +6,9 @@ import * as JsonSchema from '../src/languageservice/jsonSchema07';
 import fs = require('fs');
 import url = require('url');
 import path = require('path');
-import { SchemaModification, MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/apis/schemaModification';
-import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/kubernetesResolver';
 import { XHRResponse, xhr } from 'request-light';
+import { MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
+import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
 const fixtureDocuments = {
     'http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json': 'deploymentTemplate.json',
@@ -354,8 +354,7 @@ suite('JSON Schema', () => {
             }
         });
 
-        const schemaModification = new SchemaModification();
-        await schemaModification.addContent(service, {
+        await service.addContent({
             action: MODIFICATION_ACTIONS.add,
             path: 'properties/apiVersion',
             key: 'enum',
@@ -401,8 +400,7 @@ suite('JSON Schema', () => {
             }
         });
 
-        const schemaModification = new SchemaModification();
-        await schemaModification.deleteContent(service, {
+        await service.deleteContent({
             action: MODIFICATION_ACTIONS.delete,
             path: 'properties',
             key: 'apiVersion',
@@ -425,8 +423,7 @@ suite('JSON Schema', () => {
         const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
         service.registerExternalSchema(KUBERNETES_SCHEMA_URL);
 
-        const schemaModification = new SchemaModification();
-        await schemaModification.addContent(service, {
+        await service.addContent({
             action: MODIFICATION_ACTIONS.add,
             path: 'oneOf/0/properties/kind',
             key: 'enum',
@@ -445,8 +442,7 @@ suite('JSON Schema', () => {
         const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
         service.registerExternalSchema(KUBERNETES_SCHEMA_URL);
 
-        const schemaModification = new SchemaModification();
-        await schemaModification.deleteContent(service, {
+        await service.deleteContent({
             action: MODIFICATION_ACTIONS.delete,
             path: 'oneOf/0/properties/kind',
             key: 'enum',

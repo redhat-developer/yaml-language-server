@@ -16,6 +16,27 @@ const localize = nls.loadMessageBundle();
 
 export declare type CustomSchemaProvider = (uri: string) => Thenable<string>;
 
+export enum MODIFICATION_ACTIONS {
+    'delete',
+    'add'
+}
+
+export interface SchemaAdditions {
+    schema: string,
+    action: MODIFICATION_ACTIONS.add,
+    path: string,
+    key: string,
+    // tslint:disable-next-line: no-any
+    content: any
+}
+
+export interface SchemaDeletions {
+    schema: string,
+    action: MODIFICATION_ACTIONS.delete,
+    path: string,
+    key: string
+}
+
 export class FilePatternAssociation {
 
     private schemas: string[];
@@ -238,6 +259,7 @@ export class YAMLSchemaService extends JSONSchemaService {
             return resolveSchema();
         }
     }
+
     /**
      * Save a schema with schema ID and schema content.
      * Overrides previous schemas set for that schema ID.
@@ -257,6 +279,68 @@ export class YAMLSchemaService extends JSONSchemaService {
             delete this.schemasById[id];
         }
         return Promise.resolve(undefined);
+    }
+
+    /**
+     * Add content to a specified schema at a specified path
+     */
+    public async addContent(additions: SchemaAdditions) {
+        const schema = await this.getResolvedSchema(additions.schema);
+        if (schema) {
+            const resolvedSchemaLocation = this.resolveJSONSchemaToSection(schema.schema, additions.path);
+
+            if (typeof resolvedSchemaLocation === 'object') {
+                resolvedSchemaLocation[additions.key] = additions.content;
+            }
+            await this.saveSchema(additions.schema, schema.schema);
+        }
+    }
+
+    /**
+     * Delete content in a specified schema at a specified path
+     */
+    public async deleteContent(deletions: SchemaDeletions) {
+        const schema = await this.getResolvedSchema(deletions.schema);
+        if (schema) {
+            const resolvedSchemaLocation = this.resolveJSONSchemaToSection(schema.schema, deletions.path);
+
+            if (typeof resolvedSchemaLocation === 'object') {
+                delete resolvedSchemaLocation[deletions.key];
+            }
+            await this.saveSchema(deletions.schema, schema.schema);
+        }
+    }
+
+    /**
+     * Take a JSON Schema and the path that you would like to get to
+     * @returns the JSON Schema resolved at that specific path
+     */
+    private resolveJSONSchemaToSection(schema: JSONSchema, paths: string): JSONSchema {
+        const splitPathway = paths.split('/');
+        let resolvedSchemaLocation = schema;
+        for (const path of splitPathway) {
+            if (path === '') {
+                continue;
+            }
+            this.resolveNext(resolvedSchemaLocation, path);
+            resolvedSchemaLocation = resolvedSchemaLocation[path];
+        }
+        return resolvedSchemaLocation;
+    }
+
+    /**
+     * Resolve the next Object if they have compatible types
+     * @param object a location in the JSON Schema
+     * @param token the next token that you want to search for
+     */
+    // tslint:disable-next-line: no-any
+    private resolveNext(object: any, token: any) {
+        // tslint:disable-next-line: no-any
+        if (Array.isArray(object) && isNaN(token)) {
+            throw new Error('Expected a number after the array object');
+        } else if (typeof object === 'object' && typeof token !== 'string') {
+            throw new Error('Expected a string after the object');
+        }
     }
 
     /**

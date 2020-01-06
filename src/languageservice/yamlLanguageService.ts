@@ -4,7 +4,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { YAMLSchemaService, CustomSchemaProvider } from './services/yamlSchemaService';
+import { YAMLSchemaService, CustomSchemaProvider, SchemaAdditions, SchemaDeletions } from './services/yamlSchemaService';
 import { TextDocument, Position, CompletionList, Diagnostic, Hover, SymbolInformation, DocumentSymbol, CompletionItem, TextEdit } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema07';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
@@ -13,7 +13,6 @@ import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
 import { getLanguageService as getJSONLanguageService, JSONWorkerContribution } from 'vscode-json-languageservice';
-import { SchemaModification, SchemaAdditions, SchemaDeletions } from './apis/schemaModification';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
@@ -137,7 +136,6 @@ export function getLanguageService(schemaRequestService: SchemaRequestService,
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
   const yamlValidation = new YAMLValidation(schemaService, promise);
   const formatter = new YAMLFormatter();
-  const schemaModifier = new SchemaModification();
 
   return {
         configure: settings => {
@@ -166,7 +164,7 @@ export function getLanguageService(schemaRequestService: SchemaRequestService,
       doFormat: formatter.format.bind(formatter),
       addSchema: (schemaID: string, schema: JSONSchema) => schemaService.saveSchema(schemaID, schema),
       deleteSchema: (schemaID: string) => schemaService.deleteSchema(schemaID),
-      modifySchemaContent: (schemaAdditions: SchemaAdditions) => schemaModifier.addContent(schemaService, schemaAdditions),
-      deleteSchemaContent: (schemaDeletions: SchemaDeletions) => schemaModifier.deleteContent(schemaService, schemaDeletions)
+      modifySchemaContent: (schemaAdditions: SchemaAdditions) => schemaService.addContent(schemaAdditions),
+      deleteSchemaContent: (schemaDeletions: SchemaDeletions) => schemaService.deleteContent(schemaDeletions)
   };
 }
