@@ -16,21 +16,15 @@ import * as URL from 'url';
 import { removeDuplicatesObj } from './languageservice/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions, WorkspaceContextService } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
-import { CustomSchemaProvider, FilePatternAssociation } from './languageservice/services/yamlSchemaService';
+import { CustomSchemaProvider, FilePatternAssociation, SchemaDeletions, SchemaAdditions, MODIFICATION_ACTIONS } from './languageservice/services/yamlSchemaService';
 import { JSONSchema } from './languageservice/jsonSchema04';
-import { SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest } from './requestTypes';
+import { SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest, SchemaModificationNotification } from './requestTypes';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
 import { isRelativePath, relativeToAbsolutePath } from './languageservice/utils/paths';
 import { URI } from 'vscode-uri';
 import { KUBERNETES_SCHEMA_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 // tslint:disable-next-line: no-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
-
-/****************
- * Constants
- ****************/
-const KUBERNETES_SCHEMA_URL = 'https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.17.0-standalone-strict/all.json';
-const JSON_SCHEMASTORE_URL = 'http://schemastore.org/api/json/catalog.json';
 
 /**************************
  * Generic helper functions
@@ -568,6 +562,15 @@ connection.onDocumentFormatting(formatParams => {
     };
 
     return customLanguageService.doFormat(document, customFormatterSettings);
+});
+
+connection.onRequest(SchemaModificationNotification.type, (modifications: SchemaAdditions | SchemaDeletions) => {
+    if (modifications.action === MODIFICATION_ACTIONS.add) {
+        customLanguageService.modifySchemaContent(modifications);
+    } else if (modifications.action === MODIFICATION_ACTIONS.delete) {
+        customLanguageService.deleteSchemaContent(modifications);
+    }
+    return Promise.resolve();
 });
 
 // Start listening for any messages from the client

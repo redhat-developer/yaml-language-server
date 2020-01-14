@@ -1,4 +1,5 @@
 import { NotificationType, RequestType } from 'vscode-languageserver';
+import { SchemaAdditions, SchemaDeletions } from './languageservice/services/yamlSchemaService';
 
 export namespace SchemaAssociationNotification {
     export const type: NotificationType<{ }, { }> = new NotificationType('json/schemaAssociations');
@@ -22,4 +23,8 @@ export namespace CustomSchemaRequest {
 
 export namespace ColorSymbolRequest {
     export const type: RequestType<{ }, { }, { }, { }> = new RequestType('json/colorSymbols');
+}
+
+export namespace SchemaModificationNotification {
+    export const type: RequestType<SchemaAdditions | SchemaDeletions, void, { }, { }> = new RequestType('json/schema/modify');
 }
