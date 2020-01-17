@@ -9,7 +9,7 @@ import * as Parser from '../parser/jsonParser07';
 import { ASTNode, ObjectASTNode, PropertyASTNode } from '../jsonASTTypes';
 import { parse as parseYAML } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
-import { JSONSchema, JSONSchemaRef } from '../jsonSchema07';
+import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { PromiseConstructor, Thenable, JSONWorkerContribution, CompletionsCollector } from 'vscode-json-languageservice';
 import { CompletionItem, CompletionItemKind, CompletionList, TextDocument,
     Position, Range, TextEdit, InsertTextFormat, MarkupContent, MarkupKind } from 'vscode-languageserver-types';
