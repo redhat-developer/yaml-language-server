@@ -354,6 +354,23 @@ suite('Validation Tests', () => {
             });
         });
 
+        describe('Test anchors specifically against gitlab schema', function () {
+            it('Test that anchors do not report Property << is not allowed', done => {
+                languageService.configure({
+                    schemas: [{
+                        uri: 'http://json.schemastore.org/gitlab-ci',
+                        fileMatch: ['*.yaml', '*.yml']
+                    }],
+                    validate: true
+                });
+                const content = '.test-cache: &test-cache\n  cache: {}\nnodejs-tests:\n  <<: *test-cache\n  script: test';
+                const validator = parseSetup(content);
+                validator.then(function (result) {
+                    assert.equal(result.length, 0);
+                }).then(done, done);
+            });
+        });
+
         describe('Test with custom schemas', function () {
             function parseSetup(content: string) {
                 const testTextDocument = setupTextDocument(content);
@@ -412,7 +429,6 @@ suite('Validation Tests', () => {
                     assert.equal(result[1].message, `Value is not accepted. Valid values: "ImageStreamImport", "ImageStreamLayers".`);
                 }).then(done, done);
             });
-
         });
     });
 });
