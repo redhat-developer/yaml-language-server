@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as Json from 'jsonc-parser';
-import { JSONSchema, JSONSchemaRef } from '../jsonSchema07';
+import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isNumber, equals, isString, isDefined, isBoolean } from '../utils/objects';
 import { ASTNode, ObjectASTNode, ArrayASTNode, BooleanASTNode, NumberASTNode, StringASTNode, NullASTNode, PropertyASTNode, BaseASTNode } from '../jsonASTTypes';
 import { ErrorCode, JSONPath } from 'vscode-json-languageservice';

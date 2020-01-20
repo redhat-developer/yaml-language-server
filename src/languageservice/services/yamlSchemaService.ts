@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema07';
+import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
 import { SchemaRequestService, WorkspaceContextService, PromiseConstructor, Thenable } from '../yamlLanguageService';
 import { UnresolvedSchema, ResolvedSchema, JSONSchemaService,
     SchemaDependencies, ISchemaContributions } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
