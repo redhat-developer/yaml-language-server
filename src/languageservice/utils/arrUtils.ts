@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { SingleYAMLDocument } from '../parser/yamlParser04';
+import { SingleYAMLDocument } from '../parser/yamlParser07';
 
 export function removeDuplicates(arr, prop) {
     const new_arr = [];
@@ -62,19 +62,6 @@ export function removeDuplicatesObj(objArray){
 }
 
 export function matchOffsetToDocument(offset: number, jsonDocuments) {
-
-    for (const jsonDoc in jsonDocuments.documents) {
-        const currJsonDoc: SingleYAMLDocument = jsonDocuments.documents[jsonDoc];
-        if (currJsonDoc.root && currJsonDoc.root.end >= offset && currJsonDoc.root.start <= offset) {
-            return currJsonDoc;
-        }
-    }
-
-    // TODO: Fix this so that it returns the correct document
-    return jsonDocuments.documents[0];
-}
-
-export function matchOffsetToDocument2(offset: number, jsonDocuments) {
 
     for (const jsonDoc of jsonDocuments.documents) {
         if (jsonDoc.root && jsonDoc.root.offset <= offset && (jsonDoc.root.length + jsonDoc.root.offset) >= offset) {

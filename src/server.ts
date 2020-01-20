@@ -17,7 +17,7 @@ import { removeDuplicatesObj } from './languageservice/utils/arrUtils';
 import { getLanguageService as getCustomLanguageService, LanguageSettings, CustomFormatterOptions, WorkspaceContextService } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
 import { CustomSchemaProvider, FilePatternAssociation, SchemaDeletions, SchemaAdditions, MODIFICATION_ACTIONS } from './languageservice/services/yamlSchemaService';
-import { JSONSchema } from './languageservice/jsonSchema04';
+import { JSONSchema } from './languageservice/jsonSchema';
 import { SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest, SchemaModificationNotification } from './requestTypes';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
 import { isRelativePath, relativeToAbsolutePath } from './languageservice/utils/paths';

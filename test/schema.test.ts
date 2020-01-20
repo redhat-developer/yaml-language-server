@@ -2,7 +2,7 @@
 
 import assert = require('assert');
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
-import * as JsonSchema from '../src/languageservice/jsonSchema07';
+import * as JsonSchema from '../src/languageservice/jsonSchema';
 import fs = require('fs');
 import url = require('url');
 import path = require('path');
