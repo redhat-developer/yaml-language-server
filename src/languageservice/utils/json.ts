@@ -4,41 +4,31 @@
 *--------------------------------------------------------------------------------------------*/
 
 // tslint:disable-next-line: no-any
-export function stringifyObject(obj: any, indent: string, stringifyLiteral: (val: any) => string): string {
-    if (obj !== null && typeof obj === 'object') {
-        const newIndent = indent + '\t';
-        if (Array.isArray(obj)) {
-            if (obj.length === 0) {
-                return '[]';
-            }
-            let result = '[\n';
-            for (let i = 0; i < obj.length; i++) {
-                result += newIndent + stringifyObject(obj[i], newIndent, stringifyLiteral);
-                if (i < obj.length - 1) {
-                    result += ',';
-                }
-                result += '\n';
-            }
-            result += indent + ']';
-            return result;
-        } else {
-            const keys = Object.keys(obj);
-            if (keys.length === 0) {
-                return '{}';
-            }
-            let result = '{\n';
-            for (let i = 0; i < keys.length; i++) {
-                const key = keys[i];
+export interface StringifySettings {
+    newLineFirst: boolean;
+    indentFirstObject: boolean;
+    shouldIndentWithTab: boolean;
+}
 
-                result += newIndent + JSON.stringify(key) + ': ' + stringifyObject(obj[key], newIndent, stringifyLiteral);
-                if (i < keys.length - 1) {
-                    result += ',';
-                }
-                result += '\n';
-            }
-            result += indent + '}';
-            return result;
+export function stringifyObject(obj: any, indent: string, stringifyLiteral: (val: any) => string, settings: StringifySettings): string {
+    if (obj !== null && typeof obj === 'object') {
+        const newIndent = settings.shouldIndentWithTab ? (indent + '\t') : indent;
+        const keys = Object.keys(obj);
+        if (keys.length === 0) {
+            return '';
         }
+        let result = settings.newLineFirst ? '\n' : '';
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            if (i === 0 && !settings.indentFirstObject) {
+                result += indent + key + ': ' + stringifyObject(obj[key], newIndent, stringifyLiteral, settings);
+            } else {
+                result += newIndent + key + ': ' + stringifyObject(obj[key], newIndent, stringifyLiteral, settings);
+            }
+            result += '\n';
+        }
+        result += indent;
+        return result;
     }
     return stringifyLiteral(obj);
 }

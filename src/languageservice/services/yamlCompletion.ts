@@ -19,7 +19,7 @@ import { LanguageSettings } from '../yamlLanguageService';
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 import { JSONCompletion } from 'vscode-json-languageservice/lib/umd/services/jsonCompletion';
 import { ClientCapabilities } from 'vscode-languageserver-protocol';
-import { stringifyObject } from '../utils/json';
+import { stringifyObject, StringifySettings } from '../utils/json';
 const localize = nls.loadMessageBundle();
 
 export class YAMLCompletion extends JSONCompletion {
@@ -234,6 +234,11 @@ export class YAMLCompletion extends JSONCompletion {
             if (s.node === node && !s.inverted) {
                 const schemaProperties = s.schema.properties;
                 if (schemaProperties) {
+                    this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
+                        newLineFirst: false,
+                        indentFirstObject: false,
+                        shouldIndentWithTab: false
+                    }, false);
                     Object.keys(schemaProperties).forEach((key: string) => {
                         const propertySchema = schemaProperties[key];
                         if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema['doNotSuggest']) {
@@ -265,6 +270,25 @@ export class YAMLCompletion extends JSONCompletion {
                 // it will treated as a property key since `:` has been appended
                 if (node.type === 'object' && node.parent && node.parent.type === 'array' && s.schema.type !== 'object') {
                     this.addSchemaValueCompletions(s.schema, separatorAfter, collector, { });
+                }
+            }
+
+            // Covers the case when we are showing a snippet in an array
+            if (node.type === 'object' && node.parent && node.parent.type === 'array' && s.schema.type !== 'object') {
+                // For some reason the first item in the array needs to be treated differently, otherwise
+                // the indentation will not be correct
+                if (node.properties.length === 1) {
+                    this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
+                        newLineFirst: false,
+                        indentFirstObject: false,
+                        shouldIndentWithTab: true
+                    }, false);
+                } else {
+                    this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
+                        newLineFirst: false,
+                        indentFirstObject: true,
+                        shouldIndentWithTab: false
+                    }, false);
                 }
             }
         });
@@ -405,6 +429,17 @@ export class YAMLCompletion extends JSONCompletion {
                 hasProposals = true;
             });
         }
+        this.collectDefaultSnippets(schema, separatorAfter, collector, {
+            newLineFirst: true,
+            indentFirstObject: true,
+            shouldIndentWithTab: true
+        }, schema.type === 'array');
+        if (!hasProposals && typeof schema.items === 'object' && !Array.isArray(schema.items)) {
+            this.addDefaultValueCompletions(schema.items, separatorAfter, collector, arrayDepth + 1);
+        }
+    }
+
+    private collectDefaultSnippets(schema: JSONSchema, separatorAfter: string, collector: CompletionsCollector, settings: StringifySettings, isArray: boolean) {
         if (Array.isArray(schema.defaultSnippets)) {
             schema.defaultSnippets.forEach(s => {
                 let type = schema.type;
@@ -413,24 +448,13 @@ export class YAMLCompletion extends JSONCompletion {
                 let insertText: string;
                 let filterText: string;
                 if (isDefined(value)) {
-                    let type = schema.type;
-                    for (let i = arrayDepth; i > 0; i--) {
-                        value = [value];
-                        type = 'array';
-                    }
-                    insertText = this.getInsertTextForSnippetValue(value, separatorAfter);
+                    insertText = this.getInsertTextForSnippetValue(value, separatorAfter, settings, isArray);
                     label = label || this.getLabelForSnippetValue(value);
                 } else if (typeof s.bodyText === 'string') {
                     let prefix = '', suffix = '', indent = '';
-                    for (let i = arrayDepth; i > 0; i--) {
-                        prefix = prefix + indent + '[\n';
-                        suffix = suffix + '\n' + indent + ']';
-                        indent += '\t';
-                        type = 'array';
-                    }
                     insertText = prefix + indent + s.bodyText.split('\n').join('\n' + indent) + suffix + separatorAfter;
-                    label = label || insertText,
-                        filterText = insertText.replace(/[\n]/g, '');   // remove new lines
+                    label = label || insertText;
+                    filterText = insertText.replace(/[\n]/g, '');   // remove new lines
                 }
                 collector.add({
                     kind: this.getSuggestionKind(type),
@@ -440,16 +464,12 @@ export class YAMLCompletion extends JSONCompletion {
                     insertTextFormat: InsertTextFormat.Snippet,
                     filterText
                 });
-                hasProposals = true;
             });
-        }
-        if (!hasProposals && typeof schema.items === 'object' && !Array.isArray(schema.items)) {
-            this.addDefaultValueCompletions(schema.items, separatorAfter, collector, arrayDepth + 1);
         }
     }
 
     // tslint:disable-next-line:no-any
-    private getInsertTextForSnippetValue(value: any, separatorAfter: string): string {
+    private getInsertTextForSnippetValue(value: any, separatorAfter: string, settings: StringifySettings, isArray?: boolean): string {
         // tslint:disable-next-line:no-any
         const replacer = (value: any) => {
             if (typeof value === 'string') {
@@ -457,9 +477,22 @@ export class YAMLCompletion extends JSONCompletion {
                     return value.substr(1);
                 }
             }
-            return JSON.stringify(value);
+            return value;
         };
-        return stringifyObject(value, '', replacer) + separatorAfter;
+        // If it is an array then we need to manually indent the keys
+        // of that array item
+        if (isArray && typeof value === 'object' && value !== null) {
+            const fixedObj = { };
+            Object.keys(value).forEach((val, index) => {
+                if (index === 0 && !val.startsWith('-')) {
+                    fixedObj[`- ${val}`] = value[val];
+                } else {
+                    fixedObj[`  ${val}`] = value[val];
+                }
+            });
+            value = fixedObj;
+        }
+        return stringifyObject(value, '', replacer, settings) + separatorAfter;
     }
 
     // tslint:disable-next-line:no-any
@@ -632,7 +665,11 @@ export class YAMLCompletion extends JSONCompletion {
                 if (propertySchema.defaultSnippets.length === 1) {
                     const body = propertySchema.defaultSnippets[0].body;
                     if (isDefined(body)) {
-                        value = this.getInsertTextForSnippetValue(body, '');
+                        value = this.getInsertTextForSnippetValue(body, '', {
+                            newLineFirst: true,
+                            indentFirstObject: false,
+                            shouldIndentWithTab: false
+                        });
                     }
                 }
                 nValueProposals += propertySchema.defaultSnippets.length;
