@@ -51,6 +51,9 @@ export class YAMLValidation {
             if (syd.errors.length > 0) {
                 validationResult.push(...syd.errors);
             }
+            if (syd.warnings.length > 0) {
+                validationResult.push(...syd.warnings);
+            }
 
             validationResult.push(...validation);
             index++;

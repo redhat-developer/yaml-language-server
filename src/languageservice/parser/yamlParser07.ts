@@ -191,9 +191,8 @@ function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], te
 
     //Patch ontop of yaml-ast-parser to disable duplicate key message on merge key
     const isDuplicateAndNotMergeKey = function (error: Yaml.YAMLException, yamlText: string) {
-        const errorConverted = convertError(error);
-        const errorStart = errorConverted.range.start.character;
-        const errorEnd = errorConverted.range.end.character;
+        const errorStart = error.mark.position;
+        const errorEnd = error.mark.position + error.mark.column;
         if (error.reason === duplicateKeyReason && yamlText.substring(errorStart, errorEnd).startsWith('<<')) {
             return false;
         }
