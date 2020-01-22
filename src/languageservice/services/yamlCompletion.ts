@@ -332,6 +332,7 @@ export class YAMLCompletion extends JSONCompletion {
                                 insertText: `- ${this.getInsertTextForObject(s.schema.items, separatorAfter).insertText.trimLeft()}`,
                                 insertTextFormat: InsertTextFormat.Snippet,
                             });
+                            this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types);
                         }
                         else {
                             this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types);
