@@ -1,0 +1,55 @@
+{
+    "type": "object",
+    "properties": {
+        "object": {
+            "type": "object",
+            "defaultSnippets": [
+                {
+                    "label": "Object item",
+                    "description": "Binds a key to a command for a given state",
+                    "body": { "key1": "$1", "key2": "$2" }
+                }
+            ],
+            "properties": {
+                "key": {
+                    "$ref": "#/properties/object"
+                }
+            }
+        },
+        "array": {
+            "type": "array",
+            "defaultSnippets": [
+                {
+                    "label": "My array item",
+                    "body": { "item1": "$1", "item2": "$2" }
+                }
+            ],
+            "items": {
+                "item1": {
+                    "$ref": "#/properties/array"
+                },
+                "item2": {
+                    "$ref": "#/properties/array"
+                }
+            }
+        },
+        "string": {
+            "type": "string",
+            "defaultSnippets": [
+                {
+                    "label": "My string item",
+                    "bodyText": "test $1"
+                }
+            ]
+        },
+        "boolean": {
+            "type": "boolean",
+            "defaultSnippets": [
+                {
+                    "label": "My boolean item",
+                    "bodyText": "false"
+                }
+            ]
+        }
+    }
+}
