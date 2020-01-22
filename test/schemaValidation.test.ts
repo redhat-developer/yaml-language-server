@@ -333,6 +333,27 @@ suite('Validation Tests', () => {
 
         });
 
+        describe('Test with no schemas', () => {
+            function parseSetup(content: string) {
+                const testTextDocument = setupTextDocument(content);
+                return languageService.doValidation(testTextDocument, true);
+            }
+
+            it('Duplicate properties are reported', done => {
+                languageService.configure({
+                    validate: true,
+                    isKubernetes: true
+                });
+                const content = 'kind: a\ncwd: b\nkind: c';
+                const validator = parseSetup(content);
+                validator.then(function (result) {
+                    assert.equal(result.length, 2);
+                    assert.equal(result[1].message, 'duplicate key');
+                }).then(done, done);
+
+            });
+        });
+
         describe('Test with custom schemas', function () {
             function parseSetup(content: string) {
                 const testTextDocument = setupTextDocument(content);
