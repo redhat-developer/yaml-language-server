@@ -4,7 +4,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { YAMLSchemaService, CustomSchemaProvider } from './services/yamlSchemaService';
+import { YAMLSchemaService, CustomSchemaProvider, SchemaAdditions, SchemaDeletions } from './services/yamlSchemaService';
 import { TextDocument, Position, CompletionList, Diagnostic, Hover, SymbolInformation, DocumentSymbol, CompletionItem, TextEdit } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
@@ -12,7 +12,7 @@ import { YAMLCompletion } from './services/yamlCompletion';
 import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
-import { LanguageService as JSONLanguageService, getLanguageService as getJSONLanguageService, JSONWorkerContribution } from 'vscode-json-languageservice';
+import { getLanguageService as getJSONLanguageService, JSONWorkerContribution } from 'vscode-json-languageservice';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
@@ -118,6 +118,10 @@ export interface LanguageService {
   doResolve(completionItem): Thenable<CompletionItem>;
   resetSchema(uri: string): boolean;
   doFormat(document: TextDocument, options: CustomFormatterOptions): TextEdit[];
+  addSchema(schemaID: string, schema: JSONSchema): void;
+  deleteSchema(schemaID: string): void;
+  modifySchemaContent(schemaAdditions: SchemaAdditions): void;
+  deleteSchemaContent(schemaDeletions: SchemaDeletions): void;
 }
 
 export function getLanguageService(schemaRequestService: SchemaRequestService,
@@ -157,6 +161,10 @@ export function getLanguageService(schemaRequestService: SchemaRequestService,
       findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols),
       findDocumentSymbols2: yamlDocumentSymbols.findHierarchicalDocumentSymbols.bind(yamlDocumentSymbols),
       resetSchema: (uri: string) => schemaService.onResourceChange(uri),
-      doFormat: formatter.format.bind(formatter)
+      doFormat: formatter.format.bind(formatter),
+      addSchema: (schemaID: string, schema: JSONSchema) => schemaService.saveSchema(schemaID, schema),
+      deleteSchema: (schemaID: string) => schemaService.deleteSchema(schemaID),
+      modifySchemaContent: (schemaAdditions: SchemaAdditions) => schemaService.addContent(schemaAdditions),
+      deleteSchemaContent: (schemaDeletions: SchemaDeletions) => schemaService.deleteContent(schemaDeletions)
   };
 }
