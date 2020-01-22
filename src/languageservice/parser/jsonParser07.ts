@@ -837,8 +837,37 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
         const unprocessedProperties: string[] = [];
         for (const propertyNode of node.properties) {
             const key = propertyNode.keyNode.value;
-            seenKeys[key] = propertyNode.valueNode;
-            unprocessedProperties.push(key);
+
+            //Replace the merge key with the actual values of what the node value points to in seen keys
+            if (key === '<<' && propertyNode.valueNode) {
+
+                switch (propertyNode.valueNode.type) {
+                    case 'object': {
+                        propertyNode.valueNode['properties'].forEach(propASTNode => {
+                            const propKey = propASTNode.keyNode.value;
+                            seenKeys[propKey] = propASTNode.valueNode;
+                            unprocessedProperties.push(propKey);
+                        });
+                        break;
+                    }
+                    case 'array': {
+                        propertyNode.valueNode['items'].forEach(sequenceNode => {
+                            sequenceNode['properties'].forEach(propASTNode => {
+                                const seqKey = propASTNode.keyNode.value;
+                                seenKeys[seqKey] = propASTNode.valueNode;
+                                unprocessedProperties.push(seqKey);
+                            });
+                        });
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
+                }
+            } else {
+                seenKeys[key] = propertyNode.valueNode;
+                unprocessedProperties.push(key);
+            }
         }
 
         if (Array.isArray(schema.required)) {
