@@ -38,7 +38,7 @@ suite('Default Snippet Tests', () => {
                 const completion = parseSetup(content, 11);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].insertText, 'item1: $1\n\titem2: $2\n');
+                    assert.equal(result.items[0].insertText, 'item1: $1\n  item2: $2');
                     assert.equal(result.items[0].label, 'My array item');
                 }).then(done, done);
             });
@@ -48,17 +48,17 @@ suite('Default Snippet Tests', () => {
                 const completion = parseSetup(content, 24);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].insertText, 'item1: $1\n\titem2: $2\n');
+                    assert.equal(result.items[0].insertText, 'item1: $1\n  item2: $2');
                     assert.equal(result.items[0].label, 'My array item');
                 }).then(done, done);
             });
 
             it('Snippet in array schema should autocomplete correctly after ', done => {
-                const content = 'array:\n  - item1: asd\n  - item2: asd\n    ';
+                const content = 'array:\n  - item1: asd\n    item2: asd\n    ';
                 const completion = parseSetup(content, 40);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].insertText, 'item1: $1\nitem2: $2\n');
+                    assert.equal(result.items[0].insertText, 'item1: $1\nitem2: $2');
                     assert.equal(result.items[0].label, 'My array item');
                 }).then(done, done);
             });
@@ -76,7 +76,7 @@ suite('Default Snippet Tests', () => {
                 const completion = parseSetup(content, 11);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 2);
-                    assert.equal(result.items[0].insertText, 'key1: $1\nkey2: $2\n');
+                    assert.equal(result.items[0].insertText, 'key1: $1\nkey2: $2');
                     assert.equal(result.items[0].label, 'Object item');
                     assert.equal(result.items[1].insertText, 'key:\n\t$1');
                     assert.equal(result.items[1].label, 'key');
@@ -88,7 +88,7 @@ suite('Default Snippet Tests', () => {
                 const completion = parseSetup(content, 20);
                 completion.then(function (result) {
                     assert.notEqual(result.items.length, 0);
-                    assert.equal(result.items[0].insertText, 'key1: $1\nkey2: $2\n');
+                    assert.equal(result.items[0].insertText, 'key1: $1\nkey2: $2');
                     assert.equal(result.items[0].label, 'Object item');
                     assert.equal(result.items[1].insertText, 'key:\n\t$1');
                     assert.equal(result.items[1].label, 'key');
@@ -120,6 +120,28 @@ suite('Default Snippet Tests', () => {
                     assert.notEqual(result.items.length, 0);
                     assert.equal(result.items[0].label, 'My boolean item');
                     assert.equal(result.items[0].insertText, 'false');
+                }).then(done, done);
+            });
+
+            it('Snippet in boolean schema should autocomplete on same line', done => {
+                const content = 'longSnippet:  ';
+                const completion = parseSetup(content, 13);
+                completion.then(function (result) {
+                    assert.equal(result.items.length, 1);
+                    assert.equal(result.items[0].label, 'apply-manifests');
+                    // tslint:disable-next-line:max-line-length
+                    assert.equal(result.items[0].insertText, '\n  name: $1\n  taskRef: \n    name: apply-manifests  \n  resources: \n    inputs: \n      \n      name: source\n      resource: $3          \n  params: \n    \n    name: manifest_dir\n    value: $2    ');
+                }).then(done, done);
+            });
+
+            it('Snippet in boolean schema should autocomplete on same line', done => {
+                const content = 'lon  ';
+                const completion = parseSetup(content, 3);
+                completion.then(function (result) {
+                    assert.equal(result.items.length, 5);
+                    assert.equal(result.items[4].label, 'longSnippet');
+                    // tslint:disable-next-line:max-line-length
+                    assert.equal(result.items[4].insertText, 'longSnippet:\n  name: $1\n  taskRef: \n    name: apply-manifests  \n  resources: \n    inputs: \n      \n      name: source\n      resource: $3          \n  params: \n    \n    name: manifest_dir\n    value: $2    ');
                 }).then(done, done);
             });
         });
