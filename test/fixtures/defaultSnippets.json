@@ -50,6 +50,35 @@
                     "bodyText": "false"
                 }
             ]
+        },
+        "longSnippet": {
+            "type": "object",
+            "defaultSnippets": [
+                {
+                    "label": "apply-manifests",
+                    "description": "Task",
+                    "body": {
+                      "name": "$1",
+                      "taskRef": {
+                        "name": "apply-manifests"
+                      },
+                      "resources": {
+                        "inputs": [
+                          {
+                            "name": "source",
+                            "resource": "$3"
+                          }
+                        ]
+                      },
+                      "params": [
+                        {
+                          "name": "manifest_dir",
+                          "value": "$2"
+                        }
+                      ]
+                    }
+                  }
+            ]
         }
     }
 }

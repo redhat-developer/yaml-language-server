@@ -232,13 +232,13 @@ export class YAMLCompletion extends JSONCompletion {
         const matchingSchemas = doc.getMatchingSchemas(schema.schema);
         matchingSchemas.forEach(s => {
             if (s.node === node && !s.inverted) {
+                this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
+                    newLineFirst: false,
+                    indentFirstObject: false,
+                    shouldIndentWithTab: false
+                }, false);
                 const schemaProperties = s.schema.properties;
                 if (schemaProperties) {
-                    this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
-                        newLineFirst: false,
-                        indentFirstObject: false,
-                        shouldIndentWithTab: false
-                    }, false);
                     Object.keys(schemaProperties).forEach((key: string) => {
                         const propertySchema = schemaProperties[key];
                         if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema['doNotSuggest']) {
@@ -439,7 +439,7 @@ export class YAMLCompletion extends JSONCompletion {
         }
     }
 
-    private collectDefaultSnippets(schema: JSONSchema, separatorAfter: string, collector: CompletionsCollector, settings: StringifySettings, isArray: boolean) {
+    private collectDefaultSnippets(schema: JSONSchema, separatorAfter: string, collector: CompletionsCollector, settings: StringifySettings, isArray: boolean, arrayDepth = 0) {
         if (Array.isArray(schema.defaultSnippets)) {
             schema.defaultSnippets.forEach(s => {
                 let type = schema.type;
@@ -448,10 +448,21 @@ export class YAMLCompletion extends JSONCompletion {
                 let insertText: string;
                 let filterText: string;
                 if (isDefined(value)) {
+                    let type = schema.type;
+                    for (let i = arrayDepth; i > 0; i--) {
+                        value = [value];
+                        type = 'array';
+                    }
                     insertText = this.getInsertTextForSnippetValue(value, separatorAfter, settings, isArray);
                     label = label || this.getLabelForSnippetValue(value);
                 } else if (typeof s.bodyText === 'string') {
                     let prefix = '', suffix = '', indent = '';
+                    for (let i = arrayDepth; i > 0; i--) {
+                        prefix = prefix + indent + '[\n';
+                        suffix = suffix + '\n' + indent + ']';
+                        indent += '\t';
+                        type = 'array';
+                    }
                     insertText = prefix + indent + s.bodyText.split('\n').join('\n' + indent) + suffix + separatorAfter;
                     label = label || insertText;
                     filterText = insertText.replace(/[\n]/g, '');   // remove new lines
@@ -469,7 +480,7 @@ export class YAMLCompletion extends JSONCompletion {
     }
 
     // tslint:disable-next-line:no-any
-    private getInsertTextForSnippetValue(value: any, separatorAfter: string, settings: StringifySettings, isArray?: boolean): string {
+    private getInsertTextForSnippetValue(value: any, separatorAfter: string, settings: StringifySettings, isArray?: boolean, depth?: number): string {
         // tslint:disable-next-line:no-any
         const replacer = (value: any) => {
             if (typeof value === 'string') {
@@ -492,7 +503,7 @@ export class YAMLCompletion extends JSONCompletion {
             });
             value = fixedObj;
         }
-        return stringifyObject(value, '', replacer, settings) + separatorAfter;
+        return stringifyObject(value, '', replacer, settings, depth) + separatorAfter;
     }
 
     // tslint:disable-next-line:no-any
@@ -669,7 +680,7 @@ export class YAMLCompletion extends JSONCompletion {
                             newLineFirst: true,
                             indentFirstObject: false,
                             shouldIndentWithTab: false
-                        });
+                        }, false, 1);
                     }
                 }
                 nValueProposals += propertySchema.defaultSnippets.length;
