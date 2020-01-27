@@ -14,7 +14,7 @@ import * as nls from 'vscode-nls';
 import { convertSimple2RegExpPattern } from '../utils/strings';
 const localize = nls.loadMessageBundle();
 
-export declare type CustomSchemaProvider = (uri: string) => Thenable<string>;
+export declare type CustomSchemaProvider = (uri: string) => Thenable<string | string[]>;
 
 export enum MODIFICATION_ACTIONS {
     'delete',
@@ -242,22 +242,41 @@ export class YAMLSchemaService extends JSONSchemaService {
         if (this.customSchemaProvider) {
             return this.customSchemaProvider(resource)
                        .then(schemaUri => {
-                           if (!schemaUri) {
-                               return resolveSchema();
-                           }
 
-                           return this.loadSchema(schemaUri)
-                               .then(unsolvedSchema => this.resolveSchemaContent(unsolvedSchema, schemaUri, []).then(schema => {
-                                if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[doc.currentDocIndex]) {
-                                    return new ResolvedSchema(schema.schema.schemaSequence[doc.currentDocIndex]);
+                            if (Array.isArray(schemaUri)) {
+                                if (schemaUri.length === 0) {
+                                    return resolveSchema();
                                 }
-                                return schema;
-                            }));
+                                return Promise.all(schemaUri.map(schemaUri => this.resolveCustomSchema(schemaUri, doc))).then(schemas =>
+                                    ({
+                                        'errors': [],
+                                        'schema': {
+                                            'oneOf': schemas.map(schemaObj => schemaObj.schema)
+                                        }
+                                    })
+                                , err => resolveSchema());
+
+                            }
+
+                            if (!schemaUri) {
+                                return resolveSchema();
+                            }
+
+                            return this.resolveCustomSchema(schemaUri, doc);
                         })
                        .then(schema => schema, err => resolveSchema());
         } else {
             return resolveSchema();
         }
+    }
+
+    private async resolveCustomSchema(schemaUri, doc) {
+        const unresolvedSchema = await this.loadSchema(schemaUri);
+        const schema = await this.resolveSchemaContent(unresolvedSchema, schemaUri, []);
+        if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[doc.currentDocIndex]) {
+            return new ResolvedSchema(schema.schema.schemaSequence[doc.currentDocIndex]);
+        }
+        return schema;
     }
 
     /**
