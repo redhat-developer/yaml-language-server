@@ -251,7 +251,7 @@ export class YAMLSchemaService extends JSONSchemaService {
                                     ({
                                         'errors': [],
                                         'schema': {
-                                            'oneOf': schemas.map(schemaObj => schemaObj.schema)
+                                            'anyOf': schemas.map(schemaObj => schemaObj.schema)
                                         }
                                     })
                                 , err => resolveSchema());
