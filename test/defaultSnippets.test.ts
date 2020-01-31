@@ -43,6 +43,26 @@ suite('Default Snippet Tests', () => {
                 }).then(done, done);
             });
 
+            it('Snippet in array schema should autocomplete with - if none is present', done => {
+                const content = 'array:\n  ';
+                const completion = parseSetup(content, 9);
+                completion.then(function (result) {
+                    assert.equal(result.items.length, 1);
+                    assert.equal(result.items[0].insertText, '- item1: $1\n  item2: $2');
+                    assert.equal(result.items[0].label, 'My array item');
+                }).then(done, done);
+            });
+
+            it('Snippet in array schema should autocomplete on same line as array', done => {
+                const content = 'array:  ';
+                const completion = parseSetup(content, 7);
+                completion.then(function (result) {
+                    assert.equal(result.items.length, 1);
+                    assert.equal(result.items[0].insertText, '\n  - item1: $1\n    item2: $2');
+                    assert.equal(result.items[0].label, 'My array item');
+                }).then(done, done);
+            });
+
             it('Snippet in array schema should autocomplete on next line with depth', done => {
                 const content = 'array:\n  - item1:\n    - ';
                 const completion = parseSetup(content, 24);
@@ -60,14 +80,6 @@ suite('Default Snippet Tests', () => {
                     assert.equal(result.items.length, 1);
                     assert.equal(result.items[0].insertText, 'item1: $1\nitem2: $2');
                     assert.equal(result.items[0].label, 'My array item');
-                }).then(done, done);
-            });
-
-            it('Snippet in array schema should autocomplete on same line as array', done => {
-                const content = 'array:  ';
-                const completion = parseSetup(content, 7);
-                completion.then(function (result) {
-                    assert.equal(result.items.length, 1);
                 }).then(done, done);
             });
 
@@ -130,7 +142,7 @@ suite('Default Snippet Tests', () => {
                     assert.equal(result.items.length, 1);
                     assert.equal(result.items[0].label, 'apply-manifests');
                     // tslint:disable-next-line:max-line-length
-                    assert.equal(result.items[0].insertText, '\n  name: $1\n  taskRef: \n    name: apply-manifests  \n  resources: \n    inputs: \n      \n      name: source\n      resource: $3          \n  params: \n    \n    name: manifest_dir\n    value: $2    ');
+                    assert.equal(result.items[0].insertText, '\n  name: $1\n  taskRef: \n    name: apply-manifests  \n  resources: \n    inputs:       \n      - name: source\n        resource: $3          \n  params:     \n    - name: manifest_dir\n      value: $2    ');
                 }).then(done, done);
             });
 
@@ -138,10 +150,43 @@ suite('Default Snippet Tests', () => {
                 const content = 'lon  ';
                 const completion = parseSetup(content, 3);
                 completion.then(function (result) {
-                    assert.equal(result.items.length, 5);
+                    assert.equal(result.items.length, 6); // This is just checking the total number of snippets in the defaultSnippets.json
                     assert.equal(result.items[4].label, 'longSnippet');
                     // tslint:disable-next-line:max-line-length
-                    assert.equal(result.items[4].insertText, 'longSnippet:\n  name: $1\n  taskRef: \n    name: apply-manifests  \n  resources: \n    inputs: \n      \n      name: source\n      resource: $3          \n  params: \n    \n    name: manifest_dir\n    value: $2    ');
+                    assert.equal(result.items[4].insertText, 'longSnippet:\n  name: $1\n  taskRef: \n    name: apply-manifests  \n  resources: \n    inputs:       \n      - name: source\n        resource: $3          \n  params:     \n    - name: manifest_dir\n      value: $2    ');
+                }).then(done, done);
+            });
+
+            it('Test array of arrays on properties completion', done => {
+                const content = 'arrayArrayS  ';
+                const completion = parseSetup(content, 11);
+                completion.then(function (result) {
+                    assert.equal(result.items.length, 6); // This is just checking the total number of snippets in the defaultSnippets.json
+                    assert.equal(result.items[5].label, 'arrayArraySnippet');
+                    // tslint:disable-next-line:max-line-length
+                    assert.equal(result.items[5].insertText, 'arrayArraySnippet:\n  apple:         \n    - - name: source\n        resource: $3      ');
+                }).then(done, done);
+            });
+
+            it('Test array of arrays on value completion', done => {
+                const content = 'arrayArraySnippet: ';
+                const completion = parseSetup(content, 20);
+                completion.then(function (result) {
+                    assert.equal(result.items.length, 1);
+                    assert.equal(result.items[0].label, 'Array Array Snippet');
+                    // tslint:disable-next-line:max-line-length
+                    assert.equal(result.items[0].insertText, '\n  apple:         \n    - - name: source\n        resource: $3      ');
+                }).then(done, done);
+            });
+
+            it('Test array of arrays on indented completion', done => {
+                const content = 'arrayArraySnippet:\n  ';
+                const completion = parseSetup(content, 21);
+                completion.then(function (result) {
+                    assert.equal(result.items.length, 1);
+                    assert.equal(result.items[0].label, 'Array Array Snippet');
+                    // tslint:disable-next-line:max-line-length
+                    assert.equal(result.items[0].insertText, 'apple:     \n  - - name: source\n      resource: $3');
                 }).then(done, done);
             });
         });

@@ -236,7 +236,7 @@ export class YAMLCompletion extends JSONCompletion {
                     newLineFirst: false,
                     indentFirstObject: false,
                     shouldIndentWithTab: false
-                }, false);
+                });
                 const schemaProperties = s.schema.properties;
                 if (schemaProperties) {
                     Object.keys(schemaProperties).forEach((key: string) => {
@@ -282,13 +282,13 @@ export class YAMLCompletion extends JSONCompletion {
                         newLineFirst: false,
                         indentFirstObject: false,
                         shouldIndentWithTab: true
-                    }, false);
+                    }, 1);
                 } else {
                     this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
                         newLineFirst: false,
                         indentFirstObject: true,
                         shouldIndentWithTab: false
-                    }, false);
+                    }, 1);
                 }
             }
         });
@@ -433,13 +433,13 @@ export class YAMLCompletion extends JSONCompletion {
             newLineFirst: true,
             indentFirstObject: true,
             shouldIndentWithTab: true
-        }, schema.type === 'array');
+        });
         if (!hasProposals && typeof schema.items === 'object' && !Array.isArray(schema.items)) {
             this.addDefaultValueCompletions(schema.items, separatorAfter, collector, arrayDepth + 1);
         }
     }
 
-    private collectDefaultSnippets(schema: JSONSchema, separatorAfter: string, collector: CompletionsCollector, settings: StringifySettings, isArray: boolean, arrayDepth = 0) {
+    private collectDefaultSnippets(schema: JSONSchema, separatorAfter: string, collector: CompletionsCollector, settings: StringifySettings, arrayDepth = 0) {
         if (Array.isArray(schema.defaultSnippets)) {
             schema.defaultSnippets.forEach(s => {
                 let type = schema.type;
@@ -449,11 +449,19 @@ export class YAMLCompletion extends JSONCompletion {
                 let filterText: string;
                 if (isDefined(value)) {
                     let type = schema.type;
-                    for (let i = arrayDepth; i > 0; i--) {
-                        value = [value];
-                        type = 'array';
+                    if (arrayDepth === 0 && type === 'array') {
+                        // We know that a - isn't present yet so we need to add one
+                        const fixedObj = { };
+                        Object.keys(value).forEach((val, index) => {
+                            if (index === 0 && !val.startsWith('-')) {
+                                fixedObj[`- ${val}`] = value[val];
+                            } else {
+                                fixedObj[`  ${val}`] = value[val];
+                            }
+                        });
+                        value = fixedObj;
                     }
-                    insertText = this.getInsertTextForSnippetValue(value, separatorAfter, settings, isArray);
+                    insertText = this.getInsertTextForSnippetValue(value, separatorAfter, settings);
                     label = label || this.getLabelForSnippetValue(value);
                 } else if (typeof s.bodyText === 'string') {
                     let prefix = '', suffix = '', indent = '';
@@ -480,7 +488,7 @@ export class YAMLCompletion extends JSONCompletion {
     }
 
     // tslint:disable-next-line:no-any
-    private getInsertTextForSnippetValue(value: any, separatorAfter: string, settings: StringifySettings, isArray?: boolean, depth?: number): string {
+    private getInsertTextForSnippetValue(value: any, separatorAfter: string, settings: StringifySettings, depth?: number): string {
         // tslint:disable-next-line:no-any
         const replacer = (value: any) => {
             if (typeof value === 'string') {
@@ -490,19 +498,6 @@ export class YAMLCompletion extends JSONCompletion {
             }
             return value;
         };
-        // If it is an array then we need to manually indent the keys
-        // of that array item
-        if (isArray && typeof value === 'object' && value !== null) {
-            const fixedObj = { };
-            Object.keys(value).forEach((val, index) => {
-                if (index === 0 && !val.startsWith('-')) {
-                    fixedObj[`- ${val}`] = value[val];
-                } else {
-                    fixedObj[`  ${val}`] = value[val];
-                }
-            });
-            value = fixedObj;
-        }
         return stringifyObject(value, '', replacer, settings, depth) + separatorAfter;
     }
 
@@ -680,7 +675,7 @@ export class YAMLCompletion extends JSONCompletion {
                             newLineFirst: true,
                             indentFirstObject: false,
                             shouldIndentWithTab: false
-                        }, false, 1);
+                        }, 1);
                     }
                 }
                 nValueProposals += propertySchema.defaultSnippets.length;

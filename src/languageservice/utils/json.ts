@@ -11,7 +11,7 @@ export interface StringifySettings {
 }
 
 // tslint:disable-next-line: no-any
-export function stringifyObject(obj: any, indent: string, stringifyLiteral: (val: any) => string, settings: StringifySettings, depth = 0): string {
+export function stringifyObject(obj: any, indent: string, stringifyLiteral: (val: any) => string, settings: StringifySettings, depth = 0, consecutiveArrays = 0): string {
     if (obj !== null && typeof obj === 'object') {
 
         /**
@@ -21,12 +21,17 @@ export function stringifyObject(obj: any, indent: string, stringifyLiteral: (val
          */
         let newIndent = ((depth === 0 && settings.shouldIndentWithTab) || depth > 0) ? (indent + '  ') : '';
         if (Array.isArray(obj)) {
+            consecutiveArrays += 1;
             if (obj.length === 0) {
                 return '';
             }
-            let result = ((depth === 0 && settings.newLineFirst) || depth > 0) ? '\n' : '';
+            let result = '';
             for (let i = 0; i < obj.length; i++) {
-                result += newIndent + stringifyObject(obj[i], indent, stringifyLiteral, settings, depth += 1);
+                let pseudoObj = obj[i];
+                if (!Array.isArray(obj[i])) {
+                    pseudoObj = preprendToObject(obj[i], consecutiveArrays);
+                }
+                result += newIndent + stringifyObject(pseudoObj, indent, stringifyLiteral, settings, depth += 1, consecutiveArrays);
                 if (i < obj.length - 1) {
                     result += '\n';
                 }
@@ -44,9 +49,9 @@ export function stringifyObject(obj: any, indent: string, stringifyLiteral: (val
 
                 // The first child of an array needs to be treated specially, otherwise identations will be off
                 if (depth === 0 && i === 0 && !settings.indentFirstObject) {
-                    result += indent + key + ': ' + stringifyObject(obj[key], newIndent, stringifyLiteral, settings, depth += 1);
+                    result += indent + key + ': ' + stringifyObject(obj[key], newIndent, stringifyLiteral, settings, depth += 1, 0);
                 } else {
-                    result += newIndent + key + ': ' + stringifyObject(obj[key], newIndent, stringifyLiteral, settings, depth += 1);
+                    result += newIndent + key + ': ' + stringifyObject(obj[key], newIndent, stringifyLiteral, settings, depth += 1, 0);
                 }
                 if (i < keys.length - 1) {
                     result += '\n';
@@ -57,4 +62,17 @@ export function stringifyObject(obj: any, indent: string, stringifyLiteral: (val
         }
     }
     return stringifyLiteral(obj);
+}
+
+function preprendToObject(obj, consecutiveArrays) {
+    const newObj = { };
+    for (let i = 0; i < Object.keys(obj).length; i++) {
+        const key = Object.keys(obj)[i];
+        if (i === 0) {
+            newObj['- '.repeat(consecutiveArrays) + key] = obj[key];
+        } else {
+            newObj['  '.repeat(consecutiveArrays) + key] = obj[key];
+        }
+    }
+    return newObj;
 }

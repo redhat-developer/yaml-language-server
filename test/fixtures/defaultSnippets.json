@@ -79,6 +79,25 @@
                     }
                   }
             ]
+        },
+        "arrayArraySnippet": {
+            "type": "object",
+            "defaultSnippets": [
+                {
+                    "label": "Array Array Snippet",
+                    "description": "Task",
+                    "body": {
+                          "apple": [
+                            [
+                              {
+                                "name": "source",
+                                "resource": "$3"
+                              }
+                            ]
+                          ]
+                    }
+                  }
+            ]
         }
     }
 }
