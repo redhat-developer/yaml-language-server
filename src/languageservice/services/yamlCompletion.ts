@@ -273,8 +273,7 @@ export class YAMLCompletion extends JSONCompletion {
                 }
             }
 
-            // Covers the case when we are showing a snippet in an array
-            if (node.type === 'object' && node.parent && node.parent.type === 'array' && s.schema.type !== 'object') {
+            if (node.parent && s.node === node.parent && node.type === 'object' && s.schema.defaultSnippets) {
                 // For some reason the first item in the array needs to be treated differently, otherwise
                 // the indentation will not be correct
                 if (node.properties.length === 1) {
