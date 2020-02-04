@@ -63,16 +63,6 @@ suite('Default Snippet Tests', () => {
                 }).then(done, done);
             });
 
-            it('Snippet in array schema should autocomplete on next line with depth', done => {
-                const content = 'array:\n  - item1:\n    - ';
-                const completion = parseSetup(content, 24);
-                completion.then(function (result) {
-                    assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].insertText, 'item1: $1\n  item2: $2');
-                    assert.equal(result.items[0].label, 'My array item');
-                }).then(done, done);
-            });
-
             it('Snippet in array schema should autocomplete correctly after ', done => {
                 const content = 'array:\n  - item1: asd\n    item2: asd\n    ';
                 const completion = parseSetup(content, 40);

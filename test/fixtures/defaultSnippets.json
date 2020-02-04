@@ -24,12 +24,12 @@
                     "body": { "item1": "$1", "item2": "$2" }
                 }
             ],
-            "items": {
+            "items": { 
                 "item1": {
-                    "$ref": "#/properties/array"
+                    "type": "string"
                 },
                 "item2": {
-                    "$ref": "#/properties/array"
+                    "type": "string"
                 }
             }
         },
