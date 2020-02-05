@@ -495,6 +495,9 @@ export class YAMLCompletion extends JSONCompletion {
                 if (value[0] === '^') {
                     return value.substr(1);
                 }
+                if (value === 'true' || value === 'false') {
+                    return `\"${value}\"`;
+                }
             }
             return value;
         };

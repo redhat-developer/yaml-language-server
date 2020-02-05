@@ -150,7 +150,7 @@ suite('Default Snippet Tests', () => {
                 const content = 'lon  ';
                 const completion = parseSetup(content, 3);
                 completion.then(function (result) {
-                    assert.equal(result.items.length, 6); // This is just checking the total number of snippets in the defaultSnippets.json
+                    assert.equal(result.items.length, 8); // This is just checking the total number of snippets in the defaultSnippets.json
                     assert.equal(result.items[4].label, 'longSnippet');
                     // tslint:disable-next-line:max-line-length
                     assert.equal(result.items[4].insertText, 'longSnippet:\n  name: $1\n  taskRef: \n    name: apply-manifests  \n  resources: \n    inputs:       \n      - name: source\n        resource: $3          \n  params:     \n    - name: manifest_dir\n      value: $2    ');
@@ -161,7 +161,7 @@ suite('Default Snippet Tests', () => {
                 const content = 'arrayArrayS  ';
                 const completion = parseSetup(content, 11);
                 completion.then(function (result) {
-                    assert.equal(result.items.length, 6); // This is just checking the total number of snippets in the defaultSnippets.json
+                    assert.equal(result.items.length, 8); // This is just checking the total number of snippets in the defaultSnippets.json
                     assert.equal(result.items[5].label, 'arrayArraySnippet');
                     // tslint:disable-next-line:max-line-length
                     assert.equal(result.items[5].insertText, 'arrayArraySnippet:\n  apple:         \n    - - name: source\n        resource: $3      ');
@@ -187,6 +187,28 @@ suite('Default Snippet Tests', () => {
                     assert.equal(result.items[0].label, 'Array Array Snippet');
                     // tslint:disable-next-line:max-line-length
                     assert.equal(result.items[0].insertText, 'apple:     \n  - - name: source\n      resource: $3');
+                }).then(done, done);
+            });
+
+            it('Test string with boolean in string should insert string', done => {
+                const content = 'simpleBooleanString: ';
+                const completion = parseSetup(content, 21);
+                completion.then(function (result) {
+                    assert.equal(result.items.length, 1);
+                    assert.equal(result.items[0].label, 'Simple boolean string');
+                    // tslint:disable-next-line:max-line-length
+                    assert.equal(result.items[0].insertText, '\n  test: \"true\"');
+                }).then(done, done);
+            });
+
+            it('Test string with boolean NOT in string should insert boolean', done => {
+                const content = 'simpleBoolean: ';
+                const completion = parseSetup(content, 15);
+                completion.then(function (result) {
+                    assert.equal(result.items.length, 1);
+                    assert.equal(result.items[0].label, 'Simple string');
+                    // tslint:disable-next-line:max-line-length
+                    assert.equal(result.items[0].insertText, '\n  test: true');
                 }).then(done, done);
             });
         });

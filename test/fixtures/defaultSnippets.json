@@ -96,7 +96,31 @@
                             ]
                           ]
                     }
-                  }
+                }
+            ]
+        },
+        "simpleBooleanString": {
+            "type": "object",
+            "defaultSnippets": [
+                {
+                    "label": "Simple boolean string",
+                    "description": "Simple boolean string insert",
+                    "body": {
+                          "test": "true"
+                    }
+                }
+            ]
+        },
+        "simpleBoolean": {
+            "type": "object",
+            "defaultSnippets": [
+                {
+                    "label": "Simple string",
+                    "description": "Simple string insert",
+                    "body": {
+                          "test": true
+                    }
+                }
             ]
         }
     }
