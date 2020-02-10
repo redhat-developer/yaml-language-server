@@ -425,7 +425,7 @@ suite('JSON Schema', () => {
 
         await service.addContent({
             action: MODIFICATION_ACTIONS.add,
-            path: 'oneOf/0/properties/kind',
+            path: 'oneOf/1/properties/kind',
             key: 'enum',
             content: [
                 'v2',
@@ -435,7 +435,7 @@ suite('JSON Schema', () => {
         });
 
         const fs = await service.getResolvedSchema(KUBERNETES_SCHEMA_URL);
-        assert.deepEqual(fs.schema.oneOf[0].properties['kind']['enum'], ['v2', 'v3']);
+        assert.deepEqual(fs.schema.oneOf[1].properties['kind']['enum'], ['v2', 'v3']);
     });
 
     test('Deleting schema works with Kubernetes resolution', async () => {
@@ -444,13 +444,13 @@ suite('JSON Schema', () => {
 
         await service.deleteContent({
             action: MODIFICATION_ACTIONS.delete,
-            path: 'oneOf/0/properties/kind',
+            path: 'oneOf/1/properties/kind',
             key: 'enum',
             schema: KUBERNETES_SCHEMA_URL
         });
 
         const fs = await service.getResolvedSchema(KUBERNETES_SCHEMA_URL);
-        assert.equal(fs.schema.oneOf[0].properties['kind']['enum'], undefined);
+        assert.equal(fs.schema.oneOf[1].properties['kind']['enum'], undefined);
     });
 
     test('Adding a brand new schema', async () => {
