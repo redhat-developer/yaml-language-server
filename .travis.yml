@@ -18,6 +18,7 @@ deploy:
   provider: npm
   email: gorkem.ercan@gmail.com
   cleanup: false
+  edge: true
   on:
     tags: true
     repo: redhat-developer/yaml-language-server
