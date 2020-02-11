@@ -9,7 +9,7 @@ import { MarkedString } from '../src';
 
 const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
-const uri = 'https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.14.0-standalone-strict/all.json';
+const uri = 'https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.17.0-standalone-strict/all.json';
 const languageSettings: LanguageSettings = {
     schemas: [],
     validate: true,
