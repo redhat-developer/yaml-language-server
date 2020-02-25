@@ -116,7 +116,6 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
             }
 
             //This is patch to support YAML null values: https://yaml.org/type/null.html
-            // TODO: fix null values // TODO: also add <empty>
             const possibleNullValues = ['~', 'NULL', 'Null', 'null'];
             if (instance.plainScalar && possibleNullValues.indexOf(value.toString()) !== -1) {
                 return new NullASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
