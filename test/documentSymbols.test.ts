@@ -80,7 +80,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 1);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('apiVersion', 15, undefined, TEST_URI, 0, 0, 0, 16)
+                createExpectedSymbolInformation('apiVersion', SymbolKind.Variable, undefined, TEST_URI, 0, 0, 0, 16)
             );
         });
 
@@ -90,7 +90,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 1);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('items', 18, undefined, TEST_URI, 0, 0, 2, 8)
+                createExpectedSymbolInformation('items', SymbolKind.Array, undefined, TEST_URI, 0, 0, 2, 8)
             );
         });
 
@@ -221,7 +221,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 1);
             assert.deepEqual(
                 symbols[0],
-                createExpectedDocumentSymbol('apiVersion', SymbolKind.String, 0, 0, 0, 16, 0, 0, 0, 10)
+                createExpectedDocumentSymbol('apiVersion', SymbolKind.Variable, 0, 0, 0, 16, 0, 0, 0, 10)
             );
         });
 
