@@ -115,15 +115,9 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
                 return new BooleanASTNodeImpl(parent, parseYamlBoolean(value), node.startPosition, node.endPosition - node.startPosition);
             }
 
-            //This is patch to support YAML null values: https://yaml.org/type/null.html
-            const possibleNullValues = ['~', 'NULL', 'Null', 'null'];
-            if (instance.plainScalar && possibleNullValues.indexOf(value.toString()) !== -1) {
-                return new NullASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
-            }
-
             switch (type) {
                 case Yaml.ScalarType.null: {
-                    return new StringASTNodeImpl(parent, instance.startPosition, instance.endPosition - instance.startPosition);
+                    return new NullASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
                 }
                 case Yaml.ScalarType.bool: {
                     return new BooleanASTNodeImpl(parent, Yaml.parseYamlBoolean(value), node.startPosition, node.endPosition - node.startPosition);

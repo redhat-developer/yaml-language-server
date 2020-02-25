@@ -96,16 +96,6 @@ suite('Validation Tests', () => {
                 }).then(done, done);
             });
 
-            // TODO: remove this test, because it is just plain wrong: https://yaml.org/type/null.html
-            // See: https://github.com/redhat-developer/yaml-language-server/issues/118
-            it.skip('Null scalar value should be treated as string', done => {
-                const content = 'cwd: Null';
-                const validator = parseSetup(content);
-                validator.then(function (result) {
-                    assert.equal(result.length, 0);
-                }).then(done, done);
-            });
-
             it('Anchor should not not error', done => {
                 const content = 'default: &DEFAULT\n  name: Anchor\nanchor_test:\n  <<: *DEFAULT';
                 const validator = parseSetup(content);
