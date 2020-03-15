@@ -96,14 +96,6 @@ suite('Validation Tests', () => {
                 }).then(done, done);
             });
 
-            it('Null scalar value should be treated as string', done => {
-                const content = 'cwd: Null';
-                const validator = parseSetup(content);
-                validator.then(function (result) {
-                    assert.equal(result.length, 0);
-                }).then(done, done);
-            });
-
             it('Anchor should not not error', done => {
                 const content = 'default: &DEFAULT\n  name: Anchor\nanchor_test:\n  <<: *DEFAULT';
                 const validator = parseSetup(content);
@@ -427,6 +419,56 @@ suite('Validation Tests', () => {
                     assert.equal(result.length, 2);
                     // tslint:disable-next-line:quotemark
                     assert.equal(result[1].message, `Value is not accepted. Valid values: "ImageStreamImport", "ImageStreamLayers".`);
+                }).then(done, done);
+            });
+        });
+
+        // https://github.com/redhat-developer/yaml-language-server/issues/118
+        describe('Null literals', () => {
+            ['NULL', 'Null', 'null', '~', ''].forEach(content => {
+                it(`Test type null is parsed from [${content}]`, done => {
+                    const schema = {
+                        type: 'null'
+                    };
+                    languageService.configure({
+                        schemas: [{
+                            uri: 'file://test.yaml',
+                            fileMatch: ['*.yaml', '*.yml'],
+                            schema
+                        }],
+                        validate: true
+                    });
+                    const validator = parseSetup(content);
+                    validator.then(function (result) {
+                        assert.equal(result.length, 0);
+                    }).then(done, done);
+                });
+            });
+
+            it('Test type null is working correctly in array', done => {
+                const schema = {
+                    properties: {
+                        values: {
+                            type: 'array',
+                            items: {
+                                type: 'null'
+                            }
+                        }
+                    },
+                    required: ['values']
+                };
+                languageService.configure({
+                    schemas: [{
+                        uri: 'file://test.yaml',
+                        fileMatch: ['*.yaml', '*.yml'],
+                        schema
+                    }],
+                    validate: true
+                });
+                const content = 'values: [Null, NULL, null, ~,]';
+                const validator = parseSetup(content);
+                validator.then(function (result) {
+                    assert.equal(result.length, 0);
                 }).then(done, done);
             });
         });

@@ -117,7 +117,7 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 
             switch (type) {
                 case Yaml.ScalarType.null: {
-                    return new StringASTNodeImpl(parent, instance.startPosition, instance.endPosition - instance.startPosition);
+                    return new NullASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
                 }
                 case Yaml.ScalarType.bool: {
                     return new BooleanASTNodeImpl(parent, Yaml.parseYamlBoolean(value), node.startPosition, node.endPosition - node.startPosition);
