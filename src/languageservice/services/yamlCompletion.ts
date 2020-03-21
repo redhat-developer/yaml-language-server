@@ -673,7 +673,7 @@ export class YAMLCompletion extends JSONCompletion {
                 if (propertySchema.defaultSnippets.length === 1) {
                     const body = propertySchema.defaultSnippets[0].body;
                     if (isDefined(body)) {
-                        value = ' ' + this.getInsertTextForSnippetValue(body, '', {
+                        value = this.getInsertTextForSnippetValue(body, '', {
                             newLineFirst: true,
                             indentFirstObject: false,
                             shouldIndentWithTab: false
