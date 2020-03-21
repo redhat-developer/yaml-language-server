@@ -673,7 +673,7 @@ export class YAMLCompletion extends JSONCompletion {
                 if (propertySchema.defaultSnippets.length === 1) {
                     const body = propertySchema.defaultSnippets[0].body;
                     if (isDefined(body)) {
-                        value = this.getInsertTextForSnippetValue(body, '', {
+                        value = ' ' + this.getInsertTextForSnippetValue(body, '', {
                             newLineFirst: true,
                             indentFirstObject: false,
                             shouldIndentWithTab: false
@@ -684,19 +684,19 @@ export class YAMLCompletion extends JSONCompletion {
             }
             if (propertySchema.enum) {
                 if (!value && propertySchema.enum.length === 1) {
-                    value = this.getInsertTextForGuessedValue(propertySchema.enum[0], '');
+                    value = ' ' + this.getInsertTextForGuessedValue(propertySchema.enum[0], '');
                 }
                 nValueProposals += propertySchema.enum.length;
             }
             if (isDefined(propertySchema.default)) {
                 if (!value) {
-                    value = this.getInsertTextForGuessedValue(propertySchema.default, '');
+                    value = ' ' + this.getInsertTextForGuessedValue(propertySchema.default, '');
                 }
                 nValueProposals++;
             }
             if (Array.isArray(propertySchema.examples) && propertySchema.examples.length) {
                 if (!value) {
-                    value = this.getInsertTextForGuessedValue(propertySchema.examples[0], '');
+                    value = ' ' + this.getInsertTextForGuessedValue(propertySchema.examples[0], '');
                 }
                 nValueProposals += propertySchema.examples.length;
             }
@@ -740,7 +740,7 @@ export class YAMLCompletion extends JSONCompletion {
             }
         }
         if (!value || nValueProposals > 1) {
-            value = '$1';
+            value = ' $1';
         }
         return resultText + value + separatorAfter;
     }
