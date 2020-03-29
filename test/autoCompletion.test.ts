@@ -53,7 +53,7 @@ suite('Auto Completion Tests', () => {
                 const content = 'directory';
                 const completion = parseSetup(content, 10);
                 completion.then(function (result) {
-                    assert.equal(result.items[0].insertText, 'directory: bower_components');
+                    assert.equal(result.items[2].insertText, 'directory: ${1:bower_components}');
                 }).then(done, done);
             });
 
