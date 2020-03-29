@@ -49,6 +49,14 @@ suite('Auto Completion Tests', () => {
                 }).then(done, done);
             });
 
+            it('Autocomplete on default value (without :)', done => {
+                const content = 'directory';
+                const completion = parseSetup(content, 10);
+                completion.then(function (result) {
+                    assert.equal(result.items[2].insertText, 'directory: ${1:bower_components}');
+                }).then(done, done);
+            });
+
             it('Autocomplete on default value (without value content)', done => {
                 const content = 'directory: ';
                 const completion = parseSetup(content, 12);
