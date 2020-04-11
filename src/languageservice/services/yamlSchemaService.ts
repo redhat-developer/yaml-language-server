@@ -10,6 +10,8 @@ import { SchemaRequestService, WorkspaceContextService, PromiseConstructor, Then
 import { UnresolvedSchema, ResolvedSchema, JSONSchemaService,
     SchemaDependencies, ISchemaContributions } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 
+import { URI } from 'vscode-uri';
+
 import * as nls from 'vscode-nls';
 import { convertSimple2RegExpPattern } from '../utils/strings';
 const localize = nls.loadMessageBundle();
@@ -71,7 +73,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     [x: string]: any;
 
     private customSchemaProvider: CustomSchemaProvider | undefined;
-    private filePatternAssociations: FilePatternAssociation[];
+    private filePatternAssociations: JSONSchemaService.FilePatternAssociation[];
     private contextService: WorkspaceContextService;
 
     constructor(requestService: SchemaRequestService, contextService?: WorkspaceContextService, promiseConstructor?: PromiseConstructor) {
@@ -219,7 +221,7 @@ export class YAMLSchemaService extends JSONSchemaService {
             const schemas: string[] = [];
             for (const entry of this.filePatternAssociations) {
                 if (entry.matchesPattern(resource)) {
-                    for (const schemaId of entry.getSchemas()) {
+                  for (const schemaId of entry.getURIs()) {
                         if (!seen[schemaId]) {
                             schemas.push(schemaId);
                             seen[schemaId] = true;
@@ -368,7 +370,13 @@ export class YAMLSchemaService extends JSONSchemaService {
      */
 
     normalizeId(id: string) {
-        return super.normalizeId(id);
+        // The parent's `super.normalizeId(id)` isn't visible, so duplicated the code here
+        try {
+           return URI.parse(id).toString();
+        }
+        catch (e) {
+          return id;
+        }
     }
 
     getOrAddSchemaHandle(id: string, unresolvedSchemaContent?: JSONSchema) {

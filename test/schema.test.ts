@@ -257,7 +257,7 @@ suite('JSON Schema', () => {
 
         service.getResolvedSchema('main').then(fs => {
             const section = fs.getSection(['child', 'grandchild']);
-            assert.strictEqual(section, null);
+            assert.strictEqual(section, undefined);
         }).then(() => testDone(), error => {
             testDone(error);
         });

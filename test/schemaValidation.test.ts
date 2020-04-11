@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { configureLanguageService, setupTextDocument }  from './utils/testHelper';
+import { configureLanguageService, setupTextDocument, TEST_URI }  from './utils/testHelper';
 import { createExpectedError } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import { StringTypeError, BooleanTypeError, ArrayTypeError, ObjectTypeError, IncludeWithoutValueError, ColonMissingError, BlockMappingEntryError } from './utils/errorMessages';
@@ -406,7 +406,7 @@ suite('Validation Tests', () => {
                 };
                 languageService.configure({
                     schemas: [{
-                        uri: 'file://test.yaml',
+                        uri: TEST_URI,
                         fileMatch: ['*.yaml', '*.yml'],
                         schema
                     }],
@@ -432,7 +432,7 @@ suite('Validation Tests', () => {
                     };
                     languageService.configure({
                         schemas: [{
-                            uri: 'file://test.yaml',
+                            uri: TEST_URI,
                             fileMatch: ['*.yaml', '*.yml'],
                             schema
                         }],
@@ -459,7 +459,7 @@ suite('Validation Tests', () => {
                 };
                 languageService.configure({
                     schemas: [{
-                        uri: 'file://test.yaml',
+                        uri: TEST_URI,
                         fileMatch: ['*.yaml', '*.yml'],
                         schema
                     }],

@@ -30,13 +30,13 @@
   },
   "dependencies": {
     "js-yaml": "^3.13.1",
-    "jsonc-parser": "^2.1.0",
+    "jsonc-parser": "^2.2.1",
     "request-light": "^0.2.4",
-    "vscode-json-languageservice": "^3.3.0",
+    "vscode-json-languageservice": "^3.5.2",
     "vscode-languageserver": "^5.2.1",
-    "vscode-languageserver-types": "^3.14.0",
-    "vscode-nls": "^4.1.1",
-    "vscode-uri": "^2.0.3",
+    "vscode-languageserver-types": "^3.15.1",
+    "vscode-nls": "^4.1.2",
+    "vscode-uri": "^2.1.1",
     "yaml-ast-parser-custom-tags": "0.0.43"
   },
   "optionalDependencies": {
@@ -52,9 +52,9 @@
     "nyc": "^14.1.1",
     "source-map-support": "^0.5.12",
     "ts-node": "^5.0.1",
-    "tslint": "^5.18.0",
-    "typescript": "^3.5.3",
-    "typescript-tslint-plugin": "^0.5.4"
+    "tslint": "^6.1.1",
+    "typescript": "^3.8.3",
+    "typescript-tslint-plugin": "^0.5.5"
   },
   "scripts": {
     "compile": "installServerIntoExtension ./out ./package.json ./tsconfig.json && tsc -p .",
