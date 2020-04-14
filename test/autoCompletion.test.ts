@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import { TextDocument } from 'vscode-languageserver';
 import { getLanguageService } from '../src/languageservice/yamlLanguageService';
-import { schemaRequestService, workspaceContext } from './utils/testHelper';
+import { schemaRequestService, workspaceContext, TEST_URI } from './utils/testHelper';
 import assert = require('assert');
 
 const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
@@ -21,7 +21,7 @@ languageService.configure(languageSettings);
 suite('Auto Completion Tests', () => {
 
     function setup(content: string) {
-        return TextDocument.create('file://~/Desktop/vscode-k8s/test.yaml', 'yaml', 0, content);
+        return TextDocument.create(TEST_URI, 'yaml', 0, content);
     }
 
     function parseSetup(content: string, position) {
@@ -194,7 +194,7 @@ suite('Auto Completion Tests', () => {
                 };
                 languageService.configure({
                     schemas: [{
-                        uri: 'file://test.yaml',
+                        uri: TEST_URI,
                         fileMatch: ['*.yaml', '*.yml'],
                         schema
                     }],

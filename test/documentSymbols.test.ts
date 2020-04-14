@@ -32,7 +32,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 1);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('cwd', 15, undefined, TEST_URI, 0, 0, 0, 9)
+                createExpectedSymbolInformation('cwd', 15, "", TEST_URI, 0, 0, 0, 9)
             );
         });
 
@@ -42,7 +42,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 1);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('node1', 16, undefined, TEST_URI, 0, 0, 0, 12)
+                createExpectedSymbolInformation('node1', 16, "", TEST_URI, 0, 0, 0, 12)
             );
         });
 
@@ -52,7 +52,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 1);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('node1', 17, undefined, TEST_URI, 0, 0, 0, 12)
+                createExpectedSymbolInformation('node1', 17, "", TEST_URI, 0, 0, 0, 12)
             );
         });
 
@@ -62,7 +62,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 3);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('scripts', 2, undefined, TEST_URI, 0, 0, 2, 13)
+                createExpectedSymbolInformation('scripts', 2, "", TEST_URI, 0, 0, 2, 13)
             );
             assert.deepEqual(
                 symbols[1],
@@ -80,7 +80,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 1);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('apiVersion', SymbolKind.Variable, undefined, TEST_URI, 0, 0, 0, 16)
+                createExpectedSymbolInformation('apiVersion', SymbolKind.Variable, "", TEST_URI, 0, 0, 0, 16)
             );
         });
 
@@ -90,7 +90,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 1);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('items', SymbolKind.Array, undefined, TEST_URI, 0, 0, 2, 8)
+                createExpectedSymbolInformation('items', SymbolKind.Array, "", TEST_URI, 0, 0, 2, 8)
             );
         });
 
@@ -100,7 +100,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 3);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('authors', 18, undefined, TEST_URI, 0, 0, 2, 13)
+                createExpectedSymbolInformation('authors', 18, "", TEST_URI, 0, 0, 2, 13)
             );
             assert.deepEqual(
                 symbols[1],
@@ -116,29 +116,33 @@ suite('Document Symbols Tests', () => {
             const content = 'scripts:\n  node1: test\n  node2: test\nauthors:\n  - name: Josh\n  - email: jp';
             const symbols = parseNonHierarchicalSetup(content);
             assert.equal(symbols.length, 6);
+
+            // Sort the items first so they have predictable order in the array
+            symbols.sort((a, b) => a.name.localeCompare(b.name));
+            
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('scripts', 2, undefined, TEST_URI, 0, 0, 2, 13)
+                createExpectedSymbolInformation('authors', 18, "", TEST_URI, 3, 0, 5, 13)
             );
             assert.deepEqual(
                 symbols[1],
-                createExpectedSymbolInformation('node1', 15, 'scripts', TEST_URI, 1, 2, 1, 13)
+                createExpectedSymbolInformation('email', 15, 'authors', TEST_URI, 5, 4, 5, 13)
             );
             assert.deepEqual(
                 symbols[2],
-                createExpectedSymbolInformation('node2', 15, 'scripts', TEST_URI, 2, 2, 2, 13)
-            );
-            assert.deepEqual(
-                symbols[3],
-                createExpectedSymbolInformation('authors', 18, undefined, TEST_URI, 3, 0, 5, 13)
-            );
-            assert.deepEqual(
-                symbols[4],
                 createExpectedSymbolInformation('name', 15, 'authors', TEST_URI, 4, 4, 4, 14)
             );
             assert.deepEqual(
+                symbols[3],
+                createExpectedSymbolInformation('node1', 15, 'scripts', TEST_URI, 1, 2, 1, 13)
+            );
+            assert.deepEqual(
+                symbols[4],
+                createExpectedSymbolInformation('node2', 15, 'scripts', TEST_URI, 2, 2, 2, 13)
+            );
+            assert.deepEqual(
                 symbols[5],
-                createExpectedSymbolInformation('email', 15, 'authors', TEST_URI, 5, 4, 5, 13)
+                createExpectedSymbolInformation('scripts', 2, "", TEST_URI, 0, 0, 2, 13)
             );
         });
 
@@ -148,11 +152,11 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 2);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('analytics', 17, undefined, TEST_URI, 1, 0, 1, 15)
+                createExpectedSymbolInformation('analytics', 17, "", TEST_URI, 1, 0, 1, 15)
             );
             assert.deepEqual(
                 symbols[1],
-                createExpectedSymbolInformation('json', 15, undefined, TEST_URI, 4, 0, 4, 10)
+                createExpectedSymbolInformation('json', 15, "", TEST_URI, 4, 0, 4, 10)
             );
         });
 

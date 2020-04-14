@@ -31,7 +31,7 @@ export function createExpectedError(
 
 export function createExpectedSymbolInformation(
     name: string,
-    kind: number,
+    kind: SymbolKind,
     containerName: string | undefined,
     uri: string,
     startLine: number,
