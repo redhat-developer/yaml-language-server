@@ -3,7 +3,7 @@ import { join, normalize } from 'path';
 import { URI } from 'vscode-uri';
 
 export const isRelativePath = (path: string): boolean => {
-    const relativePathRegex = /^(((\.\.?)|([\w-\. ]+))(\/|\\\\?))*[\w-\. ]*\.[\w-]+$/i;
+    const relativePathRegex = /^(((\.\.?)|([\w-@\. ]+))(\/|\\\\?))*[\w-\. ]*\.[\w-]+$/i;
     return relativePathRegex.test(path);
 };
 

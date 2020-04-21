@@ -132,6 +132,11 @@ suite('File path tests', () => {
                       'file:///usr/testuser/relative/path/file.json',
                       'file:///c%3A/Users/testuser/relative/path/file.json');
 
+        checkGoodPath(join('..', '..', 'relative', '@path', 'file.json'),
+                      'file:///relative/%40path/file.json',
+                      'file:///usr/testuser/relative/%40path/file.json',
+                      'file:///c%3A/Users/testuser/relative/%40path/file.json');
+
         describe('Relative path = a workspace folder', () => {
             const path1 = join('aFolder', 'file.json');
             const path2 = join('folder-2', 'file.json');
