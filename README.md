@@ -130,6 +130,7 @@ This repository only contains the server implementation. Here are some known cli
 * [Eclipse Wild Web Developer](https://marketplace.eclipse.org/content/eclipse-wild-web-developer-web-development-eclipse-ide) for Eclipse IDE
 * [lsp-mode](https://github.com/emacs-lsp/lsp-mode) for Emacs
 * [vim-lsp](https://github.com/prabirshrestha/vim-lsp) for Vim
+* [LSP-yaml](https://packagecontrol.io/packages/LSP-yaml) for Sublime Text
 
 ## Developer Support
 
