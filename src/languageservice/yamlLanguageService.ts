@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { YAMLSchemaService, CustomSchemaProvider, SchemaAdditions, SchemaDeletions } from './services/yamlSchemaService';
-import { TextDocument, Position, CompletionList, Diagnostic, Hover, SymbolInformation, DocumentSymbol, CompletionItem, TextEdit } from 'vscode-languageserver-types';
+import { TextDocument, Position, CompletionList, Diagnostic, Hover, SymbolInformation, DocumentSymbol, CompletionItem, TextEdit, DefinitionLink } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLCompletion } from './services/yamlCompletion';
@@ -13,6 +13,7 @@ import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
 import { getLanguageService as getJSONLanguageService, JSONWorkerContribution } from 'vscode-json-languageservice';
+import { findDefinition } from './services/yamlDefinition';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
@@ -116,6 +117,7 @@ export interface LanguageService {
   findDocumentSymbols(document: TextDocument): SymbolInformation[];
   findDocumentSymbols2(document: TextDocument): DocumentSymbol[];
   doResolve(completionItem): Thenable<CompletionItem>;
+  findDefinition(document: TextDocument, position: Position): Thenable<DefinitionLink[]>;
   resetSchema(uri: string): boolean;
   doFormat(document: TextDocument, options: CustomFormatterOptions): TextEdit[];
   addSchema(schemaID: string, schema: JSONSchema): void;
@@ -154,6 +156,7 @@ export function getLanguageService(schemaRequestService: SchemaRequestService,
       registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
         schemaService.registerCustomSchemaProvider(schemaProvider);
       },
+      findDefinition,
       doComplete: completer.doComplete.bind(completer),
       doResolve: completer.doResolve.bind(completer),
       doValidation: yamlValidation.doValidation.bind(yamlValidation),

@@ -104,6 +104,7 @@ let workspaceRoot: URI = null;
 let workspaceFolders: WorkspaceFolder[] = [];
 let clientDynamicRegisterSupport = false;
 let hierarchicalDocumentSymbolSupport = false;
+let clientDefinitionLinkSupport = false;
 
 /****************************
  * Reusable helper functions
@@ -353,6 +354,11 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
       capabilities.textDocument.rangeFormatting &&
       capabilities.textDocument.rangeFormatting.dynamicRegistration
     );
+    clientDefinitionLinkSupport = !!(
+      capabilities.textDocument &&
+      capabilities.textDocument.definition &&
+      capabilities.textDocument.definition.linkSupport
+    );
 
     return {
         capabilities: {
@@ -361,7 +367,8 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
             hoverProvider: true,
             documentSymbolProvider: true,
             documentFormattingProvider: false,
-            documentRangeFormattingProvider: false
+            documentRangeFormattingProvider: false,
+            definitionProvider: true
         }
     };
 });
@@ -562,6 +569,20 @@ connection.onDocumentFormatting(formatParams => {
     };
 
     return customLanguageService.doFormat(document, customFormatterSettings);
+});
+
+connection.onDefinition(params => {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) {
+        return Promise.resolve([]);
+    }
+
+    const definitionLinksPromise = customLanguageService.findDefinition(document, params.position);
+    if (clientDefinitionLinkSupport) {
+        return definitionLinksPromise;
+    } else {
+        return definitionLinksPromise.then(definitionLinks => definitionLinks.map(definitionLink => ({uri: definitionLink.targetUri, range: definitionLink.targetRange})));
+    }
 });
 
 connection.onRequest(SchemaModificationNotification.type, (modifications: SchemaAdditions | SchemaDeletions) => {
