@@ -404,10 +404,10 @@ connection.onDidChangeConfiguration(change => {
 
     specificValidatorPaths = [];
     if (settings.yaml) {
-        yamlConfigurationSettings = settings.yaml.schemas;
-        yamlShouldValidate = settings.yaml.validate;
-        yamlShouldHover = settings.yaml.hover;
-        yamlShouldCompletion = settings.yaml.completion;
+        yamlConfigurationSettings = settings.yaml.schemas || yamlConfigurationSettings;
+        yamlShouldValidate = settings.yaml.validate || yamlShouldValidate;
+        yamlShouldHover = settings.yaml.hover || yamlShouldHover;
+        yamlShouldCompletion = settings.yaml.completion || yamlShouldCompletion;
         customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
 
         if (settings.yaml.schemaStore) {
