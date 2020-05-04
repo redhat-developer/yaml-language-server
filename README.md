@@ -142,11 +142,11 @@ This repository only contains the server implementation. Here are some known cli
 3. Install the dependencies
 	```bash
     cd yaml-language-server
-	$ npm install
+	$ yarn install
 	```
 4. Build the language server
 	```bash
-	$ npm run compile
+	$ yarn run compile
 	```
 5. The new built server is now location in out/server/src/server.js.
 	```bash
