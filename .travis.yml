@@ -12,6 +12,7 @@ before_install:
 install:
 - npm install
 - npm run compile
+- rm -rf out/server/node_modules/
 after_script:
 - npm run coveralls
 deploy:
