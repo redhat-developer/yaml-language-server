@@ -12,7 +12,6 @@ before_install:
 install:
 - yarn install
 - yarn run compile
-- rm -rf out/server/node_modules/
 after_script:
 - yarn run coveralls
 deploy:
