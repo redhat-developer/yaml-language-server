@@ -157,11 +157,18 @@ function recursivelyBuildAst (parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 }
 
 function convertError(e: Yaml.YAMLException) {
-    console.log(`ERROR TO CONVER: ${e}`);
+    console.log(`ERROR TO CONVERT: ${e}`);
 
     const line = e.mark.line === 0 ? 0 : e.mark.line - 1;
+    /**
+     * I think this calculation is wrong???
+     */
     const character = e.mark.position + e.mark.column === 0 ? 0 : e.mark.position + e.mark.column - 1;
 
+    /**
+     * Something funny going on here -- why would these
+     * errors star and end at the same position?
+     */
     return { message: `${e.reason}`, range: {
         start: {
             line,
