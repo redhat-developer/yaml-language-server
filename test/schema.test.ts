@@ -88,8 +88,8 @@ suite('JSON Schema', () => {
         const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
         service.setSchemaContributions({
             schemas: {
-                'http://json.schemastore.org/swagger-2.0': {
-                    id: 'http://json.schemastore.org/swagger-2.0',
+                'https://json.schemastore.org/swagger-2.0': {
+                    id: 'https://json.schemastore.org/swagger-2.0',
                     type: 'object',
                     properties: {
                         'responseValue': {
@@ -111,7 +111,7 @@ suite('JSON Schema', () => {
             }
         });
 
-        service.getResolvedSchema('http://json.schemastore.org/swagger-2.0').then(fs => {
+        service.getResolvedSchema('https://json.schemastore.org/swagger-2.0').then(fs => {
             assert.deepEqual(fs.schema.properties['responseValue'], {
                 type: 'object',
                 required: ['$ref'],

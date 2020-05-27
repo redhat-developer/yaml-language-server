@@ -9,7 +9,7 @@ import assert = require('assert');
 
 const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
-const uri = 'http://json.schemastore.org/bowerrc';
+const uri = 'https://json.schemastore.org/bowerrc';
 const languageSettings = {
     schemas: [],
     completion: true
