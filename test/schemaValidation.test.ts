@@ -8,7 +8,7 @@ import { ServiceSetup } from './utils/serviceSetup';
 import { StringTypeError, BooleanTypeError, ArrayTypeError, ObjectTypeError, IncludeWithoutValueError, ColonMissingError, BlockMappingEntryError } from './utils/errorMessages';
 import assert = require('assert');
 
-const uri = 'http://json.schemastore.org/bowerrc';
+const uri = 'https://json.schemastore.org/bowerrc';
 const fileMatch = ['*.yml', '*.yaml'];
 const languageSettingsSetup = new ServiceSetup()
     .withValidate()
@@ -350,7 +350,7 @@ suite('Validation Tests', () => {
             it('Test that anchors do not report Property << is not allowed', done => {
                 languageService.configure({
                     schemas: [{
-                        uri: 'http://json.schemastore.org/gitlab-ci',
+                        uri: 'https://json.schemastore.org/gitlab-ci',
                         fileMatch: ['*.yaml', '*.yml']
                     }],
                     validate: true

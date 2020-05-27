@@ -36,7 +36,7 @@ The following settings are supported:
 * `yaml.hover`: Enable/disable hover
 * `yaml.completion`: Enable/disable autocompletion
 * `yaml.schemas`: Helps you associate schemas with files in a glob pattern
-* `yaml.schemaStore.enable`: When set to true the YAML language server will pull in all available schemas from [JSON Schema Store](http://schemastore.org/json/)
+* `yaml.schemaStore.enable`: When set to true the YAML language server will pull in all available schemas from [JSON Schema Store](https://www.schemastore.org/json/)
 * `yaml.customTags`: Array of custom tags that the parser will validate against. It has two ways to be used. Either an item in the array is a custom tag such as "!Ref" and it will automatically map !Ref to scalar or you can specify the type of the object !Ref should be e.g. "!Ref sequence". The type of object can be either scalar (for strings and booleans), sequence (for arrays), map (for objects).
 
 ##### Adding custom tags
@@ -80,7 +80,7 @@ you can do
 
 ```
 yaml.schemas: {
-    "http://json.schemastore.org/composer": "/myYamlFile.yaml"
+    "https://json.schemastore.org/composer": "/myYamlFile.yaml"
 }
 ```
 
@@ -99,7 +99,7 @@ yaml.schemas: {
 e.g.
 ```
 yaml.schemas: {
-    "http://json.schemastore.org/composer": "/*"
+    "https://json.schemastore.org/composer": "/*"
 }
 ```
 
@@ -113,7 +113,7 @@ yaml.schemas: {
 e.g.
 ```
 yaml.schemas: {
-    "http://json.schemastore.org/composer": "/*",
+    "https://json.schemastore.org/composer": "/*",
     "kubernetes": "/myYamlFile.yaml"
 }
 ```

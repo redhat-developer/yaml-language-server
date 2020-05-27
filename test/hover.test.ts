@@ -10,8 +10,8 @@ import assert = require('assert');
 /**
  * Setup the schema we are going to use with the language settings
  */
-const bowerURI = 'http://json.schemastore.org/bowerrc';
-const composerURI = 'http://json.schemastore.org/composer';
+const bowerURI = 'https://json.schemastore.org/bowerrc';
+const composerURI = 'https://json.schemastore.org/composer';
 const fileMatch = ['*.yml', '*.yaml'];
 const languageSettingsSetup = new ServiceSetup()
     .withHover()
