@@ -12,7 +12,7 @@ import assert = require('assert');
 
 const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
-const uri = 'http://json.schemastore.org/composer';
+const uri = 'https://json.schemastore.org/composer';
 const languageSettings = {
     schemas: [],
     completion: true

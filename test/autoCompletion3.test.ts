@@ -10,7 +10,7 @@ import assert = require('assert');
 
 const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
-const uri = 'http://json.schemastore.org/asmdef';
+const uri = 'https://json.schemastore.org/asmdef';
 const languageSettings = {
     schemas: [],
     completion: true

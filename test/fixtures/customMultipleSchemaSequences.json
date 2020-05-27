@@ -17,7 +17,7 @@
 			"required": ["name","age"]
 		},
 		{
-			"$ref": "http://json.schemastore.org/bowerrc"
+			"$ref": "https://json.schemastore.org/bowerrc"
 		}
 	]
 
