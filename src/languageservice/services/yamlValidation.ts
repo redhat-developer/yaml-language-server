@@ -53,7 +53,8 @@ export class YAMLValidation {
                 validationResult.push(...syd.errors);
             }
             if (syd.warnings.length > 0) {
-                validationResult.push(...syd.warnings);
+                // TODO: Get rid of this type assertion (shouldn't need it)
+                validationResult.push(...(syd.warnings as Diagnostic[]));
             }
 
             validationResult.push(...validation);

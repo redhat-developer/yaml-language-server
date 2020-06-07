@@ -221,7 +221,7 @@ export class YAMLDocument {
 
 }
 
-export function parse(text: string, customTags: string[] = []): YAMLDocument {
+export function parse(text: string, customTags = []): YAMLDocument {
     const additionalOptions = customTagsToAdditionalOptions(customTags);
 
     // Parse the AST using `yaml-ast-parser-custom-tags`

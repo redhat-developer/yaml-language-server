@@ -63,7 +63,7 @@ export function convertError(e: Yaml.YAMLException): YAMLDocError {
     };
 }
 
-export function customTagsToAdditionalOptions(customTags: string[]) {
+export function customTagsToAdditionalOptions(customTags: String[]) {
     const filteredTags = filterInvalidCustomTags(customTags);
 
     const schemaWithAdditionalTags = Schema.create(filteredTags.map(tag => {
