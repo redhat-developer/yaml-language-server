@@ -11,67 +11,15 @@ import * as nls from 'vscode-nls';
 const localize = nls.loadMessageBundle();
 
 import * as Yaml from 'yaml-ast-parser-custom-tags';
-import { Schema, Type } from 'js-yaml';
 
 import { getLineStartPositions } from '../utils/documentPositionCalculator';
+import { YAMLDocError, convertError, customTagsToAdditionalOptions } from '../utils/parseUtils';
 import { parseYamlBoolean } from './scalar-type';
-import { filterInvalidCustomTags } from '../utils/arrUtils';
 import { ASTNode } from '../jsonASTTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
 import { emit } from 'process';
 
-/**
- * An individual YAML diagnostic,
- * after formatting.
- */
-interface YAMLDocError {
-    message: string
-    range: {
-        start: {
-            line: number
-            character: number
-        }
-        end: {
-            line: number
-            character: number
-        }
-    }
-    severity: number
-}
-
-/**
- * `yaml-ast-parser-custom-tags` parses the AST and
- * returns ASTNodes, which are then converted into
- * these extended JSONDocuments.
- * 
- * These documents are collected into a final YAMLDocument
- * and passed to the `parseYAML` caller.
- */
-export class SingleYAMLDocument extends JSONDocument {
-    private lines: number[];
-    public root: ASTNode;
-    public errors: YAMLDocError[];
-    public warnings: YAMLDocError[];
-    public isKubernetes: boolean;
-    public currentDocIndex: number;
-
-    constructor (lines: number[]) {
-        super(null, []);
-        this.lines = lines;
-        this.root = null;
-        this.errors = [];
-        this.warnings = [];
-    }
-
-    public getSchemas (schema, doc, node) {
-        const matchingSchemas = [];
-        doc.validate(schema, matchingSchemas, node.start);
-        return matchingSchemas;
-    }
-
-}
-
-function recursivelyBuildAst (parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
+function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 
     if (!node) {
         return;
@@ -184,45 +132,36 @@ function recursivelyBuildAst (parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
     }
 }
 
-function convertError(e: Yaml.YAMLException): YAMLDocError {
-    const exception = {
-        exception: e,
-        string: e.toString(),
-        mark: {
-            mark: e.mark,
-            string: e.mark.toString(),
-            snippet: {
-                snippet: e.mark.getSnippet(),
-                length: e.mark.getSnippet().length
-            }
-        }
-    };
-    console.log(exception);
+/**
+ * `yaml-ast-parser-custom-tags` parses the AST and
+ * returns ASTNodes, which are then converted into
+ * these extended JSONDocuments.
+ * 
+ * These documents are collected into a final YAMLDocument
+ * and passed to the `parseYAML` caller.
+ */
+export class SingleYAMLDocument extends JSONDocument {
+    private lines: number[];
+    public root: ASTNode;
+    public errors: YAMLDocError[];
+    public warnings: YAMLDocError[];
+    public isKubernetes: boolean;
+    public currentDocIndex: number;
 
-    const line = e.mark.line === 0 ? 0 : e.mark.line - 1;
-    /**
-     * I think this calculation is wrong???
-     */
-    const character = e.mark.position + e.mark.column === 0 ? 0 : e.mark.position + e.mark.column - 1;
+    constructor(lines: number[]) {
+        super(null, []);
+        this.lines = lines;
+        this.root = null;
+        this.errors = [];
+        this.warnings = [];
+    }
 
-    /**
-     * Something funny going on here -- why would these
-     * errors start and end at the same position?
-     */
-    return {
-        message: `${e.reason}`,
-        range: {
-            start: {
-                line,
-                character
-            },
-            end: {
-                line,
-                character
-            },
-        },
-        severity: 2
-    };
+    public getSchemas(schema, doc, node) {
+        const matchingSchemas = [];
+        doc.validate(schema, matchingSchemas, node.start);
+        return matchingSchemas;
+    }
+
 }
 
 /**
@@ -254,8 +193,8 @@ function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], te
         }
         return true;
     };
-    
-    // ! IT LOOKS LIKE WE'RE ONLY CONVERTING DUPLICATE KEY ERRORS?
+
+    // ! IT LOOKS LIKE WE'RE CONVERTING EVERYTHING EXCEPT DUPLICATE KEY ERRORS
     const errors = yamlDoc.errors.filter(e => e.reason !== duplicateKeyReason && !e.isWarning).map(e => convertError(e));
     const warnings = yamlDoc.errors.filter(e => (e.reason === duplicateKeyReason && isDuplicateAndNotMergeKey(e, text)) || e.isWarning).map(e => convertError(e));
 
@@ -282,44 +221,17 @@ export class YAMLDocument {
 
 }
 
-export function parse(text: string, customTags = []): YAMLDocument {
-    const filteredTags = filterInvalidCustomTags(customTags);
+export function parse(text: string, customTags: string[] = []): YAMLDocument {
+    const additionalOptions = customTagsToAdditionalOptions(customTags);
 
-    const schemaWithAdditionalTags = Schema.create(filteredTags.map(tag => {
-        const typeInfo = tag.split(' ');
-        return new Type(typeInfo[0], { kind: (typeInfo[1] && typeInfo[1].toLowerCase()) || 'scalar' });
-    }));
-
-    /**
-     * Collect the additional tags into a map of string to possible tag types
-     */
-    const tagWithAdditionalItems = new Map<string, string[]>();
-    filteredTags.forEach(tag => {
-        const typeInfo = tag.split(' ');
-        const tagName = typeInfo[0];
-        const tagType = (typeInfo[1] && typeInfo[1].toLowerCase()) || 'scalar';
-        if (tagWithAdditionalItems.has(tagName)) {
-            tagWithAdditionalItems.set(tagName, tagWithAdditionalItems.get(tagName).concat([tagType]));
-        } else {
-            tagWithAdditionalItems.set(tagName, [tagType]);
-        }
-    });
-
-    tagWithAdditionalItems.forEach((additionalTagKinds, key) => {
-        const newTagType = new Type(key, { kind: additionalTagKinds[0] || 'scalar' });
-        newTagType.additionalKinds = additionalTagKinds;
-        schemaWithAdditionalTags.compiledTypeMap[key] = newTagType;
-    });
-
-    const additionalOptions: Yaml.LoadOptions = {
-        schema: schemaWithAdditionalTags
-    };
-
+    // Parse the AST using `yaml-ast-parser-custom-tags`
     const yamlNodes: Yaml.YAMLNode[] = [];
     Yaml.loadAll(text, doc => yamlNodes.push(doc), additionalOptions);
 
+    // Generate the SingleYAMLDocs from the AST nodes
     const startPositions = getLineStartPositions(text);
     const yamlDocs: SingleYAMLDocument[] = yamlNodes.map(doc => createJSONDocument(doc, startPositions, text));
-    // Create JSON docs to send to the client
+
+    // Consolidate the SingleYAMLDocs
     return new YAMLDocument(yamlDocs);
 }
