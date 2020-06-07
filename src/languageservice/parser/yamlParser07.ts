@@ -20,6 +20,10 @@ import { ASTNode } from '../jsonASTTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
 import { emit } from 'process';
 
+/**
+ * An individual YAML diagnostic,
+ * after formatting.
+ */
 interface YAMLDocError {
     message: string
     range: {
@@ -35,11 +39,19 @@ interface YAMLDocError {
     severity: number
 }
 
+/**
+ * `yaml-ast-parser-custom-tags` parses the AST and
+ * returns ASTNodes, which are then converted into
+ * these extended JSONDocuments.
+ * 
+ * These documents are collected into a final YAMLDocument
+ * and passed to the `parseYAML` caller.
+ */
 export class SingleYAMLDocument extends JSONDocument {
-    private lines;
-    public root;
+    private lines: number[];
+    public root: ASTNode;
     public errors: YAMLDocError[];
-    public warnings;
+    public warnings: YAMLDocError[];
     public isKubernetes: boolean;
     public currentDocIndex: number;
 
@@ -197,30 +209,38 @@ function convertError(e: Yaml.YAMLException): YAMLDocError {
      * Something funny going on here -- why would these
      * errors start and end at the same position?
      */
-    return { message: `${e.reason}`, range: {
-        start: {
-            line,
-            character
+    return {
+        message: `${e.reason}`,
+        range: {
+            start: {
+                line,
+                character
+            },
+            end: {
+                line,
+                character
+            },
         },
-        end: {
-            line,
-            character
-        },
-    },
-    severity: 2
+        severity: 2
     };
 }
 
-function createJSONDocument (yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string) {
+/**
+ * Create the JSON object for a single diagnostic??
+ * Doc == Diagnostic??
+ */
+function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string): SingleYAMLDocument {
     const _doc = new SingleYAMLDocument(startPositions);
     _doc.root = recursivelyBuildAst(null, yamlDoc);
 
     if (!_doc.root) {
         // TODO: When this is true, consider not pushing the other errors.
-        _doc.errors.push({ message: localize('Invalid symbol', 'Expected a YAML object, array or literal'),
-        //@ts-ignore
-        code: ErrorCode.Undefined,
-        location: { start: yamlDoc.startPosition, end: yamlDoc.endPosition } });
+        _doc.errors.push({
+            message: localize('Invalid symbol', 'Expected a YAML object, array or literal'),
+            //@ts-ignore
+            code: ErrorCode.Undefined,
+            location: { start: yamlDoc.startPosition, end: yamlDoc.endPosition }
+        });
     }
 
     const duplicateKeyReason = 'duplicate key';
@@ -234,6 +254,7 @@ function createJSONDocument (yamlDoc: Yaml.YAMLNode, startPositions: number[], t
         }
         return true;
     };
+    
     // ! IT LOOKS LIKE WE'RE ONLY CONVERTING DUPLICATE KEY ERRORS?
     const errors = yamlDoc.errors.filter(e => e.reason !== duplicateKeyReason && !e.isWarning).map(e => convertError(e));
     const warnings = yamlDoc.errors.filter(e => (e.reason === duplicateKeyReason && isDuplicateAndNotMergeKey(e, text)) || e.isWarning).map(e => convertError(e));
@@ -244,10 +265,14 @@ function createJSONDocument (yamlDoc: Yaml.YAMLNode, startPositions: number[], t
     return _doc;
 }
 
+/**
+ * Contains the SingleYAMLDocuments, to be passed
+ * to the `parseYAML` caller.
+ */
 export class YAMLDocument {
     public documents: SingleYAMLDocument[];
-    private errors;
-    private warnings;
+    private errors: YAMLDocError[];
+    private warnings: YAMLDocError[];
 
     constructor (documents: SingleYAMLDocument[]) {
         this.documents = documents;
@@ -257,13 +282,7 @@ export class YAMLDocument {
 
 }
 
-export function parse (text: string, customTags = []): YAMLDocument {
-
-    const startPositions = getLineStartPositions(text);
-    // This is documented to return a YAMLNode even though the
-    // typing only returns a YAMLDocument
-    const yamlDocs = [];
-
+export function parse(text: string, customTags = []): YAMLDocument {
     const filteredTags = filterInvalidCustomTags(customTags);
 
     const schemaWithAdditionalTags = Schema.create(filteredTags.map(tag => {
@@ -296,8 +315,11 @@ export function parse (text: string, customTags = []): YAMLDocument {
         schema: schemaWithAdditionalTags
     };
 
-    // What does this do?
-    Yaml.loadAll(text, doc => yamlDocs.push(doc), additionalOptions);
+    const yamlNodes: Yaml.YAMLNode[] = [];
+    Yaml.loadAll(text, doc => yamlNodes.push(doc), additionalOptions);
 
-    return new YAMLDocument(yamlDocs.map(doc => {return createJSONDocument(doc, startPositions, text);}));
+    const startPositions = getLineStartPositions(text);
+    const yamlDocs: SingleYAMLDocument[] = yamlNodes.map(doc => createJSONDocument(doc, startPositions, text));
+    // Create JSON docs to send to the client
+    return new YAMLDocument(yamlDocs);
 }
