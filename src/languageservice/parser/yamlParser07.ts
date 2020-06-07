@@ -19,10 +19,6 @@ import { ErrorCode } from 'vscode-json-languageservice';
 import { emit } from 'process';
 
 /**
- * `yaml-ast-parser-custom-tags` parses the AST and
- * returns ASTNodes, which are then converted into
- * these extended JSONDocuments.
- * 
  * These documents are collected into a final YAMLDocument
  * and passed to the `parseYAML` caller.
  */
@@ -90,6 +86,11 @@ export class YAMLDocument {
 
 }
 
+/**
+ * `yaml-ast-parser-custom-tags` parses the AST and
+ * returns YAML AST nodes, which are then formatted
+ * for consumption via the language server.
+ */
 export function parse(text: string, customTags = []): YAMLDocument {
     const additionalOptions = customTagsToAdditionalOptions(customTags);
 
