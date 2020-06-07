@@ -18,11 +18,27 @@ import { parseYamlBoolean } from './scalar-type';
 import { filterInvalidCustomTags } from '../utils/arrUtils';
 import { ASTNode } from '../jsonASTTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
+import { emit } from 'process';
+
+interface YAMLDocError {
+    message: string
+    range: {
+        start: {
+            line: number
+            character: number
+        }
+        end: {
+            line: number
+            character: number
+        }
+    }
+    severity: number
+}
 
 export class SingleYAMLDocument extends JSONDocument {
     private lines;
     public root;
-    public errors;
+    public errors: YAMLDocError[];
     public warnings;
     public isKubernetes: boolean;
     public currentDocIndex: number;
@@ -156,8 +172,20 @@ function recursivelyBuildAst (parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
     }
 }
 
-function convertError(e: Yaml.YAMLException) {
-    console.log(`ERROR TO CONVERT: ${e}`);
+function convertError(e: Yaml.YAMLException): YAMLDocError {
+    const exception = {
+        exception: e,
+        string: e.toString(),
+        mark: {
+            mark: e.mark,
+            string: e.mark.toString(),
+            snippet: {
+                snippet: e.mark.getSnippet(),
+                length: e.mark.getSnippet().length
+            }
+        }
+    };
+    console.log(exception);
 
     const line = e.mark.line === 0 ? 0 : e.mark.line - 1;
     /**
@@ -167,7 +195,7 @@ function convertError(e: Yaml.YAMLException) {
 
     /**
      * Something funny going on here -- why would these
-     * errors star and end at the same position?
+     * errors start and end at the same position?
      */
     return { message: `${e.reason}`, range: {
         start: {
@@ -190,8 +218,9 @@ function createJSONDocument (yamlDoc: Yaml.YAMLNode, startPositions: number[], t
     if (!_doc.root) {
         // TODO: When this is true, consider not pushing the other errors.
         _doc.errors.push({ message: localize('Invalid symbol', 'Expected a YAML object, array or literal'),
-            code: ErrorCode.Undefined,
-            location: { start: yamlDoc.startPosition, end: yamlDoc.endPosition } });
+        //@ts-ignore
+        code: ErrorCode.Undefined,
+        location: { start: yamlDoc.startPosition, end: yamlDoc.endPosition } });
     }
 
     const duplicateKeyReason = 'duplicate key';
@@ -205,9 +234,9 @@ function createJSONDocument (yamlDoc: Yaml.YAMLNode, startPositions: number[], t
         }
         return true;
     };
-    const errors = yamlDoc.errors.filter(e => {return e.reason !== duplicateKeyReason && !e.isWarning;}).map(e => {return convertError(e);});
-    const warnings = yamlDoc.errors.filter(e =>
-    {return (e.reason === duplicateKeyReason && isDuplicateAndNotMergeKey(e, text)) || e.isWarning;}).map(e => {return convertError(e);});
+    // ! IT LOOKS LIKE WE'RE ONLY CONVERTING DUPLICATE KEY ERRORS?
+    const errors = yamlDoc.errors.filter(e => e.reason !== duplicateKeyReason && !e.isWarning).map(e => convertError(e));
+    const warnings = yamlDoc.errors.filter(e => (e.reason === duplicateKeyReason && isDuplicateAndNotMergeKey(e, text)) || e.isWarning).map(e => convertError(e));
 
     errors.forEach(e => {return _doc.errors.push(e);});
     warnings.forEach(e => {return _doc.warnings.push(e);});
@@ -267,7 +296,8 @@ export function parse (text: string, customTags = []): YAMLDocument {
         schema: schemaWithAdditionalTags
     };
 
-    Yaml.loadAll(text, doc => {return yamlDocs.push(doc);}, additionalOptions);
+    // What does this do?
+    Yaml.loadAll(text, doc => yamlDocs.push(doc), additionalOptions);
 
     return new YAMLDocument(yamlDocs.map(doc => {return createJSONDocument(doc, startPositions, text);}));
 }

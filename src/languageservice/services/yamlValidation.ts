@@ -49,6 +49,7 @@ export class YAMLValidation {
             const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
             const syd = currentYAMLDoc as unknown as SingleYAMLDocument;
             if (syd.errors.length > 0) {
+                //@ts-ignore
                 validationResult.push(...syd.errors);
             }
             if (syd.warnings.length > 0) {
