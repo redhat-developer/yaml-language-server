@@ -49,11 +49,10 @@ export class YAMLValidation {
             const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
             const syd = currentYAMLDoc as unknown as SingleYAMLDocument;
             if (syd.errors.length > 0) {
-                //@ts-ignore
-                validationResult.push(...syd.errors);
+                // TODO: Get rid of these type assertions (shouldn't need them)
+                validationResult.push(...(syd.errors as Diagnostic[]));
             }
             if (syd.warnings.length > 0) {
-                // TODO: Get rid of this type assertion (shouldn't need it)
                 validationResult.push(...(syd.warnings as Diagnostic[]));
             }
 
