@@ -30,39 +30,32 @@ export interface YAMLDocDiagnostic {
  * language server diagnostic.
  */
 function exceptionToDiagnostic(e: Yaml.YAMLException): YAMLDocDiagnostic {
+    // The exceptions from the AST produce WEIRD text snippets.
+    // This undoes the strange formatting.
+    const formatSnippet = (snippet: string) => snippet
+                                                .replace(/ /g, '')
+                                                .replace(/\n/g, '')
+                                                .replace(/\^/g, '');
     const exceptionSnippet = e.mark.getSnippet();
-    const trimSnippet = exceptionSnippet
-                                .replace(/ /g, '')
-                                .replace(/\n/g, '')
-                                .replace(/\^/g, '');
-    const exception = {
-        exception: e,
-        string: e.toString(),
-        mark: {
-            mark: e.mark,
-            string: e.mark.toString(),
-            markBuffer: e.mark.buffer,
-            snippet: {
-                snippet: trimSnippet,
-                length: trimSnippet.length
-            },
-            toLineEnd: e.mark.toLineEnd
-        }
-    };
-    console.log(exception);
+    const snippet = formatSnippet(exceptionSnippet);
 
-    const line = e.mark.line;
-    /**
-     * I think this calculation is wrong???
-     */
-    // const character = e.mark.position + e.mark.column === 0 ? 0 : e.mark.position + e.mark.column - 1;
-    const startPos = e.mark.column;
-    const endPos = e.mark.column + trimSnippet.length;
-    /**
-     * Something funny going on here -- why would these
-     * errors start and end at the same position?
-     */
-    const diagnostic = {
+    const line = e.mark.line === 1 ? 0 : e.mark.line;
+    let startPos;
+    let endPos;
+
+    // Use the snippet to calculate the diagnostic position
+    // if it's available. Some exceptions return empty snippets.
+    // In the event of an empty snippet, use the old logic.
+    if (snippet.length > 0) {
+        startPos = e.mark.column;
+        endPos = e.mark.column + snippet.length;
+    } else {
+        const pos = e.mark.position + e.mark.column === 0 ? 0 : e.mark.position + e.mark.column - 1;
+        startPos = pos;
+        endPos = pos;
+    }
+
+    return {
         message: `${e.reason}`,
         range: {
             start: {
@@ -76,8 +69,6 @@ function exceptionToDiagnostic(e: Yaml.YAMLException): YAMLDocDiagnostic {
         },
         severity: 2
     };
-    console.log(diagnostic);
-    return diagnostic;
 }
 
 /**
