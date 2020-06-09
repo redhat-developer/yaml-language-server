@@ -2,6 +2,7 @@ import * as Yaml from 'yaml-ast-parser-custom-tags';
 import { Schema, Type } from 'js-yaml';
 
 import { filterInvalidCustomTags } from './arrUtils';
+import { emit } from 'process';
 
 export const DUPLICATE_KEY_REASON = 'duplicate key';
 
@@ -24,45 +25,59 @@ export interface YAMLDocDiagnostic {
     severity: number
 }
 
+/**
+ * Convert a YAML node exception to a
+ * language server diagnostic.
+ */
 function exceptionToDiagnostic(e: Yaml.YAMLException): YAMLDocDiagnostic {
+    const exceptionSnippet = e.mark.getSnippet();
+    const trimSnippet = exceptionSnippet
+                                .replace(/ /g, '')
+                                .replace(/\n/g, '')
+                                .replace(/\^/g, '');
     const exception = {
         exception: e,
         string: e.toString(),
         mark: {
             mark: e.mark,
             string: e.mark.toString(),
+            markBuffer: e.mark.buffer,
             snippet: {
-                snippet: e.mark.getSnippet(),
-                length: e.mark.getSnippet().length
-            }
+                snippet: trimSnippet,
+                length: trimSnippet.length
+            },
+            toLineEnd: e.mark.toLineEnd
         }
     };
     console.log(exception);
 
-    const line = e.mark.line === 0 ? 0 : e.mark.line - 1;
+    const line = e.mark.line;
     /**
      * I think this calculation is wrong???
      */
-    const character = e.mark.position + e.mark.column === 0 ? 0 : e.mark.position + e.mark.column - 1;
-
+    // const character = e.mark.position + e.mark.column === 0 ? 0 : e.mark.position + e.mark.column - 1;
+    const startPos = e.mark.column;
+    const endPos = e.mark.column + trimSnippet.length;
     /**
      * Something funny going on here -- why would these
      * errors start and end at the same position?
      */
-    return {
+    const diagnostic = {
         message: `${e.reason}`,
         range: {
             start: {
                 line,
-                character
+                character: startPos
             },
             end: {
                 line,
-                character
+                character: endPos
             },
         },
         severity: 2
     };
+    console.log(diagnostic);
+    return diagnostic;
 }
 
 /**
