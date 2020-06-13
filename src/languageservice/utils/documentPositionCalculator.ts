@@ -5,11 +5,11 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-export function insertionPointReturnValue(pt: number) {
+export function insertionPointReturnValue (pt: number) {
     return ((-pt) - 1);
 }
 
-export function binarySearch(array: number[], sought: number) {
+export function binarySearch (array: number[], sought: number) {
 
     let lower = 0;
     let upper = array.length - 1;
@@ -35,7 +35,7 @@ export function binarySearch(array: number[], sought: number) {
     }
 }
 
-export function getLineStartPositions(text: string) {
+export function getLineStartPositions (text: string) {
     const lineStartPositions = [0];
     for (let i = 0; i < text.length; i++) {
         const c = text[i];
@@ -55,7 +55,7 @@ export function getLineStartPositions(text: string) {
     return lineStartPositions;
 }
 
-export function getPosition(pos: number, lineStartPositions: number[]){
+export function getPosition (pos: number, lineStartPositions: number[]){
     let line = binarySearch(lineStartPositions, pos);
 
     if (line < 0){

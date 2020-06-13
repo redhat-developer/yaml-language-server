@@ -30,9 +30,9 @@ export const schemaRequestHandler = (connection: IConnection, uri: string): Then
 
         return new Promise<string>((c, e) => {
             fs.readFile(fsPath, 'UTF-8', (err, result) =>
-                // If there was an error reading the file, return empty error message
-                // Otherwise return the file contents as a string
-                err ? e('') : c(result.toString())
+            // If there was an error reading the file, return empty error message
+            // Otherwise return the file contents as a string
+            {return err ? e('') : c(result.toString());}
             );
         });
     }
@@ -42,7 +42,7 @@ export const schemaRequestHandler = (connection: IConnection, uri: string): Then
     // See https://github.com/microsoft/vscode/blob/master/extensions/json-language-features/server/README.md
     if (scheme === 'vscode') {
         return connection.sendRequest(VSCodeContentRequest.type, uri)
-                        .then(responseText => responseText, error => error.message);
+            .then(responseText => {return responseText;}, error => {return error.message;});
     }
 
     // HTTP(S) requests are sent and the response result is either the schema content or an error
@@ -60,8 +60,8 @@ export const schemaRequestHandler = (connection: IConnection, uri: string): Then
         // Send the HTTP(S) schema content request and return the result
         const headers = { 'Accept-Encoding': 'gzip, deflate' };
         return xhr({ url: uri, followRedirects: 5, headers })
-               .then(response => response.responseText,
-                    (error: XHRResponse) => Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString()));
+            .then(response => {return response.responseText;},
+                (error: XHRResponse) => {return Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString());});
     }
 
     // Neither local file nor vscode, nor HTTP(S) schema request, so send it off as a custom request

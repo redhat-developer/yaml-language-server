@@ -5,7 +5,7 @@
 'use strict';
 
 // tslint:disable-next-line: no-any
-export function equals(one: any, other: any): boolean {
+export function equals (one: any, other: any): boolean {
     if (one === other) {
         return true;
     }
@@ -59,21 +59,21 @@ export function equals(one: any, other: any): boolean {
 }
 
 // tslint:disable-next-line: no-any
-export function isNumber(val: any): val is number {
+export function isNumber (val: any): val is number {
     return typeof val === 'number';
 }
 
 // tslint:disable-next-line: no-any
-export function isDefined(val: any): val is object {
+export function isDefined (val: any): val is object {
     return typeof val !== 'undefined';
 }
 
 // tslint:disable-next-line: no-any
-export function isBoolean(val: any): val is boolean {
+export function isBoolean (val: any): val is boolean {
     return typeof val === 'boolean';
 }
 
 // tslint:disable-next-line: no-any
-export function isString(val: any): val is string {
+export function isString (val: any): val is string {
     return typeof val === 'string';
 }

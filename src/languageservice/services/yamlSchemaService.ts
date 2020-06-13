@@ -44,7 +44,7 @@ export class FilePatternAssociation {
     private schemas: string[];
     private patternRegExp: RegExp;
 
-    constructor(pattern: string) {
+    constructor (pattern: string) {
         try {
             this.patternRegExp = new RegExp(convertSimple2RegExpPattern(pattern) + '$');
         } catch (e) {
@@ -54,15 +54,15 @@ export class FilePatternAssociation {
         this.schemas = [];
     }
 
-    public addSchema(id: string) {
+    public addSchema (id: string) {
         this.schemas.push(id);
     }
 
-    public matchesPattern(fileName: string): boolean {
+    public matchesPattern (fileName: string): boolean {
         return this.patternRegExp && this.patternRegExp.test(fileName);
     }
 
-    public getSchemas() {
+    public getSchemas () {
         return this.schemas;
     }
 }
@@ -76,23 +76,23 @@ export class YAMLSchemaService extends JSONSchemaService {
     private filePatternAssociations: JSONSchemaService.FilePatternAssociation[];
     private contextService: WorkspaceContextService;
 
-    constructor(requestService: SchemaRequestService, contextService?: WorkspaceContextService, promiseConstructor?: PromiseConstructor) {
+    constructor (requestService: SchemaRequestService, contextService?: WorkspaceContextService, promiseConstructor?: PromiseConstructor) {
         super(requestService, contextService, promiseConstructor);
         this.customSchemaProvider = undefined;
     }
 
-    registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider) {
+    registerCustomSchemaProvider (customSchemaProvider: CustomSchemaProvider) {
         this.customSchemaProvider = customSchemaProvider;
     }
 
     //tslint:disable
-    public resolveSchemaContent(schemaToResolve: UnresolvedSchema, schemaURL: string, dependencies: SchemaDependencies): Thenable<ResolvedSchema> {
+    public resolveSchemaContent (schemaToResolve: UnresolvedSchema, schemaURL: string, dependencies: SchemaDependencies): Thenable<ResolvedSchema> {
 
-        let resolveErrors: string[] = schemaToResolve.errors.slice(0);
-        let schema = schemaToResolve.schema;
-        let contextService = this.contextService;
+        const resolveErrors: string[] = schemaToResolve.errors.slice(0);
+        const schema = schemaToResolve.schema;
+        const contextService = this.contextService;
 
-        let findSection = (schema: JSONSchema, path: string): any => {
+        const findSection = (schema: JSONSchema, path: string): any => {
             if (!path) {
                 return schema;
             }
@@ -100,17 +100,17 @@ export class YAMLSchemaService extends JSONSchemaService {
             if (path[0] === '/') {
                 path = path.substr(1);
             }
-            path.split('/').some((part) => {
+            path.split('/').some(part => {
                 current = current[part];
                 return !current;
             });
             return current;
         };
 
-        let merge = (target: JSONSchema, sourceRoot: JSONSchema, sourceURI: string, path: string): void => {
-            let section = findSection(sourceRoot, path);
+        const merge = (target: JSONSchema, sourceRoot: JSONSchema, sourceURI: string, path: string): void => {
+            const section = findSection(sourceRoot, path);
             if (section) {
-                for (let key in section) {
+                for (const key in section) {
                     if (section.hasOwnProperty(key) && !target.hasOwnProperty(key)) {
                         target[key] = section[key];
                     }
@@ -120,7 +120,7 @@ export class YAMLSchemaService extends JSONSchemaService {
             }
         };
 
-        let resolveExternalLink = (node: JSONSchema, uri: string, linkPath: string, parentSchemaURL: string, parentSchemaDependencies: SchemaDependencies): Thenable<any> => {
+        const resolveExternalLink = (node: JSONSchema, uri: string, linkPath: string, parentSchemaURL: string, parentSchemaDependencies: SchemaDependencies): Thenable<any> => {
             if (contextService && !/^\w+:\/\/.*/.test(uri)) {
                 uri = contextService.resolveRelativePath(uri, parentSchemaURL);
             }
@@ -129,7 +129,7 @@ export class YAMLSchemaService extends JSONSchemaService {
             return referencedHandle.getUnresolvedSchema().then(unresolvedSchema => {
                 parentSchemaDependencies[uri] = true;
                 if (unresolvedSchema.errors.length) {
-                    let loc = linkPath ? uri + '#' + linkPath : uri;
+                    const loc = linkPath ? uri + '#' + linkPath : uri;
                     resolveErrors.push(localize('json.schema.problemloadingref', 'Problems loading reference \'{0}\': {1}', loc, unresolvedSchema.errors[0]));
                 }
                 merge(node, unresolvedSchema.schema, uri, linkPath);
@@ -137,28 +137,28 @@ export class YAMLSchemaService extends JSONSchemaService {
             });
         };
 
-        let resolveRefs = (node: JSONSchema, parentSchema: JSONSchema, parentSchemaURL: string, parentSchemaDependencies: SchemaDependencies): Thenable<any> => {
+        const resolveRefs = (node: JSONSchema, parentSchema: JSONSchema, parentSchemaURL: string, parentSchemaDependencies: SchemaDependencies): Thenable<any> => {
             if (!node || typeof node !== 'object') {
                 return Promise.resolve(null);
             }
 
-            let toWalk: JSONSchema[] = [node];
-            let seen: JSONSchema[] = [];
+            const toWalk: JSONSchema[] = [node];
+            const seen: JSONSchema[] = [];
 
-            let openPromises: Thenable<any>[] = [];
+            const openPromises: Thenable<any>[] = [];
 
-            let collectEntries = (...entries: JSONSchemaRef[]) => {
-                for (let entry of entries) {
+            const collectEntries = (...entries: JSONSchemaRef[]) => {
+                for (const entry of entries) {
                     if (typeof entry === 'object') {
                         toWalk.push(entry);
                     }
                 }
             };
-            let collectMapEntries = (...maps: JSONSchemaMap[]) => {
-                for (let map of maps) {
+            const collectMapEntries = (...maps: JSONSchemaMap[]) => {
+                for (const map of maps) {
                     if (typeof map === 'object') {
-                        for (let key in map) {
-                            let entry = map[key];
+                        for (const key in map) {
+                            const entry = map[key];
                             if (typeof entry === 'object') {
                                 toWalk.push(entry);
                             }
@@ -166,10 +166,10 @@ export class YAMLSchemaService extends JSONSchemaService {
                     }
                 }
             };
-            let collectArrayEntries = (...arrays: JSONSchemaRef[][]) => {
-                for (let array of arrays) {
+            const collectArrayEntries = (...arrays: JSONSchemaRef[][]) => {
+                for (const array of arrays) {
                     if (Array.isArray(array)) {
-                        for (let entry of array) {
+                        for (const entry of array) {
                             if (typeof entry === 'object') {
                                 toWalk.push(entry);
                             }
@@ -177,11 +177,11 @@ export class YAMLSchemaService extends JSONSchemaService {
                     }
                 }
             };
-            let handleRef = (next: JSONSchema) => {
-                let seenRefs = [];
+            const handleRef = (next: JSONSchema) => {
+                const seenRefs = [];
                 while (next.$ref) {
                     const ref = next.$ref;
-                    let segments = ref.split('#', 2);
+                    const segments = ref.split('#', 2);
                     delete next.$ref;
                     if (segments[0].length > 0) {
                         openPromises.push(resolveExternalLink(next, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies));
@@ -200,7 +200,7 @@ export class YAMLSchemaService extends JSONSchemaService {
             };
 
             while (toWalk.length) {
-                let next = toWalk.pop();
+                const next = toWalk.pop();
                 if (seen.indexOf(next) >= 0) {
                     continue;
                 }
@@ -210,18 +210,18 @@ export class YAMLSchemaService extends JSONSchemaService {
             return Promise.all(openPromises);
         };
 
-        return resolveRefs(schema, schema, schemaURL, dependencies).then(_ => new ResolvedSchema(schema, resolveErrors));
+        return resolveRefs(schema, schema, schemaURL, dependencies).then(() => {return new ResolvedSchema(schema, resolveErrors);});
     }
     //tslint:enable
 
-    public getSchemaForResource(resource: string, doc = undefined): Thenable<ResolvedSchema> {
+    public getSchemaForResource (resource: string, doc = undefined): Thenable<ResolvedSchema> {
         const resolveSchema = () => {
 
             const seen: { [schemaId: string]: boolean } = Object.create(null);
             const schemas: string[] = [];
             for (const entry of this.filePatternAssociations) {
                 if (entry.matchesPattern(resource)) {
-                  for (const schemaId of entry.getURIs()) {
+                    for (const schemaId of entry.getURIs()) {
                         if (!seen[schemaId]) {
                             schemas.push(schemaId);
                             seen[schemaId] = true;
@@ -243,36 +243,36 @@ export class YAMLSchemaService extends JSONSchemaService {
         };
         if (this.customSchemaProvider) {
             return this.customSchemaProvider(resource)
-                       .then(schemaUri => {
+                .then(schemaUri => {
 
-                            if (Array.isArray(schemaUri)) {
-                                if (schemaUri.length === 0) {
-                                    return resolveSchema();
-                                }
-                                return Promise.all(schemaUri.map(schemaUri => this.resolveCustomSchema(schemaUri, doc))).then(schemas =>
-                                    ({
-                                        'errors': [],
-                                        'schema': {
-                                            'anyOf': schemas.map(schemaObj => schemaObj.schema)
-                                        }
-                                    })
-                                , err => resolveSchema());
-
+                    if (Array.isArray(schemaUri)) {
+                        if (schemaUri.length === 0) {
+                            return resolveSchema();
+                        }
+                        return Promise.all(schemaUri.map(schemaUri => {return this.resolveCustomSchema(schemaUri, doc);})).then(schemas =>
+                        {return {
+                            'errors': [],
+                            'schema': {
+                                'anyOf': schemas.map(schemaObj => {return schemaObj.schema;})
                             }
+                        };}
+                        , err => {return resolveSchema();});
 
-                            if (!schemaUri) {
-                                return resolveSchema();
-                            }
+                    }
 
-                            return this.resolveCustomSchema(schemaUri, doc);
-                        })
-                       .then(schema => schema, err => resolveSchema());
+                    if (!schemaUri) {
+                        return resolveSchema();
+                    }
+
+                    return this.resolveCustomSchema(schemaUri, doc);
+                })
+                .then(schema => {return schema;}, err => {return resolveSchema();});
         } else {
             return resolveSchema();
         }
     }
 
-    private async resolveCustomSchema(schemaUri, doc) {
+    private async resolveCustomSchema (schemaUri, doc) {
         const unresolvedSchema = await this.loadSchema(schemaUri);
         const schema = await this.resolveSchemaContent(unresolvedSchema, schemaUri, []);
         if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[doc.currentDocIndex]) {
@@ -285,7 +285,7 @@ export class YAMLSchemaService extends JSONSchemaService {
      * Save a schema with schema ID and schema content.
      * Overrides previous schemas set for that schema ID.
      */
-    public async saveSchema(schemaId: string, schemaContent: JSONSchema): Promise<void> {
+    public async saveSchema (schemaId: string, schemaContent: JSONSchema): Promise<void> {
         const id = this.normalizeId(schemaId);
         this.getOrAddSchemaHandle(id, schemaContent);
         return Promise.resolve(undefined);
@@ -294,7 +294,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     /**
      * Delete a schema with schema ID.
      */
-    public async deleteSchema(schemaId: string): Promise<void> {
+    public async deleteSchema (schemaId: string): Promise<void> {
         const id = this.normalizeId(schemaId);
         if ( this.schemasById[id] ) {
             delete this.schemasById[id];
@@ -305,7 +305,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     /**
      * Add content to a specified schema at a specified path
      */
-    public async addContent(additions: SchemaAdditions) {
+    public async addContent (additions: SchemaAdditions) {
         const schema = await this.getResolvedSchema(additions.schema);
         if (schema) {
             const resolvedSchemaLocation = this.resolveJSONSchemaToSection(schema.schema, additions.path);
@@ -320,7 +320,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     /**
      * Delete content in a specified schema at a specified path
      */
-    public async deleteContent(deletions: SchemaDeletions) {
+    public async deleteContent (deletions: SchemaDeletions) {
         const schema = await this.getResolvedSchema(deletions.schema);
         if (schema) {
             const resolvedSchemaLocation = this.resolveJSONSchemaToSection(schema.schema, deletions.path);
@@ -336,7 +336,7 @@ export class YAMLSchemaService extends JSONSchemaService {
      * Take a JSON Schema and the path that you would like to get to
      * @returns the JSON Schema resolved at that specific path
      */
-    private resolveJSONSchemaToSection(schema: JSONSchema, paths: string): JSONSchema {
+    private resolveJSONSchemaToSection (schema: JSONSchema, paths: string): JSONSchema {
         const splitPathway = paths.split('/');
         let resolvedSchemaLocation = schema;
         for (const path of splitPathway) {
@@ -355,7 +355,7 @@ export class YAMLSchemaService extends JSONSchemaService {
      * @param token the next token that you want to search for
      */
     // tslint:disable-next-line: no-any
-    private resolveNext(object: any, token: any) {
+    private resolveNext (object: any, token: any) {
         // tslint:disable-next-line: no-any
         if (Array.isArray(object) && isNaN(token)) {
             throw new Error('Expected a number after the array object');
@@ -369,46 +369,46 @@ export class YAMLSchemaService extends JSONSchemaService {
      * to provide a wrapper around the javascript methods we are calling since they have no type
      */
 
-    normalizeId(id: string) {
+    normalizeId (id: string) {
         // The parent's `super.normalizeId(id)` isn't visible, so duplicated the code here
         try {
-           return URI.parse(id).toString();
+            return URI.parse(id).toString();
         }
         catch (e) {
-          return id;
+            return id;
         }
     }
 
-    getOrAddSchemaHandle(id: string, unresolvedSchemaContent?: JSONSchema) {
+    getOrAddSchemaHandle (id: string, unresolvedSchemaContent?: JSONSchema) {
         return super.getOrAddSchemaHandle(id, unresolvedSchemaContent);
     }
 
     // tslint:disable-next-line: no-any
-    loadSchema(schemaUri: string): Thenable<any> {
+    loadSchema (schemaUri: string): Thenable<any> {
         return super.loadSchema(schemaUri);
     }
 
-    registerExternalSchema(uri: string, filePatterns?: string[], unresolvedSchema?: JSONSchema) {
+    registerExternalSchema (uri: string, filePatterns?: string[], unresolvedSchema?: JSONSchema) {
         return super.registerExternalSchema(uri, filePatterns, unresolvedSchema);
     }
 
-    clearExternalSchemas(): void {
+    clearExternalSchemas (): void {
         super.clearExternalSchemas();
     }
 
-    setSchemaContributions(schemaContributions: ISchemaContributions): void {
+    setSchemaContributions (schemaContributions: ISchemaContributions): void {
         super.setSchemaContributions(schemaContributions);
     }
 
-    getRegisteredSchemaIds(filter?: (scheme: any) => boolean): string[] {
+    getRegisteredSchemaIds (filter?: (scheme: any) => boolean): string[] {
         return super.getRegisteredSchemaIds(filter);
     }
 
-    getResolvedSchema(schemaId: string): Thenable<ResolvedSchema> {
+    getResolvedSchema (schemaId: string): Thenable<ResolvedSchema> {
         return super.getResolvedSchema(schemaId);
     }
 
-    onResourceChange(uri: string): boolean {
+    onResourceChange (uri: string): boolean {
         return super.onResourceChange(uri);
     }
 }

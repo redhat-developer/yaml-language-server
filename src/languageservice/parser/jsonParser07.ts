@@ -7,7 +7,7 @@
 import * as Json from 'jsonc-parser';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isNumber, equals, isString, isDefined, isBoolean } from '../utils/objects';
-import { ASTNode, ObjectASTNode, ArrayASTNode, BooleanASTNode, NumberASTNode, StringASTNode, NullASTNode, PropertyASTNode, BaseASTNode } from '../jsonASTTypes';
+import { ASTNode, ObjectASTNode, ArrayASTNode, BooleanASTNode, NumberASTNode, StringASTNode, NullASTNode, PropertyASTNode } from '../jsonASTTypes';
 import { ErrorCode, JSONPath } from 'vscode-json-languageservice';
 import * as nls from 'vscode-nls';
 import { URI } from 'vscode-uri';
@@ -39,13 +39,13 @@ export abstract class ASTNodeImpl {
     public readonly parent: ASTNode;
     public location: string;
 
-    constructor(parent: ASTNode, offset: number, length?: number) {
+    constructor (parent: ASTNode, offset: number, length?: number) {
         this.offset = offset;
         this.length = length;
         this.parent = parent;
     }
 
-    public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
+    public getNodeFromOffsetEndInclusive (offset: number): ASTNode {
         const collector = [];
         const findNode = (node: ASTNode | ASTNodeImpl): ASTNode | ASTNodeImpl => {
             if (offset >= node.offset && offset <= (node.offset + node.length)) {
@@ -74,11 +74,11 @@ export abstract class ASTNodeImpl {
         return currMinNode || foundNode;
     }
 
-    public get children(): ASTNode[] {
+    public get children (): ASTNode[] {
         return [];
     }
 
-    public toString(): string {
+    public toString (): string {
         return 'type: ' + this.type + ' (' + this.offset + '/' + this.length + ')' + (this.parent ? ' parent: {' + this.parent.toString() + '}' : '');
     }
 }
@@ -87,7 +87,7 @@ export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
 
     public type: 'null' = 'null';
     public value: null = null;
-    constructor(parent: ASTNode, offset: number, length?: number) {
+    constructor (parent: ASTNode, offset: number, length?: number) {
         super(parent, offset, length);
     }
 }
@@ -97,7 +97,7 @@ export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
     public type: 'boolean' = 'boolean';
     public value: boolean;
 
-    constructor(parent: ASTNode, boolValue: boolean, offset: number, length?: number) {
+    constructor (parent: ASTNode, boolValue: boolean, offset: number, length?: number) {
         super(parent, offset, length);
         this.value = boolValue;
     }
@@ -108,12 +108,12 @@ export class ArrayASTNodeImpl extends ASTNodeImpl implements ArrayASTNode {
     public type: 'array' = 'array';
     public items: ASTNode[];
 
-    constructor(parent: ASTNode, offset: number, length?: number) {
+    constructor (parent: ASTNode, offset: number, length?: number) {
         super(parent, offset, length);
         this.items = [];
     }
 
-    public get children(): ASTNode[] {
+    public get children (): ASTNode[] {
         return this.items;
     }
 }
@@ -124,7 +124,7 @@ export class NumberASTNodeImpl extends ASTNodeImpl implements NumberASTNode {
     public isInteger: boolean;
     public value: number;
 
-    constructor(parent: ASTNode, offset: number, length?: number) {
+    constructor (parent: ASTNode, offset: number, length?: number) {
         super(parent, offset, length);
         this.isInteger = true;
         this.value = Number.NaN;
@@ -135,7 +135,7 @@ export class StringASTNodeImpl extends ASTNodeImpl implements StringASTNode {
     public type: 'string' = 'string';
     public value: string;
 
-    constructor(parent: ASTNode, offset: number, length?: number) {
+    constructor (parent: ASTNode, offset: number, length?: number) {
         super(parent, offset, length);
         this.value = '';
     }
@@ -147,12 +147,12 @@ export class PropertyASTNodeImpl extends ASTNodeImpl implements PropertyASTNode 
     public valueNode: ASTNode;
     public colonOffset: number;
 
-    constructor(parent: ObjectASTNode, offset: number, length?: number) {
+    constructor (parent: ObjectASTNode, offset: number, length?: number) {
         super(parent, offset, length);
         this.colonOffset = -1;
     }
 
-    public get children(): ASTNode[] {
+    public get children (): ASTNode[] {
         return this.valueNode ? [this.keyNode, this.valueNode] : [this.keyNode];
     }
 }
@@ -161,19 +161,19 @@ export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
     public type: 'object' = 'object';
     public properties: PropertyASTNode[];
 
-    constructor(parent: ASTNode, offset: number, length?: number) {
+    constructor (parent: ASTNode, offset: number, length?: number) {
         super(parent, offset, length);
 
         this.properties = [];
     }
 
-    public get children(): ASTNode[] {
+    public get children (): ASTNode[] {
         return this.properties;
     }
 
 }
 
-export function asSchema(schema: JSONSchemaRef) {
+export function asSchema (schema: JSONSchemaRef) {
     if (isBoolean(schema)) {
         return schema ? {} : { 'not': {} };
     }
@@ -204,29 +204,29 @@ export interface ISchemaCollector {
 
 class SchemaCollector implements ISchemaCollector {
     schemas: IApplicableSchema[] = [];
-    constructor(private focusOffset = -1, private exclude: ASTNode = null) {
+    constructor (private focusOffset = -1, private exclude: ASTNode = null) {
     }
-    add(schema: IApplicableSchema) {
+    add (schema: IApplicableSchema) {
         this.schemas.push(schema);
     }
-    merge(other: ISchemaCollector) {
+    merge (other: ISchemaCollector) {
         this.schemas.push(...other.schemas);
     }
-    include(node: ASTNode) {
+    include (node: ASTNode) {
         return (this.focusOffset === -1 || contains(node, this.focusOffset)) && (node !== this.exclude);
     }
-    newSub(): ISchemaCollector {
+    newSub (): ISchemaCollector {
         return new SchemaCollector(-1, this.exclude);
     }
 }
 
 class NoOpSchemaCollector implements ISchemaCollector {
-    private constructor() { }
-    get schemas() { return []; }
-    add(schema: IApplicableSchema) { }
-    merge(other: ISchemaCollector) { }
-    include(node: ASTNode) { return true; }
-    newSub(): ISchemaCollector { return this; }
+    private constructor () { }
+    get schemas () { return []; }
+    add (schema: IApplicableSchema) { }
+    merge (other: ISchemaCollector) { }
+    include (node: ASTNode) { return true; }
+    newSub (): ISchemaCollector { return this; }
 
     static instance = new NoOpSchemaCollector();
 }
@@ -241,7 +241,7 @@ export class ValidationResult {
     // tslint:disable-next-line: no-any
     public enumValues: any[];
 
-    constructor(isKubernetes: boolean) {
+    constructor (isKubernetes: boolean) {
         this.problems = [];
         this.propertiesMatches = 0;
         this.propertiesValueMatches = 0;
@@ -254,32 +254,33 @@ export class ValidationResult {
         }
     }
 
-    public hasProblems(): boolean {
+    public hasProblems (): boolean {
         return !!this.problems.length;
     }
 
-    public mergeAll(validationResults: ValidationResult[]): void {
+    public mergeAll (validationResults: ValidationResult[]): void {
         for (const validationResult of validationResults) {
             this.merge(validationResult);
         }
     }
 
-    public merge(validationResult: ValidationResult): void {
+    public merge (validationResult: ValidationResult): void {
         this.problems = this.problems.concat(validationResult.problems);
     }
 
-    public mergeEnumValues(validationResult: ValidationResult): void {
+    public mergeEnumValues (validationResult: ValidationResult): void {
         if (!this.enumValueMatch && !validationResult.enumValueMatch && this.enumValues && validationResult.enumValues) {
             this.enumValues = this.enumValues.concat(validationResult.enumValues);
             for (const error of this.problems) {
                 if (error.code === ErrorCode.EnumValueMismatch) {
-                    error.message = localize('enumWarning', 'Value is not accepted. Valid values: {0}.', [...new Set(this.enumValues)].map(v => JSON.stringify(v)).join(', '));
+                    error.message = localize('enumWarning', 'Value is not accepted. Valid values: {0}.',
+                        [...new Set(this.enumValues)].map(v => {return JSON.stringify(v);}).join(', '));
                 }
             }
         }
     }
 
-    public mergePropertyMatch(propertyValidationResult: ValidationResult): void {
+    public mergePropertyMatch (propertyValidationResult: ValidationResult): void {
         this.merge(propertyValidationResult);
         this.propertiesMatches++;
         if (propertyValidationResult.enumValueMatch || !propertyValidationResult.hasProblems() && propertyValidationResult.propertiesMatches) {
@@ -290,7 +291,7 @@ export class ValidationResult {
         }
     }
 
-    public compareGeneric(other: ValidationResult): number {
+    public compareGeneric (other: ValidationResult): number {
         const hasProblems = this.hasProblems();
         if (hasProblems !== other.hasProblems()) {
             return hasProblems ? -1 : 1;
@@ -307,7 +308,7 @@ export class ValidationResult {
         return this.propertiesMatches - other.propertiesMatches;
     }
 
-    public compareKubernetes(other: ValidationResult): number {
+    public compareKubernetes (other: ValidationResult): number {
         const hasProblems = this.hasProblems();
         if (this.propertiesMatches !== other.propertiesMatches){
             return this.propertiesMatches - other.propertiesMatches;
@@ -329,20 +330,20 @@ export class ValidationResult {
 
 }
 
-export function newJSONDocument(root: ASTNode, diagnostics: Diagnostic[] = []) {
+export function newJSONDocument (root: ASTNode, diagnostics: Diagnostic[] = []) {
     return new JSONDocument(root, diagnostics, []);
 }
 
 // tslint:disable-next-line: no-any
-export function getNodeValue(node: ASTNode): any {
+export function getNodeValue (node: ASTNode): any {
     return Json.getNodeValue(node);
 }
 
-export function getNodePath(node: ASTNode): JSONPath {
+export function getNodePath (node: ASTNode): JSONPath {
     return Json.getNodePath(node);
 }
 
-export function contains(node: ASTNode, offset: number, includeRightBound = false): boolean {
+export function contains (node: ASTNode, offset: number, includeRightBound = false): boolean {
     return offset >= node.offset && offset < (node.offset + node.length) || includeRightBound && offset === (node.offset + node.length);
 }
 
@@ -350,21 +351,21 @@ export class JSONDocument {
 
     public isKubernetes: boolean;
 
-    constructor(public readonly root: ASTNode, public readonly syntaxErrors: Diagnostic[] = [], public readonly comments: Range[] = []) {
+    constructor (public readonly root: ASTNode, public readonly syntaxErrors: Diagnostic[] = [], public readonly comments: Range[] = []) {
     }
 
-    public getNodeFromOffset(offset: number, includeRightBound = false): ASTNode | undefined {
+    public getNodeFromOffset (offset: number, includeRightBound = false): ASTNode | undefined {
         if (this.root) {
             return <ASTNode>Json.findNodeAtOffset(this.root, offset, includeRightBound);
         }
-        return void 0;
+        return undefined;
     }
 
-    public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
+    public getNodeFromOffsetEndInclusive (offset: number): ASTNode {
         return this.root && this.root.getNodeFromOffsetEndInclusive(offset);
     }
 
-    public visit(visitor: (node: ASTNode) => boolean): void {
+    public visit (visitor: (node: ASTNode) => boolean): void {
         if (this.root) {
             const doVisit = (node: ASTNode): boolean => {
                 let ctn = visitor(node);
@@ -380,7 +381,7 @@ export class JSONDocument {
         }
     }
 
-    public validate(textDocument: TextDocument, schema: JSONSchema): Diagnostic[] {
+    public validate (textDocument: TextDocument, schema: JSONSchema): Diagnostic[] {
         if (this.root && schema) {
             const validationResult = new ValidationResult(this.isKubernetes);
             validate(this.root, schema, validationResult, NoOpSchemaCollector.instance, this.isKubernetes);
@@ -392,7 +393,7 @@ export class JSONDocument {
         return null;
     }
 
-    public getMatchingSchemas(schema: JSONSchema, focusOffset: number = -1, exclude: ASTNode = null): IApplicableSchema[] {
+    public getMatchingSchemas (schema: JSONSchema, focusOffset: number = -1, exclude: ASTNode = null): IApplicableSchema[] {
         const matchingSchemas = new SchemaCollector(focusOffset, exclude);
         if (this.root && schema) {
             validate(this.root, schema, new ValidationResult(this.isKubernetes), matchingSchemas, this.isKubernetes);
@@ -401,7 +402,7 @@ export class JSONDocument {
     }
 }
 
-function validate(node: ASTNode, schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector, isKubernetes: boolean) {
+function validate (node: ASTNode, schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector, isKubernetes: boolean) {
 
     if (!node || !matchingSchemas.include(node)) {
         return;
@@ -427,9 +428,9 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
 
     matchingSchemas.add({ node: node, schema: schema });
 
-    function _validateNode() {
+    function _validateNode () {
 
-        function matchesType(type: string) {
+        function matchesType (type: string) {
             return node.type === type || (type === 'integer' && node.type === 'number' && node.isInteger);
         }
 
@@ -568,7 +569,8 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
                     location: { offset: node.offset, length: node.length },
                     severity: DiagnosticSeverity.Warning,
                     code: ErrorCode.EnumValueMismatch,
-                    message: schema.errorMessage || localize('enumWarning', 'Value is not accepted. Valid values: {0}.', schema.enum.map(v => JSON.stringify(v)).join(', '))
+                    message: schema.errorMessage || localize('enumWarning', 'Value is not accepted. Valid values: {0}.',
+                        schema.enum.map(v => {return JSON.stringify(v);}).join(', '))
                 });
             }
         }
@@ -598,7 +600,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
         }
     }
 
-    function _validateNumberNode(node: NumberASTNode, schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
+    function _validateNumberNode (node: NumberASTNode, schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
         const val = node.value;
 
         if (isNumber(schema.multipleOf)) {
@@ -610,20 +612,20 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
                 });
             }
         }
-        function getExclusiveLimit(limit: number | undefined, exclusive: boolean | number | undefined): number | undefined {
+        function getExclusiveLimit (limit: number | undefined, exclusive: boolean | number | undefined): number | undefined {
             if (isNumber(exclusive)) {
                 return exclusive;
             }
             if (isBoolean(exclusive) && exclusive) {
                 return limit;
             }
-            return void 0;
+            return undefined;
         }
-        function getLimit(limit: number | undefined, exclusive: boolean | number | undefined): number | undefined {
+        function getLimit (limit: number | undefined, exclusive: boolean | number | undefined): number | undefined {
             if (!isBoolean(exclusive) || !exclusive) {
                 return limit;
             }
-            return void 0;
+            return undefined;
         }
         const exclusiveMinimum = getExclusiveLimit(schema.minimum, schema.exclusiveMinimum);
         if (isNumber(exclusiveMinimum) && val <= exclusiveMinimum) {
@@ -659,7 +661,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
         }
     }
 
-    function _validateStringNode(node: StringASTNode, schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
+    function _validateStringNode (node: StringASTNode, schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
         if (isNumber(schema.minLength) && node.value.length < schema.minLength) {
             validationResult.problems.push({
                 location: { offset: node.offset, length: node.length },
@@ -728,8 +730,9 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
                         validationResult.problems.push({
                             location: { offset: node.offset, length: node.length },
                             severity: DiagnosticSeverity.Warning,
-// tslint:disable-next-line: max-line-length
-                            message: schema.patternErrorMessage || schema.errorMessage || localize('colorHexFormatWarning', 'Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.')
+                            // tslint:disable-next-line: max-line-length
+                            message: schema.patternErrorMessage || schema.errorMessage || localize('colorHexFormatWarning',
+                                'Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.')
                         });
                     }
                 }
@@ -739,7 +742,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
         }
 
     }
-    function _validateArrayNode(node: ArrayASTNode, schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
+    function _validateArrayNode (node: ArrayASTNode, schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
         if (Array.isArray(schema.items)) {
             const subSchemas = schema.items;
             for (let index = 0; index < subSchemas.length; index++) {
@@ -759,7 +762,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
                 if (typeof schema.additionalItems === 'object') {
                     for (let i = subSchemas.length; i < node.items.length; i++) {
                         const itemValidationResult = new ValidationResult(isKubernetes);
-// tslint:disable-next-line: no-any
+                        // tslint:disable-next-line: no-any
                         validate(node.items[i], <any>schema.additionalItems, itemValidationResult, matchingSchemas, isKubernetes);
                         validationResult.mergePropertyMatch(itemValidationResult);
                         validationResult.mergeEnumValues(itemValidationResult);
@@ -820,7 +823,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
         if (schema.uniqueItems === true) {
             const values = getNodeValue(node);
             const duplicates = values.some((value, index) =>
-                index !== values.lastIndexOf(value));
+            {return index !== values.lastIndexOf(value);});
             if (duplicates) {
                 validationResult.problems.push({
                     location: { offset: node.offset, length: node.length },
@@ -832,7 +835,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
 
     }
 
-    function _validateObjectNode(node: ObjectASTNode, schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
+    function _validateObjectNode (node: ObjectASTNode, schema: JSONSchema, validationResult: ValidationResult, matchingSchemas: ISchemaCollector): void {
         const seenKeys: { [key: string]: ASTNode } = Object.create(null);
         const unprocessedProperties: string[] = [];
         for (const propertyNode of node.properties) {
@@ -959,7 +962,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
                 const child = seenKeys[propertyName];
                 if (child) {
                     const propertyValidationResult = new ValidationResult(isKubernetes);
-// tslint:disable-next-line: no-any
+                    // tslint:disable-next-line: no-any
                     validate(child, <any>schema.additionalProperties, propertyValidationResult, matchingSchemas, isKubernetes);
                     validationResult.mergePropertyMatch(propertyValidationResult);
                     validationResult.mergeEnumValues(propertyValidationResult);
@@ -1051,7 +1054,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
     }
 
     //Alternative comparison is specifically used by the kubernetes/openshift schema but may lead to better results then genericComparison depending on the schema
-    function alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas){
+    function alternativeComparison (subValidationResult, bestMatch, subSchema, subMatchingSchemas){
         const compareResult = subValidationResult.compareKubernetes(bestMatch.validationResult);
         if (compareResult > 0) {
             // our node is the best matching so far
@@ -1065,7 +1068,7 @@ function validate(node: ASTNode, schema: JSONSchema, validationResult: Validatio
     }
 
     //genericComparison tries to find the best matching schema using a generic comparison
-    function genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas){
+    function genericComparison (maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas){
         if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
             // no errors, both are equally good matches
             bestMatch.matchingSchemas.merge(subMatchingSchemas);

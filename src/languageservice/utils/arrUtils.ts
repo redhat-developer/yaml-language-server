@@ -2,9 +2,8 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { SingleYAMLDocument } from '../parser/yamlParser07';
 
-export function removeDuplicates(arr, prop) {
+export function removeDuplicates (arr, prop) {
     const new_arr = [];
     const lookup  = {};
 
@@ -19,30 +18,30 @@ export function removeDuplicates(arr, prop) {
     return new_arr;
 }
 
-export function getLineOffsets(textDocString: String): number[] {
+export function getLineOffsets (textDocString: String): number[] {
 
-        const lineOffsets: number[] = [];
-        const text = textDocString;
-        let isLineStart = true;
-        for (let i = 0; i < text.length; i++) {
-            if (isLineStart) {
-                lineOffsets.push(i);
-                isLineStart = false;
-            }
-            const ch = text.charAt(i);
-            isLineStart = (ch === '\r' || ch === '\n');
-            if (ch === '\r' && i + 1 < text.length && text.charAt(i + 1) === '\n') {
-                i++;
-            }
+    const lineOffsets: number[] = [];
+    const text = textDocString;
+    let isLineStart = true;
+    for (let i = 0; i < text.length; i++) {
+        if (isLineStart) {
+            lineOffsets.push(i);
+            isLineStart = false;
         }
-        if (isLineStart && text.length > 0) {
-            lineOffsets.push(text.length);
+        const ch = text.charAt(i);
+        isLineStart = (ch === '\r' || ch === '\n');
+        if (ch === '\r' && i + 1 < text.length && text.charAt(i + 1) === '\n') {
+            i++;
         }
+    }
+    if (isLineStart && text.length > 0) {
+        lineOffsets.push(text.length);
+    }
 
-        return lineOffsets;
+    return lineOffsets;
 }
 
-export function removeDuplicatesObj(objArray){
+export function removeDuplicatesObj (objArray){
 
     const nonDuplicateSet = new Set();
     const nonDuplicateArr = [];
@@ -61,7 +60,7 @@ export function removeDuplicatesObj(objArray){
 
 }
 
-export function matchOffsetToDocument(offset: number, jsonDocuments) {
+export function matchOffsetToDocument (offset: number, jsonDocuments) {
 
     for (const jsonDoc of jsonDocuments.documents) {
         if (jsonDoc.root && jsonDoc.root.offset <= offset && (jsonDoc.root.length + jsonDoc.root.offset) >= offset) {
@@ -73,7 +72,7 @@ export function matchOffsetToDocument(offset: number, jsonDocuments) {
     return null;
 }
 
-export function filterInvalidCustomTags(customTags: String[]): String[] {
+export function filterInvalidCustomTags (customTags: String[]): String[] {
     const validCustomTags = ['mapping', 'scalar', 'sequence'];
 
     return customTags.filter(tag => {

@@ -31,7 +31,7 @@ export class YAMLCompletion extends JSONCompletion {
     private completion: boolean;
     private supportsMarkdown: boolean | undefined;
 
-    constructor(schemaService: YAMLSchemaService, contributions: JSONWorkerContribution[] = [],
+    constructor (schemaService: YAMLSchemaService, contributions: JSONWorkerContribution[] = [],
         promiseConstructor: PromiseConstructor = Promise, private clientCapabilities: ClientCapabilities = {}) {
         super(schemaService, contributions, promiseConstructor);
         this.schemaService = schemaService;
@@ -41,14 +41,14 @@ export class YAMLCompletion extends JSONCompletion {
         this.completion = true;
     }
 
-    public configure(languageSettings: LanguageSettings, customTags: Array<String>) {
+    public configure (languageSettings: LanguageSettings, customTags: Array<String>) {
         if (languageSettings) {
             this.completion = languageSettings.completion;
         }
         this.customTags = customTags;
     }
 
-    public doResolve(item: CompletionItem): Thenable<CompletionItem> {
+    public doResolve (item: CompletionItem): Thenable<CompletionItem> {
         for (let i = this.contributions.length - 1; i >= 0; i--) {
             if (this.contributions[i].resolveCompletion) {
                 const resolver = this.contributions[i].resolveCompletion(item);
@@ -60,7 +60,7 @@ export class YAMLCompletion extends JSONCompletion {
         return this.promise.resolve(item);
     }
 
-    public doComplete(document: TextDocument, position: Position, isKubernetes: boolean= false): Thenable<CompletionList> {
+    public doComplete (document: TextDocument, position: Position, isKubernetes: boolean= false): Thenable<CompletionList> {
 
         const result: CompletionList = {
             items: [],
@@ -142,7 +142,7 @@ export class YAMLCompletion extends JSONCompletion {
                 console.log(message);
             },
             getNumberOfProposals: () =>
-                result.items.length
+            {return result.items.length;}
         };
 
         if (this.customTags.length > 0) {
@@ -223,12 +223,12 @@ export class YAMLCompletion extends JSONCompletion {
             }
 
             return this.promise.all(collectionPromises).then(() =>
-                result);
+            {return result;});
         });
     }
 
-    private getPropertyCompletions(schema: ResolvedSchema, doc: Parser.JSONDocument, node: ASTNode, addValue: boolean,
-            separatorAfter: string, collector: CompletionsCollector, document): void {
+    private getPropertyCompletions (schema: ResolvedSchema, doc: Parser.JSONDocument, node: ASTNode, addValue: boolean,
+        separatorAfter: string, collector: CompletionsCollector, document): void {
         const matchingSchemas = doc.getMatchingSchemas(schema.schema);
         matchingSchemas.forEach(s => {
             if (s.node === node && !s.inverted) {
@@ -293,7 +293,7 @@ export class YAMLCompletion extends JSONCompletion {
         });
     }
 
-    private getValueCompletions(schema: ResolvedSchema, doc: Parser.JSONDocument, node: ASTNode, offset: number, document: TextDocument,
+    private getValueCompletions (schema: ResolvedSchema, doc: Parser.JSONDocument, node: ASTNode, offset: number, document: TextDocument,
         collector: CompletionsCollector, types: { [type: string]: boolean }): void {
         let offsetForSeparator = offset;
         let parentKey: string = null;
@@ -380,7 +380,7 @@ export class YAMLCompletion extends JSONCompletion {
         }
     }
 
-    private getCustomTagValueCompletions(collector: CompletionsCollector) {
+    private getCustomTagValueCompletions (collector: CompletionsCollector) {
         const validCustomTags = filterInvalidCustomTags(this.customTags);
         validCustomTags.forEach(validTag => {
             // Valid custom tags are guarenteed to be strings
@@ -389,11 +389,11 @@ export class YAMLCompletion extends JSONCompletion {
         });
     }
 
-    private addSchemaValueCompletions(schema: JSONSchemaRef, separatorAfter: string, collector: CompletionsCollector, types: { [type: string]: boolean }): void {
+    private addSchemaValueCompletions (schema: JSONSchemaRef, separatorAfter: string, collector: CompletionsCollector, types: { [type: string]: boolean }): void {
         super.addSchemaValueCompletions(schema, separatorAfter, collector, types);
     }
 
-    private addDefaultValueCompletions(schema: JSONSchema, separatorAfter: string, collector: CompletionsCollector, arrayDepth = 0): void {
+    private addDefaultValueCompletions (schema: JSONSchema, separatorAfter: string, collector: CompletionsCollector, arrayDepth = 0): void {
         let hasProposals = false;
         if (isDefined(schema.default)) {
             let type = schema.type;
@@ -438,7 +438,7 @@ export class YAMLCompletion extends JSONCompletion {
         }
     }
 
-    private collectDefaultSnippets(schema: JSONSchema, separatorAfter: string, collector: CompletionsCollector, settings: StringifySettings, arrayDepth = 0) {
+    private collectDefaultSnippets (schema: JSONSchema, separatorAfter: string, collector: CompletionsCollector, settings: StringifySettings, arrayDepth = 0) {
         if (Array.isArray(schema.defaultSnippets)) {
             schema.defaultSnippets.forEach(s => {
                 let type = schema.type;
@@ -447,7 +447,7 @@ export class YAMLCompletion extends JSONCompletion {
                 let insertText: string;
                 let filterText: string;
                 if (isDefined(value)) {
-                    let type = schema.type;
+                    const type = schema.type;
                     if (arrayDepth === 0 && type === 'array') {
                         // We know that a - isn't present yet so we need to add one
                         const fixedObj = { };
@@ -487,7 +487,7 @@ export class YAMLCompletion extends JSONCompletion {
     }
 
     // tslint:disable-next-line:no-any
-    private getInsertTextForSnippetValue(value: any, separatorAfter: string, settings: StringifySettings, depth?: number): string {
+    private getInsertTextForSnippetValue (value: any, separatorAfter: string, settings: StringifySettings, depth?: number): string {
         // tslint:disable-next-line:no-any
         const replacer = (value: any) => {
             if (typeof value === 'string') {
@@ -504,12 +504,12 @@ export class YAMLCompletion extends JSONCompletion {
     }
 
     // tslint:disable-next-line:no-any
-    private getLabelForSnippetValue(value: any): string {
+    private getLabelForSnippetValue (value: any): string {
         const label = JSON.stringify(value);
         return label.replace(/\$\{\d+:([^}]+)\}|\$\d+/g, '$1');
     }
 
-    private addCustomTagValueCompletion(collector: CompletionsCollector, separatorAfter: string, label: string): void {
+    private addCustomTagValueCompletion (collector: CompletionsCollector, separatorAfter: string, label: string): void {
         collector.add({
             kind: super.getSuggestionKind('string'),
             label: label,
@@ -519,7 +519,7 @@ export class YAMLCompletion extends JSONCompletion {
         });
     }
 
-    private addBooleanValueCompletion(value: boolean, separatorAfter: string, collector: CompletionsCollector): void {
+    private addBooleanValueCompletion (value: boolean, separatorAfter: string, collector: CompletionsCollector): void {
         collector.add({
             kind: this.getSuggestionKind('boolean'),
             label: value ? 'true' : 'false',
@@ -530,7 +530,7 @@ export class YAMLCompletion extends JSONCompletion {
     }
 
     // tslint:disable-next-line:no-any
-    private getSuggestionKind(type: any): CompletionItemKind {
+    private getSuggestionKind (type: any): CompletionItemKind {
         if (Array.isArray(type)) {
             // tslint:disable-next-line:no-any
             const array = <any[]> type;
@@ -547,7 +547,7 @@ export class YAMLCompletion extends JSONCompletion {
         }
     }
 
-    private addNullValueCompletion(separatorAfter: string, collector: CompletionsCollector): void {
+    private addNullValueCompletion (separatorAfter: string, collector: CompletionsCollector): void {
         collector.add({
             kind: this.getSuggestionKind('null'),
             label: 'null',
@@ -558,15 +558,15 @@ export class YAMLCompletion extends JSONCompletion {
     }
 
     // tslint:disable-next-line: no-any
-    private getInsertTextForValue(value: any, separatorAfter: string): string {
+    private getInsertTextForValue (value: any, separatorAfter: string): string {
         return this.getInsertTextForPlainText(value + separatorAfter);
     }
 
-    private getInsertTextForPlainText(text: string): string {
+    private getInsertTextForPlainText (text: string): string {
         return text.replace(/[\\\$\}]/g, '\\$&');   // escape $, \ and }
     }
 
-    private getInsertTextForObject(schema: JSONSchema, separatorAfter: string, indent = '\t', insertIndex = 1) {
+    private getInsertTextForObject (schema: JSONSchema, separatorAfter: string, indent = '\t', insertIndex = 1) {
         let insertText = '';
         if (!schema.properties) {
             insertText = `${indent}\$${insertIndex++}\n`;
@@ -626,7 +626,7 @@ export class YAMLCompletion extends JSONCompletion {
     }
 
     // tslint:disable-next-line:no-any
-    private getInsertTextForArray(schema: any, separatorAfter: string, indent = '\t', insertIndex = 1) {
+    private getInsertTextForArray (schema: any, separatorAfter: string, indent = '\t', insertIndex = 1) {
         let insertText = '';
         if (!schema) {
             insertText = `\$${insertIndex++}`;
@@ -660,8 +660,8 @@ export class YAMLCompletion extends JSONCompletion {
         return { insertText, insertIndex };
     }
 
-    private getInsertTextForProperty(key: string, propertySchema: JSONSchema, addValue: boolean, separatorAfter: string,
-                                     ident: string = '\t'): string {
+    private getInsertTextForProperty (key: string, propertySchema: JSONSchema, addValue: boolean, separatorAfter: string,
+        ident: string = '\t'): string {
 
         const propertyText = this.getInsertTextForValue(key, '');
         const resultText = propertyText + ':';
@@ -746,7 +746,7 @@ export class YAMLCompletion extends JSONCompletion {
     }
 
     // tslint:disable-next-line:no-any
-    private getInsertTextForGuessedValue(value: any, separatorAfter: string): string {
+    private getInsertTextForGuessedValue (value: any, separatorAfter: string): string {
         switch (typeof value) {
             case 'object':
                 if (value === null) {
@@ -765,14 +765,14 @@ export class YAMLCompletion extends JSONCompletion {
         return this.getInsertTextForValue(value, separatorAfter);
     }
 
-    private getLabelForValue(value: string) {
+    private getLabelForValue (value: string) {
         return value;
     }
 
     /**
      * Corrects simple syntax mistakes to load possible nodes even if a semicolon is missing
      */
-    private completionHelper(document: TextDocument, textDocumentPosition: Position) {
+    private completionHelper (document: TextDocument, textDocumentPosition: Position) {
         // Get the string we are looking at via a substring
         const linePos = textDocumentPosition.line;
         const position = textDocumentPosition;
@@ -826,12 +826,12 @@ export class YAMLCompletion extends JSONCompletion {
         }
     }
 
-    private is_EOL(c: number) {
+    private is_EOL (c: number) {
         return (c === 0x0A/* LF */) || (c === 0x0D/* CR */);
     }
 
     // Called by onCompletion
-    private setKubernetesParserOption(jsonDocuments: Parser.JSONDocument[], option: boolean) {
+    private setKubernetesParserOption (jsonDocuments: Parser.JSONDocument[], option: boolean) {
         for (const jsonDoc in jsonDocuments) {
             jsonDocuments[jsonDoc].isKubernetes = option;
         }
@@ -839,6 +839,6 @@ export class YAMLCompletion extends JSONCompletion {
 }
 
 // tslint:disable-next-line: no-any
-function isDefined(val: any): val is object {
+function isDefined (val: any): val is object {
     return val !== undefined;
 }
