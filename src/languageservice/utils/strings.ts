@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-export function startsWith(haystack: string, needle: string): boolean {
+export function startsWith (haystack: string, needle: string): boolean {
     if (haystack.length < needle.length) {
         return false;
     }
@@ -21,7 +21,7 @@ export function startsWith(haystack: string, needle: string): boolean {
 /**
  * Determines if haystack ends with needle.
  */
-export function endsWith(haystack: string, needle: string): boolean {
+export function endsWith (haystack: string, needle: string): boolean {
     const diff = haystack.length - needle.length;
     if (diff > 0) {
         return haystack.lastIndexOf(needle) === diff;
@@ -32,20 +32,20 @@ export function endsWith(haystack: string, needle: string): boolean {
     }
 }
 
-export function convertSimple2RegExp(pattern: string): RegExp {
+export function convertSimple2RegExp (pattern: string): RegExp {
     const match = pattern.match(new RegExp('^/(.*?)/([gimy]*)$'));
     return match ? convertRegexString2RegExp(match[1], match[2])
         :  convertGlobalPattern2RegExp(pattern);
 }
 
-function convertGlobalPattern2RegExp(pattern: string): RegExp {
+function convertGlobalPattern2RegExp (pattern: string): RegExp {
     return new RegExp(pattern.replace(/[\-\\\{\}\+\?\|\^\$\.\,\[\]\(\)\#\s]/g, '\\$&').replace(/[\*]/g, '.*') + '$');
 }
 
-function convertRegexString2RegExp(pattern: string, flag: string): RegExp {
+function convertRegexString2RegExp (pattern: string, flag: string): RegExp {
     return new RegExp(pattern, flag);
 }
 
-export function convertSimple2RegExpPattern(pattern: string): string {
+export function convertSimple2RegExpPattern (pattern: string): string {
     return pattern.replace(/[\-\\\{\}\+\?\|\^\$\.\,\[\]\(\)\#\s]/g, '\\$&').replace(/[\*]/g, '.*');
 }

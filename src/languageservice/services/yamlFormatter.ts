@@ -12,13 +12,13 @@ export class YAMLFormatter {
 
     private formatterEnabled: boolean = true;
 
-    public configure(shouldFormat: LanguageSettings) {
+    public configure (shouldFormat: LanguageSettings) {
         if (shouldFormat) {
             this.formatterEnabled = shouldFormat.format;
         }
     }
 
-    public format(document: TextDocument, options: CustomFormatterOptions): TextEdit[] {
+    public format (document: TextDocument, options: CustomFormatterOptions): TextEdit[] {
 
         if (!this.formatterEnabled) {
             return [];

@@ -11,7 +11,7 @@ export interface StringifySettings {
 }
 
 // tslint:disable-next-line: no-any
-export function stringifyObject(obj: any, indent: string, stringifyLiteral: (val: any) => string, settings: StringifySettings, depth = 0, consecutiveArrays = 0): string {
+export function stringifyObject (obj: any, indent: string, stringifyLiteral: (val: any) => string, settings: StringifySettings, depth = 0, consecutiveArrays = 0): string {
     if (obj !== null && typeof obj === 'object') {
 
         /**
@@ -19,7 +19,7 @@ export function stringifyObject(obj: any, indent: string, stringifyLiteral: (val
          * is propertly indented. When we are auto completion from a value we don't want the indent because the cursor
          * is already in the correct place
          */
-        let newIndent = ((depth === 0 && settings.shouldIndentWithTab) || depth > 0) ? (indent + '  ') : '';
+        const newIndent = ((depth === 0 && settings.shouldIndentWithTab) || depth > 0) ? (indent + '  ') : '';
         if (Array.isArray(obj)) {
             consecutiveArrays += 1;
             if (obj.length === 0) {
@@ -39,13 +39,13 @@ export function stringifyObject(obj: any, indent: string, stringifyLiteral: (val
             result += indent;
             return result;
         } else {
-            let keys = Object.keys(obj);
+            const keys = Object.keys(obj);
             if (keys.length === 0) {
                 return '';
             }
             let result = ((depth === 0 && settings.newLineFirst) || depth > 0) ? '\n' : '';
             for (let i = 0; i < keys.length; i++) {
-                let key = keys[i];
+                const key = keys[i];
 
                 // The first child of an array needs to be treated specially, otherwise identations will be off
                 if (depth === 0 && i === 0 && !settings.indentFirstObject) {
@@ -64,7 +64,7 @@ export function stringifyObject(obj: any, indent: string, stringifyLiteral: (val
     return stringifyLiteral(obj);
 }
 
-function preprendToObject(obj, consecutiveArrays) {
+function preprendToObject (obj, consecutiveArrays) {
     const newObj = { };
     for (let i = 0; i < Object.keys(obj).length; i++) {
         const key = Object.keys(obj)[i];

@@ -31,7 +31,7 @@ nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
  **************************/
 const workspaceContext: WorkspaceContextService = {
     resolveRelativePath: (relativePath: string, resource: string) =>
-        URL.resolve(resource, relativePath)
+    {return URL.resolve(resource, relativePath);}
 };
 
 /********************
@@ -71,8 +71,8 @@ interface JSONSchemaSettings {
  ****************/
 
 // Language server configuration
-let yamlConfigurationSettings: JSONSchemaSettings[] = void 0;
-let schemaAssociations: ISchemaAssociations = void 0;
+let yamlConfigurationSettings: JSONSchemaSettings[] = undefined;
+let schemaAssociations: ISchemaAssociations = undefined;
 let formatterRegistration: Thenable<Disposable> = null;
 let specificValidatorPaths = [];
 let schemaConfigurationSettings = [];
@@ -125,7 +125,7 @@ const checkSchemaURI = (uri: string): string => {
  * AND the schema store setting is enabled. If the schema store setting
  * is not enabled we need to clear the schemas.
  */
-function setSchemaStoreSettingsIfNotSet() {
+function setSchemaStoreSettingsIfNotSet () {
     const schemaStoreIsSet = (schemaStoreSettings.length !== 0);
 
     if (schemaStoreEnabled && !schemaStoreIsSet) {
@@ -142,7 +142,7 @@ function setSchemaStoreSettingsIfNotSet() {
 /**
  * When the schema store is enabled, download and store YAML schema associations
  */
-function getSchemaStoreMatchingSchemas() {
+function getSchemaStoreMatchingSchemas () {
     return xhr({ url: JSON_SCHEMASTORE_URL }).then(response => {
         const languageSettings = {
             schemas: []
@@ -174,7 +174,7 @@ function getSchemaStoreMatchingSchemas() {
  * Called when server settings or schema associations are changed
  * Re-creates schema associations and revalidates any open YAML files
  */
-function updateConfiguration() {
+function updateConfiguration () {
     let languageSettings: LanguageSettings = {
         validate: yamlShouldValidate,
         hover: yamlShouldHover,
@@ -231,7 +231,7 @@ function updateConfiguration() {
  * @param schema schema id
  * @param languageSettings current server settings
  */
-function configureSchemas(uri: string, fileMatch: string[], schema: any, languageSettings: LanguageSettings) {
+function configureSchemas (uri: string, fileMatch: string[], schema: any, languageSettings: LanguageSettings) {
 
     uri = checkSchemaURI(uri);
 
@@ -252,7 +252,7 @@ function configureSchemas(uri: string, fileMatch: string[], schema: any, languag
     return languageSettings;
 }
 
-function isKubernetes(textDocument: TextDocument) {
+function isKubernetes (textDocument: TextDocument) {
     for (const path in specificValidatorPaths) {
         const globPath = specificValidatorPaths[path];
         const fpa = new FilePatternAssociation(globPath);
@@ -264,7 +264,7 @@ function isKubernetes(textDocument: TextDocument) {
     return false;
 }
 
-function cleanPendingValidation(textDocument: TextDocument): void {
+function cleanPendingValidation (textDocument: TextDocument): void {
     const request = pendingValidationRequests[textDocument.uri];
 
     if (request) {
@@ -273,7 +273,7 @@ function cleanPendingValidation(textDocument: TextDocument): void {
     }
 }
 
-function triggerValidation(textDocument: TextDocument): void {
+function triggerValidation (textDocument: TextDocument): void {
     cleanPendingValidation(textDocument);
     pendingValidationRequests[textDocument.uri] = setTimeout(() => {
         delete pendingValidationRequests[textDocument.uri];
@@ -281,7 +281,7 @@ function triggerValidation(textDocument: TextDocument): void {
     }, validationDelayMs);
 }
 
-function validateTextDocument(textDocument: TextDocument): void {
+function validateTextDocument (textDocument: TextDocument): void {
     if (!textDocument) {
         return;
     }
@@ -291,16 +291,16 @@ function validateTextDocument(textDocument: TextDocument): void {
         return;
     }
 
-       customLanguageService.doValidation(textDocument, isKubernetes(textDocument))
-                         .then(function (diagnosticResults) {
-        const diagnostics = [];
-        for (const diagnosticItem in diagnosticResults) {
-            diagnosticResults[diagnosticItem].severity = 1; //Convert all warnings to errors
-            diagnostics.push(diagnosticResults[diagnosticItem]);
-        }
+    customLanguageService.doValidation(textDocument, isKubernetes(textDocument))
+        .then(function (diagnosticResults) {
+            const diagnostics = [];
+            for (const diagnosticItem in diagnosticResults) {
+                diagnosticResults[diagnosticItem].severity = 1; //Convert all warnings to errors
+                diagnostics.push(diagnosticResults[diagnosticItem]);
+            }
 
-        connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicatesObj(diagnostics) });
-    }, function (error) { });
+            connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: removeDuplicatesObj(diagnostics) });
+        }, function (error) { });
 }
 
 /*************
@@ -345,17 +345,17 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
     workspaceFolders = params.workspaceFolders || [];
 
     hierarchicalDocumentSymbolSupport = !!(
-      capabilities.textDocument &&
+        capabilities.textDocument &&
       capabilities.textDocument.documentSymbol &&
       capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport
     );
     clientDynamicRegisterSupport = !!(
-      capabilities.textDocument &&
+        capabilities.textDocument &&
       capabilities.textDocument.rangeFormatting &&
       capabilities.textDocument.rangeFormatting.dynamicRegistration
     );
     clientDefinitionLinkSupport = !!(
-      capabilities.textDocument &&
+        capabilities.textDocument &&
       capabilities.textDocument.definition &&
       capabilities.textDocument.definition.linkSupport
     );
@@ -389,7 +389,7 @@ connection.onNotification(SchemaAssociationNotification.type, associations => {
  * Register the custom schema provider and use it for requests of unknown scheme
  */
 connection.onNotification(DynamicCustomSchemaRequestRegistration.type, () => {
-    const schemaProvider = (resource => connection.sendRequest(CustomSchemaRequest.type, resource)) as CustomSchemaProvider;
+    const schemaProvider = (resource => {return connection.sendRequest(CustomSchemaRequest.type, resource);}) as CustomSchemaProvider;
     customLanguageService.registerCustomSchemaProvider(schemaProvider);
 });
 
@@ -470,7 +470,7 @@ connection.onDidChangeConfiguration(change => {
                 });
             }
         } else if (formatterRegistration) {
-            formatterRegistration.then(r => r.dispose());
+            formatterRegistration.then(r => {return r.dispose();});
             formatterRegistration = null;
         }
     }
@@ -525,7 +525,7 @@ connection.onCompletion(textDocumentPosition => {
  * Like onCompletion, but called only for currently selected completion item
  * Provides additional information about the item, not just the keyword
  */
-connection.onCompletionResolve(completionItem => customLanguageService.doResolve(completionItem));
+connection.onCompletionResolve(completionItem => {return customLanguageService.doResolve(completionItem);});
 
 /**
  * Called when the user hovers with their mouse over a keyword
@@ -535,7 +535,7 @@ connection.onHover(textDocumentPositionParams => {
     const document = documents.get(textDocumentPositionParams.textDocument.uri);
 
     if (!document) {
-        return Promise.resolve(void 0);
+        return Promise.resolve(undefined);
     }
 
     return customLanguageService.doHover(document, textDocumentPositionParams.position);
@@ -589,7 +589,9 @@ connection.onDefinition(params => {
     if (clientDefinitionLinkSupport) {
         return definitionLinksPromise;
     } else {
-        return definitionLinksPromise.then(definitionLinks => definitionLinks.map(definitionLink => ({uri: definitionLink.targetUri, range: definitionLink.targetRange})));
+        return definitionLinksPromise.then(definitionLinks =>
+        {return definitionLinks.map(definitionLink =>
+        {return {uri: definitionLink.targetUri, range: definitionLink.targetRange};});});
     }
 });
 

@@ -15,11 +15,11 @@ export class YAMLDocumentSymbols {
 
     private jsonDocumentSymbols;
 
-    constructor(schemaService: YAMLSchemaService) {
+    constructor (schemaService: YAMLSchemaService) {
         this.jsonDocumentSymbols = new JSONDocumentSymbols(schemaService);
     }
 
-    public findDocumentSymbols(document: TextDocument): SymbolInformation[] {
+    public findDocumentSymbols (document: TextDocument): SymbolInformation[] {
 
         const doc = parseYAML(document.getText());
         if (!doc || doc['documents'].length === 0) {
@@ -36,7 +36,7 @@ export class YAMLDocumentSymbols {
         return results;
     }
 
-    public findHierarchicalDocumentSymbols(document: TextDocument ): DocumentSymbol[] {
+    public findHierarchicalDocumentSymbols (document: TextDocument ): DocumentSymbol[] {
         const doc = parseYAML(document.getText());
         if (!doc || doc['documents'].length === 0) {
             return null;

@@ -19,28 +19,28 @@ export class YAMLHover {
     private shouldHover: boolean;
     private jsonHover;
 
-    constructor(schemaService: YAMLSchemaService, promiseConstructor: PromiseConstructor) {
+    constructor (schemaService: YAMLSchemaService, promiseConstructor: PromiseConstructor) {
         this.promise = promiseConstructor || Promise;
         this.shouldHover = true;
         this.jsonHover = new JSONHover(schemaService, [], Promise);
     }
 
-    public configure(languageSettings: LanguageSettings) {
+    public configure (languageSettings: LanguageSettings) {
         if (languageSettings) {
             this.shouldHover = languageSettings.hover;
         }
     }
 
-    public doHover(document: TextDocument, position: Position): Thenable<Hover> {
+    public doHover (document: TextDocument, position: Position): Thenable<Hover> {
 
         if (!this.shouldHover || !document) {
-            return this.promise.resolve(void 0);
+            return this.promise.resolve(undefined);
         }
         const doc = parseYAML(document.getText());
         const offset = document.offsetAt(position);
         const currentDoc = matchOffsetToDocument(offset, doc);
         if (currentDoc === null) {
-            return this.promise.resolve(void 0);
+            return this.promise.resolve(undefined);
         }
 
         const currentDocIndex = doc.documents.indexOf(currentDoc);

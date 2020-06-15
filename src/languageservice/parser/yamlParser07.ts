@@ -27,7 +27,7 @@ export class SingleYAMLDocument extends JSONDocument {
     public isKubernetes: boolean;
     public currentDocIndex: number;
 
-    constructor(lines: number[]) {
+    constructor (lines: number[]) {
         super(null, []);
         this.lines = lines;
         this.root = null;
@@ -35,7 +35,7 @@ export class SingleYAMLDocument extends JSONDocument {
         this.warnings = [];
     }
 
-    public getSchemas(schema, doc, node) {
+    public getSchemas (schema, doc, node) {
         const matchingSchemas = [];
         doc.validate(schema, matchingSchemas, node.start);
         return matchingSchemas;
@@ -43,7 +43,7 @@ export class SingleYAMLDocument extends JSONDocument {
 
 }
 
-function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
+function recursivelyBuildAst (parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
 
     if (!node) {
         return;
@@ -106,7 +106,6 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
             const type = Yaml.determineScalarType(instance);
 
             // The name is set either by the sequence or the mapping case.
-            const name = null;
             const value = instance.value;
 
             //This is a patch for redirecting values with these strings to be boolean nodes because its not supported in the parser.
@@ -157,7 +156,7 @@ function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
     }
 }
 
-function convertError(e: Yaml.YAMLException) {
+function convertError (e: Yaml.YAMLException) {
 
     const line = e.mark.line === 0 ? 0 : e.mark.line - 1;
     const character = e.mark.position + e.mark.column === 0 ? 0 : e.mark.position + e.mark.column - 1;
@@ -172,19 +171,19 @@ function convertError(e: Yaml.YAMLException) {
             character
         },
     },
-     severity: 2
+    severity: 2
     };
 }
 
-function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string) {
+function createJSONDocument (yamlDoc: Yaml.YAMLNode, startPositions: number[], text: string) {
     const _doc = new SingleYAMLDocument(startPositions);
     _doc.root = recursivelyBuildAst(null, yamlDoc);
 
     if (!_doc.root) {
         // TODO: When this is true, consider not pushing the other errors.
         _doc.errors.push({ message: localize('Invalid symbol', 'Expected a YAML object, array or literal'),
-        code: ErrorCode.Undefined,
-        location: { start: yamlDoc.startPosition, end: yamlDoc.endPosition } });
+            code: ErrorCode.Undefined,
+            location: { start: yamlDoc.startPosition, end: yamlDoc.endPosition } });
     }
 
     const duplicateKeyReason = 'duplicate key';
@@ -198,11 +197,12 @@ function createJSONDocument(yamlDoc: Yaml.YAMLNode, startPositions: number[], te
         }
         return true;
     };
-    const errors = yamlDoc.errors.filter(e => e.reason !== duplicateKeyReason && !e.isWarning).map(e => convertError(e));
-    const warnings = yamlDoc.errors.filter(e => (e.reason === duplicateKeyReason && isDuplicateAndNotMergeKey(e, text)) || e.isWarning).map(e => convertError(e));
+    const errors = yamlDoc.errors.filter(e => {return e.reason !== duplicateKeyReason && !e.isWarning;}).map(e => {return convertError(e);});
+    const warnings = yamlDoc.errors.filter(e =>
+    {return (e.reason === duplicateKeyReason && isDuplicateAndNotMergeKey(e, text)) || e.isWarning;}).map(e => {return convertError(e);});
 
-    errors.forEach(e => _doc.errors.push(e));
-    warnings.forEach(e => _doc.warnings.push(e));
+    errors.forEach(e => {return _doc.errors.push(e);});
+    warnings.forEach(e => {return _doc.warnings.push(e);});
 
     return _doc;
 }
@@ -212,7 +212,7 @@ export class YAMLDocument {
     private errors;
     private warnings;
 
-    constructor(documents: SingleYAMLDocument[]) {
+    constructor (documents: SingleYAMLDocument[]) {
         this.documents = documents;
         this.errors = [];
         this.warnings = [];
@@ -220,7 +220,7 @@ export class YAMLDocument {
 
 }
 
-export function parse(text: string, customTags = []): YAMLDocument {
+export function parse (text: string, customTags = []): YAMLDocument {
 
     const startPositions = getLineStartPositions(text);
     // This is documented to return a YAMLNode even though the
@@ -259,7 +259,7 @@ export function parse(text: string, customTags = []): YAMLDocument {
         schema: schemaWithAdditionalTags
     };
 
-    Yaml.loadAll(text, doc => yamlDocs.push(doc), additionalOptions);
+    Yaml.loadAll(text, doc => {return yamlDocs.push(doc);}, additionalOptions);
 
-    return new YAMLDocument(yamlDocs.map(doc => createJSONDocument(doc, startPositions, text)));
+    return new YAMLDocument(yamlDocs.map(doc => {return createJSONDocument(doc, startPositions, text);}));
 }

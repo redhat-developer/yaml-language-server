@@ -21,20 +21,20 @@ export class YAMLValidation {
 
     private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
-    public constructor(schemaService: YAMLSchemaService, promiseConstructor: PromiseConstructor) {
+    public constructor (schemaService: YAMLSchemaService, promiseConstructor: PromiseConstructor) {
         this.promise = promiseConstructor || Promise;
         this.validationEnabled = true;
         this.jsonValidation = new JSONValidation(schemaService, this.promise);
     }
 
-    public configure(settings: LanguageSettings) {
+    public configure (settings: LanguageSettings) {
         if (settings) {
             this.validationEnabled = settings.validate;
             this.customTags = settings.customTags;
         }
     }
 
-    public async doValidation(textDocument: TextDocument, isKubernetes: boolean = false): Promise<Diagnostic[]> {
+    public async doValidation (textDocument: TextDocument, isKubernetes: boolean = false): Promise<Diagnostic[]> {
 
         if (!this.validationEnabled) {
             return this.promise.resolve([]);
