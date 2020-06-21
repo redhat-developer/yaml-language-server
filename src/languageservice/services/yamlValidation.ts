@@ -59,7 +59,7 @@ export class YAMLValidation {
         }
 
         const yamlDocument: YAMLDocument = parseYAML(textDocument.getText(), this.customTags);
-        const validationResult: YAMLDocDiagnostic[] = [];
+        const validationResult = [];
 
         let index = 0;
         for (const currentYAMLDoc of yamlDocument.documents) {
@@ -82,7 +82,7 @@ export class YAMLValidation {
 
         const foundSignatures = new Set();
         const duplicateMessagesRemoved: Diagnostic[] = [];
-        for (const err of validationResult) {
+        for (let err of validationResult) {
             /**
              * A patch ontop of the validation that removes the
              * 'Matches many schemas' error for kubernetes
@@ -91,11 +91,15 @@ export class YAMLValidation {
             if (isKubernetes && err.message === this.MATCHES_MULTIPLE) {
                 continue;
             }
-            const errSig = err.location.start + ' ' + err.location.end + ' ' + err.message;
-            if (!foundSignatures.has(errSig)) {
-                const lsDiagnostic = yamlDiagToLSDiag(err, textDocument);
 
-                duplicateMessagesRemoved.push(lsDiagnostic);
+            if (err.hasOwnProperty('location')) {
+                err = yamlDiagToLSDiag(err, textDocument);
+            }
+
+            const errSig = err.range.start.line + ' ' + err.range.start.character + ' ' + err.message;
+            if (!foundSignatures.has(errSig)) {
+
+                duplicateMessagesRemoved.push(err);
                 foundSignatures.add(errSig);
             }
         }

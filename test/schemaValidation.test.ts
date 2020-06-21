@@ -203,14 +203,15 @@ suite('Validation Tests', () => {
                 const content = 'cwd: hello\nan';
                 const validator = parseSetup(content);
                 validator.then(function (result) {
+                    console.log(`RESULT: ${JSON.stringify(result)}`)
                     assert.equal(result.length, 2);
                     assert.deepEqual(
                         result[0],
-                        createExpectedError(BlockMappingEntryError, 1, 13, 1, 13)
+                        createExpectedError(BlockMappingEntryError, 1, 2, 1, 2)
                     );
                     assert.deepEqual(
                         result[1],
-                        createExpectedError(ColonMissingError, 1, 13, 1, 13)
+                        createExpectedError(ColonMissingError, 1, 2, 1, 2)
                     );
                 }).then(done, done);
             });
