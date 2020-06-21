@@ -11,6 +11,25 @@ import { parse as parseYAML, YAMLDocument } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
+import { YAMLDocDiagnostic } from '../utils/parseUtils';
+
+/**
+ * Convert a YAMLDocDiagnostic to a language server Diagnostic
+ * @param yamlDiag A YAMLDocDiagnostic from the parser
+ * @param textDocument TextDocument from the language server client
+ */
+export const yamlDiagToLSDiag = (yamlDiag: YAMLDocDiagnostic, textDocument: TextDocument): Diagnostic => {
+    const range = {
+        start: textDocument.positionAt(yamlDiag.location.start),
+        end: textDocument.positionAt(yamlDiag.location.end)
+    };
+
+    return {
+        message: yamlDiag.message,
+        range,
+        severity: yamlDiag.severity
+    };
+}
 
 export class YAMLValidation {
 
@@ -34,13 +53,14 @@ export class YAMLValidation {
         }
     }
 
-    public async doValidation (textDocument: TextDocument, isKubernetes: boolean = false): Promise<Diagnostic[]> {
-
+    public async doValidation(textDocument: TextDocument, isKubernetes: boolean = false): Promise<Diagnostic[]> {
         if (!this.validationEnabled) {
             return this.promise.resolve([]);
         }
+
         const yamlDocument: YAMLDocument = parseYAML(textDocument.getText(), this.customTags);
-        const validationResult: Diagnostic[] = [];
+        const validationResult: YAMLDocDiagnostic[] = [];
+
         let index = 0;
         for (const currentYAMLDoc of yamlDocument.documents) {
             currentYAMLDoc.isKubernetes = isKubernetes;
@@ -50,10 +70,10 @@ export class YAMLValidation {
             const syd = currentYAMLDoc as unknown as SingleYAMLDocument;
             if (syd.errors.length > 0) {
                 // TODO: Get rid of these type assertions (shouldn't need them)
-                validationResult.push(...(syd.errors as Diagnostic[]));
+                validationResult.push(...syd.errors);
             }
             if (syd.warnings.length > 0) {
-                validationResult.push(...(syd.warnings as Diagnostic[]));
+                validationResult.push(...syd.warnings);
             }
 
             validationResult.push(...validation);
@@ -61,8 +81,8 @@ export class YAMLValidation {
         }
 
         const foundSignatures = new Set();
-        const duplicateMessagesRemoved = [];
-        for (const err of validationResult as Diagnostic[]) {
+        const duplicateMessagesRemoved: Diagnostic[] = [];
+        for (const err of validationResult) {
             /**
              * A patch ontop of the validation that removes the
              * 'Matches many schemas' error for kubernetes
@@ -71,12 +91,15 @@ export class YAMLValidation {
             if (isKubernetes && err.message === this.MATCHES_MULTIPLE) {
                 continue;
             }
-            const errSig = err.range.start.line + ' ' + err.range.start.character + ' ' + err.message;
+            const errSig = err.location.start + ' ' + err.location.end + ' ' + err.message;
             if (!foundSignatures.has(errSig)) {
-                duplicateMessagesRemoved.push(err);
+                const lsDiagnostic = yamlDiagToLSDiag(err, textDocument);
+
+                duplicateMessagesRemoved.push(lsDiagnostic);
                 foundSignatures.add(errSig);
             }
         }
+
         return duplicateMessagesRemoved;
     }
 

@@ -2,7 +2,6 @@ import * as Yaml from 'yaml-ast-parser-custom-tags';
 import { Schema, Type } from 'js-yaml';
 
 import { filterInvalidCustomTags } from './arrUtils';
-import { emit } from 'process';
 
 export const DUPLICATE_KEY_REASON = 'duplicate key';
 
@@ -12,60 +11,24 @@ export const DUPLICATE_KEY_REASON = 'duplicate key';
  */
 export interface YAMLDocDiagnostic {
     message: string
-    range: {
-        start: {
-            line: number
-            character: number
-        }
-        end: {
-            line: number
-            character: number
-        }
+    location: {
+        start: number
+        end: number
     }
-    severity: number
+    severity: 1 | 2
 }
 
 /**
  * Convert a YAML node exception to a
- * language server diagnostic.
+ * special diagnostic type (NOT YET THE
+ * LANGUAGE SERVER DIAGNOSTIC).
  */
 function exceptionToDiagnostic(e: Yaml.YAMLException): YAMLDocDiagnostic {
-    // The exceptions from the AST produce WEIRD text snippets.
-    // This undoes the strange formatting.
-    const formatSnippet = (snippet: string) => snippet
-                                                .replace(/ /g, '')
-                                                .replace(/\n/g, '')
-                                                .replace(/\^/g, '');
-    const exceptionSnippet = e.mark.getSnippet();
-    const snippet = formatSnippet(exceptionSnippet);
-
-    const line = e.mark.line === 1 ? 0 : e.mark.line;
-    let startPos;
-    let endPos;
-
-    // Use the snippet to calculate the diagnostic position
-    // if it's available. Some exceptions return empty snippets.
-    // In the event of an empty snippet, use the old logic.
-    if (snippet.length > 0) {
-        startPos = e.mark.column;
-        endPos = e.mark.column + snippet.length;
-    } else {
-        const pos = e.mark.position + e.mark.column === 0 ? 0 : e.mark.position + e.mark.column - 1;
-        startPos = pos;
-        endPos = pos;
-    }
-
     return {
         message: `${e.reason}`,
-        range: {
-            start: {
-                line,
-                character: startPos
-            },
-            end: {
-                line,
-                character: endPos
-            },
+        location: {
+            start: e.mark.position,
+            end: e.mark.position + e.mark.column
         },
         severity: 2
     };
