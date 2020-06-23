@@ -203,7 +203,6 @@ suite('Validation Tests', () => {
                 const content = 'cwd: hello\nan';
                 const validator = parseSetup(content);
                 validator.then(function (result) {
-                    console.log(`RESULT: ${JSON.stringify(result)}`)
                     assert.equal(result.length, 2);
                     assert.deepEqual(
                         result[0],
