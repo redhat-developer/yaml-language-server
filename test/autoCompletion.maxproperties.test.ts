@@ -43,7 +43,7 @@ suite('Auto Completion Tests', () => {
                 }).then(done, done);
             });
 
-            it('Provide the 3 types when none provided', done => {
+            it('Provide the 3 types when one is provided', done => {
                 const content = '- prop1:\n  ';
                 const completion = parseSetup(content, content.length);
                 completion.then(function (result) {
