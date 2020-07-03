@@ -1,0 +1,17 @@
+{
+    "$id": "https://example.com/arrays.schema.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "items": {
+        "properties": {
+            "prop1": {
+                "type": "string"
+            },"prop2": {
+                "type": "string"
+            },"prop3": {
+                "type": "string"
+            }
+        },
+        "maxProperties": 2
+    }
+  }
