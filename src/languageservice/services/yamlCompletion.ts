@@ -227,7 +227,7 @@ export class YAMLCompletion extends JSONCompletion {
         });
     }
 
-    private getPropertyCompletions (schema: ResolvedSchema, doc: Parser.JSONDocument, node: ASTNode, addValue: boolean,
+    private getPropertyCompletions (schema: ResolvedSchema, doc: Parser.JSONDocument, node: ObjectASTNode, addValue: boolean,
         separatorAfter: string, collector: CompletionsCollector, document): void {
         const matchingSchemas = doc.getMatchingSchemas(schema.schema);
         matchingSchemas.forEach(s => {
@@ -239,29 +239,32 @@ export class YAMLCompletion extends JSONCompletion {
                 });
                 const schemaProperties = s.schema.properties;
                 if (schemaProperties) {
-                    Object.keys(schemaProperties).forEach((key: string) => {
-                        const propertySchema = schemaProperties[key];
-                        if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema['doNotSuggest']) {
-                            let identCompensation = '';
-                            if (node.parent && node.parent.type === 'array') {
-                                // because there is a slash '-' to prevent the properties generated to have the correct
-                                // indent
-                                const sourceText = document.getText();
-                                const indexOfSlash = sourceText.lastIndexOf('-', node.offset - 1);
-                                if (indexOfSlash > 0) {
-                                    // add one space to compensate the '-'
-                                    identCompensation = ' ' +  sourceText.slice(indexOfSlash + 1, node.offset);
+                    const maxProperties = s.schema.maxProperties;
+                    if (maxProperties === undefined || node.properties === undefined || node.properties.length <= maxProperties) {
+                        Object.keys(schemaProperties).forEach((key: string) => {
+                            const propertySchema = schemaProperties[key];
+                            if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema['doNotSuggest']) {
+                                let identCompensation = '';
+                                if (node.parent && node.parent.type === 'array') {
+                                    // because there is a slash '-' to prevent the properties generated to have the correct
+                                    // indent
+                                    const sourceText = document.getText();
+                                    const indexOfSlash = sourceText.lastIndexOf('-', node.offset - 1);
+                                    if (indexOfSlash > 0) {
+                                        // add one space to compensate the '-'
+                                        identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.offset);
+                                    }
                                 }
+                                collector.add({
+                                    kind: CompletionItemKind.Property,
+                                    label: key,
+                                    insertText: this.getInsertTextForProperty(key, propertySchema, addValue, separatorAfter, identCompensation + '\t'),
+                                    insertTextFormat: InsertTextFormat.Snippet,
+                                    documentation: propertySchema.description || ''
+                                });
                             }
-                            collector.add({
-                                kind: CompletionItemKind.Property,
-                                label: key,
-                                insertText: this.getInsertTextForProperty(key, propertySchema, addValue, separatorAfter, identCompensation + '\t'),
-                                insertTextFormat: InsertTextFormat.Snippet,
-                                documentation: propertySchema.description || ''
-                            });
-                        }
-                    });
+                        });
+                    }
                 }
                 // Error fix
                 // If this is a array of string/boolean/number
