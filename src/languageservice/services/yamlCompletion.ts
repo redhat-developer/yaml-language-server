@@ -250,7 +250,7 @@ export class YAMLCompletion extends JSONCompletion {
                                     // indent
                                     const sourceText = document.getText();
                                     const indexOfSlash = sourceText.lastIndexOf('-', node.offset - 1);
-                                    if (indexOfSlash > 0) {
+                                    if (indexOfSlash >= 0) {
                                         // add one space to compensate the '-'
                                         identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.offset);
                                     }
