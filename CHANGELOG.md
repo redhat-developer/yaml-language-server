@@ -1,3 +1,9 @@
+#### 0.9.0
+- Improve Diagnostic positions [#260](https://github.com/redhat-developer/yaml-language-server/issues/260)
+- Support `maxProperties` when providing completion [#269](https://github.com/redhat-developer/yaml-language-server/issues/269)
+- Fix for required attributes are inserted with wrong level of indentation on first array item [redhat-developer/vscode-yaml#312](https://github.com/redhat-developer/vscode-yaml/issues/312)
+- Use https endpoints for schemastore [#PR](https://github.com/redhat-developer/yaml-language-server/pull/264)
+
 #### 0.8.0
 - Start using yarn for everything instead of npm
 - Allow for partial configurations in onDidChangeConfiguration [#256](https://github.com/redhat-developer/yaml-language-server/issues/256)
