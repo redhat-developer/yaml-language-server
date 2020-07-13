@@ -132,3 +132,4 @@ export function setupTextDocument(content: string) {
 }
 
 export const TEST_URI = 'file://~/Desktop/vscode-k8s/test.yaml';
+export const SCHEMA_ID = 'default_schema_id.yaml';
