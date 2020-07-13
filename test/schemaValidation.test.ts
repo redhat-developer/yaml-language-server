@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { configureLanguageService, setupTextDocument, TEST_URI }  from './utils/testHelper';
+import { configureLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper';
 import { createExpectedError } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import { StringTypeError, BooleanTypeError, ArrayTypeError, ObjectTypeError, IncludeWithoutValueError, ColonMissingError, BlockMappingEntryError } from './utils/errorMessages';
@@ -419,6 +419,70 @@ suite('Validation Tests', () => {
                     assert.equal(result.length, 2);
                     // tslint:disable-next-line:quotemark
                     assert.equal(result[1].message, `Value is not accepted. Valid values: "ImageStreamImport", "ImageStreamLayers".`);
+                }).then(done, done);
+            });
+        });
+
+        // https://github.com/redhat-developer/yaml-language-server/issues/273
+        describe('Test with anchors that contain aliases', function () {
+            function parseSetup(content: string) {
+                const testTextDocument = setupTextDocument(content);
+                return languageService.doValidation(testTextDocument, true);
+            }
+
+            it('Test anchor that contains an alias validates', done => {
+                const schema = {
+                    "definitions": {
+                        "field": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["label"],
+                            "properties": {
+                                "label": { "type": "string" }
+                            }
+                        },
+                        "model": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "props": {
+                                    "type": "object",
+                                    "additionalProperties": { "$ref": "#/definitions/field" }
+                                }
+                            }
+                        }
+                    },
+                    "type": "object",
+                    "additionalProperties": { "$ref": "#/definitions/model" }
+                }
+                const content = `
+                    Named:
+                        props: &NamedProps
+                            name:
+                                label: Name
+                    Timestamped:
+                        props: &TimestampedProps
+                            <<: *NamedProps
+                            ts:
+                                label: Timestamp
+                    Record:
+                        props:
+                            <<: *TimestampedProps
+                            id:
+                                label: ID`;
+                languageService.configure({
+                    schemas: [{
+                        uri: TEST_URI,
+                        fileMatch: ['*.yaml', '*.yml'],
+                        schema
+                    }],
+                    validate: true,
+                    isKubernetes: true
+                });
+
+                const validator = parseSetup(content);
+                validator.then(function (result) {
+                    assert.equal(result.length, 0)
                 }).then(done, done);
             });
         });
