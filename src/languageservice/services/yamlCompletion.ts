@@ -652,7 +652,7 @@ export class YAMLCompletion extends JSONCompletion {
                 insertText = `\${${insertIndex++}:0}`;
                 break;
             case 'string':
-                insertText = `\${${insertIndex++}:null}`;
+                insertText = `\${${insertIndex++}:""}`;
                 break;
             case 'object':
                 const objectInsertResult = this.getInsertTextForObject(schema, separatorAfter, `${indent}\t`, insertIndex++);
