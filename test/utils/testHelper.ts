@@ -122,9 +122,18 @@ export function createJSONLanguageService() {
     });
 }
 
-export function setupTextDocument(content: string) {
+export function setupTextDocument (content: string) {
     return TextDocument.create(
         TEST_URI,
+        'yaml',
+        0,
+        content
+    );
+}
+
+export function setupSchemaIDTextDocument (content: string) {
+    return TextDocument.create(
+        SCHEMA_ID,
         'yaml',
         0,
         content

@@ -26,3 +26,8 @@ export const ColonMissingError = 'can not read an implicit mapping pair; a colon
  * Value Errors
  */
 export const IncludeWithoutValueError = '!include without value';
+
+/**
+ * Duplicate Key error
+ */
+export const DuplicateKeyError = 'duplicate key';

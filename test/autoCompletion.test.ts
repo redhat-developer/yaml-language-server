@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import { TextDocument } from 'vscode-languageserver';
 import { getLanguageService } from '../src/languageservice/yamlLanguageService';
-import { schemaRequestService, workspaceContext, SCHEMA_ID } from './utils/testHelper';
+import { schemaRequestService, workspaceContext, SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
 
@@ -18,12 +18,8 @@ languageService.configure(languageSettings);
 
 suite('Auto Completion Tests', () => {
 
-    function setup (content: string) {
-        return TextDocument.create(SCHEMA_ID, 'yaml', 0, content);
-    }
-
     function parseSetup (content: string, position) {
-        const testTextDocument = setup(content);
+        const testTextDocument = setupSchemaIDTextDocument(content);
         return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
     }
 

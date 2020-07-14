@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import { TextDocument } from 'vscode-languageserver';
 import { getLanguageService } from '../src/languageservice/yamlLanguageService';
-import { toFsPath, schemaRequestService, workspaceContext } from './utils/testHelper';
+import { toFsPath, schemaRequestService, workspaceContext, setupTextDocument } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
 
@@ -24,12 +24,8 @@ suite('Default Snippet Tests', () => {
 
     describe('Snippet Tests', function () {
 
-        function setup (content: string) {
-            return TextDocument.create('file://~/Desktop/vscode-k8s/test.yaml', 'yaml', 0, content);
-        }
-
         function parseSetup (content: string, position: number) {
-            const testTextDocument = setup(content);
+            const testTextDocument = setupTextDocument(content);
             return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
         }
 
