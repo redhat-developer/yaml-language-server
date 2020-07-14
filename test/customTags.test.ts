@@ -16,7 +16,7 @@ let languageService = configureLanguageService(
 // Defines a Mocha test suite to group tests of similar kind together
 suite('Custom Tag tests Tests', () => {
 
-    function parseSetup(content: string, customTags: string[]) {
+    function parseSetup (content: string, customTags: string[]) {
         const testTextDocument = setupTextDocument(content);
         languageSettingsSetup.languageSettings.customTags = customTags;
         languageService = configureLanguageService(languageSettingsSetup.languageSettings);

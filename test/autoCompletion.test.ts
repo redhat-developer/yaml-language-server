@@ -2,11 +2,11 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { TextDocument } from 'vscode-languageserver';
 import { getLanguageService } from '../src/languageservice/yamlLanguageService';
 import { schemaRequestService, workspaceContext, SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
+import { createExpectedCompletion } from './utils/verifyError';
 
 const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
@@ -44,8 +44,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 0);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'name');
-                    assert.equal(result.items[0].insertText, 'name: $1');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('name', 'name: $1', 0, 0, 0, 0, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -62,8 +63,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 2);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'name');
-                    assert.equal(result.items[0].insertText, 'name: $1');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('name', 'name: $1', 0, 0, 0, 2, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -81,8 +83,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 10);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'name');
-                    assert.equal(result.items[0].insertText, 'name: ${1:yaml}');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('name', 'name: ${1:yaml}', 0, 0, 0, 4, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -100,8 +103,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 12);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'yaml');
-                    assert.equal(result.items[0].insertText, 'yaml');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('yaml', 'yaml', 0, 6, 0, 6, 12, 2, {
+                        detail: 'Default value'
+                    }));
                 }).then(done, done);
             });
 
@@ -119,8 +123,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 15);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'yaml');
-                    assert.equal(result.items[0].insertText, 'yaml');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('yaml', 'yaml', 0, 6, 0, 8, 12, 2, {
+                        detail: 'Default value'
+                    }));
                 }).then(done, done);
             });
 
@@ -137,10 +142,12 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 11);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 2);
-                    assert.equal(result.items[0].label, 'true');
-                    assert.equal(result.items[0].insertText, 'true');
-                    assert.equal(result.items[1].label, 'false');
-                    assert.equal(result.items[1].insertText, 'false');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('true', 'true', 0, 6, 0, 6, 12, 2, {
+                        documentation: ''
+                    }));
+                    assert.deepEqual(result.items[1], createExpectedCompletion('false', 'false', 0, 6, 0, 6, 12, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -157,10 +164,12 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 11);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 2);
-                    assert.equal(result.items[0].label, 'true');
-                    assert.equal(result.items[0].insertText, 'true');
-                    assert.equal(result.items[1].label, 'false');
-                    assert.equal(result.items[1].insertText, 'false');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('true', 'true', 0, 6, 0, 9, 12, 2, {
+                        documentation: ''
+                    }));
+                    assert.deepEqual(result.items[1], createExpectedCompletion('false', 'false', 0, 6, 0, 9, 12, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -178,8 +187,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 9);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 60000);
-                    assert.equal(result.items[0].insertText, 60000);
+                    assert.deepEqual(result.items[0], createExpectedCompletion('60000', '60000', 0, 9, 0, 9, 12, 2, {
+                        detail: 'Default value'
+                    }));
                 }).then(done, done);
             });
 
@@ -197,8 +207,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 10);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 60000);
-                    assert.equal(result.items[0].insertText, 60000);
+                    assert.deepEqual(result.items[0], createExpectedCompletion('60000', '60000', 0, 9, 0, 10, 12, 2, {
+                        detail: 'Default value'
+                    }));
                 }).then(done, done);
             });
 
@@ -223,8 +234,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 11);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'sample');
-                    assert.equal(result.items[0].insertText, 'sample: ${1:test}');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('sample', 'sample: ${1:test}', 1, 2, 1, 8, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -247,8 +259,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 11);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'sample');
-                    assert.equal(result.items[0].insertText, 'sample: ${1:test}');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('sample', 'sample: ${1:test}', 1, 2, 1, 5, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -280,8 +293,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 31);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'myOtherSample');
-                    assert.equal(result.items[0].insertText, 'myOtherSample: ${1:test}');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('myOtherSample', 'myOtherSample: ${1:test}', 2, 2, 2, 9, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -346,8 +360,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 28);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'timeout');
-                    assert.equal(result.items[0].insertText, 'timeout: ${1:60000}');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('timeout', 'timeout: ${1:60000}', 4, 0, 4, 3, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -365,8 +380,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 26);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'timeout');
-                    assert.equal(result.items[0].insertText, 'timeout: ${1:60000}');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('timeout', 'timeout: ${1:60000}', 4, 0, 4, 4, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -428,14 +444,18 @@ suite('Auto Completion Tests', () => {
                 const validator = parseSetup(content, 6);
                 validator.then(function (result) {
                     assert.equal(result.items.length, 4);
-                    assert.equal(result.items[0].label, 'ImageBuild');
-                    assert.equal(result.items[0].insertText, 'ImageBuild');
-                    assert.equal(result.items[1].label, 'ImageBuilder');
-                    assert.equal(result.items[1].insertText, 'ImageBuilder');
-                    assert.equal(result.items[2].label, 'ImageStream');
-                    assert.equal(result.items[2].insertText, 'ImageStream');
-                    assert.equal(result.items[3].label, 'ImageStreamBuilder');
-                    assert.equal(result.items[3].insertText, 'ImageStreamBuilder');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('ImageBuild', 'ImageBuild', 0, 6, 0, 6, 12, 2, {
+                        documentation: undefined
+                    }));
+                    assert.deepEqual(result.items[1], createExpectedCompletion('ImageBuilder', 'ImageBuilder', 0, 6, 0, 6, 12, 2, {
+                        documentation: undefined
+                    }));
+                    assert.deepEqual(result.items[2], createExpectedCompletion('ImageStream', 'ImageStream', 0, 6, 0, 6, 12, 2, {
+                        documentation: undefined
+                    }));
+                    assert.deepEqual(result.items[3], createExpectedCompletion('ImageStreamBuilder', 'ImageStreamBuilder', 0, 6, 0, 6, 12, 2, {
+                        documentation: undefined
+                    }));
                 }).then(done, done);
             });
 
@@ -445,8 +465,10 @@ suite('Auto Completion Tests', () => {
                 const content = '- top:\n    prop1: demo\n- ';
                 const completion = parseSetup(content, content.length);
                 completion.then(function (result) {
-                    assert.equal(result.items[0].label, 'top');
-                    assert.equal(result.items[0].insertText, 'top:\n  \tprop1: $1');
+                    assert.equal(result.items.length, 1);
+                    assert.deepEqual(result.items[0], createExpectedCompletion('top', 'top:\n  \tprop1: $1', 2, 2, 2, 2, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -456,8 +478,10 @@ suite('Auto Completion Tests', () => {
                 const content = '- ';
                 const completion = parseSetup(content, content.length);
                 completion.then(function (result) {
-                    assert.equal(result.items[0].label, 'top');
-                    assert.equal(result.items[0].insertText, 'top:\n  \tprop1: $1');
+                    assert.equal(result.items.length, 1);
+                    assert.deepEqual(result.items[0], createExpectedCompletion('top', 'top:\n  \tprop1: $1', 0, 2, 0, 2, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -468,12 +492,15 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, content.length);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 3);
-                    assert.equal(result.items[0].label, 'prop1');
-                    assert.equal(result.items[0].insertText, 'prop1: $1');
-                    assert.equal(result.items[1].label, 'prop2');
-                    assert.equal(result.items[1].insertText, 'prop2: $1');
-                    assert.equal(result.items[2].label, 'prop3');
-                    assert.equal(result.items[2].insertText, 'prop3: $1');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('prop1', 'prop1: $1', 0, 2, 0, 2, 10, 2, {
+                        documentation: ''
+                    }));
+                    assert.deepEqual(result.items[1], createExpectedCompletion('prop2', 'prop2: $1', 0, 2, 0, 2, 10, 2, {
+                        documentation: ''
+                    }));
+                    assert.deepEqual(result.items[2], createExpectedCompletion('prop3', 'prop3: $1', 0, 2, 0, 2, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -484,10 +511,12 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, content.length);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 2);
-                    assert.equal(result.items[0].label, 'prop2');
-                    assert.equal(result.items[0].insertText, 'prop2: $1');
-                    assert.equal(result.items[1].label, 'prop3');
-                    assert.equal(result.items[1].insertText, 'prop3: $1');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('prop2', 'prop2: $1', 1, 2, 1, 2, 10, 2, {
+                        documentation: ''
+                    }));
+                    assert.deepEqual(result.items[1], createExpectedCompletion('prop3', 'prop3: $1', 1, 2, 1, 2, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -524,8 +553,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 14);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'name');
-                    assert.equal(result.items[0].insertText, 'name: $1');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('name', 'name: $1', 1, 4, 1, 4, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -550,8 +580,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 13);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, '- (array item)');
-                    assert.equal(result.items[0].insertText, '- $1');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('- (array item)', '- $1', 1, 2, 1, 3, 9, 2, {
+                        documentation: 'Create an item of an array'
+                    }));
                 }).then(done, done);
             });
 
@@ -579,8 +610,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 24);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, '- (array item)');
-                    assert.equal(result.items[0].insertText, '- $1');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('- (array item)', '- $1', 2, 0, 2, 0, 9, 2, {
+                        documentation: 'Create an item of an array'
+                    }));
                 }).then(done, done);
             });
 
@@ -605,8 +637,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 14);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'name');
-                    assert.equal(result.items[0].insertText, 'name: $1');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('name', 'name: $1', 1, 4, 1, 5, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -634,8 +667,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 32);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'email');
-                    assert.equal(result.items[0].insertText, 'email: $1');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('email', 'email: $1', 2, 4, 2, 4, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -663,8 +697,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 27);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'email');
-                    assert.equal(result.items[0].insertText, 'email: $1');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('email', 'email: $1', 2, 3, 2, 3, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -695,8 +730,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 24);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'load');
-                    assert.equal(result.items[0].insertText, 'load: $1');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('load', 'load: $1', 2, 0, 2, 0, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -727,8 +763,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 29);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, '- (array item)');
-                    assert.equal(result.items[0].insertText, '- name: ${1:test}');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 0, 3, 0, 9, 2, {
+                        documentation: 'Create an item of an array'
+                    }));
                 }).then(done, done);
             });
 
@@ -750,8 +787,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 29);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'Test');
-                    assert.equal(result.items[0].insertText, 'Test');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('Test', 'Test', 1, 2, 1, 3, 12, 2, {
+                        documentation: undefined
+                    }));
                 }).then(done, done);
             });
 
@@ -773,8 +811,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 30);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'Test');
-                    assert.equal(result.items[0].insertText, 'Test');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('Test', 'Test', 1, 4, 1, 4, 12, 2, {
+                        documentation: undefined
+                    }));
                 }).then(done, done);
             });
 
@@ -796,8 +835,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 31);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'Test');
-                    assert.equal(result.items[0].insertText, 'Test');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('Test', 'Test', 1, 4, 1, 5, 12, 2, {
+                        documentation: undefined
+                    }));
                 }).then(done, done);
             });
         });
@@ -821,12 +861,11 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 12);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 3);
-                    assert.equal(result.items[0].label, 'Carrot');
-                    assert.equal(result.items[0].insertText, 'Carrot');
-                    assert.equal(result.items[1].label, 'Apple');
-                    assert.equal(result.items[1].insertText, 'Apple');
-                    assert.equal(result.items[2].label, 'Banana');
-                    assert.equal(result.items[2].insertText, 'Banana');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('Carrot', 'Carrot', 0, 11, 0, 11, 12, 2, {
+                        detail: 'Default value'
+                    }));
+                    assert.deepEqual(result.items[1], createExpectedCompletion('Apple', 'Apple', 0, 11, 0, 11, 12, 2, {}));
+                    assert.deepEqual(result.items[2], createExpectedCompletion('Banana', 'Banana', 0, 11, 0, 11, 12, 2, {}));
                 }).then(done, done);
             });
 
@@ -843,8 +882,9 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 9);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.equal(result.items[0].label, 'Apple');
-                    assert.equal(result.items[0].insertText, 'Apple');
+                    assert.deepEqual(result.items[0], createExpectedCompletion('Apple', 'Apple', 0, 7, 0, 10, 12, 2, {
+                        documentation: undefined
+                    }));
                 }).then(done, done);
             });
         });
@@ -856,7 +896,10 @@ suite('Auto Completion Tests', () => {
                 const content = 'install:\n  - he';
                 const completion = parseSetup(content, content.lastIndexOf('he') + 2);
                 completion.then(function (result) {
-                    assert.equal(result.items[0].insertText, 'helm:\n  \tname: $1');
+                    assert.equal(result.items.length, 1);
+                    assert.deepEqual(result.items[0], createExpectedCompletion('helm', 'helm:\n  \tname: $1', 1, 4, 1, 6, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -866,7 +909,10 @@ suite('Auto Completion Tests', () => {
                 const content = 'install:\n -            he';
                 const completion = parseSetup(content, content.lastIndexOf('he') + 2);
                 completion.then(function (result) {
-                    assert.equal(result.items[0].insertText, 'helm:\n             \tname: $1');
+                    assert.equal(result.items.length, 1);
+                    assert.deepEqual(result.items[0], createExpectedCompletion('helm', 'helm:\n             \tname: $1', 1, 14, 1, 16, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
 
@@ -876,7 +922,10 @@ suite('Auto Completion Tests', () => {
                 const content = 'install:\n -\t             he';
                 const completion = parseSetup(content, content.lastIndexOf('he') + 2);
                 completion.then(function (result) {
-                    assert.equal(result.items[0].insertText, 'helm:\n \t             \tname: $1');
+                    assert.equal(result.items.length, 1);
+                    assert.deepEqual(result.items[0], createExpectedCompletion('helm', 'helm:\n \t             \tname: $1', 1, 16, 1, 18, 10, 2, {
+                        documentation: ''
+                    }));
                 }).then(done, done);
             });
         });
