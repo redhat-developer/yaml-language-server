@@ -14,6 +14,10 @@ import { URI } from 'vscode-uri';
 
 import * as nls from 'vscode-nls';
 import { convertSimple2RegExpPattern } from '../utils/strings';
+import { TextDocument } from 'vscode-languageserver';
+import { SingleYAMLDocument } from '../parser/yamlParser07';
+import { stringifyObject } from '../utils/json';
+import { getNodeValue } from '../parser/jsonParser07';
 const localize = nls.loadMessageBundle();
 
 export declare type CustomSchemaProvider = (uri: string) => Thenable<string | string[]>;
@@ -216,9 +220,15 @@ export class YAMLSchemaService extends JSONSchemaService {
 
     public getSchemaForResource (resource: string, doc = undefined): Thenable<ResolvedSchema> {
         const resolveSchema = () => {
-
             const seen: { [schemaId: string]: boolean } = Object.create(null);
             const schemas: string[] = [];
+            
+            const schemaFromModeline = this.getSchemaFromModeline(doc);
+            if(schemaFromModeline !== undefined) {
+                schemas.push(schemaFromModeline);
+                seen[schemaFromModeline] = true;
+            }
+            
             for (const entry of this.filePatternAssociations) {
                 if (entry.matchesPattern(resource)) {
                     for (const schemaId of entry.getURIs()) {
@@ -281,6 +291,28 @@ export class YAMLSchemaService extends JSONSchemaService {
         } else {
             return resolveSchema();
         }
+    }
+    
+    /**
+     * Retrieve schema if declared as modeline
+     * @param doc 
+     */
+    private getSchemaFromModeline(doc: any) : string{
+        if (doc instanceof SingleYAMLDocument) {
+            const modelineDeclaration = '# yaml-language-server:';
+            const yamlLanguageServerModeline = doc.lineComments.find(lineComment => lineComment.startsWith(modelineDeclaration));
+            if (yamlLanguageServerModeline != undefined) {
+                const schemaKey = '$schema=';
+                const indexOfJsonSchemaParameter = yamlLanguageServerModeline.indexOf(schemaKey);
+                if (yamlLanguageServerModeline.indexOf(schemaKey) != -1) {
+                    const startIndex = indexOfJsonSchemaParameter + schemaKey.length;
+                    const indexOfNextSpace = yamlLanguageServerModeline.indexOf(' ', startIndex);
+                    const endIndex = indexOfNextSpace !== -1 ? indexOfNextSpace : yamlLanguageServerModeline.length;
+                    return yamlLanguageServerModeline.substring(startIndex, endIndex);
+                }
+            }
+        }
+        return undefined;
     }
 
     private async resolveCustomSchema (schemaUri, doc) {
