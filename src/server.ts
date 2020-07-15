@@ -20,7 +20,7 @@ import { CustomSchemaProvider, FilePatternAssociation, SchemaDeletions, SchemaAd
 import { JSONSchema } from './languageservice/jsonSchema';
 import { SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest, SchemaModificationNotification } from './requestTypes';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
-import { isRelativePath, relativeToAbsolutePath } from './languageservice/utils/paths';
+import { isRelativePath, relativeToAbsolutePath, workspaceFoldersChanged } from './languageservice/utils/paths';
 import { URI } from 'vscode-uri';
 import { KUBERNETES_SCHEMA_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 // tslint:disable-next-line: no-any
@@ -383,16 +383,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 connection.onInitialized(() => {
     if (hasWorkspaceFolderCapability) {
         connection.workspace.onDidChangeWorkspaceFolders(changedFolders => {
-            workspaceFolders = workspaceFolders.filter(e => {
-                return !changedFolders.removed.some(f => {
-                    return f.uri === e.uri;
-                });
-            });
-            workspaceFolders = workspaceFolders.filter(e => {
-                return !changedFolders.added.some(f => {
-                    return f.uri === e.uri;
-                });
-            }).concat(changedFolders.added);
+            workspaceFolders = workspaceFoldersChanged(workspaceFolders, changedFolders);
         });
     }
 });
