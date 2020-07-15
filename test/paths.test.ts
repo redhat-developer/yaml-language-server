@@ -55,6 +55,18 @@ const ws3 = new TestWorkspace([
 ],
 'file:///c%3A/Users/testuser/dev/potatoes');
 
+const ws4 = new TestWorkspace([
+    {
+        uri: 'file:///c%3A/Users/testuser/dev/test',
+        name: 'test'
+    },
+    {
+        uri: 'file:///c%3A/Users/testuser/dev/test2',
+        name: 'test2'
+    }
+],
+'file:///c%3A/Users/testuser/dev/test2');
+
 const checkBadPath = (path: string): void => {
     it('Rejects "' + path + '"', () => {
         assert(!isRelativePath(path));
@@ -141,6 +153,7 @@ suite('File path tests', () => {
             const path1 = join('aFolder', 'file.json');
             const path2 = join('folder-2', 'file.json');
             const path3 = join('carrots', 'file.json');
+            const path4 = join('test', 'test.json');
 
             it('Recognises relative path "' + path1 + '"', () => {
                 assert(isRelativePath(path1));
@@ -159,6 +172,10 @@ suite('File path tests', () => {
             it('Resolves "' + path3 + '" in multi-root nested workspace', () => {
                 assert.equal(ws3.resolve(path3),
                             'file:///c%3A/Users/testuser/dev/carrots/file.json');
+            });
+
+            it('Resolves "' + path4 + '" in multi-root nested workspace', () => {
+                assert.equal(ws4.resolve(path4), 'file:///c%3A/Users/testuser/dev/test/test.json');
             });
         });
 

@@ -105,6 +105,7 @@ let workspaceFolders: WorkspaceFolder[] = [];
 let clientDynamicRegisterSupport = false;
 let hierarchicalDocumentSymbolSupport = false;
 let clientDefinitionLinkSupport = false;
+let hasWorkspaceFolderCapability = false;
 
 /****************************
  * Reusable helper functions
@@ -359,7 +360,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
       capabilities.textDocument.definition &&
       capabilities.textDocument.definition.linkSupport
     );
-
+    hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
     return {
         capabilities: {
             textDocumentSync: documents.syncKind,
@@ -368,9 +369,32 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
             documentSymbolProvider: true,
             documentFormattingProvider: false,
             documentRangeFormattingProvider: false,
-            definitionProvider: true
+            definitionProvider: true,
+            workspace: {
+                workspaceFolders: {
+                    changeNotifications: true,
+                    supported: true
+                }
+            }
         }
     };
+});
+
+connection.onInitialized(() => {
+    if (hasWorkspaceFolderCapability) {
+        connection.workspace.onDidChangeWorkspaceFolders(changedFolders => {
+            workspaceFolders = workspaceFolders.filter(e => {
+                return !changedFolders.removed.some(f => {
+                    return f.uri === e.uri;
+                });
+            });
+            workspaceFolders = workspaceFolders.filter(e => {
+                return !changedFolders.added.some(f => {
+                    return f.uri === e.uri;
+                });
+            }).concat(changedFolders.added);
+        });
+    }
 });
 
 /**

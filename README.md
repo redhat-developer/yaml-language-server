@@ -118,6 +118,27 @@ yaml.schemas: {
 }
 ```
 
+## Multi root schema association:
+You can also use relative paths when working with multi root workspaces.
+
+Suppose you have a multi root workspace that is laid out like:
+```
+My_first_project:
+   test.yaml
+   my_schema.json
+My_second_project:
+   test2.yaml
+   my_schema2.json
+```
+
+You must then associate schemas relative to the root of the multi root workspace project.
+```
+yaml.schemas: {
+    "My_first_project/my_schema.json": "test.yaml",
+    "My_second_project/my_schema2.json": "test2.yaml"
+}
+```
+
 `yaml.schemas` allows you to specify json schemas that you want to validate against the yaml that you write. Kubernetes is an optional field. It does not require a url as the language server will provide that. You just need the keyword kubernetes and a glob pattern.
 
 ## Clients
