@@ -1,20 +1,15 @@
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-import { getLanguageService } from '../src/languageservice/yamlLanguageService';
-import { schemaRequestService, workspaceContext, SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper';
+ *--------------------------------------------------------------------------------------------*/;
+import { SCHEMA_ID, setupSchemaIDTextDocument, configureLanguageService } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
+import { ServiceSetup } from './utils/serviceSetup';
 
-const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
-
-const languageSettings = {
-    schemas: [],
-    completion: true
-};
-languageService.configure(languageSettings);
+const languageSettingsSetup = new ServiceSetup().withCompletion();
+const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
 
 suite('Auto Completion Tests', () => {
 
