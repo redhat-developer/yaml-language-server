@@ -2,23 +2,18 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { TextDocument } from 'vscode-languageserver';
-import { getLanguageService } from '../src/languageservice/yamlLanguageService';
-import { toFsPath, schemaRequestService, workspaceContext, setupTextDocument } from './utils/testHelper';
+import { toFsPath, setupTextDocument, configureLanguageService } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
-
-const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
-
-const languageSettings = {
-    schemas: [],
-    completion: true
-};
+import { ServiceSetup } from './utils/serviceSetup';
 
 const uri = toFsPath(path.join(__dirname, './fixtures/defaultSnippets.json'));
 const fileMatch = ['*.yml', '*.yaml'];
-languageSettings.schemas.push({ uri, fileMatch: fileMatch });
-languageService.configure(languageSettings);
+const languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
+    fileMatch,
+    uri
+});
+const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
 
 suite('Default Snippet Tests', () => {
 

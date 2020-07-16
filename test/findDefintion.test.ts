@@ -2,11 +2,11 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { getLanguageService } from '../src/languageservice/yamlLanguageService';
-import { schemaRequestService, setupTextDocument, workspaceContext } from './utils/testHelper';
+import { setupTextDocument, configureLanguageService } from './utils/testHelper';
 import assert = require('assert');
+import { ServiceSetup } from './utils/serviceSetup';
 
-const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
+const languageService = configureLanguageService(new ServiceSetup().languageSettings);
 
 suite('FindDefintion Tests', () => {
 

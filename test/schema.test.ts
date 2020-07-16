@@ -3,27 +3,29 @@
 import assert = require('assert');
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import * as JsonSchema from '../src/languageservice/jsonSchema';
-import fs = require('fs');
 import url = require('url');
-import path = require('path');
 import { XHRResponse, xhr } from 'request-light';
 import { MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
 const requestServiceMock = function (uri: string): Promise<string> {
-    return Promise.reject<string>('Resource not found.');
+    return Promise.reject<string>(`Resource ${uri} not found.`);
 };
 
 const workspaceContext = {
-    resolveRelativePath: (relativePath: string, resource: string) =>
-        url.resolve(resource, relativePath)
+    resolveRelativePath: (relativePath: string, resource: string) => {
+        return url.resolve(resource, relativePath);
+    }
 };
 
 const schemaRequestServiceForURL = (uri: string): Thenable<string> => {
     const headers = { 'Accept-Encoding': 'gzip, deflate' };
     return xhr({ url: uri, followRedirects: 5, headers }).then(response =>
-        response.responseText, (error: XHRResponse) =>
-        Promise.reject(error.responseText || error.toString()));
+    {
+        return response.responseText;
+    }, (error: XHRResponse) => {
+        return Promise.reject(error.responseText || error.toString());
+    });
 };
 
 suite('JSON Schema', () => {
@@ -54,7 +56,9 @@ suite('JSON Schema', () => {
                 type: 'bool',
                 description: 'Test description'
             });
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -92,7 +96,9 @@ suite('JSON Schema', () => {
                 required: ['$ref'],
                 properties: { $ref: { type: 'string' } }
             });
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
 
@@ -142,7 +148,9 @@ suite('JSON Schema', () => {
                 type: 'string',
                 enum: ['object']
             });
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
 
@@ -174,7 +182,9 @@ suite('JSON Schema', () => {
         service.getResolvedSchema('main').then(fs => {
             const section = fs.getSection(['child', 'grandchild']);
             assert.equal(section.description, 'Meaning of Life');
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -208,7 +218,9 @@ suite('JSON Schema', () => {
         service.getResolvedSchema('main').then(fs => {
             const section = fs.getSection(['child', '0', 'grandchild']);
             assert.equal(section.description, 'Meaning of Life');
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -233,7 +245,9 @@ suite('JSON Schema', () => {
         service.getResolvedSchema('main').then(fs => {
             const section = fs.getSection(['child', 'grandchild']);
             assert.strictEqual(section, undefined);
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -261,7 +275,9 @@ suite('JSON Schema', () => {
         service.getSchemaForResource('test.json').then(schema => {
             const section = schema.getSection(['child', 'grandchild']);
             assert.equal(section.description, 'Meaning of Life');
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -271,7 +287,9 @@ suite('JSON Schema', () => {
 
         service.getSchemaForResource('test.json').then(schema => {
             assert.equal(schema, null);
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -281,7 +299,9 @@ suite('JSON Schema', () => {
 
         service.loadSchema('test.json').then(schema => {
             assert.notEqual(schema.errors.length, 0);
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -290,20 +310,20 @@ suite('JSON Schema', () => {
         const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
         const non_uri = 'non_uri';
         service.registerExternalSchema(non_uri, ['*.yml', '*.yaml'], {
-           'properties': {
-              'test_node': {
-                  'description': 'my test_node description',
-                  'enum': [
-                      'test 1',
-                      'test 2'
-                  ]
-              }
-           }
+            'properties': {
+                'test_node': {
+                    'description': 'my test_node description',
+                    'enum': [
+                        'test 1',
+                        'test 2'
+                    ]
+                }
+            }
         });
-       service.getResolvedSchema(non_uri).then(schema => {
-        assert.notEqual(schema, undefined);
-        testDone();
-       });
+        service.getResolvedSchema(non_uri).then(schema => {
+            assert.notEqual(schema, undefined);
+            testDone();
+        });
     });
     test('Modifying schema', async () => {
         const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);

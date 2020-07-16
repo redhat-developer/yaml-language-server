@@ -9,12 +9,12 @@ class TestWorkspace {
     folders: WorkspaceFolder[];
     root: URI;
 
-    constructor(workspaceFolders: WorkspaceFolder[], workspaceRoot: string) {
+    constructor (workspaceFolders: WorkspaceFolder[], workspaceRoot: string) {
         this.folders = workspaceFolders;
         this.root = URI.parse(workspaceRoot);
     }
 
-    resolve(relPath: string): string {
+    resolve (relPath: string): string {
         return relativeToAbsolutePath(this.folders, this.root, relPath);
     }
 }
@@ -93,49 +93,49 @@ suite('File path tests', () => {
 
     describe('Recognises and correctly resolves relative paths', () => {
         checkGoodPath('file.json',
-                      'file:///home/aFolder/file.json',
-                      'file:///usr/testuser/projects/workspace/file.json',
-                      'file:///c%3A/Users/testuser/dev/potatoes/file.json');
+            'file:///home/aFolder/file.json',
+            'file:///usr/testuser/projects/workspace/file.json',
+            'file:///c%3A/Users/testuser/dev/potatoes/file.json');
 
         checkGoodPath('file.long.extension.json',
-                      'file:///home/aFolder/file.long.extension.json',
-                      'file:///usr/testuser/projects/workspace/file.long.extension.json',
-                      'file:///c%3A/Users/testuser/dev/potatoes/file.long.extension.json');
+            'file:///home/aFolder/file.long.extension.json',
+            'file:///usr/testuser/projects/workspace/file.long.extension.json',
+            'file:///c%3A/Users/testuser/dev/potatoes/file.long.extension.json');
 
         checkGoodPath(join('.', 'file.json'),
-                      'file:///home/aFolder/file.json',
-                      'file:///usr/testuser/projects/workspace/file.json',
-                      'file:///c%3A/Users/testuser/dev/potatoes/file.json');
+            'file:///home/aFolder/file.json',
+            'file:///usr/testuser/projects/workspace/file.json',
+            'file:///c%3A/Users/testuser/dev/potatoes/file.json');
 
         checkGoodPath(join('.', 'folder', 'file.json'),
-                      'file:///home/aFolder/folder/file.json',
-                      'file:///usr/testuser/projects/workspace/folder/file.json',
-                      'file:///c%3A/Users/testuser/dev/potatoes/folder/file.json');
+            'file:///home/aFolder/folder/file.json',
+            'file:///usr/testuser/projects/workspace/folder/file.json',
+            'file:///c%3A/Users/testuser/dev/potatoes/folder/file.json');
 
         checkGoodPath(join('.', 'long', 'path', 'to', 'file.json'),
-                      'file:///home/aFolder/long/path/to/file.json',
-                      'file:///usr/testuser/projects/workspace/long/path/to/file.json',
-                      'file:///c%3A/Users/testuser/dev/potatoes/long/path/to/file.json');
+            'file:///home/aFolder/long/path/to/file.json',
+            'file:///usr/testuser/projects/workspace/long/path/to/file.json',
+            'file:///c%3A/Users/testuser/dev/potatoes/long/path/to/file.json');
 
         checkGoodPath(join('..', 'file.json'),
-                      'file:///home/file.json',
-                      'file:///usr/testuser/projects/file.json',
-                      'file:///c%3A/Users/testuser/dev/file.json');
+            'file:///home/file.json',
+            'file:///usr/testuser/projects/file.json',
+            'file:///c%3A/Users/testuser/dev/file.json');
 
         checkGoodPath(join('.', 'relativepath', '..', 'file.json'),
-                      'file:///home/aFolder/file.json',
-                      'file:///usr/testuser/projects/workspace/file.json',
-                      'file:///c%3A/Users/testuser/dev/potatoes/file.json');
+            'file:///home/aFolder/file.json',
+            'file:///usr/testuser/projects/workspace/file.json',
+            'file:///c%3A/Users/testuser/dev/potatoes/file.json');
 
         checkGoodPath(join('..', '..', 'relative', 'path', 'file.json'),
-                      'file:///relative/path/file.json',
-                      'file:///usr/testuser/relative/path/file.json',
-                      'file:///c%3A/Users/testuser/relative/path/file.json');
+            'file:///relative/path/file.json',
+            'file:///usr/testuser/relative/path/file.json',
+            'file:///c%3A/Users/testuser/relative/path/file.json');
 
         checkGoodPath(join('..', '..', 'relative', '@path', 'file.json'),
-                      'file:///relative/%40path/file.json',
-                      'file:///usr/testuser/relative/%40path/file.json',
-                      'file:///c%3A/Users/testuser/relative/%40path/file.json');
+            'file:///relative/%40path/file.json',
+            'file:///usr/testuser/relative/%40path/file.json',
+            'file:///c%3A/Users/testuser/relative/%40path/file.json');
 
         describe('Relative path = a workspace folder', () => {
             const path1 = join('aFolder', 'file.json');
@@ -147,18 +147,15 @@ suite('File path tests', () => {
             });
 
             it('Resolves "' + path1 + '" in single-root workspace', () => {
-                assert.equal(ws1.resolve(path1),
-                            'file:///home/aFolder/file.json');
+                assert.equal(ws1.resolve(path1), 'file:///home/aFolder/file.json');
             });
 
             it('Resolves "' + path2 + '" in multi-root workspace', () => {
-                assert.equal(ws2.resolve(path2),
-                            'file:///usr/testuser/projects/workspace/folder-2/file.json');
+                assert.equal(ws2.resolve(path2), 'file:///usr/testuser/projects/workspace/folder-2/file.json');
             });
 
             it('Resolves "' + path3 + '" in multi-root nested workspace', () => {
-                assert.equal(ws3.resolve(path3),
-                            'file:///c%3A/Users/testuser/dev/carrots/file.json');
+                assert.equal(ws3.resolve(path3), 'file:///c%3A/Users/testuser/dev/carrots/file.json');
             });
         });
 
@@ -177,8 +174,7 @@ suite('File path tests', () => {
                 if (process.platform !== 'win32') {
                     this.skip();
                 } else {
-                    assert.equal(ws1.resolve(path),
-                                'file:///home/aFolder/some/strange/but/functional/path/file.json');
+                    assert.equal(ws1.resolve(path), 'file:///home/aFolder/some/strange/but/functional/path/file.json');
                 }
             });
 
@@ -186,8 +182,7 @@ suite('File path tests', () => {
                 if (process.platform !== 'win32') {
                     this.skip();
                 } else {
-                    assert.equal(ws2.resolve(path),
-                                'file:///usr/testuser/projects/workspace/some/strange/but/functional/path/file.json');
+                    assert.equal(ws2.resolve(path), 'file:///usr/testuser/projects/workspace/some/strange/but/functional/path/file.json');
                 }
             });
 
@@ -195,8 +190,7 @@ suite('File path tests', () => {
                 if (process.platform !== 'win32') {
                     this.skip();
                 } else {
-                    assert.equal(ws3.resolve(path),
-                                'file:///c%3A/Users/testuser/dev/potatoes/some/strange/but/functional/path/file.json');
+                    assert.equal(ws3.resolve(path), 'file:///c%3A/Users/testuser/dev/potatoes/some/strange/but/functional/path/file.json');
                 }
             });
         });

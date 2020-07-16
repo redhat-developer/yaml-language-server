@@ -46,8 +46,8 @@ if (process.argv.indexOf('--stdio') === -1) {
 }
 
 connection.onInitialize(
-    (): InitializeResult =>
-        ({
+    (): InitializeResult => {
+        return ({
             capabilities: {
                 // Tell the client that the server works in FULL text document sync mode
                 textDocumentSync: TextDocumentSyncKind.Full,
@@ -56,39 +56,49 @@ connection.onInitialize(
                     resolveProvider: false
                 }
             }
-        })
+        });
+    }
 );
 
-export let workspaceContext = {
-    resolveRelativePath: (relativePath: string, resource: string) => URL.resolve(resource, relativePath)
+export const workspaceContext = {
+    resolveRelativePath: (relativePath: string, resource: string) => {
+        return URL.resolve(resource, relativePath);
+    }
 };
 
-export let schemaRequestService = (uri: string): Thenable<string> => {
+export const schemaRequestService = (uri: string): Thenable<string> => {
     if (Strings.startsWith(uri, 'file://')) {
         const fsPath = URI.parse(uri).fsPath;
         return new Promise<string>((c, e) => {
             fs.readFile(fsPath, 'UTF-8', (err, result) => {
-                err ? e('') : c(result.toString());
+                return err ? e('') : c(result.toString());
             });
         });
     } else if (Strings.startsWith(uri, 'vscode://')) {
         return connection.sendRequest(VSCodeContentRequest.type, uri).then(
-            responseText => responseText,
-            error => error.message
+            responseText => {
+                return responseText;
+            },
+            error => {
+                return error.message;
+            }
         );
     }
     return xhr({ url: uri, followRedirects: 5 }).then(
-        response => response.responseText,
-        (error: XHRResponse) =>
-            Promise.reject(
+        response => {
+            return response.responseText;
+        },
+        (error: XHRResponse) => {
+            return Promise.reject(
                 error.responseText ||
                     getErrorStatusDescription(error.status) ||
                     error.toString()
-            )
+            );
+        }
     );
 };
 
-export function toFsPath(str): string {
+export function toFsPath (str): string {
     if (typeof str !== 'string') {
         throw new TypeError(`Expected a string, got ${typeof str}`);
     }
@@ -103,7 +113,7 @@ export function toFsPath(str): string {
     return encodeURI(`file://${pathName}`).replace(/[?#]/g, encodeURIComponent);
 }
 
-export function configureLanguageService(languageSettings: LanguageSettings) {
+export function configureLanguageService (languageSettings: LanguageSettings) {
     const languageService = getLanguageService(
         schemaRequestService,
         workspaceContext,
@@ -115,7 +125,7 @@ export function configureLanguageService(languageSettings: LanguageSettings) {
     return languageService;
 }
 
-export function createJSONLanguageService() {
+export function createJSONLanguageService () {
     return getJSONLanguageService({
         schemaRequestService,
         workspaceContext

@@ -20,32 +20,32 @@ export class ServiceSetup {
         customTags: []
     };
 
-    withValidate() {
+    withValidate () {
         this.languageSettings.validate = true;
         return this;
     }
 
-    withHover() {
+    withHover () {
         this.languageSettings.hover = true;
         return this;
     }
 
-    withCompletion() {
+    withCompletion () {
         this.languageSettings.completion = true;
         return this;
     }
 
-    withFormat() {
+    withFormat () {
         this.languageSettings.format = true;
         return this;
     }
 
-    withKubernetes() {
+    withKubernetes () {
         this.languageSettings.isKubernetes = true;
         return this;
     }
 
-    withSchemaFileMatch(schemaFileMatch: {
+    withSchemaFileMatch (schemaFileMatch: {
         uri: string,
         fileMatch: string[]
     }) {
@@ -53,7 +53,7 @@ export class ServiceSetup {
         return this;
     }
 
-    withCustomTags(customTags: string[]) {
+    withCustomTags (customTags: string[]) {
         this.languageSettings.customTags = customTags;
         return this;
     }

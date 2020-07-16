@@ -26,7 +26,7 @@ suite('Kubernetes Integration Tests', () => {
     // Tests for validator
     describe('Yaml Validation with kubernetes', function () {
 
-        function parseSetup(content: string) {
+        function parseSetup (content: string) {
             const testTextDocument = setupTextDocument(content);
             return languageService.doValidation(testTextDocument, true);
         }
@@ -183,7 +183,7 @@ suite('Kubernetes Integration Tests', () => {
 
         describe('doComplete', function () {
 
-            function parseSetup(content: string, position) {
+            function parseSetup (content: string, position) {
                 const testTextDocument = setupTextDocument(content);
                 return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), true);
             }
@@ -207,7 +207,7 @@ suite('Kubernetes Integration Tests', () => {
             //     }).then(done, done);
             // });
 
-             /**
+            /**
               * Removed these tests because the schema pulled in from
               * https://github.com/redhat-developer/yaml-language-server/pull/108
               * No longer has those types of completion
@@ -264,7 +264,7 @@ suite('Kubernetes Integration Tests', () => {
 
     describe('yamlHover with kubernetes', function () {
 
-        function parseSetup(content: string, offset: number) {
+        function parseSetup (content: string, offset: number) {
             const testTextDocument = setupTextDocument(content);
             return languageService.doHover(testTextDocument, testTextDocument.positionAt(offset));
         }
