@@ -20,7 +20,7 @@ import { CustomSchemaProvider, FilePatternAssociation, SchemaDeletions, SchemaAd
 import { JSONSchema } from './languageservice/jsonSchema';
 import { SchemaAssociationNotification, DynamicCustomSchemaRequestRegistration, CustomSchemaRequest, SchemaModificationNotification } from './requestTypes';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
-import { isRelativePath, relativeToAbsolutePath } from './languageservice/utils/paths';
+import { isRelativePath, relativeToAbsolutePath, workspaceFoldersChanged } from './languageservice/utils/paths';
 import { URI } from 'vscode-uri';
 import { KUBERNETES_SCHEMA_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 // tslint:disable-next-line: no-any
@@ -105,6 +105,7 @@ let workspaceFolders: WorkspaceFolder[] = [];
 let clientDynamicRegisterSupport = false;
 let hierarchicalDocumentSymbolSupport = false;
 let clientDefinitionLinkSupport = false;
+let hasWorkspaceFolderCapability = false;
 
 /****************************
  * Reusable helper functions
@@ -359,7 +360,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
       capabilities.textDocument.definition &&
       capabilities.textDocument.definition.linkSupport
     );
-
+    hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
     return {
         capabilities: {
             textDocumentSync: documents.syncKind,
@@ -368,9 +369,23 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
             documentSymbolProvider: true,
             documentFormattingProvider: false,
             documentRangeFormattingProvider: false,
-            definitionProvider: true
+            definitionProvider: true,
+            workspace: {
+                workspaceFolders: {
+                    changeNotifications: true,
+                    supported: true
+                }
+            }
         }
     };
+});
+
+connection.onInitialized(() => {
+    if (hasWorkspaceFolderCapability) {
+        connection.workspace.onDidChangeWorkspaceFolders(changedFolders => {
+            workspaceFolders = workspaceFoldersChanged(workspaceFolders, changedFolders);
+        });
+    }
 });
 
 /**

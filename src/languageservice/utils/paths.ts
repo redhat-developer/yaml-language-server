@@ -1,5 +1,5 @@
-import { WorkspaceFolder } from 'vscode-languageserver';
-import { join, normalize } from 'path';
+import { WorkspaceFolder, WorkspaceFoldersChangeEvent } from 'vscode-languageserver';
+import { join, normalize, sep } from 'path';
 import { URI } from 'vscode-uri';
 
 export const isRelativePath = (path: string): boolean => {
@@ -14,7 +14,7 @@ export const relativeToAbsolutePath = (workspaceFolders: WorkspaceFolder[], work
         // Convert it into an absolute path with the appropriate root folder path
         if (uri.startsWith(folder.name)) {
             const pathToFolder = URI.parse(folder.uri).fsPath;
-            const withoutFolderPrefix = uri.split(folder.name);
+            const withoutFolderPrefix = uri.split(sep);
             withoutFolderPrefix.shift();
 
             return URI.file(join(pathToFolder, withoutFolderPrefix.join())).toString();
@@ -29,4 +29,18 @@ export const relativeToAbsolutePath = (workspaceFolders: WorkspaceFolder[], work
 
     // Fallback in case nothing could be applied
     return normalize(uri);
+};
+
+export const workspaceFoldersChanged = (workspaceFolders: WorkspaceFolder[], changedFolders: WorkspaceFoldersChangeEvent): WorkspaceFolder[] => {
+    workspaceFolders = workspaceFolders.filter(e => {
+        return !changedFolders.removed.some(f => {
+            return f.uri === e.uri;
+        });
+    });
+    workspaceFolders = workspaceFolders.filter(e => {
+        return !changedFolders.added.some(f => {
+            return f.uri === e.uri;
+        });
+    }).concat(changedFolders.added);
+    return workspaceFolders;
 };
