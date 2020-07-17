@@ -2,19 +2,19 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { getLanguageService } from '../src/languageservice/yamlLanguageService';
-import { schemaRequestService, workspaceContext, setupTextDocument, TEST_URI }  from './utils/testHelper';
+import { setupTextDocument, TEST_URI, configureLanguageService }  from './utils/testHelper';
 import { createExpectedSymbolInformation, createExpectedDocumentSymbol } from './utils/verifyError';
 import { DocumentSymbol, SymbolKind } from 'vscode-languageserver-types';
 import assert = require('assert');
+import { ServiceSetup } from './utils/serviceSetup';
 
-const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
+const languageService = configureLanguageService(new ServiceSetup().languageSettings);
 
 suite('Document Symbols Tests', () => {
 
     describe('Document Symbols Tests (Non Hierarchical)', function () {
 
-        function parseNonHierarchicalSetup(content: string) {
+        function parseNonHierarchicalSetup (content: string) {
             const testTextDocument = setupTextDocument(content);
             return languageService.findDocumentSymbols(testTextDocument );
         }
@@ -32,7 +32,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 1);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('cwd', 15, "", TEST_URI, 0, 0, 0, 9)
+                createExpectedSymbolInformation('cwd', 15, '', TEST_URI, 0, 0, 0, 9)
             );
         });
 
@@ -42,7 +42,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 1);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('node1', 16, "", TEST_URI, 0, 0, 0, 12)
+                createExpectedSymbolInformation('node1', 16, '', TEST_URI, 0, 0, 0, 12)
             );
         });
 
@@ -52,7 +52,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 1);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('node1', 17, "", TEST_URI, 0, 0, 0, 12)
+                createExpectedSymbolInformation('node1', 17, '', TEST_URI, 0, 0, 0, 12)
             );
         });
 
@@ -62,7 +62,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 3);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('scripts', 2, "", TEST_URI, 0, 0, 2, 13)
+                createExpectedSymbolInformation('scripts', 2, '', TEST_URI, 0, 0, 2, 13)
             );
             assert.deepEqual(
                 symbols[1],
@@ -80,7 +80,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 1);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('apiVersion', SymbolKind.Variable, "", TEST_URI, 0, 0, 0, 16)
+                createExpectedSymbolInformation('apiVersion', SymbolKind.Variable, '', TEST_URI, 0, 0, 0, 16)
             );
         });
 
@@ -90,7 +90,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 1);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('items', SymbolKind.Array, "", TEST_URI, 0, 0, 2, 8)
+                createExpectedSymbolInformation('items', SymbolKind.Array, '', TEST_URI, 0, 0, 2, 8)
             );
         });
 
@@ -100,7 +100,7 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 3);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('authors', 18, "", TEST_URI, 0, 0, 2, 13)
+                createExpectedSymbolInformation('authors', 18, '', TEST_URI, 0, 0, 2, 13)
             );
             assert.deepEqual(
                 symbols[1],
@@ -118,11 +118,11 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 6);
 
             // Sort the items first so they have predictable order in the array
-            symbols.sort((a, b) => a.name.localeCompare(b.name));
-            
+            symbols.sort((a, b) => {return a.name.localeCompare(b.name);});
+
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('authors', 18, "", TEST_URI, 3, 0, 5, 13)
+                createExpectedSymbolInformation('authors', 18, '', TEST_URI, 3, 0, 5, 13)
             );
             assert.deepEqual(
                 symbols[1],
@@ -142,7 +142,7 @@ suite('Document Symbols Tests', () => {
             );
             assert.deepEqual(
                 symbols[5],
-                createExpectedSymbolInformation('scripts', 2, "", TEST_URI, 0, 0, 2, 13)
+                createExpectedSymbolInformation('scripts', 2, '', TEST_URI, 0, 0, 2, 13)
             );
         });
 
@@ -152,11 +152,11 @@ suite('Document Symbols Tests', () => {
             assert.equal(symbols.length, 2);
             assert.deepEqual(
                 symbols[0],
-                createExpectedSymbolInformation('analytics', 17, "", TEST_URI, 1, 0, 1, 15)
+                createExpectedSymbolInformation('analytics', 17, '', TEST_URI, 1, 0, 1, 15)
             );
             assert.deepEqual(
                 symbols[1],
-                createExpectedSymbolInformation('json', 15, "", TEST_URI, 4, 0, 4, 10)
+                createExpectedSymbolInformation('json', 15, '', TEST_URI, 4, 0, 4, 10)
             );
         });
 
@@ -164,7 +164,7 @@ suite('Document Symbols Tests', () => {
 
     describe('Document Symbols Tests (Hierarchical)', function () {
 
-        function parseHierarchicalSetup(content: string): DocumentSymbol[] {
+        function parseHierarchicalSetup (content: string): DocumentSymbol[] {
             const testTextDocument = setupTextDocument(content);
             return languageService.findDocumentSymbols2(testTextDocument);
         }

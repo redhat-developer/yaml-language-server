@@ -20,7 +20,7 @@ suite('Formatter Tests', () => {
 
         describe('Test that formatter works with custom tags', function () {
 
-            function parseSetup(content: string, options= {}) {
+            function parseSetup (content: string, options= {}) {
                 const testTextDocument = setupTextDocument(content);
                 return languageService.doFormat(testTextDocument, options);
             }

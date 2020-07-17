@@ -3,52 +3,29 @@
 import assert = require('assert');
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import * as JsonSchema from '../src/languageservice/jsonSchema';
-import fs = require('fs');
 import url = require('url');
-import path = require('path');
 import { XHRResponse, xhr } from 'request-light';
 import { MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
-const fixtureDocuments = {
-    'http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json': 'deploymentTemplate.json',
-    'http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json': 'deploymentParameters.json',
-    'http://schema.management.azure.com/schemas/2015-01-01/Microsoft.Authorization.json': 'Microsoft.Authorization.json',
-    'http://schema.management.azure.com/schemas/2015-01-01/Microsoft.Resources.json': 'Microsoft.Resources.json',
-    'http://schema.management.azure.com/schemas/2014-04-01-preview/Microsoft.Sql.json': 'Microsoft.Sql.json',
-    'http://schema.management.azure.com/schemas/2014-06-01/Microsoft.Web.json': 'Microsoft.Web.json',
-    'http://schema.management.azure.com/schemas/2014-04-01/SuccessBricks.ClearDB.json': 'SuccessBricks.ClearDB.json',
-    'http://schema.management.azure.com/schemas/2015-08-01/Microsoft.Compute.json': 'Microsoft.Compute.json'
-};
-
 const requestServiceMock = function (uri: string): Promise<string> {
-    if (uri.length && uri[uri.length - 1] === '#') {
-        uri = uri.substr(0, uri.length - 1);
-    }
-
-    const fileName = fixtureDocuments[uri];
-
-    if (fileName) {
-        return new Promise<string>((c, e) => {
-            const fixturePath = path.join(__dirname, './fixtures', fileName);
-            fs.readFile(fixturePath, 'UTF-8', (err, result) => {
-                err ? e('Resource not found.') : c(result.toString());
-            });
-        });
-    }
-    return Promise.reject<string>('Resource not found.');
+    return Promise.reject<string>(`Resource ${uri} not found.`);
 };
 
 const workspaceContext = {
-    resolveRelativePath: (relativePath: string, resource: string) =>
-        url.resolve(resource, relativePath)
+    resolveRelativePath: (relativePath: string, resource: string) => {
+        return url.resolve(resource, relativePath);
+    }
 };
 
 const schemaRequestServiceForURL = (uri: string): Thenable<string> => {
     const headers = { 'Accept-Encoding': 'gzip, deflate' };
     return xhr({ url: uri, followRedirects: 5, headers }).then(response =>
-        response.responseText, (error: XHRResponse) =>
-        Promise.reject(error.responseText || error.toString()));
+    {
+        return response.responseText;
+    }, (error: XHRResponse) => {
+        return Promise.reject(error.responseText || error.toString());
+    });
 };
 
 suite('JSON Schema', () => {
@@ -79,7 +56,9 @@ suite('JSON Schema', () => {
                 type: 'bool',
                 description: 'Test description'
             });
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -117,7 +96,9 @@ suite('JSON Schema', () => {
                 required: ['$ref'],
                 properties: { $ref: { type: 'string' } }
             });
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
 
@@ -167,7 +148,9 @@ suite('JSON Schema', () => {
                 type: 'string',
                 enum: ['object']
             });
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
 
@@ -199,7 +182,9 @@ suite('JSON Schema', () => {
         service.getResolvedSchema('main').then(fs => {
             const section = fs.getSection(['child', 'grandchild']);
             assert.equal(section.description, 'Meaning of Life');
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -233,7 +218,9 @@ suite('JSON Schema', () => {
         service.getResolvedSchema('main').then(fs => {
             const section = fs.getSection(['child', '0', 'grandchild']);
             assert.equal(section.description, 'Meaning of Life');
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -258,7 +245,9 @@ suite('JSON Schema', () => {
         service.getResolvedSchema('main').then(fs => {
             const section = fs.getSection(['child', 'grandchild']);
             assert.strictEqual(section, undefined);
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -286,7 +275,9 @@ suite('JSON Schema', () => {
         service.getSchemaForResource('test.json').then(schema => {
             const section = schema.getSection(['child', 'grandchild']);
             assert.equal(section.description, 'Meaning of Life');
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -296,7 +287,9 @@ suite('JSON Schema', () => {
 
         service.getSchemaForResource('test.json').then(schema => {
             assert.equal(schema, null);
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -306,7 +299,9 @@ suite('JSON Schema', () => {
 
         service.loadSchema('test.json').then(schema => {
             assert.notEqual(schema.errors.length, 0);
-        }).then(() => testDone(), error => {
+        }).then(() => {
+            return testDone();
+        }, error => {
             testDone(error);
         });
     });
@@ -315,20 +310,20 @@ suite('JSON Schema', () => {
         const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
         const non_uri = 'non_uri';
         service.registerExternalSchema(non_uri, ['*.yml', '*.yaml'], {
-           'properties': {
-              'test_node': {
-                  'description': 'my test_node description',
-                  'enum': [
-                      'test 1',
-                      'test 2'
-                  ]
-              }
-           }
+            'properties': {
+                'test_node': {
+                    'description': 'my test_node description',
+                    'enum': [
+                        'test 1',
+                        'test 2'
+                    ]
+                }
+            }
         });
-       service.getResolvedSchema(non_uri).then(schema => {
-        assert.notEqual(schema, undefined);
-        testDone();
-       });
+        service.getResolvedSchema(non_uri).then(schema => {
+            assert.notEqual(schema, undefined);
+            testDone();
+        });
     });
     test('Modifying schema', async () => {
         const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);

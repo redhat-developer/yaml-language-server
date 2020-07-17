@@ -24,13 +24,13 @@ suite('Multiple Documents Validation Tests', () => {
     // Tests for validator
     describe('Multiple Documents Validation', function () {
 
-        function validatorSetup(content: string) {
+        function validatorSetup (content: string) {
             const testTextDocument = setupTextDocument(content);
             const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
             return languageService.doValidation(testTextDocument, false);
         }
 
-        function hoverSetup(content: string, position) {
+        function hoverSetup (content: string, position) {
             const testTextDocument = setupTextDocument(content);
             const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
             return languageService.doHover(

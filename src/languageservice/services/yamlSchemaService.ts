@@ -230,6 +230,17 @@ export class YAMLSchemaService extends JSONSchemaService {
                 }
             }
 
+            /**
+             * If this resource matches a schemaID directly then use that schema.
+             * This will be used in the case where the yaml language server is being used as a library
+             * and clients want to save a schema with a particular ID and also use that schema
+             * in language features
+             */
+            const normalizedResourceID = this.normalizeId(resource);
+            if ( this.schemasById[normalizedResourceID] ) {
+                schemas.push(normalizedResourceID);
+            }
+
             if (schemas.length > 0) {
                 return super.createCombinedSchema(resource, schemas).getResolvedSchema().then(schema => {
                     if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[doc.currentDocIndex]) {

@@ -5,7 +5,7 @@
 
 import { DocumentSymbol, SymbolKind } from 'vscode-languageserver-types';
 
-export function createExpectedError(
+export function createExpectedError (
     message: string,
     startLine: number,
     startCharacter: number,
@@ -29,7 +29,7 @@ export function createExpectedError(
     };
 }
 
-export function createExpectedSymbolInformation(
+export function createExpectedSymbolInformation (
     name: string,
     kind: SymbolKind,
     containerName: string | undefined,
@@ -59,7 +59,7 @@ export function createExpectedSymbolInformation(
     };
 }
 
-export function createExpectedDocumentSymbol(
+export function createExpectedDocumentSymbol (
     name: string,
     kind: SymbolKind,
     startLine: number,
@@ -96,5 +96,40 @@ export function createExpectedDocumentSymbol(
             }
         },
         children
+    };
+}
+
+export function createExpectedCompletion (
+    label: string | number,
+    insertText: string | number,
+    startLine: number,
+    startCharacter: number,
+    endLine: number,
+    endCharacter: number,
+    kind: number,
+    insertTextFormat: number = 2,
+    extra = {}
+) {
+    return {
+        ...{
+            insertText,
+            label,
+            insertTextFormat,
+            kind,
+            textEdit: {
+                newText: insertText,
+                range: {
+                    start: {
+                        line: startLine,
+                        character: startCharacter
+                    },
+                    end: {
+                        line: endLine,
+                        character: endCharacter
+                    }
+                }
+            }
+        },
+        ...extra
     };
 }

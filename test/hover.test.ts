@@ -3,29 +3,23 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { ServiceSetup } from './utils/serviceSetup';
-import { configureLanguageService, setupTextDocument } from './utils/testHelper';
+import { configureLanguageService, SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper';
 import { MarkedString } from '../src';
 import assert = require('assert');
 
-/**
- * Setup the schema we are going to use with the language settings
- */
-const bowerURI = 'https://json.schemastore.org/bowerrc';
-const composerURI = 'https://json.schemastore.org/composer';
-const fileMatch = ['*.yml', '*.yaml'];
 const languageSettingsSetup = new ServiceSetup()
-    .withHover()
-    .withSchemaFileMatch({ uri: bowerURI, fileMatch: fileMatch });
+    .withHover();
+const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
 
 suite('Hover Tests', () => {
+
+    afterEach(() => {
+        languageService.deleteSchema(SCHEMA_ID);
+    });
+
     describe('Hover', function () {
-        function parseSetup(content: string, position, schemaURI: string) {
-            const testTextDocument = setupTextDocument(content);
-            languageSettingsSetup.languageSettings.schemas = [{
-                fileMatch,
-                uri: schemaURI
-            }];
-            const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+        function parseSetup (content: string, position) {
+            const testTextDocument = setupSchemaIDTextDocument(content);
             return languageService.doHover(
                 testTextDocument,
                 testTextDocument.positionAt(position)
@@ -33,8 +27,17 @@ suite('Hover Tests', () => {
         }
 
         it('Hover on key on root', done => {
+            languageService.addSchema(SCHEMA_ID, {
+                type: 'object',
+                properties: {
+                    'cwd': {
+                        type: 'string',
+                        description: 'The directory from which bower should run. All relative paths will be calculated according to this setting.'
+                    }
+                }
+            });
             const content = 'cwd: test';
-            const hover = parseSetup(content, 1, bowerURI);
+            const hover = parseSetup(content, 1);
             hover
                 .then(function (result) {
                     assert.equal((result.contents as string).length, 1);
@@ -47,8 +50,17 @@ suite('Hover Tests', () => {
         });
 
         it('Hover on value on root', done => {
+            languageService.addSchema(SCHEMA_ID, {
+                type: 'object',
+                properties: {
+                    'cwd': {
+                        type: 'string',
+                        description: 'The directory from which bower should run. All relative paths will be calculated according to this setting.'
+                    }
+                }
+            });
             const content = 'cwd: test';
-            const hover = parseSetup(content, 6, bowerURI);
+            const hover = parseSetup(content, 6);
             hover
                 .then(function (result) {
                     assert.equal((result.contents as string).length, 1);
@@ -61,8 +73,22 @@ suite('Hover Tests', () => {
         });
 
         it('Hover on key with depth', done => {
+            languageService.addSchema(SCHEMA_ID, {
+                type: 'object',
+                properties: {
+                    scripts: {
+                        type: 'object',
+                        properties: {
+                            postinstall: {
+                                type: 'string',
+                                description: 'A script to run after install'
+                            }
+                        }
+                    }
+                }
+            });
             const content = 'scripts:\n  postinstall: test';
-            const hover = parseSetup(content, 15, bowerURI);
+            const hover = parseSetup(content, 15);
             hover
                 .then(function (result) {
                     assert.equal((result.contents as MarkedString[]).length, 1);
@@ -75,8 +101,22 @@ suite('Hover Tests', () => {
         });
 
         it('Hover on value with depth', done => {
+            languageService.addSchema(SCHEMA_ID, {
+                type: 'object',
+                properties: {
+                    scripts: {
+                        type: 'object',
+                        properties: {
+                            postinstall: {
+                                type: 'string',
+                                description: 'A script to run after install'
+                            }
+                        }
+                    }
+                }
+            });
             const content = 'scripts:\n  postinstall: test';
-            const hover = parseSetup(content, 26, bowerURI);
+            const hover = parseSetup(content, 26);
             hover
                 .then(function (result) {
                     assert.equal((result.contents as MarkedString[]).length, 1);
@@ -89,9 +129,24 @@ suite('Hover Tests', () => {
         });
 
         it('Hover works on both root node and child nodes works', done => {
+            languageService.addSchema(SCHEMA_ID, {
+                type: 'object',
+                properties: {
+                    scripts: {
+                        type: 'object',
+                        properties: {
+                            postinstall: {
+                                type: 'string',
+                                description: 'A script to run after install'
+                            }
+                        },
+                        description: 'Contains custom hooks used to trigger other automated tools'
+                    }
+                }
+            });
             const content = 'scripts:\n  postinstall: test';
 
-            const firstHover = parseSetup(content, 3, bowerURI);
+            const firstHover = parseSetup(content, 3);
             firstHover.then(function (result) {
                 assert.equal((result.contents as MarkedString[]).length, 1);
                 assert.equal(
@@ -100,7 +155,7 @@ suite('Hover Tests', () => {
                 );
             });
 
-            const secondHover = parseSetup(content, 15, bowerURI);
+            const secondHover = parseSetup(content, 15);
             secondHover
                 .then(function (result) {
                     assert.equal((result.contents as MarkedString[]).length, 1);
@@ -113,8 +168,16 @@ suite('Hover Tests', () => {
         });
 
         it('Hover does not show results when there isnt description field', done => {
+            languageService.addSchema(SCHEMA_ID, {
+                type: 'object',
+                properties: {
+                    analytics: {
+                        type: 'boolean'
+                    }
+                }
+            });
             const content = 'analytics: true';
-            const hover = parseSetup(content, 3, bowerURI);
+            const hover = parseSetup(content, 3);
             hover
                 .then(function (result) {
                     assert.equal((result.contents as MarkedString[]).length, 1);
@@ -124,8 +187,16 @@ suite('Hover Tests', () => {
         });
 
         it('Hover on first document in multi document', done => {
+            languageService.addSchema(SCHEMA_ID, {
+                type: 'object',
+                properties: {
+                    analytics: {
+                        type: 'boolean'
+                    }
+                }
+            });
             const content = '---\nanalytics: true\n...\n---\njson: test\n...';
-            const hover = parseSetup(content, 10, bowerURI);
+            const hover = parseSetup(content, 10);
             hover
                 .then(function (result) {
                     assert.equal((result.contents as MarkedString[]).length, 1);
@@ -138,22 +209,38 @@ suite('Hover Tests', () => {
         });
 
         it('Hover on second document in multi document', done => {
+            languageService.addSchema(SCHEMA_ID, {
+                type: 'object',
+                properties: {
+                    analytics: {
+                        type: 'boolean'
+                    },
+                    json: {
+                        type: 'string',
+                        description: 'A file path to the configuration file'
+                    }
+                }
+            });
             const content = '---\nanalytics: true\n...\n---\njson: test\n...';
-            const hover = parseSetup(content, 30, bowerURI);
+            const hover = parseSetup(content, 30);
             hover
                 .then(function (result) {
                     assert.equal((result.contents as MarkedString[]).length, 1);
                     assert.equal(
                         result.contents[0],
-                        'A file path to the Bower configuration file'
+                        'A file path to the configuration file'
                     );
                 })
                 .then(done, done);
         });
 
         it('Hover should not return anything on key', done => {
+            languageService.addSchema(SCHEMA_ID, {
+                type: 'object',
+                properties: {}
+            });
             const content = 'my_unknown_hover: test';
-            const hover = parseSetup(content, 1, bowerURI);
+            const hover = parseSetup(content, 1);
             hover
                 .then(function (result) {
                     assert.equal((result.contents as MarkedString[]).length, 1);
@@ -163,8 +250,12 @@ suite('Hover Tests', () => {
         });
 
         it('Hover should not return anything on value', done => {
+            languageService.addSchema(SCHEMA_ID, {
+                type: 'object',
+                properties: {}
+            });
             const content = 'my_unknown_hover: test';
-            const hover = parseSetup(content, 21, bowerURI);
+            const hover = parseSetup(content, 21);
             hover
                 .then(function (result) {
                     assert.equal((result.contents as MarkedString[]).length, 1);
@@ -174,8 +265,25 @@ suite('Hover Tests', () => {
         });
 
         it('Hover works on array nodes', done => {
+            languageService.addSchema(SCHEMA_ID, {
+                type: 'object',
+                properties: {
+                    authors: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                name: {
+                                    type: 'string',
+                                    description: 'Full name of the author.'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
             const content = 'authors:\n  - name: Josh';
-            const hover = parseSetup(content, 14, composerURI);
+            const hover = parseSetup(content, 14);
             hover
                 .then(function (result) {
                     assert.notEqual((result.contents as MarkedString[]).length, 0);
@@ -185,8 +293,29 @@ suite('Hover Tests', () => {
         });
 
         it('Hover works on additional array nodes', done => {
+            languageService.addSchema(SCHEMA_ID, {
+                type: 'object',
+                properties: {
+                    authors: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                name: {
+                                    type: 'string',
+                                    description: 'Full name of the author.'
+                                },
+                                email: {
+                                    type: 'string',
+                                    description: 'Email address of the author.'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
             const content = 'authors:\n  - name: Josh\n  - email: jp';
-            const hover = parseSetup(content, 28, composerURI);
+            const hover = parseSetup(content, 28);
             hover
                 .then(function (result) {
                     assert.notEqual((result.contents as MarkedString[]).length, 0);
