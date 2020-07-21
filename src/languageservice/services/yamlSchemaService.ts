@@ -17,7 +17,8 @@ import { convertSimple2RegExpPattern } from '../utils/strings';
 import { TextDocument } from 'vscode-languageserver';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { stringifyObject } from '../utils/json';
-import { getNodeValue } from '../parser/jsonParser07';
+import { getNodeValue, JSONDocument } from '../parser/jsonParser07';
+import { Parser } from 'prettier';
 const localize = nls.loadMessageBundle();
 
 export declare type CustomSchemaProvider = (uri: string) => Thenable<string | string[]>;
@@ -218,7 +219,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     }
     //tslint:enable
 
-    public getSchemaForResource (resource: string, doc = undefined): Thenable<ResolvedSchema> {
+    public getSchemaForResource (resource: string, doc : JSONDocument): Thenable<ResolvedSchema> {
         const resolveSchema = () => {
             const seen: { [schemaId: string]: boolean } = Object.create(null);
             const schemas: string[] = [];
@@ -253,8 +254,8 @@ export class YAMLSchemaService extends JSONSchemaService {
 
             if (schemas.length > 0) {
                 return super.createCombinedSchema(resource, schemas).getResolvedSchema().then(schema => {
-                    if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[doc.currentDocIndex]) {
-                        return new ResolvedSchema(schema.schema.schemaSequence[doc.currentDocIndex]);
+                    if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]) {
+                        return new ResolvedSchema(schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]);
                     }
                     return schema;
                 });
