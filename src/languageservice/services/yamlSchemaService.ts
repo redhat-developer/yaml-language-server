@@ -305,7 +305,7 @@ export class YAMLSchemaService extends JSONSchemaService {
             if (yamlLanguageServerModeline != undefined) {
                 const schemaKey = '$schema=';
                 const indexOfJsonSchemaParameter = yamlLanguageServerModeline.indexOf(schemaKey);
-                if (yamlLanguageServerModeline.indexOf(schemaKey) != -1) {
+                if (indexOfJsonSchemaParameter !== -1) {
                     const startIndex = indexOfJsonSchemaParameter + schemaKey.length;
                     const indexOfNextSpace = yamlLanguageServerModeline.indexOf(' ', startIndex);
                     const endIndex = indexOfNextSpace !== -1 ? indexOfNextSpace : yamlLanguageServerModeline.length;
