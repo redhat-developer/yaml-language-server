@@ -951,20 +951,11 @@ suite('Auto Completion Tests', () => {
                 const completionDoc1 = parseSetup(content, documentContent1.length);
                 completionDoc1.then(function (result) {
                     assert.equal(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
-                    assert.deepEqual(result.items[0], createExpectedCompletion('prop1', 'prop1: $1', 0, 2, 0, 2, 10, 2, {
-                        documentation: ''
-                    }));
-                    assert.deepEqual(result.items[1], createExpectedCompletion('prop2', 'prop2: $1', 0, 2, 0, 2, 10, 2, {
-                        documentation: ''
-                    }));
-                    assert.deepEqual(result.items[2], createExpectedCompletion('prop3', 'prop3: $1', 0, 2, 0, 2, 10, 2, {
-                        documentation: ''
-                    }));
                     const completionDoc2 = parseSetup(content, content.length);
                     completionDoc2.then(function (resultDoc2) {
                         assert.equal(resultDoc2.items.length, 0, `Expecting no items in completion but found ${resultDoc2.items.length}`);
                     }).then(done, done);
-                });
+                }, done);
                 
             });
         });
