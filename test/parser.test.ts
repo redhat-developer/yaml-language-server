@@ -14,6 +14,11 @@ suite('Test parser', () => {
                 assert(parsedDocument.documents.length === 0, 'A document has been created for an empty text');
             });
             
+            it('parse only comment', () => {
+                const parsedDocument = parse('# a comment');
+                assert(parsedDocument.documents.length === 1, 'No document has been created when there is a comment');
+            });
+            
             it('parse single document', () => {
                 const parsedDocument = parse('test');
                 assert(parsedDocument.documents.length === 1, `A single document should be available but there are ${parsedDocument.documents.length}`);
