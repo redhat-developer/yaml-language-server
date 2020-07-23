@@ -1,6 +1,7 @@
 'use strict';
 
 import assert = require('assert');
+import * as parser from '../src/languageservice/parser/yamlParser07';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import * as JsonSchema from '../src/languageservice/jsonSchema';
 import url = require('url');
@@ -475,4 +476,59 @@ suite('JSON Schema', () => {
         const hello_world_schema = await service.getResolvedSchema('hello_world');
         assert.equal(hello_world_schema, null);
     });
+    
+    describe('Test getSchemaFromModeline', function () {
+        
+        test('simple case', async() => {
+            checkReturnSchemaUrl('# yaml-language-server: $schema=expectedUrl', 'expectedUrl');
+        });
+        
+        test('with several spaces between # and yaml-language-server', async() => {
+            checkReturnSchemaUrl('#    yaml-language-server: $schema=expectedUrl', 'expectedUrl');
+        });
+        
+        test('with several spaces between yaml-language-server and :', async() => {
+            checkReturnSchemaUrl('# yaml-language-server   : $schema=expectedUrl', 'expectedUrl');
+        });
+        
+        test('with several spaces between : and $schema', async() => {
+            checkReturnSchemaUrl('# yaml-language-server:    $schema=expectedUrl', 'expectedUrl');
+        });
+        
+        test('with several spaces at the end', async() => {
+            checkReturnSchemaUrl('# yaml-language-server: $schema=expectedUrl   ', 'expectedUrl');
+        });
+        
+        test('with several spaces at several places', async() => {
+            checkReturnSchemaUrl('#   yaml-language-server  :   $schema=expectedUrl   ', 'expectedUrl');
+        });
+        
+        test('with several attributes', async() => {
+            checkReturnSchemaUrl('# yaml-language-server: anotherAttribute=test $schema=expectedUrl aSecondAttribtute=avalue', 'expectedUrl');
+        });
+        
+        test('with tabs', async() => {
+            checkReturnSchemaUrl('#\tyaml-language-server:\t$schema=expectedUrl', 'expectedUrl');
+        });
+        
+        test('with several $schema - pick the first', async() => {
+            checkReturnSchemaUrl('# yaml-language-server: $schema=url1 $schema=url2', 'url1');
+        });
+        
+        test('no schema returned if not yaml-language-server', async() => {
+            checkReturnSchemaUrl('# somethingelse: $schema=url1', undefined);
+        });
+        
+        test('no schema returned if not $schema', async() => {
+            checkReturnSchemaUrl('# yaml-language-server: $notschema=url1', undefined);
+        });
+        
+        function checkReturnSchemaUrl(modeline: string, expectedResult: string) {
+            const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
+            const yamlDoc = new parser.SingleYAMLDocument([]);
+            yamlDoc.lineComments = [modeline];
+            assert.equal(service.getSchemaFromModeline(yamlDoc), expectedResult);
+        }
+    });
 });
+

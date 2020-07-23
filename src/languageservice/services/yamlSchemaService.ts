@@ -295,21 +295,23 @@ export class YAMLSchemaService extends JSONSchemaService {
     }
     
     /**
-     * Retrieve schema if declared as modeline
+     * Retrieve schema if declared as modeline.
+     * Public for testing purpose, not part of the API.
      * @param doc 
      */
-    private getSchemaFromModeline(doc: any) : string{
+    public getSchemaFromModeline(doc: any) : string{
         if (doc instanceof SingleYAMLDocument) {
-            const modelineDeclaration = '# yaml-language-server:';
-            const yamlLanguageServerModeline = doc.lineComments.find(lineComment => lineComment.startsWith(modelineDeclaration));
+            const yamlLanguageServerModeline = doc.lineComments.find(lineComment => {
+                const matchModeline = lineComment.match(/^#\s+yaml-language-server\s*:/g);
+                return matchModeline !== null && matchModeline.length === 1;
+            });
             if (yamlLanguageServerModeline != undefined) {
-                const schemaKey = '$schema=';
-                const indexOfJsonSchemaParameter = yamlLanguageServerModeline.indexOf(schemaKey);
-                if (indexOfJsonSchemaParameter !== -1) {
-                    const startIndex = indexOfJsonSchemaParameter + schemaKey.length;
-                    const indexOfNextSpace = yamlLanguageServerModeline.indexOf(' ', startIndex);
-                    const endIndex = indexOfNextSpace !== -1 ? indexOfNextSpace : yamlLanguageServerModeline.length;
-                    return yamlLanguageServerModeline.substring(startIndex, endIndex);
+                const schemaMatchs = yamlLanguageServerModeline.match(/\$schema=\S+/g);
+                if(schemaMatchs !== null && schemaMatchs.length >= 1) {
+                    if (schemaMatchs.length >= 2) {
+                        console.log('Several $schema attributes has been found on the yaml-language-server modeline. The first one will be picked.');
+                    }
+                    return schemaMatchs[0].substring('$schema='.length);
                 }
             }
         }
