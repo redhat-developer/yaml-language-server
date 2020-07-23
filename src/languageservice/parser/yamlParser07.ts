@@ -18,6 +18,10 @@ import { ASTNode } from '../jsonASTTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
 import { emit } from 'process';
 
+const YAML_DIRECTIVE_PREFIX = '%';
+const YAML_COMMENT_PREFIX = '#';
+const YAML_DATA_INSTANCE_SEPARATOR = '---';
+
 /**
  * These documents are collected into a final YAMLDocument
  * and passed to the `parseYAML` caller.
@@ -29,6 +33,7 @@ export class SingleYAMLDocument extends JSONDocument {
     public warnings: YAMLDocDiagnostic[];
     public isKubernetes: boolean;
     public currentDocIndex: number;
+    public lineComments: string[];
 
     constructor(lines: number[]) {
         super(null, []);
@@ -36,6 +41,7 @@ export class SingleYAMLDocument extends JSONDocument {
         this.root = null;
         this.errors = [];
         this.warnings = [];
+        this.lineComments = [];
     }
 
     public getSchemas(schema, doc, node) {
@@ -101,7 +107,25 @@ export function parse(text: string, customTags = []): YAMLDocument {
     // Generate the SingleYAMLDocs from the AST nodes
     const startPositions = getLineStartPositions(text);
     const yamlDocs: SingleYAMLDocument[] = yamlNodes.map(node => nodeToSingleDoc(node, startPositions, text));
+    
+    parseLineComments(text, yamlDocs);
 
     // Consolidate the SingleYAMLDocs
     return new YAMLDocument(yamlDocs);
+}
+
+function parseLineComments(text: string, yamlDocs: SingleYAMLDocument[]) {
+    const lines = text.split(/[\r\n]+/g);
+    let yamlDocCount = 0;
+    lines.forEach(line => {
+        if (line.startsWith(YAML_DIRECTIVE_PREFIX) && yamlDocCount === 0) {
+            yamlDocCount--;
+        }
+        if (line === YAML_DATA_INSTANCE_SEPARATOR) {
+            yamlDocCount++;
+        }
+        if (line.startsWith(YAML_COMMENT_PREFIX)) {
+            yamlDocs[yamlDocCount].lineComments.push(line);
+        }
+    });
 }

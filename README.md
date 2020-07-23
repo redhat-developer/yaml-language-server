@@ -88,6 +88,10 @@ and that will associate the composer schema with myYamlFile.yaml.
 
 ## More examples of schema association:
 
+### Using yaml.schemas settings
+
+#### Single root schema association:
+
 When associating a schema it should follow the format below
 ```
 yaml.schemas: {
@@ -118,7 +122,7 @@ yaml.schemas: {
 }
 ```
 
-## Multi root schema association:
+#### Multi root schema association:
 You can also use relative paths when working with multi root workspaces.
 
 Suppose you have a multi root workspace that is laid out like:
@@ -140,6 +144,14 @@ yaml.schemas: {
 ```
 
 `yaml.schemas` allows you to specify json schemas that you want to validate against the yaml that you write. Kubernetes is an optional field. It does not require a url as the language server will provide that. You just need the keyword kubernetes and a glob pattern.
+
+### Using inlined schema
+
+It is possible to specify a yaml schema using a modeline.
+
+```
+# yaml-language-server: $schema=<urlToTheSchema>
+```
 
 ## Clients
 This repository only contains the server implementation. Here are some known clients consuming this server:

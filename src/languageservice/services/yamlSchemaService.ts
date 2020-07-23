@@ -14,6 +14,11 @@ import { URI } from 'vscode-uri';
 
 import * as nls from 'vscode-nls';
 import { convertSimple2RegExpPattern } from '../utils/strings';
+import { TextDocument } from 'vscode-languageserver';
+import { SingleYAMLDocument } from '../parser/yamlParser07';
+import { stringifyObject } from '../utils/json';
+import { getNodeValue, JSONDocument } from '../parser/jsonParser07';
+import { Parser } from 'prettier';
 const localize = nls.loadMessageBundle();
 
 export declare type CustomSchemaProvider = (uri: string) => Thenable<string | string[]>;
@@ -214,11 +219,17 @@ export class YAMLSchemaService extends JSONSchemaService {
     }
     //tslint:enable
 
-    public getSchemaForResource (resource: string, doc = undefined): Thenable<ResolvedSchema> {
+    public getSchemaForResource (resource: string, doc : JSONDocument): Thenable<ResolvedSchema> {
         const resolveSchema = () => {
-
             const seen: { [schemaId: string]: boolean } = Object.create(null);
             const schemas: string[] = [];
+            
+            const schemaFromModeline = this.getSchemaFromModeline(doc);
+            if(schemaFromModeline !== undefined) {
+                schemas.push(schemaFromModeline);
+                seen[schemaFromModeline] = true;
+            }
+            
             for (const entry of this.filePatternAssociations) {
                 if (entry.matchesPattern(resource)) {
                     for (const schemaId of entry.getURIs()) {
@@ -243,8 +254,8 @@ export class YAMLSchemaService extends JSONSchemaService {
 
             if (schemas.length > 0) {
                 return super.createCombinedSchema(resource, schemas).getResolvedSchema().then(schema => {
-                    if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[doc.currentDocIndex]) {
-                        return new ResolvedSchema(schema.schema.schemaSequence[doc.currentDocIndex]);
+                    if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]) {
+                        return new ResolvedSchema(schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]);
                     }
                     return schema;
                 });
@@ -281,6 +292,30 @@ export class YAMLSchemaService extends JSONSchemaService {
         } else {
             return resolveSchema();
         }
+    }
+    
+    /**
+     * Retrieve schema if declared as modeline.
+     * Public for testing purpose, not part of the API.
+     * @param doc 
+     */
+    public getSchemaFromModeline(doc: any) : string{
+        if (doc instanceof SingleYAMLDocument) {
+            const yamlLanguageServerModeline = doc.lineComments.find(lineComment => {
+                const matchModeline = lineComment.match(/^#\s+yaml-language-server\s*:/g);
+                return matchModeline !== null && matchModeline.length === 1;
+            });
+            if (yamlLanguageServerModeline != undefined) {
+                const schemaMatchs = yamlLanguageServerModeline.match(/\$schema=\S+/g);
+                if(schemaMatchs !== null && schemaMatchs.length >= 1) {
+                    if (schemaMatchs.length >= 2) {
+                        console.log('Several $schema attributes has been found on the yaml-language-server modeline. The first one will be picked.');
+                    }
+                    return schemaMatchs[0].substring('$schema='.length);
+                }
+            }
+        }
+        return undefined;
     }
 
     private async resolveCustomSchema (schemaUri, doc) {

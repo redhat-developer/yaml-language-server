@@ -1,3 +1,7 @@
+#### 0.10.0
+
+- Allows to declare a schema inside the yaml file through modeline `# yaml-language-server: $schema=<urlOfTheSchema>`
+
 #### 0.9.0
 - Improve Diagnostic positions [#260](https://github.com/redhat-developer/yaml-language-server/issues/260)
 - Support `maxProperties` when providing completion [#269](https://github.com/redhat-developer/yaml-language-server/issues/269)
