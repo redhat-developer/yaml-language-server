@@ -638,16 +638,28 @@ suite('Validation Tests', () => {
         });
     });
 
-    describe.skip('Test anchors specifically against gitlab schema', function () {
-        it('Test that anchors do not report Property << is not allowed', done => {
-            languageService.configure({
-                schemas: [{
-                    uri: 'https://json.schemastore.org/gitlab-ci',
-                    fileMatch: ['*.yaml', '*.yml']
-                }],
-                validate: true
-            });
-            const content = '.test-cache: &test-cache\n  cache: {}\nnodejs-tests:\n  <<: *test-cache\n  script: test';
+    describe('Test anchors', function () {
+        it('Test that anchors with a schema do not report Property << is not allowed', done => {
+            const schema = {
+                'type': 'object',
+                'properties': {
+                    'sample': {
+                        'type': 'object',
+                        'properties': {
+                            'prop1': {
+                                'type': 'string'
+                            },
+                            'prop2': {
+                                'type': 'string'
+                            }
+                        },
+                        'additionalProperties': false
+                    }
+                },
+                '$schema': 'http://json-schema.org/draft-07/schema#'
+            };
+            languageService.addSchema(SCHEMA_ID, schema);
+            const content = 'test: &test\n  prop1: hello\nsample:\n  <<: *test\n  prop2: another_test';
             const validator = parseSetup(content);
             validator.then(function (result) {
                 assert.equal(result.length, 0);

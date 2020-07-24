@@ -527,6 +527,17 @@ suite('Auto Completion Tests', () => {
         });
 
         describe('Array Specific Tests', function () {
+
+            it('Should insert empty array item', done => {
+                const schema = require(path.join(__dirname, './fixtures/testStringArray.json'));
+                languageService.addSchema(SCHEMA_ID, schema);
+                const content = 'fooBa';
+                const completion = parseSetup(content, content.lastIndexOf('Ba') + 2);
+                completion.then(function (result) {
+                    assert.strictEqual('fooBar:\n\t- ${1:""}', result.items[0].insertText);
+                }).then(done, done);
+            });
+
             it('Array autocomplete without word and extra space', done => {
                 languageService.addSchema(SCHEMA_ID, {
                     type: 'object',
