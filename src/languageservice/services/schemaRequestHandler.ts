@@ -47,16 +47,6 @@ export const schemaRequestHandler = (connection: IConnection, uri: string): Then
 
     // HTTP(S) requests are sent and the response result is either the schema content or an error
     if (scheme === 'http' || scheme === 'https') {
-        // If it's an HTTP(S) request to Microsoft Azure, log the request
-        if (uri.indexOf('//schema.management.azure.com/') !== -1) {
-            connection.telemetry.logEvent({
-                key: 'json.schema',
-                value: {
-                    schemaURL: uri
-                }
-            });
-        }
-
         // Send the HTTP(S) schema content request and return the result
         const headers = { 'Accept-Encoding': 'gzip, deflate' };
         return xhr({ url: uri, followRedirects: 5, headers })
