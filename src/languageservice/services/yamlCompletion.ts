@@ -405,9 +405,15 @@ export class YAMLCompletion extends JSONCompletion {
                 value = [value];
                 type = 'array';
             }
+            let label;
+            if(typeof value == 'object'){
+                label = 'Default value';
+            } else {
+                label = (value as object).toString();
+            }
             collector.add({
                 kind: this.getSuggestionKind(type),
-                label: value.toString(),
+                label,
                 insertText: this.getInsertTextForValue(value, separatorAfter),
                 insertTextFormat: InsertTextFormat.Snippet,
                 detail: localize('json.suggest.default', 'Default value')
@@ -562,6 +568,19 @@ export class YAMLCompletion extends JSONCompletion {
 
     // tslint:disable-next-line: no-any
     private getInsertTextForValue (value: any, separatorAfter: string): string {
+        switch (typeof value) {
+            case 'object':
+                const indent = '\t';
+                let insertText = '';
+                let navOrder = 0;
+                for (const key in value) {
+                    if (Object.prototype.hasOwnProperty.call(value, key)) {
+                        const element = value[key];
+                        insertText += `${indent}\${${navOrder++}:${key}}: \${${navOrder++}:${element}}\n`;
+                    }
+                }
+                return insertText;
+        }
         return this.getInsertTextForPlainText(value + separatorAfter);
     }
 
