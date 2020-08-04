@@ -571,7 +571,7 @@ export class YAMLCompletion extends JSONCompletion {
         switch (typeof value) {
             case 'object':
                 const indent = '\t';
-                let insertText = '';
+                let insertText = '\n';
                 let navOrder = 0;
                 for (const key in value) {
                     if (Object.prototype.hasOwnProperty.call(value, key)) {

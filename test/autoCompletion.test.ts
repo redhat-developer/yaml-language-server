@@ -989,7 +989,7 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 5);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.deepEqual(result.items[0], createExpectedCompletion('Default value', '\t${0:KEY}: ${1:VALUE}\n', 0, 5, 0, 5, 9, 2, {
+                    assert.deepEqual(result.items[0], createExpectedCompletion('Default value', '\n\t${0:KEY}: ${1:VALUE}\n', 0, 5, 0, 5, 9, 2, {
                         detail: 'Default value'
                     }));
                 }).then(done, done);
