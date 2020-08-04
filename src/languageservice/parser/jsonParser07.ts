@@ -20,8 +20,13 @@ export interface IRange {
     length: number;
 }
 
-const colorHexPattern = /^#([0-9A-Fa-f]{3,4}|([0-9A-Fa-f]{2}){3,4})$/;
-const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+const formats = {
+    'color-hex': { errorMessage: localize('colorHexFormatWarning', 'Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.'), pattern: /^#([0-9A-Fa-f]{3,4}|([0-9A-Fa-f]{2}){3,4})$/ },
+    'date-time': { errorMessage: localize('dateTimeFormatWarning', 'String is not a RFC3339 date-time.'), pattern: /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i },
+    'date': { errorMessage: localize('dateFormatWarning', 'String is not a RFC3339 date.'), pattern: /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/i },
+    'time': { errorMessage: localize('timeFormatWarning', 'String is not a RFC3339 time.'), pattern: /^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i },
+    'email': { errorMessage: localize('emailFormatWarning', 'String is not an e-mail address.'), pattern: /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/ }
+};
 
 export interface IProblem {
     location: IRange;
@@ -715,28 +720,19 @@ function validate (node: ASTNode, schema: JSONSchema, validationResult: Validati
                     }
                 }
                     break;
-                case 'email': {
-                    if (!node.value.match(emailPattern)) {
+                case 'color-hex':
+                case 'date-time':
+                case 'date':
+                case 'time':
+                case 'email':
+                    const format = formats[schema.format];
+                    if (!node.value || !format.pattern.exec(node.value)) {
                         validationResult.problems.push({
                             location: { offset: node.offset, length: node.length },
                             severity: DiagnosticSeverity.Warning,
-                            message: schema.patternErrorMessage || schema.errorMessage || localize('emailFormatWarning', 'String is not an e-mail address.')
+                            message: schema.patternErrorMessage || schema.errorMessage || format.errorMessage
                         });
                     }
-                }
-                    break;
-                case 'color-hex': {
-                    if (!node.value.match(colorHexPattern)) {
-                        validationResult.problems.push({
-                            location: { offset: node.offset, length: node.length },
-                            severity: DiagnosticSeverity.Warning,
-                            // tslint:disable-next-line: max-line-length
-                            message: schema.patternErrorMessage || schema.errorMessage || localize('colorHexFormatWarning',
-                                'Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.')
-                        });
-                    }
-                }
-                    break;
                 default:
             }
         }
