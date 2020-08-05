@@ -5,9 +5,9 @@
 import assert = require('assert');
 import {parse} from './../src/languageservice/parser/yamlParser07';
 
-suite('Test parser', () => {
+suite('YAML parser', () => {
 
-    describe('test parser', function () {
+    describe('YAML parser', function () {
 
             it('parse emtpy text', () => {
                 const parsedDocument = parse('');
