@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { setupTextDocument, TEST_URI, configureLanguageService }  from './utils/testHelper';
+import { setupTextDocument, TEST_URI, configureLanguageService } from './utils/testHelper';
 import { createExpectedSymbolInformation, createExpectedDocumentSymbol } from './utils/verifyError';
 import { DocumentSymbol, SymbolKind } from 'vscode-languageserver-types';
 import assert = require('assert');
@@ -16,7 +16,7 @@ suite('Document Symbols Tests', () => {
 
         function parseNonHierarchicalSetup (content: string) {
             const testTextDocument = setupTextDocument(content);
-            return languageService.findDocumentSymbols(testTextDocument );
+            return languageService.findDocumentSymbols(testTextDocument);
         }
 
         it('Document is empty', done => {
@@ -296,6 +296,28 @@ suite('Document Symbols Tests', () => {
                 symbols[1],
                 createExpectedDocumentSymbol('json', SymbolKind.String, 4, 0, 4, 10, 4, 0, 4, 4)
             );
+        });
+
+        it('Document Symbols with complex mapping and aliases', () => {
+            const content = `version: 0.0.1
+            structure:
+              ? &root root
+              :
+                element: div
+            conditions:
+              ? *root
+              :
+                style:
+                  height: 41
+            `;
+
+            try {
+                const symbols = parseHierarchicalSetup(content);
+                assert.equal(symbols.length, 2);
+            } catch (err) {
+                assert.fail(err);
+            }
+
         });
 
     });
