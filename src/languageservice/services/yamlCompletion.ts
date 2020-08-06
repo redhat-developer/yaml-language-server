@@ -405,9 +405,15 @@ export class YAMLCompletion extends JSONCompletion {
                 value = [value];
                 type = 'array';
             }
+            let label;
+            if(typeof value == 'object'){
+                label = 'Default value';
+            } else {
+                label = (value as object).toString();
+            }
             collector.add({
                 kind: this.getSuggestionKind(type),
-                label: value.toString(),
+                label,
                 insertText: this.getInsertTextForValue(value, separatorAfter),
                 insertTextFormat: InsertTextFormat.Snippet,
                 detail: localize('json.suggest.default', 'Default value')
@@ -562,6 +568,39 @@ export class YAMLCompletion extends JSONCompletion {
 
     // tslint:disable-next-line: no-any
     private getInsertTextForValue (value: any, separatorAfter: string): string {
+        switch (typeof value) {
+            case 'object':
+                const indent = '\t';
+                return this.getInsertTemplateForValue(value,indent , {index: 1}, separatorAfter);
+
+        }
+        return this.getInsertTextForPlainText(value + separatorAfter);
+    }
+
+    private getInsertTemplateForValue (value: object | [], indent: string, navOrder: {index: number}, separatorAfter: string): string {
+        if (Array.isArray(value)) {
+            let insertText = '\n';
+            for (const arrValue of value) {
+                insertText += `${indent}- \${${navOrder.index++}:${arrValue}\}\n`;
+            }
+            return insertText;
+        } else if (typeof value === 'object'){
+            let insertText = '\n';
+            for (const key in value) {
+                if (Object.prototype.hasOwnProperty.call(value, key)) {
+                    const element = value[key];
+                    insertText += `${indent}\${${navOrder.index++}:${key}}:`;
+                    let valueTemplate;
+                    if(typeof element === 'object') {
+                        valueTemplate =  `${this.getInsertTemplateForValue(element, indent + '\t', navOrder, separatorAfter)}`;
+                    } else {
+                        valueTemplate = ` \${${navOrder.index++}:${this.getInsertTextForPlainText(element + separatorAfter)}}\n`;
+                    }
+                    insertText += `${valueTemplate}`;
+                }
+            }
+            return insertText;
+        }
         return this.getInsertTextForPlainText(value + separatorAfter);
     }
 

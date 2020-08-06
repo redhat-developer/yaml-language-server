@@ -935,7 +935,7 @@ suite('Auto Completion Tests', () => {
                 }).then(done, done);
             });
         });
-        
+
         describe('Yaml schema defined in file', function () {
 
             const uri = toFsPath(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
@@ -947,7 +947,7 @@ suite('Auto Completion Tests', () => {
                     assert.equal(result.items.length, 3);
                 }).then(done, done);
             });
-            
+
             it('Provide completion from schema declared in file with several attributes', done => {
                 const content = `# yaml-language-server: $schema=${uri} anothermodeline=value\n- `;
                 const completion = parseSetup(content, content.length);
@@ -955,7 +955,7 @@ suite('Auto Completion Tests', () => {
                     assert.equal(result.items.length, 3);
                 }).then(done, done);
             });
-            
+
             it('Provide completion from schema declared in file with several documents', done => {
                 const documentContent1 = `# yaml-language-server: $schema=${uri} anothermodeline=value\n- `;
                 const content = `${documentContent1}\n---\n- `;
@@ -967,7 +967,69 @@ suite('Auto Completion Tests', () => {
                         assert.equal(resultDoc2.items.length, 0, `Expecting no items in completion but found ${resultDoc2.items.length}`);
                     }).then(done, done);
                 }, done);
-                
+
+            });
+        });
+
+        describe('Bug fixes', () => {
+            it('Object completion', done => {
+                languageService.addSchema(SCHEMA_ID, {
+                    type: 'object',
+                    properties: {
+                        env: {
+                            type: 'object',
+                            default: {
+                                KEY: 'VALUE'
+                            }
+                        }
+                    }
+                });
+
+                const content = 'env: ';
+                const completion = parseSetup(content, 5);
+                completion.then(function (result) {
+                    assert.equal(result.items.length, 1);
+                    assert.deepEqual(result.items[0], createExpectedCompletion('Default value', '\n\t${1:KEY}: ${2:VALUE}\n', 0, 5, 0, 5, 9, 2, {
+                        detail: 'Default value'
+                    }));
+                }).then(done, done);
+            });
+
+            it('Complex default object completion', done => {
+                languageService.addSchema(SCHEMA_ID, {
+                    type: 'object',
+                    properties: {
+                        env: {
+                            type: 'object',
+                            default: {
+                                KEY: 'VALUE',
+                                KEY2: {
+                                    TEST: 'TEST2'
+                                },
+                                KEY3: ['Test', 'Test2']
+                            }
+                        }
+                    }
+                });
+
+                const content = 'env: ';
+                const completion = parseSetup(content, 5);
+                completion.then(function (result) {
+                    assert.equal(result.items.length, 1);
+                    assert.deepEqual(result.items[0],
+                        createExpectedCompletion(
+                            'Default value',
+                            '\n\t${1:KEY}: ${2:VALUE}\n\t${3:KEY2}:\n\t\t${4:TEST}: ${5:TEST2}\n\t${6:KEY3}:\n\t\t- ${7:Test}\n\t\t- ${8:Test2}\n',
+                            0,
+                            5,
+                            0,
+                            5,
+                            9,
+                            2, {
+                                detail: 'Default value'
+                            }
+                        ));
+                }).then(done, done);
             });
         });
     });
