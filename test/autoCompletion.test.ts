@@ -989,9 +989,46 @@ suite('Auto Completion Tests', () => {
                 const completion = parseSetup(content, 5);
                 completion.then(function (result) {
                     assert.equal(result.items.length, 1);
-                    assert.deepEqual(result.items[0], createExpectedCompletion('Default value', '\n\t${0:KEY}: ${1:VALUE}\n', 0, 5, 0, 5, 9, 2, {
+                    assert.deepEqual(result.items[0], createExpectedCompletion('Default value', '\n\t${1:KEY}: ${2:VALUE}\n', 0, 5, 0, 5, 9, 2, {
                         detail: 'Default value'
                     }));
+                }).then(done, done);
+            });
+
+            it('Complex default object completion', done => {
+                languageService.addSchema(SCHEMA_ID, {
+                    type: 'object',
+                    properties: {
+                        env: {
+                            type: 'object',
+                            default: {
+                                KEY: 'VALUE',
+                                KEY2: {
+                                    TEST: 'TEST2'
+                                },
+                                KEY3: ['Test', 'Test2']
+                            }
+                        }
+                    }
+                });
+
+                const content = 'env: ';
+                const completion = parseSetup(content, 5);
+                completion.then(function (result) {
+                    assert.equal(result.items.length, 1);
+                    assert.deepEqual(result.items[0],
+                        createExpectedCompletion(
+                            'Default value',
+                            '\n\t${1:KEY}: ${2:VALUE}\n\t${3:KEY2}:\n\t\t${4:TEST}: ${5:TEST2}\n\t${6:KEY3}:\n\t\t- ${7:Test}\n\t\t- ${8:Test2}\n',
+                            0,
+                            5,
+                            0,
+                            5,
+                            9,
+                            2, {
+                                detail: 'Default value'
+                            }
+                        ));
                 }).then(done, done);
             });
         });

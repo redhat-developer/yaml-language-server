@@ -571,15 +571,35 @@ export class YAMLCompletion extends JSONCompletion {
         switch (typeof value) {
             case 'object':
                 const indent = '\t';
-                let insertText = '\n';
-                let navOrder = 0;
-                for (const key in value) {
-                    if (Object.prototype.hasOwnProperty.call(value, key)) {
-                        const element = value[key];
-                        insertText += `${indent}\${${navOrder++}:${key}}: \${${navOrder++}:${element}}\n`;
+                return this.getInsertTemplateForValue(value,indent , {index: 1}, separatorAfter);
+
+        }
+        return this.getInsertTextForPlainText(value + separatorAfter);
+    }
+
+    private getInsertTemplateForValue (value: object | [], indent: string, navOrder: {index: number}, separatorAfter: string): string {
+        if (Array.isArray(value)) {
+            let insertText = '\n';
+            for (const arrValue of value) {
+                insertText += `${indent}- \${${navOrder.index++}:${arrValue}\}\n`;
+            }
+            return insertText;
+        } else if (typeof value === 'object'){
+            let insertText = '\n';
+            for (const key in value) {
+                if (Object.prototype.hasOwnProperty.call(value, key)) {
+                    const element = value[key];
+                    insertText += `${indent}\${${navOrder.index++}:${key}}:`;
+                    let valueTemplate;
+                    if(typeof element === 'object') {
+                        valueTemplate =  `${this.getInsertTemplateForValue(element, indent + '\t', navOrder, separatorAfter)}`;
+                    } else {
+                        valueTemplate = ` \${${navOrder.index++}:${this.getInsertTextForPlainText(element + separatorAfter)}}\n`;
                     }
+                    insertText += `${valueTemplate}`;
                 }
-                return insertText;
+            }
+            return insertText;
         }
         return this.getInsertTextForPlainText(value + separatorAfter);
     }
