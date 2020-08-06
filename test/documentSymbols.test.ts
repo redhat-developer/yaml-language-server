@@ -299,7 +299,8 @@ suite('Document Symbols Tests', () => {
         });
 
         it('Document Symbols with complex mapping and aliases', () => {
-            const content = `version: 0.0.1
+            const content = `
+            version: 0.0.1
             structure:
               ? &root root
               :
@@ -311,12 +312,30 @@ suite('Document Symbols Tests', () => {
                   height: 41
             `;
 
-            try {
-                const symbols = parseHierarchicalSetup(content);
-                assert.equal(symbols.length, 2);
-            } catch (err) {
-                assert.fail(err);
-            }
+            const symbols = parseHierarchicalSetup(content);
+
+            assert.equal(symbols.length, 3);
+            assert.deepEqual(
+                symbols[0],
+                createExpectedDocumentSymbol('version', SymbolKind.String, 1, 12, 1, 26, 1, 12, 1, 19)
+            );
+
+            const element = createExpectedDocumentSymbol('element', SymbolKind.String, 5, 16, 5, 28, 5, 16, 5, 23, );
+            const root1 = createExpectedDocumentSymbol('root', SymbolKind.Module, 3, 22, 5, 28, 3, 22, 3, 26,[element]);
+
+            const height = createExpectedDocumentSymbol('height', SymbolKind.Number, 10, 18, 10, 28, 10, 18, 10, 24);
+            const style = createExpectedDocumentSymbol('style', SymbolKind.Module, 9, 16, 10, 28, 9, 16, 9, 21, [height]);
+            const root2 = createExpectedDocumentSymbol('root', SymbolKind.Module, 7, 17, 10, 28, 7, 17, 7, 21, [style]);
+
+            assert.deepEqual(
+                symbols[1],
+                createExpectedDocumentSymbol('structure', SymbolKind.Module, 2, 12, 5, 28, 2, 12, 2, 21, [root1])
+            );
+
+            assert.deepEqual(
+                symbols[2],
+                createExpectedDocumentSymbol('conditions', SymbolKind.Module, 6, 12, 10, 28, 6, 12, 6, 22, [root2])
+            );
 
         });
 
