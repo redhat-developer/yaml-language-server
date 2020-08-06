@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { setupTextDocument, TEST_URI, configureLanguageService }  from './utils/testHelper';
+import { setupTextDocument, TEST_URI, configureLanguageService } from './utils/testHelper';
 import { createExpectedSymbolInformation, createExpectedDocumentSymbol } from './utils/verifyError';
 import { DocumentSymbol, SymbolKind } from 'vscode-languageserver-types';
 import assert = require('assert');
@@ -16,7 +16,7 @@ suite('Document Symbols Tests', () => {
 
         function parseNonHierarchicalSetup (content: string) {
             const testTextDocument = setupTextDocument(content);
-            return languageService.findDocumentSymbols(testTextDocument );
+            return languageService.findDocumentSymbols(testTextDocument);
         }
 
         it('Document is empty', done => {
@@ -296,6 +296,47 @@ suite('Document Symbols Tests', () => {
                 symbols[1],
                 createExpectedDocumentSymbol('json', SymbolKind.String, 4, 0, 4, 10, 4, 0, 4, 4)
             );
+        });
+
+        it('Document Symbols with complex mapping and aliases', () => {
+            const content = `
+            version: 0.0.1
+            structure:
+              ? &root root
+              :
+                element: div
+            conditions:
+              ? *root
+              :
+                style:
+                  height: 41
+            `;
+
+            const symbols = parseHierarchicalSetup(content);
+
+            assert.equal(symbols.length, 3);
+            assert.deepEqual(
+                symbols[0],
+                createExpectedDocumentSymbol('version', SymbolKind.String, 1, 12, 1, 26, 1, 12, 1, 19)
+            );
+
+            const element = createExpectedDocumentSymbol('element', SymbolKind.String, 5, 16, 5, 28, 5, 16, 5, 23, );
+            const root1 = createExpectedDocumentSymbol('root', SymbolKind.Module, 3, 22, 5, 28, 3, 22, 3, 26,[element]);
+
+            const height = createExpectedDocumentSymbol('height', SymbolKind.Number, 10, 18, 10, 28, 10, 18, 10, 24);
+            const style = createExpectedDocumentSymbol('style', SymbolKind.Module, 9, 16, 10, 28, 9, 16, 9, 21, [height]);
+            const root2 = createExpectedDocumentSymbol('root', SymbolKind.Module, 7, 17, 10, 28, 7, 17, 7, 21, [style]);
+
+            assert.deepEqual(
+                symbols[1],
+                createExpectedDocumentSymbol('structure', SymbolKind.Module, 2, 12, 5, 28, 2, 12, 2, 21, [root1])
+            );
+
+            assert.deepEqual(
+                symbols[2],
+                createExpectedDocumentSymbol('conditions', SymbolKind.Module, 6, 12, 10, 28, 6, 12, 6, 22, [root2])
+            );
+
         });
 
     });

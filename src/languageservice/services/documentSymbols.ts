@@ -17,6 +17,17 @@ export class YAMLDocumentSymbols {
 
     constructor (schemaService: YAMLSchemaService) {
         this.jsonDocumentSymbols = new JSONDocumentSymbols(schemaService);
+        const origKeyLabel = this.jsonDocumentSymbols.getKeyLabel;
+
+        // override 'getKeyLabel' to handle complex mapping
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.jsonDocumentSymbols.getKeyLabel = (property: any) => {
+            if (typeof property.keyNode.value === 'object') {
+                return property.keyNode.value.value;
+            } else {
+                return origKeyLabel.call(this.jsonDocumentSymbols, property);
+            }
+        };
     }
 
     public findDocumentSymbols (document: TextDocument): SymbolInformation[] {
