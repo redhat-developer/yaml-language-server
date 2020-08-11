@@ -26,7 +26,7 @@ export class YAMLFormatter {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const prettier = require('prettier');
       const text = document.getText();
-      
+
       const formatted = prettier.format(text, Object.assign(options, { parser: 'yaml' }));
 
       return [
