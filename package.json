@@ -28,10 +28,12 @@
     "type": "git",
     "url": "https://github.com/redhat-developer/yaml-language-server.git"
   },
+  "optionalDependencies": {
+    "prettier": "2.0.5"
+  },
   "dependencies": {
     "js-yaml": "^3.13.1",
     "jsonc-parser": "^2.2.1",
-    "prettier": "2.0.5",
     "request-light": "^0.2.4",
     "vscode-json-languageservice": "^3.6.0",
     "vscode-languageserver": "^5.2.1",

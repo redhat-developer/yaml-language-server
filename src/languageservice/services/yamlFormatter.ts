@@ -7,7 +7,6 @@
 
 import { TextDocument, Range, Position, TextEdit } from 'vscode-languageserver-types';
 import { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
-import * as prettier from 'prettier';
 
 export class YAMLFormatter {
   private formatterEnabled = true;
@@ -24,9 +23,11 @@ export class YAMLFormatter {
     }
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const prettier = require('prettier');
       const text = document.getText();
-      (options as prettier.Options).parser = 'yaml';
-      const formatted = prettier.format(text, options as prettier.Options);
+      
+      const formatted = prettier.format(text, Object.assign(options, { parser: 'yaml' }));
 
       return [
         TextEdit.replace(
