@@ -6,12 +6,7 @@
 'use strict';
 
 import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
-import {
-  SchemaRequestService,
-  WorkspaceContextService,
-  PromiseConstructor,
-  Thenable,
-} from '../yamlLanguageService';
+import { SchemaRequestService, WorkspaceContextService, PromiseConstructor, Thenable } from '../yamlLanguageService';
 import {
   UnresolvedSchema,
   ResolvedSchema,
@@ -128,31 +123,16 @@ export class YAMLSchemaService extends JSONSchemaService {
       return current;
     };
 
-    const merge = (
-      target: JSONSchema,
-      sourceRoot: JSONSchema,
-      sourceURI: string,
-      path: string
-    ): void => {
+    const merge = (target: JSONSchema, sourceRoot: JSONSchema, sourceURI: string, path: string): void => {
       const section = findSection(sourceRoot, path);
       if (section) {
         for (const key in section) {
-          if (
-            Object.prototype.hasOwnProperty.call(section, key) &&
-            !Object.prototype.hasOwnProperty.call(target, key)
-          ) {
+          if (Object.prototype.hasOwnProperty.call(section, key) && !Object.prototype.hasOwnProperty.call(target, key)) {
             target[key] = section[key];
           }
         }
       } else {
-        resolveErrors.push(
-          localize(
-            'json.schema.invalidref',
-            "$ref '{0}' in '{1}' can not be resolved.",
-            path,
-            sourceURI
-          )
-        );
+        resolveErrors.push(localize('json.schema.invalidref', "$ref '{0}' in '{1}' can not be resolved.", path, sourceURI));
       }
     };
 
@@ -173,12 +153,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         if (unresolvedSchema.errors.length) {
           const loc = linkPath ? uri + '#' + linkPath : uri;
           resolveErrors.push(
-            localize(
-              'json.schema.problemloadingref',
-              "Problems loading reference '{0}': {1}",
-              loc,
-              unresolvedSchema.errors[0]
-            )
+            localize('json.schema.problemloadingref', "Problems loading reference '{0}': {1}", loc, unresolvedSchema.errors[0])
           );
         }
         merge(node, unresolvedSchema.schema, uri, linkPath);
@@ -239,15 +214,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           const segments = ref.split('#', 2);
           delete next.$ref;
           if (segments[0].length > 0) {
-            openPromises.push(
-              resolveExternalLink(
-                next,
-                segments[0],
-                segments[1],
-                parentSchemaURL,
-                parentSchemaDependencies
-              )
-            );
+            openPromises.push(resolveExternalLink(next, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies));
             return;
           } else {
             if (seenRefs.indexOf(ref) === -1) {
@@ -267,19 +234,8 @@ export class YAMLSchemaService extends JSONSchemaService {
           next.then,
           next.else
         );
-        collectMapEntries(
-          next.definitions,
-          next.properties,
-          next.patternProperties,
-          <JSONSchemaMap>next.dependencies
-        );
-        collectArrayEntries(
-          next.anyOf,
-          next.allOf,
-          next.oneOf,
-          <JSONSchema[]>next.items,
-          next.schemaSequence
-        );
+        collectMapEntries(next.definitions, next.properties, next.patternProperties, <JSONSchemaMap>next.dependencies);
+        collectArrayEntries(next.anyOf, next.allOf, next.oneOf, <JSONSchema[]>next.items, next.schemaSequence);
       };
 
       while (toWalk.length) {
@@ -342,9 +298,7 @@ export class YAMLSchemaService extends JSONSchemaService {
               schema.schema.schemaSequence &&
               schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]
             ) {
-              return new ResolvedSchema(
-                schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]
-              );
+              return new ResolvedSchema(schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]);
             }
             return schema;
           });
@@ -428,11 +382,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   private async resolveCustomSchema(schemaUri, doc) {
     const unresolvedSchema = await this.loadSchema(schemaUri);
     const schema = await this.resolveSchemaContent(unresolvedSchema, schemaUri, []);
-    if (
-      schema.schema &&
-      schema.schema.schemaSequence &&
-      schema.schema.schemaSequence[doc.currentDocIndex]
-    ) {
+    if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[doc.currentDocIndex]) {
       return new ResolvedSchema(schema.schema.schemaSequence[doc.currentDocIndex]);
     }
     return schema;

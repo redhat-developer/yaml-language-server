@@ -25,8 +25,7 @@ export function stringifyObject(
      * is propertly indented. When we are auto completion from a value we don't want the indent because the cursor
      * is already in the correct place
      */
-    const newIndent =
-      (depth === 0 && settings.shouldIndentWithTab) || depth > 0 ? indent + '  ' : '';
+    const newIndent = (depth === 0 && settings.shouldIndentWithTab) || depth > 0 ? indent + '  ' : '';
     if (Array.isArray(obj)) {
       consecutiveArrays += 1;
       if (obj.length === 0) {
@@ -38,16 +37,7 @@ export function stringifyObject(
         if (!Array.isArray(obj[i])) {
           pseudoObj = preprendToObject(obj[i], consecutiveArrays);
         }
-        result +=
-          newIndent +
-          stringifyObject(
-            pseudoObj,
-            indent,
-            stringifyLiteral,
-            settings,
-            (depth += 1),
-            consecutiveArrays
-          );
+        result += newIndent + stringifyObject(pseudoObj, indent, stringifyLiteral, settings, (depth += 1), consecutiveArrays);
         if (i < obj.length - 1) {
           result += '\n';
         }
@@ -65,17 +55,9 @@ export function stringifyObject(
 
         // The first child of an array needs to be treated specially, otherwise identations will be off
         if (depth === 0 && i === 0 && !settings.indentFirstObject) {
-          result +=
-            indent +
-            key +
-            ': ' +
-            stringifyObject(obj[key], newIndent, stringifyLiteral, settings, (depth += 1), 0);
+          result += indent + key + ': ' + stringifyObject(obj[key], newIndent, stringifyLiteral, settings, (depth += 1), 0);
         } else {
-          result +=
-            newIndent +
-            key +
-            ': ' +
-            stringifyObject(obj[key], newIndent, stringifyLiteral, settings, (depth += 1), 0);
+          result += newIndent + key + ': ' + stringifyObject(obj[key], newIndent, stringifyLiteral, settings, (depth += 1), 0);
         }
         if (i < keys.length - 1) {
           result += '\n';

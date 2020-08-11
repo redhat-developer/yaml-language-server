@@ -5,11 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as assert from 'assert';
-import {
-  getNodePath,
-  getNodeValue,
-  JSONDocument,
-} from './../src/languageservice/parser/jsonParser07';
+import { getNodePath, getNodeValue, JSONDocument } from './../src/languageservice/parser/jsonParser07';
 import * as JsonSchema from './../src/languageservice/jsonSchema';
 import { ASTNode, ObjectASTNode } from './../src/languageservice/jsonASTTypes';
 import { ErrorCode, getLanguageService } from 'vscode-json-languageservice';
@@ -563,10 +559,7 @@ suite('JSON Parser', () => {
 
     semanticErrors = jsonDoc.validate(textDoc, schemaWithURI);
     assert.strictEqual(semanticErrors!.length, 1);
-    assert.strictEqual(
-      semanticErrors![0].message,
-      'String is not a URI: URI with a scheme is expected.'
-    );
+    assert.strictEqual(semanticErrors![0].message, 'String is not a URI: URI with a scheme is expected.');
 
     semanticErrors = validate('{"one":"http://foo/bar"}', schemaWithURI);
     assert.strictEqual(semanticErrors!.length, 0);
@@ -577,10 +570,7 @@ suite('JSON Parser', () => {
 
     semanticErrors = validate('{"one":"//foo/bar"}', schemaWithURI);
     assert.strictEqual(semanticErrors!.length, 1);
-    assert.strictEqual(
-      semanticErrors![0].message,
-      'String is not a URI: URI with a scheme is expected.'
-    );
+    assert.strictEqual(semanticErrors![0].message, 'String is not a URI: URI with a scheme is expected.');
 
     const schemaWithURIReference = {
       type: 'object',
@@ -631,10 +621,7 @@ suite('JSON Parser', () => {
 
     semanticErrors = validate('{"color":"#FF00F"}', schemaWithColor);
     assert.strictEqual(semanticErrors!.length, 1, 'email');
-    assert.strictEqual(
-      semanticErrors![0].message,
-      'Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.'
-    );
+    assert.strictEqual(semanticErrors![0].message, 'Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.');
 
     const schemaWithDateTime = {
       type: 'object',
@@ -747,10 +734,7 @@ suite('JSON Parser', () => {
       },
     });
     assert.strictEqual(semanticErrors!.length, 1, 'at exclusive mininum');
-    assert.strictEqual(
-      semanticErrors![0].message,
-      'Value is below the exclusive minimum of 134.5.'
-    );
+    assert.strictEqual(semanticErrors![0].message, 'Value is below the exclusive minimum of 134.5.');
 
     semanticErrors = jsonDoc.validate(textDoc, {
       type: 'object',
@@ -774,10 +758,7 @@ suite('JSON Parser', () => {
       },
     });
     assert.strictEqual(semanticErrors!.length, 1, 'at exclusive mininum');
-    assert.strictEqual(
-      semanticErrors![0].message,
-      'Value is below the exclusive minimum of 134.5.'
-    );
+    assert.strictEqual(semanticErrors![0].message, 'Value is below the exclusive minimum of 134.5.');
 
     semanticErrors = jsonDoc.validate(textDoc, {
       type: 'object',
@@ -790,10 +771,7 @@ suite('JSON Parser', () => {
       },
     });
     assert.strictEqual(semanticErrors!.length, 1, 'at exclusive mininum');
-    assert.strictEqual(
-      semanticErrors![0].message,
-      'Value is above the exclusive maximum of 134.5.'
-    );
+    assert.strictEqual(semanticErrors![0].message, 'Value is above the exclusive maximum of 134.5.');
 
     semanticErrors = jsonDoc.validate(textDoc, {
       type: 'object',
@@ -817,10 +795,7 @@ suite('JSON Parser', () => {
       },
     });
     assert.strictEqual(semanticErrors!.length, 1, 'at exclusive mininum');
-    assert.strictEqual(
-      semanticErrors![0].message,
-      'Value is above the exclusive maximum of 134.5.'
-    );
+    assert.strictEqual(semanticErrors![0].message, 'Value is above the exclusive maximum of 134.5.');
 
     semanticErrors = jsonDoc.validate(textDoc, {
       type: 'object',
@@ -1417,10 +1392,7 @@ suite('JSON Parser', () => {
       const { textDoc, jsonDoc } = toDocument('{"harmonica": false, "violin": true}');
       const semanticErrors = jsonDoc.validate(textDoc, schema);
       assert.strictEqual(semanticErrors!.length, 1);
-      assert.strictEqual(
-        semanticErrors![0].message,
-        'String is longer than the maximum length of 6.'
-      );
+      assert.strictEqual(semanticErrors![0].message, 'String is longer than the maximum length of 6.');
     }
   });
 
@@ -1742,9 +1714,7 @@ suite('JSON Parser', () => {
     assert.strictEqual(getNodeValue(node!), 42);
 
     const matchingSchemas = jsonDoc.getMatchingSchemas(schema);
-    const schemas = matchingSchemas
-      .filter((s) => s.node === node && !s.inverted)
-      .map((s) => s.schema);
+    const schemas = matchingSchemas.filter((s) => s.node === node && !s.inverted).map((s) => s.schema);
 
     assert.ok(Array.isArray(schemas));
     // 0 is the most specific schema,
@@ -1825,9 +1795,7 @@ suite('JSON Parser', () => {
       assert.strictEqual(semanticErrors![0].message, 'Incorrect type. Expected "boolean".');
     }
     {
-      const { textDoc, jsonDoc } = toDocument(
-        '{"key":{"type":"bar", "prop1":true, "prop2":false }}'
-      );
+      const { textDoc, jsonDoc } = toDocument('{"key":{"type":"bar", "prop1":true, "prop2":false }}');
       assert.strictEqual(jsonDoc.syntaxErrors.length, 0);
 
       const semanticErrors = jsonDoc.validate(textDoc, schema);
@@ -1877,23 +1845,15 @@ suite('JSON Parser', () => {
 
       const semanticErrors = jsonDoc.validate(textDoc, schema);
       assert.strictEqual(semanticErrors!.length, 1);
-      assert.strictEqual(
-        semanticErrors![0].message,
-        'Value is not accepted. Valid values: "w1", "w2".'
-      );
+      assert.strictEqual(semanticErrors![0].message, 'Value is not accepted. Valid values: "w1", "w2".');
     }
     {
-      const { textDoc, jsonDoc } = toDocument(
-        '{"key":{"type":"bar", "prop1":"v1", "prop2":"w1" }}'
-      );
+      const { textDoc, jsonDoc } = toDocument('{"key":{"type":"bar", "prop1":"v1", "prop2":"w1" }}');
       assert.strictEqual(jsonDoc.syntaxErrors.length, 0);
 
       const semanticErrors = jsonDoc.validate(textDoc, schema);
       assert.strictEqual(semanticErrors!.length, 1);
-      assert.strictEqual(
-        semanticErrors![0].message,
-        'Value is not accepted. Valid values: "x1", "x2".'
-      );
+      assert.strictEqual(semanticErrors![0].message, 'Value is not accepted. Valid values: "x1", "x2".');
     }
   });
 
@@ -1919,10 +1879,7 @@ suite('JSON Parser', () => {
 
     const semanticErrors = jsonDoc.validate(textDoc, schema);
     assert.strictEqual(semanticErrors!.length, 1);
-    assert.strictEqual(
-      semanticErrors![0].message,
-      'Value is not accepted. Valid values: "a", "b", "c", "d".'
-    );
+    assert.strictEqual(semanticErrors![0].message, 'Value is not accepted. Valid values: "a", "b", "c", "d".');
   });
 
   test('validate API', async function () {

@@ -7,11 +7,7 @@ export const isRelativePath = (path: string): boolean => {
   return relativePathRegex.test(path);
 };
 
-export const relativeToAbsolutePath = (
-  workspaceFolders: WorkspaceFolder[],
-  workspaceRoot: URI,
-  uri: string
-): string => {
+export const relativeToAbsolutePath = (workspaceFolders: WorkspaceFolder[], workspaceRoot: URI, uri: string): string => {
   // Iterate through all of the workspace root folders
   for (const folder of workspaceFolders) {
     // If the requested schema URI specifies a workspace root folder

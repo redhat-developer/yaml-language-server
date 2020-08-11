@@ -13,10 +13,7 @@ import {
   RequestType,
 } from 'vscode-languageserver';
 import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
-import {
-  getLanguageService,
-  LanguageSettings,
-} from '../../src/languageservice/yamlLanguageService';
+import { getLanguageService, LanguageSettings } from '../../src/languageservice/yamlLanguageService';
 import Strings = require('../../src/languageservice/utils/strings');
 import { URI } from 'vscode-uri';
 import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';
@@ -82,9 +79,7 @@ export const schemaRequestService = (uri: string): Thenable<string> => {
       return response.responseText;
     },
     (error: XHRResponse) => {
-      return Promise.reject(
-        error.responseText || getErrorStatusDescription(error.status) || error.toString()
-      );
+      return Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString());
     }
   );
 };

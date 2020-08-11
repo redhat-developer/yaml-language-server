@@ -4,12 +4,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import {
-  YAMLSchemaService,
-  CustomSchemaProvider,
-  SchemaAdditions,
-  SchemaDeletions,
-} from './services/yamlSchemaService';
+import { YAMLSchemaService, CustomSchemaProvider, SchemaAdditions, SchemaDeletions } from './services/yamlSchemaService';
 import {
   TextDocument,
   Position,
@@ -29,10 +24,7 @@ import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import {
-  getLanguageService as getJSONLanguageService,
-  JSONWorkerContribution,
-} from 'vscode-json-languageservice';
+import { getLanguageService as getJSONLanguageService, JSONWorkerContribution } from 'vscode-json-languageservice';
 import { findDefinition } from './services/yamlDefinition';
 
 export interface LanguageSettings {
@@ -54,9 +46,7 @@ export interface PromiseConstructor {
    * and a reject callback used to reject the promise with a provided reason or error.
    */
   // tslint:disable-next-line: no-any
-  new <T>(
-    executor: (resolve: (value?: T | Thenable<T>) => void, reject: (reason?: any) => void) => void
-  ): Thenable<T>;
+  new <T>(executor: (resolve: (value?: T | Thenable<T>) => void, reject: (reason?: any) => void) => void): Thenable<T>;
 
   /**
    * Creates a Promise that is resolved with an array of results when all of the provided Promises
@@ -94,10 +84,7 @@ export interface Thenable<R> {
     onrejected?: (reason: any) => TResult | Thenable<TResult>
   ): Thenable<TResult>;
   // tslint:disable-next-line: no-any
-  then<TResult>(
-    onfulfilled?: (value: R) => TResult | Thenable<TResult>,
-    onrejected?: (reason: any) => void
-  ): Thenable<TResult>;
+  then<TResult>(onfulfilled?: (value: R) => TResult | Thenable<TResult>, onrejected?: (reason: any) => void): Thenable<TResult>;
 }
 
 export interface WorkspaceContextService {
@@ -138,11 +125,7 @@ export interface CustomFormatterOptions {
 export interface LanguageService {
   configure(settings: LanguageSettings): void;
   registerCustomSchemaProvider(schemaProvider: CustomSchemaProvider): void;
-  doComplete(
-    document: TextDocument,
-    position: Position,
-    isKubernetes: boolean
-  ): Thenable<CompletionList>;
+  doComplete(document: TextDocument, position: Position, isKubernetes: boolean): Thenable<CompletionList>;
   doValidation(document: TextDocument, isKubernetes: boolean): Thenable<Diagnostic[]>;
   doHover(document: TextDocument, position: Position): Thenable<Hover | null>;
   findDocumentSymbols(document: TextDocument): SymbolInformation[];
@@ -195,9 +178,7 @@ export function getLanguageService(
     doValidation: yamlValidation.doValidation.bind(yamlValidation),
     doHover: hover.doHover.bind(hover),
     findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols),
-    findDocumentSymbols2: yamlDocumentSymbols.findHierarchicalDocumentSymbols.bind(
-      yamlDocumentSymbols
-    ),
+    findDocumentSymbols2: yamlDocumentSymbols.findHierarchicalDocumentSymbols.bind(yamlDocumentSymbols),
     resetSchema: (uri: string) => {
       return schemaService.onResourceChange(uri);
     },

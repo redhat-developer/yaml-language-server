@@ -34,9 +34,7 @@ export function endsWith(haystack: string, needle: string): boolean {
 
 export function convertSimple2RegExp(pattern: string): RegExp {
   const match = pattern.match(new RegExp('^/(.*?)/([gimy]*)$'));
-  return match
-    ? convertRegexString2RegExp(match[1], match[2])
-    : convertGlobalPattern2RegExp(pattern);
+  return match ? convertRegexString2RegExp(match[1], match[2]) : convertGlobalPattern2RegExp(pattern);
 }
 
 function convertGlobalPattern2RegExp(pattern: string): RegExp {

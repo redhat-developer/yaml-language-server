@@ -19,11 +19,7 @@ suite('Default Snippet Tests', () => {
   describe('Snippet Tests', function () {
     function parseSetup(content: string, position: number) {
       const testTextDocument = setupTextDocument(content);
-      return languageService.doComplete(
-        testTextDocument,
-        testTextDocument.positionAt(position),
-        false
-      );
+      return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
     }
 
     it('Snippet in array schema should autocomplete with -', (done) => {
@@ -192,10 +188,7 @@ suite('Default Snippet Tests', () => {
           assert.equal(result.items.length, 1);
           assert.equal(result.items[0].label, 'Array Array Snippet');
           // tslint:disable-next-line:max-line-length
-          assert.equal(
-            result.items[0].insertText,
-            '\n  apple:         \n    - - name: source\n        resource: $3      '
-          );
+          assert.equal(result.items[0].insertText, '\n  apple:         \n    - - name: source\n        resource: $3      ');
         })
         .then(done, done);
     });
@@ -208,10 +201,7 @@ suite('Default Snippet Tests', () => {
           assert.equal(result.items.length, 1);
           assert.equal(result.items[0].label, 'Array Array Snippet');
           // tslint:disable-next-line:max-line-length
-          assert.equal(
-            result.items[0].insertText,
-            'apple:     \n  - - name: source\n      resource: $3'
-          );
+          assert.equal(result.items[0].insertText, 'apple:     \n  - - name: source\n      resource: $3');
         })
         .then(done, done);
     });

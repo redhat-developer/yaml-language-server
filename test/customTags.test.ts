@@ -62,12 +62,7 @@ suite('Custom Tag tests Tests', () => {
 
     it('Allow multiple different custom tag types with multiple different uses', (done) => {
       const content = '!test\nhello: !test\n  world\nsequence: !ref\n  - item1';
-      const validator = parseSetup(content, [
-        '!test scalar',
-        '!test mapping',
-        '!ref sequence',
-        '!ref mapping',
-      ]);
+      const validator = parseSetup(content, ['!test scalar', '!test mapping', '!ref sequence', '!ref mapping']);
       validator
         .then(function (result) {
           assert.equal(result.length, 0);

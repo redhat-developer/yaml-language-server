@@ -18,10 +18,7 @@ import { YAMLDocDiagnostic } from '../utils/parseUtils';
  * @param yamlDiag A YAMLDocDiagnostic from the parser
  * @param textDocument TextDocument from the language server client
  */
-export const yamlDiagToLSDiag = (
-  yamlDiag: YAMLDocDiagnostic,
-  textDocument: TextDocument
-): Diagnostic => {
+export const yamlDiagToLSDiag = (yamlDiag: YAMLDocDiagnostic, textDocument: TextDocument): Diagnostic => {
   const range = {
     start: textDocument.positionAt(yamlDiag.location.start),
     end: textDocument.positionAt(yamlDiag.location.end),
@@ -55,10 +52,7 @@ export class YAMLValidation {
     }
   }
 
-  public async doValidation(
-    textDocument: TextDocument,
-    isKubernetes = false
-  ): Promise<Diagnostic[]> {
+  public async doValidation(textDocument: TextDocument, isKubernetes = false): Promise<Diagnostic[]> {
     if (!this.validationEnabled) {
       return this.promise.resolve([]);
     }

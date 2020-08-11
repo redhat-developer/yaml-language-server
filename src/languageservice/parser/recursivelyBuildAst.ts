@@ -20,11 +20,7 @@ export default function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode
     case Yaml.Kind.MAP: {
       const instance = <Yaml.YamlMap>node;
 
-      const result = new ObjectASTNodeImpl(
-        parent,
-        node.startPosition,
-        node.endPosition - node.startPosition
-      );
+      const result = new ObjectASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
 
       for (const mapping of instance.mappings) {
         result.properties.push(<PropertyASTNodeImpl>recursivelyBuildAst(result, mapping));
@@ -44,11 +40,7 @@ export default function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode
 
       // Technically, this is an arbitrary node in YAML
       // I doubt we would get a better string representation by parsing it
-      const keyNode = new StringASTNodeImpl(
-        result,
-        key.startPosition,
-        key.endPosition - key.startPosition
-      );
+      const keyNode = new StringASTNodeImpl(result, key.startPosition, key.endPosition - key.startPosition);
       keyNode.value = key.value;
 
       const valueNode = instance.value
@@ -64,11 +56,7 @@ export default function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode
     case Yaml.Kind.SEQ: {
       const instance = <Yaml.YAMLSequence>node;
 
-      const result = new ArrayASTNodeImpl(
-        parent,
-        instance.startPosition,
-        instance.endPosition - instance.startPosition
-      );
+      const result = new ArrayASTNodeImpl(parent, instance.startPosition, instance.endPosition - instance.startPosition);
 
       const count = 0;
       for (const item of instance.items) {
@@ -78,10 +66,7 @@ export default function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode
 
         // Be aware of https://github.com/nodeca/js-yaml/issues/321
         // Cannot simply work around it here because we need to know if we are in Flow or Block
-        const itemNode =
-          item === null
-            ? new NullASTNodeImpl(parent, instance.endPosition, 0)
-            : recursivelyBuildAst(result, item);
+        const itemNode = item === null ? new NullASTNodeImpl(parent, instance.endPosition, 0) : recursivelyBuildAst(result, item);
 
         // itemNode.location = count++;
         result.children.push(itemNode);
@@ -117,21 +102,12 @@ export default function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode
         'OFF',
       ];
       if (instance.plainScalar && possibleBooleanValues.indexOf(value.toString()) !== -1) {
-        return new BooleanASTNodeImpl(
-          parent,
-          parseYamlBoolean(value),
-          node.startPosition,
-          node.endPosition - node.startPosition
-        );
+        return new BooleanASTNodeImpl(parent, parseYamlBoolean(value), node.startPosition, node.endPosition - node.startPosition);
       }
 
       switch (type) {
         case Yaml.ScalarType.null: {
-          return new NullASTNodeImpl(
-            parent,
-            node.startPosition,
-            node.endPosition - node.startPosition
-          );
+          return new NullASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
         }
         case Yaml.ScalarType.bool: {
           return new BooleanASTNodeImpl(
@@ -142,31 +118,19 @@ export default function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode
           );
         }
         case Yaml.ScalarType.int: {
-          const result = new NumberASTNodeImpl(
-            parent,
-            node.startPosition,
-            node.endPosition - node.startPosition
-          );
+          const result = new NumberASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
           result.value = Yaml.parseYamlInteger(value);
           result.isInteger = true;
           return result;
         }
         case Yaml.ScalarType.float: {
-          const result = new NumberASTNodeImpl(
-            parent,
-            node.startPosition,
-            node.endPosition - node.startPosition
-          );
+          const result = new NumberASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
           result.value = Yaml.parseYamlFloat(value);
           result.isInteger = false;
           return result;
         }
         case Yaml.ScalarType.string: {
-          const result = new StringASTNodeImpl(
-            parent,
-            node.startPosition,
-            node.endPosition - node.startPosition
-          );
+          const result = new StringASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
           result.value = node.value;
           return result;
         }
@@ -183,11 +147,7 @@ export default function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode
       );
     }
     case Yaml.Kind.INCLUDE_REF: {
-      const result = new StringASTNodeImpl(
-        parent,
-        node.startPosition,
-        node.endPosition - node.startPosition
-      );
+      const result = new StringASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition);
       result.value = node.value;
       return result;
     }

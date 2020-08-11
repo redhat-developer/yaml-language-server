@@ -46,11 +46,7 @@ import {
   SchemaModificationNotification,
 } from './requestTypes';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
-import {
-  isRelativePath,
-  relativeToAbsolutePath,
-  workspaceFoldersChanged,
-} from './languageservice/utils/paths';
+import { isRelativePath, relativeToAbsolutePath, workspaceFoldersChanged } from './languageservice/utils/paths';
 import { URI } from 'vscode-uri';
 import { KUBERNETES_SCHEMA_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 // tslint:disable-next-line: no-any
@@ -271,12 +267,7 @@ function updateConfiguration() {
  * @param schema schema id
  * @param languageSettings current server settings
  */
-function configureSchemas(
-  uri: string,
-  fileMatch: string[],
-  schema: any,
-  languageSettings: LanguageSettings
-) {
+function configureSchemas(uri: string, fileMatch: string[], schema: any, languageSettings: LanguageSettings) {
   uri = checkSchemaURI(uri);
 
   if (schema === null) {
@@ -376,11 +367,7 @@ documents.listen(connection);
 
 const schemaRequestService = schemaRequestHandler.bind(this, connection);
 
-export const customLanguageService = getCustomLanguageService(
-  schemaRequestService,
-  workspaceContext,
-  []
-);
+export const customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
 
 /***********************
  * Connection listeners
@@ -415,8 +402,7 @@ connection.onInitialize(
       capabilities.textDocument.definition &&
       capabilities.textDocument.definition.linkSupport
     );
-    hasWorkspaceFolderCapability =
-      capabilities.workspace && !!capabilities.workspace.workspaceFolders;
+    hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
     return {
       capabilities: {
         textDocumentSync: documents.syncKind,
@@ -474,10 +460,7 @@ connection.onNotification(DynamicCustomSchemaRequestRegistration.type, () => {
  */
 connection.onDidChangeConfiguration((change) => {
   const settings = change.settings as Settings;
-  configureHttpRequests(
-    settings.http && settings.http.proxy,
-    settings.http && settings.http.proxyStrictSSL
-  );
+  configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
 
   specificValidatorPaths = [];
   if (settings.yaml) {
@@ -536,8 +519,7 @@ connection.onDidChangeConfiguration((change) => {
 
   // dynamically enable & disable the formatter
   if (clientDynamicRegisterSupport) {
-    const enableFormatter =
-      settings && settings.yaml && settings.yaml.format && settings.yaml.format.enable;
+    const enableFormatter = settings && settings.yaml && settings.yaml.format && settings.yaml.format.enable;
 
     if (enableFormatter) {
       if (!formatterRegistration) {
@@ -596,11 +578,7 @@ connection.onCompletion((textDocumentPosition) => {
   if (!textDocument) {
     return Promise.resolve(result);
   }
-  return customLanguageService.doComplete(
-    textDocument,
-    textDocumentPosition.position,
-    isKubernetes(textDocument)
-  );
+  return customLanguageService.doComplete(textDocument, textDocumentPosition.position, isKubernetes(textDocument));
 });
 
 /**
@@ -680,17 +658,14 @@ connection.onDefinition((params) => {
   }
 });
 
-connection.onRequest(
-  SchemaModificationNotification.type,
-  (modifications: SchemaAdditions | SchemaDeletions) => {
-    if (modifications.action === MODIFICATION_ACTIONS.add) {
-      customLanguageService.modifySchemaContent(modifications);
-    } else if (modifications.action === MODIFICATION_ACTIONS.delete) {
-      customLanguageService.deleteSchemaContent(modifications);
-    }
-    return Promise.resolve();
+connection.onRequest(SchemaModificationNotification.type, (modifications: SchemaAdditions | SchemaDeletions) => {
+  if (modifications.action === MODIFICATION_ACTIONS.add) {
+    customLanguageService.modifySchemaContent(modifications);
+  } else if (modifications.action === MODIFICATION_ACTIONS.delete) {
+    customLanguageService.deleteSchemaContent(modifications);
   }
-);
+  return Promise.resolve();
+});
 
 // Start listening for any messages from the client
 connection.listen();

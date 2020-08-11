@@ -140,10 +140,7 @@ suite('Hover Tests', () => {
       const firstHover = parseSetup(content, 3);
       firstHover.then(function (result) {
         assert.equal((result.contents as MarkedString[]).length, 1);
-        assert.equal(
-          result.contents[0],
-          'Contains custom hooks used to trigger other automated tools'
-        );
+        assert.equal(result.contents[0], 'Contains custom hooks used to trigger other automated tools');
       });
 
       const secondHover = parseSetup(content, 15);

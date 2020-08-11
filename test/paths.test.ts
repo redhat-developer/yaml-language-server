@@ -2,11 +2,7 @@ import * as assert from 'assert';
 import { WorkspaceFolder } from 'vscode-languageserver';
 import { join } from 'path';
 
-import {
-  relativeToAbsolutePath,
-  isRelativePath,
-  workspaceFoldersChanged,
-} from '../src/languageservice/utils/paths';
+import { relativeToAbsolutePath, isRelativePath, workspaceFoldersChanged } from '../src/languageservice/utils/paths';
 import { URI } from 'vscode-uri';
 
 class TestWorkspace {
@@ -194,10 +190,7 @@ suite('File path tests', () => {
       });
 
       it('Resolves "' + path2 + '" in multi-root workspace', () => {
-        assert.equal(
-          ws2.resolve(path2),
-          'file:///usr/testuser/projects/workspace/folder-2/file.json'
-        );
+        assert.equal(ws2.resolve(path2), 'file:///usr/testuser/projects/workspace/folder-2/file.json');
       });
 
       it('Resolves "' + path3 + '" in multi-root nested workspace', () => {
@@ -224,10 +217,7 @@ suite('File path tests', () => {
         if (process.platform !== 'win32') {
           this.skip();
         } else {
-          assert.equal(
-            ws1.resolve(path),
-            'file:///home/aFolder/some/strange/but/functional/path/file.json'
-          );
+          assert.equal(ws1.resolve(path), 'file:///home/aFolder/some/strange/but/functional/path/file.json');
         }
       });
 
@@ -235,10 +225,7 @@ suite('File path tests', () => {
         if (process.platform !== 'win32') {
           this.skip();
         } else {
-          assert.equal(
-            ws2.resolve(path),
-            'file:///usr/testuser/projects/workspace/some/strange/but/functional/path/file.json'
-          );
+          assert.equal(ws2.resolve(path), 'file:///usr/testuser/projects/workspace/some/strange/but/functional/path/file.json');
         }
       });
 
@@ -246,10 +233,7 @@ suite('File path tests', () => {
         if (process.platform !== 'win32') {
           this.skip();
         } else {
-          assert.equal(
-            ws3.resolve(path),
-            'file:///c%3A/Users/testuser/dev/potatoes/some/strange/but/functional/path/file.json'
-          );
+          assert.equal(ws3.resolve(path), 'file:///c%3A/Users/testuser/dev/potatoes/some/strange/but/functional/path/file.json');
         }
       });
     });
@@ -267,25 +251,13 @@ suite('File path tests', () => {
         });
         assert.equal(newWorkspaceFolders.length, 4);
         assert.equal(newWorkspaceFolders[0].name, 'folder-1');
-        assert.equal(
-          newWorkspaceFolders[0].uri,
-          'file:///usr/testuser/projects/workspace/folder-1/'
-        );
+        assert.equal(newWorkspaceFolders[0].uri, 'file:///usr/testuser/projects/workspace/folder-1/');
         assert.equal(newWorkspaceFolders[1].name, 'folder-2');
-        assert.equal(
-          newWorkspaceFolders[1].uri,
-          'file:///usr/testuser/projects/workspace/folder-2/'
-        );
+        assert.equal(newWorkspaceFolders[1].uri, 'file:///usr/testuser/projects/workspace/folder-2/');
         assert.equal(newWorkspaceFolders[2].name, 'folder-3');
-        assert.equal(
-          newWorkspaceFolders[2].uri,
-          'file:///usr/testuser/projects/workspace/folder-3/'
-        );
+        assert.equal(newWorkspaceFolders[2].uri, 'file:///usr/testuser/projects/workspace/folder-3/');
         assert.equal(newWorkspaceFolders[3].name, 'folder-4');
-        assert.equal(
-          newWorkspaceFolders[3].uri,
-          'file:///usr/testuser/projects/workspace/folder-4/'
-        );
+        assert.equal(newWorkspaceFolders[3].uri, 'file:///usr/testuser/projects/workspace/folder-4/');
       });
       it('workspaceFolders are not added if duplicate uri', () => {
         const newWorkspaceFolders = workspaceFoldersChanged(ws2.folders, {
@@ -299,20 +271,11 @@ suite('File path tests', () => {
         });
         assert.equal(newWorkspaceFolders.length, 3);
         assert.equal(newWorkspaceFolders[0].name, 'folder-1');
-        assert.equal(
-          newWorkspaceFolders[0].uri,
-          'file:///usr/testuser/projects/workspace/folder-1/'
-        );
+        assert.equal(newWorkspaceFolders[0].uri, 'file:///usr/testuser/projects/workspace/folder-1/');
         assert.equal(newWorkspaceFolders[1].name, 'folder-2');
-        assert.equal(
-          newWorkspaceFolders[1].uri,
-          'file:///usr/testuser/projects/workspace/folder-2/'
-        );
+        assert.equal(newWorkspaceFolders[1].uri, 'file:///usr/testuser/projects/workspace/folder-2/');
         assert.equal(newWorkspaceFolders[2].name, 'folder-3');
-        assert.equal(
-          newWorkspaceFolders[2].uri,
-          'file:///usr/testuser/projects/workspace/folder-3/'
-        );
+        assert.equal(newWorkspaceFolders[2].uri, 'file:///usr/testuser/projects/workspace/folder-3/');
       });
       it('workspaceFolders are removed correctly', () => {
         const newWorkspaceFolders = workspaceFoldersChanged(ws2.folders, {
@@ -326,15 +289,9 @@ suite('File path tests', () => {
         });
         assert.equal(newWorkspaceFolders.length, 2);
         assert.equal(newWorkspaceFolders[0].name, 'folder-1');
-        assert.equal(
-          newWorkspaceFolders[0].uri,
-          'file:///usr/testuser/projects/workspace/folder-1/'
-        );
+        assert.equal(newWorkspaceFolders[0].uri, 'file:///usr/testuser/projects/workspace/folder-1/');
         assert.equal(newWorkspaceFolders[1].name, 'folder-2');
-        assert.equal(
-          newWorkspaceFolders[1].uri,
-          'file:///usr/testuser/projects/workspace/folder-2/'
-        );
+        assert.equal(newWorkspaceFolders[1].uri, 'file:///usr/testuser/projects/workspace/folder-2/');
       });
       it('workspaceFolders empty event does nothing', () => {
         const newWorkspaceFolders = workspaceFoldersChanged(ws2.folders, {
@@ -343,20 +300,11 @@ suite('File path tests', () => {
         });
         assert.equal(newWorkspaceFolders.length, 3);
         assert.equal(newWorkspaceFolders[0].name, 'folder-1');
-        assert.equal(
-          newWorkspaceFolders[0].uri,
-          'file:///usr/testuser/projects/workspace/folder-1/'
-        );
+        assert.equal(newWorkspaceFolders[0].uri, 'file:///usr/testuser/projects/workspace/folder-1/');
         assert.equal(newWorkspaceFolders[1].name, 'folder-2');
-        assert.equal(
-          newWorkspaceFolders[1].uri,
-          'file:///usr/testuser/projects/workspace/folder-2/'
-        );
+        assert.equal(newWorkspaceFolders[1].uri, 'file:///usr/testuser/projects/workspace/folder-2/');
         assert.equal(newWorkspaceFolders[2].name, 'folder-3');
-        assert.equal(
-          newWorkspaceFolders[2].uri,
-          'file:///usr/testuser/projects/workspace/folder-3/'
-        );
+        assert.equal(newWorkspaceFolders[2].uri, 'file:///usr/testuser/projects/workspace/folder-3/');
       });
     });
   });

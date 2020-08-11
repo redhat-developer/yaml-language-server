@@ -9,18 +9,12 @@ suite('YAML parser', () => {
   describe('YAML parser', function () {
     it('parse emtpy text', () => {
       const parsedDocument = parse('');
-      assert(
-        parsedDocument.documents.length === 0,
-        'A document has been created for an empty text'
-      );
+      assert(parsedDocument.documents.length === 0, 'A document has been created for an empty text');
     });
 
     it('parse only comment', () => {
       const parsedDocument = parse('# a comment');
-      assert(
-        parsedDocument.documents.length === 1,
-        'No document has been created when there is a comment'
-      );
+      assert(parsedDocument.documents.length === 1, 'No document has been created when there is a comment');
     });
 
     it('parse single document', () => {
@@ -124,9 +118,7 @@ suite('YAML parser', () => {
     });
 
     it('parse 2 documents with comment and a directive', () => {
-      const parsedDocument = parse(
-        '%TAG demo\n---\n# a comment\ntest\n---\n# a second comment\ntest2'
-      );
+      const parsedDocument = parse('%TAG demo\n---\n# a comment\ntest\n---\n# a second comment\ntest2');
       assert(
         parsedDocument.documents.length === 2,
         `2 documents should be available but there are ${parsedDocument.documents.length}`

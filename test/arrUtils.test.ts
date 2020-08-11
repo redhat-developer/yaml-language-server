@@ -2,11 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {
-  removeDuplicates,
-  getLineOffsets,
-  removeDuplicatesObj,
-} from '../src/languageservice/utils/arrUtils';
+import { removeDuplicates, getLineOffsets, removeDuplicatesObj } from '../src/languageservice/utils/arrUtils';
 import * as assert from 'assert';
 
 suite('Array Utils Tests', () => {

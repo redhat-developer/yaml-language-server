@@ -61,9 +61,7 @@ export const schemaRequestHandler = (connection: IConnection, uri: string): Then
         return response.responseText;
       },
       (error: XHRResponse) => {
-        return Promise.reject(
-          error.responseText || getErrorStatusDescription(error.status) || error.toString()
-        );
+        return Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString());
       }
     );
   }

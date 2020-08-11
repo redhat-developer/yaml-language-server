@@ -57,11 +57,7 @@ export function removeDuplicatesObj(objArray) {
 
 export function matchOffsetToDocument(offset: number, jsonDocuments) {
   for (const jsonDoc of jsonDocuments.documents) {
-    if (
-      jsonDoc.root &&
-      jsonDoc.root.offset <= offset &&
-      jsonDoc.root.length + jsonDoc.root.offset >= offset
-    ) {
+    if (jsonDoc.root && jsonDoc.root.offset <= offset && jsonDoc.root.length + jsonDoc.root.offset >= offset) {
       return jsonDoc;
     }
   }

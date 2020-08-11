@@ -17,9 +17,7 @@ import {
 } from './utils/errorMessages';
 import * as assert from 'assert';
 
-const languageSettingsSetup = new ServiceSetup()
-  .withValidate()
-  .withCustomTags(['!Test', '!Ref sequence']);
+const languageSettingsSetup = new ServiceSetup().withValidate().withCustomTags(['!Test', '!Ref sequence']);
 const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
 
 // Defines a Mocha test suite to group tests of similar kind together
@@ -315,8 +313,7 @@ suite('Validation Tests', () => {
           },
         },
       });
-      const content =
-        'analytics: true\ncwd: this\nscripts:\n  preinstall: test1\n  postinstall: test2';
+      const content = 'analytics: true\ncwd: this\nscripts:\n  preinstall: test1\n  postinstall: test2';
       const validator = parseSetup(content);
       validator
         .then(function (result) {
@@ -453,8 +450,7 @@ suite('Validation Tests', () => {
           },
         },
       });
-      const content =
-        'default: &DEFAULT\n  name: Anchor\nanchor_test:\n  <<: *DEFAULT\nanchor_test2:\n  <<: *DEFAULT';
+      const content = 'default: &DEFAULT\n  name: Anchor\nanchor_test:\n  <<: *DEFAULT\nanchor_test2:\n  <<: *DEFAULT';
       const validator = parseSetup(content);
       validator
         .then(function (result) {
@@ -730,10 +726,7 @@ suite('Validation Tests', () => {
         .then(function (result) {
           assert.equal(result.length, 2);
           // eslint-disable-next-line
-          assert.equal(
-            result[1].message,
-            `Value is not accepted. Valid values: "ImageStreamImport", "ImageStreamLayers".`
-          );
+          assert.equal(result[1].message, `Value is not accepted. Valid values: "ImageStreamImport", "ImageStreamLayers".`);
         })
         .then(done, done);
     });

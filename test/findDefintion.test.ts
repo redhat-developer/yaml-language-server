@@ -12,10 +12,7 @@ suite('FindDefintion Tests', () => {
   describe('Jump to defintion', function () {
     function findDefinitions(content: string, position: number) {
       const testTextDocument = setupTextDocument(content);
-      return languageService.findDefinition(
-        testTextDocument,
-        testTextDocument.positionAt(position)
-      );
+      return languageService.findDefinition(testTextDocument, testTextDocument.positionAt(position));
     }
 
     it('Find source defintion', (done) => {

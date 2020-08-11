@@ -31,10 +31,7 @@ export interface IRange {
 
 const formats = {
   'color-hex': {
-    errorMessage: localize(
-      'colorHexFormatWarning',
-      'Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.'
-    ),
+    errorMessage: localize('colorHexFormatWarning', 'Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.'),
     pattern: /^#([0-9A-Fa-f]{3,4}|([0-9A-Fa-f]{2}){3,4})$/,
   },
   'date-time': {
@@ -63,14 +60,7 @@ export interface IProblem {
 }
 
 export abstract class ASTNodeImpl {
-  public abstract readonly type:
-    | 'object'
-    | 'property'
-    | 'array'
-    | 'number'
-    | 'boolean'
-    | 'null'
-    | 'string';
+  public abstract readonly type: 'object' | 'property' | 'array' | 'number' | 'boolean' | 'null' | 'string';
 
   public offset: number;
   public length: number;
@@ -323,12 +313,7 @@ export class ValidationResult {
   }
 
   public mergeEnumValues(validationResult: ValidationResult): void {
-    if (
-      !this.enumValueMatch &&
-      !validationResult.enumValueMatch &&
-      this.enumValues &&
-      validationResult.enumValues
-    ) {
+    if (!this.enumValueMatch && !validationResult.enumValueMatch && this.enumValues && validationResult.enumValues) {
       this.enumValues = this.enumValues.concat(validationResult.enumValues);
       for (const error of this.problems) {
         if (error.code === ErrorCode.EnumValueMismatch) {
@@ -413,8 +398,7 @@ export function getNodePath(node: ASTNode): JSONPath {
 
 export function contains(node: ASTNode, offset: number, includeRightBound = false): boolean {
   return (
-    (offset >= node.offset && offset < node.offset + node.length) ||
-    (includeRightBound && offset === node.offset + node.length)
+    (offset >= node.offset && offset < node.offset + node.length) || (includeRightBound && offset === node.offset + node.length)
   );
 }
 
@@ -457,13 +441,7 @@ export class JSONDocument {
   public validate(textDocument: TextDocument, schema: JSONSchema): Diagnostic[] {
     if (this.root && schema) {
       const validationResult = new ValidationResult(this.isKubernetes);
-      validate(
-        this.root,
-        schema,
-        validationResult,
-        NoOpSchemaCollector.instance,
-        this.isKubernetes
-      );
+      validate(this.root, schema, validationResult, NoOpSchemaCollector.instance, this.isKubernetes);
       return validationResult.problems.map((p) => {
         const range = Range.create(
           textDocument.positionAt(p.location.offset),
@@ -475,20 +453,10 @@ export class JSONDocument {
     return null;
   }
 
-  public getMatchingSchemas(
-    schema: JSONSchema,
-    focusOffset = -1,
-    exclude: ASTNode = null
-  ): IApplicableSchema[] {
+  public getMatchingSchemas(schema: JSONSchema, focusOffset = -1, exclude: ASTNode = null): IApplicableSchema[] {
     const matchingSchemas = new SchemaCollector(focusOffset, exclude);
     if (this.root && schema) {
-      validate(
-        this.root,
-        schema,
-        new ValidationResult(this.isKubernetes),
-        matchingSchemas,
-        this.isKubernetes
-      );
+      validate(this.root, schema, new ValidationResult(this.isKubernetes), matchingSchemas, this.isKubernetes);
     }
     return matchingSchemas.schemas;
   }
@@ -537,11 +505,7 @@ function validate(
           severity: DiagnosticSeverity.Warning,
           message:
             schema.errorMessage ||
-            localize(
-              'typeArrayMismatchWarning',
-              'Incorrect type. Expected one of {0}.',
-              (<string[]>schema.type).join(', ')
-            ),
+            localize('typeArrayMismatchWarning', 'Incorrect type. Expected one of {0}.', (<string[]>schema.type).join(', ')),
         });
       }
     } else if (schema.type) {
@@ -549,9 +513,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message:
-            schema.errorMessage ||
-            localize('typeMismatchWarning', 'Incorrect type. Expected "{0}".', schema.type),
+          message: schema.errorMessage || localize('typeMismatchWarning', 'Incorrect type. Expected "{0}".', schema.type),
         });
       }
     }
@@ -602,20 +564,9 @@ function validate(
             matchingSchemas: subMatchingSchemas,
           };
         } else if (isKubernetes) {
-          bestMatch = alternativeComparison(
-            subValidationResult,
-            bestMatch,
-            subSchema,
-            subMatchingSchemas
-          );
+          bestMatch = alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         } else {
-          bestMatch = genericComparison(
-            maxOneMatch,
-            subValidationResult,
-            bestMatch,
-            subSchema,
-            subMatchingSchemas
-          );
+          bestMatch = genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         }
       }
 
@@ -623,17 +574,13 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
-          message: localize(
-            'oneOfWarning',
-            'Matches multiple schemas when only one must validate.'
-          ),
+          message: localize('oneOfWarning', 'Matches multiple schemas when only one must validate.'),
         });
       }
       if (bestMatch !== null) {
         validationResult.merge(bestMatch.validationResult);
         validationResult.propertiesMatches += bestMatch.validationResult.propertiesMatches;
-        validationResult.propertiesValueMatches +=
-          bestMatch.validationResult.propertiesValueMatches;
+        validationResult.propertiesValueMatches += bestMatch.validationResult.propertiesValueMatches;
         matchingSchemas.merge(bestMatch.matchingSchemas);
       }
       return matches.length;
@@ -657,11 +604,7 @@ function validate(
       matchingSchemas.merge(subMatchingSchemas);
     };
 
-    const testCondition = (
-      ifSchema: JSONSchemaRef,
-      thenSchema?: JSONSchemaRef,
-      elseSchema?: JSONSchemaRef
-    ) => {
+    const testCondition = (ifSchema: JSONSchemaRef, thenSchema?: JSONSchemaRef, elseSchema?: JSONSchemaRef) => {
       const subSchema = asSchema(ifSchema);
       const subValidationResult = new ValidationResult(isKubernetes);
       const subMatchingSchemas = matchingSchemas.newSub();
@@ -721,9 +664,7 @@ function validate(
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
           code: ErrorCode.EnumValueMismatch,
-          message:
-            schema.errorMessage ||
-            localize('constWarning', 'Value must be {0}.', JSON.stringify(schema.const)),
+          message: schema.errorMessage || localize('constWarning', 'Value must be {0}.', JSON.stringify(schema.const)),
         });
         validationResult.enumValueMatch = false;
       } else {
@@ -754,18 +695,11 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: localize(
-            'multipleOfWarning',
-            'Value is not divisible by {0}.',
-            schema.multipleOf
-          ),
+          message: localize('multipleOfWarning', 'Value is not divisible by {0}.', schema.multipleOf),
         });
       }
     }
-    function getExclusiveLimit(
-      limit: number | undefined,
-      exclusive: boolean | number | undefined
-    ): number | undefined {
+    function getExclusiveLimit(limit: number | undefined, exclusive: boolean | number | undefined): number | undefined {
       if (isNumber(exclusive)) {
         return exclusive;
       }
@@ -774,10 +708,7 @@ function validate(
       }
       return undefined;
     }
-    function getLimit(
-      limit: number | undefined,
-      exclusive: boolean | number | undefined
-    ): number | undefined {
+    function getLimit(limit: number | undefined, exclusive: boolean | number | undefined): number | undefined {
       if (!isBoolean(exclusive) || !exclusive) {
         return limit;
       }
@@ -788,11 +719,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize(
-          'exclusiveMinimumWarning',
-          'Value is below the exclusive minimum of {0}.',
-          exclusiveMinimum
-        ),
+        message: localize('exclusiveMinimumWarning', 'Value is below the exclusive minimum of {0}.', exclusiveMinimum),
       });
     }
     const exclusiveMaximum = getExclusiveLimit(schema.maximum, schema.exclusiveMaximum);
@@ -800,11 +727,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize(
-          'exclusiveMaximumWarning',
-          'Value is above the exclusive maximum of {0}.',
-          exclusiveMaximum
-        ),
+        message: localize('exclusiveMaximumWarning', 'Value is above the exclusive maximum of {0}.', exclusiveMaximum),
       });
     }
     const minimum = getLimit(schema.minimum, schema.exclusiveMinimum);
@@ -835,11 +758,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize(
-          'minLengthWarning',
-          'String is shorter than the minimum length of {0}.',
-          schema.minLength
-        ),
+        message: localize('minLengthWarning', 'String is shorter than the minimum length of {0}.', schema.minLength),
       });
     }
 
@@ -847,11 +766,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize(
-          'maxLengthWarning',
-          'String is longer than the maximum length of {0}.',
-          schema.maxLength
-        ),
+        message: localize('maxLengthWarning', 'String is longer than the maximum length of {0}.', schema.maxLength),
       });
     }
 
@@ -864,11 +779,7 @@ function validate(
           message:
             schema.patternErrorMessage ||
             schema.errorMessage ||
-            localize(
-              'patternWarning',
-              'String does not match the pattern of "{0}".',
-              schema.pattern
-            ),
+            localize('patternWarning', 'String does not match the pattern of "{0}".', schema.pattern),
         });
       }
     }
@@ -949,13 +860,7 @@ function validate(
           for (let i = subSchemas.length; i < node.items.length; i++) {
             const itemValidationResult = new ValidationResult(isKubernetes);
             // tslint:disable-next-line: no-any
-            validate(
-              node.items[i],
-              <any>schema.additionalItems,
-              itemValidationResult,
-              matchingSchemas,
-              isKubernetes
-            );
+            validate(node.items[i], <any>schema.additionalItems, itemValidationResult, matchingSchemas, isKubernetes);
             validationResult.mergePropertyMatch(itemValidationResult);
             validationResult.mergeEnumValues(itemValidationResult);
           }
@@ -987,13 +892,7 @@ function validate(
     if (containsSchema) {
       const doesContain = node.items.some((item) => {
         const itemValidationResult = new ValidationResult(isKubernetes);
-        validate(
-          item,
-          containsSchema,
-          itemValidationResult,
-          NoOpSchemaCollector.instance,
-          isKubernetes
-        );
+        validate(item, containsSchema, itemValidationResult, NoOpSchemaCollector.instance, isKubernetes);
         return !itemValidationResult.hasProblems();
       });
 
@@ -1001,9 +900,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message:
-            schema.errorMessage ||
-            localize('requiredItemMissingWarning', 'Array does not contain required item.'),
+          message: schema.errorMessage || localize('requiredItemMissingWarning', 'Array does not contain required item.'),
         });
       }
     }
@@ -1012,11 +909,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize(
-          'minItemsWarning',
-          'Array has too few items. Expected {0} or more.',
-          schema.minItems
-        ),
+        message: localize('minItemsWarning', 'Array has too few items. Expected {0} or more.', schema.minItems),
       });
     }
 
@@ -1024,11 +917,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize(
-          'maxItemsWarning',
-          'Array has too many items. Expected {0} or fewer.',
-          schema.maxItems
-        ),
+        message: localize('maxItemsWarning', 'Array has too many items. Expected {0} or fewer.', schema.maxItems),
       });
     }
 
@@ -1093,17 +982,11 @@ function validate(
       for (const propertyName of schema.required) {
         if (!seenKeys[propertyName]) {
           const keyNode = node.parent && node.parent.type === 'property' && node.parent.keyNode;
-          const location = keyNode
-            ? { offset: keyNode.offset, length: keyNode.length }
-            : { offset: node.offset, length: 1 };
+          const location = keyNode ? { offset: keyNode.offset, length: keyNode.length } : { offset: node.offset, length: 1 };
           validationResult.problems.push({
             location: location,
             severity: DiagnosticSeverity.Warning,
-            message: localize(
-              'MissingRequiredPropWarning',
-              'Missing property "{0}".',
-              propertyName
-            ),
+            message: localize('MissingRequiredPropWarning', 'Missing property "{0}".', propertyName),
           });
         }
       }
@@ -1133,12 +1016,7 @@ function validate(
                 },
                 severity: DiagnosticSeverity.Warning,
                 message:
-                  schema.errorMessage ||
-                  localize(
-                    'DisallowedExtraPropWarning',
-                    'Property {0} is not allowed.',
-                    propertyName
-                  ),
+                  schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
               });
             } else {
               validationResult.propertiesMatches++;
@@ -1146,13 +1024,7 @@ function validate(
             }
           } else {
             const propertyValidationResult = new ValidationResult(isKubernetes);
-            validate(
-              child,
-              propertySchema,
-              propertyValidationResult,
-              matchingSchemas,
-              isKubernetes
-            );
+            validate(child, propertySchema, propertyValidationResult, matchingSchemas, isKubernetes);
             validationResult.mergePropertyMatch(propertyValidationResult);
             validationResult.mergeEnumValues(propertyValidationResult);
           }
@@ -1179,12 +1051,7 @@ function validate(
                     },
                     severity: DiagnosticSeverity.Warning,
                     message:
-                      schema.errorMessage ||
-                      localize(
-                        'DisallowedExtraPropWarning',
-                        'Property {0} is not allowed.',
-                        propertyName
-                      ),
+                      schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
                   });
                 } else {
                   validationResult.propertiesMatches++;
@@ -1192,13 +1059,7 @@ function validate(
                 }
               } else {
                 const propertyValidationResult = new ValidationResult(isKubernetes);
-                validate(
-                  child,
-                  propertySchema,
-                  propertyValidationResult,
-                  matchingSchemas,
-                  isKubernetes
-                );
+                validate(child, propertySchema, propertyValidationResult, matchingSchemas, isKubernetes);
                 validationResult.mergePropertyMatch(propertyValidationResult);
                 validationResult.mergeEnumValues(propertyValidationResult);
               }
@@ -1214,13 +1075,7 @@ function validate(
         if (child) {
           const propertyValidationResult = new ValidationResult(isKubernetes);
           // tslint:disable-next-line: no-any
-          validate(
-            child,
-            <any>schema.additionalProperties,
-            propertyValidationResult,
-            matchingSchemas,
-            isKubernetes
-          );
+          validate(child, <any>schema.additionalProperties, propertyValidationResult, matchingSchemas, isKubernetes);
           validationResult.mergePropertyMatch(propertyValidationResult);
           validationResult.mergeEnumValues(propertyValidationResult);
         }
@@ -1246,12 +1101,7 @@ function validate(
               },
               severity: DiagnosticSeverity.Warning,
               message:
-                schema.errorMessage ||
-                localize(
-                  'DisallowedExtraPropWarning',
-                  'Property {0} is not allowed.',
-                  propertyName
-                ),
+                schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
             });
           }
         }
@@ -1263,11 +1113,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: localize(
-            'MaxPropWarning',
-            'Object has more properties than limit of {0}.',
-            schema.maxProperties
-          ),
+          message: localize('MaxPropWarning', 'Object has more properties than limit of {0}.', schema.maxProperties),
         });
       }
     }
@@ -1312,13 +1158,7 @@ function validate(
             const propertySchema = asSchema(propertyDep);
             if (propertySchema) {
               const propertyValidationResult = new ValidationResult(isKubernetes);
-              validate(
-                node,
-                propertySchema,
-                propertyValidationResult,
-                matchingSchemas,
-                isKubernetes
-              );
+              validate(node, propertySchema, propertyValidationResult, matchingSchemas, isKubernetes);
               validationResult.mergePropertyMatch(propertyValidationResult);
               validationResult.mergeEnumValues(propertyValidationResult);
             }
@@ -1332,13 +1172,7 @@ function validate(
       for (const f of node.properties) {
         const key = f.keyNode;
         if (key) {
-          validate(
-            key,
-            propertyNames,
-            validationResult,
-            NoOpSchemaCollector.instance,
-            isKubernetes
-          );
+          validate(key, propertyNames, validationResult, NoOpSchemaCollector.instance, isKubernetes);
         }
       }
     }
@@ -1363,23 +1197,12 @@ function validate(
   }
 
   //genericComparison tries to find the best matching schema using a generic comparison
-  function genericComparison(
-    maxOneMatch,
-    subValidationResult,
-    bestMatch,
-    subSchema,
-    subMatchingSchemas
-  ) {
-    if (
-      !maxOneMatch &&
-      !subValidationResult.hasProblems() &&
-      !bestMatch.validationResult.hasProblems()
-    ) {
+  function genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas) {
+    if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
       bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
-      bestMatch.validationResult.propertiesValueMatches +=
-        subValidationResult.propertiesValueMatches;
+      bestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
     } else {
       const compareResult = subValidationResult.compareGeneric(bestMatch.validationResult);
       if (compareResult > 0) {

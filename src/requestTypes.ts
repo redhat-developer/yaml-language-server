@@ -8,9 +8,7 @@ export namespace SchemaAssociationNotification {
 }
 
 export namespace DynamicCustomSchemaRequestRegistration {
-  export const type: NotificationType<{}, {}> = new NotificationType(
-    'yaml/registerCustomSchemaRequest'
-  );
+  export const type: NotificationType<{}, {}> = new NotificationType('yaml/registerCustomSchemaRequest');
 }
 
 export namespace VSCodeContentRequest {
@@ -30,7 +28,5 @@ export namespace ColorSymbolRequest {
 }
 
 export namespace SchemaModificationNotification {
-  export const type: RequestType<SchemaAdditions | SchemaDeletions, void, {}, {}> = new RequestType(
-    'json/schema/modify'
-  );
+  export const type: RequestType<SchemaAdditions | SchemaDeletions, void, {}, {}> = new RequestType('json/schema/modify');
 }

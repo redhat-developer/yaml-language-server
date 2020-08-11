@@ -6,10 +6,7 @@ import * as SchemaService from '../src/languageservice/services/yamlSchemaServic
 import * as JsonSchema from '../src/languageservice/jsonSchema';
 import url = require('url');
 import { XHRResponse, xhr } from 'request-light';
-import {
-  MODIFICATION_ACTIONS,
-  SchemaDeletions,
-} from '../src/languageservice/services/yamlSchemaService';
+import { MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
 const requestServiceMock = function (uri: string): Promise<string> {
@@ -459,10 +456,7 @@ suite('JSON Schema', () => {
   });
 
   test('Modifying schema works with kubernetes resolution', async () => {
-    const service = new SchemaService.YAMLSchemaService(
-      schemaRequestServiceForURL,
-      workspaceContext
-    );
+    const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
     service.registerExternalSchema(KUBERNETES_SCHEMA_URL);
 
     await service.addContent({
@@ -478,10 +472,7 @@ suite('JSON Schema', () => {
   });
 
   test('Deleting schema works with Kubernetes resolution', async () => {
-    const service = new SchemaService.YAMLSchemaService(
-      schemaRequestServiceForURL,
-      workspaceContext
-    );
+    const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
     service.registerExternalSchema(KUBERNETES_SCHEMA_URL);
 
     await service.deleteContent({
@@ -496,10 +487,7 @@ suite('JSON Schema', () => {
   });
 
   test('Adding a brand new schema', async () => {
-    const service = new SchemaService.YAMLSchemaService(
-      schemaRequestServiceForURL,
-      workspaceContext
-    );
+    const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
     service.saveSchema('hello_world', {
       enum: ['test1', 'test2'],
     });
@@ -509,10 +497,7 @@ suite('JSON Schema', () => {
   });
 
   test('Deleting an existing schema', async () => {
-    const service = new SchemaService.YAMLSchemaService(
-      schemaRequestServiceForURL,
-      workspaceContext
-    );
+    const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
     service.saveSchema('hello_world', {
       enum: ['test1', 'test2'],
     });
@@ -572,10 +557,7 @@ suite('JSON Schema', () => {
     });
 
     function checkReturnSchemaUrl(modeline: string, expectedResult: string) {
-      const service = new SchemaService.YAMLSchemaService(
-        schemaRequestServiceForURL,
-        workspaceContext
-      );
+      const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
       const yamlDoc = new parser.SingleYAMLDocument([]);
       yamlDoc.lineComments = [modeline];
       assert.equal(service.getSchemaFromModeline(yamlDoc), expectedResult);

@@ -11,12 +11,7 @@ const localize = nls.loadMessageBundle();
 import * as Yaml from 'yaml-ast-parser-custom-tags';
 
 import { JSONDocument } from './jsonParser07';
-import {
-  YAMLDocDiagnostic,
-  formatErrors,
-  formatWarnings,
-  customTagsToAdditionalOptions,
-} from '../utils/parseUtils';
+import { YAMLDocDiagnostic, formatErrors, formatWarnings, customTagsToAdditionalOptions } from '../utils/parseUtils';
 import recursivelyBuildAst from './recursivelyBuildAst';
 import { getLineStartPositions } from '../utils/documentPositionCalculator';
 import { ASTNode } from '../jsonASTTypes';
@@ -55,11 +50,7 @@ export class SingleYAMLDocument extends JSONDocument {
   }
 }
 
-function nodeToSingleDoc(
-  yamlNode: Yaml.YAMLNode,
-  startPositions: number[],
-  text: string
-): SingleYAMLDocument {
+function nodeToSingleDoc(yamlNode: Yaml.YAMLNode, startPositions: number[], text: string): SingleYAMLDocument {
   const _doc = new SingleYAMLDocument(startPositions);
   _doc.root = recursivelyBuildAst(null, yamlNode);
 
@@ -115,9 +106,7 @@ export function parse(text: string, customTags = []): YAMLDocument {
 
   // Generate the SingleYAMLDocs from the AST nodes
   const startPositions = getLineStartPositions(text);
-  const yamlDocs: SingleYAMLDocument[] = yamlNodes.map((node) =>
-    nodeToSingleDoc(node, startPositions, text)
-  );
+  const yamlDocs: SingleYAMLDocument[] = yamlNodes.map((node) => nodeToSingleDoc(node, startPositions, text));
 
   parseLineComments(text, yamlDocs);
 

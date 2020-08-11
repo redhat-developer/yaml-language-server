@@ -9,8 +9,7 @@ import { MarkedString } from '../src';
 
 const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
-const uri =
-  'https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.17.0-standalone-strict/all.json';
+const uri = 'https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.17.0-standalone-strict/all.json';
 const languageSettings: LanguageSettings = {
   schemas: [],
   validate: true,
@@ -195,11 +194,7 @@ suite('Kubernetes Integration Tests', () => {
     describe('doComplete', function () {
       function parseSetup(content: string, position) {
         const testTextDocument = setupTextDocument(content);
-        return languageService.doComplete(
-          testTextDocument,
-          testTextDocument.positionAt(position),
-          true
-        );
+        return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), true);
       }
 
       /**

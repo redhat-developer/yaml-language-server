@@ -4,12 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /* eslint-disable @typescript-eslint/no-var-requires */
-import {
-  SCHEMA_ID,
-  setupSchemaIDTextDocument,
-  configureLanguageService,
-  toFsPath,
-} from './utils/testHelper';
+import { SCHEMA_ID, setupSchemaIDTextDocument, configureLanguageService, toFsPath } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
@@ -21,11 +16,7 @@ const languageService = configureLanguageService(languageSettingsSetup.languageS
 suite('Auto Completion Tests', () => {
   function parseSetup(content: string, position) {
     const testTextDocument = setupSchemaIDTextDocument(content);
-    return languageService.doComplete(
-      testTextDocument,
-      testTextDocument.positionAt(position),
-      false
-    );
+    return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
   }
 
   afterEach(() => {
@@ -353,19 +344,9 @@ suite('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion(
-                'myOtherSample',
-                'myOtherSample: ${1:test}',
-                2,
-                2,
-                2,
-                9,
-                10,
-                2,
-                {
-                  documentation: '',
-                }
-              )
+              createExpectedCompletion('myOtherSample', 'myOtherSample: ${1:test}', 2, 2, 2, 9, 10, 2, {
+                documentation: '',
+              })
             );
           })
           .then(done, done);
@@ -543,19 +524,9 @@ suite('Auto Completion Tests', () => {
             );
             assert.deepEqual(
               result.items[3],
-              createExpectedCompletion(
-                'ImageStreamBuilder',
-                'ImageStreamBuilder',
-                0,
-                6,
-                0,
-                6,
-                12,
-                2,
-                {
-                  documentation: undefined,
-                }
-              )
+              createExpectedCompletion('ImageStreamBuilder', 'ImageStreamBuilder', 0, 6, 0, 6, 12, 2, {
+                documentation: undefined,
+              })
             );
           })
           .then(done, done);
@@ -1059,14 +1030,8 @@ suite('Auto Completion Tests', () => {
                 detail: 'Default value',
               })
             );
-            assert.deepEqual(
-              result.items[1],
-              createExpectedCompletion('Apple', 'Apple', 0, 11, 0, 11, 12, 2, {})
-            );
-            assert.deepEqual(
-              result.items[2],
-              createExpectedCompletion('Banana', 'Banana', 0, 11, 0, 11, 12, 2, {})
-            );
+            assert.deepEqual(result.items[1], createExpectedCompletion('Apple', 'Apple', 0, 11, 0, 11, 12, 2, {}));
+            assert.deepEqual(result.items[2], createExpectedCompletion('Banana', 'Banana', 0, 11, 0, 11, 12, 2, {}));
           })
           .then(done, done);
       });
@@ -1125,19 +1090,9 @@ suite('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion(
-                'helm',
-                'helm:\n             \tname: $1',
-                1,
-                14,
-                1,
-                16,
-                10,
-                2,
-                {
-                  documentation: '',
-                }
-              )
+              createExpectedCompletion('helm', 'helm:\n             \tname: $1', 1, 14, 1, 16, 10, 2, {
+                documentation: '',
+              })
             );
           })
           .then(done, done);
@@ -1153,19 +1108,9 @@ suite('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion(
-                'helm',
-                'helm:\n \t             \tname: $1',
-                1,
-                16,
-                1,
-                18,
-                10,
-                2,
-                {
-                  documentation: '',
-                }
-              )
+              createExpectedCompletion('helm', 'helm:\n \t             \tname: $1', 1, 16, 1, 18, 10, 2, {
+                documentation: '',
+              })
             );
           })
           .then(done, done);
@@ -1200,19 +1145,11 @@ suite('Auto Completion Tests', () => {
         const content = `${documentContent1}\n---\n- `;
         const completionDoc1 = parseSetup(content, documentContent1.length);
         completionDoc1.then(function (result) {
-          assert.equal(
-            result.items.length,
-            3,
-            `Expecting 3 items in completion but found ${result.items.length}`
-          );
+          assert.equal(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
           const completionDoc2 = parseSetup(content, content.length);
           completionDoc2
             .then(function (resultDoc2) {
-              assert.equal(
-                resultDoc2.items.length,
-                0,
-                `Expecting no items in completion but found ${resultDoc2.items.length}`
-              );
+              assert.equal(resultDoc2.items.length, 0, `Expecting no items in completion but found ${resultDoc2.items.length}`);
             })
             .then(done, done);
         }, done);
@@ -1240,19 +1177,9 @@ suite('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion(
-                'Default value',
-                '\n\t${1:KEY}: ${2:VALUE}\n',
-                0,
-                5,
-                0,
-                5,
-                9,
-                2,
-                {
-                  detail: 'Default value',
-                }
-              )
+              createExpectedCompletion('Default value', '\n\t${1:KEY}: ${2:VALUE}\n', 0, 5, 0, 5, 9, 2, {
+                detail: 'Default value',
+              })
             );
           })
           .then(done, done);

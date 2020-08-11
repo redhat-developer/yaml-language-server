@@ -39,19 +39,14 @@ function exceptionToDiagnostic(e: Yaml.YAMLException): YAMLDocDiagnostic {
  * into diagnostics for consumption by the server client.
  */
 export function formatErrors(exceptions: Yaml.YAMLException[]) {
-  return exceptions
-    .filter((e) => e.reason !== DUPLICATE_KEY_REASON && !e.isWarning)
-    .map((e) => exceptionToDiagnostic(e));
+  return exceptions.filter((e) => e.reason !== DUPLICATE_KEY_REASON && !e.isWarning).map((e) => exceptionToDiagnostic(e));
 }
 
 //Patch ontop of yaml-ast-parser to disable duplicate key message on merge key
 export function isDuplicateAndNotMergeKey(error: Yaml.YAMLException, yamlText: string) {
   const errorStart = error.mark.position;
   const errorEnd = error.mark.position + error.mark.column;
-  if (
-    error.reason === DUPLICATE_KEY_REASON &&
-    yamlText.substring(errorStart, errorEnd).startsWith('<<')
-  ) {
+  if (error.reason === DUPLICATE_KEY_REASON && yamlText.substring(errorStart, errorEnd).startsWith('<<')) {
     return false;
   }
   return true;
@@ -59,10 +54,7 @@ export function isDuplicateAndNotMergeKey(error: Yaml.YAMLException, yamlText: s
 
 export function formatWarnings(exceptions: Yaml.YAMLException[], text: string) {
   return exceptions
-    .filter(
-      (e) =>
-        (e.reason === DUPLICATE_KEY_REASON && isDuplicateAndNotMergeKey(e, text)) || e.isWarning
-    )
+    .filter((e) => (e.reason === DUPLICATE_KEY_REASON && isDuplicateAndNotMergeKey(e, text)) || e.isWarning)
     .map((e) => exceptionToDiagnostic(e));
 }
 
