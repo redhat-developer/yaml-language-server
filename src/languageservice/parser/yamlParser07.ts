@@ -11,12 +11,16 @@ const localize = nls.loadMessageBundle();
 import * as Yaml from 'yaml-ast-parser-custom-tags';
 
 import { JSONDocument } from './jsonParser07';
-import { YAMLDocDiagnostic, formatErrors, formatWarnings, customTagsToAdditionalOptions } from '../utils/parseUtils';
+import {
+  YAMLDocDiagnostic,
+  formatErrors,
+  formatWarnings,
+  customTagsToAdditionalOptions,
+} from '../utils/parseUtils';
 import recursivelyBuildAst from './recursivelyBuildAst';
 import { getLineStartPositions } from '../utils/documentPositionCalculator';
 import { ASTNode } from '../jsonASTTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
-import { emit } from 'process';
 
 const YAML_DIRECTIVE_PREFIX = '%';
 const YAML_COMMENT_PREFIX = '#';
@@ -27,52 +31,58 @@ const YAML_DATA_INSTANCE_SEPARATOR = '---';
  * and passed to the `parseYAML` caller.
  */
 export class SingleYAMLDocument extends JSONDocument {
-    private lines: number[];
-    public root: ASTNode;
-    public errors: YAMLDocDiagnostic[];
-    public warnings: YAMLDocDiagnostic[];
-    public isKubernetes: boolean;
-    public currentDocIndex: number;
-    public lineComments: string[];
+  private lines: number[];
+  public root: ASTNode;
+  public errors: YAMLDocDiagnostic[];
+  public warnings: YAMLDocDiagnostic[];
+  public isKubernetes: boolean;
+  public currentDocIndex: number;
+  public lineComments: string[];
 
-    constructor(lines: number[]) {
-        super(null, []);
-        this.lines = lines;
-        this.root = null;
-        this.errors = [];
-        this.warnings = [];
-        this.lineComments = [];
-    }
+  constructor(lines: number[]) {
+    super(null, []);
+    this.lines = lines;
+    this.root = null;
+    this.errors = [];
+    this.warnings = [];
+    this.lineComments = [];
+  }
 
-    public getSchemas(schema, doc, node) {
-        const matchingSchemas = [];
-        doc.validate(schema, matchingSchemas, node.start);
-        return matchingSchemas;
-    }
-
+  public getSchemas(schema, doc, node) {
+    const matchingSchemas = [];
+    doc.validate(schema, matchingSchemas, node.start);
+    return matchingSchemas;
+  }
 }
 
-function nodeToSingleDoc(yamlNode: Yaml.YAMLNode, startPositions: number[], text: string): SingleYAMLDocument {
-    const _doc = new SingleYAMLDocument(startPositions);
-    _doc.root = recursivelyBuildAst(null, yamlNode);
+function nodeToSingleDoc(
+  yamlNode: Yaml.YAMLNode,
+  startPositions: number[],
+  text: string
+): SingleYAMLDocument {
+  const _doc = new SingleYAMLDocument(startPositions);
+  _doc.root = recursivelyBuildAst(null, yamlNode);
 
-    if (!_doc.root) {
-        // TODO: When this is true, consider not pushing the other errors.
-        _doc.errors.push({
-            message: localize('Invalid symbol', 'Expected a YAML object, array or literal'),
-            //@ts-ignore
-            code: ErrorCode.Undefined,
-            location: { start: yamlNode.startPosition, end: yamlNode.endPosition }
-        });
-    }
+  if (!_doc.root) {
+    // TODO: When this is true, consider not pushing the other errors.
+    _doc.errors.push(({
+      message: localize('Invalid symbol', 'Expected a YAML object, array or literal'),
+      code: ErrorCode.Undefined,
+      location: { start: yamlNode.startPosition, end: yamlNode.endPosition },
+    } as unknown) as YAMLDocDiagnostic);
+  }
 
-    const errors = formatErrors(yamlNode.errors);
-    const warnings = formatWarnings(yamlNode.errors, text);
+  const errors = formatErrors(yamlNode.errors);
+  const warnings = formatWarnings(yamlNode.errors, text);
 
-    errors.forEach(e => {return _doc.errors.push(e);});
-    warnings.forEach(e => {return _doc.warnings.push(e);});
+  errors.forEach((e) => {
+    return _doc.errors.push(e);
+  });
+  warnings.forEach((e) => {
+    return _doc.warnings.push(e);
+  });
 
-    return _doc;
+  return _doc;
 }
 
 /**
@@ -80,16 +90,15 @@ function nodeToSingleDoc(yamlNode: Yaml.YAMLNode, startPositions: number[], text
  * to the `parseYAML` caller.
  */
 export class YAMLDocument {
-    public documents: SingleYAMLDocument[];
-    private errors: YAMLDocDiagnostic[];
-    private warnings: YAMLDocDiagnostic[];
+  public documents: SingleYAMLDocument[];
+  private errors: YAMLDocDiagnostic[];
+  private warnings: YAMLDocDiagnostic[];
 
-    constructor (documents: SingleYAMLDocument[]) {
-        this.documents = documents;
-        this.errors = [];
-        this.warnings = [];
-    }
-
+  constructor(documents: SingleYAMLDocument[]) {
+    this.documents = documents;
+    this.errors = [];
+    this.warnings = [];
+  }
 }
 
 /**
@@ -98,34 +107,36 @@ export class YAMLDocument {
  * for consumption via the language server.
  */
 export function parse(text: string, customTags = []): YAMLDocument {
-    const additionalOptions = customTagsToAdditionalOptions(customTags);
+  const additionalOptions = customTagsToAdditionalOptions(customTags);
 
-    // Parse the AST using `yaml-ast-parser-custom-tags`
-    const yamlNodes: Yaml.YAMLNode[] = [];
-    Yaml.loadAll(text, doc => yamlNodes.push(doc), additionalOptions);
+  // Parse the AST using `yaml-ast-parser-custom-tags`
+  const yamlNodes: Yaml.YAMLNode[] = [];
+  Yaml.loadAll(text, (doc) => yamlNodes.push(doc), additionalOptions);
 
-    // Generate the SingleYAMLDocs from the AST nodes
-    const startPositions = getLineStartPositions(text);
-    const yamlDocs: SingleYAMLDocument[] = yamlNodes.map(node => nodeToSingleDoc(node, startPositions, text));
-    
-    parseLineComments(text, yamlDocs);
+  // Generate the SingleYAMLDocs from the AST nodes
+  const startPositions = getLineStartPositions(text);
+  const yamlDocs: SingleYAMLDocument[] = yamlNodes.map((node) =>
+    nodeToSingleDoc(node, startPositions, text)
+  );
 
-    // Consolidate the SingleYAMLDocs
-    return new YAMLDocument(yamlDocs);
+  parseLineComments(text, yamlDocs);
+
+  // Consolidate the SingleYAMLDocs
+  return new YAMLDocument(yamlDocs);
 }
 
 function parseLineComments(text: string, yamlDocs: SingleYAMLDocument[]) {
-    const lines = text.split(/[\r\n]+/g);
-    let yamlDocCount = 0;
-    lines.forEach(line => {
-        if (line.startsWith(YAML_DIRECTIVE_PREFIX) && yamlDocCount === 0) {
-            yamlDocCount--;
-        }
-        if (line === YAML_DATA_INSTANCE_SEPARATOR) {
-            yamlDocCount++;
-        }
-        if (line.startsWith(YAML_COMMENT_PREFIX)) {
-            yamlDocs[yamlDocCount].lineComments.push(line);
-        }
-    });
+  const lines = text.split(/[\r\n]+/g);
+  let yamlDocCount = 0;
+  lines.forEach((line) => {
+    if (line.startsWith(YAML_DIRECTIVE_PREFIX) && yamlDocCount === 0) {
+      yamlDocCount--;
+    }
+    if (line === YAML_DATA_INSTANCE_SEPARATOR) {
+      yamlDocCount++;
+    }
+    if (line.startsWith(YAML_COMMENT_PREFIX)) {
+      yamlDocs[yamlDocCount].lineComments.push(line);
+    }
+  });
 }

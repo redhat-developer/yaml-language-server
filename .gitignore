@@ -4,3 +4,5 @@ node_modules/
 npm-debug.log
 .nyc_output
 out/server
+.DS_Store
+yarn-error.log

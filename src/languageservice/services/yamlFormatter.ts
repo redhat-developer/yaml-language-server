@@ -7,33 +7,35 @@
 
 import { TextDocument, Range, Position, TextEdit } from 'vscode-languageserver-types';
 import { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
+import * as prettier from 'prettier';
 
 export class YAMLFormatter {
+  private formatterEnabled = true;
 
-    private formatterEnabled: boolean = true;
+  public configure(shouldFormat: LanguageSettings): void {
+    if (shouldFormat) {
+      this.formatterEnabled = shouldFormat.format;
+    }
+  }
 
-    public configure (shouldFormat: LanguageSettings) {
-        if (shouldFormat) {
-            this.formatterEnabled = shouldFormat.format;
-        }
+  public format(document: TextDocument, options: CustomFormatterOptions): TextEdit[] {
+    if (!this.formatterEnabled) {
+      return [];
     }
 
-    public format (document: TextDocument, options: CustomFormatterOptions): TextEdit[] {
+    try {
+      const text = document.getText();
+      (options as prettier.Options).parser = 'yaml';
+      const formatted = prettier.format(text, options as prettier.Options);
 
-        if (!this.formatterEnabled) {
-            return [];
-        }
-
-        try {
-            const prettier = require('prettier');
-            const text = document.getText();
-
-            const formatted = prettier.format(text, Object.assign(options, { parser: 'yaml' }));
-
-            return [TextEdit.replace(Range.create(Position.create(0, 0), document.positionAt(text.length)), formatted)];
-        } catch (error) {
-            return [];
-        }
+      return [
+        TextEdit.replace(
+          Range.create(Position.create(0, 0), document.positionAt(text.length)),
+          formatted
+        ),
+      ];
+    } catch (error) {
+      return [];
     }
-
+  }
 }

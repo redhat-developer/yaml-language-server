@@ -14,37 +14,35 @@ import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONHover } from 'vscode-json-languageservice/lib/umd/services/jsonHover';
 
 export class YAMLHover {
+  private promise: PromiseConstructor;
+  private shouldHover: boolean;
+  private jsonHover;
 
-    private promise: PromiseConstructor;
-    private shouldHover: boolean;
-    private jsonHover;
+  constructor(schemaService: YAMLSchemaService, promiseConstructor: PromiseConstructor) {
+    this.promise = promiseConstructor || Promise;
+    this.shouldHover = true;
+    this.jsonHover = new JSONHover(schemaService, [], Promise);
+  }
 
-    constructor (schemaService: YAMLSchemaService, promiseConstructor: PromiseConstructor) {
-        this.promise = promiseConstructor || Promise;
-        this.shouldHover = true;
-        this.jsonHover = new JSONHover(schemaService, [], Promise);
+  public configure(languageSettings: LanguageSettings) {
+    if (languageSettings) {
+      this.shouldHover = languageSettings.hover;
+    }
+  }
+
+  public doHover(document: TextDocument, position: Position): Thenable<Hover> {
+    if (!this.shouldHover || !document) {
+      return this.promise.resolve(undefined);
+    }
+    const doc = parseYAML(document.getText());
+    const offset = document.offsetAt(position);
+    const currentDoc = matchOffsetToDocument(offset, doc);
+    if (currentDoc === null) {
+      return this.promise.resolve(undefined);
     }
 
-    public configure (languageSettings: LanguageSettings) {
-        if (languageSettings) {
-            this.shouldHover = languageSettings.hover;
-        }
-    }
-
-    public doHover (document: TextDocument, position: Position): Thenable<Hover> {
-
-        if (!this.shouldHover || !document) {
-            return this.promise.resolve(undefined);
-        }
-        const doc = parseYAML(document.getText());
-        const offset = document.offsetAt(position);
-        const currentDoc = matchOffsetToDocument(offset, doc);
-        if (currentDoc === null) {
-            return this.promise.resolve(undefined);
-        }
-
-        const currentDocIndex = doc.documents.indexOf(currentDoc);
-        currentDoc.currentDocIndex = currentDocIndex;
-        return this.jsonHover.doHover(document, position, currentDoc);
-    }
+    const currentDocIndex = doc.documents.indexOf(currentDoc);
+    currentDoc.currentDocIndex = currentDocIndex;
+    return this.jsonHover.doHover(document, position, currentDoc);
+  }
 }

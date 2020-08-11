@@ -12,7 +12,7 @@ node('rhel7'){
     stage ('build & test server'){
         def archive = "yaml-language-server-${env.BUILD_NUMBER}.tar.gz"
         sh "npm install"
-        sh "npm run compile"
+        sh "npm run build"
         sh "npm test"
         sh "tar -zcvf ${archive} ./out"
         sh "rsync -Pzrlt --rsh=ssh --protocol=28 ${archive}  ${UPLOAD_LOCATION}"

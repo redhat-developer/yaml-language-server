@@ -1,19 +1,19 @@
 version: ~> 1.0
 language: node_js
 node_js:
-- '12'
+  - '12'
 os:
-- osx
-- linux
+  - osx
+  - linux
 before_install:
-- if [ $TRAVIS_OS_NAME == "linux" ]; then export CXX="g++-4.9" CC="gcc-4.9" DISPLAY=:99.0;
-  sh -e /etc/init.d/xvfb start; sleep 3; fi
-- yarn global add typescript
+  - if [ $TRAVIS_OS_NAME == "linux" ]; then export CXX="g++-4.9" CC="gcc-4.9" DISPLAY=:99.0;
+    sh -e /etc/init.d/xvfb start; sleep 3; fi
+  - yarn global add typescript
 install:
-- yarn install
-- yarn run compile
+  - yarn install
+  - yarn run build
 after_script:
-- yarn run coveralls
+  - yarn run coveralls
 deploy:
   provider: npm
   email: gorkem.ercan@gmail.com

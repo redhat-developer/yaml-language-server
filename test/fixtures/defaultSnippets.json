@@ -1,127 +1,127 @@
 {
-    "type": "object",
-    "properties": {
-        "object": {
-            "type": "object",
-            "defaultSnippets": [
-                {
-                    "label": "Object item",
-                    "description": "Binds a key to a command for a given state",
-                    "body": { "key1": "$1", "key2": "$2" }
-                }
-            ],
-            "properties": {
-                "key": {
-                    "$ref": "#/properties/object"
-                }
-            }
-        },
-        "array": {
-            "type": "array",
-            "defaultSnippets": [
-                {
-                    "label": "My array item",
-                    "body": { "item1": "$1", "item2": "$2" }
-                }
-            ],
-            "items": { 
-                "item1": {
-                    "type": "string"
-                },
-                "item2": {
-                    "type": "string"
-                }
-            }
-        },
-        "string": {
-            "type": "string",
-            "defaultSnippets": [
-                {
-                    "label": "My string item",
-                    "bodyText": "test $1"
-                }
-            ]
-        },
-        "boolean": {
-            "type": "boolean",
-            "defaultSnippets": [
-                {
-                    "label": "My boolean item",
-                    "bodyText": "false"
-                }
-            ]
-        },
-        "longSnippet": {
-            "type": "object",
-            "defaultSnippets": [
-                {
-                    "label": "apply-manifests",
-                    "description": "Task",
-                    "body": {
-                      "name": "$1",
-                      "taskRef": {
-                        "name": "apply-manifests"
-                      },
-                      "resources": {
-                        "inputs": [
-                          {
-                            "name": "source",
-                            "resource": "$3"
-                          }
-                        ]
-                      },
-                      "params": [
-                        {
-                          "name": "manifest_dir",
-                          "value": "$2"
-                        }
-                      ]
-                    }
-                  }
-            ]
-        },
-        "arrayArraySnippet": {
-            "type": "object",
-            "defaultSnippets": [
-                {
-                    "label": "Array Array Snippet",
-                    "description": "Task",
-                    "body": {
-                          "apple": [
-                            [
-                              {
-                                "name": "source",
-                                "resource": "$3"
-                              }
-                            ]
-                          ]
-                    }
-                }
-            ]
-        },
-        "simpleBooleanString": {
-            "type": "object",
-            "defaultSnippets": [
-                {
-                    "label": "Simple boolean string",
-                    "description": "Simple boolean string insert",
-                    "body": {
-                          "test": "true"
-                    }
-                }
-            ]
-        },
-        "simpleBoolean": {
-            "type": "object",
-            "defaultSnippets": [
-                {
-                    "label": "Simple string",
-                    "description": "Simple string insert",
-                    "body": {
-                          "test": true
-                    }
-                }
-            ]
+  "type": "object",
+  "properties": {
+    "object": {
+      "type": "object",
+      "defaultSnippets": [
+        {
+          "label": "Object item",
+          "description": "Binds a key to a command for a given state",
+          "body": { "key1": "$1", "key2": "$2" }
         }
+      ],
+      "properties": {
+        "key": {
+          "$ref": "#/properties/object"
+        }
+      }
+    },
+    "array": {
+      "type": "array",
+      "defaultSnippets": [
+        {
+          "label": "My array item",
+          "body": { "item1": "$1", "item2": "$2" }
+        }
+      ],
+      "items": {
+        "item1": {
+          "type": "string"
+        },
+        "item2": {
+          "type": "string"
+        }
+      }
+    },
+    "string": {
+      "type": "string",
+      "defaultSnippets": [
+        {
+          "label": "My string item",
+          "bodyText": "test $1"
+        }
+      ]
+    },
+    "boolean": {
+      "type": "boolean",
+      "defaultSnippets": [
+        {
+          "label": "My boolean item",
+          "bodyText": "false"
+        }
+      ]
+    },
+    "longSnippet": {
+      "type": "object",
+      "defaultSnippets": [
+        {
+          "label": "apply-manifests",
+          "description": "Task",
+          "body": {
+            "name": "$1",
+            "taskRef": {
+              "name": "apply-manifests"
+            },
+            "resources": {
+              "inputs": [
+                {
+                  "name": "source",
+                  "resource": "$3"
+                }
+              ]
+            },
+            "params": [
+              {
+                "name": "manifest_dir",
+                "value": "$2"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "arrayArraySnippet": {
+      "type": "object",
+      "defaultSnippets": [
+        {
+          "label": "Array Array Snippet",
+          "description": "Task",
+          "body": {
+            "apple": [
+              [
+                {
+                  "name": "source",
+                  "resource": "$3"
+                }
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    "simpleBooleanString": {
+      "type": "object",
+      "defaultSnippets": [
+        {
+          "label": "Simple boolean string",
+          "description": "Simple boolean string insert",
+          "body": {
+            "test": "true"
+          }
+        }
+      ]
+    },
+    "simpleBoolean": {
+      "type": "object",
+      "defaultSnippets": [
+        {
+          "label": "Simple string",
+          "description": "Simple string insert",
+          "body": {
+            "test": true
+          }
+        }
+      ]
     }
+  }
 }

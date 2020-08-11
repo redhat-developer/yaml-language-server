@@ -1,17 +1,14 @@
 {
-	"compilerOptions": {
-		"forceConsistentCasingInFileNames": true,
-		"target": "es6",
-		"module": "commonjs",
-        "moduleResolution": "node",
-        "declaration": true,
-        "sourceMap": true,
-		"lib" : [ "es2016" ],
-		"outDir": "./out/server",
-        "alwaysStrict": true
-	},
-	"exclude": [
-		"node_modules",
-		"out"
-	]
+  "compilerOptions": {
+    "forceConsistentCasingInFileNames": true,
+    "target": "es6",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "declaration": true,
+    "sourceMap": true,
+    "lib": ["es2016"],
+    "outDir": "./out/server",
+    "alwaysStrict": true
+  },
+  "exclude": ["node_modules", "out"]
 }
