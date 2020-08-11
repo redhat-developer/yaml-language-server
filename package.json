@@ -51,6 +51,7 @@
     "coveralls": "^3.0.5",
     "eslint": "^7.2.0",
     "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-prettier": "^3.1.4",
     "mocha": "5.0.4",
     "mocha-lcov-reporter": "^1.3.0",
     "nyc": "^14.1.1",
@@ -66,10 +67,9 @@
     "test": "mocha --require ts-node/register --ui tdd ./test/*.test.ts",
     "coverage": "nyc mocha --require ts-node/register --require source-map-support/register --recursive --ui tdd ./test/*.test.ts",
     "coveralls": "nyc yarn test && nyc report --reporter=text-lcov | coveralls",
-    "lint": "eslint -c .eslintrc.js --ext .ts src",
-    "prettier-check": "yarn prettier --check .",
+    "lint": "eslint -c .eslintrc.js --ext .ts src test",
     "prettier-fix": "yarn prettier --write .",
-    "build": "yarn clean && yarn prettier-check && yarn lint && yarn compile"
+    "build": "yarn clean && yarn lint && yarn compile"
   },
   "nyc": {
     "extension": [
