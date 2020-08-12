@@ -66,7 +66,7 @@
     "watch": "tsc --watch -p .",
     "test": "mocha --require ts-node/register --ui tdd ./test/*.test.ts",
     "coverage": "nyc mocha --require ts-node/register --require source-map-support/register --recursive --ui tdd ./test/*.test.ts",
-    "coveralls": "nyc yarn test && nyc report --reporter=text-lcov | coveralls",
+    "coveralls": "nyc --reporter=lcov --reporter=text mocha --require ts-node/register --require source-map-support/register --recursive --ui tdd ./test/*.test.ts",
     "lint": "eslint -c .eslintrc.js --ext .ts src test",
     "prettier-fix": "yarn prettier --write .",
     "build": "yarn clean && yarn lint && yarn compile"
@@ -79,7 +79,9 @@
     "exclude": [
       "**/*.d.ts",
       "test/",
-      "out"
+      "out",
+      "coverage/",
+      ".eslintrc.js"
     ],
     "all": true
   }

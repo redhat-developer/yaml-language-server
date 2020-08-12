@@ -12,8 +12,6 @@ before_install:
 install:
   - yarn install
   - yarn run build
-after_script:
-  - yarn run coveralls
 deploy:
   provider: npm
   email: gorkem.ercan@gmail.com
