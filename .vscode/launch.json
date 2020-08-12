@@ -1,34 +1,25 @@
 {
-	"version": "0.2.0",
-	"configurations": [
-		// An attach configuration that attaches the debugger to a running server
-		{
-			"name": "Attach to server",
-			"type": "node",
-			"request": "attach",
-			"port": 6009,
-			"sourceMaps": true,
-			"outFiles": [ "${workspaceRoot}/out/server/**/*.ts" ],
-			"protocol": "inspector",
-			"trace": true
-		},
-		// A launch configuration that compiles the server and runs mocha unit tests
-		{
-			"type": "node",
-			"request": "launch",
-			"name": "Launch Tests",
-			"program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
-			"args": [
-				"-u",
-				"tdd",
-				"--timeout",
-				"999999",
-				"--colors",
-				"-r",
-				"ts-node/register",
-				"${workspaceRoot}/test/*.test.ts"
-			],
-			"preLaunchTask": "watch typescript"
-		}
-	]
+  "version": "0.2.0",
+  "configurations": [
+    // An attach configuration that attaches the debugger to a running server
+    {
+      "name": "Attach to server",
+      "type": "node",
+      "request": "attach",
+      "port": 6009,
+      "sourceMaps": true,
+      "outFiles": ["${workspaceRoot}/out/server/**/*.ts"],
+      "protocol": "inspector",
+      "trace": true
+    },
+    // A launch configuration that compiles the server and runs mocha unit tests
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Tests",
+      "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+      "args": ["-u", "tdd", "--timeout", "999999", "--colors", "-r", "ts-node/register", "${workspaceRoot}/test/*.test.ts"],
+      "preLaunchTask": "watch typescript"
+    }
+  ]
 }

@@ -1,0 +1,6 @@
+{
+  "arrowParens": "always",
+  "printWidth": 130,
+  "singleQuote": true,
+  "trailingComma": "es5"
+}

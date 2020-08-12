@@ -10,15 +10,11 @@
               "type": "string"
             }
           },
-          "required": [
-            "name"
-          ],
+          "required": ["name"],
           "type": "object"
         }
       },
-      "required": [
-        "helm"
-      ],
+      "required": ["helm"],
       "type": "object"
     }
   },
