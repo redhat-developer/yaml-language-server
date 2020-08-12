@@ -18,7 +18,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-18.04]
+        os: [macos-latest, windows-latest, ubuntu-latest]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -43,7 +43,7 @@ jobs:
       - name: Run Test
         uses: GabrielBB/xvfb-action@v1.0
         with:
-          run: yarn coverage --silent
+          run: yarn coveralls
       
         # Run Coveralls
       - name: Coveralls
