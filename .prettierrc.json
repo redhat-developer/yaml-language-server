@@ -4,5 +4,5 @@
   "printWidth": 130,
   "singleQuote": true,
   "trailingComma": "es5",
-  "endOfLine": "lf"
+  "endOfLine": "auto"
 }
