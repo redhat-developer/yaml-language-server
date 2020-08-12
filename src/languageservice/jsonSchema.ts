@@ -10,7 +10,7 @@ export interface JSONSchema {
   $schema?: string;
   type?: string | string[];
   title?: string;
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   default?: any;
   definitions?: { [name: string]: JSONSchema };
   description?: string;
@@ -39,16 +39,16 @@ export interface JSONSchema {
   allOf?: JSONSchemaRef[];
   oneOf?: JSONSchemaRef[];
   not?: JSONSchemaRef;
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   enum?: any[];
   format?: string;
 
   // schema draft 06
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const?: any;
   contains?: JSONSchemaRef;
   propertyNames?: JSONSchemaRef;
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   examples?: any[];
 
   // schema draft 07
@@ -63,7 +63,7 @@ export interface JSONSchema {
     label?: string;
     description?: string;
     markdownDescription?: string;
-    // tslint:disable-next-line: no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     body?: any;
     bodyText?: string;
   }[]; // VSCode extension: body: a object that will be converted to a JSON string. bodyText: text with \t and \n

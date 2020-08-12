@@ -171,7 +171,6 @@ suite('Default Snippet Tests', () => {
         .then(function (result) {
           assert.equal(result.items.length, 8); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[5].label, 'arrayArraySnippet');
-          // tslint:disable-next-line:max-line-length
           assert.equal(
             result.items[5].insertText,
             'arrayArraySnippet:\n  apple:         \n    - - name: source\n        resource: $3      '
@@ -187,7 +186,6 @@ suite('Default Snippet Tests', () => {
         .then(function (result) {
           assert.equal(result.items.length, 1);
           assert.equal(result.items[0].label, 'Array Array Snippet');
-          // tslint:disable-next-line:max-line-length
           assert.equal(result.items[0].insertText, '\n  apple:         \n    - - name: source\n        resource: $3      ');
         })
         .then(done, done);
@@ -200,7 +198,6 @@ suite('Default Snippet Tests', () => {
         .then(function (result) {
           assert.equal(result.items.length, 1);
           assert.equal(result.items[0].label, 'Array Array Snippet');
-          // tslint:disable-next-line:max-line-length
           assert.equal(result.items[0].insertText, 'apple:     \n  - - name: source\n      resource: $3');
         })
         .then(done, done);
@@ -213,7 +210,6 @@ suite('Default Snippet Tests', () => {
         .then(function (result) {
           assert.equal(result.items.length, 1);
           assert.equal(result.items[0].label, 'Simple boolean string');
-          // tslint:disable-next-line:max-line-length
           assert.equal(result.items[0].insertText, '\n  test: "true"');
         })
         .then(done, done);
@@ -226,7 +222,6 @@ suite('Default Snippet Tests', () => {
         .then(function (result) {
           assert.equal(result.items.length, 1);
           assert.equal(result.items[0].label, 'Simple string');
-          // tslint:disable-next-line:max-line-length
           assert.equal(result.items[0].insertText, '\n  test: true');
         })
         .then(done, done);

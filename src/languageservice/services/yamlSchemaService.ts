@@ -38,7 +38,7 @@ export interface SchemaAdditions {
   action: MODIFICATION_ACTIONS.add;
   path: string;
   key: string;
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   content: any;
 }
 
@@ -78,7 +78,7 @@ export class FilePatternAssociation {
 
 export class YAMLSchemaService extends JSONSchemaService {
   // To allow to use schemasById from super.
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [x: string]: any;
 
   private customSchemaProvider: CustomSchemaProvider | undefined;
@@ -461,9 +461,9 @@ export class YAMLSchemaService extends JSONSchemaService {
    * @param object a location in the JSON Schema
    * @param token the next token that you want to search for
    */
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private resolveNext(object: any, token: any) {
-    // tslint:disable-next-line: no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (Array.isArray(object) && isNaN(token)) {
       throw new Error('Expected a number after the array object');
     } else if (typeof object === 'object' && typeof token !== 'string') {
@@ -489,7 +489,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     return super.getOrAddSchemaHandle(id, unresolvedSchemaContent);
   }
 
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   loadSchema(schemaUri: string): Thenable<any> {
     return super.loadSchema(schemaUri);
   }

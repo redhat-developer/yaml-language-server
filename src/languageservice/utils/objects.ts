@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-// tslint:disable-next-line: no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function equals(one: any, other: any): boolean {
   if (one === other) {
     return true;
@@ -67,12 +67,12 @@ export function isDefined(val: any): val is object {
   return typeof val !== 'undefined';
 }
 
-// tslint:disable-next-line: no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isBoolean(val: any): val is boolean {
   return typeof val === 'boolean';
 }
 
-// tslint:disable-next-line: no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isString(val: any): val is string {
   return typeof val === 'string';
 }
