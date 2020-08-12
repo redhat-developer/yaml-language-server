@@ -43,8 +43,10 @@ jobs:
       - name: Run Test
         uses: GabrielBB/xvfb-action@v1.0
         with:
-          run: yarn test --silent
+          run: yarn coverage --silent
       
         # Run Coveralls
-      - name: Run Coveralls
-        run : yarn coveralls
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
