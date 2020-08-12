@@ -33,14 +33,18 @@ jobs:
 
       # Run install dependencies
       - name: Install dependencies
-        run: npm i
+        run: yarn
 
       # Build extension
       - name: Run build
-        run: npm run build
+        run: yarn build
 
       # Run tests
       - name: Run Test
         uses: GabrielBB/xvfb-action@v1.0
         with:
-          run: npm test --silent
+          run: yarn test --silent
+      
+        # Run Coveralls
+      - name: Run Coveralls
+        run : yarn coveralls
