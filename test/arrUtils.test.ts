@@ -2,69 +2,11 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { removeDuplicates, getLineOffsets, removeDuplicatesObj } from '../src/languageservice/utils/arrUtils';
+import { getLineOffsets, removeDuplicatesObj } from '../src/languageservice/utils/arrUtils';
 import * as assert from 'assert';
 
 suite('Array Utils Tests', () => {
   describe('Server - Array Utils', function () {
-    describe('removeDuplicates', function () {
-      it('Remove one duplicate with property', () => {
-        const obj1 = {
-          test_key: 'test_value',
-        };
-
-        const obj2 = {
-          test_key: 'test_value',
-        };
-
-        const arr = [obj1, obj2];
-        const prop = 'test_key';
-
-        const result = removeDuplicates(arr, prop);
-        assert.equal(result.length, 1);
-      });
-
-      it('Remove multiple duplicates with property', () => {
-        const obj1 = {
-          test_key: 'test_value',
-        };
-
-        const obj2 = {
-          test_key: 'test_value',
-        };
-
-        const obj3 = {
-          test_key: 'test_value',
-        };
-
-        const obj4 = {
-          another_key_too: 'test_value',
-        };
-
-        const arr = [obj1, obj2, obj3, obj4];
-        const prop = 'test_key';
-
-        const result = removeDuplicates(arr, prop);
-        assert.equal(result.length, 2);
-      });
-
-      it('Do NOT remove items without duplication', () => {
-        const obj1 = {
-          first_key: 'test_value',
-        };
-
-        const obj2 = {
-          second_key: 'test_value',
-        };
-
-        const arr = [obj1, obj2];
-        const prop = 'first_key';
-
-        const result = removeDuplicates(arr, prop);
-        assert.equal(result.length, 2);
-      });
-    });
-
     describe('getLineOffsets', function () {
       it('No offset', () => {
         const offsets = getLineOffsets('');

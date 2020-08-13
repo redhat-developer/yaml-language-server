@@ -3,20 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-export function removeDuplicates(arr, prop) {
-  const new_arr = [];
-  const lookup = {};
-
-  for (const i in arr) {
-    lookup[arr[i][prop]] = arr[i];
-  }
-
-  for (const i in lookup) {
-    new_arr.push(lookup[i]);
-  }
-
-  return new_arr;
-}
+import { YAMLDocument, SingleYAMLDocument } from '../parser/yamlParser07';
 
 export function getLineOffsets(textDocString: string): number[] {
   const lineOffsets: number[] = [];
@@ -40,7 +27,8 @@ export function getLineOffsets(textDocString: string): number[] {
   return lineOffsets;
 }
 
-export function removeDuplicatesObj(objArray) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function removeDuplicatesObj(objArray: any[]): any[] {
   const nonDuplicateSet = new Set();
   const nonDuplicateArr = [];
   for (const obj in objArray) {
@@ -55,7 +43,7 @@ export function removeDuplicatesObj(objArray) {
   return nonDuplicateArr;
 }
 
-export function matchOffsetToDocument(offset: number, jsonDocuments) {
+export function matchOffsetToDocument(offset: number, jsonDocuments: YAMLDocument): SingleYAMLDocument | null {
   for (const jsonDoc of jsonDocuments.documents) {
     if (jsonDoc.root && jsonDoc.root.offset <= offset && jsonDoc.root.length + jsonDoc.root.offset >= offset) {
       return jsonDoc;

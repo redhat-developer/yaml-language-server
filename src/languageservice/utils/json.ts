@@ -3,18 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface StringifySettings {
   newLineFirst: boolean;
   indentFirstObject: boolean;
   shouldIndentWithTab: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function stringifyObject(
-  obj: any,
+  obj: unknown,
   indent: string,
-  stringifyLiteral: (val: any) => string,
+  stringifyLiteral: (val: unknown) => string,
   settings: StringifySettings,
   depth = 0,
   consecutiveArrays = 0
@@ -70,7 +68,7 @@ export function stringifyObject(
   return stringifyLiteral(obj);
 }
 
-function preprendToObject(obj, consecutiveArrays) {
+function preprendToObject(obj: Record<string, unknown>, consecutiveArrays: number): Record<string, unknown> {
   const newObj = {};
   for (let i = 0; i < Object.keys(obj).length; i++) {
     const key = Object.keys(obj)[i];
