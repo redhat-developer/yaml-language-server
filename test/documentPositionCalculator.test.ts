@@ -66,7 +66,7 @@ suite('DocumentPositionCalculator Tests', () => {
       const result = getPosition(0, startPositions);
       assert.notEqual(result, undefined);
       assert.equal(result.line, 0);
-      assert.equal(result.column, 0);
+      assert.equal(result.character, 0);
     });
 
     it('getPosition when not found', () => {
@@ -76,7 +76,7 @@ suite('DocumentPositionCalculator Tests', () => {
       const result = getPosition(5, startPositions);
       assert.notEqual(result, undefined);
       assert.equal(result.line, 0);
-      assert.equal(result.column, 5);
+      assert.equal(result.character, 5);
     });
   });
 });

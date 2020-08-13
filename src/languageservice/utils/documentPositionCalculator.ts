@@ -5,11 +5,13 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-export function insertionPointReturnValue(pt: number) {
+import { Position } from 'vscode-languageserver-types';
+
+export function insertionPointReturnValue(pt: number): number {
   return -pt - 1;
 }
 
-export function binarySearch(array: number[], sought: number) {
+export function binarySearch(array: number[], sought: number): number {
   let lower = 0;
   let upper = array.length - 1;
 
@@ -34,7 +36,7 @@ export function binarySearch(array: number[], sought: number) {
   }
 }
 
-export function getLineStartPositions(text: string) {
+export function getLineStartPositions(text: string): number[] {
   const lineStartPositions = [0];
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
@@ -54,7 +56,7 @@ export function getLineStartPositions(text: string) {
   return lineStartPositions;
 }
 
-export function getPosition(pos: number, lineStartPositions: number[]) {
+export function getPosition(pos: number, lineStartPositions: number[]): Position {
   let line = binarySearch(lineStartPositions, pos);
 
   if (line < 0) {
@@ -62,5 +64,5 @@ export function getPosition(pos: number, lineStartPositions: number[]) {
     line = insertionPoint - 1;
   }
 
-  return { line, column: pos - lineStartPositions[line] };
+  return Position.create(line, pos - lineStartPositions[line]);
 }

@@ -38,12 +38,12 @@ function exceptionToDiagnostic(e: Yaml.YAMLException): YAMLDocDiagnostic {
  * We have to convert the exceptions returned by the AST parser
  * into diagnostics for consumption by the server client.
  */
-export function formatErrors(exceptions: Yaml.YAMLException[]) {
+export function formatErrors(exceptions: Yaml.YAMLException[]): YAMLDocDiagnostic[] {
   return exceptions.filter((e) => e.reason !== DUPLICATE_KEY_REASON && !e.isWarning).map((e) => exceptionToDiagnostic(e));
 }
 
 //Patch ontop of yaml-ast-parser to disable duplicate key message on merge key
-export function isDuplicateAndNotMergeKey(error: Yaml.YAMLException, yamlText: string) {
+export function isDuplicateAndNotMergeKey(error: Yaml.YAMLException, yamlText: string): boolean {
   const errorStart = error.mark.position;
   const errorEnd = error.mark.position + error.mark.column;
   if (error.reason === DUPLICATE_KEY_REASON && yamlText.substring(errorStart, errorEnd).startsWith('<<')) {
@@ -52,13 +52,13 @@ export function isDuplicateAndNotMergeKey(error: Yaml.YAMLException, yamlText: s
   return true;
 }
 
-export function formatWarnings(exceptions: Yaml.YAMLException[], text: string) {
+export function formatWarnings(exceptions: Yaml.YAMLException[], text: string): YAMLDocDiagnostic[] {
   return exceptions
     .filter((e) => (e.reason === DUPLICATE_KEY_REASON && isDuplicateAndNotMergeKey(e, text)) || e.isWarning)
     .map((e) => exceptionToDiagnostic(e));
 }
 
-export function customTagsToAdditionalOptions(customTags: string[]) {
+export function customTagsToAdditionalOptions(customTags: string[]): Type {
   const filteredTags = filterInvalidCustomTags(customTags);
 
   const schemaWithAdditionalTags = Schema.create(
