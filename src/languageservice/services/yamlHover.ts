@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { PromiseConstructor, Thenable, LanguageService } from 'vscode-json-languageservice';
+import { PromiseConstructor, Thenable } from 'vscode-json-languageservice';
 import { Hover, TextDocument, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
@@ -24,7 +24,7 @@ export class YAMLHover {
     this.jsonHover = new JSONHover(schemaService, [], Promise);
   }
 
-  public configure(languageSettings: LanguageSettings) {
+  public configure(languageSettings: LanguageSettings): void {
     if (languageSettings) {
       this.shouldHover = languageSettings.hover;
     }

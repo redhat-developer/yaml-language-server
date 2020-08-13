@@ -45,7 +45,7 @@ export class YAMLValidation {
     this.jsonValidation = new JSONValidation(schemaService, this.promise);
   }
 
-  public configure(settings: LanguageSettings) {
+  public configure(settings: LanguageSettings): void {
     if (settings) {
       this.validationEnabled = settings.validate;
       this.customTags = settings.customTags;

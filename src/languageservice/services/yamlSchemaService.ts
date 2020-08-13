@@ -13,17 +13,16 @@ import {
   JSONSchemaService,
   SchemaDependencies,
   ISchemaContributions,
+  SchemaHandle,
 } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 
 import { URI } from 'vscode-uri';
 
 import * as nls from 'vscode-nls';
 import { convertSimple2RegExpPattern } from '../utils/strings';
-import { TextDocument } from 'vscode-languageserver';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { stringifyObject } from '../utils/json';
-import { getNodeValue, JSONDocument } from '../parser/jsonParser07';
-import { Parser } from 'prettier';
+import { JSONDocument } from '../parser/jsonParser07';
+
 const localize = nls.loadMessageBundle();
 
 export declare type CustomSchemaProvider = (uri: string) => Thenable<string | string[]>;
@@ -63,7 +62,7 @@ export class FilePatternAssociation {
     this.schemas = [];
   }
 
-  public addSchema(id: string) {
+  public addSchema(id: string): void {
     this.schemas.push(id);
   }
 
@@ -71,7 +70,7 @@ export class FilePatternAssociation {
     return this.patternRegExp && this.patternRegExp.test(fileName);
   }
 
-  public getSchemas() {
+  public getSchemas(): string[] {
     return this.schemas;
   }
 }
@@ -94,11 +93,10 @@ export class YAMLSchemaService extends JSONSchemaService {
     this.customSchemaProvider = undefined;
   }
 
-  registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider) {
+  registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider): void {
     this.customSchemaProvider = customSchemaProvider;
   }
 
-  //tslint:disable
   public resolveSchemaContent(
     schemaToResolve: UnresolvedSchema,
     schemaURL: string,
@@ -108,10 +106,12 @@ export class YAMLSchemaService extends JSONSchemaService {
     const schema = schemaToResolve.schema;
     const contextService = this.contextService;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const findSection = (schema: JSONSchema, path: string): any => {
       if (!path) {
         return schema;
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let current: any = schema;
       if (path[0] === '/') {
         path = path.substr(1);
@@ -142,6 +142,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       linkPath: string,
       parentSchemaURL: string,
       parentSchemaDependencies: SchemaDependencies
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Thenable<any> => {
       if (contextService && !/^\w+:\/\/.*/.test(uri)) {
         uri = contextService.resolveRelativePath(uri, parentSchemaURL);
@@ -167,6 +168,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       parentSchema: JSONSchema,
       parentSchemaURL: string,
       parentSchemaDependencies: SchemaDependencies
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Thenable<any> => {
       if (!node || typeof node !== 'object') {
         return Promise.resolve(null);
@@ -175,16 +177,17 @@ export class YAMLSchemaService extends JSONSchemaService {
       const toWalk: JSONSchema[] = [node];
       const seen: JSONSchema[] = [];
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const openPromises: Thenable<any>[] = [];
 
-      const collectEntries = (...entries: JSONSchemaRef[]) => {
+      const collectEntries = (...entries: JSONSchemaRef[]): void => {
         for (const entry of entries) {
           if (typeof entry === 'object') {
             toWalk.push(entry);
           }
         }
       };
-      const collectMapEntries = (...maps: JSONSchemaMap[]) => {
+      const collectMapEntries = (...maps: JSONSchemaMap[]): void => {
         for (const map of maps) {
           if (typeof map === 'object') {
             for (const key in map) {
@@ -196,7 +199,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           }
         }
       };
-      const collectArrayEntries = (...arrays: JSONSchemaRef[][]) => {
+      const collectArrayEntries = (...arrays: JSONSchemaRef[][]): void => {
         for (const array of arrays) {
           if (Array.isArray(array)) {
             for (const entry of array) {
@@ -207,7 +210,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           }
         }
       };
-      const handleRef = (next: JSONSchema) => {
+      const handleRef = (next: JSONSchema): void => {
         const seenRefs = [];
         while (next.$ref) {
           const ref = next.$ref;
@@ -253,10 +256,10 @@ export class YAMLSchemaService extends JSONSchemaService {
       return new ResolvedSchema(schema, resolveErrors);
     });
   }
-  //tslint:enable
 
   public getSchemaForResource(resource: string, doc: JSONDocument): Thenable<ResolvedSchema> {
-    const resolveSchema = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const resolveSchema = (): any => {
       const seen: { [schemaId: string]: boolean } = Object.create(null);
       const schemas: string[] = [];
 
@@ -328,7 +331,7 @@ export class YAMLSchemaService extends JSONSchemaService {
                   },
                 };
               },
-              (err) => {
+              () => {
                 return resolveSchema();
               }
             );
@@ -344,7 +347,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           (schema) => {
             return schema;
           },
-          (err) => {
+          () => {
             return resolveSchema();
           }
         );
@@ -358,7 +361,7 @@ export class YAMLSchemaService extends JSONSchemaService {
    * Public for testing purpose, not part of the API.
    * @param doc
    */
-  public getSchemaFromModeline(doc: any): string {
+  public getSchemaFromModeline(doc: SingleYAMLDocument | JSONDocument): string {
     if (doc instanceof SingleYAMLDocument) {
       const yamlLanguageServerModeline = doc.lineComments.find((lineComment) => {
         const matchModeline = lineComment.match(/^#\s+yaml-language-server\s*:/g);
@@ -379,7 +382,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     return undefined;
   }
 
-  private async resolveCustomSchema(schemaUri, doc) {
+  private async resolveCustomSchema(schemaUri, doc): ResolvedSchema {
     const unresolvedSchema = await this.loadSchema(schemaUri);
     const schema = await this.resolveSchemaContent(unresolvedSchema, schemaUri, []);
     if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[doc.currentDocIndex]) {
@@ -412,7 +415,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   /**
    * Add content to a specified schema at a specified path
    */
-  public async addContent(additions: SchemaAdditions) {
+  public async addContent(additions: SchemaAdditions): Promise<void> {
     const schema = await this.getResolvedSchema(additions.schema);
     if (schema) {
       const resolvedSchemaLocation = this.resolveJSONSchemaToSection(schema.schema, additions.path);
@@ -427,7 +430,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   /**
    * Delete content in a specified schema at a specified path
    */
-  public async deleteContent(deletions: SchemaDeletions) {
+  public async deleteContent(deletions: SchemaDeletions): Promise<void> {
     const schema = await this.getResolvedSchema(deletions.schema);
     if (schema) {
       const resolvedSchemaLocation = this.resolveJSONSchemaToSection(schema.schema, deletions.path);
@@ -462,7 +465,7 @@ export class YAMLSchemaService extends JSONSchemaService {
    * @param token the next token that you want to search for
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private resolveNext(object: any, token: any) {
+  private resolveNext(object: any, token: any): void {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (Array.isArray(object) && isNaN(token)) {
       throw new Error('Expected a number after the array object');
@@ -476,7 +479,7 @@ export class YAMLSchemaService extends JSONSchemaService {
    * to provide a wrapper around the javascript methods we are calling since they have no type
    */
 
-  normalizeId(id: string) {
+  normalizeId(id: string): string {
     // The parent's `super.normalizeId(id)` isn't visible, so duplicated the code here
     try {
       return URI.parse(id).toString();
@@ -485,7 +488,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     }
   }
 
-  getOrAddSchemaHandle(id: string, unresolvedSchemaContent?: JSONSchema) {
+  getOrAddSchemaHandle(id: string, unresolvedSchemaContent?: JSONSchema): SchemaHandle {
     return super.getOrAddSchemaHandle(id, unresolvedSchemaContent);
   }
 
@@ -494,7 +497,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     return super.loadSchema(schemaUri);
   }
 
-  registerExternalSchema(uri: string, filePatterns?: string[], unresolvedSchema?: JSONSchema) {
+  registerExternalSchema(uri: string, filePatterns?: string[], unresolvedSchema?: JSONSchema): SchemaHandle {
     return super.registerExternalSchema(uri, filePatterns, unresolvedSchema);
   }
 
@@ -506,6 +509,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     super.setSchemaContributions(schemaContributions);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getRegisteredSchemaIds(filter?: (scheme: any) => boolean): string[] {
     return super.getRegisteredSchemaIds(filter);
   }
