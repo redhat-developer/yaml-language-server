@@ -43,7 +43,8 @@ export class SingleYAMLDocument extends JSONDocument {
     this.lineComments = [];
   }
 
-  public getSchemas(schema, doc, node) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+  public getSchemas(schema: any, doc: any, node: any): any[] {
     const matchingSchemas = [];
     doc.validate(schema, matchingSchemas, node.start);
     return matchingSchemas;
@@ -114,7 +115,7 @@ export function parse(text: string, customTags = []): YAMLDocument {
   return new YAMLDocument(yamlDocs);
 }
 
-function parseLineComments(text: string, yamlDocs: SingleYAMLDocument[]) {
+function parseLineComments(text: string, yamlDocs: SingleYAMLDocument[]): void {
   const lines = text.split(/[\r\n]+/g);
   let yamlDocCount = 0;
   lines.forEach((line) => {

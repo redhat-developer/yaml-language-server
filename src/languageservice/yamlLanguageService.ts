@@ -81,6 +81,7 @@ export interface Thenable<R> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   then<TResult>(
     onfulfilled?: (value: R) => TResult | Thenable<TResult>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onrejected?: (reason: any) => TResult | Thenable<TResult>
   ): Thenable<TResult>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -78,8 +78,6 @@ export default function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode
       const instance = <Yaml.YAMLScalar>node;
       const type = Yaml.determineScalarType(instance);
 
-      // The name is set either by the sequence or the mapping case.
-      const name = null;
       const value = instance.value;
 
       //This is a patch for redirecting values with these strings to be boolean nodes because its not supported in the parser.

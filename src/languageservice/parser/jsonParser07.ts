@@ -205,7 +205,7 @@ export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
   }
 }
 
-export function asSchema(schema: JSONSchemaRef) {
+export function asSchema(schema: JSONSchemaRef): JSONSchema {
   if (isBoolean(schema)) {
     return schema ? {} : { not: {} };
   }
@@ -238,13 +238,13 @@ export interface ISchemaCollector {
 class SchemaCollector implements ISchemaCollector {
   schemas: IApplicableSchema[] = [];
   constructor(private focusOffset = -1, private exclude: ASTNode = null) {}
-  add(schema: IApplicableSchema) {
+  add(schema: IApplicableSchema): void {
     this.schemas.push(schema);
   }
-  merge(other: ISchemaCollector) {
+  merge(other: ISchemaCollector): void {
     this.schemas.push(...other.schemas);
   }
-  include(node: ASTNode) {
+  include(node: ASTNode): boolean {
     return (this.focusOffset === -1 || contains(node, this.focusOffset)) && node !== this.exclude;
   }
   newSub(): ISchemaCollector {
@@ -256,16 +256,20 @@ class NoOpSchemaCollector implements ISchemaCollector {
   private constructor() {
     // ignore
   }
-  get schemas() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get schemas(): any[] {
     return [];
   }
-  add(schema: IApplicableSchema) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  add(schema: IApplicableSchema): void {
     // ignore
   }
-  merge(other: ISchemaCollector) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  merge(other: ISchemaCollector): void {
     // ignore
   }
-  include(node: ASTNode) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  include(node: ASTNode): boolean {
     return true;
   }
   newSub(): ISchemaCollector {
@@ -383,7 +387,7 @@ export class ValidationResult {
   }
 }
 
-export function newJSONDocument(root: ASTNode, diagnostics: Diagnostic[] = []) {
+export function newJSONDocument(root: ASTNode, diagnostics: Diagnostic[] = []): JSONDocument {
   return new JSONDocument(root, diagnostics, []);
 }
 
@@ -468,7 +472,8 @@ function validate(
   validationResult: ValidationResult,
   matchingSchemas: ISchemaCollector,
   isKubernetes: boolean
-) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any {
   if (!node || !matchingSchemas.include(node)) {
     return;
   }
@@ -481,10 +486,10 @@ function validate(
       _validateArrayNode(node, schema, validationResult, matchingSchemas);
       break;
     case 'string':
-      _validateStringNode(node, schema, validationResult, matchingSchemas);
+      _validateStringNode(node, schema, validationResult);
       break;
     case 'number':
-      _validateNumberNode(node, schema, validationResult, matchingSchemas);
+      _validateNumberNode(node, schema, validationResult);
       break;
     case 'property':
       return validate(node.valueNode, schema, validationResult, matchingSchemas, isKubernetes);
@@ -493,8 +498,8 @@ function validate(
 
   matchingSchemas.add({ node: node, schema: schema });
 
-  function _validateNode() {
-    function matchesType(type: string) {
+  function _validateNode(): void {
+    function matchesType(type: string): boolean {
       return node.type === type || (type === 'integer' && node.type === 'number' && node.isInteger);
     }
 
@@ -540,7 +545,7 @@ function validate(
       }
     }
 
-    const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean) => {
+    const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean): number => {
       const matches = [];
 
       // remember the best match that is used for error messages
@@ -592,7 +597,7 @@ function validate(
       testAlternatives(schema.oneOf, true);
     }
 
-    const testBranch = (schema: JSONSchemaRef) => {
+    const testBranch = (schema: JSONSchemaRef): void => {
       const subValidationResult = new ValidationResult(isKubernetes);
       const subMatchingSchemas = matchingSchemas.newSub();
 
@@ -604,7 +609,7 @@ function validate(
       matchingSchemas.merge(subMatchingSchemas);
     };
 
-    const testCondition = (ifSchema: JSONSchemaRef, thenSchema?: JSONSchemaRef, elseSchema?: JSONSchemaRef) => {
+    const testCondition = (ifSchema: JSONSchemaRef, thenSchema?: JSONSchemaRef, elseSchema?: JSONSchemaRef): void => {
       const subSchema = asSchema(ifSchema);
       const subValidationResult = new ValidationResult(isKubernetes);
       const subMatchingSchemas = matchingSchemas.newSub();
@@ -682,12 +687,7 @@ function validate(
     }
   }
 
-  function _validateNumberNode(
-    node: NumberASTNode,
-    schema: JSONSchema,
-    validationResult: ValidationResult,
-    matchingSchemas: ISchemaCollector
-  ): void {
+  function _validateNumberNode(node: NumberASTNode, schema: JSONSchema, validationResult: ValidationResult): void {
     const val = node.value;
 
     if (isNumber(schema.multipleOf)) {
@@ -748,12 +748,7 @@ function validate(
     }
   }
 
-  function _validateStringNode(
-    node: StringASTNode,
-    schema: JSONSchema,
-    validationResult: ValidationResult,
-    matchingSchemas: ISchemaCollector
-  ): void {
+  function _validateStringNode(node: StringASTNode, schema: JSONSchema, validationResult: ValidationResult): void {
     if (isNumber(schema.minLength) && node.value.length < schema.minLength) {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
@@ -992,7 +987,7 @@ function validate(
       }
     }
 
-    const propertyProcessed = (prop: string) => {
+    const propertyProcessed = (prop: string): void => {
       let index = unprocessedProperties.indexOf(prop);
       while (index >= 0) {
         unprocessedProperties.splice(index, 1);
@@ -1179,7 +1174,8 @@ function validate(
   }
 
   //Alternative comparison is specifically used by the kubernetes/openshift schema but may lead to better results then genericComparison depending on the schema
-  function alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas): any {
     const compareResult = subValidationResult.compareKubernetes(bestMatch.validationResult);
     if (compareResult > 0) {
       // our node is the best matching so far
@@ -1197,7 +1193,8 @@ function validate(
   }
 
   //genericComparison tries to find the best matching schema using a generic comparison
-  function genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas): any {
     if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
