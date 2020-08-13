@@ -6,6 +6,7 @@ import { ServiceSetup } from './utils/serviceSetup';
 import { configureLanguageService, SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper';
 import { MarkedString } from '../src';
 import * as assert from 'assert';
+import { Hover } from 'vscode-languageserver';
 
 const languageSettingsSetup = new ServiceSetup().withHover();
 const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
@@ -16,7 +17,7 @@ suite('Hover Tests', () => {
   });
 
   describe('Hover', function () {
-    function parseSetup(content: string, position) {
+    function parseSetup(content: string, position): Thenable<Hover> {
       const testTextDocument = setupSchemaIDTextDocument(content);
       return languageService.doHover(testTextDocument, testTextDocument.positionAt(position));
     }

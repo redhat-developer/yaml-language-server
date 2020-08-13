@@ -5,12 +5,13 @@
 import { setupTextDocument, configureLanguageService } from './utils/testHelper';
 import assert = require('assert');
 import { ServiceSetup } from './utils/serviceSetup';
+import { LocationLink } from '../src';
 
 const languageService = configureLanguageService(new ServiceSetup().languageSettings);
 
 suite('FindDefintion Tests', () => {
   describe('Jump to defintion', function () {
-    function findDefinitions(content: string, position: number) {
+    function findDefinitions(content: string, position: number): Thenable<LocationLink[]> {
       const testTextDocument = setupTextDocument(content);
       return languageService.findDefinition(testTextDocument, testTextDocument.positionAt(position));
     }

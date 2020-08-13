@@ -7,12 +7,13 @@ import { createExpectedSymbolInformation, createExpectedDocumentSymbol } from '.
 import { DocumentSymbol, SymbolKind } from 'vscode-languageserver-types';
 import assert = require('assert');
 import { ServiceSetup } from './utils/serviceSetup';
+import { SymbolInformation } from 'vscode-languageserver';
 
 const languageService = configureLanguageService(new ServiceSetup().languageSettings);
 
 suite('Document Symbols Tests', () => {
   describe('Document Symbols Tests (Non Hierarchical)', function () {
-    function parseNonHierarchicalSetup(content: string) {
+    function parseNonHierarchicalSetup(content: string): SymbolInformation[] {
       const testTextDocument = setupTextDocument(content);
       return languageService.findDocumentSymbols(testTextDocument);
     }

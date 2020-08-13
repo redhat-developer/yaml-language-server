@@ -556,7 +556,7 @@ suite('JSON Schema', () => {
       checkReturnSchemaUrl('# yaml-language-server: $notschema=url1', undefined);
     });
 
-    function checkReturnSchemaUrl(modeline: string, expectedResult: string) {
+    function checkReturnSchemaUrl(modeline: string, expectedResult: string): void {
       const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
       const yamlDoc = new parser.SingleYAMLDocument([]);
       yamlDoc.lineComments = [modeline];

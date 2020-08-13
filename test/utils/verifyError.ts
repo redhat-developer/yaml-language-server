@@ -3,7 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DocumentSymbol, SymbolKind } from 'vscode-languageserver-types';
+import { DocumentSymbol, SymbolKind, InsertTextFormat } from 'vscode-languageserver-types';
+import { CompletionItem, CompletionItemKind, SymbolInformation, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 
 export function createExpectedError(
   message: string,
@@ -11,8 +12,8 @@ export function createExpectedError(
   startCharacter: number,
   endLine: number,
   endCharacter: number,
-  severity = 2
-) {
+  severity: DiagnosticSeverity = 2
+): Diagnostic {
   return {
     message,
     range: {
@@ -38,7 +39,7 @@ export function createExpectedSymbolInformation(
   startCharacter: number,
   endLine: number,
   endCharacter: number
-) {
+): SymbolInformation {
   return {
     name,
     kind,
@@ -100,16 +101,16 @@ export function createExpectedDocumentSymbol(
 }
 
 export function createExpectedCompletion(
-  label: string | number,
-  insertText: string | number,
+  label: string,
+  insertText: string,
   startLine: number,
   startCharacter: number,
   endLine: number,
   endCharacter: number,
-  kind: number,
-  insertTextFormat = 2,
+  kind: CompletionItemKind,
+  insertTextFormat: InsertTextFormat = 2,
   extra = {}
-) {
+): CompletionItem {
   return {
     ...{
       insertText,

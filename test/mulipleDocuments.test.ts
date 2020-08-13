@@ -6,6 +6,7 @@ import * as path from 'path';
 import { setupTextDocument, configureLanguageService, toFsPath } from './utils/testHelper';
 import * as assert from 'assert';
 import { ServiceSetup } from './utils/serviceSetup';
+import { Diagnostic, Hover } from 'vscode-languageserver';
 
 /**
  * Setup the schema we are going to use with the language settings
@@ -22,13 +23,13 @@ const languageSettingsSetup = new ServiceSetup()
 suite('Multiple Documents Validation Tests', () => {
   // Tests for validator
   describe('Multiple Documents Validation', function () {
-    function validatorSetup(content: string) {
+    function validatorSetup(content: string): Thenable<Diagnostic[]> {
       const testTextDocument = setupTextDocument(content);
       const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
       return languageService.doValidation(testTextDocument, false);
     }
 
-    function hoverSetup(content: string, position) {
+    function hoverSetup(content: string, position): Thenable<Hover> {
       const testTextDocument = setupTextDocument(content);
       const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
       return languageService.doHover(testTextDocument, testTextDocument.positionAt(position));

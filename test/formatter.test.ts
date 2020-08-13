@@ -5,6 +5,7 @@
 import { configureLanguageService, setupTextDocument } from './utils/testHelper';
 import { ServiceSetup } from './utils/serviceSetup';
 import * as assert from 'assert';
+import { TextEdit } from 'vscode-languageserver';
 
 const languageSettingsSetup = new ServiceSetup().withFormat();
 const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
@@ -14,7 +15,7 @@ suite('Formatter Tests', () => {
   // Tests for validator
   describe('Formatter', function () {
     describe('Test that formatter works with custom tags', function () {
-      function parseSetup(content: string, options = {}) {
+      function parseSetup(content: string, options = {}): TextEdit[] {
         const testTextDocument = setupTextDocument(content);
         return languageService.doFormat(testTextDocument, options);
       }

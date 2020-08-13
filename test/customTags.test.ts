@@ -6,13 +6,14 @@ import { setupTextDocument, configureLanguageService } from './utils/testHelper'
 import { ServiceSetup } from './utils/serviceSetup';
 import { createExpectedError } from './utils/verifyError';
 import * as assert from 'assert';
+import { Diagnostic } from 'vscode-languageserver';
 
 const languageSettingsSetup = new ServiceSetup().withValidate();
 let languageService = configureLanguageService(languageSettingsSetup.languageSettings);
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite('Custom Tag tests Tests', () => {
-  function parseSetup(content: string, customTags: string[]) {
+  function parseSetup(content: string, customTags: string[]): Thenable<Diagnostic[]> {
     const testTextDocument = setupTextDocument(content);
     languageSettingsSetup.languageSettings.customTags = customTags;
     languageService = configureLanguageService(languageSettingsSetup.languageSettings);
