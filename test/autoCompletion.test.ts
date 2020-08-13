@@ -9,12 +9,13 @@ import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
+import { CompletionList } from 'vscode-languageserver';
 
 const languageSettingsSetup = new ServiceSetup().withCompletion();
 const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
 
 suite('Auto Completion Tests', () => {
-  function parseSetup(content: string, position) {
+  function parseSetup(content: string, position): Thenable<CompletionList> {
     const testTextDocument = setupSchemaIDTextDocument(content);
     return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
   }

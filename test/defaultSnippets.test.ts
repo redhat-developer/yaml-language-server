@@ -6,6 +6,7 @@ import { toFsPath, setupTextDocument, configureLanguageService } from './utils/t
 import assert = require('assert');
 import path = require('path');
 import { ServiceSetup } from './utils/serviceSetup';
+import { CompletionList } from 'vscode-languageserver';
 
 const uri = toFsPath(path.join(__dirname, './fixtures/defaultSnippets.json'));
 const fileMatch = ['*.yml', '*.yaml'];
@@ -17,7 +18,7 @@ const languageService = configureLanguageService(languageSettingsSetup.languageS
 
 suite('Default Snippet Tests', () => {
   describe('Snippet Tests', function () {
-    function parseSetup(content: string, position: number) {
+    function parseSetup(content: string, position: number): Thenable<CompletionList> {
       const testTextDocument = setupTextDocument(content);
       return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
     }

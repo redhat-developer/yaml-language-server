@@ -6,6 +6,7 @@ import { getLanguageService, LanguageSettings } from '../src/languageservice/yam
 import { schemaRequestService, workspaceContext, setupTextDocument } from './utils/testHelper';
 import * as assert from 'assert';
 import { MarkedString } from '../src';
+import { Diagnostic, CompletionList, Hover } from 'vscode-languageserver';
 
 const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
@@ -24,7 +25,7 @@ languageService.configure(languageSettings);
 suite('Kubernetes Integration Tests', () => {
   // Tests for validator
   describe('Yaml Validation with kubernetes', function () {
-    function parseSetup(content: string) {
+    function parseSetup(content: string): Thenable<Diagnostic[]> {
       const testTextDocument = setupTextDocument(content);
       return languageService.doValidation(testTextDocument, true);
     }
@@ -192,7 +193,7 @@ suite('Kubernetes Integration Tests', () => {
 
   describe('yamlCompletion with kubernetes', function () {
     describe('doComplete', function () {
-      function parseSetup(content: string, position) {
+      function parseSetup(content: string, position): Thenable<CompletionList> {
         const testTextDocument = setupTextDocument(content);
         return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), true);
       }
@@ -282,7 +283,7 @@ suite('Kubernetes Integration Tests', () => {
   });
 
   describe('yamlHover with kubernetes', function () {
-    function parseSetup(content: string, offset: number) {
+    function parseSetup(content: string, offset: number): Thenable<Hover> {
       const testTextDocument = setupTextDocument(content);
       return languageService.doHover(testTextDocument, testTextDocument.positionAt(offset));
     }

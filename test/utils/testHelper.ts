@@ -13,10 +13,13 @@ import {
   RequestType,
 } from 'vscode-languageserver';
 import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
-import { getLanguageService, LanguageSettings } from '../../src/languageservice/yamlLanguageService';
+import { getLanguageService, LanguageSettings, LanguageService } from '../../src/languageservice/yamlLanguageService';
 import Strings = require('../../src/languageservice/utils/strings');
 import { URI } from 'vscode-uri';
-import { getLanguageService as getJSONLanguageService } from 'vscode-json-languageservice';
+import {
+  getLanguageService as getJSONLanguageService,
+  LanguageService as JSONLanguageService,
+} from 'vscode-json-languageservice';
 import * as URL from 'url';
 import fs = require('fs');
 import path = require('path');
@@ -51,7 +54,7 @@ connection.onInitialize(
 );
 
 export const workspaceContext = {
-  resolveRelativePath: (relativePath: string, resource: string) => {
+  resolveRelativePath: (relativePath: string, resource: string): string => {
     return URL.resolve(resource, relativePath);
   },
 };
@@ -84,7 +87,7 @@ export const schemaRequestService = (uri: string): Thenable<string> => {
   );
 };
 
-export function toFsPath(str): string {
+export function toFsPath(str: unknown): string {
   if (typeof str !== 'string') {
     throw new TypeError(`Expected a string, got ${typeof str}`);
   }
@@ -99,14 +102,14 @@ export function toFsPath(str): string {
   return encodeURI(`file://${pathName}`).replace(/[?#]/g, encodeURIComponent);
 }
 
-export function configureLanguageService(languageSettings: LanguageSettings) {
+export function configureLanguageService(languageSettings: LanguageSettings): LanguageService {
   const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
 
   languageService.configure(languageSettings);
   return languageService;
 }
 
-export function createJSONLanguageService() {
+export function createJSONLanguageService(): JSONLanguageService {
   return getJSONLanguageService({
     schemaRequestService,
     workspaceContext,
@@ -116,10 +119,10 @@ export function createJSONLanguageService() {
 export const TEST_URI = 'file://~/Desktop/vscode-k8s/test.yaml';
 export const SCHEMA_ID = 'default_schema_id.yaml';
 
-export function setupTextDocument(content: string) {
+export function setupTextDocument(content: string): TextDocument {
   return TextDocument.create(TEST_URI, 'yaml', 0, content);
 }
 
-export function setupSchemaIDTextDocument(content: string) {
+export function setupSchemaIDTextDocument(content: string): TextDocument {
   return TextDocument.create(SCHEMA_ID, 'yaml', 0, content);
 }

@@ -16,13 +16,14 @@ import {
   DuplicateKeyError,
 } from './utils/errorMessages';
 import * as assert from 'assert';
+import { Diagnostic } from 'vscode-languageserver';
 
 const languageSettingsSetup = new ServiceSetup().withValidate().withCustomTags(['!Test', '!Ref sequence']);
 const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite('Validation Tests', () => {
-  function parseSetup(content: string, isKubernetes = false) {
+  function parseSetup(content: string, isKubernetes = false): Thenable<Diagnostic[]> {
     const testTextDocument = setupSchemaIDTextDocument(content);
     return languageService.doValidation(testTextDocument, isKubernetes);
   }

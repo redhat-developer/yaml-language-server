@@ -19,37 +19,37 @@ export class ServiceSetup {
     customTags: [],
   };
 
-  withValidate() {
+  withValidate(): ServiceSetup {
     this.languageSettings.validate = true;
     return this;
   }
 
-  withHover() {
+  withHover(): ServiceSetup {
     this.languageSettings.hover = true;
     return this;
   }
 
-  withCompletion() {
+  withCompletion(): ServiceSetup {
     this.languageSettings.completion = true;
     return this;
   }
 
-  withFormat() {
+  withFormat(): ServiceSetup {
     this.languageSettings.format = true;
     return this;
   }
 
-  withKubernetes() {
+  withKubernetes(): ServiceSetup {
     this.languageSettings.isKubernetes = true;
     return this;
   }
 
-  withSchemaFileMatch(schemaFileMatch: { uri: string; fileMatch: string[] }) {
+  withSchemaFileMatch(schemaFileMatch: { uri: string; fileMatch: string[] }): ServiceSetup {
     this.languageSettings.schemas.push(schemaFileMatch);
     return this;
   }
 
-  withCustomTags(customTags: string[]) {
+  withCustomTags(customTags: string[]): ServiceSetup {
     this.languageSettings.customTags = customTags;
     return this;
   }
