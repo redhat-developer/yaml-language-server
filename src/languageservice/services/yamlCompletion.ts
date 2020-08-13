@@ -20,8 +20,6 @@ import {
   Range,
   TextEdit,
   InsertTextFormat,
-  MarkupContent,
-  MarkupKind,
 } from 'vscode-languageserver-types';
 import * as nls from 'vscode-nls';
 import { getLineOffsets, filterInvalidCustomTags, matchOffsetToDocument } from '../utils/arrUtils';
@@ -54,7 +52,7 @@ export class YAMLCompletion extends JSONCompletion {
     this.completion = true;
   }
 
-  public configure(languageSettings: LanguageSettings, customTags: Array<string>) {
+  public configure(languageSettings: LanguageSettings, customTags: Array<string>): void {
     if (languageSettings) {
       this.completion = languageSettings.completion;
     }
@@ -173,7 +171,6 @@ export class YAMLCompletion extends JSONCompletion {
       const collectionPromises: Thenable<any>[] = [];
 
       let addValue = true;
-      let currentKey = '';
 
       let currentProperty: PropertyASTNode = null;
       if (node) {
@@ -182,7 +179,6 @@ export class YAMLCompletion extends JSONCompletion {
           if (parent && parent.type === 'property' && parent.keyNode === node) {
             addValue = !parent.valueNode;
             currentProperty = parent;
-            currentKey = document.getText().substr(node.offset + 1, node.length - 2);
             if (parent) {
               node = parent.parent;
             }
@@ -349,13 +345,9 @@ export class YAMLCompletion extends JSONCompletion {
     collector: CompletionsCollector,
     types: { [type: string]: boolean }
   ): void {
-    let offsetForSeparator = offset;
     let parentKey: string = null;
-    let valueNode: ASTNode = null;
 
     if (node && (node.type === 'string' || node.type === 'number' || node.type === 'boolean')) {
-      offsetForSeparator = node.offset + node.length;
-      valueNode = node;
       node = node.parent;
     }
 
@@ -435,7 +427,7 @@ export class YAMLCompletion extends JSONCompletion {
     }
   }
 
-  private getCustomTagValueCompletions(collector: CompletionsCollector) {
+  private getCustomTagValueCompletions(collector: CompletionsCollector): void {
     const validCustomTags = filterInvalidCustomTags(this.customTags);
     validCustomTags.forEach((validTag) => {
       // Valid custom tags are guarenteed to be strings
@@ -515,7 +507,7 @@ export class YAMLCompletion extends JSONCompletion {
     collector: CompletionsCollector,
     settings: StringifySettings,
     arrayDepth = 0
-  ) {
+  ): void {
     if (Array.isArray(schema.defaultSnippets)) {
       schema.defaultSnippets.forEach((s) => {
         let type = schema.type;
@@ -568,7 +560,7 @@ export class YAMLCompletion extends JSONCompletion {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getInsertTextForSnippetValue(value: any, separatorAfter: string, settings: StringifySettings, depth?: number): string {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const replacer = (value: any) => {
+    const replacer = (value: any): string | any => {
       if (typeof value === 'string') {
         if (value[0] === '^') {
           return value.substr(1);
@@ -687,7 +679,7 @@ export class YAMLCompletion extends JSONCompletion {
     return text.replace(/[\\$}]/g, '\\$&'); // escape $, \ and }
   }
 
-  private getInsertTextForObject(schema: JSONSchema, separatorAfter: string, indent = '\t', insertIndex = 1) {
+  private getInsertTextForObject(schema: JSONSchema, separatorAfter: string, indent = '\t', insertIndex = 1): InsertText {
     let insertText = '';
     if (!schema.properties) {
       insertText = `${indent}$${insertIndex++}\n`;
@@ -761,7 +753,7 @@ export class YAMLCompletion extends JSONCompletion {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getInsertTextForArray(schema: any, separatorAfter: string, indent = '\t', insertIndex = 1) {
+  private getInsertTextForArray(schema: any, separatorAfter: string, indent = '\t', insertIndex = 1): InsertText {
     let insertText = '';
     if (!schema) {
       insertText = `$${insertIndex++}`;
@@ -912,14 +904,14 @@ export class YAMLCompletion extends JSONCompletion {
     return this.getInsertTextForValue(value, separatorAfter);
   }
 
-  private getLabelForValue(value: string) {
+  private getLabelForValue(value: string): string {
     return value;
   }
 
   /**
    * Corrects simple syntax mistakes to load possible nodes even if a semicolon is missing
    */
-  private completionHelper(document: TextDocument, textDocumentPosition: Position) {
+  private completionHelper(document: TextDocument, textDocumentPosition: Position): NewTextAndPosition {
     // Get the string we are looking at via a substring
     const linePos = textDocumentPosition.line;
     const position = textDocumentPosition;
@@ -978,19 +970,29 @@ export class YAMLCompletion extends JSONCompletion {
     }
   }
 
-  private is_EOL(c: number) {
+  private is_EOL(c: number): boolean {
     return c === 0x0a /* LF */ || c === 0x0d /* CR */;
   }
 
   // Called by onCompletion
-  private setKubernetesParserOption(jsonDocuments: Parser.JSONDocument[], option: boolean) {
+  private setKubernetesParserOption(jsonDocuments: Parser.JSONDocument[], option: boolean): void {
     for (const jsonDoc in jsonDocuments) {
       jsonDocuments[jsonDoc].isKubernetes = option;
     }
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/ban-types
 function isDefined(val: any): val is object {
   return val !== undefined;
+}
+
+interface InsertText {
+  insertText: string;
+  insertIndex: number;
+}
+
+interface NewTextAndPosition {
+  newText: string;
+  newPosition: Position;
 }
