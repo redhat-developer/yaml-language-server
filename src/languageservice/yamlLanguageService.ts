@@ -33,7 +33,7 @@ export interface LanguageSettings {
   completion?: boolean; //Setting for whether we want to have completion results
   format?: boolean; //Setting for whether we want to have the formatter or not
   isKubernetes?: boolean; //If true then its validating against kubernetes
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   schemas?: any[]; //List of schemas,
   customTags?: Array<string>; //Array of Custom Tags
 }
@@ -45,7 +45,7 @@ export interface PromiseConstructor {
    * a resolve callback used resolve the promise with a value or the result of another promise,
    * and a reject callback used to reject the promise with a provided reason or error.
    */
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   new <T>(executor: (resolve: (value?: T | Thenable<T>) => void, reject: (reason?: any) => void) => void): Thenable<T>;
 
   /**
@@ -60,7 +60,7 @@ export interface PromiseConstructor {
    * @param reason The reason the promise was rejected.
    * @returns A new rejected Promise.
    */
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   reject<T>(reason: any): Thenable<T>;
 
   /**
@@ -78,12 +78,12 @@ export interface Thenable<R> {
    * @param onrejected The callback to execute when the Promise is rejected.
    * @returns A Promise for the completion of which ever callback is executed.
    */
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   then<TResult>(
     onfulfilled?: (value: R) => TResult | Thenable<TResult>,
     onrejected?: (reason: any) => TResult | Thenable<TResult>
   ): Thenable<TResult>;
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   then<TResult>(onfulfilled?: (value: R) => TResult | Thenable<TResult>, onrejected?: (reason: any) => void): Thenable<TResult>;
 }
 

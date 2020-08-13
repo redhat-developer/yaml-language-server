@@ -169,7 +169,7 @@ export class YAMLCompletion extends JSONCompletion {
       }
       const newSchema = schema;
 
-      // tslint:disable-next-line: no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const collectionPromises: Thenable<any>[] = [];
 
       let addValue = true;
@@ -565,9 +565,9 @@ export class YAMLCompletion extends JSONCompletion {
     }
   }
 
-  // tslint:disable-next-line:no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getInsertTextForSnippetValue(value: any, separatorAfter: string, settings: StringifySettings, depth?: number): string {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const replacer = (value: any) => {
       if (typeof value === 'string') {
         if (value[0] === '^') {
@@ -582,7 +582,7 @@ export class YAMLCompletion extends JSONCompletion {
     return stringifyObject(value, '', replacer, settings, depth) + separatorAfter;
   }
 
-  // tslint:disable-next-line:no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getLabelForSnippetValue(value: any): string {
     const label = JSON.stringify(value);
     return label.replace(/\$\{\d+:([^}]+)\}|\$\d+/g, '$1');
@@ -608,10 +608,10 @@ export class YAMLCompletion extends JSONCompletion {
     });
   }
 
-  // tslint:disable-next-line:no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getSuggestionKind(type: any): CompletionItemKind {
     if (Array.isArray(type)) {
-      // tslint:disable-next-line:no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const array = <any[]>type;
       type = array.length > 0 ? array[0] : null;
     }
@@ -640,7 +640,7 @@ export class YAMLCompletion extends JSONCompletion {
     });
   }
 
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getInsertTextForValue(value: any, separatorAfter: string): string {
     switch (typeof value) {
       case 'object': {
@@ -760,7 +760,7 @@ export class YAMLCompletion extends JSONCompletion {
     return { insertText, insertIndex };
   }
 
-  // tslint:disable-next-line:no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getInsertTextForArray(schema: any, separatorAfter: string, indent = '\t', insertIndex = 1) {
     let insertText = '';
     if (!schema) {
@@ -891,7 +891,7 @@ export class YAMLCompletion extends JSONCompletion {
     return resultText + value + separatorAfter;
   }
 
-  // tslint:disable-next-line:no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getInsertTextForGuessedValue(value: any, separatorAfter: string): string {
     switch (typeof value) {
       case 'object':

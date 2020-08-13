@@ -282,7 +282,7 @@ export class ValidationResult {
   public propertiesValueMatches: number;
   public primaryValueMatches: number;
   public enumValueMatch: boolean;
-  // tslint:disable-next-line: no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public enumValues: any[];
 
   constructor(isKubernetes: boolean) {
@@ -387,7 +387,7 @@ export function newJSONDocument(root: ASTNode, diagnostics: Diagnostic[] = []) {
   return new JSONDocument(root, diagnostics, []);
 }
 
-// tslint:disable-next-line: no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getNodeValue(node: ASTNode): any {
   return Json.getNodeValue(node);
 }
@@ -859,7 +859,7 @@ function validate(
         if (typeof schema.additionalItems === 'object') {
           for (let i = subSchemas.length; i < node.items.length; i++) {
             const itemValidationResult = new ValidationResult(isKubernetes);
-            // tslint:disable-next-line: no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             validate(node.items[i], <any>schema.additionalItems, itemValidationResult, matchingSchemas, isKubernetes);
             validationResult.mergePropertyMatch(itemValidationResult);
             validationResult.mergeEnumValues(itemValidationResult);
@@ -1074,7 +1074,7 @@ function validate(
         const child = seenKeys[propertyName];
         if (child) {
           const propertyValidationResult = new ValidationResult(isKubernetes);
-          // tslint:disable-next-line: no-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           validate(child, <any>schema.additionalProperties, propertyValidationResult, matchingSchemas, isKubernetes);
           validationResult.mergePropertyMatch(propertyValidationResult);
           validationResult.mergeEnumValues(propertyValidationResult);
