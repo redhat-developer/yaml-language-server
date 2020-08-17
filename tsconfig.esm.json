@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "declaration": true,
+    "sourceMap": true,
+    "alwaysStrict": true,
+    "lib": [
+      "dom",
+      "es2016",
+    ],
+    "outDir": "./lib/esm",
+    "plugins": [],
+    "downlevelIteration": true
+  },
+  "exclude": [
+    "node_modules",
+    "out",
+    "lib",
+    "test"
+  ]
+}
