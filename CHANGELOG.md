@@ -2,7 +2,7 @@
 
 - Allows to declare a schema inside the yaml file through modeline `# yaml-language-server: $schema=<urlOfTheSchema>` [#280](https://github.com/redhat-developer/yaml-language-server/pull/280)
 - Insert empty string instead of 'null' for string array completion [#277](https://github.com/redhat-developer/yaml-language-server/pull/277)
-- Handle workspace folders better [#281](https://github.com/redhat-developer/yaml-language-server/pull/281)
+- Handle workspace/workspaceFolders event for multi root workspaces [#281](https://github.com/redhat-developer/yaml-language-server/pull/281)
 - Provide default object as completion snippet [#291] https://github.com/redhat-developer/yaml-language-server/pull/291
 - Add validation of date and time formats [#292](https://github.com/redhat-developer/yaml-language-server/pull/292)
 - Fix document symbols computation if yaml has complex mappings [#293](https://github.com/redhat-developer/yaml-language-server/pull/293)
