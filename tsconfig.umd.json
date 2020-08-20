@@ -1,15 +1,9 @@
 {
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "target": "es6",
+    "lib": ["dom"],
     "module": "umd",
-    "moduleResolution": "node",
-    "declaration": true,
-    "lib": [
-      "dom",
-      "es2016"
-    ],
     "outDir": "./lib/umd",
-    "plugins": []
   },
   "exclude": [
     "node_modules",
