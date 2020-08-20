@@ -372,7 +372,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         if (schemaMatchs !== null && schemaMatchs.length >= 1) {
           if (schemaMatchs.length >= 2) {
             console.log(
-              'Several $schema attributes has been found on the yaml-language-server modeline. The first one will be picked.'
+              'Several $schema attributes have been found on the yaml-language-server modeline. The first one will be picked.'
             );
           }
           return schemaMatchs[0].substring('$schema='.length);
