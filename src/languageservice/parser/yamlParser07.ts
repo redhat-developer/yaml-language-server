@@ -17,7 +17,6 @@ import { getLineStartPositions } from '../utils/documentPositionCalculator';
 import { ASTNode } from '../jsonASTTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
 
-const YAML_DIRECTIVE_PREFIX = '%';
 const YAML_COMMENT_PREFIX = '#';
 const YAML_DATA_INSTANCE_SEPARATOR = '---';
 
@@ -118,14 +117,14 @@ export function parse(text: string, customTags = []): YAMLDocument {
 function parseLineComments(text: string, yamlDocs: SingleYAMLDocument[]): void {
   const lines = text.split(/[\r\n]+/g);
   let yamlDocCount = 0;
+  let firstSeparatorFound = false;
   lines.forEach((line) => {
-    if (line.startsWith(YAML_DIRECTIVE_PREFIX) && yamlDocCount === 0) {
-      yamlDocCount--;
-    }
-    if (line === YAML_DATA_INSTANCE_SEPARATOR) {
+    if (line === YAML_DATA_INSTANCE_SEPARATOR && firstSeparatorFound) {
       yamlDocCount++;
+    } else if (line === YAML_DATA_INSTANCE_SEPARATOR) {
+      firstSeparatorFound = true;
     }
-    if (line.startsWith(YAML_COMMENT_PREFIX)) {
+    if (line.startsWith(YAML_COMMENT_PREFIX) && yamlDocCount < yamlDocs.length) {
       yamlDocs[yamlDocCount].lineComments.push(line);
     }
   });
