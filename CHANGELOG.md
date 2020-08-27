@@ -1,3 +1,7 @@
+#### 0.10.1
+
+- Fix for cannot read property 'lineComments' of undefined Code: -32603 [redhat-developer/vscode-yaml#312](https://github.com/redhat-developer/vscode-yaml/issues/358)
+
 #### 0.10.0
 
 - Allows to declare a schema inside the yaml file through modeline `# yaml-language-server: $schema=<urlOfTheSchema>` [#280](https://github.com/redhat-developer/yaml-language-server/pull/280)
