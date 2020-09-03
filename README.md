@@ -199,3 +199,7 @@ This repository only contains the server implementation. Here are some known cli
 ### Connecting to the language server via stdio
 
 We have included the option to connect to the language server via [stdio](https://github.com/redhat-developer/yaml-language-server/blob/681985b5a059c2cb55c8171235b07e1651b6c546/src/server.ts#L46-L51) to help with intergrating the language server into different clients.
+
+### ESM and UMD Modules
+
+Building the YAML Language Server produces [CommonJS](http://www.commonjs.org/) modules in the `/out/server/src` directory. In addition, a build also produces [UMD](https://github.com/umdjs/umd) (Universal Module Definition) modules and [ES Modules](https://tc39.es/ecma262/#sec-modules) (ESM) in the `/lib` directory. That gives you choices in using the YAML Language Server with different module loaders on the server side and in the browser with bundlers like webpack.
