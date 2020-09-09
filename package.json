@@ -61,7 +61,7 @@
     "typescript": "^3.8.3"
   },
   "scripts": {
-    "clean": "rimraf out/server",
+    "clean": "rimraf out/server && rimraf lib",
     "compile": "tsc -p .",
     "watch": "tsc --watch -p .",
     "test": "mocha --require ts-node/register --ui tdd ./test/*.test.ts",
