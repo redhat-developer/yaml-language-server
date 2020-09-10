@@ -777,4 +777,42 @@ suite('Validation Tests', () => {
         .then(done, done);
     });
   });
+
+  describe('Multi Document schema validation tests', () => {
+    it('Document does not error when --- is present with schema', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          cwd: {
+            type: 'string',
+          },
+        },
+      });
+      const content = '---\n# this is a test\ncwd: this';
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.equal(result.length, 0);
+        })
+        .then(done, done);
+    });
+
+    it('Multi Document does not error when --- is present with schema', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          cwd: {
+            type: 'string',
+          },
+        },
+      });
+      const content = '---\n# this is a test\ncwd: this...\n---\n# second comment\ncwd: hello\n...';
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.equal(result.length, 0);
+        })
+        .then(done, done);
+    });
+  });
 });

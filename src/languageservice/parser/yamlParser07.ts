@@ -17,7 +17,6 @@ import { getLineStartPositions } from '../utils/documentPositionCalculator';
 import { ASTNode } from '../jsonASTTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
 
-const YAML_DIRECTIVE_PREFIX = '%';
 const YAML_COMMENT_PREFIX = '#';
 const YAML_DATA_INSTANCE_SEPARATOR = '---';
 
@@ -43,7 +42,8 @@ export class SingleYAMLDocument extends JSONDocument {
     this.lineComments = [];
   }
 
-  public getSchemas(schema, doc, node) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+  public getSchemas(schema: any, doc: any, node: any): any[] {
     const matchingSchemas = [];
     doc.validate(schema, matchingSchemas, node.start);
     return matchingSchemas;
@@ -114,17 +114,17 @@ export function parse(text: string, customTags = []): YAMLDocument {
   return new YAMLDocument(yamlDocs);
 }
 
-function parseLineComments(text: string, yamlDocs: SingleYAMLDocument[]) {
+function parseLineComments(text: string, yamlDocs: SingleYAMLDocument[]): void {
   const lines = text.split(/[\r\n]+/g);
   let yamlDocCount = 0;
+  let firstSeparatorFound = false;
   lines.forEach((line) => {
-    if (line.startsWith(YAML_DIRECTIVE_PREFIX) && yamlDocCount === 0) {
-      yamlDocCount--;
-    }
-    if (line === YAML_DATA_INSTANCE_SEPARATOR) {
+    if (line === YAML_DATA_INSTANCE_SEPARATOR && firstSeparatorFound) {
       yamlDocCount++;
+    } else if (line === YAML_DATA_INSTANCE_SEPARATOR) {
+      firstSeparatorFound = true;
     }
-    if (line.startsWith(YAML_COMMENT_PREFIX)) {
+    if (line.startsWith(YAML_COMMENT_PREFIX) && yamlDocCount < yamlDocs.length) {
       yamlDocs[yamlDocCount].lineComments.push(line);
     }
   });

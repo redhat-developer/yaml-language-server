@@ -21,7 +21,7 @@ import {
   DocumentFormattingRequest,
 } from 'vscode-languageserver';
 
-import { xhr, XHRResponse, configure as configureHttpRequests } from 'request-light';
+import { xhr, configure as configureHttpRequests } from 'request-light';
 import * as URL from 'url';
 import { removeDuplicatesObj } from './languageservice/utils/arrUtils';
 import {
@@ -155,7 +155,7 @@ const checkSchemaURI = (uri: string): string => {
  * AND the schema store setting is enabled. If the schema store setting
  * is not enabled we need to clear the schemas.
  */
-function setSchemaStoreSettingsIfNotSet() {
+function setSchemaStoreSettingsIfNotSet(): void {
   const schemaStoreIsSet = schemaStoreSettings.length !== 0;
 
   if (schemaStoreEnabled && !schemaStoreIsSet) {
@@ -164,7 +164,7 @@ function setSchemaStoreSettingsIfNotSet() {
         schemaStoreSettings = schemaStore.schemas;
         updateConfiguration();
       })
-      .catch((error: XHRResponse) => {
+      .catch(() => {
         // ignore
       });
   } else if (!schemaStoreEnabled) {
@@ -176,7 +176,8 @@ function setSchemaStoreSettingsIfNotSet() {
 /**
  * When the schema store is enabled, download and store YAML schema associations
  */
-function getSchemaStoreMatchingSchemas() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getSchemaStoreMatchingSchemas(): Promise<{ schemas: any[] }> {
   return xhr({ url: JSON_SCHEMASTORE_URL }).then((response) => {
     const languageSettings = {
       schemas: [],
@@ -208,9 +209,9 @@ function getSchemaStoreMatchingSchemas() {
 
 /**
  * Called when server settings or schema associations are changed
- * Re-creates schema associations and revalidates any open YAML files
+ * Re-creates schema associations and re-validates any open YAML files
  */
-function updateConfiguration() {
+function updateConfiguration(): void {
   let languageSettings: LanguageSettings = {
     validate: yamlShouldValidate,
     hover: yamlShouldHover,
@@ -267,7 +268,8 @@ function updateConfiguration() {
  * @param schema schema id
  * @param languageSettings current server settings
  */
-function configureSchemas(uri: string, fileMatch: string[], schema: any, languageSettings: LanguageSettings) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function configureSchemas(uri: string, fileMatch: string[], schema: any, languageSettings: LanguageSettings): LanguageSettings {
   uri = checkSchemaURI(uri);
 
   if (schema === null) {
@@ -287,7 +289,7 @@ function configureSchemas(uri: string, fileMatch: string[], schema: any, languag
   return languageSettings;
 }
 
-function isKubernetes(textDocument: TextDocument) {
+function isKubernetes(textDocument: TextDocument): boolean {
   for (const path in specificValidatorPaths) {
     const globPath = specificValidatorPaths[path];
     const fpa = new FilePatternAssociation(globPath);
@@ -339,7 +341,7 @@ function validateTextDocument(textDocument: TextDocument): void {
         diagnostics: removeDuplicatesObj(diagnostics),
       });
     },
-    function (error) {
+    function () {
       // ignore
     }
   );
@@ -547,7 +549,7 @@ documents.onDidClose((event) => {
 
 /**
  * Called when a monitored file is changed in an editor
- * Revalidates the entire document
+ * Re-validates the entire document
  */
 connection.onDidChangeWatchedFiles((change) => {
   let hasChanges = false;
