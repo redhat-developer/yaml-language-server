@@ -7,3 +7,4 @@ out/server
 .DS_Store
 yarn-error.log
 coverage
+lib/

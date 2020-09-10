@@ -1,7 +1,7 @@
 import { URI } from 'vscode-uri';
 import { IConnection } from 'vscode-languageserver';
 import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
-import fs = require('fs');
+import * as fs from 'fs';
 
 import { VSCodeContentRequest, CustomSchemaContentRequest } from '../../requestTypes';
 import { isRelativePath, relativeToAbsolutePath } from '../utils/paths';
