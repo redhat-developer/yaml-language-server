@@ -2,6 +2,10 @@
 
 - Make yaml-language-server available as ESM and UMD modules in the `/lib` directory [#305](https://github.com/redhat-developer/yaml-language-server/pull/305)
 
+#### 0.10.1
+
+- Fix for cannot read property 'lineComments' of undefined Code: -32603 [redhat-developer/vscode-yaml#312](https://github.com/redhat-developer/vscode-yaml/issues/358)
+
 #### 0.10.0
 
 - Allows to declare a schema inside the yaml file through modeline `# yaml-language-server: $schema=<urlOfTheSchema>`
