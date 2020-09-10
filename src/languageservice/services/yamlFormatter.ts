@@ -5,8 +5,11 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { TextDocument, Range, Position, TextEdit } from 'vscode-languageserver-types';
+import { TextDocument, Range, Position, TextEdit, FormattingOptions } from 'vscode-languageserver-types';
 import { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
+import * as prettier from 'prettier';
+import { Options } from 'prettier';
+import * as parser from 'prettier/parser-yaml';
 
 export class YAMLFormatter {
   private formatterEnabled = true;
@@ -17,17 +20,30 @@ export class YAMLFormatter {
     }
   }
 
-  public format(document: TextDocument, options: CustomFormatterOptions): TextEdit[] {
+  public format(document: TextDocument, options: FormattingOptions & CustomFormatterOptions): TextEdit[] {
     if (!this.formatterEnabled) {
       return [];
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const prettier = require('prettier');
       const text = document.getText();
 
-      const formatted = prettier.format(text, Object.assign(options, { parser: 'yaml' }));
+      const prettierOptions: Options = {
+        parser: 'yaml',
+        plugins: [parser],
+
+        // --- FormattingOptions ---
+        tabWidth: options.tabSize,
+
+        // --- CustomFormatterOptions ---
+        singleQuote: options.singleQuote,
+        bracketSpacing: options.bracketSpacing,
+        // 'preserve' is the default for Options.proseWrap. See also server.ts
+        proseWrap: 'always' === options.proseWrap ? 'always' : 'never' === options.proseWrap ? 'never' : 'preserve',
+        printWidth: options.printWidth,
+      };
+
+      const formatted = prettier.format(text, prettierOptions);
 
       return [TextEdit.replace(Range.create(Position.create(0, 0), document.positionAt(text.length)), formatted)];
     } catch (error) {
