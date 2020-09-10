@@ -1,3 +1,7 @@
+#### 0.11.0
+
+- Make yaml-language-server available as ESM and UMD modules in the `/lib` directory [#305](https://github.com/redhat-developer/yaml-language-server/pull/305)
+
 #### 0.10.0
 
 - Allows to declare a schema inside the yaml file through modeline `# yaml-language-server: $schema=<urlOfTheSchema>`
