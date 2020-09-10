@@ -1,6 +1,7 @@
 #### 0.11.0
 
 - Make yaml-language-server available as ESM and UMD modules in the `/lib` directory [#305](https://github.com/redhat-developer/yaml-language-server/pull/305)
+- Fix: `yaml.schemas` configuration doesn't work on windows with full path [#347](https://github.com/redhat-developer/vscode-yaml/issues/347)
 
 #### 0.10.1
 

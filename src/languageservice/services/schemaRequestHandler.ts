@@ -21,7 +21,14 @@ export const schemaRequestHandler = (connection: IConnection, uri: string): Then
     uri = relativeToAbsolutePath(this.workspaceFolders, this.workspaceRoot, uri);
   }
 
-  const scheme = URI.parse(uri).scheme.toLowerCase();
+  let scheme = URI.parse(uri).scheme.toLowerCase();
+
+  // test if uri is windows path, ie starts with 'c:\'
+  if (/^[a-z]:\\/i.test(uri)) {
+    const winUri = URI.file(uri);
+    scheme = winUri.scheme.toLowerCase();
+    uri = winUri.toString();
+  }
 
   // If the requested schema is a local file, read and return the file contents
   if (scheme === 'file') {

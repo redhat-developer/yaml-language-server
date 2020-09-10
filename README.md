@@ -95,7 +95,7 @@ and that will associate the composer schema with myYamlFile.yaml.
 
 When associating a schema it should follow the format below
 
-```
+```json
 yaml.schemas: {
     "url": "globPattern",
     "Kubernetes": "globPattern"
@@ -104,7 +104,7 @@ yaml.schemas: {
 
 e.g.
 
-```
+```json
 yaml.schemas: {
     "https://json.schemastore.org/composer": "/*"
 }
@@ -112,7 +112,7 @@ yaml.schemas: {
 
 e.g.
 
-```
+```json
 yaml.schemas: {
     "kubernetes": "/myYamlFile.yaml"
 }
@@ -120,10 +120,26 @@ yaml.schemas: {
 
 e.g.
 
-```
+```json
 yaml.schemas: {
     "https://json.schemastore.org/composer": "/*",
     "kubernetes": "/myYamlFile.yaml"
+}
+```
+
+On Windows with full path:
+
+```json
+yaml.schemas: {
+    "C:\\Users\\user\\Documents\\custom_schema.json": "someFilePattern.yaml",
+}
+```
+
+On Mac/Linux with full path:
+
+```json
+yaml.schemas: {
+    "/home/user/custom_schema.json": "someFilePattern.yaml",
 }
 ```
 
