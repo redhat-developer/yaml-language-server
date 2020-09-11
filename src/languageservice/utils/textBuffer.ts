@@ -6,6 +6,10 @@
 import { TextDocument } from 'vscode-languageserver';
 import { Range } from 'vscode-languageserver-types';
 
+interface FullTextDocument {
+  getLineOffsets(): number[];
+}
+
 export class TextBuffer {
   constructor(private doc: TextDocument) {}
 
@@ -14,8 +18,7 @@ export class TextBuffer {
   }
 
   getLineLength(lineNumber: number): number {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const lineOffsets: number[] = (this.doc as any).getLineOffsets();
+    const lineOffsets = ((this.doc as unknown) as FullTextDocument).getLineOffsets();
     if (lineNumber >= lineOffsets.length) {
       return this.doc.getText().length;
     } else if (lineNumber < 0) {
@@ -27,8 +30,7 @@ export class TextBuffer {
   }
 
   getLineContent(lineNumber: number): string {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const lineOffsets: number[] = (this.doc as any).getLineOffsets();
+    const lineOffsets = ((this.doc as unknown) as FullTextDocument).getLineOffsets();
     if (lineNumber >= lineOffsets.length) {
       return this.doc.getText();
     } else if (lineNumber < 0) {
