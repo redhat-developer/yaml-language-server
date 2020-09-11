@@ -28,6 +28,8 @@ import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jso
 import { JSONCompletion } from 'vscode-json-languageservice/lib/umd/services/jsonCompletion';
 import { ClientCapabilities } from 'vscode-languageserver-protocol';
 import { stringifyObject, StringifySettings } from '../utils/json';
+import { guessIndentation } from '../utils/indentationGuesser';
+import { TextBuffer } from '../utils/textBuffer';
 const localize = nls.loadMessageBundle();
 
 export class YAMLCompletion extends JSONCompletion {
@@ -37,6 +39,8 @@ export class YAMLCompletion extends JSONCompletion {
   private customTags: Array<string>;
   private completion: boolean;
   private supportsMarkdown: boolean | undefined;
+  private indentation: string;
+  private configuredIndentation: string | undefined;
 
   constructor(
     schemaService: YAMLSchemaService,
@@ -57,6 +61,7 @@ export class YAMLCompletion extends JSONCompletion {
       this.completion = languageSettings.completion;
     }
     this.customTags = customTags;
+    this.configuredIndentation = languageSettings.indentation;
   }
 
   public doResolve(item: CompletionItem): Thenable<CompletionItem> {
@@ -83,6 +88,12 @@ export class YAMLCompletion extends JSONCompletion {
     const completionFix = this.completionHelper(document, position);
     const newText = completionFix.newText;
     const doc = parseYAML(newText);
+    if (!this.configuredIndentation) {
+      const indent = guessIndentation(new TextBuffer(document), 2, true);
+      this.indentation = indent.insertSpaces ? ' '.repeat(indent.tabSize) : '\t';
+    } else {
+      this.indentation = this.configuredIndentation;
+    }
     this.setKubernetesParserOption(doc.documents, isKubernetes);
 
     const offset = document.offsetAt(position);
@@ -285,7 +296,7 @@ export class YAMLCompletion extends JSONCompletion {
                     propertySchema,
                     addValue,
                     separatorAfter,
-                    identCompensation + '\t'
+                    identCompensation + this.indentation
                   ),
                   insertTextFormat: InsertTextFormat.Snippet,
                   documentation: propertySchema.description || '',
@@ -538,7 +549,7 @@ export class YAMLCompletion extends JSONCompletion {
           for (let i = arrayDepth; i > 0; i--) {
             prefix = prefix + indent + '[\n';
             suffix = suffix + '\n' + indent + ']';
-            indent += '\t';
+            indent += this.indentation;
             type = 'array';
           }
           insertText = prefix + indent + s.bodyText.split('\n').join('\n' + indent) + suffix + separatorAfter;
@@ -636,7 +647,7 @@ export class YAMLCompletion extends JSONCompletion {
   private getInsertTextForValue(value: any, separatorAfter: string): string {
     switch (typeof value) {
       case 'object': {
-        const indent = '\t';
+        const indent = this.indentation;
         return this.getInsertTemplateForValue(value, indent, { index: 1 }, separatorAfter);
       }
     }
@@ -663,7 +674,7 @@ export class YAMLCompletion extends JSONCompletion {
           insertText += `${indent}\${${navOrder.index++}:${key}}:`;
           let valueTemplate;
           if (typeof element === 'object') {
-            valueTemplate = `${this.getInsertTemplateForValue(element, indent + '\t', navOrder, separatorAfter)}`;
+            valueTemplate = `${this.getInsertTemplateForValue(element, indent + this.indentation, navOrder, separatorAfter)}`;
           } else {
             valueTemplate = ` \${${navOrder.index++}:${this.getInsertTextForPlainText(element + separatorAfter)}}\n`;
           }
@@ -679,7 +690,12 @@ export class YAMLCompletion extends JSONCompletion {
     return text.replace(/[\\$}]/g, '\\$&'); // escape $, \ and }
   }
 
-  private getInsertTextForObject(schema: JSONSchema, separatorAfter: string, indent = '\t', insertIndex = 1): InsertText {
+  private getInsertTextForObject(
+    schema: JSONSchema,
+    separatorAfter: string,
+    indent = this.indentation,
+    insertIndex = 1
+  ): InsertText {
     let insertText = '';
     if (!schema.properties) {
       insertText = `${indent}$${insertIndex++}\n`;
@@ -710,11 +726,11 @@ export class YAMLCompletion extends JSONCompletion {
               const arrayInsertResult = this.getInsertTextForArray(
                 propertySchema.items,
                 separatorAfter,
-                `${indent}\t`,
+                `${indent}${this.indentation}`,
                 insertIndex++
               );
               insertIndex = arrayInsertResult.insertIndex;
-              insertText += `${indent}${key}:\n${indent}\t- ${arrayInsertResult.insertText}\n`;
+              insertText += `${indent}${key}:\n${indent}${this.indentation}- ${arrayInsertResult.insertText}\n`;
             }
             break;
           case 'object':
@@ -722,7 +738,7 @@ export class YAMLCompletion extends JSONCompletion {
               const objectInsertResult = this.getInsertTextForObject(
                 propertySchema,
                 separatorAfter,
-                `${indent}\t`,
+                `${indent}${this.indentation}`,
                 insertIndex++
               );
               insertIndex = objectInsertResult.insertIndex;
@@ -753,7 +769,7 @@ export class YAMLCompletion extends JSONCompletion {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getInsertTextForArray(schema: any, separatorAfter: string, indent = '\t', insertIndex = 1): InsertText {
+  private getInsertTextForArray(schema: any, separatorAfter: string, indent = this.indentation, insertIndex = 1): InsertText {
     let insertText = '';
     if (!schema) {
       insertText = `$${insertIndex++}`;
@@ -780,7 +796,12 @@ export class YAMLCompletion extends JSONCompletion {
         break;
       case 'object':
         {
-          const objectInsertResult = this.getInsertTextForObject(schema, separatorAfter, `${indent}\t`, insertIndex++);
+          const objectInsertResult = this.getInsertTextForObject(
+            schema,
+            separatorAfter,
+            `${indent}${this.indentation}`,
+            insertIndex++
+          );
           insertText = objectInsertResult.insertText.trimLeft();
           insertIndex = objectInsertResult.insertIndex;
         }
@@ -794,7 +815,7 @@ export class YAMLCompletion extends JSONCompletion {
     propertySchema: JSONSchema,
     addValue: boolean,
     separatorAfter: string,
-    ident = '\t'
+    ident = this.indentation
   ): string {
     const propertyText = this.getInsertTextForValue(key, '');
     const resultText = propertyText + ':';
@@ -841,7 +862,9 @@ export class YAMLCompletion extends JSONCompletion {
       if (propertySchema.properties) {
         return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter, ident).insertText}`;
       } else if (propertySchema.items) {
-        return `${resultText}\n\t- ${this.getInsertTextForArray(propertySchema.items, separatorAfter, ident).insertText}`;
+        return `${resultText}\n${this.indentation}- ${
+          this.getInsertTextForArray(propertySchema.items, separatorAfter, ident).insertText
+        }`;
       }
       if (nValueProposals === 0) {
         let type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
@@ -860,10 +883,10 @@ export class YAMLCompletion extends JSONCompletion {
             value = ' $1';
             break;
           case 'object':
-            value = '\n\t';
+            value = `\n${this.indentation}`;
             break;
           case 'array':
-            value = '\n\t- ';
+            value = `\n${this.indentation}- `;
             break;
           case 'number':
           case 'integer':
