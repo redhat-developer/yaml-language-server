@@ -411,7 +411,7 @@ connection.onInitialize(
         completionProvider: { resolveProvider: true },
         hoverProvider: true,
         documentSymbolProvider: true,
-        documentFormattingProvider: false,
+        documentFormattingProvider: true,
         documentRangeFormattingProvider: false,
         definitionProvider: true,
         workspace: {
