@@ -88,7 +88,7 @@ interface Settings {
     proxyStrictSSL: boolean;
   };
   editor: {
-    tabSize: string;
+    tabSize: number;
   };
 }
 
@@ -511,8 +511,8 @@ connection.onDidChangeConfiguration((change) => {
 
   schemaConfigurationSettings = [];
 
-  if (settings.editor.tabSize) {
-    indentation = settings.editor.tabSize;
+  if (settings.editor?.tabSize) {
+    indentation = ' '.repeat(settings.editor.tabSize);
   }
 
   for (const uri in yamlConfigurationSettings) {
