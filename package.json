@@ -43,12 +43,14 @@
     "yaml-ast-parser-custom-tags": "0.0.43"
   },
   "devDependencies": {
+    "@types/chai": "^4.2.12",
     "@types/mocha": "2.2.48",
     "@types/node": "^12.11.7",
-    "@types/sinon": "^9.0.5",
     "@types/prettier": "2.0.2",
+    "@types/sinon": "^9.0.5",
     "@typescript-eslint/eslint-plugin": "^3.2.0",
     "@typescript-eslint/parser": "^3.2.0",
+    "chai": "^4.2.0",
     "coveralls": "^3.0.5",
     "eslint": "^7.2.0",
     "eslint-config-prettier": "^6.11.0",
@@ -58,6 +60,7 @@
     "nyc": "^14.1.1",
     "rimraf": "^3.0.2",
     "sinon": "^9.0.3",
+    "sinon-chai": "^3.5.0",
     "source-map-support": "^0.5.12",
     "ts-node": "^5.0.1",
     "typescript": "^3.8.3"
