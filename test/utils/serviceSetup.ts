@@ -17,6 +17,7 @@ export class ServiceSetup {
     isKubernetes: false,
     schemas: [],
     customTags: [],
+    indentation: undefined,
   };
 
   withValidate(): ServiceSetup {
@@ -51,6 +52,11 @@ export class ServiceSetup {
 
   withCustomTags(customTags: string[]): ServiceSetup {
     this.languageSettings.customTags = customTags;
+    return this;
+  }
+
+  withIndentation(indentation: string): ServiceSetup {
+    this.languageSettings.indentation = indentation;
     return this;
   }
 }

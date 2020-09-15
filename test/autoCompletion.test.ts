@@ -22,6 +22,7 @@ suite('Auto Completion Tests', () => {
 
   afterEach(() => {
     languageService.deleteSchema(SCHEMA_ID);
+    languageService.configure(languageSettingsSetup.languageSettings);
   });
 
   describe('YAML Completion Tests', function () {
@@ -543,7 +544,7 @@ suite('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('top', 'top:\n  \tprop1: $1', 2, 2, 2, 2, 10, 2, {
+              createExpectedCompletion('top', 'top:\n      prop1: $1', 2, 2, 2, 2, 10, 2, {
                 documentation: '',
               })
             );
@@ -561,7 +562,7 @@ suite('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('top', 'top:\n  \tprop1: $1', 0, 2, 0, 2, 10, 2, {
+              createExpectedCompletion('top', 'top:\n    prop1: $1', 0, 2, 0, 2, 10, 2, {
                 documentation: '',
               })
             );
@@ -644,7 +645,7 @@ suite('Auto Completion Tests', () => {
         const completion = parseSetup(content, content.lastIndexOf('Ba') + 2);
         completion
           .then(function (result) {
-            assert.strictEqual('fooBar:\n\t- ${1:""}', result.items[0].insertText);
+            assert.strictEqual('fooBar:\n  - ${1:""}', result.items[0].insertText);
           })
           .then(done, done);
       });
@@ -1073,7 +1074,7 @@ suite('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('helm', 'helm:\n  \tname: $1', 1, 4, 1, 6, 10, 2, {
+              createExpectedCompletion('helm', 'helm:\n    name: $1', 1, 4, 1, 6, 10, 2, {
                 documentation: '',
               })
             );
@@ -1091,7 +1092,7 @@ suite('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('helm', 'helm:\n             \tname: $1', 1, 14, 1, 16, 10, 2, {
+              createExpectedCompletion('helm', 'helm:\n               name: $1', 1, 14, 1, 16, 10, 2, {
                 documentation: '',
               })
             );
@@ -1109,7 +1110,7 @@ suite('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('helm', 'helm:\n \t             \tname: $1', 1, 16, 1, 18, 10, 2, {
+              createExpectedCompletion('helm', 'helm:\n \t               name: $1', 1, 16, 1, 18, 10, 2, {
                 documentation: '',
               })
             );
@@ -1157,6 +1158,40 @@ suite('Auto Completion Tests', () => {
       });
     });
 
+    describe('Configuration based indentation', () => {
+      it('4 space indentation', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('    ');
+        languageService.configure(languageSettingsSetup.languageSettings);
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'string',
+                  enum: ['test'],
+                },
+                myOtherSample: {
+                  type: 'string',
+                  enum: ['test'],
+                },
+              },
+            },
+          },
+        });
+        const content = 'scripts:\n    sample: test\n    myOther';
+        const completion = await parseSetup(content, 34);
+        assert.strictEqual(completion.items.length, 1);
+        assert.deepStrictEqual(
+          completion.items[0],
+          createExpectedCompletion('myOtherSample', 'myOtherSample: ${1:test}', 2, 4, 2, 11, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+    });
+
     describe('Bug fixes', () => {
       it('Object completion', (done) => {
         languageService.addSchema(SCHEMA_ID, {
@@ -1178,7 +1213,7 @@ suite('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('Default value', '\n\t${1:KEY}: ${2:VALUE}\n', 0, 5, 0, 5, 9, 2, {
+              createExpectedCompletion('Default value', '\n  ${1:KEY}: ${2:VALUE}\n', 0, 5, 0, 5, 9, 2, {
                 detail: 'Default value',
               })
             );
@@ -1212,7 +1247,7 @@ suite('Auto Completion Tests', () => {
               result.items[0],
               createExpectedCompletion(
                 'Default value',
-                '\n\t${1:KEY}: ${2:VALUE}\n\t${3:KEY2}:\n\t\t${4:TEST}: ${5:TEST2}\n\t${6:KEY3}:\n\t\t- ${7:Test}\n\t\t- ${8:Test2}\n',
+                '\n  ${1:KEY}: ${2:VALUE}\n  ${3:KEY2}:\n    ${4:TEST}: ${5:TEST2}\n  ${6:KEY3}:\n    - ${7:Test}\n    - ${8:Test2}\n',
                 0,
                 5,
                 0,

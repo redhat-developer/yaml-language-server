@@ -79,7 +79,7 @@ suite('Default Snippet Tests', () => {
           assert.equal(result.items.length, 2);
           assert.equal(result.items[0].insertText, 'key1: $1\nkey2: $2');
           assert.equal(result.items[0].label, 'Object item');
-          assert.equal(result.items[1].insertText, 'key:\n\t$1');
+          assert.equal(result.items[1].insertText, 'key:\n  $1');
           assert.equal(result.items[1].label, 'key');
         })
         .then(done, done);
@@ -93,7 +93,7 @@ suite('Default Snippet Tests', () => {
           assert.notEqual(result.items.length, 0);
           assert.equal(result.items[0].insertText, 'key1: $1\nkey2: $2');
           assert.equal(result.items[0].label, 'Object item');
-          assert.equal(result.items[1].insertText, 'key:\n\t$1');
+          assert.equal(result.items[1].insertText, 'key:\n  $1');
           assert.equal(result.items[1].label, 'key');
         })
         .then(done, done);
