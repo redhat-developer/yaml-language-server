@@ -36,6 +36,10 @@ export interface LanguageSettings {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   schemas?: any[]; //List of schemas,
   customTags?: Array<string>; //Array of Custom Tags
+  /**
+   * Default indentation size
+   */
+  indentation?: string;
 }
 
 export interface PromiseConstructor {

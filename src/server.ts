@@ -87,6 +87,9 @@ interface Settings {
     proxy: string;
     proxyStrictSSL: boolean;
   };
+  editor: {
+    tabSize: number;
+  };
 }
 
 interface JSONSchemaSettings {
@@ -118,6 +121,7 @@ let yamlShouldCompletion = true;
 let schemaStoreSettings = [];
 let customTags = [];
 let schemaStoreEnabled = true;
+let indentation: string | undefined = undefined;
 
 // File validation helpers
 const pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
@@ -219,6 +223,7 @@ function updateConfiguration(): void {
     schemas: [],
     customTags: customTags,
     format: yamlFormatterSettings.enable,
+    indentation: indentation,
   };
 
   if (schemaAssociations) {
@@ -505,6 +510,10 @@ connection.onDidChangeConfiguration((change) => {
   }
 
   schemaConfigurationSettings = [];
+
+  if (settings.editor?.tabSize) {
+    indentation = ' '.repeat(settings.editor.tabSize);
+  }
 
   for (const uri in yamlConfigurationSettings) {
     const globPattern = yamlConfigurationSettings[uri];
