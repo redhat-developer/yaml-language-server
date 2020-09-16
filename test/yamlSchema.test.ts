@@ -51,6 +51,7 @@ suite('YAML Schema', () => {
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('fooScheme.yaml');
     expect(result.errors).length(1);
+    expect(result.errors[0]).includes('Unable to load schema from');
   });
 
   test('Error while parsing yaml scheme', async () => {
