@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/redhat-developer/yaml-language-server.svg?branch=master)](https://travis-ci.org/redhat-developer/yaml-language-server) [![version](https://img.shields.io/npm/v/yaml-language-server.svg)](https://www.npmjs.com/package/yaml-language-server) [![Coverage Status](https://coveralls.io/repos/github/redhat-developer/yaml-language-server/badge.svg?branch=master)](https://coveralls.io/github/redhat-developer/yaml-language-server?branch=master)
+![CI](https://github.com/redhat-developer/yaml-language-server/workflows/CI/badge.svg) [![Build Status](https://travis-ci.org/redhat-developer/yaml-language-server.svg?branch=master)](https://travis-ci.org/redhat-developer/yaml-language-server) [![version](https://img.shields.io/npm/v/yaml-language-server.svg)](https://www.npmjs.com/package/yaml-language-server) [![Coverage Status](https://coveralls.io/repos/github/redhat-developer/yaml-language-server/badge.svg?branch=master)](https://coveralls.io/github/redhat-developer/yaml-language-server?branch=master)
 
 # YAML Language Server
 
@@ -141,6 +141,12 @@ On Mac/Linux with full path:
 yaml.schemas: {
     "/home/user/custom_schema.json": "someFilePattern.yaml",
 }
+```
+
+Since `0.11.0` YAML Schemas can be used for validation:
+
+```json
+ "/home/user/custom_schema.yaml": "someFilePattern.yaml"
 ```
 
 #### Multi root schema association:
