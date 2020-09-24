@@ -644,7 +644,7 @@ connection.onDocumentFormatting((formatParams) => {
   }
 
   const customFormatterSettings = {
-    tabWidth: formatParams.options.tabSize,
+    tabSize: formatParams.options.tabSize,
     ...yamlFormatterSettings,
   };
 
