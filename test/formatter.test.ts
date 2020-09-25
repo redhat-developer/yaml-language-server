@@ -43,6 +43,76 @@ suite('Formatter Tests', () => {
         });
         assert.equal(edits[0].newText, 'comments: >\n  test test test\n  test test test\n  test test test\n  test test test\n');
       });
+
+      it('Formatting uses tabSize', () => {
+        const content = `map:
+  k1: v1
+  k2: v2
+list:
+  - item1
+  - item2
+`;
+
+        const edits = parseSetup(content, {
+          tabSize: 5,
+        });
+
+        const expected = `map:
+     k1: v1
+     k2: v2
+list:
+     - item1
+     - item2
+`;
+        assert.equal(edits[0].newText, expected);
+      });
+
+      it('Formatting uses tabWidth', () => {
+        const content = `map:
+  k1: v1
+  k2: v2
+list:
+  - item1
+  - item2
+`;
+
+        const edits = parseSetup(content, {
+          tabWidth: 5,
+        });
+
+        const expected = `map:
+     k1: v1
+     k2: v2
+list:
+     - item1
+     - item2
+`;
+        assert.equal(edits[0].newText, expected);
+      });
+
+      it('Formatting uses tabWidth over tabSize', () => {
+        const content = `map:
+  k1: v1
+  k2: v2
+list:
+  - item1
+  - item2
+`;
+
+        const edits = parseSetup(content, {
+          tabSize: 3,
+          tabWidth: 5,
+        });
+
+        const expected = `map:
+     k1: v1
+     k2: v2
+list:
+     - item1
+     - item2
+`;
+        assert.equal(edits[0].newText, expected);
+      });
     });
   });
 });

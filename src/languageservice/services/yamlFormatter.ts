@@ -33,7 +33,7 @@ export class YAMLFormatter {
         plugins: [parser],
 
         // --- FormattingOptions ---
-        tabWidth: options.tabSize,
+        tabWidth: (options.tabWidth as number) || options.tabSize,
 
         // --- CustomFormatterOptions ---
         singleQuote: options.singleQuote,
