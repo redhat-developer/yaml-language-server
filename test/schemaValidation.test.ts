@@ -16,7 +16,8 @@ import {
   DuplicateKeyError,
 } from './utils/errorMessages';
 import * as assert from 'assert';
-import { Diagnostic } from 'vscode-languageserver';
+import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+import { expect } from 'chai';
 
 const languageSettingsSetup = new ServiceSetup().withValidate().withCustomTags(['!Test', '!Ref sequence']);
 const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
@@ -101,7 +102,10 @@ suite('Validation Tests', () => {
       validator
         .then(function (result) {
           assert.equal(result.length, 1);
-          assert.deepEqual(result[0], createExpectedError(BooleanTypeError, 0, 11, 0, 15));
+          assert.deepEqual(
+            result[0],
+            createExpectedError(BooleanTypeError, 0, 11, 0, 15, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+          );
         })
         .then(done, done);
     });
@@ -120,7 +124,10 @@ suite('Validation Tests', () => {
       validator
         .then(function (result) {
           assert.equal(result.length, 1);
-          assert.deepEqual(result[0], createExpectedError(StringTypeError, 0, 5, 0, 10));
+          assert.deepEqual(
+            result[0],
+            createExpectedError(StringTypeError, 0, 5, 0, 10, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+          );
         })
         .then(done, done);
     });
@@ -200,7 +207,10 @@ suite('Validation Tests', () => {
       validator
         .then(function (result) {
           assert.equal(result.length, 1);
-          assert.deepEqual(result[0], createExpectedError(BooleanTypeError, 0, 11, 0, 16));
+          assert.deepEqual(
+            result[0],
+            createExpectedError(BooleanTypeError, 0, 11, 0, 16, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+          );
         })
         .then(done, done);
     });
@@ -219,7 +229,10 @@ suite('Validation Tests', () => {
       validator
         .then(function (result) {
           assert.equal(result.length, 1);
-          assert.deepEqual(result[0], createExpectedError(StringTypeError, 0, 5, 0, 7));
+          assert.deepEqual(
+            result[0],
+            createExpectedError(StringTypeError, 0, 5, 0, 7, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+          );
         })
         .then(done, done);
     });
@@ -258,7 +271,10 @@ suite('Validation Tests', () => {
       validator
         .then(function (result) {
           assert.equal(result.length, 1);
-          assert.deepEqual(result[0], createExpectedError(StringTypeError, 0, 5, 0, 11));
+          assert.deepEqual(
+            result[0],
+            createExpectedError(StringTypeError, 0, 5, 0, 11, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+          );
         })
         .then(done, done);
     });
@@ -365,7 +381,10 @@ suite('Validation Tests', () => {
       validator
         .then(function (result) {
           assert.equal(result.length, 1);
-          assert.deepEqual(result[0], createExpectedError(ObjectTypeError, 0, 9, 0, 13));
+          assert.deepEqual(
+            result[0],
+            createExpectedError(ObjectTypeError, 0, 9, 0, 13, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+          );
         })
         .then(done, done);
     });
@@ -407,7 +426,10 @@ suite('Validation Tests', () => {
       validator
         .then(function (result) {
           assert.equal(result.length, 1);
-          assert.deepEqual(result[0], createExpectedError(ArrayTypeError, 0, 11, 0, 15));
+          assert.deepEqual(
+            result[0],
+            createExpectedError(ArrayTypeError, 0, 11, 0, 15, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+          );
         })
         .then(done, done);
     });
@@ -637,7 +659,10 @@ suite('Validation Tests', () => {
       validator
         .then(function (result) {
           assert.equal(result.length, 1);
-          assert.deepEqual(result[0], createExpectedError(StringTypeError, 0, 4, 0, 4));
+          assert.deepEqual(
+            result[0],
+            createExpectedError(StringTypeError, 0, 4, 0, 4, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+          );
         })
         .then(done, done);
     });
@@ -813,6 +838,25 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 0);
         })
         .then(done, done);
+    });
+  });
+
+  describe('Schema with title', () => {
+    it('validator use schema title instead of url', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        title: 'Schema Super title',
+        properties: {
+          analytics: {
+            type: 'string',
+          },
+        },
+      });
+      const content = 'analytics: 1';
+      const result = await parseSetup(content);
+      expect(result[0]).deep.equal(
+        createExpectedError(StringTypeError, 0, 11, 0, 12, DiagnosticSeverity.Warning, 'yaml-schema: Schema Super title')
+      );
     });
   });
 });

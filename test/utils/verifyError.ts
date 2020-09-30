@@ -12,7 +12,8 @@ export function createExpectedError(
   startCharacter: number,
   endLine: number,
   endCharacter: number,
-  severity: DiagnosticSeverity = 2
+  severity: DiagnosticSeverity = 2,
+  source = 'yaml'
 ): Diagnostic {
   return {
     message,
@@ -27,6 +28,7 @@ export function createExpectedError(
       },
     },
     severity,
+    source,
   };
 }
 

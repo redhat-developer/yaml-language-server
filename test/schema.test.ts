@@ -4,10 +4,11 @@ import * as assert from 'assert';
 import * as parser from '../src/languageservice/parser/yamlParser07';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import * as JsonSchema from '../src/languageservice/jsonSchema';
-import url = require('url');
+import * as url from 'url';
 import { XHRResponse, xhr } from 'request-light';
 import { MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
+import { expect } from 'chai';
 
 const requestServiceMock = function (uri: string): Promise<string> {
   return Promise.reject<string>(`Resource ${uri} not found.`);
@@ -323,6 +324,31 @@ suite('JSON Schema', () => {
           testDone(error);
         }
       );
+  });
+
+  test('Schema has url', async () => {
+    const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+    const id = 'https://myschemastore/test1';
+    const schema: JsonSchema.JSONSchema = {
+      type: 'object',
+      properties: {
+        child: {
+          type: 'object',
+          properties: {
+            grandchild: {
+              type: 'number',
+              description: 'Meaning of Life',
+            },
+          },
+        },
+      },
+    };
+
+    service.registerExternalSchema(id, ['*.json'], schema);
+
+    const result = await service.getSchemaForResource('test.json', undefined);
+
+    expect(result.schema.url).equal(id);
   });
 
   test('Null Schema', function (testDone) {

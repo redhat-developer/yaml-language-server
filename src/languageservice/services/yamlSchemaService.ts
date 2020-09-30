@@ -296,19 +296,21 @@ export class YAMLSchemaService extends JSONSchemaService {
       }
 
       if (schemas.length > 0) {
-        return super
-          .createCombinedSchema(resource, schemas)
-          .getResolvedSchema()
-          .then((schema) => {
-            if (
-              schema.schema &&
-              schema.schema.schemaSequence &&
-              schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]
-            ) {
-              return new ResolvedSchema(schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]);
-            }
-            return schema;
-          });
+        const schemaHandle = super.createCombinedSchema(resource, schemas);
+        return schemaHandle.getResolvedSchema().then((schema) => {
+          if (schema.schema) {
+            schema.schema.url = schemaHandle.url;
+          }
+
+          if (
+            schema.schema &&
+            schema.schema.schemaSequence &&
+            schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]
+          ) {
+            return new ResolvedSchema(schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]);
+          }
+          return schema;
+        });
       }
 
       return Promise.resolve(null);
