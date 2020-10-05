@@ -9,7 +9,7 @@ import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionItemKind, CompletionList } from 'vscode-languageserver';
+import { CompletionList } from 'vscode-languageserver';
 import { expect } from 'chai';
 
 const languageSettingsSetup = new ServiceSetup().withCompletion();
