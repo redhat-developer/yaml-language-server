@@ -10,6 +10,7 @@ import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import { CompletionList } from 'vscode-languageserver';
+import { expect } from 'chai';
 
 const languageSettingsSetup = new ServiceSetup().withCompletion();
 const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
@@ -1261,6 +1262,39 @@ suite('Auto Completion Tests', () => {
             );
           })
           .then(done, done);
+      });
+
+      it('should handle array schema without items', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'array',
+          items: {
+            anyOf: [
+              {
+                type: 'object',
+                properties: {
+                  fooBar: {
+                    type: 'object',
+                    properties: {
+                      name: {
+                        type: 'string',
+                      },
+                      aaa: {
+                        type: 'array',
+                      },
+                    },
+                    required: ['name', 'aaa'],
+                  },
+                },
+              },
+            ],
+          },
+        });
+
+        const content = '---\n- \n';
+        const completion = await parseSetup(content, 6);
+        expect(completion.items).lengthOf(1);
+        expect(completion.items[0].label).eq('fooBar');
+        expect(completion.items[0].insertText).eq('fooBar:\n    name: $1\n    aaa:\n      - $2');
       });
     });
   });

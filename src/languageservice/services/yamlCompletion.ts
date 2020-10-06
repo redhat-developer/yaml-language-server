@@ -773,6 +773,7 @@ export class YAMLCompletion extends JSONCompletion {
     let insertText = '';
     if (!schema) {
       insertText = `$${insertIndex++}`;
+      return { insertText, insertIndex };
     }
     let type = Array.isArray(schema.type) ? schema.type[0] : schema.type;
     if (!type) {
