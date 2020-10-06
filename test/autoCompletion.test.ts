@@ -1008,6 +1008,162 @@ suite('Auto Completion Tests', () => {
           })
           .then(done, done);
       });
+
+      it('Array of objects autocomplete with 4 space indentation check', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('    ');
+        languageService.configure(languageSettingsSetup.languageSettings);
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            metadata: {
+              type: 'object',
+              properties: {
+                ownerReferences: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      apiVersion: {
+                        type: 'string',
+                      },
+                      kind: {
+                        type: 'string',
+                      },
+                      name: {
+                        type: 'string',
+                      },
+                      uid: {
+                        type: 'string',
+                      },
+                    },
+                    required: ['apiVersion', 'kind', 'name', 'uid'],
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const content = 'metadata:\n    ownerReferences';
+        const completion = await parseSetup(content, 29);
+        expect(completion.items[0]).deep.eq(
+          createExpectedCompletion(
+            'ownerReferences',
+            'ownerReferences:\n    - apiVersion: $1\n      kind: $2\n      name: $3\n      uid: $4',
+            1,
+            4,
+            1,
+            19,
+            10,
+            2,
+            { documentation: '' }
+          )
+        );
+      });
+    });
+
+    it('Array of objects autocomplete with 2 space indentation check', async () => {
+      const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('  ');
+      languageService.configure(languageSettingsSetup.languageSettings);
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          metadata: {
+            type: 'object',
+            properties: {
+              ownerReferences: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    apiVersion: {
+                      type: 'string',
+                    },
+                    kind: {
+                      type: 'string',
+                    },
+                    name: {
+                      type: 'string',
+                    },
+                    uid: {
+                      type: 'string',
+                    },
+                  },
+                  required: ['apiVersion', 'kind', 'name', 'uid'],
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const content = 'metadata:\n  ownerReferences';
+      const completion = await parseSetup(content, 27);
+      expect(completion.items[0]).deep.eq(
+        createExpectedCompletion(
+          'ownerReferences',
+          'ownerReferences:\n  - apiVersion: $1\n    kind: $2\n    name: $3\n    uid: $4',
+          1,
+          2,
+          1,
+          17,
+          10,
+          2,
+          { documentation: '' }
+        )
+      );
+
+      it('Array of objects autocomplete with 3 space indentation check', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('   ');
+        languageService.configure(languageSettingsSetup.languageSettings);
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            metadata: {
+              type: 'object',
+              properties: {
+                ownerReferences: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      apiVersion: {
+                        type: 'string',
+                      },
+                      kind: {
+                        type: 'string',
+                      },
+                      name: {
+                        type: 'string',
+                      },
+                      uid: {
+                        type: 'string',
+                      },
+                    },
+                    required: ['apiVersion', 'kind', 'name', 'uid'],
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const content = 'metadata:\n   ownerReferences';
+        const completion = await parseSetup(content, 27);
+        expect(completion.items[0]).deep.eq(
+          createExpectedCompletion(
+            'ownerReferences',
+            'ownerReferences:\n   - apiVersion: $1\n     kind: $2\n     name: $3\n     uid: $4',
+            1,
+            2,
+            1,
+            17,
+            10,
+            2,
+            { documentation: '' }
+          )
+        );
+      });
     });
 
     describe('JSON Schema 7 Specific Tests', function () {

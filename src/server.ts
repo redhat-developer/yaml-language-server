@@ -511,7 +511,9 @@ connection.onDidChangeConfiguration((change) => {
 
   schemaConfigurationSettings = [];
 
-  if (settings.editor?.tabSize) {
+  if (settings['[yaml]'] && settings['[yaml]']['editor.tabSize']) {
+    indentation = ' '.repeat(settings['[yaml]']['editor.tabSize']);
+  } else if (settings.editor?.tabSize) {
     indentation = ' '.repeat(settings.editor.tabSize);
   }
 

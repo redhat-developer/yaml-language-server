@@ -149,7 +149,7 @@ export class YAMLCompletion extends JSONCompletion {
           suggestion.label = label;
           proposed[label] = suggestion;
           result.items.push(suggestion);
-        } else if (!existing.documentation) {
+        } else if (!existing.documentation && suggestion.documentation) {
           existing.documentation = suggestion.documentation;
         }
       },
@@ -260,7 +260,7 @@ export class YAMLCompletion extends JSONCompletion {
     addValue: boolean,
     separatorAfter: string,
     collector: CompletionsCollector,
-    document
+    document: TextDocument
   ): void {
     const matchingSchemas = doc.getMatchingSchemas(schema.schema);
     matchingSchemas.forEach((s) => {
@@ -723,12 +723,7 @@ export class YAMLCompletion extends JSONCompletion {
             break;
           case 'array':
             {
-              const arrayInsertResult = this.getInsertTextForArray(
-                propertySchema.items,
-                separatorAfter,
-                `${indent}${this.indentation}`,
-                insertIndex++
-              );
+              const arrayInsertResult = this.getInsertTextForArray(propertySchema.items, separatorAfter, insertIndex++);
               insertIndex = arrayInsertResult.insertIndex;
               insertText += `${indent}${key}:\n${indent}${this.indentation}- ${arrayInsertResult.insertText}\n`;
             }
@@ -769,7 +764,7 @@ export class YAMLCompletion extends JSONCompletion {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getInsertTextForArray(schema: any, separatorAfter: string, indent = this.indentation, insertIndex = 1): InsertText {
+  private getInsertTextForArray(schema: any, separatorAfter: string, insertIndex = 1): InsertText {
     let insertText = '';
     if (!schema) {
       insertText = `$${insertIndex++}`;
@@ -797,12 +792,7 @@ export class YAMLCompletion extends JSONCompletion {
         break;
       case 'object':
         {
-          const objectInsertResult = this.getInsertTextForObject(
-            schema,
-            separatorAfter,
-            `${indent}${this.indentation}`,
-            insertIndex++
-          );
+          const objectInsertResult = this.getInsertTextForObject(schema, separatorAfter, `${this.indentation}  `, insertIndex++);
           insertText = objectInsertResult.insertText.trimLeft();
           insertIndex = objectInsertResult.insertIndex;
         }
@@ -864,7 +854,7 @@ export class YAMLCompletion extends JSONCompletion {
         return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter, ident).insertText}`;
       } else if (propertySchema.items) {
         return `${resultText}\n${this.indentation}- ${
-          this.getInsertTextForArray(propertySchema.items, separatorAfter, ident).insertText
+          this.getInsertTextForArray(propertySchema.items, separatorAfter).insertText
         }`;
       }
       if (nValueProposals === 0) {
