@@ -39,6 +39,10 @@ The following settings are supported:
 - `yaml.schemas`: Helps you associate schemas with files in a glob pattern
 - `yaml.schemaStore.enable`: When set to true the YAML language server will pull in all available schemas from [JSON Schema Store](https://www.schemastore.org/json/)
 - `yaml.customTags`: Array of custom tags that the parser will validate against. It has two ways to be used. Either an item in the array is a custom tag such as "!Ref" and it will automatically map !Ref to scalar or you can specify the type of the object !Ref should be e.g. "!Ref sequence". The type of object can be either scalar (for strings and booleans), sequence (for arrays), map (for objects).
+- `[yaml].editor.tabSize`: the number of spaces to use when autocompleting. Takes priority over editor.tabSize.
+- `editor.tabSize`: the number of spaces to use when autocompleting. Default is 2.
+- `http.proxy`: The URL of the proxy server that will be used when attempting to download a schema. If it is not set or it is undefined no proxy server will be used.
+- `http.proxyStrictSSL`: Whether the proxy server certificate should be verified against the list of supplied CAs.
 
 ##### Adding custom tags
 
