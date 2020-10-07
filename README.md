@@ -42,7 +42,7 @@ The following settings are supported:
 - `[yaml].editor.tabSize`: the number of spaces to use when autocompleting. Takes priority over editor.tabSize.
 - `editor.tabSize`: the number of spaces to use when autocompleting. Default is 2.
 - `http.proxy`: The URL of the proxy server that will be used when attempting to download a schema. If it is not set or it is undefined no proxy server will be used.
-- `http.proxyStrictSSL`: Whether the proxy server certificate should be verified against the list of supplied CAs.
+- `http.proxyStrictSSL`: If true the proxy server certificate should be verified against the list of supplied CAs. Default is false.
 
 ##### Adding custom tags
 
