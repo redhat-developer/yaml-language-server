@@ -228,5 +228,5 @@ Building the YAML Language Server produces [CommonJS](http://www.commonjs.org/) 
 
 ### CI
 
-We use GitHub Action to publish each change in the `master` branch to npm registry, such packages tagged with `next` tag.
+We use a GitHub Action to publish each change in the `master` branch to [npm registry](https://www.npmjs.com/package/yaml-language-server) with the `next` tag.
 You may use the `next` version to adopt the latest changes into your project.
