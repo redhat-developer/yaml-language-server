@@ -53,7 +53,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Publish 
-        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/master'}}
+        if: ${{ success() && runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/master'}}
         run: yarn publish --tag next --no-git-tag-version --prepatch --preid "$(git rev-parse --short HEAD)"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
