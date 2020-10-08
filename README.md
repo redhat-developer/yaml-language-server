@@ -225,3 +225,8 @@ We have included the option to connect to the language server via [stdio](https:
 ### ESM and UMD Modules
 
 Building the YAML Language Server produces [CommonJS](http://www.commonjs.org/) modules in the `/out/server/src` directory. In addition, a build also produces [UMD](https://github.com/umdjs/umd) (Universal Module Definition) modules and [ES Modules](https://tc39.es/ecma262/#sec-modules) (ESM) in the `/lib` directory. That gives you choices in using the YAML Language Server with different module loaders on the server side and in the browser with bundlers like webpack.
+
+### CI
+
+We use a GitHub Action to publish each change in the `master` branch to [npm registry](https://www.npmjs.com/package/yaml-language-server) with the `next` tag.
+You may use the `next` version to adopt the latest changes into your project.

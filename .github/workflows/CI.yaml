@@ -30,6 +30,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 12
+          registry-url: 'https://registry.npmjs.org'
 
       # Run install dependencies
       - name: Install dependencies
@@ -50,3 +51,9 @@ jobs:
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Publish 
+        if: ${{ success() && runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/master'}}
+        run: yarn publish --tag next --no-git-tag-version --prepatch --preid "$(git rev-parse --short HEAD)"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
