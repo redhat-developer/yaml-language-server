@@ -149,7 +149,7 @@ export class YAMLCompletion extends JSONCompletion {
           suggestion.label = label;
           proposed[label] = suggestion;
           result.items.push(suggestion);
-        } else if (!existing.documentation && suggestion.documentation) {
+        } else if (!existing.documentation) {
           existing.documentation = suggestion.documentation;
         }
       },
