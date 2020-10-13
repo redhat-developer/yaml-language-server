@@ -64,7 +64,7 @@ export class YAMLValidation {
       currentYAMLDoc.currentDocIndex = index;
 
       const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
-      // const validation = await this.validate(textDocument, currentYAMLDoc);
+
       const syd = (currentYAMLDoc as unknown) as SingleYAMLDocument;
       if (syd.errors.length > 0) {
         // TODO: Get rid of these type assertions (shouldn't need them)
