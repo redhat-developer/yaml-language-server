@@ -1051,7 +1051,7 @@ function validate(
               validationResult.propertiesValueMatches++;
             }
           } else {
-            propertySchema.url = schema.url;
+            propertySchema.url = schema.url ?? originalSchema.url;
             const propertyValidationResult = new ValidationResult(isKubernetes);
             validate(child, propertySchema, schema, propertyValidationResult, matchingSchemas, isKubernetes);
             validationResult.mergePropertyMatch(propertyValidationResult);
@@ -1265,12 +1265,15 @@ function getSchemaSource(schema: JSONSchema, originalSchema: JSONSchema): string
       label = schema.title;
     } else if (originalSchema.title) {
       label = originalSchema.title;
-    } else if (originalSchema.url) {
-      const url = URI.parse(originalSchema.url);
-      if (url.scheme === 'file') {
-        label = url.fsPath;
+    } else {
+      const uriString = schema.url ?? originalSchema.url;
+      if (uriString) {
+        const url = URI.parse(uriString);
+        if (url.scheme === 'file') {
+          label = url.fsPath;
+        }
+        label = url.toString();
       }
-      label = url.toString();
     }
     if (label) {
       return `yaml-schema: ${label}`;
