@@ -8,6 +8,7 @@ export interface JSONSchema {
   id?: string;
   $id?: string;
   $schema?: string;
+  url?: string;
   type?: string | string[];
   title?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

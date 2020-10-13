@@ -61,6 +61,7 @@ suite('JSON Schema', () => {
           id: 'https://myschemastore/child',
           type: 'bool',
           description: 'Test description',
+          url: 'https://myschemastore/child',
         });
       })
       .then(
@@ -156,14 +157,17 @@ suite('JSON Schema', () => {
         assert.deepEqual(fs.schema.properties['p1'], {
           type: 'string',
           enum: ['object'],
+          url: 'https://myschemastore/main/schema2.json',
         });
         assert.deepEqual(fs.schema.properties['p2'], {
           type: 'string',
           enum: ['object'],
+          url: 'https://myschemastore/main/schema2.json',
         });
         assert.deepEqual(fs.schema.properties['p3'], {
           type: 'string',
           enum: ['object'],
+          url: 'https://myschemastore/main/schema2.json',
         });
       })
       .then(

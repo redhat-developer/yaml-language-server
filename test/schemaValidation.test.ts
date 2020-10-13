@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { configureLanguageService, SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper';
+import { configureLanguageService, SCHEMA_ID, setupSchemaIDTextDocument, setupTextDocument } from './utils/testHelper';
 import { createExpectedError } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import {
@@ -18,6 +18,7 @@ import {
 import * as assert from 'assert';
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { expect } from 'chai';
+import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
 const languageSettingsSetup = new ServiceSetup().withValidate().withCustomTags(['!Test', '!Ref sequence']);
 const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
@@ -856,6 +857,35 @@ suite('Validation Tests', () => {
       const result = await parseSetup(content);
       expect(result[0]).deep.equal(
         createExpectedError(StringTypeError, 0, 11, 0, 12, DiagnosticSeverity.Warning, 'yaml-schema: Schema Super title')
+      );
+    });
+  });
+
+  describe('Multiple schema for single file', () => {
+    it('should add proper source to diagnostic', async () => {
+      const languageSettingsSetup = new ServiceSetup()
+        .withValidate()
+        .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['test.yaml'] })
+        .withSchemaFileMatch({ uri: 'https://json.schemastore.org/composer', fileMatch: ['test.yaml'] });
+      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+
+      const content = `
+      abandoned: v1
+      archive:
+        exclude:
+          asd: asd`;
+      const testTextDocument = setupTextDocument(content);
+      const result = await languageService.doValidation(testTextDocument, true);
+      expect(result[0]).deep.equal(
+        createExpectedError(
+          ArrayTypeError,
+          4,
+          10,
+          4,
+          18,
+          DiagnosticSeverity.Warning,
+          'yaml-schema: https://json.schemastore.org/composer'
+        )
       );
     });
   });

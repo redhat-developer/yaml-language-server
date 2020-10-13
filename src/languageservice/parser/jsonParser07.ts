@@ -52,11 +52,14 @@ const formats = {
   },
 };
 
+export const YAML_SOURCE = 'YAML';
+
 export interface IProblem {
   location: IRange;
   severity: DiagnosticSeverity;
   code?: ErrorCode;
   message: string;
+  source?: string;
 }
 
 export abstract class ASTNodeImpl {
@@ -445,13 +448,13 @@ export class JSONDocument {
   public validate(textDocument: TextDocument, schema: JSONSchema): Diagnostic[] {
     if (this.root && schema) {
       const validationResult = new ValidationResult(this.isKubernetes);
-      validate(this.root, schema, validationResult, NoOpSchemaCollector.instance, this.isKubernetes);
+      validate(this.root, schema, schema, validationResult, NoOpSchemaCollector.instance, this.isKubernetes);
       return validationResult.problems.map((p) => {
         const range = Range.create(
           textDocument.positionAt(p.location.offset),
           textDocument.positionAt(p.location.offset + p.location.length)
         );
-        return Diagnostic.create(range, p.message, p.severity, p.code);
+        return Diagnostic.create(range, p.message, p.severity, p.code, p.source);
       });
     }
     return null;
@@ -460,7 +463,7 @@ export class JSONDocument {
   public getMatchingSchemas(schema: JSONSchema, focusOffset = -1, exclude: ASTNode = null): IApplicableSchema[] {
     const matchingSchemas = new SchemaCollector(focusOffset, exclude);
     if (this.root && schema) {
-      validate(this.root, schema, new ValidationResult(this.isKubernetes), matchingSchemas, this.isKubernetes);
+      validate(this.root, schema, schema, new ValidationResult(this.isKubernetes), matchingSchemas, this.isKubernetes);
     }
     return matchingSchemas.schemas;
   }
@@ -469,6 +472,7 @@ export class JSONDocument {
 function validate(
   node: ASTNode,
   schema: JSONSchema,
+  originalSchema: JSONSchema,
   validationResult: ValidationResult,
   matchingSchemas: ISchemaCollector,
   isKubernetes: boolean
@@ -492,7 +496,7 @@ function validate(
       _validateNumberNode(node, schema, validationResult);
       break;
     case 'property':
-      return validate(node.valueNode, schema, validationResult, matchingSchemas, isKubernetes);
+      return validate(node.valueNode, schema, schema, validationResult, matchingSchemas, isKubernetes);
   }
   _validateNode();
 
@@ -511,6 +515,7 @@ function validate(
           message:
             schema.errorMessage ||
             localize('typeArrayMismatchWarning', 'Incorrect type. Expected one of {0}.', (<string[]>schema.type).join(', ')),
+          source: getSchemaSource(schema, originalSchema),
         });
       }
     } else if (schema.type) {
@@ -519,24 +524,26 @@ function validate(
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
           message: schema.errorMessage || localize('typeMismatchWarning', 'Incorrect type. Expected "{0}".', schema.type),
+          source: getSchemaSource(schema, originalSchema),
         });
       }
     }
     if (Array.isArray(schema.allOf)) {
       for (const subSchemaRef of schema.allOf) {
-        validate(node, asSchema(subSchemaRef), validationResult, matchingSchemas, isKubernetes);
+        validate(node, asSchema(subSchemaRef), schema, validationResult, matchingSchemas, isKubernetes);
       }
     }
     const notSchema = asSchema(schema.not);
     if (notSchema) {
       const subValidationResult = new ValidationResult(isKubernetes);
       const subMatchingSchemas = matchingSchemas.newSub();
-      validate(node, notSchema, subValidationResult, subMatchingSchemas, isKubernetes);
+      validate(node, notSchema, schema, subValidationResult, subMatchingSchemas, isKubernetes);
       if (!subValidationResult.hasProblems()) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
           message: localize('notSchemaWarning', 'Matches a schema that is not allowed.'),
+          source: getSchemaSource(schema, originalSchema),
         });
       }
       for (const ms of subMatchingSchemas.schemas) {
@@ -558,7 +565,7 @@ function validate(
         const subSchema = asSchema(subSchemaRef);
         const subValidationResult = new ValidationResult(isKubernetes);
         const subMatchingSchemas = matchingSchemas.newSub();
-        validate(node, subSchema, subValidationResult, subMatchingSchemas, isKubernetes);
+        validate(node, subSchema, schema, subValidationResult, subMatchingSchemas, isKubernetes);
         if (!subValidationResult.hasProblems()) {
           matches.push(subSchema);
         }
@@ -580,6 +587,7 @@ function validate(
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
           message: localize('oneOfWarning', 'Matches multiple schemas when only one must validate.'),
+          source: getSchemaSource(schema, originalSchema),
         });
       }
       if (bestMatch !== null) {
@@ -597,11 +605,11 @@ function validate(
       testAlternatives(schema.oneOf, true);
     }
 
-    const testBranch = (schema: JSONSchemaRef): void => {
+    const testBranch = (schema: JSONSchemaRef, originalSchema: JSONSchema): void => {
       const subValidationResult = new ValidationResult(isKubernetes);
       const subMatchingSchemas = matchingSchemas.newSub();
 
-      validate(node, asSchema(schema), subValidationResult, subMatchingSchemas, isKubernetes);
+      validate(node, asSchema(schema), originalSchema, subValidationResult, subMatchingSchemas, isKubernetes);
 
       validationResult.merge(subValidationResult);
       validationResult.propertiesMatches += subValidationResult.propertiesMatches;
@@ -609,20 +617,25 @@ function validate(
       matchingSchemas.merge(subMatchingSchemas);
     };
 
-    const testCondition = (ifSchema: JSONSchemaRef, thenSchema?: JSONSchemaRef, elseSchema?: JSONSchemaRef): void => {
+    const testCondition = (
+      ifSchema: JSONSchemaRef,
+      originalSchema: JSONSchema,
+      thenSchema?: JSONSchemaRef,
+      elseSchema?: JSONSchemaRef
+    ): void => {
       const subSchema = asSchema(ifSchema);
       const subValidationResult = new ValidationResult(isKubernetes);
       const subMatchingSchemas = matchingSchemas.newSub();
 
-      validate(node, subSchema, subValidationResult, subMatchingSchemas, isKubernetes);
+      validate(node, subSchema, originalSchema, subValidationResult, subMatchingSchemas, isKubernetes);
       matchingSchemas.merge(subMatchingSchemas);
 
       if (!subValidationResult.hasProblems()) {
         if (thenSchema) {
-          testBranch(thenSchema);
+          testBranch(thenSchema, originalSchema);
         }
       } else if (elseSchema) {
-        testBranch(elseSchema);
+        testBranch(elseSchema, originalSchema);
       }
     };
 
@@ -658,6 +671,7 @@ function validate(
                 })
                 .join(', ')
             ),
+          source: getSchemaSource(schema, originalSchema),
         });
       }
     }
@@ -670,6 +684,7 @@ function validate(
           severity: DiagnosticSeverity.Warning,
           code: ErrorCode.EnumValueMismatch,
           message: schema.errorMessage || localize('constWarning', 'Value must be {0}.', JSON.stringify(schema.const)),
+          source: getSchemaSource(schema, originalSchema),
         });
         validationResult.enumValueMatch = false;
       } else {
@@ -683,6 +698,7 @@ function validate(
         location: { offset: node.parent.offset, length: node.parent.length },
         severity: DiagnosticSeverity.Warning,
         message: schema.deprecationMessage,
+        source: getSchemaSource(schema, originalSchema),
       });
     }
   }
@@ -696,6 +712,7 @@ function validate(
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
           message: localize('multipleOfWarning', 'Value is not divisible by {0}.', schema.multipleOf),
+          source: getSchemaSource(schema, originalSchema),
         });
       }
     }
@@ -720,6 +737,7 @@ function validate(
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
         message: localize('exclusiveMinimumWarning', 'Value is below the exclusive minimum of {0}.', exclusiveMinimum),
+        source: getSchemaSource(schema, originalSchema),
       });
     }
     const exclusiveMaximum = getExclusiveLimit(schema.maximum, schema.exclusiveMaximum);
@@ -728,6 +746,7 @@ function validate(
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
         message: localize('exclusiveMaximumWarning', 'Value is above the exclusive maximum of {0}.', exclusiveMaximum),
+        source: getSchemaSource(schema, originalSchema),
       });
     }
     const minimum = getLimit(schema.minimum, schema.exclusiveMinimum);
@@ -736,6 +755,7 @@ function validate(
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
         message: localize('minimumWarning', 'Value is below the minimum of {0}.', minimum),
+        source: getSchemaSource(schema, originalSchema),
       });
     }
     const maximum = getLimit(schema.maximum, schema.exclusiveMaximum);
@@ -744,6 +764,7 @@ function validate(
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
         message: localize('maximumWarning', 'Value is above the maximum of {0}.', maximum),
+        source: getSchemaSource(schema, originalSchema),
       });
     }
   }
@@ -754,6 +775,7 @@ function validate(
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
         message: localize('minLengthWarning', 'String is shorter than the minimum length of {0}.', schema.minLength),
+        source: getSchemaSource(schema, originalSchema),
       });
     }
 
@@ -762,6 +784,7 @@ function validate(
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
         message: localize('maxLengthWarning', 'String is longer than the maximum length of {0}.', schema.maxLength),
+        source: getSchemaSource(schema, originalSchema),
       });
     }
 
@@ -775,6 +798,7 @@ function validate(
             schema.patternErrorMessage ||
             schema.errorMessage ||
             localize('patternWarning', 'String does not match the pattern of "{0}".', schema.pattern),
+          source: getSchemaSource(schema, originalSchema),
         });
       }
     }
@@ -805,6 +829,7 @@ function validate(
                   schema.patternErrorMessage ||
                   schema.errorMessage ||
                   localize('uriFormatWarning', 'String is not a URI: {0}', errorMessage),
+                source: getSchemaSource(schema, originalSchema),
               });
             }
           }
@@ -821,6 +846,7 @@ function validate(
                 location: { offset: node.offset, length: node.length },
                 severity: DiagnosticSeverity.Warning,
                 message: schema.patternErrorMessage || schema.errorMessage || format.errorMessage,
+                source: getSchemaSource(schema, originalSchema),
               });
             }
           }
@@ -843,7 +869,7 @@ function validate(
         const itemValidationResult = new ValidationResult(isKubernetes);
         const item = node.items[index];
         if (item) {
-          validate(item, subSchema, itemValidationResult, matchingSchemas, isKubernetes);
+          validate(item, subSchema, schema, itemValidationResult, matchingSchemas, isKubernetes);
           validationResult.mergePropertyMatch(itemValidationResult);
           validationResult.mergeEnumValues(itemValidationResult);
         } else if (node.items.length >= subSchemas.length) {
@@ -855,7 +881,7 @@ function validate(
           for (let i = subSchemas.length; i < node.items.length; i++) {
             const itemValidationResult = new ValidationResult(isKubernetes);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            validate(node.items[i], <any>schema.additionalItems, itemValidationResult, matchingSchemas, isKubernetes);
+            validate(node.items[i], <any>schema.additionalItems, schema, itemValidationResult, matchingSchemas, isKubernetes);
             validationResult.mergePropertyMatch(itemValidationResult);
             validationResult.mergeEnumValues(itemValidationResult);
           }
@@ -868,6 +894,7 @@ function validate(
               'Array has too many items according to schema. Expected {0} or fewer.',
               subSchemas.length
             ),
+            source: getSchemaSource(schema, originalSchema),
           });
         }
       }
@@ -876,7 +903,7 @@ function validate(
       if (itemSchema) {
         for (const item of node.items) {
           const itemValidationResult = new ValidationResult(isKubernetes);
-          validate(item, itemSchema, itemValidationResult, matchingSchemas, isKubernetes);
+          validate(item, itemSchema, schema, itemValidationResult, matchingSchemas, isKubernetes);
           validationResult.mergePropertyMatch(itemValidationResult);
           validationResult.mergeEnumValues(itemValidationResult);
         }
@@ -887,7 +914,7 @@ function validate(
     if (containsSchema) {
       const doesContain = node.items.some((item) => {
         const itemValidationResult = new ValidationResult(isKubernetes);
-        validate(item, containsSchema, itemValidationResult, NoOpSchemaCollector.instance, isKubernetes);
+        validate(item, containsSchema, schema, itemValidationResult, NoOpSchemaCollector.instance, isKubernetes);
         return !itemValidationResult.hasProblems();
       });
 
@@ -896,6 +923,7 @@ function validate(
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
           message: schema.errorMessage || localize('requiredItemMissingWarning', 'Array does not contain required item.'),
+          source: getSchemaSource(schema, originalSchema),
         });
       }
     }
@@ -905,6 +933,7 @@ function validate(
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
         message: localize('minItemsWarning', 'Array has too few items. Expected {0} or more.', schema.minItems),
+        source: getSchemaSource(schema, originalSchema),
       });
     }
 
@@ -913,6 +942,7 @@ function validate(
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
         message: localize('maxItemsWarning', 'Array has too many items. Expected {0} or fewer.', schema.maxItems),
+        source: getSchemaSource(schema, originalSchema),
       });
     }
 
@@ -926,6 +956,7 @@ function validate(
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
           message: localize('uniqueItemsWarning', 'Array has duplicate items.'),
+          source: getSchemaSource(schema, originalSchema),
         });
       }
     }
@@ -982,6 +1013,7 @@ function validate(
             location: location,
             severity: DiagnosticSeverity.Warning,
             message: localize('MissingRequiredPropWarning', 'Missing property "{0}".', propertyName),
+            source: getSchemaSource(schema, originalSchema),
           });
         }
       }
@@ -1012,14 +1044,16 @@ function validate(
                 severity: DiagnosticSeverity.Warning,
                 message:
                   schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
+                source: getSchemaSource(schema, originalSchema),
               });
             } else {
               validationResult.propertiesMatches++;
               validationResult.propertiesValueMatches++;
             }
           } else {
+            propertySchema.url = schema.url;
             const propertyValidationResult = new ValidationResult(isKubernetes);
-            validate(child, propertySchema, propertyValidationResult, matchingSchemas, isKubernetes);
+            validate(child, propertySchema, schema, propertyValidationResult, matchingSchemas, isKubernetes);
             validationResult.mergePropertyMatch(propertyValidationResult);
             validationResult.mergeEnumValues(propertyValidationResult);
           }
@@ -1047,6 +1081,7 @@ function validate(
                     severity: DiagnosticSeverity.Warning,
                     message:
                       schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
+                    source: getSchemaSource(schema, originalSchema),
                   });
                 } else {
                   validationResult.propertiesMatches++;
@@ -1054,7 +1089,7 @@ function validate(
                 }
               } else {
                 const propertyValidationResult = new ValidationResult(isKubernetes);
-                validate(child, propertySchema, propertyValidationResult, matchingSchemas, isKubernetes);
+                validate(child, propertySchema, schema, propertyValidationResult, matchingSchemas, isKubernetes);
                 validationResult.mergePropertyMatch(propertyValidationResult);
                 validationResult.mergeEnumValues(propertyValidationResult);
               }
@@ -1070,7 +1105,7 @@ function validate(
         if (child) {
           const propertyValidationResult = new ValidationResult(isKubernetes);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          validate(child, <any>schema.additionalProperties, propertyValidationResult, matchingSchemas, isKubernetes);
+          validate(child, <any>schema.additionalProperties, schema, propertyValidationResult, matchingSchemas, isKubernetes);
           validationResult.mergePropertyMatch(propertyValidationResult);
           validationResult.mergeEnumValues(propertyValidationResult);
         }
@@ -1097,6 +1132,7 @@ function validate(
               severity: DiagnosticSeverity.Warning,
               message:
                 schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
+              source: getSchemaSource(schema, originalSchema),
             });
           }
         }
@@ -1109,6 +1145,7 @@ function validate(
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
           message: localize('MaxPropWarning', 'Object has more properties than limit of {0}.', schema.maxProperties),
+          source: getSchemaSource(schema, originalSchema),
         });
       }
     }
@@ -1123,6 +1160,7 @@ function validate(
             'Object has fewer properties than the required number of {0}',
             schema.minProperties
           ),
+          source: getSchemaSource(schema, originalSchema),
         });
       }
     }
@@ -1144,6 +1182,7 @@ function validate(
                     requiredProp,
                     key
                   ),
+                  source: getSchemaSource(schema, originalSchema),
                 });
               } else {
                 validationResult.propertiesValueMatches++;
@@ -1153,7 +1192,7 @@ function validate(
             const propertySchema = asSchema(propertyDep);
             if (propertySchema) {
               const propertyValidationResult = new ValidationResult(isKubernetes);
-              validate(node, propertySchema, propertyValidationResult, matchingSchemas, isKubernetes);
+              validate(node, propertySchema, schema, propertyValidationResult, matchingSchemas, isKubernetes);
               validationResult.mergePropertyMatch(propertyValidationResult);
               validationResult.mergeEnumValues(propertyValidationResult);
             }
@@ -1167,7 +1206,7 @@ function validate(
       for (const f of node.properties) {
         const key = f.keyNode;
         if (key) {
-          validate(key, propertyNames, validationResult, NoOpSchemaCollector.instance, isKubernetes);
+          validate(key, propertyNames, schema, validationResult, NoOpSchemaCollector.instance, isKubernetes);
         }
       }
     }
@@ -1217,4 +1256,26 @@ function validate(
     }
     return bestMatch;
   }
+}
+
+function getSchemaSource(schema: JSONSchema, originalSchema: JSONSchema): string | undefined {
+  if (schema) {
+    let label: string;
+    if (schema.title) {
+      label = schema.title;
+    } else if (originalSchema.title) {
+      label = originalSchema.title;
+    } else if (originalSchema.url) {
+      const url = URI.parse(originalSchema.url);
+      if (url.scheme === 'file') {
+        label = url.fsPath;
+      }
+      label = url.toString();
+    }
+    if (label) {
+      return `yaml-schema: ${label}`;
+    }
+  }
+
+  return YAML_SOURCE;
 }

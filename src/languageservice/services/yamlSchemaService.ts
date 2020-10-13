@@ -162,6 +162,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           );
         }
         merge(node, unresolvedSchema.schema, uri, linkPath);
+        node.url = uri;
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         return resolveRefs(node, unresolvedSchema.schema, uri, referencedHandle.dependencies);
       });
@@ -391,6 +392,9 @@ export class YAMLSchemaService extends JSONSchemaService {
   private async resolveCustomSchema(schemaUri, doc): ResolvedSchema {
     const unresolvedSchema = await this.loadSchema(schemaUri);
     const schema = await this.resolveSchemaContent(unresolvedSchema, schemaUri, []);
+    if (schema.schema) {
+      schema.schema.url = schemaUri;
+    }
     if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[doc.currentDocIndex]) {
       return new ResolvedSchema(schema.schema.schemaSequence[doc.currentDocIndex]);
     }
@@ -544,7 +548,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           }
         );
       }
-
+      unresolvedJsonSchema.uri = schemaUri;
       return unresolvedJsonSchema;
     });
   }
