@@ -482,6 +482,13 @@ function validate(
     return;
   }
 
+  if (!schema.url) {
+    schema.url = originalSchema.url;
+  }
+  if (!schema.title) {
+    schema.title = originalSchema.title;
+  }
+
   switch (node.type) {
     case 'object':
       _validateObjectNode(node, schema, validationResult, matchingSchemas);

@@ -14,9 +14,10 @@ import {
   ColonMissingError,
   BlockMappingEntryError,
   DuplicateKeyError,
+  propertyIsNotAllowed,
 } from './utils/errorMessages';
 import * as assert from 'assert';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+import { Diagnostic, DiagnosticSeverity, TextDocument } from 'vscode-languageserver';
 import { expect } from 'chai';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
@@ -885,6 +886,33 @@ suite('Validation Tests', () => {
           18,
           DiagnosticSeverity.Warning,
           'yaml-schema: https://json.schemastore.org/composer'
+        )
+      );
+    });
+
+    it('should add proper source to diagnostic in case of drone', async () => {
+      const languageSettingsSetup = new ServiceSetup()
+        .withValidate()
+        .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['.drone.yml'] })
+        .withSchemaFileMatch({ uri: 'https://json.schemastore.org/drone', fileMatch: ['.drone.yml'] });
+      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+
+      const content = `
+      apiVersion: v1
+      kind: Deployment
+      `;
+
+      const testTextDocument = TextDocument.create('file://~/Desktop/vscode-yaml/.drone.yml', 'yaml', 0, content);
+      const result = await languageService.doValidation(testTextDocument, true);
+      expect(result[5]).deep.equal(
+        createExpectedError(
+          propertyIsNotAllowed('apiVersion'),
+          1,
+          6,
+          1,
+          16,
+          DiagnosticSeverity.Warning,
+          'yaml-schema: Drone CI configuration file'
         )
       );
     });

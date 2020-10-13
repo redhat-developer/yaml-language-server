@@ -16,6 +16,10 @@ export const BooleanTypeError = 'Incorrect type. Expected "boolean".';
 export const ArrayTypeError = 'Incorrect type. Expected "array".';
 export const ObjectTypeError = 'Incorrect type. Expected "object".';
 
+export function propertyIsNotAllowed(name: string): string {
+  return `Property ${name} is not allowed.`;
+}
+
 /**
  * Parse errors
  */
