@@ -843,7 +843,7 @@ suite('Validation Tests', () => {
   });
 
   describe('Schema with title', () => {
-    it('validator use schema title instead of url', async () => {
+    it('validator uses schema title instead of url', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         title: 'Schema Super title',
