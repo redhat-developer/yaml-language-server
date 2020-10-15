@@ -5,13 +5,15 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { Diagnostic, TextDocument } from 'vscode-languageserver-types';
+import { Diagnostic } from 'vscode-languageserver-types';
 import { PromiseConstructor, LanguageSettings } from '../yamlLanguageService';
 import { parse as parseYAML, YAMLDocument } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
-import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
+import { TextDocument } from 'vscode-languageserver';
+import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
+import { YAML_SOURCE } from '../parser/jsonParser07';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -24,11 +26,7 @@ export const yamlDiagToLSDiag = (yamlDiag: YAMLDocDiagnostic, textDocument: Text
     end: textDocument.positionAt(yamlDiag.location.end),
   };
 
-  return {
-    message: yamlDiag.message,
-    range,
-    severity: yamlDiag.severity,
-  };
+  return Diagnostic.create(range, yamlDiag.message, yamlDiag.severity, undefined, YAML_SOURCE);
 };
 
 export class YAMLValidation {
@@ -66,6 +64,7 @@ export class YAMLValidation {
       currentYAMLDoc.currentDocIndex = index;
 
       const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
+
       const syd = (currentYAMLDoc as unknown) as SingleYAMLDocument;
       if (syd.errors.length > 0) {
         // TODO: Get rid of these type assertions (shouldn't need them)
@@ -93,6 +92,10 @@ export class YAMLValidation {
 
       if (Object.prototype.hasOwnProperty.call(err, 'location')) {
         err = yamlDiagToLSDiag(err, textDocument);
+      }
+
+      if (!err.source) {
+        err.source = YAML_SOURCE;
       }
 
       const errSig = err.range.start.line + ' ' + err.range.start.character + ' ' + err.message;

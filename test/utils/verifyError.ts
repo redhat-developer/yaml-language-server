@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DocumentSymbol, SymbolKind, InsertTextFormat } from 'vscode-languageserver-types';
+import { DocumentSymbol, SymbolKind, InsertTextFormat, Range } from 'vscode-languageserver-types';
 import { CompletionItem, CompletionItemKind, SymbolInformation, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 
 export function createExpectedError(
@@ -12,22 +12,10 @@ export function createExpectedError(
   startCharacter: number,
   endLine: number,
   endCharacter: number,
-  severity: DiagnosticSeverity = 2
+  severity: DiagnosticSeverity = 2,
+  source = 'YAML'
 ): Diagnostic {
-  return {
-    message,
-    range: {
-      start: {
-        line: startLine,
-        character: startCharacter,
-      },
-      end: {
-        line: endLine,
-        character: endCharacter,
-      },
-    },
-    severity,
-  };
+  return Diagnostic.create(Range.create(startLine, startCharacter, endLine, endCharacter), message, severity, undefined, source);
 }
 
 export function createExpectedSymbolInformation(

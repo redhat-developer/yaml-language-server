@@ -16,6 +16,7 @@ export interface YAMLDocDiagnostic {
     end: number;
   };
   severity: 1 | 2;
+  source?: string;
 }
 
 /**
