@@ -1453,5 +1453,59 @@ suite('Auto Completion Tests', () => {
         expect(completion.items[0].insertText).eq('fooBar:\n    name: $1\n    aaa:\n      - $2');
       });
     });
+
+    it('should complete string which contains number in default value', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          env: {
+            type: 'integer',
+            default: '1',
+          },
+          enum: {
+            type: 'string',
+            default: '1',
+          },
+        },
+      });
+
+      const content = 'enum';
+      const completion = await parseSetup(content, 3);
+
+      const enumItem = completion.items.find((i) => i.label === 'enum');
+      expect(enumItem).to.not.undefined;
+      expect(enumItem.textEdit.newText).equal('enum: ${1:"1"}');
+
+      const envItem = completion.items.find((i) => i.label === 'env');
+      expect(envItem).to.not.undefined;
+      expect(envItem.textEdit.newText).equal('env: ${1:1}');
+    });
+
+    it('should complete string which contains number in examples values', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          fooBar: {
+            type: 'string',
+            examples: ['test', '1', 'true'],
+          },
+        },
+      });
+
+      const content = 'fooBar: \n';
+      const completion = await parseSetup(content, 8);
+
+      const testItem = completion.items.find((i) => i.label === 'test');
+      expect(testItem).to.not.undefined;
+      expect(testItem.textEdit.newText).equal('test');
+
+      const oneItem = completion.items.find((i) => i.label === '1');
+      expect(oneItem).to.not.undefined;
+      expect(oneItem.textEdit.newText).equal('"1"');
+
+      const trueItem = completion.items.find((i) => i.label === 'true');
+      expect(trueItem).to.not.undefined;
+      expect(trueItem.textEdit.newText).equal('"true"');
+    });
   });
 });

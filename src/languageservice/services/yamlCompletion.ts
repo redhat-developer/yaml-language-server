@@ -479,7 +479,7 @@ export class YAMLCompletion extends JSONCompletion {
       collector.add({
         kind: this.getSuggestionKind(type),
         label,
-        insertText: this.getInsertTextForValue(value, separatorAfter),
+        insertText: this.getInsertTextForValue(value, separatorAfter, type),
         insertTextFormat: InsertTextFormat.Snippet,
         detail: localize('json.suggest.default', 'Default value'),
       });
@@ -496,7 +496,7 @@ export class YAMLCompletion extends JSONCompletion {
         collector.add({
           kind: this.getSuggestionKind(type),
           label: value,
-          insertText: this.getInsertTextForValue(value, separatorAfter),
+          insertText: this.getInsertTextForValue(value, separatorAfter, type),
           insertTextFormat: InsertTextFormat.Snippet,
         });
         hasProposals = true;
@@ -605,7 +605,7 @@ export class YAMLCompletion extends JSONCompletion {
     collector.add({
       kind: this.getSuggestionKind('boolean'),
       label: value ? 'true' : 'false',
-      insertText: this.getInsertTextForValue(value, separatorAfter),
+      insertText: this.getInsertTextForValue(value, separatorAfter, 'boolean'),
       insertTextFormat: InsertTextFormat.Snippet,
       documentation: '',
     });
@@ -644,12 +644,16 @@ export class YAMLCompletion extends JSONCompletion {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getInsertTextForValue(value: any, separatorAfter: string): string {
+  private getInsertTextForValue(value: any, separatorAfter: string, type: string | string[]): string {
     switch (typeof value) {
       case 'object': {
         const indent = this.indentation;
         return this.getInsertTemplateForValue(value, indent, { index: 1 }, separatorAfter);
       }
+    }
+    type = Array.isArray(type) ? type[0] : type;
+    if (type === 'string') {
+      value = convertToStringValue(value);
     }
     return this.getInsertTextForPlainText(value + separatorAfter);
   }
@@ -744,10 +748,12 @@ export class YAMLCompletion extends JSONCompletion {
       } else if (propertySchema.default !== undefined) {
         switch (type) {
           case 'boolean':
-          case 'string':
           case 'number':
           case 'integer':
             insertText += `${indent}${key}: \${${insertIndex++}:${propertySchema.default}}\n`;
+            break;
+          case 'string':
+            insertText += `${indent}${key}: \${${insertIndex++}:${convertToStringValue(propertySchema.default)}}\n`;
             break;
           case 'array':
           case 'object':
@@ -808,12 +814,20 @@ export class YAMLCompletion extends JSONCompletion {
     separatorAfter: string,
     ident = this.indentation
   ): string {
-    const propertyText = this.getInsertTextForValue(key, '');
+    const propertyText = this.getInsertTextForValue(key, '', 'string');
     const resultText = propertyText + ':';
 
     let value;
     let nValueProposals = 0;
     if (propertySchema) {
+      let type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
+      if (!type) {
+        if (propertySchema.properties) {
+          type = 'object';
+        } else if (propertySchema.items) {
+          type = 'array';
+        }
+      }
       if (Array.isArray(propertySchema.defaultSnippets)) {
         if (propertySchema.defaultSnippets.length === 1) {
           const body = propertySchema.defaultSnippets[0].body;
@@ -834,19 +848,19 @@ export class YAMLCompletion extends JSONCompletion {
       }
       if (propertySchema.enum) {
         if (!value && propertySchema.enum.length === 1) {
-          value = ' ' + this.getInsertTextForGuessedValue(propertySchema.enum[0], '');
+          value = ' ' + this.getInsertTextForGuessedValue(propertySchema.enum[0], '', type);
         }
         nValueProposals += propertySchema.enum.length;
       }
       if (isDefined(propertySchema.default)) {
         if (!value) {
-          value = ' ' + this.getInsertTextForGuessedValue(propertySchema.default, '');
+          value = ' ' + this.getInsertTextForGuessedValue(propertySchema.default, '', type);
         }
         nValueProposals++;
       }
       if (Array.isArray(propertySchema.examples) && propertySchema.examples.length) {
         if (!value) {
-          value = ' ' + this.getInsertTextForGuessedValue(propertySchema.examples[0], '');
+          value = ' ' + this.getInsertTextForGuessedValue(propertySchema.examples[0], '', type);
         }
         nValueProposals += propertySchema.examples.length;
       }
@@ -858,14 +872,6 @@ export class YAMLCompletion extends JSONCompletion {
         }`;
       }
       if (nValueProposals === 0) {
-        let type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
-        if (!type) {
-          if (propertySchema.properties) {
-            type = 'object';
-          } else if (propertySchema.items) {
-            type = 'array';
-          }
-        }
         switch (type) {
           case 'boolean':
             value = ' $1';
@@ -898,24 +904,27 @@ export class YAMLCompletion extends JSONCompletion {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getInsertTextForGuessedValue(value: any, separatorAfter: string): string {
+  private getInsertTextForGuessedValue(value: any, separatorAfter: string, type: string): string {
     switch (typeof value) {
       case 'object':
         if (value === null) {
           return '${1:null}' + separatorAfter;
         }
-        return this.getInsertTextForValue(value, separatorAfter);
+        return this.getInsertTextForValue(value, separatorAfter, type);
       case 'string': {
         let snippetValue = JSON.stringify(value);
         snippetValue = snippetValue.substr(1, snippetValue.length - 2); // remove quotes
         snippetValue = this.getInsertTextForPlainText(snippetValue); // escape \ and }
+        if (type === 'string') {
+          snippetValue = convertToStringValue(snippetValue);
+        }
         return '${1:' + snippetValue + '}' + separatorAfter;
       }
       case 'number':
       case 'boolean':
         return '${1:' + value + '}' + separatorAfter;
     }
-    return this.getInsertTextForValue(value, separatorAfter);
+    return this.getInsertTextForValue(value, separatorAfter, type);
   }
 
   private getLabelForValue(value: string): string {
@@ -996,6 +1005,14 @@ export class YAMLCompletion extends JSONCompletion {
   }
 }
 
+const isNumberExp = /^\d+$/;
+function convertToStringValue(value: string): string {
+  if (value === 'true' || value === 'false' || value === 'null' || isNumberExp.test(value)) {
+    return `"${value}"`;
+  }
+
+  return value;
+}
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/ban-types
 function isDefined(val: any): val is object {
   return val !== undefined;
