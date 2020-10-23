@@ -1,4 +1,4 @@
-import * as Yaml from 'yaml-ast-parser-custom-tags';
+import * as Yaml from 'yaml-language-server-parser';
 import { Schema, Type } from 'js-yaml';
 
 import { filterInvalidCustomTags } from './arrUtils';

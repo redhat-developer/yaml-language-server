@@ -7,7 +7,7 @@ import {
   ArrayASTNodeImpl,
   BooleanASTNodeImpl,
 } from './jsonParser07';
-import * as Yaml from 'yaml-ast-parser-custom-tags';
+import * as Yaml from 'yaml-language-server-parser';
 import { ASTNode } from '../jsonASTTypes';
 import { parseYamlBoolean } from './scalar-type';
 

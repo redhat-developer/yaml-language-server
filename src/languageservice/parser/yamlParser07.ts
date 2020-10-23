@@ -8,7 +8,7 @@
 import * as nls from 'vscode-nls';
 const localize = nls.loadMessageBundle();
 
-import * as Yaml from 'yaml-ast-parser-custom-tags';
+import * as Yaml from 'yaml-language-server-parser';
 
 import { JSONDocument } from './jsonParser07';
 import { YAMLDocDiagnostic, formatErrors, formatWarnings, customTagsToAdditionalOptions } from '../utils/parseUtils';
