@@ -77,7 +77,8 @@
     "build": "yarn clean && yarn lint && yarn compile && yarn build:libs",
     "build:libs": "yarn compile:umd && yarn compile:esm",
     "compile:umd": "tsc -p ./tsconfig.umd.json",
-    "compile:esm": "tsc -p ./tsconfig.esm.json"
+    "compile:esm": "tsc -p ./tsconfig.esm.json",
+    "check-dependencies": "node ./scripts/check-dependencies.js"
   },
   "nyc": {
     "extension": [
