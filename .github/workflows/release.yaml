@@ -32,15 +32,15 @@ jobs:
 
       # Run install dependencies
     - name: Install dependencies
-      run: npm install
+      run: yarn
 
       # Build extension
     - name: Run build
-      run: npm run build
+      run: yarn build
 
       # Run tests
     - name: Run Test
-      run: npm run test
+      run: yarn test
 
       # Publish to npm
     - run: |
