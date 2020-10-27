@@ -9,7 +9,7 @@ import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList } from 'vscode-languageserver';
+import { CompletionList, InsertTextFormat } from 'vscode-languageserver';
 import { expect } from 'chai';
 
 const languageSettingsSetup = new ServiceSetup().withCompletion();
@@ -1506,6 +1506,23 @@ suite('Auto Completion Tests', () => {
       const trueItem = completion.items.find((i) => i.label === 'true');
       expect(trueItem).to.not.undefined;
       expect(trueItem.textEdit.newText).equal('"true"');
+    });
+
+    it('should provide completion for flow map', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: { A: { type: 'string', enum: ['a1', 'a2'] }, B: { type: 'string', enum: ['b1', 'b2'] } },
+      });
+
+      const content = '{A: , B: b1}';
+      const completion = await parseSetup(content, 4);
+      expect(completion.items).lengthOf(2);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('a1', 'a1', 0, 4, 0, 4, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
+      expect(completion.items[1]).eql(
+        createExpectedCompletion('a2', 'a2', 0, 4, 0, 4, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
     });
   });
 });

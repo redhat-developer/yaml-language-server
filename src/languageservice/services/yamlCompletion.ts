@@ -195,6 +195,16 @@ export class YAMLCompletion extends JSONCompletion {
             }
           }
         }
+        if (node.type === 'null') {
+          const parent = node.parent;
+          if (parent && parent.type === 'property' && parent.valueNode === node) {
+            addValue = !parent.valueNode;
+            currentProperty = parent;
+            if (parent) {
+              node = parent;
+            }
+          }
+        }
       }
 
       // proposals for properties
