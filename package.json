@@ -40,7 +40,7 @@
     "vscode-languageserver-types": "^3.15.1",
     "vscode-nls": "^4.1.2",
     "vscode-uri": "^2.1.1",
-    "yaml-ast-parser-custom-tags": "0.0.43"
+    "yaml-language-server-parser": "next"
   },
   "devDependencies": {
     "@types/chai": "^4.2.12",
@@ -77,7 +77,8 @@
     "build": "yarn clean && yarn lint && yarn compile && yarn build:libs",
     "build:libs": "yarn compile:umd && yarn compile:esm",
     "compile:umd": "tsc -p ./tsconfig.umd.json",
-    "compile:esm": "tsc -p ./tsconfig.esm.json"
+    "compile:esm": "tsc -p ./tsconfig.esm.json",
+    "check-dependencies": "node ./scripts/check-dependencies.js"
   },
   "nyc": {
     "extension": [
