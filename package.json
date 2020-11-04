@@ -35,7 +35,7 @@
     "js-yaml": "^3.13.1",
     "jsonc-parser": "^2.2.1",
     "request-light": "^0.2.4",
-    "vscode-json-languageservice": "^3.6.0",
+    "vscode-json-languageservice": "^3.6.0 <3.10.0",
     "vscode-languageserver": "^5.2.1",
     "vscode-languageserver-types": "^3.15.1",
     "vscode-nls": "^4.1.2",
