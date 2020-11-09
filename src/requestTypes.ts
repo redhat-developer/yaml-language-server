@@ -2,9 +2,15 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { NotificationType, RequestType } from 'vscode-languageserver';
 import { SchemaAdditions, SchemaDeletions } from './languageservice/services/yamlSchemaService';
+import { SchemaConfiguration } from './languageservice/yamlLanguageService';
+
+export type ISchemaAssociations = Record<string, string[]>;
 
 export namespace SchemaAssociationNotification {
-  export const type: NotificationType<{}, {}> = new NotificationType('json/schemaAssociations');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export const type: NotificationType<ISchemaAssociations | SchemaConfiguration[], any> = new NotificationType(
+    'json/schemaAssociations'
+  );
 }
 
 export namespace DynamicCustomSchemaRequestRegistration {
