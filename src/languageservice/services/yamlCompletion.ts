@@ -30,6 +30,7 @@ import { ClientCapabilities } from 'vscode-languageserver-protocol';
 import { stringifyObject, StringifySettings } from '../utils/json';
 import { guessIndentation } from '../utils/indentationGuesser';
 import { TextBuffer } from '../utils/textBuffer';
+import { setKubernetesParserOption } from '../parser/isKubernetes';
 const localize = nls.loadMessageBundle();
 
 export class YAMLCompletion extends JSONCompletion {
@@ -94,7 +95,7 @@ export class YAMLCompletion extends JSONCompletion {
     } else {
       this.indentation = this.configuredIndentation;
     }
-    this.setKubernetesParserOption(doc.documents, isKubernetes);
+    setKubernetesParserOption(doc.documents, isKubernetes);
 
     const offset = document.offsetAt(position);
     if (document.getText()[offset] === ':') {
@@ -1005,13 +1006,6 @@ export class YAMLCompletion extends JSONCompletion {
 
   private is_EOL(c: number): boolean {
     return c === 0x0a /* LF */ || c === 0x0d /* CR */;
-  }
-
-  // Called by onCompletion
-  private setKubernetesParserOption(jsonDocuments: Parser.JSONDocument[], option: boolean): void {
-    for (const jsonDoc in jsonDocuments) {
-      jsonDocuments[jsonDoc].isKubernetes = option;
-    }
   }
 }
 
