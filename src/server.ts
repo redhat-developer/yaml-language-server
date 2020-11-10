@@ -29,6 +29,7 @@ import {
   LanguageSettings,
   CustomFormatterOptions,
   WorkspaceContextService,
+  SchemaConfiguration,
 } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
 import {
@@ -44,6 +45,7 @@ import {
   DynamicCustomSchemaRequestRegistration,
   CustomSchemaRequest,
   SchemaModificationNotification,
+  ISchemaAssociations,
 } from './requestTypes';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
 import { isRelativePath, relativeToAbsolutePath, workspaceFoldersChanged } from './languageservice/utils/paths';
@@ -66,10 +68,6 @@ const workspaceContext: WorkspaceContextService = {
 /********************
  * Helper interfaces
  ********************/
-interface ISchemaAssociations {
-  [pattern: string]: string[];
-}
-
 // Client settings interface to grab settings relevant for the language server
 interface Settings {
   yaml: {
@@ -104,7 +102,7 @@ interface JSONSchemaSettings {
 
 // Language server configuration
 let yamlConfigurationSettings: JSONSchemaSettings[] = undefined;
-let schemaAssociations: ISchemaAssociations = undefined;
+let schemaAssociations: ISchemaAssociations | SchemaConfiguration[] | undefined = undefined;
 let formatterRegistration: Thenable<Disposable> = null;
 let specificValidatorPaths = [];
 let schemaConfigurationSettings = [];
@@ -227,12 +225,16 @@ function updateConfiguration(): void {
   };
 
   if (schemaAssociations) {
-    for (const pattern in schemaAssociations) {
-      const association = schemaAssociations[pattern];
-      if (Array.isArray(association)) {
-        association.forEach((uri) => {
-          languageSettings = configureSchemas(uri, [pattern], null, languageSettings);
-        });
+    if (Array.isArray(schemaAssociations)) {
+      Array.prototype.push.apply(languageSettings.schemas, schemaAssociations);
+    } else {
+      for (const pattern in schemaAssociations) {
+        const association = schemaAssociations[pattern];
+        if (Array.isArray(association)) {
+          association.forEach((uri) => {
+            languageSettings = configureSchemas(uri, [pattern], null, languageSettings);
+          });
+        }
       }
     }
   }
