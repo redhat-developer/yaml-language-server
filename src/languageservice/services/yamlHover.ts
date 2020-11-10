@@ -12,6 +12,7 @@ import { LanguageSettings } from '../yamlLanguageService';
 import { parse as parseYAML } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONHover } from 'vscode-json-languageservice/lib/umd/services/jsonHover';
+import { setKubernetesParserOption } from '../parser/isKubernetes';
 
 export class YAMLHover {
   private promise: PromiseConstructor;
@@ -30,7 +31,7 @@ export class YAMLHover {
     }
   }
 
-  public doHover(document: TextDocument, position: Position): Thenable<Hover> {
+  public doHover(document: TextDocument, position: Position, isKubernetes = false): Thenable<Hover> {
     if (!this.shouldHover || !document) {
       return this.promise.resolve(undefined);
     }
@@ -41,6 +42,7 @@ export class YAMLHover {
       return this.promise.resolve(undefined);
     }
 
+    setKubernetesParserOption(doc.documents, isKubernetes);
     const currentDocIndex = doc.documents.indexOf(currentDoc);
     currentDoc.currentDocIndex = currentDocIndex;
     return this.jsonHover.doHover(document, position, currentDoc);
