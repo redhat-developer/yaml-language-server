@@ -35,7 +35,6 @@ const localize = nls.loadMessageBundle();
 
 export class YAMLCompletion extends JSONCompletion {
   private schemaService: YAMLSchemaService;
-  private contributions: JSONWorkerContribution[];
   private promise: PromiseConstructor;
   private customTags: Array<string>;
   private completion: boolean;
@@ -51,7 +50,6 @@ export class YAMLCompletion extends JSONCompletion {
   ) {
     super(schemaService, contributions, promiseConstructor);
     this.schemaService = schemaService;
-    this.contributions = contributions;
     this.promise = promiseConstructor || Promise;
     this.customTags = [];
     this.completion = true;
@@ -63,18 +61,6 @@ export class YAMLCompletion extends JSONCompletion {
     }
     this.customTags = customTags;
     this.configuredIndentation = languageSettings.indentation;
-  }
-
-  public doResolve(item: CompletionItem): Thenable<CompletionItem> {
-    for (let i = this.contributions.length - 1; i >= 0; i--) {
-      if (this.contributions[i].resolveCompletion) {
-        const resolver = this.contributions[i].resolveCompletion(item);
-        if (resolver) {
-          return resolver;
-        }
-      }
-    }
-    return this.promise.resolve(item);
   }
 
   public doComplete(document: TextDocument, position: Position, isKubernetes = false): Thenable<CompletionList> {
@@ -224,20 +210,6 @@ export class YAMLCompletion extends JSONCompletion {
           this.getPropertyCompletions(newSchema, currentDoc, node, addValue, separatorAfter, collector, document);
         }
 
-        const location = Parser.getNodePath(node);
-        this.contributions.forEach((contribution) => {
-          const collectPromise = contribution.collectPropertyCompletions(
-            document.uri,
-            location,
-            currentWord,
-            addValue,
-            false,
-            collector
-          );
-          if (collectPromise) {
-            collectionPromises.push(collectPromise);
-          }
-        });
         if (!schema && currentWord.length > 0 && document.getText().charAt(offset - currentWord.length - 1) !== '"') {
           collector.add({
             kind: CompletionItemKind.Property,
@@ -253,9 +225,6 @@ export class YAMLCompletion extends JSONCompletion {
       const types: { [type: string]: boolean } = {};
       if (newSchema) {
         this.getValueCompletions(newSchema, currentDoc, node, offset, document, collector, types);
-      }
-      if (this.contributions.length > 0) {
-        super.getContributedValueCompletions(currentDoc, node, offset, document, collector, collectionPromises);
       }
 
       return this.promise.all(collectionPromises).then(() => {
