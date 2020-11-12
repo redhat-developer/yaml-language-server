@@ -103,7 +103,7 @@ export function toFsPath(str: unknown): string {
 }
 
 export function configureLanguageService(languageSettings: LanguageSettings): LanguageService {
-  const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
+  const languageService = getLanguageService(schemaRequestService, workspaceContext);
 
   languageService.configure(languageSettings);
   return languageService;
