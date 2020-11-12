@@ -409,7 +409,7 @@ connection.onInitialize(
     return {
       capabilities: {
         textDocumentSync: documents.syncKind,
-        completionProvider: { resolveProvider: true },
+        completionProvider: { resolveProvider: false },
         hoverProvider: true,
         documentSymbolProvider: true,
         documentFormattingProvider: false,
