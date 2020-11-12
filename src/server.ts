@@ -135,7 +135,6 @@ let workspaceRoot: URI = null;
 let workspaceFolders: WorkspaceFolder[] = [];
 let clientDynamicRegisterSupport = false;
 let hierarchicalDocumentSymbolSupport = false;
-let clientDefinitionLinkSupport = false;
 let hasWorkspaceFolderCapability = false;
 
 /****************************
@@ -406,11 +405,6 @@ connection.onInitialize(
       capabilities.textDocument.rangeFormatting &&
       capabilities.textDocument.rangeFormatting.dynamicRegistration
     );
-    clientDefinitionLinkSupport = !!(
-      capabilities.textDocument &&
-      capabilities.textDocument.definition &&
-      capabilities.textDocument.definition.linkSupport
-    );
     hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
     return {
       capabilities: {
@@ -420,7 +414,7 @@ connection.onInitialize(
         documentSymbolProvider: true,
         documentFormattingProvider: false,
         documentRangeFormattingProvider: false,
-        definitionProvider: true,
+        documentLinkProvider: {},
         workspace: {
           workspaceFolders: {
             changeNotifications: true,
@@ -597,14 +591,6 @@ connection.onCompletion((textDocumentPosition) => {
 });
 
 /**
- * Like onCompletion, but called only for currently selected completion item
- * Provides additional information about the item, not just the keyword
- */
-connection.onCompletionResolve((completionItem) => {
-  return customLanguageService.doResolve(completionItem);
-});
-
-/**
  * Called when the user hovers with their mouse over a keyword
  * Returns an informational tooltip
  */
@@ -655,22 +641,13 @@ connection.onDocumentFormatting((formatParams) => {
   return customLanguageService.doFormat(document, customFormatterSettings);
 });
 
-connection.onDefinition((params) => {
+connection.onDocumentLinks((params) => {
   const document = documents.get(params.textDocument.uri);
   if (!document) {
     return Promise.resolve([]);
   }
 
-  const definitionLinksPromise = customLanguageService.findDefinition(document, params.position);
-  if (clientDefinitionLinkSupport) {
-    return definitionLinksPromise;
-  } else {
-    return definitionLinksPromise.then((definitionLinks) => {
-      return definitionLinks.map((definitionLink) => {
-        return { uri: definitionLink.targetUri, range: definitionLink.targetRange };
-      });
-    });
-  }
+  return customLanguageService.findLinks(document);
 });
 
 connection.onRequest(SchemaModificationNotification.type, (modifications: SchemaAdditions | SchemaDeletions) => {

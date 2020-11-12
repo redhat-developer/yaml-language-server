@@ -13,9 +13,8 @@ import {
   Hover,
   SymbolInformation,
   DocumentSymbol,
-  CompletionItem,
   TextEdit,
-  DefinitionLink,
+  DocumentLink,
 } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
@@ -24,8 +23,8 @@ import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { getLanguageService as getJSONLanguageService, JSONWorkerContribution } from 'vscode-json-languageservice';
-import { findDefinition } from './services/yamlDefinition';
+import { getLanguageService as getJSONLanguageService, JSONWorkerContribution, JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
+import { findLinks } from './services/yamlLinks';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
@@ -135,8 +134,8 @@ export interface LanguageService {
   doHover(document: TextDocument, position: Position): Thenable<Hover | null>;
   findDocumentSymbols(document: TextDocument): SymbolInformation[];
   findDocumentSymbols2(document: TextDocument): DocumentSymbol[];
-  doResolve(completionItem): Thenable<CompletionItem>;
-  findDefinition(document: TextDocument, position: Position): Thenable<DefinitionLink[]>;
+  findDefinition(document: TextDocument, position: Position, doc: JSONDocument): Thenable<DefinitionLink[]>;
+  findLinks(document: TextDocument): Thenable<DocumentLink[]>;
   resetSchema(uri: string): boolean;
   doFormat(document: TextDocument, options: CustomFormatterOptions): TextEdit[];
   addSchema(schemaID: string, schema: JSONSchema): void;
@@ -177,9 +176,9 @@ export function getLanguageService(
     registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
       schemaService.registerCustomSchemaProvider(schemaProvider);
     },
-    findDefinition,
+    findDefinition: () => Promise.resolve([]),
+    findLinks,
     doComplete: completer.doComplete.bind(completer),
-    doResolve: completer.doResolve.bind(completer),
     doValidation: yamlValidation.doValidation.bind(yamlValidation),
     doHover: hover.doHover.bind(hover),
     findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols),
