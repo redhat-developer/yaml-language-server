@@ -8,7 +8,7 @@ import * as assert from 'assert';
 import { MarkedString } from '../src';
 import { Diagnostic, CompletionList, Hover } from 'vscode-languageserver';
 
-const languageService = getLanguageService(schemaRequestService, workspaceContext, [], null);
+const languageService = getLanguageService(schemaRequestService, workspaceContext);
 
 const uri = 'https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.17.0-standalone-strict/all.json';
 const languageSettings: LanguageSettings = {

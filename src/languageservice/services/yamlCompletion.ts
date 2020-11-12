@@ -10,7 +10,7 @@ import { ASTNode, ObjectASTNode, PropertyASTNode } from '../jsonASTTypes';
 import { parse as parseYAML } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
-import { PromiseConstructor, Thenable, JSONWorkerContribution, CompletionsCollector } from 'vscode-json-languageservice';
+import { Thenable, CompletionsCollector } from 'vscode-json-languageservice';
 import {
   CompletionItem,
   CompletionItemKind,
@@ -26,7 +26,6 @@ import { getLineOffsets, filterInvalidCustomTags, matchOffsetToDocument } from '
 import { LanguageSettings } from '../yamlLanguageService';
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 import { JSONCompletion } from 'vscode-json-languageservice/lib/umd/services/jsonCompletion';
-import { ClientCapabilities } from 'vscode-languageserver-protocol';
 import { stringifyObject, StringifySettings } from '../utils/json';
 import { guessIndentation } from '../utils/indentationGuesser';
 import { TextBuffer } from '../utils/textBuffer';
@@ -35,22 +34,14 @@ const localize = nls.loadMessageBundle();
 
 export class YAMLCompletion extends JSONCompletion {
   private schemaService: YAMLSchemaService;
-  private promise: PromiseConstructor;
   private customTags: Array<string>;
   private completion: boolean;
-  private supportsMarkdown: boolean | undefined;
   private indentation: string;
   private configuredIndentation: string | undefined;
 
-  constructor(
-    schemaService: YAMLSchemaService,
-    contributions: JSONWorkerContribution[] = [],
-    promiseConstructor: PromiseConstructor = Promise,
-    private clientCapabilities: ClientCapabilities = {}
-  ) {
-    super(schemaService, contributions, promiseConstructor);
+  constructor(schemaService: YAMLSchemaService) {
+    super(schemaService, [], Promise);
     this.schemaService = schemaService;
-    this.promise = promiseConstructor || Promise;
     this.customTags = [];
     this.completion = true;
   }
@@ -227,7 +218,7 @@ export class YAMLCompletion extends JSONCompletion {
         this.getValueCompletions(newSchema, currentDoc, node, offset, document, collector, types);
       }
 
-      return this.promise.all(collectionPromises).then(() => {
+      return Promise.all(collectionPromises).then(() => {
         return result;
       });
     });

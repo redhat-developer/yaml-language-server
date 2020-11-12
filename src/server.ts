@@ -375,7 +375,7 @@ documents.listen(connection);
 
 const schemaRequestService = schemaRequestHandler.bind(this, connection);
 
-export const customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, []);
+export const customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext);
 
 /***********************
  * Connection listeners

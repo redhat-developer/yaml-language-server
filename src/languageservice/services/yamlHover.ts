@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { PromiseConstructor, Thenable } from 'vscode-json-languageservice';
+import { Thenable } from 'vscode-json-languageservice';
 import { Hover, TextDocument, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
@@ -15,12 +15,10 @@ import { JSONHover } from 'vscode-json-languageservice/lib/umd/services/jsonHove
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 
 export class YAMLHover {
-  private promise: PromiseConstructor;
   private shouldHover: boolean;
   private jsonHover;
 
-  constructor(schemaService: YAMLSchemaService, promiseConstructor: PromiseConstructor) {
-    this.promise = promiseConstructor || Promise;
+  constructor(schemaService: YAMLSchemaService) {
     this.shouldHover = true;
     this.jsonHover = new JSONHover(schemaService, [], Promise);
   }
@@ -33,13 +31,13 @@ export class YAMLHover {
 
   public doHover(document: TextDocument, position: Position, isKubernetes = false): Thenable<Hover> {
     if (!this.shouldHover || !document) {
-      return this.promise.resolve(undefined);
+      return Promise.resolve(undefined);
     }
     const doc = parseYAML(document.getText());
     const offset = document.offsetAt(position);
     const currentDoc = matchOffsetToDocument(offset, doc);
     if (currentDoc === null) {
-      return this.promise.resolve(undefined);
+      return Promise.resolve(undefined);
     }
 
     setKubernetesParserOption(doc.documents, isKubernetes);

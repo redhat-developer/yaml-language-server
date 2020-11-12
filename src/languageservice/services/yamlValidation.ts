@@ -6,7 +6,7 @@
 'use strict';
 
 import { Diagnostic } from 'vscode-languageserver-types';
-import { PromiseConstructor, LanguageSettings } from '../yamlLanguageService';
+import { LanguageSettings } from '../yamlLanguageService';
 import { parse as parseYAML, YAMLDocument } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
@@ -30,17 +30,15 @@ export const yamlDiagToLSDiag = (yamlDiag: YAMLDocDiagnostic, textDocument: Text
 };
 
 export class YAMLValidation {
-  private promise: PromiseConstructor;
   private validationEnabled: boolean;
   private customTags: string[];
   private jsonValidation;
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
-  public constructor(schemaService: YAMLSchemaService, promiseConstructor: PromiseConstructor) {
-    this.promise = promiseConstructor || Promise;
+  public constructor(schemaService: YAMLSchemaService) {
     this.validationEnabled = true;
-    this.jsonValidation = new JSONValidation(schemaService, this.promise);
+    this.jsonValidation = new JSONValidation(schemaService, Promise);
   }
 
   public configure(settings: LanguageSettings): void {
@@ -52,7 +50,7 @@ export class YAMLValidation {
 
   public async doValidation(textDocument: TextDocument, isKubernetes = false): Promise<Diagnostic[]> {
     if (!this.validationEnabled) {
-      return this.promise.resolve([]);
+      return Promise.resolve([]);
     }
 
     const yamlDocument: YAMLDocument = parseYAML(textDocument.getText(), this.customTags);

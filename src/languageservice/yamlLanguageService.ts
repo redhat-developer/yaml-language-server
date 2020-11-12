@@ -146,17 +146,13 @@ export interface LanguageService {
 
 export function getLanguageService(
   schemaRequestService: SchemaRequestService,
-  workspaceContext: WorkspaceContextService,
-  contributions: JSONWorkerContribution[],
-  promiseConstructor?: PromiseConstructor
+  workspaceContext: WorkspaceContextService
 ): LanguageService {
-  const promise = promiseConstructor || Promise;
-
   const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
-  const completer = new YAMLCompletion(schemaService, contributions, promise);
-  const hover = new YAMLHover(schemaService, promise);
+  const completer = new YAMLCompletion(schemaService);
+  const hover = new YAMLHover(schemaService);
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
-  const yamlValidation = new YAMLValidation(schemaService, promise);
+  const yamlValidation = new YAMLValidation(schemaService);
   const formatter = new YAMLFormatter();
 
   return {
