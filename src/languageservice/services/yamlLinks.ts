@@ -15,5 +15,5 @@ export function findLinks(document: TextDocument): Thenable<DocumentLink[]> {
     linkPromises.push(JSONFindLinks(document, yamlDoc));
   }
   // Wait for all the promises to return and then flatten them into one DocumentLink array
-  return Promise.all(linkPromises).then(yamlLinkArray => [].concat(...yamlLinkArray));
+  return Promise.all(linkPromises).then((yamlLinkArray) => [].concat(...yamlLinkArray));
 }

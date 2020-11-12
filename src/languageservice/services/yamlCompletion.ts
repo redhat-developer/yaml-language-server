@@ -210,7 +210,6 @@ export class YAMLCompletion extends JSONCompletion {
           this.getPropertyCompletions(newSchema, currentDoc, node, addValue, separatorAfter, collector, document);
         }
 
-        const location = Parser.getNodePath(node);
         if (!schema && currentWord.length > 0 && document.getText().charAt(offset - currentWord.length - 1) !== '"') {
           collector.add({
             kind: CompletionItemKind.Property,
