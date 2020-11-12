@@ -23,7 +23,7 @@ import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { getLanguageService as getJSONLanguageService, JSONWorkerContribution, JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
+import { JSONWorkerContribution, JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
 
 export interface LanguageSettings {

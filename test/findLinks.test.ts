@@ -33,7 +33,7 @@ suite('FindDefintion Tests', () => {
               character: 29,
             },
           });
-          assert.deepEqual(results[0].target, "file://~/Desktop/vscode-k8s/test.yaml#3,5");
+          assert.deepEqual(results[0].target, 'file://~/Desktop/vscode-k8s/test.yaml#3,5');
         })
         .then(done, done);
     });
