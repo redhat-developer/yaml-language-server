@@ -23,13 +23,13 @@ const languageSettingsSetup = new ServiceSetup()
 suite('Multiple Documents Validation Tests', () => {
   // Tests for validator
   describe('Multiple Documents Validation', function () {
-    function validatorSetup(content: string): Thenable<Diagnostic[]> {
+    function validatorSetup(content: string): Promise<Diagnostic[]> {
       const testTextDocument = setupTextDocument(content);
       const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
       return languageService.doValidation(testTextDocument, false);
     }
 
-    function hoverSetup(content: string, position): Thenable<Hover> {
+    function hoverSetup(content: string, position): Promise<Hover> {
       const testTextDocument = setupTextDocument(content);
       const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
       return languageService.doHover(testTextDocument, testTextDocument.positionAt(position));

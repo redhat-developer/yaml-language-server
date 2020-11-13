@@ -10,7 +10,7 @@ import { ASTNode, ObjectASTNode, PropertyASTNode } from '../jsonASTTypes';
 import { parse as parseYAML } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
-import { Thenable, CompletionsCollector } from 'vscode-json-languageservice';
+import { CompletionsCollector } from 'vscode-json-languageservice';
 import {
   CompletionItem,
   CompletionItemKind,
@@ -54,7 +54,7 @@ export class YAMLCompletion extends JSONCompletion {
     this.configuredIndentation = languageSettings.indentation;
   }
 
-  public doComplete(document: TextDocument, position: Position, isKubernetes = false): Thenable<CompletionList> {
+  public doComplete(document: TextDocument, position: Position, isKubernetes = false): Promise<CompletionList> {
     const result: CompletionList = {
       items: [],
       isIncomplete: false,
@@ -157,7 +157,7 @@ export class YAMLCompletion extends JSONCompletion {
       const newSchema = schema;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const collectionPromises: Thenable<any>[] = [];
+      const collectionPromises: Promise<any>[] = [];
 
       let addValue = true;
 

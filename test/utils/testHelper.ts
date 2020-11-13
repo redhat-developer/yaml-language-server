@@ -10,7 +10,6 @@ import {
   TextDocumentSyncKind,
   TextDocument,
   InitializeResult,
-  RequestType,
 } from 'vscode-languageserver';
 import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
 import { getLanguageService, LanguageSettings, LanguageService } from '../../src/languageservice/yamlLanguageService';
@@ -23,12 +22,6 @@ import {
 import * as URL from 'url';
 import fs = require('fs');
 import path = require('path');
-
-// eslint-disable-next-line @typescript-eslint/no-namespace
-namespace VSCodeContentRequest {
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  export const type: RequestType<{}, {}, {}, {}> = new RequestType('vscode/content');
-}
 
 // Create a connection for the server.
 let connection: IConnection = null;
@@ -59,7 +52,7 @@ export const workspaceContext = {
   },
 };
 
-export const schemaRequestService = (uri: string): Thenable<string> => {
+export const schemaRequestService = (uri: string): Promise<string> => {
   if (Strings.startsWith(uri, 'file://')) {
     const fsPath = URI.parse(uri).fsPath;
     return new Promise<string>((c, e) => {
@@ -67,15 +60,6 @@ export const schemaRequestService = (uri: string): Thenable<string> => {
         return err ? e('') : c(result.toString());
       });
     });
-  } else if (Strings.startsWith(uri, 'vscode://')) {
-    return connection.sendRequest(VSCodeContentRequest.type, uri).then(
-      (responseText) => {
-        return responseText;
-      },
-      (error) => {
-        return error.message;
-      }
-    );
   }
   return xhr({ url: uri, followRedirects: 5 }).then(
     (response) => {

@@ -16,7 +16,7 @@ const languageSettingsSetup = new ServiceSetup().withCompletion();
 const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
 
 suite('Auto Completion Tests', () => {
-  function parseSetup(content: string, position): Thenable<CompletionList> {
+  function parseSetup(content: string, position): Promise<CompletionList> {
     const testTextDocument = setupSchemaIDTextDocument(content);
     return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
   }

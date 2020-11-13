@@ -20,7 +20,7 @@ const workspaceContext = {
   },
 };
 
-const schemaRequestServiceForURL = (uri: string): Thenable<string> => {
+const schemaRequestServiceForURL = (uri: string): Promise<string> => {
   const headers = { 'Accept-Encoding': 'gzip, deflate' };
   return xhr({ url: uri, followRedirects: 5, headers }).then(
     (response) => {

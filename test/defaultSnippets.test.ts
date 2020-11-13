@@ -18,7 +18,7 @@ const languageService = configureLanguageService(languageSettingsSetup.languageS
 
 suite('Default Snippet Tests', () => {
   describe('Snippet Tests', function () {
-    function parseSetup(content: string, position: number): Thenable<CompletionList> {
+    function parseSetup(content: string, position: number): Promise<CompletionList> {
       const testTextDocument = setupTextDocument(content);
       return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
     }

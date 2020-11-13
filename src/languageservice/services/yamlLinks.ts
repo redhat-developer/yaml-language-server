@@ -7,7 +7,7 @@ import { parse as parseYAML } from '../parser/yamlParser07';
 import { findLinks as JSONFindLinks } from 'vscode-json-languageservice/lib/umd/services/jsonLinks';
 import { DocumentLink } from 'vscode-languageserver';
 
-export function findLinks(document: TextDocument): Thenable<DocumentLink[]> {
+export function findLinks(document: TextDocument): Promise<DocumentLink[]> {
   const doc = parseYAML(document.getText());
   // Find links across all YAML Documents then report them back once finished
   const linkPromises = [];
