@@ -507,7 +507,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     return super.getOrAddSchemaHandle(id, unresolvedSchemaContent);
   }
 
-  loadSchema(schemaUri: string): Thenable<UnresolvedSchema> {
+  loadSchema(schemaUri: string): Promise<UnresolvedSchema> {
     const requestService = this.requestService;
     return super.loadSchema(schemaUri).then((unresolvedJsonSchema: UnresolvedSchema) => {
       // If json-language-server failed to parse the schema, attempt to parse it as YAML instead.
@@ -570,7 +570,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     return super.getRegisteredSchemaIds(filter);
   }
 
-  getResolvedSchema(schemaId: string): Thenable<ResolvedSchema> {
+  getResolvedSchema(schemaId: string): Promise<ResolvedSchema> {
     return super.getResolvedSchema(schemaId);
   }
 
