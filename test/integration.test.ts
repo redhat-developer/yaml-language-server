@@ -25,7 +25,7 @@ languageService.configure(languageSettings);
 suite('Kubernetes Integration Tests', () => {
   // Tests for validator
   describe('Yaml Validation with kubernetes', function () {
-    function parseSetup(content: string): Thenable<Diagnostic[]> {
+    function parseSetup(content: string): Promise<Diagnostic[]> {
       const testTextDocument = setupTextDocument(content);
       return languageService.doValidation(testTextDocument, true);
     }
@@ -193,7 +193,7 @@ suite('Kubernetes Integration Tests', () => {
 
   describe('yamlCompletion with kubernetes', function () {
     describe('doComplete', function () {
-      function parseSetup(content: string, position): Thenable<CompletionList> {
+      function parseSetup(content: string, position): Promise<CompletionList> {
         const testTextDocument = setupTextDocument(content);
         return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), true);
       }
@@ -283,7 +283,7 @@ suite('Kubernetes Integration Tests', () => {
   });
 
   describe('yamlHover with kubernetes', function () {
-    function parseSetup(content: string, offset: number): Thenable<Hover> {
+    function parseSetup(content: string, offset: number): Promise<Hover> {
       const testTextDocument = setupTextDocument(content);
       return languageService.doHover(testTextDocument, testTextDocument.positionAt(offset));
     }

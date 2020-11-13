@@ -23,7 +23,7 @@ import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { JSONWorkerContribution, JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
+import { JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
 
 export interface LanguageSettings {
@@ -41,56 +41,6 @@ export interface LanguageSettings {
   indentation?: string;
 }
 
-export interface PromiseConstructor {
-  /**
-   * Creates a new Promise.
-   * @param executor A callback used to initialize the promise. This callback is passed two arguments:
-   * a resolve callback used resolve the promise with a value or the result of another promise,
-   * and a reject callback used to reject the promise with a provided reason or error.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  new <T>(executor: (resolve: (value?: T | Thenable<T>) => void, reject: (reason?: any) => void) => void): Thenable<T>;
-
-  /**
-   * Creates a Promise that is resolved with an array of results when all of the provided Promises
-   * resolve, or rejected when any Promise is rejected.
-   * @param values An array of Promises.
-   * @returns A new Promise.
-   */
-  all<T>(values: Array<T | Thenable<T>>): Thenable<T[]>;
-  /**
-   * Creates a new rejected promise for the provided reason.
-   * @param reason The reason the promise was rejected.
-   * @returns A new rejected Promise.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  reject<T>(reason: any): Thenable<T>;
-
-  /**
-   * Creates a new resolved promise for the provided value.
-   * @param value A promise.
-   * @returns A promise whose internal state matches the provided promise.
-   */
-  resolve<T>(value: T | Thenable<T>): Thenable<T>;
-}
-
-export interface Thenable<R> {
-  /**
-   * Attaches callbacks for the resolution and/or rejection of the Promise.
-   * @param onfulfilled The callback to execute when the Promise is resolved.
-   * @param onrejected The callback to execute when the Promise is rejected.
-   * @returns A Promise for the completion of which ever callback is executed.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  then<TResult>(
-    onfulfilled?: (value: R) => TResult | Thenable<TResult>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onrejected?: (reason: any) => TResult | Thenable<TResult>
-  ): Thenable<TResult>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  then<TResult>(onfulfilled?: (value: R) => TResult | Thenable<TResult>, onrejected?: (reason: any) => void): Thenable<TResult>;
-}
-
 export interface WorkspaceContextService {
   resolveRelativePath(relativePath: string, resource: string): string;
 }
@@ -99,7 +49,7 @@ export interface WorkspaceContextService {
  * in case of an error, a displayable error string
  */
 export interface SchemaRequestService {
-  (uri: string): Thenable<string>;
+  (uri: string): Promise<string>;
 }
 
 export interface SchemaConfiguration {
@@ -129,13 +79,13 @@ export interface CustomFormatterOptions {
 export interface LanguageService {
   configure(settings: LanguageSettings): void;
   registerCustomSchemaProvider(schemaProvider: CustomSchemaProvider): void;
-  doComplete(document: TextDocument, position: Position, isKubernetes: boolean): Thenable<CompletionList>;
-  doValidation(document: TextDocument, isKubernetes: boolean): Thenable<Diagnostic[]>;
-  doHover(document: TextDocument, position: Position): Thenable<Hover | null>;
+  doComplete(document: TextDocument, position: Position, isKubernetes: boolean): Promise<CompletionList>;
+  doValidation(document: TextDocument, isKubernetes: boolean): Promise<Diagnostic[]>;
+  doHover(document: TextDocument, position: Position): Promise<Hover | null>;
   findDocumentSymbols(document: TextDocument): SymbolInformation[];
   findDocumentSymbols2(document: TextDocument): DocumentSymbol[];
-  findDefinition(document: TextDocument, position: Position, doc: JSONDocument): Thenable<DefinitionLink[]>;
-  findLinks(document: TextDocument): Thenable<DocumentLink[]>;
+  findDefinition(document: TextDocument, position: Position, doc: JSONDocument): Promise<DefinitionLink[]>;
+  findLinks(document: TextDocument): Promise<DocumentLink[]>;
   resetSchema(uri: string): boolean;
   doFormat(document: TextDocument, options: CustomFormatterOptions): TextEdit[];
   addSchema(schemaID: string, schema: JSONSchema): void;

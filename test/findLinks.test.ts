@@ -11,7 +11,7 @@ const languageService = configureLanguageService(new ServiceSetup().languageSett
 
 suite('FindDefintion Tests', () => {
   describe('Jump to defintion', function () {
-    function findLinks(content: string): Thenable<DocumentLink[]> {
+    function findLinks(content: string): Promise<DocumentLink[]> {
       const testTextDocument = setupTextDocument(content);
       return languageService.findLinks(testTextDocument);
     }

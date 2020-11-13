@@ -5,7 +5,6 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { Thenable } from 'vscode-json-languageservice';
 import { Hover, TextDocument, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
@@ -29,7 +28,7 @@ export class YAMLHover {
     }
   }
 
-  public doHover(document: TextDocument, position: Position, isKubernetes = false): Thenable<Hover> {
+  public doHover(document: TextDocument, position: Position, isKubernetes = false): Promise<Hover> {
     if (!this.shouldHover || !document) {
       return Promise.resolve(undefined);
     }

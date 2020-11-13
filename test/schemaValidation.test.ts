@@ -26,7 +26,7 @@ const languageService = configureLanguageService(languageSettingsSetup.languageS
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite('Validation Tests', () => {
-  function parseSetup(content: string, isKubernetes = false): Thenable<Diagnostic[]> {
+  function parseSetup(content: string, isKubernetes = false): Promise<Diagnostic[]> {
     const testTextDocument = setupSchemaIDTextDocument(content);
     return languageService.doValidation(testTextDocument, isKubernetes);
   }

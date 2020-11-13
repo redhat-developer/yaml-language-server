@@ -17,7 +17,7 @@ suite('Hover Tests', () => {
   });
 
   describe('Hover', function () {
-    function parseSetup(content: string, position): Thenable<Hover> {
+    function parseSetup(content: string, position): Promise<Hover> {
       const testTextDocument = setupSchemaIDTextDocument(content);
       return languageService.doHover(testTextDocument, testTextDocument.positionAt(position));
     }

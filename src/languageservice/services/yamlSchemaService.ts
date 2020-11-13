@@ -6,7 +6,7 @@
 'use strict';
 
 import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
-import { SchemaRequestService, WorkspaceContextService, PromiseConstructor, Thenable } from '../yamlLanguageService';
+import { SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
 import {
   UnresolvedSchema,
   ResolvedSchema,
@@ -26,7 +26,7 @@ import * as yaml from 'js-yaml';
 
 const localize = nls.loadMessageBundle();
 
-export declare type CustomSchemaProvider = (uri: string) => Thenable<string | string[]>;
+export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
 export enum MODIFICATION_ACTIONS {
   'delete',
@@ -105,7 +105,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     schemaToResolve: UnresolvedSchema,
     schemaURL: string,
     dependencies: SchemaDependencies
-  ): Thenable<ResolvedSchema> {
+  ): Promise<ResolvedSchema> {
     const resolveErrors: string[] = schemaToResolve.errors.slice(0);
     const schema = schemaToResolve.schema;
     const contextService = this.contextService;
@@ -147,7 +147,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       parentSchemaURL: string,
       parentSchemaDependencies: SchemaDependencies
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ): Thenable<any> => {
+    ): Promise<any> => {
       if (contextService && !/^\w+:\/\/.*/.test(uri)) {
         uri = contextService.resolveRelativePath(uri, parentSchemaURL);
       }
@@ -174,7 +174,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       parentSchemaURL: string,
       parentSchemaDependencies: SchemaDependencies
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ): Thenable<any> => {
+    ): Promise<any> => {
       if (!node || typeof node !== 'object') {
         return Promise.resolve(null);
       }
@@ -183,7 +183,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       const seen: JSONSchema[] = [];
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const openPromises: Thenable<any>[] = [];
+      const openPromises: Promise<any>[] = [];
 
       const collectEntries = (...entries: JSONSchemaRef[]): void => {
         for (const entry of entries) {
@@ -262,7 +262,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     });
   }
 
-  public getSchemaForResource(resource: string, doc: JSONDocument): Thenable<ResolvedSchema> {
+  public getSchemaForResource(resource: string, doc: JSONDocument): Promise<ResolvedSchema> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const resolveSchema = (): any => {
       const seen: { [schemaId: string]: boolean } = Object.create(null);
