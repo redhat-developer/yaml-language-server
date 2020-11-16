@@ -21,6 +21,7 @@ import { URI } from 'vscode-uri';
 import * as nls from 'vscode-nls';
 import { convertSimple2RegExpPattern } from '../utils/strings';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
+import { ObjectASTNode, StringASTNode } from '../jsonASTTypes';
 import { JSONDocument } from '../parser/jsonParser07';
 import * as yaml from 'js-yaml';
 
@@ -268,10 +269,10 @@ export class YAMLSchemaService extends JSONSchemaService {
       const seen: { [schemaId: string]: boolean } = Object.create(null);
       const schemas: string[] = [];
 
-      const schemaFromModeline = this.getSchemaFromModeline(doc);
-      if (schemaFromModeline !== undefined) {
-        schemas.push(schemaFromModeline);
-        seen[schemaFromModeline] = true;
+      const schemaFromFileContent = this.getSchemaFromFileContent(doc);
+      if (schemaFromFileContent !== undefined) {
+        schemas.push(schemaFromFileContent);
+        seen[schemaFromFileContent] = true;
       }
 
       for (const entry of this.filePatternAssociations) {
@@ -364,12 +365,25 @@ export class YAMLSchemaService extends JSONSchemaService {
   }
 
   /**
-   * Retrieve schema if declared as modeline.
+   * Retrieve schema if declared in file content.
    * Public for testing purpose, not part of the API.
    * @param doc
    */
-  public getSchemaFromModeline(doc: SingleYAMLDocument | JSONDocument): string {
+  public getSchemaFromFileContent(doc: SingleYAMLDocument | JSONDocument): string {
+    let schema = undefined;
     if (doc instanceof SingleYAMLDocument) {
+      const properties = (doc.root as ObjectASTNode)?.properties;
+      if (Array.isArray(properties)) {
+        for (const prop of properties) {
+          if (prop.keyNode.value == '$schema') {
+            schema = (prop.valueNode as StringASTNode).value;
+          }
+        }
+      }
+      if (schema !== undefined) {
+        return schema;
+      }
+
       const yamlLanguageServerModeline = doc.lineComments.find((lineComment) => {
         const matchModeline = lineComment.match(/^#\s+yaml-language-server\s*:/g);
         return matchModeline !== null && matchModeline.length === 1;
@@ -382,11 +396,11 @@ export class YAMLSchemaService extends JSONSchemaService {
               'Several $schema attributes have been found on the yaml-language-server modeline. The first one will be picked.'
             );
           }
-          return schemaMatchs[0].substring('$schema='.length);
+          schema = schemaMatchs[0].substring('$schema='.length);
         }
       }
     }
-    return undefined;
+    return schema;
   }
 
   private async resolveCustomSchema(schemaUri, doc): ResolvedSchema {
