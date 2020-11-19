@@ -917,4 +917,41 @@ suite('Validation Tests', () => {
       );
     });
   });
+
+  describe('Conditional Schema', () => {
+    it('validator use "then" block if "if" valid', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        default: [],
+        properties: {
+          name: {
+            type: 'string',
+          },
+          var: {
+            type: 'string',
+          },
+        },
+        if: {
+          properties: {
+            var: {
+              type: 'string',
+            },
+          },
+        },
+        then: {
+          required: ['pineapple'],
+        },
+        else: {
+          required: ['tomato'],
+        },
+        additionalProperties: true,
+      });
+      const content = `
+      name: aName
+      var: something
+      inputs:`;
+      const result = await parseSetup(content);
+      expect(result[0].message).to.eq('Missing property "pineapple".');
+    });
+  });
 });
