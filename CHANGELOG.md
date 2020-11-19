@@ -1,3 +1,11 @@
+### 0.13.0
+
+- Improve 'hover' with complex k8s schemas [#347](https://github.com/redhat-developer/yaml-language-server/pull/347)
+- Allow array for fileMatch in yamlValidation contribution, now this property complies with `contributes.jsonValidation` [#348](https://github.com/redhat-developer/yaml-language-server/pull/348)
+- yaml-language-server now compatible with the newest version of vscode-json-languageservice. [#350](https://github.com/redhat-developer/yaml-language-server/pull/350)
+- Code cleanup related to Promises usage [#351](https://github.com/redhat-developer/yaml-language-server/pull/351) and [#352](https://github.com/redhat-developer/yaml-language-server/pull/352)
+- Fix: If blocks don't evaluate properties correctly [#393](https://github.com/redhat-developer/vscode-yaml/issues/393)
+
 ### 0.12.0
 
 - Fix: Error when file has "Type" attribute [#317](https://github.com/redhat-developer/yaml-language-server/issues/317)
