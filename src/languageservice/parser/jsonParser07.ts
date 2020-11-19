@@ -648,7 +648,7 @@ function validate(
 
     const ifSchema = asSchema(schema.if);
     if (ifSchema) {
-      testCondition(ifSchema, asSchema(schema.then), asSchema(schema.else));
+      testCondition(ifSchema, schema, asSchema(schema.then), asSchema(schema.else));
     }
 
     if (Array.isArray(schema.enum)) {
