@@ -53,7 +53,7 @@ export const schemaRequestHandler = (
 
   // HTTP(S) requests are sent and the response result is either the schema content or an error
   if (scheme === 'http' || scheme === 'https') {
-    // If we running inside of VSCode we need to make a content request. This content request
+    // If we are running inside of VSCode we need to make a content request. This content request
     // will make it so that schemas behind VPN's will resolve correctly
     if (useVSCodeContentRequest) {
       return connection.sendRequest(VSCodeContentRequest.type, uri).then(
