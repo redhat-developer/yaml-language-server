@@ -1524,5 +1524,26 @@ suite('Auto Completion Tests', () => {
         createExpectedCompletion('a2', 'a2', 0, 4, 0, 4, 12, InsertTextFormat.Snippet, { documentation: undefined })
       );
     });
+
+    it('should provide completion for "null" enum value', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          kind: {
+            enum: ['project', null],
+          },
+        },
+      });
+
+      const content = 'kind: \n';
+      const completion = await parseSetup(content, 6);
+      expect(completion.items).lengthOf(2);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('project', 'project', 0, 6, 0, 6, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
+      expect(completion.items[1]).eql(
+        createExpectedCompletion('null', '\n', 0, 6, 0, 6, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
+    });
   });
 });

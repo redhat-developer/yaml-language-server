@@ -899,6 +899,9 @@ export class YAMLCompletion extends JSONCompletion {
   }
 
   private getLabelForValue(value: string): string {
+    if (value === null) {
+      return 'null'; // return string with 'null' value if schema contains null as possible value
+    }
     return value;
   }
 
