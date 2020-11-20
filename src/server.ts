@@ -46,11 +46,13 @@ import {
   CustomSchemaRequest,
   SchemaModificationNotification,
   ISchemaAssociations,
+  VSCodeContentRequestRegistration,
 } from './requestTypes';
-import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
 import { isRelativePath, relativeToAbsolutePath, workspaceFoldersChanged } from './languageservice/utils/paths';
 import { URI } from 'vscode-uri';
 import { KUBERNETES_SCHEMA_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
+import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
 
@@ -136,6 +138,7 @@ let workspaceFolders: WorkspaceFolder[] = [];
 let clientDynamicRegisterSupport = false;
 let hierarchicalDocumentSymbolSupport = false;
 let hasWorkspaceFolderCapability = false;
+let useVSCodeContentRequest = false;
 
 /****************************
  * Reusable helper functions
@@ -373,7 +376,15 @@ console.error = connection.console.error.bind(connection.console);
 // for open, change and close text document events
 documents.listen(connection);
 
-const schemaRequestService = schemaRequestHandler.bind(this, connection);
+/**
+ * Handles schema content requests given the schema URI
+ * @param uri can be a local file, vscode request, http(s) request or a custom request
+ */
+const schemaRequestHandlerWrapper = (connection: IConnection, uri: string): Promise<string> => {
+  return schemaRequestHandler(connection, uri, workspaceFolders, workspaceRoot, useVSCodeContentRequest);
+};
+
+const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
 
 export const customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext);
 
@@ -454,6 +465,15 @@ connection.onNotification(DynamicCustomSchemaRequestRegistration.type, () => {
     return connection.sendRequest(CustomSchemaRequest.type, resource);
   }) as CustomSchemaProvider;
   customLanguageService.registerCustomSchemaProvider(schemaProvider);
+});
+
+/**
+ * Received a notification from the client that it can accept content requests
+ * This means that the server sends schemas back to the client side to get resolved rather
+ * than resolving them on the extension side
+ */
+connection.onNotification(VSCodeContentRequestRegistration.type, () => {
+  useVSCodeContentRequest = true;
 });
 
 /**

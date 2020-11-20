@@ -1,16 +1,22 @@
 import { URI } from 'vscode-uri';
-import { IConnection } from 'vscode-languageserver';
+import { IConnection, WorkspaceFolder } from 'vscode-languageserver';
 import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
 import * as fs from 'fs';
 
-import { CustomSchemaContentRequest } from '../../requestTypes';
+import { CustomSchemaContentRequest, VSCodeContentRequest } from '../../requestTypes';
 import { isRelativePath, relativeToAbsolutePath } from '../utils/paths';
 
 /**
  * Handles schema content requests given the schema URI
  * @param uri can be a local file, vscode request, http(s) request or a custom request
  */
-export const schemaRequestHandler = (connection: IConnection, uri: string): Promise<string> => {
+export const schemaRequestHandler = (
+  connection: IConnection,
+  uri: string,
+  workspaceFolders: WorkspaceFolder[],
+  workspaceRoot: URI,
+  useVSCodeContentRequest: boolean
+): Promise<string> => {
   if (!uri) {
     return Promise.reject('No schema specified');
   }
@@ -18,7 +24,7 @@ export const schemaRequestHandler = (connection: IConnection, uri: string): Prom
   // If the requested schema URI is a relative file path
   // Convert it into a proper absolute path URI
   if (isRelativePath(uri)) {
-    uri = relativeToAbsolutePath(this.workspaceFolders, this.workspaceRoot, uri);
+    uri = relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);
   }
 
   let scheme = URI.parse(uri).scheme.toLowerCase();
@@ -47,6 +53,19 @@ export const schemaRequestHandler = (connection: IConnection, uri: string): Prom
 
   // HTTP(S) requests are sent and the response result is either the schema content or an error
   if (scheme === 'http' || scheme === 'https') {
+    // If we running inside of VSCode we need to make a content request. This content request
+    // will make it so that schemas behind VPN's will resolve correctly
+    if (useVSCodeContentRequest) {
+      return connection.sendRequest(VSCodeContentRequest.type, uri).then(
+        (responseText) => {
+          return responseText;
+        },
+        (error) => {
+          return Promise.reject(error.message);
+        }
+      ) as Promise<string>;
+    }
+
     // Send the HTTP(S) schema content request and return the result
     const headers = { 'Accept-Encoding': 'gzip, deflate' };
     return xhr({ url: uri, followRedirects: 5, headers }).then(
