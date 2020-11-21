@@ -954,4 +954,61 @@ suite('Validation Tests', () => {
       expect(result[0].message).to.eq('Missing property "pineapple".');
     });
   });
+
+  describe('Schema with uri-reference', () => {
+    it('should validate multiple uri-references', async () => {
+      const schemaWithURIReference = {
+        type: 'object',
+        properties: {
+          one: {
+            type: 'string',
+            format: 'uri-reference',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schemaWithURIReference);
+      let content = `
+      one: '//foo/bar'
+      `;
+      let result = await parseSetup(content);
+      expect(result.length).to.eq(0);
+
+      content = `
+      one: '#/components/schemas/service'
+      `;
+      result = await parseSetup(content);
+      expect(result.length).to.eq(0);
+
+      content = `
+      one: 'some/relative/path/foo.schema.yaml'
+      `;
+      result = await parseSetup(content);
+      expect(result.length).to.eq(0);
+
+      content = `
+      one: 'http://foo/bar'
+      `;
+      result = await parseSetup(content);
+      expect(result.length).to.eq(0);
+    });
+
+    it('should not validate empty uri-reference', async () => {
+      const schemaWithURIReference = {
+        type: 'object',
+        properties: {
+          one: {
+            type: 'string',
+            format: 'uri-reference',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schemaWithURIReference);
+      const content = `
+      one: ''
+      `;
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(1);
+      expect(result[0].message).to.eq('String is not a URI: URI expected.');
+    });
+  });
 });
