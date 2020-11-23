@@ -1542,7 +1542,7 @@ suite('Auto Completion Tests', () => {
         createExpectedCompletion('project', 'project', 0, 6, 0, 6, 12, InsertTextFormat.Snippet, { documentation: undefined })
       );
       expect(completion.items[1]).eql(
-        createExpectedCompletion('null', '\n', 0, 6, 0, 6, 12, InsertTextFormat.Snippet, { documentation: undefined })
+        createExpectedCompletion('null', 'null', 0, 6, 0, 6, 12, InsertTextFormat.Snippet, { documentation: undefined })
       );
     });
   });
