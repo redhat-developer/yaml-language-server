@@ -616,6 +616,9 @@ export class YAMLCompletion extends JSONCompletion {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getInsertTextForValue(value: any, separatorAfter: string, type: string | string[]): string {
+    if (value === null) {
+      value = 'null'; // replace type null with string 'null'
+    }
     switch (typeof value) {
       case 'object': {
         const indent = this.indentation;
@@ -899,6 +902,9 @@ export class YAMLCompletion extends JSONCompletion {
   }
 
   private getLabelForValue(value: string): string {
+    if (value === null) {
+      return 'null'; // return string with 'null' value if schema contains null as possible value
+    }
     return value;
   }
 
