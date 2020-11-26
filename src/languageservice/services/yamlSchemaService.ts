@@ -6,7 +6,7 @@
 'use strict';
 
 import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
-import { SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
+import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
 import {
   UnresolvedSchema,
   ResolvedSchema,
@@ -86,6 +86,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   private contextService: WorkspaceContextService;
   private customSchemaProvider: CustomSchemaProvider | undefined;
   private requestService: SchemaRequestService;
+  public schemaPriorityMapping: Map<string, SchemaPriority[]>;
 
   constructor(
     requestService: SchemaRequestService,
@@ -95,6 +96,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     super(requestService, contextService, promiseConstructor);
     this.customSchemaProvider = undefined;
     this.requestService = requestService;
+    this.schemaPriorityMapping = new Map();
   }
 
   registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider): void {
@@ -297,7 +299,9 @@ export class YAMLSchemaService extends JSONSchemaService {
       }
 
       if (schemas.length > 0) {
-        const schemaHandle = super.createCombinedSchema(resource, schemas);
+        // Join all schemas with the highest priority.
+        const highestPrioSchemas = this.highestPrioritySchemas(schemas);
+        const schemaHandle = super.createCombinedSchema(resource, highestPrioSchemas);
         return schemaHandle.getResolvedSchema().then((schema) => {
           if (schema.schema) {
             schema.schema.url = schemaHandle.url;
@@ -361,6 +365,32 @@ export class YAMLSchemaService extends JSONSchemaService {
     } else {
       return resolveSchema();
     }
+  }
+
+  /**
+   * Search through all the schemas and find the ones with the highest priority 
+   */
+  private highestPrioritySchemas(schemas: string[]): string[] {
+    let highestPrio = 0;
+    const priorityMapping = new Map<SchemaPriority, string[]>();
+    schemas.forEach(schema => {
+      const priority = this.schemaPriorityMapping.get(schema);
+      priority.forEach(prio => {
+        if (prio > highestPrio) {
+          highestPrio = prio;
+        }
+
+        // Build up a mapping of priority to schemas so that we can easily get the highest priority schemas easier
+        let currPriorityArray = priorityMapping.get(prio);
+        if (currPriorityArray) {
+          currPriorityArray = (currPriorityArray as string[]).concat(schema);
+          priorityMapping.set(prio, currPriorityArray);
+        } else {
+          priorityMapping.set(prio, [schema]);
+        }
+      });
+    });
+    return priorityMapping.get(highestPrio) || [];
   }
 
   /**
