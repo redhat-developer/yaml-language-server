@@ -63,6 +63,7 @@ export class YAMLCompletion extends JSONCompletion {
     if (!this.completion) {
       return Promise.resolve(result);
     }
+    const originalPosition = Position.create(position.line, position.character);
     const completionFix = this.completionHelper(document, position);
     const newText = completionFix.newText;
     const doc = parseYAML(newText);
@@ -101,11 +102,11 @@ export class YAMLCompletion extends JSONCompletion {
     } else if (node && (node.type === 'string' || node.type === 'number' || node.type === 'boolean')) {
       overwriteRange = Range.create(document.positionAt(node.offset), document.positionAt(node.offset + node.length));
     } else {
-      let overwriteStart = offset - currentWord.length;
+      let overwriteStart = document.offsetAt(originalPosition) - currentWord.length;
       if (overwriteStart > 0 && document.getText()[overwriteStart - 1] === '"') {
         overwriteStart--;
       }
-      overwriteRange = Range.create(document.positionAt(overwriteStart), position);
+      overwriteRange = Range.create(document.positionAt(overwriteStart), originalPosition);
     }
 
     const proposed: { [key: string]: CompletionItem } = {};
