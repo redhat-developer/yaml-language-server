@@ -17,6 +17,10 @@ export namespace DynamicCustomSchemaRequestRegistration {
   export const type: NotificationType<{}, {}> = new NotificationType('yaml/registerCustomSchemaRequest');
 }
 
+export namespace VSCodeContentRequestRegistration {
+  export const type: NotificationType<{}, {}> = new NotificationType('yaml/registerContentRequest');
+}
+
 export namespace VSCodeContentRequest {
   export const type: RequestType<{}, {}, {}, {}> = new RequestType('vscode/content');
 }
