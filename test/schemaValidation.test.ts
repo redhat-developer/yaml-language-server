@@ -72,7 +72,7 @@ suite('Validation Tests', () => {
         .then(done, done);
     });
 
-    it('Test that boolean value without quotations is valid', (done) => {
+    it('Test that YAML 1.1 boolean value without quotations is invalid when schema wants boolean', (done) => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -85,7 +85,11 @@ suite('Validation Tests', () => {
       const validator = parseSetup(content);
       validator
         .then(function (result) {
-          assert.equal(result.length, 0);
+          assert.equal(result.length, 1);
+          assert.deepEqual(
+            result[0],
+            createExpectedError(BooleanTypeError, 0, 11, 0, 13, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+          );
         })
         .then(done, done);
     });
@@ -217,7 +221,7 @@ suite('Validation Tests', () => {
         .then(done, done);
     });
 
-    it('Test that boolean is invalid when no strings present and schema wants string', (done) => {
+    it('Test that no is valid when schema is string', (done) => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -230,11 +234,7 @@ suite('Validation Tests', () => {
       const validator = parseSetup(content);
       validator
         .then(function (result) {
-          assert.equal(result.length, 1);
-          assert.deepEqual(
-            result[0],
-            createExpectedError(StringTypeError, 0, 5, 0, 7, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
-          );
+          assert.equal(result.length, 0);
         })
         .then(done, done);
     });

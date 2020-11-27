@@ -9,7 +9,6 @@ import {
 } from './jsonParser07';
 import * as Yaml from 'yaml-language-server-parser';
 import { ASTNode } from '../jsonASTTypes';
-import { parseYamlBoolean } from './scalar-type';
 
 export default function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
   if (!node) {
@@ -79,29 +78,6 @@ export default function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode
       const type = Yaml.determineScalarType(instance);
 
       const value = instance.value;
-
-      //This is a patch for redirecting values with these strings to be boolean nodes because its not supported in the parser.
-      const possibleBooleanValues = [
-        'y',
-        'Y',
-        'yes',
-        'Yes',
-        'YES',
-        'n',
-        'N',
-        'no',
-        'No',
-        'NO',
-        'on',
-        'On',
-        'ON',
-        'off',
-        'Off',
-        'OFF',
-      ];
-      if (instance.plainScalar && possibleBooleanValues.indexOf(value.toString()) !== -1) {
-        return new BooleanASTNodeImpl(parent, parseYamlBoolean(value), node.startPosition, node.endPosition - node.startPosition);
-      }
 
       switch (type) {
         case Yaml.ScalarType.null: {
