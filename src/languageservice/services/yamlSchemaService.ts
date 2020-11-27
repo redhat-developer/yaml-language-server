@@ -386,6 +386,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     let highestPrio = 0;
     const priorityMapping = new Map<SchemaPriority, string[]>();
     schemas.forEach((schema) => {
+      // If the schema does not have a priority then give it a default one of [0]
       const priority = this.schemaPriorityMapping.get(schema) || [0];
       priority.forEach((prio) => {
         if (prio > highestPrio) {
