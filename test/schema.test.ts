@@ -5,10 +5,15 @@ import * as parser from '../src/languageservice/parser/yamlParser07';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import * as JsonSchema from '../src/languageservice/jsonSchema';
 import * as url from 'url';
+import path = require('path');
 import { XHRResponse, xhr } from 'request-light';
 import { MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 import { expect } from 'chai';
+import { ServiceSetup } from './utils/serviceSetup';
+import { configureLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper';
+import { SchemaPriority } from '../src';
+import { Position } from 'vscode-languageserver';
 
 const requestServiceMock = function (uri: string): Promise<string> {
   return Promise.reject<string>(`Resource ${uri} not found.`);
@@ -536,6 +541,117 @@ suite('JSON Schema', () => {
 
     const hello_world_schema = await service.getResolvedSchema('hello_world');
     assert.equal(hello_world_schema, null);
+  });
+
+  describe('Test schema priority', function () {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const schemaAssociationSample = require(path.join(__dirname, './fixtures/sample-association.json'));
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const schemaStoreSample = require(path.join(__dirname, './fixtures/sample-schemastore.json'));
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const schemaSettingsSample = require(path.join(__dirname, './fixtures/sample-settings.json'));
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const schemaModelineSample = require(path.join(__dirname, './fixtures/sample-modeline.json'));
+    const languageSettingsSetup = new ServiceSetup().withHover().withCompletion();
+
+    test('Modeline Schema takes precendence over all other schemas', () => {
+      languageSettingsSetup
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.SchemaStore,
+          schema: schemaStoreSample,
+        })
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.SchemaAssociation,
+          schema: schemaAssociationSample,
+        })
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.Settings,
+          schema: schemaSettingsSample,
+        })
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.Modeline,
+          schema: schemaModelineSample,
+        });
+      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+      const testTextDocument = setupTextDocument('');
+      languageService.doComplete(testTextDocument, Position.create(0, 0), false).then((result) => {
+        assert.strictEqual(result.items.length, 1);
+        assert.strictEqual(result[0].label, 'modeline');
+      });
+    });
+
+    test('Settings Schema takes precendence over all other lower priority schemas', () => {
+      languageSettingsSetup
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.SchemaStore,
+          schema: schemaStoreSample,
+        })
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.SchemaAssociation,
+          schema: schemaAssociationSample,
+        })
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.Settings,
+          schema: schemaSettingsSample,
+        });
+      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+      const testTextDocument = setupTextDocument('');
+      languageService.doComplete(testTextDocument, Position.create(0, 0), false).then((result) => {
+        assert.strictEqual(result.items.length, 1);
+        assert.strictEqual(result[0].label, 'settings');
+      });
+    });
+
+    test('SchemaAssociation takes precendence over SchemaStore', () => {
+      languageSettingsSetup
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.SchemaStore,
+          schema: schemaStoreSample,
+        })
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.SchemaAssociation,
+          schema: schemaAssociationSample,
+        });
+      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+      const testTextDocument = setupTextDocument('');
+      languageService.doComplete(testTextDocument, Position.create(0, 0), false).then((result) => {
+        assert.strictEqual(result.items.length, 1);
+        assert.strictEqual(result[0].label, 'association');
+      });
+    });
+
+    test('SchemaStore is highest priority if nothing else is available', () => {
+      languageSettingsSetup.withSchemaFileMatch({
+        fileMatch: ['test.yaml'],
+        uri: TEST_URI,
+        priority: SchemaPriority.SchemaStore,
+        schema: schemaStoreSample,
+      });
+      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+      const testTextDocument = setupTextDocument('');
+      languageService.doComplete(testTextDocument, Position.create(0, 0), false).then((result) => {
+        assert.strictEqual(result.items.length, 1);
+        assert.strictEqual(result[0].label, 'schemastore');
+      });
+    });
   });
 
   describe('Test getSchemaFromModeline', function () {

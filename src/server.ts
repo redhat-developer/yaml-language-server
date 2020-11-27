@@ -199,7 +199,7 @@ function getSchemaStoreMatchingSchemas(): Promise<{ schemas: any[] }> {
             languageSettings.schemas.push({
               uri: schema.url,
               fileMatch: [currFileMatch],
-              priority: SchemaPriority.SchemaStore
+              priority: SchemaPriority.SchemaStore,
             });
           }
         }
@@ -254,7 +254,7 @@ function updateConfiguration(): void {
           uri = relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);
         }
 
-        languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema, languageSettings, SchemaPriority.Local);
+        languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema, languageSettings, SchemaPriority.Settings);
       }
     });
   }
@@ -277,7 +277,13 @@ function updateConfiguration(): void {
  * @param languageSettings current server settings
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function configureSchemas(uri: string, fileMatch: string[], schema: any, languageSettings: LanguageSettings, priorityLevel: number): LanguageSettings {
+function configureSchemas(
+  uri: string,
+  fileMatch: string[],
+  schema: unknown,
+  languageSettings: LanguageSettings,
+  priorityLevel: number
+): LanguageSettings {
   uri = checkSchemaURI(uri);
 
   if (schema === null) {

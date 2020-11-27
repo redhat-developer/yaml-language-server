@@ -29,13 +29,14 @@ import { findLinks } from './services/yamlLinks';
 export enum SchemaPriority {
   SchemaStore = 1,
   SchemaAssociation = 2,
-  Local = 3,
+  Settings = 3,
+  Modeline = 4,
 }
 
 export interface SchemasSettings {
   priority?: SchemaPriority; // Priority represents the order in which schemas are selected. If multiple schemas match a yaml document then highest priority wins
   fileMatch: string[];
-  schema?: any;
+  schema?: unknown;
   uri: string;
 }
 
@@ -125,13 +126,7 @@ export function getLanguageService(
         schemaService.schemaPriorityMapping = new Map();
         settings.schemas.forEach((settings) => {
           const currPriority = settings.priority ? settings.priority : 0;
-          let currSchemaArray = schemaService.schemaPriorityMapping.get(settings.uri);
-          if (currSchemaArray) {
-            currSchemaArray = currSchemaArray.concat(currPriority);
-            schemaService.schemaPriorityMapping.set(settings.uri, currSchemaArray);
-          } else {
-            schemaService.schemaPriorityMapping.set(settings.uri, [currPriority]);
-          }
+          schemaService.addSchemaPriority(settings.uri, currPriority);
           schemaService.registerExternalSchema(settings.uri, settings.fileMatch, settings.schema);
         });
       }

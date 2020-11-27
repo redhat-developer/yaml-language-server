@@ -272,6 +272,7 @@ export class YAMLSchemaService extends JSONSchemaService {
 
       const schemaFromModeline = this.getSchemaFromModeline(doc);
       if (schemaFromModeline !== undefined) {
+        this.addSchemaPriority(schemaFromModeline, SchemaPriority.Modeline);
         schemas.push(schemaFromModeline);
         seen[schemaFromModeline] = true;
       }
@@ -367,15 +368,26 @@ export class YAMLSchemaService extends JSONSchemaService {
     }
   }
 
+  // Set the priority of a schema in the schema service
+  public addSchemaPriority(uri: string, priority: number): void {
+    let currSchemaArray = this.schemaPriorityMapping.get(uri);
+    if (currSchemaArray) {
+      currSchemaArray = currSchemaArray.concat(priority);
+      this.schemaPriorityMapping.set(uri, currSchemaArray);
+    } else {
+      this.schemaPriorityMapping.set(uri, [priority]);
+    }
+  }
+
   /**
-   * Search through all the schemas and find the ones with the highest priority 
+   * Search through all the schemas and find the ones with the highest priority
    */
   private highestPrioritySchemas(schemas: string[]): string[] {
     let highestPrio = 0;
     const priorityMapping = new Map<SchemaPriority, string[]>();
-    schemas.forEach(schema => {
-      const priority = this.schemaPriorityMapping.get(schema);
-      priority.forEach(prio => {
+    schemas.forEach((schema) => {
+      const priority = this.schemaPriorityMapping.get(schema) || [0];
+      priority.forEach((prio) => {
         if (prio > highestPrio) {
           highestPrio = prio;
         }
@@ -438,6 +450,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   public async saveSchema(schemaId: string, schemaContent: JSONSchema): Promise<void> {
     const id = this.normalizeId(schemaId);
     this.getOrAddSchemaHandle(id, schemaContent);
+    this.schemaPriorityMapping.set(id, [SchemaPriority.Settings]);
     return Promise.resolve(undefined);
   }
 
@@ -449,6 +462,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     if (this.schemasById[id]) {
       delete this.schemasById[id];
     }
+    this.schemaPriorityMapping.delete(id);
     return Promise.resolve(undefined);
   }
 
