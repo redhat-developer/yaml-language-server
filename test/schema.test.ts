@@ -552,7 +552,7 @@ suite('JSON Schema', () => {
     const schemaSettingsSample = require(path.join(__dirname, './fixtures/sample-settings.json'));
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const schemaModelineSample = require(path.join(__dirname, './fixtures/sample-modeline.json'));
-    const languageSettingsSetup = new ServiceSetup().withHover().withCompletion();
+    const languageSettingsSetup = new ServiceSetup().withCompletion();
 
     test('Modeline Schema takes precendence over all other schemas', () => {
       languageSettingsSetup
@@ -588,7 +588,7 @@ suite('JSON Schema', () => {
       });
     });
 
-    test('Settings Schema takes precendence over all other lower priority schemas', () => {
+    test('Manually setting schema takes precendence over all other lower priority schemas', () => {
       languageSettingsSetup
         .withSchemaFileMatch({
           fileMatch: ['test.yaml'],
