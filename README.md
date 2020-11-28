@@ -153,6 +153,14 @@ Since `0.11.0` YAML Schemas can be used for validation:
  "/home/user/custom_schema.yaml": "someFilePattern.yaml"
 ```
 
+A schema can be associated with multiple globs using a json array:
+
+```json
+yaml.schemas: {
+    "kubernetes": ["filePattern1.yaml", "filePattern2.yaml"]
+}
+```
+
 #### Multi root schema association:
 
 You can also use relative paths when working with multi root workspaces.
