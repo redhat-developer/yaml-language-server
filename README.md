@@ -187,6 +187,16 @@ It is possible to specify a yaml schema using a modeline.
 # yaml-language-server: $schema=<urlToTheSchema>
 ```
 
+## Containerized Language Server
+An image is provided for users who would like to use the YAML language server without having to install dependencies locally.
+
+The image is located at `quay.io/rhdevelopers/yaml-language-server`
+
+To run the image you can use:
+```
+docker run -it quay.io/rhdevelopers/yaml-language-server:latest
+```
+
 ## Clients
 
 This repository only contains the server implementation. Here are some known clients consuming this server:
