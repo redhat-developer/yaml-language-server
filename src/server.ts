@@ -52,7 +52,7 @@ import { isRelativePath, relativeToAbsolutePath, workspaceFoldersChanged } from 
 import { URI } from 'vscode-uri';
 import { KUBERNETES_SCHEMA_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
-import { CommandManager } from './languageservice/commandManager';
+import { BundleCommandManager } from './languageservice/bundleCommandManager';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
@@ -104,7 +104,7 @@ interface JSONSchemaSettings {
  ****************/
 
 // Language server configuration
-const commandManager = new CommandManager();
+const commandManager = new BundleCommandManager();
 let yamlConfigurationSettings: JSONSchemaSettings[] = undefined;
 let schemaAssociations: ISchemaAssociations | SchemaConfiguration[] | undefined = undefined;
 let formatterRegistration: Thenable<Disposable> = null;
@@ -390,12 +390,6 @@ const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
 
 export const customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext);
 
-export interface YAMLLanguageServerBundle {
-  name: string;
-  version: string;
-  commandFunctions: Map<string, Function>;
-}
-
 /***********************
  * Connection listeners
  **********************/
@@ -434,11 +428,10 @@ connection.onInitialize(
 
     // register everything with the command manager and gather server side commands
     for (const path of bundlePath) {
-      const c = require(path) as YAMLLanguageServerBundle;
-      const cmdsFunctions = c.commandFunctions;
+      const bundle = require(path) as YAMLLanguageServerBundle;
+      const cmdsFunctions = bundle.commandFunctions;
       if (cmdsFunctions) {
         cmdsFunctions.forEach((action: Function, commandID: string) => {
-          console.log(commandID, action);
           commandManager.registerCommand(commandID, action);
           serverCommands.push(commandID);
         });

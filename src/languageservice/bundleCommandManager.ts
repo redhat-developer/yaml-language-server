@@ -1,6 +1,6 @@
 import { ExecuteCommandParams } from 'vscode-languageserver';
 
-export class CommandManager {
+export class BundleCommandManager {
 
   private commands = new Map<string, Function>();
 
