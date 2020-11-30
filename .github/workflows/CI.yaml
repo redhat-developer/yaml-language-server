@@ -83,4 +83,4 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: true
-          tags: quay.io/rhdevelopers/yaml-language-server:next
+          tags: quay.io/redhat-developer/yaml-language-server:next

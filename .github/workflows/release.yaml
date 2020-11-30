@@ -79,5 +79,5 @@ jobs:
         platforms: linux/amd64
         push: true
         tags: |
-          quay.io/rhdevelopers/yaml-language-server:latest
-          quay.io/rhdevelopers/yaml-language-server:${{ steps.package-version.outputs.current-version}}
+          quay.io/redhat-developer/yaml-language-server:latest
+          quay.io/redhat-developer/yaml-language-server:${{ steps.package-version.outputs.current-version}}
