@@ -17,7 +17,7 @@ export class CommandManager {
     if (com) {
       return com.apply(e.arguments);
     }
-    return undefined;
+    return null;
   }
 
 }
