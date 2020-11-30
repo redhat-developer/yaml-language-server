@@ -432,7 +432,7 @@ connection.onInitialize(
     // The commands you want run on the server side
     const serverCommands = [];
 
-    // register everything with the command manager
+    // register everything with the command manager and gather server side commands
     for (const path of bundlePath) {
       const c = require(path) as YAMLLanguageServerBundle;
       const cmdsFunctions = c.commandFunctions;
@@ -709,7 +709,6 @@ connection.onRequest(SchemaModificationNotification.type, (modifications: Schema
   return Promise.resolve();
 });
 
-// Handler for workspace/executeCommand request
 connection.onExecuteCommand(e => {
   return commandManager.executeCommand(e);
 });
