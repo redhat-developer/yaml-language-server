@@ -161,6 +161,8 @@ yaml.schemas: {
 }
 ```
 
+e.g.
+
 ```json
 "yaml.schemas": {
     "http://json.schemastore.org/composer": ["/*"],
