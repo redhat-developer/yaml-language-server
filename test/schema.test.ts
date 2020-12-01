@@ -554,7 +554,7 @@ suite('JSON Schema', () => {
     const schemaModelineSample = require(path.join(__dirname, './fixtures/sample-modeline.json'));
     const languageSettingsSetup = new ServiceSetup().withCompletion();
 
-    test('Modeline Schema takes precendence over all other schemas', () => {
+    test('Modeline Schema takes precendence over all other schemas', async () => {
       languageSettingsSetup
         .withSchemaFileMatch({
           fileMatch: ['test.yaml'],
@@ -582,13 +582,12 @@ suite('JSON Schema', () => {
         });
       const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
       const testTextDocument = setupTextDocument('');
-      languageService.doComplete(testTextDocument, Position.create(0, 0), false).then((result) => {
-        assert.strictEqual(result.items.length, 1);
-        assert.strictEqual(result[0].label, 'modeline');
-      });
+      const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
+      assert.strictEqual(result.items.length, 1);
+      assert.strictEqual(result.items[0].label, 'modeline');
     });
 
-    test('Manually setting schema takes precendence over all other lower priority schemas', () => {
+    test('Manually setting schema takes precendence over all other lower priority schemas', async () => {
       languageSettingsSetup
         .withSchemaFileMatch({
           fileMatch: ['test.yaml'],
@@ -610,13 +609,12 @@ suite('JSON Schema', () => {
         });
       const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
       const testTextDocument = setupTextDocument('');
-      languageService.doComplete(testTextDocument, Position.create(0, 0), false).then((result) => {
-        assert.strictEqual(result.items.length, 1);
-        assert.strictEqual(result[0].label, 'settings');
-      });
+      const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
+      assert.strictEqual(result.items.length, 1);
+      assert.strictEqual(result.items[0].label, 'settings');
     });
 
-    test('SchemaAssociation takes precendence over SchemaStore', () => {
+    test('SchemaAssociation takes precendence over SchemaStore', async () => {
       languageSettingsSetup
         .withSchemaFileMatch({
           fileMatch: ['test.yaml'],
@@ -632,13 +630,12 @@ suite('JSON Schema', () => {
         });
       const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
       const testTextDocument = setupTextDocument('');
-      languageService.doComplete(testTextDocument, Position.create(0, 0), false).then((result) => {
-        assert.strictEqual(result.items.length, 1);
-        assert.strictEqual(result[0].label, 'association');
-      });
+      const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
+      assert.strictEqual(result.items.length, 1);
+      assert.strictEqual(result.items[0].label, 'association');
     });
 
-    test('SchemaStore is highest priority if nothing else is available', () => {
+    test('SchemaStore is highest priority if nothing else is available', async () => {
       languageSettingsSetup.withSchemaFileMatch({
         fileMatch: ['test.yaml'],
         uri: TEST_URI,
@@ -647,10 +644,9 @@ suite('JSON Schema', () => {
       });
       const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
       const testTextDocument = setupTextDocument('');
-      languageService.doComplete(testTextDocument, Position.create(0, 0), false).then((result) => {
-        assert.strictEqual(result.items.length, 1);
-        assert.strictEqual(result[0].label, 'schemastore');
-      });
+      const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
+      assert.strictEqual(result.items.length, 1);
+      assert.strictEqual(result.items[0].label, 'schemastore');
     });
   });
 
