@@ -190,11 +190,11 @@ It is possible to specify a yaml schema using a modeline.
 ## Containerized Language Server
 An image is provided for users who would like to use the YAML language server without having to install dependencies locally.
 
-The image is located at `quay.io/rhdevelopers/yaml-language-server`
+The image is located at `quay.io/redhat-developer/yaml-language-server`
 
 To run the image you can use:
 ```
-docker run -it quay.io/rhdevelopers/yaml-language-server:latest
+docker run -it quay.io/redhat-developer/yaml-language-server:latest
 ```
 
 ## Clients
