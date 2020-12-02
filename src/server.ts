@@ -19,6 +19,7 @@ import {
   ClientCapabilities,
   WorkspaceFolder,
   DocumentFormattingRequest,
+  TextDocumentPositionParams,
 } from 'vscode-languageserver';
 
 import { xhr, configure as configureHttpRequests } from 'request-light';
@@ -47,6 +48,7 @@ import {
   SchemaModificationNotification,
   ISchemaAssociations,
   VSCodeContentRequestRegistration,
+  HoverDetailRequest,
 } from './requestTypes';
 import { isRelativePath, relativeToAbsolutePath, workspaceFoldersChanged } from './languageservice/utils/paths';
 import { URI } from 'vscode-uri';
@@ -621,7 +623,8 @@ connection.onHover((textDocumentPositionParams) => {
     return Promise.resolve(undefined);
   }
 
-  return customLanguageService.doHover(document, textDocumentPositionParams.position);
+  return customLanguageService.doHoverDetail(document, textDocumentPositionParams.position);
+  // return customLanguageService.doHover(document, textDocumentPositionParams.position);
 });
 
 /**
@@ -677,6 +680,14 @@ connection.onRequest(SchemaModificationNotification.type, (modifications: Schema
     customLanguageService.deleteSchemaContent(modifications);
   }
   return Promise.resolve();
+});
+
+/**
+ * Received request from the client that detail info is needed.
+ */
+connection.onRequest(HoverDetailRequest.type, (params: TextDocumentPositionParams) => {
+  const document = documents.get(params.textDocument.uri);
+  return customLanguageService.doHoverDetail(document, params.position);
 });
 
 // Start listening for any messages from the client

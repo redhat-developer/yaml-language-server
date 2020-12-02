@@ -25,6 +25,7 @@ import { YAMLFormatter } from './services/yamlFormatter';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
+import { YamlHoverDetail } from './services/yamlHoverDeital';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
@@ -92,6 +93,7 @@ export interface LanguageService {
   deleteSchema(schemaID: string): void;
   modifySchemaContent(schemaAdditions: SchemaAdditions): void;
   deleteSchemaContent(schemaDeletions: SchemaDeletions): void;
+  doHoverDetail(document: TextDocument, position: Position): Promise<Hover | null>;
 }
 
 export function getLanguageService(
@@ -104,6 +106,7 @@ export function getLanguageService(
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
   const yamlValidation = new YAMLValidation(schemaService);
   const formatter = new YAMLFormatter();
+  const hoverDetail = new YamlHoverDetail(schemaService);
 
   return {
     configure: (settings) => {
@@ -118,6 +121,7 @@ export function getLanguageService(
       const customTagsSetting = settings && settings['customTags'] ? settings['customTags'] : [];
       completer.configure(settings, customTagsSetting);
       formatter.configure(settings);
+      hoverDetail.configure(settings);
     },
     registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
       schemaService.registerCustomSchemaProvider(schemaProvider);
@@ -145,5 +149,6 @@ export function getLanguageService(
     deleteSchemaContent: (schemaDeletions: SchemaDeletions) => {
       return schemaService.deleteContent(schemaDeletions);
     },
+    doHoverDetail: hoverDetail.getHoverDetail.bind(hoverDetail),
   };
 }

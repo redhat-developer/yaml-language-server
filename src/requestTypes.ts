@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-namespace */
-import { NotificationType, RequestType } from 'vscode-languageserver';
+import { NotificationType, RequestType, TextDocumentPositionParams } from 'vscode-languageserver';
 import { SchemaAdditions, SchemaDeletions } from './languageservice/services/yamlSchemaService';
 import { SchemaConfiguration } from './languageservice/yamlLanguageService';
 
@@ -39,4 +39,8 @@ export namespace ColorSymbolRequest {
 
 export namespace SchemaModificationNotification {
   export const type: RequestType<SchemaAdditions | SchemaDeletions, void, {}, {}> = new RequestType('json/schema/modify');
+}
+
+export namespace HoverDetailRequest {
+  export const type: RequestType<TextDocumentPositionParams, {}, {}, {}> = new RequestType('custom/hoverDetailRequest');
 }
