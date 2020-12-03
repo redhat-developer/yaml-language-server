@@ -153,6 +153,42 @@ Since `0.11.0` YAML Schemas can be used for validation:
  "/home/user/custom_schema.yaml": "someFilePattern.yaml"
 ```
 
+A schema can be associated with multiple globs using a json array, e.g.
+
+```json
+yaml.schemas: {
+    "kubernetes": ["filePattern1.yaml", "filePattern2.yaml"]
+}
+```
+
+e.g.
+
+```json
+"yaml.schemas": {
+    "http://json.schemastore.org/composer": ["/*"],
+    "file:///home/johnd/some-schema.json": ["some.yaml"],
+    "../relative/path/schema.json": ["/config*.yaml"],
+    "/Users/johnd/some-schema.json": ["some.yaml"],
+}
+```
+
+e.g.
+
+```json
+"yaml.schemas": {
+    "kubernetes": ["/myYamlFile.yaml"]
+}
+```
+
+e.g.
+
+```json
+"yaml.schemas": {
+    "http://json.schemastore.org/composer": ["/*"],
+    "kubernetes": ["/myYamlFile.yaml"]
+}
+```
+
 #### Multi root schema association:
 
 You can also use relative paths when working with multi root workspaces.
