@@ -48,3 +48,36 @@ jobs:
         yarn publish --access public
       env:
         NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+
+      # Get the current package.json version so we can tag the image correctly
+    - name: Get current package.json version
+      id: package-version
+      uses: martinbeentjes/npm-get-version-action@master
+
+      # Setup QEMU as requirement for docker
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      
+      # Setup DockerBuildx as requirement for docker
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+      # Login to Quay
+    - name: Login to Quay
+      uses: docker/login-action@v1 
+      with:
+        registry: quay.io
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_TOKEN }}
+
+      # Build and push the latest version of yaml language server image
+    - name: Build and push
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64
+        push: true
+        tags: |
+          quay.io/redhat-developer/yaml-language-server:latest
+          quay.io/redhat-developer/yaml-language-server:${{ steps.package-version.outputs.current-version}}
