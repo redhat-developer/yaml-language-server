@@ -405,7 +405,7 @@ export function getNodePath(node: ASTNode): JSONPath {
 
 export function contains(node: ASTNode, offset: number, includeRightBound = false): boolean {
   return (
-    (offset >= node.offset && offset < node.offset + node.length) || (includeRightBound && offset === node.offset + node.length)
+    (offset >= node.offset && offset <= node.offset + node.length) || (includeRightBound && offset === node.offset + node.length)
   );
 }
 
