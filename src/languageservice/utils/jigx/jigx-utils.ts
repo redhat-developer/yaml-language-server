@@ -56,7 +56,8 @@ export function getFileInfo(
   };
 }
 
-export function createInstance<T>(type: { new (): T }, initObj: any, initObj2: any = {}): T {
+// eslint-disable-next-line prettier/prettier
+export function createInstance<T>(type: { new(): T }, initObj: any, initObj2: any = {}): T {
   let obj: T = new type();
   obj = Object.assign(obj, initObj, initObj2) as T;
   return obj;
@@ -70,7 +71,8 @@ export function createInstance<T>(type: { new (): T }, initObj: any, initObj2: a
  * @param type
  * @param initObj
  */
-export function ensureInstance<T>(type: { new (): T }, initObj: any): T {
+// eslint-disable-next-line prettier/prettier
+export function ensureInstance<T>(type: { new(): T }, initObj: any): T {
   let obj: T;
   if (initObj instanceof type) {
     return initObj;
@@ -136,6 +138,41 @@ export function replaceSpecialCharsInDescription(text: string): string {
   return ret;
 }
 
+/**
+ * Replace elements in string by object properties.
+ * @param str String with replaceable elements: {example1}, {example2}
+ * @param dict Object with key and values, where keys are search pattern and their values are replace string.
+ * @param keyPattern Patter that is used inside the files for replace. Recommended values: ```'{{0}}' | ':{0}' | '_{0}_' | '={0}='```
+ */
+export function replace(str: string, dict: { [prop: string]: any }, regexFlag = 'g', keyPattern = '{{0}}'): string {
+  if (!str) {
+    return str;
+  }
+  Object.keys(dict)
+    .sort((a, b) => (a.length > b.length ? -1 : 1))
+    .forEach((d) => {
+      const key = keyPattern.replace('{0}', d);
+      const regexpKey = new RegExp(key, regexFlag);
+      const val = dict[d] !== undefined ? dict[d] : '';
+      str = str.replace(regexpKey, val);
+    });
+  return str;
+}
+
+// export const tableColumnSeparator = ' &#124; ';
+// export const char_lt = '&#60;';
+// export const char_gt = '&#62;';
 export const tableColumnSeparator = ' &#124; ';
 export const char_lt = '&#60;';
 export const char_gt = '&#62;';
+
+export function replaceSpecialToTsBlock(strWithSpecials: string): string {
+  return strWithSpecials
+    .replace(/&#124;/g, '|')
+    .replace(/&#60;/g, '<')
+    .replace(/&#62;/g, '>');
+}
+export function toTsBlock(code: string, offset = 0): string {
+  const offsetStr = '\n' + new Array(offset).join(' ');
+  return '\n```ts' + offsetStr + replaceSpecialToTsBlock(code).replace(/\n/g, offsetStr) + '\n```\n';
+}

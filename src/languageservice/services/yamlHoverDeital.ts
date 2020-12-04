@@ -112,13 +112,18 @@ export class YamlHoverDetail {
 
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
       if (schema && node) {
+        //for each node from yaml it will find schema part
+        //for node from yaml, there could be more schemas subpart
+        //example
+        //  node: componentId: '@jigx/jw-value' options: bottom:
+        //      find 3 schemas - 3. last one has anyOf to 1. and 2.
         const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
         const resSchemas: JSONSchema[] = [];
         let title: string | undefined = undefined;
         let markdownDescription: string | undefined = undefined;
         let markdownEnumValueDescription: string | undefined = undefined,
           enumValue: string | undefined = undefined;
-        const propertiesMd = [];
+        let propertiesMd = [];
 
         matchingSchemas.every((s) => {
           if (s.node === node && !s.inverted && s.schema) {
@@ -140,10 +145,11 @@ export class YamlHoverDetail {
             }
             const decycleSchema = decycle(s.schema, 8);
             resSchemas.push(decycleSchema);
-            const propMd = this.schema2Md.generateMd(s.schema);
-            //use only first one - the first one seems to be better
-            if (propMd && propertiesMd.length === 0) {
-              propertiesMd.push(propMd);
+            const propMd = this.schema2Md.generateMd(s.schema, node.location);
+            if (propMd) {
+              // propertiesMd.push(propMd);
+              //take only last one
+              propertiesMd = [propMd];
             }
           }
           return true;
@@ -166,6 +172,8 @@ export class YamlHoverDetail {
         }
 
         if (this.appendTypes && propertiesMd.length) {
+          // result += propertiesMd.length > 1 ? '\n\n Possible match count: ' + propertiesMd.length : '';
+          // result += propertiesMd.map((p, i) => '\n\n----\n' + (propertiesMd.length > 1 ? `${i + 1}.\n` : '') + p).join('');
           result += '\n\n----\n' + propertiesMd.join('\n\n----\n');
         }
         return createPropDetail([result], resSchemas);

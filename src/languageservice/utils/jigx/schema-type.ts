@@ -8,8 +8,11 @@ import {
   createInstance,
   getFileInfo,
   getSchemaRefTypeTitle,
+  replaceSpecialToTsBlock,
   tableColumnSeparator,
+  toTsBlock,
   translateSectionTitleToLinkHeder,
+  Utils,
 } from './jigx-utils';
 import { Globals } from './globals';
 
@@ -42,7 +45,7 @@ export class Schema_TypeBase {
    * @param subSchemas
    * @param isMD
    */
-  getElementTitle(octothorpes: string, subSchemas: [], isMD = true): string {
+  getElementTitle(octothorpes: string, subSchemas: [], isMD = true, styleAsMd = false): string {
     const extra = [];
     let typeStr = this.getTypeStr(subSchemas);
     if (isMD && (this instanceof Schema_AnyOf || this instanceof Schema_ArrayGeneric || this instanceof Schema_ArrayTyped)) {
@@ -52,12 +55,15 @@ export class Schema_TypeBase {
     if (typeStr) {
       extra.push(typeStr);
     }
-    if (this.isPropRequired) {
-      extra.push('required');
-    }
-    const extraStr = extra.length ? ` (${extra.join(', ')})` : '';
-    const propNameQuoted = this.propName ? `\`${this.propName}\`` : '';
-    const mdTitle = `${octothorpes} ${propNameQuoted}${extraStr}`;
+    // if (this.isPropRequired) {
+    //   extra.push('required');
+    // }
+    const extraStr = extra.length ? ` ${extra.join(', ')}` : '';
+    // const extraStr = extra.length ? ` (${extra.join(', ')})` : '';
+    // const propNameQuoted = this.propName ? `\`${this.propName}\`` : '';
+    const propNameQuoted = this.propName ? toTsBlock(this.propName + ':' + extraStr, octothorpes.length) : '';
+    // const mdTitle = `${octothorpes} ${propNameQuoted}${extraStr}`;
+    const mdTitle = `${octothorpes} ${propNameQuoted}`;
     // if we need custom section link...
     // const htmlTitle = `\<h${octothorpes.length} id="${this.propName}" \>${this.propName ? `\<code\>${this.propName}\</code\>` : ''}${extraStr}\</h${octothorpes.length}\>`;
     return mdTitle;
@@ -106,6 +112,7 @@ export class Schema_ObjectTyped extends Schema_TypeBase {
 }
 export class Schema_Object extends Schema_TypeBase implements Schema_HasPropertyTable {
   type: 'object';
+  $id?: string;
   properties: S_Properties;
   getPropertyTable(octothorpes: string, schema: JSONSchema, subSchemas: []): string[] {
     const out = Object.keys(this.properties).map((key) => {
@@ -115,7 +122,16 @@ export class Schema_Object extends Schema_TypeBase implements Schema_HasProperty
     return out;
   }
   getTypeStr(subSchemas: []): string {
-    return `${this.type}`;
+    //In this project Object is also used as ObjectTyped. yaml parser 'remove' information about $ref. parser puts here directly the object.
+    //This is ok because we wont to show props from this object.
+    //Only difference is that we need to show typed obj info.
+    const isTyped = this.$id || this.title;
+    //jigx-builder custom: add title instead of 'object' string
+    if (isTyped) {
+      const typeStr = this.$id ? `${this.$id.replace('.schema.json', '')}` : this.title || this.type;
+      return typeStr;
+    }
+    return this.type; //object
   }
   getTypeMD(subSchemas: [], isForElementTitle = false): string {
     const subType = this.getTypeStr(subSchemas);
@@ -127,7 +143,7 @@ export class Schema_Object extends Schema_TypeBase implements Schema_HasProperty
       const typeProcessed = `[${subType}](${link})`;
       return typeProcessed;
     } else {
-      return `\`${subType}\``;
+      return `${subType}`;
     }
   }
 }
