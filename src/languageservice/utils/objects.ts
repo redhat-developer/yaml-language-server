@@ -73,3 +73,20 @@ export function isBoolean(val: unknown): val is boolean {
 export function isString(val: unknown): val is string {
   return typeof val === 'string';
 }
+
+/**
+ * adds an element to the array if it does not already exist using a comparer
+ * @param array will be created if undefined
+ * @param element element to add
+ * @param comparer compare function or property name used to compare
+ */
+export function pushIfNotExist<T>(
+  array: T[],
+  element: T,
+  comparer: string | ((value: T, index: number, array: T[]) => unknown)
+): void {
+  const exists = typeof comparer === 'string' ? array.some((i) => i[comparer] === element[comparer]) : array.some(comparer);
+  if (!exists) {
+    array.push(element);
+  }
+}

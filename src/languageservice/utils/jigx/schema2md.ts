@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { JSONSchema } from 'vscode-json-languageservice';
+import { IProblem, JSONSchemaWithProblems } from '../../parser/jsonParser07';
 import { Globals } from './globals';
 import {
   char_gt,
@@ -276,7 +277,7 @@ export class Schema2Md {
 
   readonly tsBlockTmp = '{\n{rows}\n}';
   readonly tsBlockDescriptionTs = '//{description}';
-  readonly tsBlockRequiredTs = (r: boolean): string => (r ? '❕' : '❔');
+  readonly tsBlockRequiredTs = (r: boolean, problem: IProblem): string => problem ? '❗' : (r ? '❕' : '❔');
   // readonly tsBlockTmp = '\n```ts\n{prop}{required}: {type} {description}\n```\n';
   readonly tsBlockRowTmp = '  {prop}{required}: {type} {description}';
 
@@ -288,7 +289,7 @@ export class Schema2Md {
    * @param schema
    * @param subSchemas
    */
-  generatePropTable(octothorpes: string, name: string, isRequired: boolean, schema: JSONSchema, subSchemas: []): string {
+  generatePropTable(octothorpes: string, name: string, isRequired: boolean, schema: JSONSchemaWithProblems, subSchemas: []): string {
     const type = SchemaTypeFactory.CreatePropTypeInstance(schema, name, isRequired);
     // if (hasTypePropertyTable(type)) {
     if (type instanceof Schema_Object) {
@@ -304,6 +305,7 @@ export class Schema2Md {
       const props = Object.keys(type.properties).map((key) => {
         const prop = type.properties[key];
         const isRequired = this.isPropertyRequired(schema, key);
+        prop.problem = schema.problems && schema.problems.find(p => p.propertyName === key);
         const propType = SchemaTypeFactory.CreatePropTypeInstance(prop, key, isRequired);
         // const propTypeStr = propType.getTypeStr(subSchemas);
         const propTypeMD = propType.getTypeMD(subSchemas);
@@ -311,7 +313,7 @@ export class Schema2Md {
         if (this.propTable.styleAsTsBlock) {
           const replaceObj = {
             description: prop.description ? replace(this.tsBlockDescriptionTs, prop) : '',
-            required: this.tsBlockRequiredTs(propType.isPropRequired),
+            required: this.tsBlockRequiredTs(propType.isPropRequired, prop.problem),
             prop: key,
             type: propTypeMD,
           };

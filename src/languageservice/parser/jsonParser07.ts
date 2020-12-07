@@ -6,7 +6,7 @@
 
 import * as Json from 'jsonc-parser';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
-import { isNumber, equals, isString, isDefined, isBoolean } from '../utils/objects';
+import { isNumber, equals, isString, isDefined, isBoolean, pushIfNotExist } from '../utils/objects';
 import {
   ASTNode,
   ObjectASTNode,
@@ -60,6 +60,11 @@ export interface IProblem {
   code?: ErrorCode;
   message: string;
   source?: string;
+  propertyName?: string;
+}
+
+export interface JSONSchemaWithProblems extends JSONSchema {
+  problems: IProblem[];
 }
 
 export abstract class ASTNodeImpl {
@@ -463,7 +468,9 @@ export class JSONDocument {
   public getMatchingSchemas(schema: JSONSchema, focusOffset = -1, exclude: ASTNode = null): IApplicableSchema[] {
     const matchingSchemas = new SchemaCollector(focusOffset, exclude);
     if (this.root && schema) {
-      validate(this.root, schema, schema, new ValidationResult(this.isKubernetes), matchingSchemas, this.isKubernetes);
+      const validationResult = new ValidationResult(this.isKubernetes);
+      validate(this.root, schema, schema, validationResult, matchingSchemas, this.isKubernetes);
+      // console.log(validationResult);
     }
     return matchingSchemas.schemas;
   }
@@ -975,6 +982,7 @@ function validate(
     validationResult: ValidationResult,
     matchingSchemas: ISchemaCollector
   ): void {
+    (<JSONSchemaWithProblems>schema).problems = undefined; //clear previous problems
     const seenKeys: { [key: string]: ASTNode } = Object.create(null);
     const unprocessedProperties: string[] = [];
     for (const propertyNode of node.properties) {
@@ -1016,12 +1024,16 @@ function validate(
         if (!seenKeys[propertyName]) {
           const keyNode = node.parent && node.parent.type === 'property' && node.parent.keyNode;
           const location = keyNode ? { offset: keyNode.offset, length: keyNode.length } : { offset: node.offset, length: 1 };
-          validationResult.problems.push({
+          const problem = {
             location: location,
             severity: DiagnosticSeverity.Warning,
             message: localize('MissingRequiredPropWarning', 'Missing property "{0}".', propertyName),
             source: getSchemaSource(schema, originalSchema),
-          });
+            propertyName: propertyName,
+          };
+          validationResult.problems.push(problem);
+          (<JSONSchemaWithProblems>schema).problems = (<JSONSchemaWithProblems>schema).problems || [];
+          pushIfNotExist((<JSONSchemaWithProblems>schema).problems, problem, 'propertyName');
         }
       }
     }

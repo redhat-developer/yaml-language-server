@@ -15,6 +15,7 @@ import {
   Utils,
 } from './jigx-utils';
 import { Globals } from './globals';
+import { IProblem } from '../../parser/jsonParser07';
 
 type S_SimpleType = 'array' | 'boolean' | 'integer' | 'null' | 'number' | 'object' | 'string';
 type S_Properties = { [key: string]: Schema_AnyType };
@@ -36,6 +37,7 @@ export class Schema_TypeBase {
   type?: any;
   propName?: string;
   isPropRequired?: boolean;
+  problem?: IProblem;
   getTypeStr(subSchemas: []): string {
     return this.type || 'undefined';
   }
