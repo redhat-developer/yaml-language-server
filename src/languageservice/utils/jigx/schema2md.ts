@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { JSONSchema } from 'vscode-json-languageservice';
 import { IProblem, JSONSchemaWithProblems } from '../../parser/jsonParser07';
-import { YamlHoverDetailPropTableStyle } from '../../services/yamlHoverDeital';
+import { YamlHoverDetailPropTableStyle } from '../../services/yamlHoverDetail';
 import { Globals } from './globals';
 import {
   char_gt,

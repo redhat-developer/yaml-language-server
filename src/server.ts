@@ -54,7 +54,7 @@ import { isRelativePath, relativeToAbsolutePath, workspaceFoldersChanged } from 
 import { URI } from 'vscode-uri';
 import { KUBERNETES_SCHEMA_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
-import { YamlHoverDetailPropTableStyle } from './languageservice/services/yamlHoverDeital';
+import { YamlHoverDetailPropTableStyle } from './languageservice/services/yamlHoverDetail';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
@@ -126,7 +126,7 @@ let schemaStoreSettings = [];
 let customTags = [];
 let schemaStoreEnabled = true;
 let indentation: string | undefined = undefined;
-let propTableStyle: YamlHoverDetailPropTableStyle = 'tsBlock';
+let propTableStyle: YamlHoverDetailPropTableStyle = 'table';
 
 // File validation helpers
 const pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};

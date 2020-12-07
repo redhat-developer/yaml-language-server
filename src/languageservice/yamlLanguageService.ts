@@ -25,7 +25,7 @@ import { YAMLFormatter } from './services/yamlFormatter';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
-import { YamlHoverDetail, YamlHoverDetailPropTableStyle } from './services/yamlHoverDeital';
+import { YamlHoverDetail, YamlHoverDetailPropTableStyle } from './services/yamlHoverDetail';
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
