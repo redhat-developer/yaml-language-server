@@ -29,12 +29,13 @@ interface YamlHoverDetailResult {
 
   schemas: JSONSchema[];
 }
-
+export type YamlHoverDetailPropTableStyle = 'table' | 'tsBlock' | 'none';
 export class YamlHoverDetail {
   private jsonHover;
   private appendTypes = true;
   private promise: PromiseConstructor;
   private schema2Md = new Schema2Md();
+  propTableStyle: YamlHoverDetailPropTableStyle;
 
   constructor(private schemaService: YAMLSchemaService) {
     this.jsonHover = new JSONHover(schemaService, [], Promise);
@@ -44,7 +45,9 @@ export class YamlHoverDetail {
   public configure(languageSettings: LanguageSettings): void {
     // eslint-disable-next-line no-empty
     if (languageSettings) {
+      this.propTableStyle = languageSettings.propTableStyle;
     }
+    this.schema2Md.configure({ propTableStyle: this.propTableStyle });
   }
 
   public getHoverDetail(document: TextDocument, position: Position, isKubernetes = false): Thenable<Hover> {
@@ -145,11 +148,13 @@ export class YamlHoverDetail {
             }
             const decycleSchema = decycle(s.schema, 8);
             resSchemas.push(decycleSchema);
-            const propMd = this.schema2Md.generateMd(s.schema, node.location);
-            if (propMd) {
-              // propertiesMd.push(propMd);
-              //take only last one
-              propertiesMd = [propMd];
+            if (this.propTableStyle !== 'none') {
+              const propMd = this.schema2Md.generateMd(s.schema, node.location);
+              if (propMd) {
+                // propertiesMd.push(propMd);
+                //take only last one
+                propertiesMd = [propMd];
+              }
             }
           }
           return true;

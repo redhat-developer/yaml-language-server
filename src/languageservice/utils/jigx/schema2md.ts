@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { JSONSchema } from 'vscode-json-languageservice';
 import { IProblem, JSONSchemaWithProblems } from '../../parser/jsonParser07';
+import { YamlHoverDetailPropTableStyle } from '../../services/yamlHoverDeital';
 import { Globals } from './globals';
 import {
   char_gt,
@@ -30,6 +31,9 @@ export class Schema2Md {
   };
   constructor() {
     SchemaTypeFactory.UniqueLinks = [];
+  }
+  public configure(options: { propTableStyle: YamlHoverDetailPropTableStyle }): void {
+    this.propTable.styleAsTsBlock = options.propTableStyle === 'tsBlock';
   }
 
   public generateMd(schema: any, propName?: string): string {
@@ -87,11 +91,13 @@ export class Schema2Md {
     const schemaTypeTyped = SchemaTypeFactory.CreatePropTypeInstance(schema, name, isRequired);
     let text = [schemaTypeTyped.getElementTitle(octothorpes, subSchemas, true, this.propTable.styleAsTsBlock)];
 
-    const offset = this.propTable.styleAsTsBlock ? octothorpes.replace(/#/g, ' ') : '';
+    const offset = this.propTable.styleAsTsBlock ? octothorpes.replace(/#/g, ' ') : ' \\- ';
     if (schema.description && octothorpes > this.startOctothorpes) {
       //don't show description at the first level - it's added by yamlHover
       if (!this.propTable.styleAsTsBlock) {
-        text.push(schema.description);
+        // text.push(schema.description);
+        const title = text[0].replace('```\n', '```\n' + offset + schema.description.replace(/\n\n/g, '\n\n' + offset) + '\n');
+        text = [title];
       } else {
         const title = text[0].replace('```ts\n', '```ts\n' + offset + '//' + schema.description + '\n');
         text = [title];
@@ -277,7 +283,7 @@ export class Schema2Md {
 
   readonly tsBlockTmp = '{\n{rows}\n}';
   readonly tsBlockDescriptionTs = '//{description}';
-  readonly tsBlockRequiredTs = (r: boolean, problem: IProblem): string => problem ? '❗' : (r ? '❕' : '❔');
+  readonly requiredTmp = (r: boolean, problem: IProblem): string => (problem ? '❗' : r ? '❕' : '');
   // readonly tsBlockTmp = '\n```ts\n{prop}{required}: {type} {description}\n```\n';
   readonly tsBlockRowTmp = '  {prop}{required}: {type} {description}';
 
@@ -289,7 +295,13 @@ export class Schema2Md {
    * @param schema
    * @param subSchemas
    */
-  generatePropTable(octothorpes: string, name: string, isRequired: boolean, schema: JSONSchemaWithProblems, subSchemas: []): string {
+  generatePropTable(
+    octothorpes: string,
+    name: string,
+    isRequired: boolean,
+    schema: JSONSchemaWithProblems,
+    subSchemas: []
+  ): string {
     const type = SchemaTypeFactory.CreatePropTypeInstance(schema, name, isRequired);
     // if (hasTypePropertyTable(type)) {
     if (type instanceof Schema_Object) {
@@ -305,15 +317,15 @@ export class Schema2Md {
       const props = Object.keys(type.properties).map((key) => {
         const prop = type.properties[key];
         const isRequired = this.isPropertyRequired(schema, key);
-        prop.problem = schema.problems && schema.problems.find(p => p.propertyName === key);
+        prop.problem = schema.problems && schema.problems.find((p) => p.propertyName === key);
         const propType = SchemaTypeFactory.CreatePropTypeInstance(prop, key, isRequired);
         // const propTypeStr = propType.getTypeStr(subSchemas);
         const propTypeMD = propType.getTypeMD(subSchemas);
-
+        const requiredStr = this.requiredTmp(propType.isPropRequired, prop.problem);
         if (this.propTable.styleAsTsBlock) {
           const replaceObj = {
             description: prop.description ? replace(this.tsBlockDescriptionTs, prop) : '',
-            required: this.tsBlockRequiredTs(propType.isPropRequired, prop.problem),
+            required: requiredStr,
             prop: key,
             type: propTypeMD,
           };
@@ -321,7 +333,7 @@ export class Schema2Md {
           return propBlock;
         } else {
           const description = prop.description ? replaceSpecialCharsInDescription(prop.description) : '';
-          const row = [key, propTypeMD, propType.isPropRequired ? 'required' : '', description];
+          const row = [key, propTypeMD, requiredStr, description];
           return (this.isDebug ? '' : '') + '| ' + row.join(' | ') + ' |';
         }
       });

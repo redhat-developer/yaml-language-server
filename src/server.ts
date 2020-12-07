@@ -54,6 +54,7 @@ import { isRelativePath, relativeToAbsolutePath, workspaceFoldersChanged } from 
 import { URI } from 'vscode-uri';
 import { KUBERNETES_SCHEMA_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
+import { YamlHoverDetailPropTableStyle } from './languageservice/services/yamlHoverDeital';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
@@ -84,6 +85,7 @@ interface Settings {
     schemaStore: {
       enable: boolean;
     };
+    propTableStyle: YamlHoverDetailPropTableStyle;
   };
   http: {
     proxy: string;
@@ -124,6 +126,7 @@ let schemaStoreSettings = [];
 let customTags = [];
 let schemaStoreEnabled = true;
 let indentation: string | undefined = undefined;
+let propTableStyle: YamlHoverDetailPropTableStyle = 'tsBlock';
 
 // File validation helpers
 const pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
@@ -226,6 +229,7 @@ function updateConfiguration(): void {
     customTags: customTags,
     format: yamlFormatterSettings.enable,
     indentation: indentation,
+    propTableStyle: propTableStyle,
   };
 
   if (schemaAssociations) {
@@ -524,6 +528,9 @@ connection.onDidChangeConfiguration((change) => {
       if (settings.yaml.format.enable !== undefined) {
         yamlFormatterSettings.enable = settings.yaml.format.enable;
       }
+    }
+    if (settings.yaml.propTableStyle) {
+      propTableStyle = settings.yaml.propTableStyle;
     }
   }
 
