@@ -166,13 +166,20 @@ export const tableColumnSeparator = ' &#124; ';
 export const char_lt = '&#60;';
 export const char_gt = '&#62;';
 
-export function replaceSpecialToTsBlock(strWithSpecials: string): string {
-  return strWithSpecials
-    .replace(/&#124;/g, '|')
-    .replace(/&#60;/g, '<')
-    .replace(/&#62;/g, '>');
+export function replaceSpecialToCodeBlock(strWithSpecials: string): string {
+  const map: any = {
+    '&#124;': '|',
+    '&#60;': '<',
+    '&#62;': '>',
+  };
+  return strWithSpecials.replace(/&#60;|&#124;|&#62;/g, (m) => map[m]);
 }
+
 export function toTsBlock(code: string, offset = 0): string {
   const offsetStr = '\n' + new Array(offset).join(' ');
-  return '\n```ts' + offsetStr + replaceSpecialToTsBlock(code).replace(/\n/g, offsetStr) + '\n```\n';
+  return '\n```ts' + offsetStr + replaceSpecialToCodeBlock(code).replace(/\n/g, offsetStr) + '\n```\n';
+}
+
+export function toCodeSingleLine(code: string): string {
+  return `\`${replaceSpecialToCodeBlock(code)}\``;
 }

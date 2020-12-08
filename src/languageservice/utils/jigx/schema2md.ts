@@ -11,6 +11,7 @@ import {
   replace,
   replaceSpecialCharsInDescription,
   tableColumnSeparator,
+  toCodeSingleLine,
   toTsBlock,
 } from './jigx-utils';
 import { SchemaTypeFactory, Schema_ArrayGeneric, Schema_ArrayTyped, Schema_Object, Schema_ObjectTyped } from './schema-type';
@@ -333,7 +334,7 @@ export class Schema2Md {
           return propBlock;
         } else {
           const description = prop.description ? replaceSpecialCharsInDescription(prop.description) : '';
-          const row = [key, propTypeMD, requiredStr, description];
+          const row = [key, toCodeSingleLine(propTypeMD), requiredStr, description];
           return (this.isDebug ? '' : '') + '| ' + row.join(' | ') + ' |';
         }
       });

@@ -2,20 +2,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { JSONSchema } from 'vscode-json-languageservice';
+import { IProblem } from '../../parser/jsonParser07';
+import { Globals } from './globals';
 import {
   char_gt,
   char_lt,
   createInstance,
   getFileInfo,
   getSchemaRefTypeTitle,
-  replaceSpecialToTsBlock,
   tableColumnSeparator,
   toTsBlock,
   translateSectionTitleToLinkHeder,
-  Utils,
 } from './jigx-utils';
-import { Globals } from './globals';
-import { IProblem } from '../../parser/jsonParser07';
 
 type S_SimpleType = 'array' | 'boolean' | 'integer' | 'null' | 'number' | 'object' | 'string';
 type S_Properties = { [key: string]: Schema_AnyType };
@@ -153,7 +151,7 @@ export class Schema_Enum extends Schema_TypeBase {
   type: S_SimpleType;
   enum: string[];
   getTypeStr(): string {
-    return `enum${char_lt}${this.type}${char_gt}`;
+    return `Enum${char_lt}${this.type}${char_gt}`;
   }
 }
 
