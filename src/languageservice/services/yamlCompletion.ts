@@ -936,11 +936,7 @@ export class YAMLCompletion extends JSONCompletion {
     if (document.getText().trim().length === 0) {
       return {
         // add empty object to be compatible with JSON
-        newText:
-          document.getText().substring(0, start + textLine.length) +
-          (textLine.trim()[0] === '-' && !textLine.endsWith(' ') ? ' ' : '') +
-          '{}\n' +
-          document.getText().substr(lineOffset[linePos + 1] || document.getText().length),
+        newText: `{${document.getText()}}\n`,
         newPosition: textDocumentPosition,
       };
     }

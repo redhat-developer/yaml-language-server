@@ -1573,14 +1573,14 @@ suite('Auto Completion Tests', () => {
           ],
         });
 
-        const content = ' \n';
-        const completion = await parseSetup(content, 1);
+        const content = ' \n\n\n';
+        const completion = await parseSetup(content, 3);
         expect(completion.items).lengthOf(2);
         expect(completion.items[0]).eql(
-          createExpectedCompletion('kind', 'kind: $1', 0, 1, 0, 1, 10, InsertTextFormat.Snippet, { documentation: '' })
+          createExpectedCompletion('kind', 'kind: $1', 2, 0, 2, 0, 10, InsertTextFormat.Snippet, { documentation: '' })
         );
         expect(completion.items[1]).eql(
-          createExpectedCompletion('name', 'name: $1', 0, 1, 0, 1, 10, InsertTextFormat.Snippet, { documentation: '' })
+          createExpectedCompletion('name', 'name: $1', 2, 0, 2, 0, 10, InsertTextFormat.Snippet, { documentation: '' })
         );
       });
     });
