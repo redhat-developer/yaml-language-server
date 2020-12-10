@@ -932,6 +932,19 @@ export class YAMLCompletion extends JSONCompletion {
 
     const textLine = document.getText().substring(start, end);
 
+    // Check if document contains only white spaces and line delimiters
+    if (document.getText().trim().length === 0) {
+      return {
+        // add empty object to be compatible with JSON
+        newText:
+          document.getText().substring(0, start + textLine.length) +
+          (textLine.trim()[0] === '-' && !textLine.endsWith(' ') ? ' ' : '') +
+          '{}\n' +
+          document.getText().substr(lineOffset[linePos + 1] || document.getText().length),
+        newPosition: textDocumentPosition,
+      };
+    }
+
     // Check if the string we are looking at is a node
     if (textLine.indexOf(':') === -1) {
       // We need to add the ":" to load the nodes
