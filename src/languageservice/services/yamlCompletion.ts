@@ -792,7 +792,7 @@ export class YAMLCompletion extends JSONCompletion {
     const propertyText = this.getInsertTextForValue(key, '', 'string');
     const resultText = propertyText + ':';
 
-    let value;
+    let value: string;
     let nValueProposals = 0;
     if (propertySchema) {
       let type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
@@ -817,6 +817,10 @@ export class YAMLCompletion extends JSONCompletion {
               },
               1
             );
+            // add space before default snippet value
+            if (!value.startsWith(' ') && !value.startsWith('\n')) {
+              value = ' ' + value;
+            }
           }
         }
         nValueProposals += propertySchema.defaultSnippets.length;
