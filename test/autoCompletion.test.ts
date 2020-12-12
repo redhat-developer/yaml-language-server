@@ -4,21 +4,40 @@
  *--------------------------------------------------------------------------------------------*/
 
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { SCHEMA_ID, setupSchemaIDTextDocument, configureLanguageService, toFsPath } from './utils/testHelper';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, toFsPath } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList, InsertTextFormat } from 'vscode-languageserver';
+import { InsertTextFormat, TextDocumentPositionParams } from 'vscode-languageserver';
 import { expect } from 'chai';
-
-const languageSettingsSetup = new ServiceSetup().withCompletion();
-const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';;
+import { LanguageService } from '../src';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
 suite('Auto Completion Tests', () => {
-  function parseSetup(content: string, position): Promise<CompletionList> {
+
+  let languageSettingsSetup: ServiceSetup;
+  let languageService: LanguageService;
+  let languageHandler: LanguageHandlers;
+  let yamlSettings: SettingsState;
+
+  before(() => {
+    languageSettingsSetup = new ServiceSetup().withCompletion();
+    const { languageService: langService, validationHandler: __, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
+    languageService = langService;
+    languageHandler = langHandler;
+    yamlSettings = settings;
+  });
+
+  function parseSetup(content: string, position: number) {
     const testTextDocument = setupSchemaIDTextDocument(content);
-    return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
+    yamlSettings.documents = new TextDocumentTestManager();
+    (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+    return languageHandler.completionHandler({
+      position: testTextDocument.positionAt(position),
+      textDocument: testTextDocument
+    });
   }
 
   afterEach(() => {

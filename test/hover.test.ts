@@ -3,15 +3,28 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { ServiceSetup } from './utils/serviceSetup';
-import { configureLanguageService, SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper';
-import { MarkedString } from '../src';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import { LanguageService, MarkedString } from '../src';
 import * as assert from 'assert';
 import { Hover } from 'vscode-languageserver';
-
-const languageSettingsSetup = new ServiceSetup().withHover();
-const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 
 suite('Hover Tests', () => {
+
+  let languageSettingsSetup: ServiceSetup;
+  let languageHandler: LanguageHandlers;
+  let languageService: LanguageService;
+  let yamlSettings: SettingsState;
+
+  before(() => {
+    languageSettingsSetup = new ServiceSetup().withHover();
+    const { languageService: langService, validationHandler: __, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
+    languageService = langService;
+    languageHandler = langHandler;
+    yamlSettings = settings;
+  });
+
   afterEach(() => {
     languageService.deleteSchema(SCHEMA_ID);
   });
@@ -19,7 +32,12 @@ suite('Hover Tests', () => {
   describe('Hover', function () {
     function parseSetup(content: string, position): Promise<Hover> {
       const testTextDocument = setupSchemaIDTextDocument(content);
-      return languageService.doHover(testTextDocument, testTextDocument.positionAt(position));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      return languageHandler.hoverHandler({
+        position: testTextDocument.positionAt(position),
+        textDocument: testTextDocument
+      })
     }
 
     it('Hover on key on root', (done) => {

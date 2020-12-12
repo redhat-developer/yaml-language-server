@@ -3,36 +3,58 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as path from 'path';
-import { setupTextDocument, configureLanguageService, toFsPath } from './utils/testHelper';
+import { setupLanguageService, setupTextDocument, toFsPath } from './utils/testHelper';
 import * as assert from 'assert';
 import { ServiceSetup } from './utils/serviceSetup';
 import { Diagnostic, Hover } from 'vscode-languageserver';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { LanguageService } from '../src/languageservice/yamlLanguageService';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
 /**
  * Setup the schema we are going to use with the language settings
  */
-const uri = toFsPath(path.join(__dirname, './fixtures/customMultipleSchemaSequences.json'));
-const fileMatch = ['*.yml', '*.yaml'];
-const languageSettingsSetup = new ServiceSetup()
-  .withHover()
-  .withValidate()
-  .withSchemaFileMatch({ uri, fileMatch: fileMatch })
-  .withCustomTags(['!Test', '!Ref sequence']);
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite('Multiple Documents Validation Tests', () => {
-  // Tests for validator
+
+  let languageSettingsSetup: ServiceSetup;
+  let languageHandler: LanguageHandlers;
+  let validationHandler: ValidationHandler;
+  let languageService: LanguageService;
+  let yamlSettings: SettingsState;
+
+  before(() => {
+    const uri = toFsPath(path.join(__dirname, './fixtures/customMultipleSchemaSequences.json'));
+    const fileMatch = ['*.yml', '*.yaml'];
+    languageSettingsSetup = new ServiceSetup().withHover().withValidate().withSchemaFileMatch({
+      fileMatch,
+      uri
+    }).withCustomTags(['!Test', '!Ref sequence']);
+    const { languageService: langService, validationHandler: valHandler, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
+    languageService = langService;
+    validationHandler = valHandler;
+    languageHandler = langHandler;
+    yamlSettings = settings;
+  });
+
   describe('Multiple Documents Validation', function () {
     function validatorSetup(content: string): Promise<Diagnostic[]> {
       const testTextDocument = setupTextDocument(content);
-      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
-      return languageService.doValidation(testTextDocument, false);
+      languageService.configure(languageSettingsSetup.languageSettings);
+      return validationHandler.validateTextDocument(testTextDocument);
     }
 
     function hoverSetup(content: string, position): Promise<Hover> {
       const testTextDocument = setupTextDocument(content);
-      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
-      return languageService.doHover(testTextDocument, testTextDocument.positionAt(position));
+      languageService.configure(languageSettingsSetup.languageSettings);
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      return languageHandler.hoverHandler({
+        position: testTextDocument.positionAt(position),
+        textDocument: testTextDocument
+      })
     }
 
     it('Should validate multiple documents', (done) => {

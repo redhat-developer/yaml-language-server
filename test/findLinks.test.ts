@@ -2,18 +2,33 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { setupTextDocument, configureLanguageService } from './utils/testHelper';
+import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 import assert = require('assert');
 import { ServiceSetup } from './utils/serviceSetup';
 import { DocumentLink } from 'vscode-languageserver';
-
-const languageService = configureLanguageService(new ServiceSetup().languageSettings);
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
 suite('FindDefintion Tests', () => {
+
+  let languageHandler: LanguageHandlers;
+  let yamlSettings: SettingsState;
+
+  before(() => {
+    const languageSettingsSetup = new ServiceSetup();
+    const { languageService: _, validationHandler: __, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
+    languageHandler = langHandler;
+    yamlSettings = settings;
+  });
+
   describe('Jump to defintion', function () {
     function findLinks(content: string): Promise<DocumentLink[]> {
       const testTextDocument = setupTextDocument(content);
-      return languageService.findLinks(testTextDocument);
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      return languageHandler.documentLinkHandler({
+        textDocument: testTextDocument
+      });
     }
 
     it('Find source defintion', (done) => {

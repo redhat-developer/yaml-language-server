@@ -2,22 +2,37 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { configureLanguageService, setupTextDocument } from './utils/testHelper';
+import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 import { ServiceSetup } from './utils/serviceSetup';
 import * as assert from 'assert';
 import { TextEdit } from 'vscode-languageserver';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
-const languageSettingsSetup = new ServiceSetup().withFormat();
-const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
-
-// Defines a Mocha test suite to group tests of similar kind together
 suite('Formatter Tests', () => {
-  // Tests for validator
+
+  let languageHandler: LanguageHandlers;
+  let yamlSettings: SettingsState;
+
+  before(() => {
+    const languageSettingsSetup = new ServiceSetup().withFormat();
+    const { languageService: _, validationHandler: __, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
+    languageHandler = langHandler;
+    yamlSettings = settings;
+  });
+
+  // Tests for formatter
   describe('Formatter', function () {
     describe('Test that formatter works with custom tags', function () {
-      function parseSetup(content: string, options = {}): TextEdit[] {
+      function parseSetup(content: string, options: any = {}): TextEdit[] {
         const testTextDocument = setupTextDocument(content);
-        return languageService.doFormat(testTextDocument, options);
+        yamlSettings.documents = new TextDocumentTestManager();
+        (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+        yamlSettings.yamlFormatterSettings = options;
+        return languageHandler.formatterHandler({
+          options,
+          textDocument: testTextDocument
+        });
       }
 
       it('Formatting works without custom tags', () => {

@@ -20,7 +20,8 @@ import {
 import { ErrorCode, JSONPath } from 'vscode-json-languageservice';
 import * as nls from 'vscode-nls';
 import { URI } from 'vscode-uri';
-import { TextDocument, Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
+import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 const localize = nls.loadMessageBundle();
 
@@ -240,7 +241,7 @@ export interface ISchemaCollector {
 
 class SchemaCollector implements ISchemaCollector {
   schemas: IApplicableSchema[] = [];
-  constructor(private focusOffset = -1, private exclude: ASTNode = null) {}
+  constructor(private focusOffset = -1, private exclude: ASTNode = null) { }
   add(schema: IApplicableSchema): void {
     this.schemas.push(schema);
   }
@@ -416,7 +417,7 @@ export class JSONDocument {
     public readonly root: ASTNode,
     public readonly syntaxErrors: Diagnostic[] = [],
     public readonly comments: Range[] = []
-  ) {}
+  ) { }
 
   public getNodeFromOffset(offset: number, includeRightBound = false): ASTNode | undefined {
     if (this.root) {

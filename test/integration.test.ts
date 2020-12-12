@@ -2,32 +2,44 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { getLanguageService, LanguageSettings } from '../src/languageservice/yamlLanguageService';
-import { schemaRequestService, workspaceContext, setupTextDocument } from './utils/testHelper';
+import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 import * as assert from 'assert';
 import { MarkedString } from '../src';
 import { Diagnostic, CompletionList, Hover } from 'vscode-languageserver';
-
-const languageService = getLanguageService(schemaRequestService, workspaceContext);
-
-const uri = 'https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.17.0-standalone-strict/all.json';
-const languageSettings: LanguageSettings = {
-  schemas: [],
-  validate: true,
-  completion: true,
-  hover: true,
-};
-const fileMatch = ['*.yml', '*.yaml'];
-languageSettings.schemas.push({ uri, fileMatch: fileMatch });
-languageService.configure(languageSettings);
+import { ServiceSetup } from './utils/serviceSetup';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite('Kubernetes Integration Tests', () => {
+
+  let languageSettingsSetup: ServiceSetup;
+  let languageHandler: LanguageHandlers;
+  let validationHandler: ValidationHandler;
+  let yamlSettings: SettingsState;
+
+  before(() => {
+    const uri = 'https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.17.0-standalone-strict/all.json';
+    const fileMatch = ['*.yml', '*.yaml'];
+    languageSettingsSetup = new ServiceSetup().withHover().withValidate().withCompletion().withSchemaFileMatch({
+      fileMatch,
+      uri
+    }).withKubernetes();
+    const { languageService: _, validationHandler: valHandler, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
+    validationHandler = valHandler;
+    languageHandler = langHandler;
+    yamlSettings = settings;
+  });
+
   // Tests for validator
   describe('Yaml Validation with kubernetes', function () {
     function parseSetup(content: string): Promise<Diagnostic[]> {
       const testTextDocument = setupTextDocument(content);
-      return languageService.doValidation(testTextDocument, true);
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      yamlSettings.specificValidatorPaths = ["*.yml", "*.yaml"];
+      return validationHandler.validateTextDocument(testTextDocument);
     }
 
     //Validating basic nodes
@@ -195,7 +207,12 @@ suite('Kubernetes Integration Tests', () => {
     describe('doComplete', function () {
       function parseSetup(content: string, position): Promise<CompletionList> {
         const testTextDocument = setupTextDocument(content);
-        return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), true);
+        yamlSettings.documents = new TextDocumentTestManager();
+        (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+        return languageHandler.completionHandler({
+          position: testTextDocument.positionAt(position),
+          textDocument: testTextDocument
+        });
       }
 
       /**
@@ -285,7 +302,12 @@ suite('Kubernetes Integration Tests', () => {
   describe('yamlHover with kubernetes', function () {
     function parseSetup(content: string, offset: number): Promise<Hover> {
       const testTextDocument = setupTextDocument(content);
-      return languageService.doHover(testTextDocument, testTextDocument.positionAt(offset));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      return languageHandler.hoverHandler({
+        position: testTextDocument.positionAt(offset),
+        textDocument: testTextDocument
+      });
     }
 
     it('Hover on incomplete kubernetes document', (done) => {

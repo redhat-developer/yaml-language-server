@@ -2,25 +2,40 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { toFsPath, setupTextDocument, configureLanguageService } from './utils/testHelper';
+import { toFsPath, setupSchemaIDTextDocument, setupLanguageService } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList } from 'vscode-languageserver';
-
-const uri = toFsPath(path.join(__dirname, './fixtures/defaultSnippets.json'));
-const fileMatch = ['*.yml', '*.yaml'];
-const languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
-  fileMatch,
-  uri,
-});
-const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+import { TextDocumentPositionParams } from 'vscode-languageserver';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 
 suite('Default Snippet Tests', () => {
+
+  let languageHandler: LanguageHandlers;
+  let yamlSettings: SettingsState;
+
+  before(() => {
+    const uri = toFsPath(path.join(__dirname, './fixtures/defaultSnippets.json'));
+    const fileMatch = ['*.yml', '*.yaml'];
+    const languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
+      fileMatch,
+      uri,
+    });
+    const { languageService: _, validationHandler: __, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
+    languageHandler = langHandler;
+    yamlSettings = settings;
+  });
+
   describe('Snippet Tests', function () {
-    function parseSetup(content: string, position: number): Promise<CompletionList> {
-      const testTextDocument = setupTextDocument(content);
-      return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
+    function parseSetup(content: string, position: number) {
+      const testTextDocument = setupSchemaIDTextDocument(content);
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      return languageHandler.completionHandler({
+        position: testTextDocument.positionAt(position),
+        textDocument: testTextDocument
+      });
     }
 
     it('Snippet in array schema should autocomplete with -', (done) => {

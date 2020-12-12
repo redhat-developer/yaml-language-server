@@ -2,20 +2,35 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { setupTextDocument, TEST_URI, configureLanguageService } from './utils/testHelper';
+import { setupLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper';
 import { createExpectedSymbolInformation, createExpectedDocumentSymbol } from './utils/verifyError';
 import { DocumentSymbol, SymbolKind } from 'vscode-languageserver-types';
 import assert = require('assert');
 import { ServiceSetup } from './utils/serviceSetup';
 import { SymbolInformation } from 'vscode-languageserver';
-
-const languageService = configureLanguageService(new ServiceSetup().languageSettings);
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
 suite('Document Symbols Tests', () => {
+
+  let languageHandler: LanguageHandlers;
+  let yamlSettings: SettingsState;
+
+  before(() => {
+    const languageSettingsSetup = new ServiceSetup();
+    const { languageService: _, validationHandler: __, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
+    languageHandler = langHandler;
+    yamlSettings = settings;
+  });
+
   describe('Document Symbols Tests (Non Hierarchical)', function () {
-    function parseNonHierarchicalSetup(content: string): SymbolInformation[] {
+    function parseNonHierarchicalSetup(content: string): SymbolInformation[] | DocumentSymbol[] {
       const testTextDocument = setupTextDocument(content);
-      return languageService.findDocumentSymbols(testTextDocument);
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      return languageHandler.documentSymbolHandler({
+        textDocument: testTextDocument
+      });
     }
 
     it('Document is empty', (done) => {
@@ -106,9 +121,14 @@ suite('Document Symbols Tests', () => {
   });
 
   describe('Document Symbols Tests (Hierarchical)', function () {
-    function parseHierarchicalSetup(content: string): DocumentSymbol[] {
+    function parseHierarchicalSetup(content: string): DocumentSymbol[] | SymbolInformation[] {
       const testTextDocument = setupTextDocument(content);
-      return languageService.findDocumentSymbols2(testTextDocument);
+      yamlSettings.hierarchicalDocumentSymbolSupport = true;
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      return languageHandler.documentSymbolHandler({
+        textDocument: testTextDocument
+      });
     }
 
     it('Document is empty', (done) => {

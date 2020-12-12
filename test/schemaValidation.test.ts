@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { configureLanguageService, SCHEMA_ID, setupSchemaIDTextDocument, setupTextDocument } from './utils/testHelper';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { createExpectedError } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import {
@@ -17,18 +17,37 @@ import {
   propertyIsNotAllowed,
 } from './utils/errorMessages';
 import * as assert from 'assert';
-import { Diagnostic, DiagnosticSeverity, TextDocument } from 'vscode-languageserver';
+import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { expect } from 'chai';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
-const languageSettingsSetup = new ServiceSetup().withValidate().withCustomTags(['!Test', '!Ref sequence']);
-const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
-
-// Defines a Mocha test suite to group tests of similar kind together
 suite('Validation Tests', () => {
-  function parseSetup(content: string, isKubernetes = false): Promise<Diagnostic[]> {
-    const testTextDocument = setupSchemaIDTextDocument(content);
-    return languageService.doValidation(testTextDocument, isKubernetes);
+
+  let languageSettingsSetup: ServiceSetup;
+  let validationHandler: ValidationHandler;
+  let languageService: LanguageService;
+  let yamlSettings: SettingsState;
+
+  before(() => {
+    languageSettingsSetup = new ServiceSetup().withValidate().withCustomTags(['!Test', '!Ref sequence'])
+      .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['.drone.yml'] })
+      .withSchemaFileMatch({ uri: 'https://json.schemastore.org/drone', fileMatch: ['.drone.yml'] })
+      .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['test.yml'] })
+      .withSchemaFileMatch({ uri: 'https://json.schemastore.org/composer', fileMatch: ['test.yml'] });
+    const { languageService: langService, validationHandler: valHandler, languageHandler: _, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
+    languageService = langService;
+    validationHandler = valHandler;
+    yamlSettings = settings;
+  });
+
+  function parseSetup(content: string, customSchemaID?: string): Promise<Diagnostic[]> {
+    const testTextDocument = setupSchemaIDTextDocument(content, customSchemaID);
+    yamlSettings.documents = new TextDocumentTestManager();
+    (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+    return validationHandler.validateTextDocument(testTextDocument);
   }
 
   afterEach(() => {
@@ -106,7 +125,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(BooleanTypeError, 0, 11, 0, 15, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(BooleanTypeError, 0, 11, 0, 15, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -128,7 +147,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 5, 0, 10, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(StringTypeError, 0, 5, 0, 10, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -211,7 +230,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(BooleanTypeError, 0, 11, 0, 16, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(BooleanTypeError, 0, 11, 0, 16, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -233,7 +252,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 5, 0, 7, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(StringTypeError, 0, 5, 0, 7, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -275,7 +294,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 5, 0, 11, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(StringTypeError, 0, 5, 0, 11, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -385,7 +404,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(ObjectTypeError, 0, 9, 0, 13, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(ObjectTypeError, 0, 9, 0, 13, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -430,7 +449,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(ArrayTypeError, 0, 11, 0, 15, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(ArrayTypeError, 0, 11, 0, 15, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -663,7 +682,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 4, 0, 4, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(StringTypeError, 0, 4, 0, 4, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -717,6 +736,9 @@ suite('Validation Tests', () => {
 
   describe('Test with custom kubernetes schemas', function () {
     it('Test that properties that match multiple enums get validated properly', (done) => {
+      languageService.configure(languageSettingsSetup.withKubernetes().languageSettings)
+      yamlSettings.specificValidatorPaths = ["*.yml", "*.yaml"];
+
       const schema = {
         definitions: {
           ImageStreamImport: {
@@ -749,7 +771,7 @@ suite('Validation Tests', () => {
       };
       languageService.addSchema(SCHEMA_ID, schema);
       const content = 'kind: ';
-      const validator = parseSetup(content, true);
+      const validator = parseSetup(content);
       validator
         .then(function (result) {
           assert.equal(result.length, 2);
@@ -857,26 +879,21 @@ suite('Validation Tests', () => {
       const content = 'analytics: 1';
       const result = await parseSetup(content);
       expect(result[0]).deep.equal(
-        createExpectedError(StringTypeError, 0, 11, 0, 12, DiagnosticSeverity.Warning, 'yaml-schema: Schema Super title')
+        createExpectedError(StringTypeError, 0, 11, 0, 12, DiagnosticSeverity.Error, 'yaml-schema: Schema Super title')
       );
     });
   });
 
   describe('Multiple schema for single file', () => {
     it('should add proper source to diagnostic', async () => {
-      const languageSettingsSetup = new ServiceSetup()
-        .withValidate()
-        .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['test.yaml'] })
-        .withSchemaFileMatch({ uri: 'https://json.schemastore.org/composer', fileMatch: ['test.yaml'] });
-      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
-
       const content = `
       abandoned: v1
       archive:
         exclude:
           asd: asd`;
-      const testTextDocument = setupTextDocument(content);
-      const result = await languageService.doValidation(testTextDocument, true);
+      languageService.configure(languageSettingsSetup.withKubernetes().languageSettings)
+      yamlSettings.specificValidatorPaths = ["*.yml", "*.yaml"];
+      const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/test.yml');
       expect(result[0]).deep.equal(
         createExpectedError(
           ArrayTypeError,
@@ -884,26 +901,19 @@ suite('Validation Tests', () => {
           10,
           4,
           18,
-          DiagnosticSeverity.Warning,
+          DiagnosticSeverity.Error,
           'yaml-schema: https://json.schemastore.org/composer'
         )
       );
     });
 
     it('should add proper source to diagnostic in case of drone', async () => {
-      const languageSettingsSetup = new ServiceSetup()
-        .withValidate()
-        .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['.drone.yml'] })
-        .withSchemaFileMatch({ uri: 'https://json.schemastore.org/drone', fileMatch: ['.drone.yml'] });
-      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
-
       const content = `
       apiVersion: v1
       kind: Deployment
       `;
 
-      const testTextDocument = TextDocument.create('file://~/Desktop/vscode-yaml/.drone.yml', 'yaml', 0, content);
-      const result = await languageService.doValidation(testTextDocument, true);
+      const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/.drone.yml');
       expect(result[5]).deep.equal(
         createExpectedError(
           propertyIsNotAllowed('apiVersion'),
@@ -911,7 +921,7 @@ suite('Validation Tests', () => {
           6,
           1,
           16,
-          DiagnosticSeverity.Warning,
+          DiagnosticSeverity.Error,
           'yaml-schema: Drone CI configuration file'
         )
       );
