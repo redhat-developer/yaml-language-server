@@ -538,7 +538,7 @@ suite('JSON Schema', () => {
     assert.equal(hello_world_schema, null);
   });
 
-  describe('Test getSchemaFromModeline', function () {
+  describe('Test getSchemaFromFileContent', function () {
     test('simple case', async () => {
       checkReturnSchemaUrl('# yaml-language-server: $schema=expectedUrl', 'expectedUrl');
     });
@@ -586,11 +586,22 @@ suite('JSON Schema', () => {
       checkReturnSchemaUrl('# yaml-language-server: $notschema=url1', undefined);
     });
 
-    function checkReturnSchemaUrl(modeline: string, expectedResult: string): void {
+    test('schema key', async () => {
+      checkReturnSchemaUrl('$schema: expectedUrl', 'expectedUrl');
+    });
+
+    test('schema key and simple case', async () => {
+      checkReturnSchemaUrl('# yaml-language-server: $schema=expectedUrl1\n$schema: expectedUrl2', 'expectedUrl2');
+    });
+
+    test('schema key with wrong type', async () => {
+      checkReturnSchemaUrl('# yaml-language-server: $schema=expectedUrl1\n$schema: [expectedUrl2,expectedUrl3]', 'expectedUrl1');
+    });
+
+    function checkReturnSchemaUrl(fileContent: string, expectedResult: string): void {
       const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
-      const yamlDoc = new parser.SingleYAMLDocument([]);
-      yamlDoc.lineComments = [modeline];
-      assert.equal(service.getSchemaFromModeline(yamlDoc), expectedResult);
+      const yamlDoc = parser.parse(fileContent).documents[0];
+      assert.equal(service.getSchemaFromFileContent(yamlDoc), expectedResult);
     }
   });
 });

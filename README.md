@@ -215,6 +215,14 @@ yaml.schemas: {
 
 `yaml.schemas` allows you to specify json schemas that you want to validate against the yaml that you write. Kubernetes is an optional field. It does not require a url as the language server will provide that. You just need the keyword kubernetes and a glob pattern.
 
+### Using `$schema` key to specify schema
+
+Like [VSCode](https://code.visualstudio.com/Docs/languages/json#_mapping-in-the-json), specifying schema via `$schema` key at root is supported.
+
+```
+$schema: <urlToTheSchema>
+```
+
 ### Using inlined schema
 
 It is possible to specify a yaml schema using a modeline.
