@@ -263,7 +263,7 @@ This repository only contains the server implementation. Here are some known cli
    ```bash
    $ yarn run build
    ```
-5. The new built server is now location in out/server/src/server.js.
+5. The new built server is now located in ./out/server/src/server.js.
    ```bash
    node (Yaml Language Server Location)/out/server/src/server.js [--stdio]
    ```
