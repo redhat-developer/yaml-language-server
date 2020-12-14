@@ -26,6 +26,20 @@ import { YAMLFormatter } from './services/yamlFormatter';
 import { JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
 
+export enum SchemaPriority {
+  SchemaStore = 1,
+  SchemaAssociation = 2,
+  Settings = 3,
+  Modeline = 4,
+}
+
+export interface SchemasSettings {
+  priority?: SchemaPriority; // Priority represents the order in which schemas are selected. If multiple schemas match a yaml document then highest priority wins
+  fileMatch: string[];
+  schema?: unknown;
+  uri: string;
+}
+
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
   hover?: boolean; //Setting for whether we want to have hover results
@@ -33,7 +47,7 @@ export interface LanguageSettings {
   format?: boolean; //Setting for whether we want to have the formatter or not
   isKubernetes?: boolean; //If true then its validating against kubernetes
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  schemas?: any[]; //List of schemas,
+  schemas?: SchemasSettings[]; //List of schemas,
   customTags?: Array<string>; //Array of Custom Tags
   /**
    * Default indentation size
@@ -109,7 +123,10 @@ export function getLanguageService(
     configure: (settings) => {
       schemaService.clearExternalSchemas();
       if (settings.schemas) {
+        schemaService.schemaPriorityMapping = new Map();
         settings.schemas.forEach((settings) => {
+          const currPriority = settings.priority ? settings.priority : 0;
+          schemaService.addSchemaPriority(settings.uri, currPriority);
           schemaService.registerExternalSchema(settings.uri, settings.fileMatch, settings.schema);
         });
       }
