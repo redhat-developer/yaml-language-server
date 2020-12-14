@@ -54,6 +54,11 @@ const formats = {
 
 export const YAML_SOURCE = 'YAML';
 
+export enum ProblemType {
+  missingRequiredPropWarning = 'MissingRequiredPropWarning',
+  typeMismatchWarning = 'TypeMismatchWarning',
+}
+
 export interface IProblem {
   location: IRange;
   severity: DiagnosticSeverity;
@@ -61,6 +66,7 @@ export interface IProblem {
   message: string;
   source?: string;
   propertyName?: string;
+  problemType?: ProblemType;
 }
 
 export interface JSONSchemaWithProblems extends JSONSchema {
@@ -534,11 +540,12 @@ function validate(
       }
     } else if (schema.type) {
       if (!matchesType(schema.type)) {
-        validationResult.problems.push({
+        pushProblemToValidationResultAndSchema(schema, validationResult, {
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
           message: schema.errorMessage || localize('typeMismatchWarning', 'Incorrect type. Expected "{0}".', schema.type),
           source: getSchemaSource(schema, originalSchema),
+          problemType: ProblemType.typeMismatchWarning,
         });
       }
     }
@@ -1030,10 +1037,9 @@ function validate(
             message: localize('MissingRequiredPropWarning', 'Missing property "{0}".', propertyName),
             source: getSchemaSource(schema, originalSchema),
             propertyName: propertyName,
+            problemType: ProblemType.missingRequiredPropWarning,
           };
-          validationResult.problems.push(problem);
-          (<JSONSchemaWithProblems>schema).problems = (<JSONSchemaWithProblems>schema).problems || [];
-          pushIfNotExist((<JSONSchemaWithProblems>schema).problems, problem, 'propertyName');
+          pushProblemToValidationResultAndSchema(schema, validationResult, problem);
         }
       }
     }
@@ -1274,6 +1280,16 @@ function validate(
       }
     }
     return bestMatch;
+  }
+
+  function pushProblemToValidationResultAndSchema(
+    schema: JSONSchema,
+    validationResult: ValidationResult,
+    problem: IProblem
+  ): void {
+    validationResult.problems.push(problem);
+    (<JSONSchemaWithProblems>schema).problems = (<JSONSchemaWithProblems>schema).problems || [];
+    pushIfNotExist((<JSONSchemaWithProblems>schema).problems, problem, 'propertyName');
   }
 }
 

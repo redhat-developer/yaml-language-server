@@ -120,7 +120,7 @@ let yamlFormatterSettings = {
   printWidth: 80,
   enable: true,
 } as CustomFormatterOptions;
-let yamlShouldHover = true;
+let yamlShouldHover = false;
 let yamlShouldCompletion = true;
 let schemaStoreSettings = [];
 let customTags = [];
@@ -427,7 +427,7 @@ connection.onInitialize(
       capabilities: {
         textDocumentSync: documents.syncKind,
         completionProvider: { resolveProvider: false },
-        hoverProvider: true,
+        hoverProvider: false,
         documentSymbolProvider: true,
         documentFormattingProvider: false,
         documentRangeFormattingProvider: false,
@@ -500,7 +500,7 @@ connection.onDidChangeConfiguration((change) => {
       yamlShouldValidate = settings.yaml.validate;
     }
     if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hover')) {
-      yamlShouldHover = settings.yaml.hover;
+      yamlShouldHover = false; //settings.yaml.hover;
     }
     if (Object.prototype.hasOwnProperty.call(settings.yaml, 'completion')) {
       yamlShouldCompletion = settings.yaml.completion;

@@ -6,7 +6,7 @@
 'use strict';
 
 import { getNodePath, getNodeValue } from 'jsonc-parser';
-import { JSONSchema, MarkedString, MarkupContent, Range } from 'vscode-json-languageservice';
+import { ASTNode, JSONSchema, MarkedString, MarkupContent, Range } from 'vscode-json-languageservice';
 import { JSONHover } from 'vscode-json-languageservice/lib/umd/services/jsonHover';
 import { Hover, Position, TextDocument } from 'vscode-languageserver-types';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
@@ -28,6 +28,8 @@ interface YamlHoverDetailResult {
   range?: Range;
 
   schemas: JSONSchema[];
+
+  node: ASTNode;
 }
 export type YamlHoverDetailPropTableStyle = 'table' | 'tsBlock' | 'none';
 export class YamlHoverDetail {
@@ -95,11 +97,12 @@ export class YamlHoverDetail {
       document.positionAt(hoverRangeNode.offset + hoverRangeNode.length)
     );
 
-    const createPropDetail = (contents: MarkedString[], schemas: JSONSchema[]): YamlHoverDetailResult => {
+    const createPropDetail = (contents: MarkedString[], schemas: JSONSchema[], node: ASTNode): YamlHoverDetailResult => {
       const result: YamlHoverDetailResult = {
         contents: contents,
         range: hoverRange,
         schemas: schemas,
+        node: node,
       };
       return result;
     };
@@ -109,7 +112,7 @@ export class YamlHoverDetail {
       const contribution = this.jsonHover.contributions[i];
       const promise = contribution.getInfoContribution(document.uri, location);
       if (promise) {
-        return promise.then((htmlContent) => createPropDetail(htmlContent, []));
+        return promise.then((htmlContent) => createPropDetail(htmlContent, [], node));
       }
     }
 
@@ -181,7 +184,8 @@ export class YamlHoverDetail {
           // result += propertiesMd.map((p, i) => '\n\n----\n' + (propertiesMd.length > 1 ? `${i + 1}.\n` : '') + p).join('');
           result += '\n\n----\n' + propertiesMd.join('\n\n----\n');
         }
-        return createPropDetail([result], resSchemas);
+        const decycleNode = decycle(node, 8);
+        return createPropDetail([result], resSchemas, decycleNode);
       }
       return null;
     });

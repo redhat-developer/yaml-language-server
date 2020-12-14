@@ -79,14 +79,14 @@ export function decycle(object: any, maxLevel?: number, replacer?): any {
       if (Array.isArray(value)) {
         nu = [];
         value.forEach(function (element, i) {
-          nu[i] = derez(element, path + '[' + i + ']', level++);
+          nu[i] = derez(element, path + '[' + i + ']', level + 1);
         });
       } else {
         // If it is an object, replicate the object.
 
         nu = {};
         Object.keys(value).forEach(function (name) {
-          nu[name] = derez(value[name], path + '[' + JSON.stringify(name) + ']', level++);
+          nu[name] = derez(value[name], path + '[' + JSON.stringify(name) + ']', level + 1);
         });
       }
       return nu;
