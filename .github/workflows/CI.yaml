@@ -30,7 +30,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 12
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       # Run install dependencies
       - name: Install dependencies
@@ -45,14 +45,14 @@ jobs:
         uses: GabrielBB/xvfb-action@v1.0
         with:
           run: yarn coveralls
-      
+
         # Run Coveralls
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Publish 
+
+      - name: Publish
         if: ${{ success() && runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/master'}}
         run: yarn publish --tag next --no-git-tag-version --prepatch --preid "$(git rev-parse --short HEAD)"
         env:
@@ -60,18 +60,18 @@ jobs:
 
         # Setup QEMU as requirement for docker
       - name: Set up QEMU
-        if: ${{ success() && runner.os == 'Linux'}}
+        if: ${{ success() && runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/master'}}
         uses: docker/setup-qemu-action@v1
-        
+
         # Setup DockerBuildx as requirement for docker
       - name: Set up Docker Buildx
-        if: ${{ success() && runner.os == 'Linux'}}
+        if: ${{ success() && runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/master'}}
         uses: docker/setup-buildx-action@v1
 
         # Login to Quay
       - name: Login to Quay
-        if: ${{ success() && runner.os == 'Linux'}}
-        uses: docker/login-action@v1 
+        if: ${{ success() && runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/master'}}
+        uses: docker/login-action@v1
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
