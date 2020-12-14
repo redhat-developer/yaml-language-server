@@ -122,7 +122,11 @@ export class YAMLCompletion extends JSONCompletion {
             }
           }
           if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
-            suggestion.textEdit = TextEdit.replace(overwriteRange, suggestion.insertText);
+            let insertText = suggestion.insertText;
+            if (suggestion.kind === CompletionItemKind.Value) {
+              insertText = escapeSpecialChars(suggestion.insertText);
+            }
+            suggestion.textEdit = TextEdit.replace(overwriteRange, insertText);
           }
           suggestion.label = label;
           proposed[label] = suggestion;
@@ -986,6 +990,19 @@ function convertToStringValue(value: string): string {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/ban-types
 function isDefined(val: any): val is object {
   return val !== undefined;
+}
+
+/**
+ * if contains special chars (@), text will be into apostrophes
+ */
+function escapeSpecialChars(text: string): string {
+  // const regexp = new RegExp (/[\|\*\(\)\[\]\+\-\\_`#<>\n]/g);
+  const regexp = new RegExp(/[@]/g);
+  const contains = regexp.test(text);
+  if (contains) {
+    return `'${text}'`;
+  }
+  return text;
 }
 
 interface InsertText {
