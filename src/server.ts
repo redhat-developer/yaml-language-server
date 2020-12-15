@@ -446,7 +446,7 @@ connection.onInitialize(
 );
 
 connection.onInitialized(() => {
-  if (hasWorkspaceFolderCapability) {
+  if (hasWorkspaceFolderCapability && clientDynamicRegisterSupport) {
     connection.workspace.onDidChangeWorkspaceFolders((changedFolders) => {
       workspaceFolders = workspaceFoldersChanged(workspaceFolders, changedFolders);
     });
