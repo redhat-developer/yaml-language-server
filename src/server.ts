@@ -136,7 +136,7 @@ const documents: TextDocuments = new TextDocuments();
 let capabilities: ClientCapabilities;
 let workspaceRoot: URI = null;
 let workspaceFolders: WorkspaceFolder[] = [];
-let clientDynamicRegisterSupport = false;
+let clientFormatterDynamicRegisterSupport = false;
 let hierarchicalDocumentSymbolSupport = false;
 let hasWorkspaceFolderCapability = false;
 let useVSCodeContentRequest = false;
@@ -419,7 +419,7 @@ connection.onInitialize(
       capabilities.textDocument.documentSymbol &&
       capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport
     );
-    clientDynamicRegisterSupport = !!(
+    clientFormatterDynamicRegisterSupport = !!(
       capabilities.textDocument &&
       capabilities.textDocument.rangeFormatting &&
       capabilities.textDocument.rangeFormatting.dynamicRegistration
@@ -446,7 +446,7 @@ connection.onInitialize(
 );
 
 connection.onInitialized(() => {
-  if (hasWorkspaceFolderCapability && clientDynamicRegisterSupport) {
+  if (hasWorkspaceFolderCapability && clientFormatterDynamicRegisterSupport) {
     connection.workspace.onDidChangeWorkspaceFolders((changedFolders) => {
       workspaceFolders = workspaceFoldersChanged(workspaceFolders, changedFolders);
     });
@@ -555,7 +555,7 @@ connection.onDidChangeConfiguration((change) => {
   updateConfiguration();
 
   // dynamically enable & disable the formatter
-  if (clientDynamicRegisterSupport) {
+  if (clientFormatterDynamicRegisterSupport) {
     const enableFormatter = settings && settings.yaml && settings.yaml.format && settings.yaml.format.enable;
 
     if (enableFormatter) {
