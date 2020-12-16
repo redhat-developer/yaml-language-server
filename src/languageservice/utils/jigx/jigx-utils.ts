@@ -42,24 +42,30 @@ export function getFileInfo(
     return {
       componentId: componentId,
       category: category,
-      filePath: Utils.mdFilePath.format(category),
-      sidebarPath: Utils.sidebarPath.format(category),
-      navigationPath: Utils.navigationPath.format(category),
+      filePath: stringFormat(Utils.mdFilePath, category),
+      sidebarPath: stringFormat(Utils.sidebarPath, category),
+      navigationPath: stringFormat(Utils.navigationPath, category),
     };
   }
   return {
     componentId: componentId,
     category: schemaConfig.folder,
-    filePath: Utils.mdFilePath.format(schemaConfig.folder),
-    sidebarPath: Utils.sidebarPath.format(schemaConfig.folder),
-    navigationPath: Utils.navigationPath.format(schemaConfig.folder),
+    filePath: stringFormat(Utils.mdFilePath, schemaConfig.folder),
+    sidebarPath: stringFormat(Utils.sidebarPath, schemaConfig.folder),
+    navigationPath: stringFormat(Utils.navigationPath, schemaConfig.folder),
   };
 }
 
+export interface Instantiable {
+  initialize?: () => void;
+}
 // eslint-disable-next-line prettier/prettier
-export function createInstance<T>(type: { new(): T }, initObj: any, initObj2: any = {}): T {
+export function createInstance<T extends Instantiable>(type: { new(): T }, initObj: any, initObj2: any = {}): T {
   let obj: T = new type();
   obj = Object.assign(obj, initObj, initObj2) as T;
+  if (obj.initialize) {
+    obj.initialize();
+  }
   return obj;
 }
 
@@ -85,12 +91,18 @@ export function ensureInstance<T>(type: { new(): T }, initObj: any): T {
 
 /**
  * Get type name from reference url
- * @param $ref reference to the same file OR to the anoher component OR to the section in another component
+ * @param $ref reference to the same file OR to the another component OR to the section in another component:
+ * `globals-shared.schema.json#/definitions/FieldDatastore`
+ * `file:///Users/petr/Documents/Jigx/git/jigx-builder/assets/schemas/jc-list-item.schema.json`
+ * `#/definitions/TextFormat`
  */
 export function getSchemaRefTypeTitle($ref: string): string {
-  const match = $ref.match(/schemas\/([a-z\-A-Z]+).schema.json/);
-  const type = (match && match[1]) || '';
-  return type;
+  const match = $ref.match(/(schemas\/)?([a-z\-A-Z]*)(.schema.json)?(#\/definitions\/)?(.*)/);
+  if (match) {
+    const type = match[5] || match[2] || 'typeNotFound';
+    return type;
+  }
+  return '';
 }
 
 /**
@@ -181,5 +193,18 @@ export function toTsBlock(code: string, offset = 0): string {
 }
 
 export function toCodeSingleLine(code: string): string {
-  return `\`${replaceSpecialToCodeBlock(code)}\``;
+  const map: any = {
+    '&#124;': '\\|',
+    '&#60;': '<',
+    '&#62;': '>',
+  };
+  code = code.replace(/&#60;|&#124;|&#62;/g, (m) => map[m]);
+  return `\`${code}\``;
+}
+
+export function stringFormat(str: string, ...params: string[]): string {
+  const args = params; //arguments;
+  return str.replace(/{(\d+)}/g, function (match, number) {
+    return typeof args[number] != 'undefined' ? args[number] : match;
+  });
 }

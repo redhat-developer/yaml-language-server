@@ -10,6 +10,7 @@ import {
   createInstance,
   getFileInfo,
   getSchemaRefTypeTitle,
+  Instantiable,
   tableColumnSeparator,
   toTsBlock,
   translateSectionTitleToLinkHeder,
@@ -24,18 +25,23 @@ export type Schema_ComplexType =
   | Schema_ArrayGeneric
   | Schema_ObjectTyped
   | Schema_Enum
+  | Schema_Const
   | Schema_AnyOf
   | Schema_SimpleAnyOf
   | Schema_Undefined;
 export type Schema_AnyType = Schema_SimpleType | Schema_ComplexType;
 
-export class Schema_TypeBase {
+export class Schema_TypeBase implements Instantiable {
   title?: string;
   description?: string;
   type?: any;
   propName?: string;
   isPropRequired?: boolean;
   problem?: IProblem;
+  initialize(): void {
+    //
+  }
+
   getTypeStr(subSchemas: []): string {
     return this.type || 'undefined';
   }
@@ -86,6 +92,9 @@ export interface Schema_HasPropertyTable {
 }
 export class Schema_ObjectTyped extends Schema_TypeBase {
   $ref: string;
+  initialize(): void {
+    this.$ref = Schema_ObjectTyped.get$ref(this);
+  }
   getTypeStr(subSchemas: []): string {
     const subType = subSchemas[this.$ref] ? subSchemas[this.$ref] : getSchemaRefTypeTitle(this.$ref);
     return `${subType}`;
@@ -109,11 +118,19 @@ export class Schema_ObjectTyped extends Schema_TypeBase {
     const typeProcessed = `[${subType}](${link})`;
     return typeProcessed;
   }
+  static get$ref(schema: any): string {
+    return schema.$ref || schema._$ref;
+  }
 }
 export class Schema_Object extends Schema_TypeBase implements Schema_HasPropertyTable {
   type: 'object';
   $id?: string;
+  $ref?: string;
   properties: S_Properties;
+  required?: string[];
+  initialize(): void {
+    this.$ref = Schema_ObjectTyped.get$ref(this);
+  }
   getPropertyTable(octothorpes: string, schema: JSONSchema, subSchemas: []): string[] {
     const out = Object.keys(this.properties).map((key) => {
       const prop = this.properties[key];
@@ -123,15 +140,32 @@ export class Schema_Object extends Schema_TypeBase implements Schema_HasProperty
   }
   getTypeStr(subSchemas: []): string {
     //In this project Object is also used as ObjectTyped. yaml parser 'remove' information about $ref. parser puts here directly the object.
+    // - but _$ref is re-added in yamlSchemaService to have class name
     //This is ok because we wont to show props from this object.
     //Only difference is that we need to show typed obj info.
-    const isTyped = this.$id || this.title;
-    //jigx-builder custom: add title instead of 'object' string
-    if (isTyped) {
-      const typeStr = this.$id ? `${this.$id.replace('.schema.json', '')}` : this.title || this.type;
-      return typeStr;
+
+    //note title is title of schema, so if type is defined inside the schema, title is useless
+    //jigx-builder custom: try to build object title instead of 'object' string
+    if (this.$id) {
+      // return `${this.$id.replace('.schema.json', '')}`;
+      const type = getSchemaRefTypeTitle(this.$id);
+      return type;
     }
-    return this.type; //object
+    if (this.$ref) {
+      const type = getSchemaRefTypeTitle(this.$ref);
+      return type;
+    }
+    //last try is to check with magic if there is some const type.
+    const hasRequiredConst = Object.keys(this.properties)
+      .filter((k) => this.required?.includes(k) && (this.properties[k] as Schema_Const).const)
+      .map((k) => {
+        return (this.properties[k] as Schema_Const).const;
+      });
+    if (hasRequiredConst.length) {
+      return hasRequiredConst[0]; //!!!! TODO: check why ref is missing!!! this code is magic
+    }
+    const typeStr = this.title || this.type; //object
+    return typeStr;
   }
   getTypeMD(subSchemas: [], isForElementTitle = false): string {
     const subType = this.getTypeStr(subSchemas);
@@ -152,6 +186,13 @@ export class Schema_Enum extends Schema_TypeBase {
   enum: string[];
   getTypeStr(): string {
     return `Enum${char_lt}${this.type}${char_gt}`;
+  }
+}
+export class Schema_Const extends Schema_TypeBase {
+  type: 'const';
+  const: string;
+  getTypeStr(): string {
+    return `${this.const}`;
   }
 }
 
@@ -185,8 +226,15 @@ export class Schema_SimpleAnyOf extends Schema_TypeBase {
 export class Schema_AnyOf extends Schema_TypeBase {
   type: undefined;
   anyOf: Schema_AnyType[];
+  additionalProperties?: Schema_AnyOf;
+  get anyOfCombined(): Schema_AnyType[] {
+    return [
+      ...(this.anyOf || []),
+      ...(this.additionalProperties && this.additionalProperties.anyOf ? this.additionalProperties.anyOf : []),
+    ];
+  }
   getTypeStr(subSchemas: []): string {
-    const subType = this.anyOf
+    const subType = this.anyOfCombined
       .map((item) => {
         item = SchemaTypeFactory.CreatePropTypeInstance(item);
         const subSubType = item.getTypeStr(subSchemas);
@@ -196,7 +244,7 @@ export class Schema_AnyOf extends Schema_TypeBase {
     return `${subType}`;
   }
   getTypeMD(subSchemas: [], isForElementTitle = false): string {
-    const subType = this.anyOf
+    const subType = this.anyOfCombined
       .map((item) => {
         item = SchemaTypeFactory.CreatePropTypeInstance(item, this.propName);
         let subSubType = item.getTypeMD(subSchemas, isForElementTitle);
@@ -282,15 +330,19 @@ export class SchemaTypeFactory {
         return createInstance(Schema_Enum, schema, { propName, isPropRequired });
       } else if (schema.type === 'object' && schema.properties) {
         return createInstance(Schema_Object, schema, { propName, isPropRequired });
+      } else if (
+        schema.type === 'object' &&
+        schema.additionalProperties &&
+        typeof schema.additionalProperties !== 'boolean' &&
+        schema.additionalProperties &&
+        schema.additionalProperties.anyOf
+      ) {
+        return createInstance(Schema_AnyOf, schema, { propName, isPropRequired });
       }
       return createInstance(Schema_SimpleType, schema, { propName, isPropRequired }); //schema.type
-    } else if (schema['$ref']) {
-      return createInstance(Schema_ObjectTyped, schema, { propName, isPropRequired });
-      // if (subSchemas[schema['$ref']]) {
-      // 	return subSchemas[schema['$ref']]
-      // } else {
-      // 	return getSchemaRefTypeTitle(schema.$ref);
-      // }
+      // } else if (Schema_ObjectTyped.get$ref(schema)) {
+      //   //won't never used. Schema_Object is used instead - schema structure is little bit different
+      //   return createInstance(Schema_ObjectTyped, schema, { propName, isPropRequired });
     } else if (schema.oneOf || schema.anyOf) {
       return createInstance(Schema_AnyOf, schema, { propName, isPropRequired });
       // return (schema.oneOf || schema.anyOf).map((i: any) => getActualTypeStr(i, subSchemas)).join(tableColumnSeparator);
