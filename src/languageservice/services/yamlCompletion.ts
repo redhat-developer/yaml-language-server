@@ -30,8 +30,17 @@ import { stringifyObject, StringifySettings } from '../utils/json';
 import { guessIndentation } from '../utils/indentationGuesser';
 import { TextBuffer } from '../utils/textBuffer';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
+import { MarkupContent, MarkupKind } from 'vscode-languageserver';
 const localize = nls.loadMessageBundle();
 
+interface CompletionsCollectorExtended extends CompletionsCollector {
+  add(suggestion: CompletionItemExtended);
+}
+interface CompletionItemExtended extends CompletionItem {
+  schemaId?: string;
+  indent?: string;
+  isForParentSuggestion?: boolean;
+}
 export class YAMLCompletion extends JSONCompletion {
   private schemaService: YAMLSchemaService;
   private customTags: Array<string>;
@@ -108,12 +117,54 @@ export class YAMLCompletion extends JSONCompletion {
       overwriteRange = Range.create(document.positionAt(overwriteStart), position);
     }
 
-    const proposed: { [key: string]: CompletionItem } = {};
+    const proposed: { [key: string]: CompletionItemExtended } = {};
     const collector: CompletionsCollector = {
-      add: (suggestion: CompletionItem) => {
+      add: (suggestion: CompletionItemExtended) => {
+        const addSuggestionForParent = function (suggestion: CompletionItemExtended, result: CompletionList): void {
+          const schemaKey = suggestion.schemaId.replace('.schema.json', '');
+          let parentCompletion = result.items.find((i) => i.label === schemaKey);
+          if (!parentCompletion) {
+            parentCompletion = { ...suggestion };
+            parentCompletion.label = schemaKey;
+            parentCompletion.sortText = '_' + parentCompletion.label; //this extended completion goes first
+            parentCompletion.kind = CompletionItemKind.Class;
+            // parentCompletion.documentation = suggestion.documentation;
+            result.items.push(parentCompletion);
+          } else {
+            //modify added props to have unique $x
+            const match = parentCompletion.insertText.match(/\$([0-9]+)|\${[0-9]+:/g);
+            const max$index = match
+              .map((m) => +m.replace(/\${([0-9]+)[:|]/g, '$1').replace('$', ''))
+              .reduce((p, n) => (n > p ? n : p), 0);
+            const reindexedStr = suggestion.insertText
+              .replace(/\$([0-9]+)/g, (s, args) => {
+                return '$' + (+args + max$index);
+              })
+              .replace(/\${([0-9]+)[:|]/g, (s, args) => {
+                return '${' + (+args + max$index) + ':';
+              });
+            parentCompletion.insertText += '\n' + (suggestion.indent || '') + reindexedStr;
+            const mdText = parentCompletion.insertText
+              .replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => {
+                return arg;
+              })
+              .replace(/\$([0-9]+)/g, '');
+            parentCompletion.documentation = <MarkupContent>{
+              kind: MarkupKind.Markdown,
+              value: [
+                ...(suggestion.documentation ? [suggestion.documentation, '', '----', ''] : []),
+                '```yaml',
+                mdText,
+                '```',
+              ].join('\n'),
+            };
+            // parentCompletion.detail = (suggestion.indent || '') + parentCompletion.insertText + '\n-----';
+          }
+        };
+
         let label = suggestion.label;
         const existing = proposed[label];
-        if (!existing) {
+        if (!existing || suggestion.isForParentSuggestion) {
           label = label.replace(/[\n]/g, '↵');
           if (label.length > 60) {
             const shortendedLabel = label.substr(0, 57).trim() + '...';
@@ -129,8 +180,13 @@ export class YAMLCompletion extends JSONCompletion {
             suggestion.textEdit = TextEdit.replace(overwriteRange, insertText);
           }
           suggestion.label = label;
-          proposed[label] = suggestion;
-          result.items.push(suggestion);
+          if (suggestion.isForParentSuggestion && suggestion.schemaId) {
+            addSuggestionForParent(suggestion, result);
+          }
+          if (!existing) {
+            proposed[label] = suggestion;
+            result.items.push(suggestion);
+          }
         } else if (!existing.documentation) {
           existing.documentation = suggestion.documentation;
         }
@@ -234,7 +290,7 @@ export class YAMLCompletion extends JSONCompletion {
     node: ObjectASTNode,
     addValue: boolean,
     separatorAfter: string,
-    collector: CompletionsCollector,
+    collector: CompletionsCollectorExtended,
     document: TextDocument
   ): void {
     const matchingSchemas = doc.getMatchingSchemas(schema.schema);
@@ -271,11 +327,34 @@ export class YAMLCompletion extends JSONCompletion {
                     propertySchema,
                     addValue,
                     separatorAfter,
-                    identCompensation + this.indentation
+                    identCompensation + this.indentation,
+                    { includeConstValue: false }
                   ),
                   insertTextFormat: InsertTextFormat.Snippet,
                   documentation: propertySchema.description || '',
                 });
+                //offer all schemas for empty object
+                if (
+                  node.properties.length === 0 ||
+                  (node.properties.length === 1 && node.properties[0].valueNode instanceof Parser.NullASTNodeImpl)
+                ) {
+                  collector.add({
+                    label: key,
+                    insertText: this.getInsertTextForProperty(
+                      key,
+                      propertySchema,
+                      addValue,
+                      separatorAfter,
+                      identCompensation + this.indentation,
+                      { includeConstValue: true }
+                    ),
+                    insertTextFormat: InsertTextFormat.Snippet,
+                    documentation: s.schema.description || '',
+                    schemaId: s.schema.$id,
+                    indent: identCompensation,
+                    isForParentSuggestion: true,
+                  });
+                }
               }
             });
           }
@@ -383,9 +462,8 @@ export class YAMLCompletion extends JSONCompletion {
               collector.add({
                 kind: super.getSuggestionKind(s.schema.items.type),
                 label: '- (array item)',
-                documentation: `Create an item of an array${
-                  s.schema.description === undefined ? '' : '(' + s.schema.description + ')'
-                }`,
+                // eslint-disable-next-line prettier/prettier
+                documentation: `Create an item of an array${s.schema.description === undefined ? '' : '(' + s.schema.description + ')'}`,
                 insertText: `- ${this.getInsertTextForObject(s.schema.items, separatorAfter).insertText.trimLeft()}`,
                 insertTextFormat: InsertTextFormat.Snippet,
               });
@@ -790,7 +868,8 @@ export class YAMLCompletion extends JSONCompletion {
     propertySchema: JSONSchema,
     addValue: boolean,
     separatorAfter: string,
-    ident = this.indentation
+    ident = this.indentation,
+    options: { includeConstValue?: boolean } = {}
   ): string {
     const propertyText = this.getInsertTextForValue(key, '', 'string');
     const resultText = propertyText + ':';
@@ -830,6 +909,13 @@ export class YAMLCompletion extends JSONCompletion {
         }
         nValueProposals += propertySchema.enum.length;
       }
+      if (propertySchema.const && options.includeConstValue) {
+        if (!value) {
+          value = escapeSpecialChars(propertySchema.const);
+          value = ' ' + this.getInsertTextForGuessedValue(value, '', type);
+        }
+        nValueProposals++;
+      }
       if (isDefined(propertySchema.default)) {
         if (!value) {
           value = ' ' + this.getInsertTextForGuessedValue(propertySchema.default, '', type);
@@ -845,9 +931,8 @@ export class YAMLCompletion extends JSONCompletion {
       if (propertySchema.properties) {
         return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter, ident).insertText}`;
       } else if (propertySchema.items) {
-        return `${resultText}\n${this.indentation}- ${
-          this.getInsertTextForArray(propertySchema.items, separatorAfter).insertText
-        }`;
+        // eslint-disable-next-line prettier/prettier
+        return `${resultText}\n${this.indentation}- ${this.getInsertTextForArray(propertySchema.items, separatorAfter).insertText}`;
       }
       if (nValueProposals === 0) {
         switch (type) {

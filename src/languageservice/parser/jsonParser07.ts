@@ -495,6 +495,8 @@ function validate(
     return;
   }
 
+  (<JSONSchemaWithProblems>schema).problems = undefined; //clear previous problems
+
   if (!schema.url) {
     schema.url = originalSchema.url;
   }
@@ -989,7 +991,6 @@ function validate(
     validationResult: ValidationResult,
     matchingSchemas: ISchemaCollector
   ): void {
-    (<JSONSchemaWithProblems>schema).problems = undefined; //clear previous problems
     const seenKeys: { [key: string]: ASTNode } = Object.create(null);
     const unprocessedProperties: string[] = [];
     for (const propertyNode of node.properties) {
