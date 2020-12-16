@@ -1350,6 +1350,60 @@ suite('Auto Completion Tests', () => {
     });
 
     describe('Bug fixes', () => {
+      it('Object in array completion indetetion', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            components: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: {
+                    type: 'string',
+                  },
+                  settings: {
+                    type: 'object',
+                    required: ['data'],
+                    properties: {
+                      data: {
+                        type: 'object',
+                        required: ['arrayItems'],
+                        properties: {
+                          arrayItems: {
+                            type: 'array',
+                            items: {
+                              type: 'object',
+                              required: ['id'],
+                              properties: {
+                                show: {
+                                  type: 'boolean',
+                                  default: true,
+                                },
+                                id: {
+                                  type: 'string',
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const content = 'components:\n  - id: jsakdh\n    setti';
+        const completion = await parseSetup(content, 36);
+        expect(completion.items).lengthOf(1);
+        expect(completion.items[0].textEdit.newText).to.equal(
+          'settings:\n  data:\n    arrayItems:\n      - show: ${1:true}\n        id: $2'
+        );
+      });
+
       it('Object completion', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',

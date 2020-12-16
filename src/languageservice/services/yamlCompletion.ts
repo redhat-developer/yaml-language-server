@@ -250,7 +250,7 @@ export class YAMLCompletion extends JSONCompletion {
               const propertySchema = schemaProperties[key];
               if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema['doNotSuggest']) {
                 let identCompensation = '';
-                if (node.parent && node.parent.type === 'array') {
+                if (node.parent && node.parent.type === 'array' && node.properties.length <= 1) {
                   // because there is a slash '-' to prevent the properties generated to have the correct
                   // indent
                   const sourceText = document.getText();
@@ -703,8 +703,17 @@ export class YAMLCompletion extends JSONCompletion {
           case 'array':
             {
               const arrayInsertResult = this.getInsertTextForArray(propertySchema.items, separatorAfter, insertIndex++);
+              const arrayInsertLines = arrayInsertResult.insertText.split('\n');
+              let arrayTemplate = arrayInsertResult.insertText;
+              if (arrayInsertLines.length > 1) {
+                for (let index = 1; index < arrayInsertLines.length; index++) {
+                  const element = arrayInsertLines[index];
+                  arrayInsertLines[index] = `${indent}${this.indentation}  ${element.trimLeft()}`;
+                }
+                arrayTemplate = arrayInsertLines.join('\n');
+              }
               insertIndex = arrayInsertResult.insertIndex;
-              insertText += `${indent}${key}:\n${indent}${this.indentation}- ${arrayInsertResult.insertText}\n`;
+              insertText += `${indent}${key}:\n${indent}${this.indentation}- ${arrayTemplate}\n`;
             }
             break;
           case 'object':
