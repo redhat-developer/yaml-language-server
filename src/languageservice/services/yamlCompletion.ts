@@ -31,13 +31,14 @@ import { guessIndentation } from '../utils/indentationGuesser';
 import { TextBuffer } from '../utils/textBuffer';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { MarkupContent, MarkupKind } from 'vscode-languageserver';
+import { Schema_Object } from '../utils/jigx/schema-type';
 const localize = nls.loadMessageBundle();
 
 interface CompletionsCollectorExtended extends CompletionsCollector {
   add(suggestion: CompletionItemExtended);
 }
 interface CompletionItemExtended extends CompletionItem {
-  schemaId?: string;
+  schemaType?: string;
   indent?: string;
   isForParentSuggestion?: boolean;
 }
@@ -121,13 +122,14 @@ export class YAMLCompletion extends JSONCompletion {
     const collector: CompletionsCollector = {
       add: (suggestion: CompletionItemExtended) => {
         const addSuggestionForParent = function (suggestion: CompletionItemExtended, result: CompletionList): void {
-          const schemaKey = suggestion.schemaId.replace('.schema.json', '');
-          let parentCompletion = result.items.find((i) => i.label === schemaKey);
+          const schemaKey = suggestion.schemaType;
+          const completionKind = CompletionItemKind.Class;
+          let parentCompletion = result.items.find((i) => i.label === schemaKey && i.kind === completionKind);
           if (!parentCompletion) {
             parentCompletion = { ...suggestion };
             parentCompletion.label = schemaKey;
             parentCompletion.sortText = '_' + parentCompletion.label; //this extended completion goes first
-            parentCompletion.kind = CompletionItemKind.Class;
+            parentCompletion.kind = completionKind;
             // parentCompletion.documentation = suggestion.documentation;
             result.items.push(parentCompletion);
           } else {
@@ -144,22 +146,22 @@ export class YAMLCompletion extends JSONCompletion {
                 return '${' + (+args + max$index) + ':';
               });
             parentCompletion.insertText += '\n' + (suggestion.indent || '') + reindexedStr;
-            const mdText = parentCompletion.insertText
-              .replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => {
-                return arg;
-              })
-              .replace(/\$([0-9]+)/g, '');
-            parentCompletion.documentation = <MarkupContent>{
-              kind: MarkupKind.Markdown,
-              value: [
-                ...(suggestion.documentation ? [suggestion.documentation, '', '----', ''] : []),
-                '```yaml',
-                mdText,
-                '```',
-              ].join('\n'),
-            };
-            // parentCompletion.detail = (suggestion.indent || '') + parentCompletion.insertText + '\n-----';
           }
+          const mdText = parentCompletion.insertText
+            .replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => {
+              return arg;
+            })
+            .replace(/\$([0-9]+)/g, '');
+          parentCompletion.documentation = <MarkupContent>{
+            kind: MarkupKind.Markdown,
+            value: [
+              ...(suggestion.documentation ? [suggestion.documentation, '', '----', ''] : []),
+              '```yaml',
+              mdText,
+              '```',
+            ].join('\n'),
+          };
+          // parentCompletion.detail = (suggestion.indent || '') + parentCompletion.insertText + '\n-----';
           if (parentCompletion.textEdit) {
             parentCompletion.textEdit.newText = parentCompletion.insertText;
           }
@@ -183,7 +185,7 @@ export class YAMLCompletion extends JSONCompletion {
             suggestion.textEdit = TextEdit.replace(overwriteRange, insertText);
           }
           suggestion.label = label;
-          if (suggestion.isForParentSuggestion && suggestion.schemaId) {
+          if (suggestion.isForParentSuggestion && suggestion.schemaType) {
             addSuggestionForParent(suggestion, result);
           }
           if (!existing) {
@@ -337,10 +339,12 @@ export class YAMLCompletion extends JSONCompletion {
                   documentation: propertySchema.description || '',
                 });
                 if (
+                  s.schema.required &&
                   s.schema.required.includes(key) && //add only required props
                   (node.properties.length === 0 || //add only if node hasn't any property in yaml
                     (node.properties.length === 1 && node.properties[0].valueNode instanceof Parser.NullASTNodeImpl)) //offer all schemas for empty object
                 ) {
+                  const schemaType = Schema_Object.getSchemaType(s.schema); // s.schema.$id;
                   collector.add({
                     label: key,
                     insertText: this.getInsertTextForProperty(
@@ -353,7 +357,7 @@ export class YAMLCompletion extends JSONCompletion {
                     ),
                     insertTextFormat: InsertTextFormat.Snippet,
                     documentation: s.schema.description || '',
-                    schemaId: s.schema.$id,
+                    schemaType: schemaType,
                     indent: identCompensation,
                     isForParentSuggestion: true,
                   });

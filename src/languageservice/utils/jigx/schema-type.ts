@@ -180,6 +180,10 @@ export class Schema_Object extends Schema_TypeBase implements Schema_HasProperty
       return `${subType}`;
     }
   }
+  static getSchemaType(schema: JSONSchema): string {
+    const schemaInst = createInstance(Schema_Object, schema);
+    return schemaInst.getTypeStr([]);
+  }
 }
 export class Schema_Enum extends Schema_TypeBase {
   type: S_SimpleType;
