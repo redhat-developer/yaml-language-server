@@ -160,6 +160,9 @@ export class YAMLCompletion extends JSONCompletion {
             };
             // parentCompletion.detail = (suggestion.indent || '') + parentCompletion.insertText + '\n-----';
           }
+          if (parentCompletion.textEdit) {
+            parentCompletion.textEdit.newText = parentCompletion.insertText;
+          }
         };
 
         let label = suggestion.label;
@@ -333,10 +336,10 @@ export class YAMLCompletion extends JSONCompletion {
                   insertTextFormat: InsertTextFormat.Snippet,
                   documentation: propertySchema.description || '',
                 });
-                //offer all schemas for empty object
                 if (
-                  node.properties.length === 0 ||
-                  (node.properties.length === 1 && node.properties[0].valueNode instanceof Parser.NullASTNodeImpl)
+                  s.schema.required.includes(key) && //add only required props
+                  (node.properties.length === 0 || //add only if node hasn't any property in yaml
+                    (node.properties.length === 1 && node.properties[0].valueNode instanceof Parser.NullASTNodeImpl)) //offer all schemas for empty object
                 ) {
                   collector.add({
                     label: key,
