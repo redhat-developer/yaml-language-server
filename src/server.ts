@@ -53,6 +53,7 @@ import { isRelativePath, relativeToAbsolutePath, workspaceFoldersChanged } from 
 import { URI } from 'vscode-uri';
 import { KUBERNETES_SCHEMA_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
+import { BundleCommandManager } from './languageservice/bundleCommandManager';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
@@ -104,6 +105,7 @@ interface JSONSchemaSettings {
  ****************/
 
 // Language server configuration
+const commandManager = new BundleCommandManager();
 let yamlConfigurationSettings: JSONSchemaSettings[] = undefined;
 let schemaAssociations: ISchemaAssociations | SchemaConfiguration[] | undefined = undefined;
 let formatterRegistration: Thenable<Disposable> = null;
@@ -425,6 +427,24 @@ connection.onInitialize(
       capabilities.textDocument.rangeFormatting.dynamicRegistration
     );
     hasWorkspaceFolderCapability = capabilities.workspace && !!capabilities.workspace.workspaceFolders;
+
+    // Path to an array of javascript bundles
+    const bundlePath = params.initializationOptions?.bundles ? params.initializationOptions.bundles : [];
+
+    // The commands you want run on the server side
+    const serverCommands = [];
+
+    // register everything with the command manager and gather server side commands
+    for (const path of bundlePath) {
+      const bundle = require(path) as YAMLLanguageServerBundle;
+      const cmdsFunctions = bundle.commandFunctions;
+      if (cmdsFunctions) {
+        cmdsFunctions.forEach((action: Function, commandID: string) => {
+          commandManager.registerCommand(commandID, action);
+          serverCommands.push(commandID);
+        });
+      }
+    }
     return {
       capabilities: {
         textDocumentSync: documents.syncKind,
@@ -440,6 +460,9 @@ connection.onInitialize(
             supported: true,
           },
         },
+        executeCommandProvider: {
+          commands: serverCommands
+        }
       },
     };
   }
@@ -685,6 +708,10 @@ connection.onRequest(SchemaModificationNotification.type, (modifications: Schema
     customLanguageService.deleteSchemaContent(modifications);
   }
   return Promise.resolve();
+});
+
+connection.onExecuteCommand(e => {
+  return commandManager.executeCommand(e);
 });
 
 // Start listening for any messages from the client
