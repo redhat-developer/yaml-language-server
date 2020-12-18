@@ -6,12 +6,10 @@ import { toFsPath, setupSchemaIDTextDocument, setupLanguageService } from './uti
 import assert = require('assert');
 import path = require('path');
 import { ServiceSetup } from './utils/serviceSetup';
-import { TextDocumentPositionParams } from 'vscode-languageserver';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 
 suite('Default Snippet Tests', () => {
-
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
 
@@ -22,7 +20,12 @@ suite('Default Snippet Tests', () => {
       fileMatch,
       uri,
     });
-    const { languageService: _, validationHandler: __, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
+    const {
+      languageService: _,
+      validationHandler: __,
+      languageHandler: langHandler,
+      yamlSettings: settings,
+    } = setupLanguageService(languageSettingsSetup.languageSettings);
     languageHandler = langHandler;
     yamlSettings = settings;
   });
@@ -34,7 +37,7 @@ suite('Default Snippet Tests', () => {
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
       return languageHandler.completionHandler({
         position: testTextDocument.positionAt(position),
-        textDocument: testTextDocument
+        textDocument: testTextDocument,
       });
     }
 
@@ -169,7 +172,7 @@ suite('Default Snippet Tests', () => {
       const completion = parseSetup(content, 3);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 8); // This is just checking the total number of snippets in the defaultSnippets.json
+          assert.equal(result.items.length, 9); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[4].label, 'longSnippet');
           // eslint-disable-next-line
           assert.equal(
@@ -185,7 +188,7 @@ suite('Default Snippet Tests', () => {
       const completion = parseSetup(content, 11);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 8); // This is just checking the total number of snippets in the defaultSnippets.json
+          assert.equal(result.items.length, 9); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[5].label, 'arrayArraySnippet');
           assert.equal(
             result.items[5].insertText,
@@ -267,6 +270,14 @@ suite('Default Snippet Tests', () => {
       assert.equal(result.items[0].textEdit.range.start.character, 9);
       assert.equal(result.items[0].textEdit.range.end.line, 0);
       assert.equal(result.items[0].textEdit.range.end.character, 9);
+    });
+
+    it('should add space before value on root node', async () => {
+      const content = 'name\n';
+      const result = await parseSetup(content, 4);
+      const item = result.items.find((i) => i.label === 'name');
+      expect(item).is.not.undefined;
+      expect(item.textEdit.newText).to.be.equal('name: some');
     });
   });
 });

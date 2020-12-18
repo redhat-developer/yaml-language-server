@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { LanguageSettings } from '../../src/languageservice/yamlLanguageService';
+import { LanguageSettings, SchemasSettings } from '../../src/languageservice/yamlLanguageService';
 
 export class ServiceSetup {
   /*
@@ -45,7 +45,7 @@ export class ServiceSetup {
     return this;
   }
 
-  withSchemaFileMatch(schemaFileMatch: { uri: string; fileMatch: string[] }): ServiceSetup {
+  withSchemaFileMatch(schemaFileMatch: SchemasSettings): ServiceSetup {
     this.languageSettings.schemas.push(schemaFileMatch);
     return this;
   }

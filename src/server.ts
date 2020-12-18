@@ -6,11 +6,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import {
-  createConnection,
-  IConnection,
-  ProposedFeatures,
-} from 'vscode-languageserver';
+import { createConnection, IConnection, ProposedFeatures } from 'vscode-languageserver';
 import * as nls from 'vscode-nls';
 import { schemaRequestHandler, workspaceContext } from './languageservice/services/schemaRequestHandler';
 import { YAMLServerInit } from './yamlServerInit';
@@ -38,7 +34,13 @@ const yamlSettings = new SettingsState();
  * @param uri can be a local file, vscode request, http(s) request or a custom request
  */
 const schemaRequestHandlerWrapper = (connection: IConnection, uri: string): Promise<string> => {
-  return schemaRequestHandler(connection, uri, yamlSettings.workspaceFolders, yamlSettings.workspaceRoot, yamlSettings.useVSCodeContentRequest);
+  return schemaRequestHandler(
+    connection,
+    uri,
+    yamlSettings.workspaceFolders,
+    yamlSettings.workspaceRoot,
+    yamlSettings.useVSCodeContentRequest
+  );
 };
 
 const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);

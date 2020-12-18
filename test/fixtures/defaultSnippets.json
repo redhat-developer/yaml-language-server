@@ -122,6 +122,15 @@
           }
         }
       ]
+    },
+    "name": {
+      "type": "string",
+      "defaultSnippets": [
+          {
+              "label": "some",
+              "body": "some"
+          }
+      ]
     }
   }
 }

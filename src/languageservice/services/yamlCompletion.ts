@@ -250,7 +250,7 @@ export class YAMLCompletion extends JSONCompletion {
               const propertySchema = schemaProperties[key];
               if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema['doNotSuggest']) {
                 let identCompensation = '';
-                if (node.parent && node.parent.type === 'array') {
+                if (node.parent && node.parent.type === 'array' && node.properties.length <= 1) {
                   // because there is a slash '-' to prevent the properties generated to have the correct
                   // indent
                   const sourceText = document.getText();
@@ -703,8 +703,17 @@ export class YAMLCompletion extends JSONCompletion {
           case 'array':
             {
               const arrayInsertResult = this.getInsertTextForArray(propertySchema.items, separatorAfter, insertIndex++);
+              const arrayInsertLines = arrayInsertResult.insertText.split('\n');
+              let arrayTemplate = arrayInsertResult.insertText;
+              if (arrayInsertLines.length > 1) {
+                for (let index = 1; index < arrayInsertLines.length; index++) {
+                  const element = arrayInsertLines[index];
+                  arrayInsertLines[index] = `${indent}${this.indentation}  ${element.trimLeft()}`;
+                }
+                arrayTemplate = arrayInsertLines.join('\n');
+              }
               insertIndex = arrayInsertResult.insertIndex;
-              insertText += `${indent}${key}:\n${indent}${this.indentation}- ${arrayInsertResult.insertText}\n`;
+              insertText += `${indent}${key}:\n${indent}${this.indentation}- ${arrayTemplate}\n`;
             }
             break;
           case 'object':
@@ -792,7 +801,7 @@ export class YAMLCompletion extends JSONCompletion {
     const propertyText = this.getInsertTextForValue(key, '', 'string');
     const resultText = propertyText + ':';
 
-    let value;
+    let value: string;
     let nValueProposals = 0;
     if (propertySchema) {
       let type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
@@ -817,6 +826,10 @@ export class YAMLCompletion extends JSONCompletion {
               },
               1
             );
+            // add space before default snippet value
+            if (!value.startsWith(' ') && !value.startsWith('\n')) {
+              value = ' ' + value;
+            }
           }
         }
         nValueProposals += propertySchema.defaultSnippets.length;
@@ -931,6 +944,15 @@ export class YAMLCompletion extends JSONCompletion {
     }
 
     const textLine = document.getText().substring(start, end);
+
+    // Check if document contains only white spaces and line delimiters
+    if (document.getText().trim().length === 0) {
+      return {
+        // add empty object to be compatible with JSON
+        newText: `{${document.getText()}}\n`,
+        newPosition: textDocumentPosition,
+      };
+    }
 
     // Check if the string we are looking at is a node
     if (textLine.indexOf(':') === -1) {
