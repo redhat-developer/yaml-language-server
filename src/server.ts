@@ -20,6 +20,7 @@ import {
   WorkspaceFolder,
   DocumentFormattingRequest,
   TextDocumentPositionParams,
+  DocumentSymbol,
 } from 'vscode-languageserver';
 
 import { xhr, configure as configureHttpRequests } from 'request-light';
@@ -634,6 +635,7 @@ connection.onHover((textDocumentPositionParams) => {
   // return customLanguageService.doHover(document, textDocumentPositionParams.position);
 });
 
+let previousCall: { uri?: string, time?: number, request?: DocumentSymbol[] } = {};
 /**
  * Called when the code outline in an editor needs to be populated
  * Returns a list of symbols that is then shown in the code outline
@@ -645,11 +647,27 @@ connection.onDocumentSymbol((documentSymbolParams) => {
     return;
   }
 
-  if (hierarchicalDocumentSymbolSupport) {
-    return customLanguageService.findDocumentSymbols2(document);
-  } else {
-    return customLanguageService.findDocumentSymbols(document);
+  /**
+   * I had to combine server and client DocumentSymbol
+   * And if I use only client DocumentSymbol, outline doesn't work.
+   * So this is a prevent for double call.
+   */
+  if (
+    previousCall.request &&
+    previousCall.time &&
+    previousCall.uri === documentSymbolParams.textDocument.uri &&
+    (new Date().getTime() - previousCall.time) < 100) {
+    return previousCall.request
   }
+
+  let res;
+  if (hierarchicalDocumentSymbolSupport) {
+    res = customLanguageService.findDocumentSymbols2(document);
+  } else {
+    res = customLanguageService.findDocumentSymbols(document);
+  }
+  previousCall = { time: new Date().getTime(), uri: documentSymbolParams.textDocument.uri, request: res }
+  return res;
 });
 
 /**
