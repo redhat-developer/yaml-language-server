@@ -808,7 +808,9 @@ export class YAMLCompletion extends JSONCompletion {
             }
             break;
         }
-      } else if (propertySchema.default !== undefined) {
+      } 
+      /* don't add not required props into object text.
+      else if (propertySchema.default !== undefined) {
         switch (type) {
           case 'boolean':
           case 'number':
@@ -823,7 +825,7 @@ export class YAMLCompletion extends JSONCompletion {
             // TODO: support default value for array object
             break;
         }
-      }
+      }*/
     });
     if (insertText.trim().length === 0) {
       insertText = `${indent}$${insertIndex++}\n`;
