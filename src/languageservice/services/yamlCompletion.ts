@@ -776,6 +776,9 @@ export class YAMLCompletion extends JSONCompletion {
       const propertySchema = schema.properties[key] as JSONSchema;
       let type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
       if (!type) {
+        if (propertySchema.anyOf) {
+          type = 'anyOf';
+        }
         if (propertySchema.properties) {
           type = 'object';
         }
@@ -789,6 +792,7 @@ export class YAMLCompletion extends JSONCompletion {
           case 'string':
           case 'number':
           case 'integer':
+          case 'anyOf':
             insertText += `${indent}${key}: $${insertIndex++}\n`;
             break;
           case 'array':
@@ -895,6 +899,8 @@ export class YAMLCompletion extends JSONCompletion {
           type = 'object';
         } else if (propertySchema.items) {
           type = 'array';
+        } else if (propertySchema.anyOf) {
+          type = 'anyOf';
         }
       }
       if (Array.isArray(propertySchema.defaultSnippets)) {
@@ -966,6 +972,9 @@ export class YAMLCompletion extends JSONCompletion {
             break;
           case 'null':
             value = ' ${1:null}';
+            break;
+          case 'anyOf':
+            value = ' $1';
             break;
           default:
             return propertyText;
