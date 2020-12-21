@@ -35,42 +35,42 @@ export interface JSONSchemaSettings {
 
 // This class is responsible for handling all the settings
 export class SettingsState {
-  public yamlConfigurationSettings: JSONSchemaSettings[] = undefined;
-  public schemaAssociations: ISchemaAssociations | SchemaConfiguration[] | undefined = undefined;
-  public formatterRegistration: Thenable<Disposable> = null;
-  public specificValidatorPaths = [];
-  public schemaConfigurationSettings = [];
-  public yamlShouldValidate = true;
-  public yamlFormatterSettings = {
+  yamlConfigurationSettings: JSONSchemaSettings[] = undefined;
+  schemaAssociations: ISchemaAssociations | SchemaConfiguration[] | undefined = undefined;
+  formatterRegistration: Thenable<Disposable> = null;
+  specificValidatorPaths = [];
+  schemaConfigurationSettings = [];
+  yamlShouldValidate = true;
+  yamlFormatterSettings = {
     singleQuote: false,
     bracketSpacing: true,
     proseWrap: 'preserve',
     printWidth: 80,
     enable: true,
   } as CustomFormatterOptions;
-  public yamlShouldHover = true;
-  public yamlShouldCompletion = true;
-  public schemaStoreSettings = [];
-  public customTags = [];
-  public schemaStoreEnabled = true;
-  public indentation: string | undefined = undefined;
+  yamlShouldHover = true;
+  yamlShouldCompletion = true;
+  schemaStoreSettings = [];
+  customTags = [];
+  schemaStoreEnabled = true;
+  indentation: string | undefined = undefined;
 
   // File validation helpers
-  public pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
-  public validationDelayMs = 200;
+  pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
+  validationDelayMs = 200;
 
   // Create a simple text document manager. The text document manager
   // supports full document sync only
-  public documents: TextDocuments | TextDocumentTestManager = new TextDocuments();
+  documents: TextDocuments | TextDocumentTestManager = new TextDocuments();
 
   // Language client configuration
-  public capabilities: ClientCapabilities;
-  public workspaceRoot: URI = null;
-  public workspaceFolders: WorkspaceFolder[] = [];
-  public clientDynamicRegisterSupport = false;
-  public hierarchicalDocumentSymbolSupport = false;
-  public hasWorkspaceFolderCapability = false;
-  public useVSCodeContentRequest = false;
+  capabilities: ClientCapabilities;
+  workspaceRoot: URI = null;
+  workspaceFolders: WorkspaceFolder[] = [];
+  clientDynamicRegisterSupport = false;
+  hierarchicalDocumentSymbolSupport = false;
+  hasWorkspaceFolderCapability = false;
+  useVSCodeContentRequest = false;
 }
 
 export class TextDocumentTestManager extends TextDocuments {
