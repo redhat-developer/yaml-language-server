@@ -287,9 +287,30 @@ export class YAMLCompletion extends JSONCompletion {
       }
 
       return Promise.all(collectionPromises).then(() => {
+        this.simplifyResult(result);
         return result;
       });
     });
+  }
+
+  //remove $1 from snippets, where is no other $2
+  private simplifyResult(result: CompletionList): void {
+    const simplifyText = (text: string): string => {
+      if (text.includes('$1') && !text.includes('$2')) {
+        return text.replace('$1', '');
+      }
+      return text;
+    };
+    for (const item of result.items) {
+      if (item.insertTextFormat === InsertTextFormat.Snippet) {
+        if (item.insertText) {
+          item.insertText = simplifyText(item.insertText);
+        }
+        if (item.textEdit?.newText) {
+          item.textEdit.newText = simplifyText(item.textEdit.newText);
+        }
+      }
+    }
   }
 
   private getPropertyCompletions(
