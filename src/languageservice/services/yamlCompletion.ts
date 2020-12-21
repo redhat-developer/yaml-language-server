@@ -135,16 +135,19 @@ export class YAMLCompletion extends JSONCompletion {
           } else {
             //modify added props to have unique $x
             const match = parentCompletion.insertText.match(/\$([0-9]+)|\${[0-9]+:/g);
-            const max$index = match
-              .map((m) => +m.replace(/\${([0-9]+)[:|]/g, '$1').replace('$', ''))
-              .reduce((p, n) => (n > p ? n : p), 0);
-            const reindexedStr = suggestion.insertText
-              .replace(/\$([0-9]+)/g, (s, args) => {
-                return '$' + (+args + max$index);
-              })
-              .replace(/\${([0-9]+)[:|]/g, (s, args) => {
-                return '${' + (+args + max$index) + ':';
-              });
+            let reindexedStr = suggestion.insertText;
+            if (match) {
+              const max$index = match
+                .map((m) => +m.replace(/\${([0-9]+)[:|]/g, '$1').replace('$', ''))
+                .reduce((p, n) => (n > p ? n : p), 0);
+              reindexedStr = suggestion.insertText
+                .replace(/\$([0-9]+)/g, (s, args) => {
+                  return '$' + (+args + max$index);
+                })
+                .replace(/\${([0-9]+)[:|]/g, (s, args) => {
+                  return '${' + (+args + max$index) + ':';
+                });
+            }
             parentCompletion.insertText += '\n' + (suggestion.indent || '') + reindexedStr;
           }
           const mdText = parentCompletion.insertText
@@ -808,7 +811,7 @@ export class YAMLCompletion extends JSONCompletion {
             }
             break;
         }
-      } 
+      }
       /* don't add not required props into object text.
       else if (propertySchema.default !== undefined) {
         switch (type) {
@@ -921,7 +924,7 @@ export class YAMLCompletion extends JSONCompletion {
       if (propertySchema.const && options.includeConstValue) {
         if (!value) {
           value = escapeSpecialChars(propertySchema.const);
-          value = ' ' + this.getInsertTextForGuessedValue(value, '', type);
+          value = ' ' + this.getInsertTextForGuessedValue(value, '', type, false);
         }
         nValueProposals++;
       }
@@ -976,11 +979,11 @@ export class YAMLCompletion extends JSONCompletion {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getInsertTextForGuessedValue(value: any, separatorAfter: string, type: string): string {
+  private getInsertTextForGuessedValue(value: any, separatorAfter: string, type: string, useTabSymbol$1 = true): string {
     switch (typeof value) {
       case 'object':
         if (value === null) {
-          return '${1:null}' + separatorAfter;
+          return (useTabSymbol$1 ? '${1:null}' : 'null') + separatorAfter;
         }
         return this.getInsertTextForValue(value, separatorAfter, type);
       case 'string': {
@@ -990,11 +993,20 @@ export class YAMLCompletion extends JSONCompletion {
         if (type === 'string') {
           snippetValue = convertToStringValue(snippetValue);
         }
-        return '${1:' + snippetValue + '}' + separatorAfter;
+        if (useTabSymbol$1) {
+          return '${1:' + snippetValue + '}' + separatorAfter;
+        } else {
+          return snippetValue + separatorAfter;
+        }
       }
       case 'number':
-      case 'boolean':
-        return '${1:' + value + '}' + separatorAfter;
+      case 'boolean': {
+        if (useTabSymbol$1) {
+          return '${1:' + value + '}' + separatorAfter;
+        } else {
+          return value + separatorAfter;
+        }
+      }
     }
     return this.getInsertTextForValue(value, separatorAfter, type);
   }
