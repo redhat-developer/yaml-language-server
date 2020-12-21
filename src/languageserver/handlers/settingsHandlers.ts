@@ -84,7 +84,7 @@ export class SettingsHandler {
 
       const schemaObj = {
         fileMatch: Array.isArray(globPattern) ? globPattern : [globPattern],
-        uri: checkSchemaURI(uri),
+        uri: checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri),
       };
       this.yamlSettings.schemaConfigurationSettings.push(schemaObj);
     }
@@ -236,7 +236,7 @@ export class SettingsHandler {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private configureSchemas(uri: string, fileMatch: string[], schema: any, languageSettings: LanguageSettings): LanguageSettings {
-    uri = checkSchemaURI(uri);
+    uri = checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri);
 
     if (schema === null) {
       languageSettings.schemas.push({ uri, fileMatch: fileMatch });
