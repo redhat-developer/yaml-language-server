@@ -1350,6 +1350,60 @@ suite('Auto Completion Tests', () => {
     });
 
     describe('Bug fixes', () => {
+      it('Object in array completion indetetion', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            components: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: {
+                    type: 'string',
+                  },
+                  settings: {
+                    type: 'object',
+                    required: ['data'],
+                    properties: {
+                      data: {
+                        type: 'object',
+                        required: ['arrayItems'],
+                        properties: {
+                          arrayItems: {
+                            type: 'array',
+                            items: {
+                              type: 'object',
+                              required: ['id'],
+                              properties: {
+                                show: {
+                                  type: 'boolean',
+                                  default: true,
+                                },
+                                id: {
+                                  type: 'string',
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const content = 'components:\n  - id: jsakdh\n    setti';
+        const completion = await parseSetup(content, 36);
+        expect(completion.items).lengthOf(1);
+        expect(completion.items[0].textEdit.newText).to.equal(
+          'settings:\n  data:\n    arrayItems:\n      - show: ${1:true}\n        id: $2'
+        );
+      });
+
       it('Object completion', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
@@ -1452,98 +1506,137 @@ suite('Auto Completion Tests', () => {
         expect(completion.items[0].label).eq('fooBar');
         expect(completion.items[0].insertText).eq('fooBar:\n    name: $1\n    aaa:\n      - $2');
       });
-    });
 
-    it('should complete string which contains number in default value', async () => {
-      languageService.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: {
-          env: {
-            type: 'integer',
-            default: '1',
+      it('should complete string which contains number in default value', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            env: {
+              type: 'integer',
+              default: '1',
+            },
+            enum: {
+              type: 'string',
+              default: '1',
+            },
           },
-          enum: {
-            type: 'string',
-            default: '1',
-          },
-        },
+        });
+
+        const content = 'enum';
+        const completion = await parseSetup(content, 3);
+
+        const enumItem = completion.items.find((i) => i.label === 'enum');
+        expect(enumItem).to.not.undefined;
+        expect(enumItem.textEdit.newText).equal('enum: ${1:"1"}');
+
+        const envItem = completion.items.find((i) => i.label === 'env');
+        expect(envItem).to.not.undefined;
+        expect(envItem.textEdit.newText).equal('env: ${1:1}');
       });
 
-      const content = 'enum';
-      const completion = await parseSetup(content, 3);
-
-      const enumItem = completion.items.find((i) => i.label === 'enum');
-      expect(enumItem).to.not.undefined;
-      expect(enumItem.textEdit.newText).equal('enum: ${1:"1"}');
-
-      const envItem = completion.items.find((i) => i.label === 'env');
-      expect(envItem).to.not.undefined;
-      expect(envItem.textEdit.newText).equal('env: ${1:1}');
-    });
-
-    it('should complete string which contains number in examples values', async () => {
-      languageService.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: {
-          fooBar: {
-            type: 'string',
-            examples: ['test', '1', 'true'],
+      it('should complete string which contains number in examples values', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            fooBar: {
+              type: 'string',
+              examples: ['test', '1', 'true'],
+            },
           },
-        },
+        });
+
+        const content = 'fooBar: \n';
+        const completion = await parseSetup(content, 8);
+
+        const testItem = completion.items.find((i) => i.label === 'test');
+        expect(testItem).to.not.undefined;
+        expect(testItem.textEdit.newText).equal('test');
+
+        const oneItem = completion.items.find((i) => i.label === '1');
+        expect(oneItem).to.not.undefined;
+        expect(oneItem.textEdit.newText).equal('"1"');
+
+        const trueItem = completion.items.find((i) => i.label === 'true');
+        expect(trueItem).to.not.undefined;
+        expect(trueItem.textEdit.newText).equal('"true"');
       });
 
-      const content = 'fooBar: \n';
-      const completion = await parseSetup(content, 8);
+      it('should provide completion for flow map', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: { A: { type: 'string', enum: ['a1', 'a2'] }, B: { type: 'string', enum: ['b1', 'b2'] } },
+        });
 
-      const testItem = completion.items.find((i) => i.label === 'test');
-      expect(testItem).to.not.undefined;
-      expect(testItem.textEdit.newText).equal('test');
-
-      const oneItem = completion.items.find((i) => i.label === '1');
-      expect(oneItem).to.not.undefined;
-      expect(oneItem.textEdit.newText).equal('"1"');
-
-      const trueItem = completion.items.find((i) => i.label === 'true');
-      expect(trueItem).to.not.undefined;
-      expect(trueItem.textEdit.newText).equal('"true"');
-    });
-
-    it('should provide completion for flow map', async () => {
-      languageService.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: { A: { type: 'string', enum: ['a1', 'a2'] }, B: { type: 'string', enum: ['b1', 'b2'] } },
+        const content = '{A: , B: b1}';
+        const completion = await parseSetup(content, 4);
+        expect(completion.items).lengthOf(2);
+        expect(completion.items[0]).eql(
+          createExpectedCompletion('a1', 'a1', 0, 4, 0, 4, 12, InsertTextFormat.Snippet, { documentation: undefined })
+        );
+        expect(completion.items[1]).eql(
+          createExpectedCompletion('a2', 'a2', 0, 4, 0, 4, 12, InsertTextFormat.Snippet, { documentation: undefined })
+        );
       });
 
-      const content = '{A: , B: b1}';
-      const completion = await parseSetup(content, 4);
-      expect(completion.items).lengthOf(2);
-      expect(completion.items[0]).eql(
-        createExpectedCompletion('a1', 'a1', 0, 4, 0, 4, 12, InsertTextFormat.Snippet, { documentation: undefined })
-      );
-      expect(completion.items[1]).eql(
-        createExpectedCompletion('a2', 'a2', 0, 4, 0, 4, 12, InsertTextFormat.Snippet, { documentation: undefined })
-      );
-    });
-
-    it('should provide completion for "null" enum value', async () => {
-      languageService.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: {
-          kind: {
-            enum: ['project', null],
+      it('should provide completion for "null" enum value', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            kind: {
+              enum: ['project', null],
+            },
           },
-        },
+        });
+
+        const content = 'kind: \n';
+        const completion = await parseSetup(content, 6);
+        expect(completion.items).lengthOf(2);
+        expect(completion.items[0]).eql(
+          createExpectedCompletion('project', 'project', 0, 6, 0, 6, 12, InsertTextFormat.Snippet, { documentation: undefined })
+        );
+        expect(completion.items[1]).eql(
+          createExpectedCompletion('null', 'null', 0, 6, 0, 6, 12, InsertTextFormat.Snippet, { documentation: undefined })
+        );
       });
 
-      const content = 'kind: \n';
-      const completion = await parseSetup(content, 6);
-      expect(completion.items).lengthOf(2);
-      expect(completion.items[0]).eql(
-        createExpectedCompletion('project', 'project', 0, 6, 0, 6, 12, InsertTextFormat.Snippet, { documentation: undefined })
-      );
-      expect(completion.items[1]).eql(
-        createExpectedCompletion('null', 'null', 0, 6, 0, 6, 12, InsertTextFormat.Snippet, { documentation: undefined })
-      );
+      it('should provide completion for empty file', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          oneOf: [
+            {
+              type: 'object',
+              description: 'dummy schema',
+            },
+            {
+              properties: {
+                kind: {
+                  type: 'string',
+                },
+              },
+              type: 'object',
+              additionalProperties: false,
+            },
+            {
+              properties: {
+                name: {
+                  type: 'string',
+                },
+              },
+              type: 'object',
+              additionalProperties: false,
+            },
+          ],
+        });
+
+        const content = ' \n\n\n';
+        const completion = await parseSetup(content, 3);
+        expect(completion.items).lengthOf(2);
+        expect(completion.items[0]).eql(
+          createExpectedCompletion('kind', 'kind: $1', 2, 0, 2, 0, 10, InsertTextFormat.Snippet, { documentation: '' })
+        );
+        expect(completion.items[1]).eql(
+          createExpectedCompletion('name', 'name: $1', 2, 0, 2, 0, 10, InsertTextFormat.Snippet, { documentation: '' })
+        );
+      });
     });
   });
 });

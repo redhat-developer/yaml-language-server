@@ -30,6 +30,7 @@ import {
   CustomFormatterOptions,
   WorkspaceContextService,
   SchemaConfiguration,
+  SchemaPriority,
 } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
 import {
@@ -135,7 +136,7 @@ const documents: TextDocuments = new TextDocuments();
 let capabilities: ClientCapabilities;
 let workspaceRoot: URI = null;
 let workspaceFolders: WorkspaceFolder[] = [];
-let clientDynamicRegisterSupport = false;
+let clientFormatterDynamicRegisterSupport = false;
 let hierarchicalDocumentSymbolSupport = false;
 let hasWorkspaceFolderCapability = false;
 let useVSCodeContentRequest = false;
@@ -201,6 +202,7 @@ function getSchemaStoreMatchingSchemas(): Promise<{ schemas: any[] }> {
             languageSettings.schemas.push({
               uri: schema.url,
               fileMatch: [currFileMatch],
+              priority: SchemaPriority.SchemaStore,
             });
           }
         }
@@ -234,7 +236,7 @@ function updateConfiguration(): void {
         const association = schemaAssociations[pattern];
         if (Array.isArray(association)) {
           association.forEach((uri) => {
-            languageSettings = configureSchemas(uri, [pattern], null, languageSettings);
+            languageSettings = configureSchemas(uri, [pattern], null, languageSettings, SchemaPriority.SchemaAssociation);
           });
         }
       }
@@ -255,7 +257,7 @@ function updateConfiguration(): void {
           uri = relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);
         }
 
-        languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema, languageSettings);
+        languageSettings = configureSchemas(uri, schema.fileMatch, schema.schema, languageSettings, SchemaPriority.Settings);
       }
     });
   }
@@ -278,13 +280,19 @@ function updateConfiguration(): void {
  * @param languageSettings current server settings
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function configureSchemas(uri: string, fileMatch: string[], schema: any, languageSettings: LanguageSettings): LanguageSettings {
+function configureSchemas(
+  uri: string,
+  fileMatch: string[],
+  schema: unknown,
+  languageSettings: LanguageSettings,
+  priorityLevel: number
+): LanguageSettings {
   uri = checkSchemaURI(uri);
 
   if (schema === null) {
-    languageSettings.schemas.push({ uri, fileMatch: fileMatch });
+    languageSettings.schemas.push({ uri, fileMatch: fileMatch, priority: priorityLevel });
   } else {
-    languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema });
+    languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema, priority: priorityLevel });
   }
 
   if (fileMatch.constructor === Array && uri === KUBERNETES_SCHEMA_URL) {
@@ -411,7 +419,7 @@ connection.onInitialize(
       capabilities.textDocument.documentSymbol &&
       capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport
     );
-    clientDynamicRegisterSupport = !!(
+    clientFormatterDynamicRegisterSupport = !!(
       capabilities.textDocument &&
       capabilities.textDocument.rangeFormatting &&
       capabilities.textDocument.rangeFormatting.dynamicRegistration
@@ -438,7 +446,7 @@ connection.onInitialize(
 );
 
 connection.onInitialized(() => {
-  if (hasWorkspaceFolderCapability) {
+  if (hasWorkspaceFolderCapability && clientFormatterDynamicRegisterSupport) {
     connection.workspace.onDidChangeWorkspaceFolders((changedFolders) => {
       workspaceFolders = workspaceFoldersChanged(workspaceFolders, changedFolders);
     });
@@ -547,7 +555,7 @@ connection.onDidChangeConfiguration((change) => {
   updateConfiguration();
 
   // dynamically enable & disable the formatter
-  if (clientDynamicRegisterSupport) {
+  if (clientFormatterDynamicRegisterSupport) {
     const enableFormatter = settings && settings.yaml && settings.yaml.format && settings.yaml.format.enable;
 
     if (enableFormatter) {
