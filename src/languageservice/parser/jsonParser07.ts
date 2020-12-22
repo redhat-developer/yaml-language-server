@@ -21,6 +21,8 @@ import { ErrorCode, JSONPath } from 'vscode-json-languageservice';
 import * as nls from 'vscode-nls';
 import { URI } from 'vscode-uri';
 import { TextDocument, Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
+import { Schema_Object } from '../utils/jigx/schema-type';
+import * as path from 'path';
 
 const localize = nls.loadMessageBundle();
 
@@ -67,6 +69,7 @@ export interface IProblem {
   source?: string;
   propertyName?: string;
   problemType?: ProblemType;
+  schemaType?: string;
 }
 
 export interface JSONSchemaWithProblems extends JSONSchema {
@@ -251,7 +254,9 @@ export interface ISchemaCollector {
 
 class SchemaCollector implements ISchemaCollector {
   schemas: IApplicableSchema[] = [];
-  constructor(private focusOffset = -1, private exclude: ASTNode = null) {}
+  constructor(private focusOffset = -1, private exclude: ASTNode = null) {
+    //solve prettier vs autoFormat problem
+  }
   add(schema: IApplicableSchema): void {
     this.schemas.push(schema);
   }
@@ -349,6 +354,30 @@ export class ValidationResult {
     }
   }
 
+  static propertyApostrophe = '"';
+  static problemMessages = {
+    typeMismatchWarning:
+      'Incorrect type. Expected ' + ValidationResult.propertyApostrophe + '{0}' + ValidationResult.propertyApostrophe + '.',
+  };
+  /**
+   * Merge ProblemType.typeMismatchWarning together
+   * @param subValidationResult another possible result
+   */
+  public mergeTypeMismatch(subValidationResult: ValidationResult): void {
+    if (this.problems?.length) {
+      const typeMismatchBest = this.problems.find((p) => p.problemType === ProblemType.typeMismatchWarning);
+      if (typeMismatchBest) {
+        const typeMismatchSub = subValidationResult.problems?.find((p) => p.problemType === ProblemType.typeMismatchWarning);
+        if (typeMismatchSub && typeMismatchBest.location.offset === typeMismatchSub.location.offset) {
+          const pos = typeMismatchBest.message.lastIndexOf(ValidationResult.propertyApostrophe);
+          typeMismatchBest.message =
+            typeMismatchBest.message.slice(0, pos) + ` | ${typeMismatchSub.schemaType}` + typeMismatchBest.message.slice(pos);
+          typeMismatchBest.source = 'multiple schemas';
+        }
+      }
+    }
+  }
+
   public mergePropertyMatch(propertyValidationResult: ValidationResult): void {
     this.merge(propertyValidationResult);
     this.propertiesMatches++;
@@ -427,7 +456,9 @@ export class JSONDocument {
     public readonly root: ASTNode,
     public readonly syntaxErrors: Diagnostic[] = [],
     public readonly comments: Range[] = []
-  ) {}
+  ) {
+    //solve prettier vs autoFormat problem
+  }
 
   public getNodeFromOffset(offset: number, includeRightBound = false): ASTNode | undefined {
     if (this.root) {
@@ -542,12 +573,17 @@ function validate(
       }
     } else if (schema.type) {
       if (!matchesType(schema.type)) {
+        //get more specific name than just object
+        const schemaType = schema.type === 'object' ? Schema_Object.getSchemaType(schema) : schema.type;
         pushProblemToValidationResultAndSchema(schema, validationResult, {
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: schema.errorMessage || localize('typeMismatchWarning', 'Incorrect type. Expected "{0}".', schema.type),
+          message:
+            schema.errorMessage ||
+            localize('typeMismatchWarning', ValidationResult.problemMessages.typeMismatchWarning, schemaType),
           source: getSchemaSource(schema, originalSchema),
           problemType: ProblemType.typeMismatchWarning,
+          schemaType: schemaType,
         });
       }
     }
@@ -1258,8 +1294,21 @@ function validate(
   }
 
   //genericComparison tries to find the best matching schema using a generic comparison
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas): any {
+  function genericComparison(
+    maxOneMatch,
+    subValidationResult: ValidationResult,
+    bestMatch: {
+      schema: JSONSchema;
+      validationResult: ValidationResult;
+      matchingSchemas: ISchemaCollector;
+    },
+    subSchema,
+    subMatchingSchemas
+  ): {
+    schema: JSONSchema;
+    validationResult: ValidationResult;
+    matchingSchemas: ISchemaCollector;
+  } {
     if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
@@ -1278,6 +1327,7 @@ function validate(
         // there's already a best matching but we are as good
         bestMatch.matchingSchemas.merge(subMatchingSchemas);
         bestMatch.validationResult.mergeEnumValues(subValidationResult);
+        bestMatch.validationResult.mergeTypeMismatch(subValidationResult);
       }
     }
     return bestMatch;
@@ -1306,9 +1356,11 @@ function getSchemaSource(schema: JSONSchema, originalSchema: JSONSchema): string
       if (uriString) {
         const url = URI.parse(uriString);
         if (url.scheme === 'file') {
-          label = url.fsPath;
+          // label = url.fsPath; //don't want to show full path
+          label = path.basename(url.fsPath);
+        } else {
+          label = url.toString();
         }
-        label = url.toString();
       }
     }
     if (label) {

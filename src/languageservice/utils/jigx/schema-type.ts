@@ -162,7 +162,7 @@ export class Schema_Object extends Schema_TypeBase implements Schema_HasProperty
         return (this.properties[k] as Schema_Const).const;
       });
     if (hasRequiredConst.length) {
-      return hasRequiredConst[0]; //!!!! TODO: check why ref is missing!!! this code is magic
+      return hasRequiredConst[0];
     }
     const typeStr = this.title || this.type; //object
     return typeStr;
