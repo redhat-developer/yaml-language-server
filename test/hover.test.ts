@@ -303,5 +303,25 @@ suite('Hover Tests', () => {
         })
         .then(done, done);
     });
+
+    it('Hover on null property', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          childObject: {
+            type: 'object',
+            description: 'should return this description',
+          },
+        },
+      });
+      const content = 'childObject: \n';
+      const hover = parseSetup(content, 1);
+      hover
+        .then(function (result) {
+          assert.equal((result.contents as MarkedString[]).length, 1);
+          assert.equal(result.contents[0], 'should return this description');
+        })
+        .then(done, done);
+    });
   });
 });
