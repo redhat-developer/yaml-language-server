@@ -6,7 +6,6 @@
 
 import { YAMLSchemaService, CustomSchemaProvider, SchemaAdditions, SchemaDeletions } from './services/yamlSchemaService';
 import {
-  TextDocument,
   Position,
   CompletionList,
   Diagnostic,
@@ -22,9 +21,11 @@ import { YAMLCompletion } from './services/yamlCompletion';
 import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
+import { TextDocument, FoldingRange } from 'vscode-languageserver';
+import { getFoldingRanges } from './services/yamlFolding';
+import { FoldingRangesContext } from './yamlTypes';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -106,6 +107,7 @@ export interface LanguageService {
   deleteSchema(schemaID: string): void;
   modifySchemaContent(schemaAdditions: SchemaAdditions): void;
   deleteSchemaContent(schemaDeletions: SchemaDeletions): void;
+  getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | null;
 }
 
 export function getLanguageService(
@@ -162,5 +164,6 @@ export function getLanguageService(
     deleteSchemaContent: (schemaDeletions: SchemaDeletions) => {
       return schemaService.deleteContent(schemaDeletions);
     },
+    getFoldingRanges,
   };
 }

@@ -434,6 +434,7 @@ connection.onInitialize(
         documentFormattingProvider: false,
         documentRangeFormattingProvider: false,
         documentLinkProvider: {},
+        foldingRangeProvider: true,
         workspace: {
           workspaceFolders: {
             changeNotifications: true,
@@ -685,6 +686,14 @@ connection.onRequest(SchemaModificationNotification.type, (modifications: Schema
     customLanguageService.deleteSchemaContent(modifications);
   }
   return Promise.resolve();
+});
+
+connection.onFoldingRanges((params) => {
+  const document = documents.get(params.textDocument.uri);
+  if (!document) {
+    return Promise.resolve(undefined);
+  }
+  return customLanguageService.getFoldingRanges(document, capabilities.textDocument?.foldingRange);
 });
 
 // Start listening for any messages from the client
