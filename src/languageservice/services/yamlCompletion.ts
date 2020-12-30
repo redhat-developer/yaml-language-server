@@ -73,6 +73,7 @@ export class YAMLCompletion extends JSONCompletion {
     if (!this.completion) {
       return Promise.resolve(result);
     }
+    const originalPosition = Position.create(position.line, position.character);
     const completionFix = this.completionHelper(document, position);
     const newText = completionFix.newText;
     const doc = parseYAML(newText);
@@ -111,11 +112,11 @@ export class YAMLCompletion extends JSONCompletion {
     } else if (node && (node.type === 'string' || node.type === 'number' || node.type === 'boolean')) {
       overwriteRange = Range.create(document.positionAt(node.offset), document.positionAt(node.offset + node.length));
     } else {
-      let overwriteStart = offset - currentWord.length;
+      let overwriteStart = document.offsetAt(originalPosition) - currentWord.length;
       if (overwriteStart > 0 && document.getText()[overwriteStart - 1] === '"') {
         overwriteStart--;
       }
-      overwriteRange = Range.create(document.positionAt(overwriteStart), position);
+      overwriteRange = Range.create(document.positionAt(overwriteStart), originalPosition);
     }
 
     const proposed: { [key: string]: CompletionItemExtended } = {};
@@ -338,7 +339,7 @@ export class YAMLCompletion extends JSONCompletion {
               const propertySchema = schemaProperties[key];
               if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema['doNotSuggest']) {
                 let identCompensation = '';
-                if (node.parent && node.parent.type === 'array') {
+                if (node.parent && node.parent.type === 'array' && node.properties.length <= 1) {
                   // because there is a slash '-' to prevent the properties generated to have the correct
                   // indent
                   const sourceText = document.getText();
@@ -819,8 +820,17 @@ export class YAMLCompletion extends JSONCompletion {
           case 'array':
             {
               const arrayInsertResult = this.getInsertTextForArray(propertySchema.items, separatorAfter, insertIndex++);
+              const arrayInsertLines = arrayInsertResult.insertText.split('\n');
+              let arrayTemplate = arrayInsertResult.insertText;
+              if (arrayInsertLines.length > 1) {
+                for (let index = 1; index < arrayInsertLines.length; index++) {
+                  const element = arrayInsertLines[index];
+                  arrayInsertLines[index] = `${indent}${this.indentation}  ${element.trimLeft()}`;
+                }
+                arrayTemplate = arrayInsertLines.join('\n');
+              }
               insertIndex = arrayInsertResult.insertIndex;
-              insertText += `${indent}${key}:\n${indent}${this.indentation}- ${arrayInsertResult.insertText}\n`;
+              insertText += `${indent}${key}:\n${indent}${this.indentation}- ${arrayTemplate}\n`;
             }
             break;
           case 'object':
@@ -911,7 +921,7 @@ export class YAMLCompletion extends JSONCompletion {
     const propertyText = this.getInsertTextForValue(key, '', 'string');
     const resultText = propertyText + ':';
 
-    let value;
+    let value: string;
     let nValueProposals = 0;
     if (propertySchema) {
       let type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
@@ -938,6 +948,10 @@ export class YAMLCompletion extends JSONCompletion {
               },
               1
             );
+            // add space before default snippet value
+            if (!value.startsWith(' ') && !value.startsWith('\n')) {
+              value = ' ' + value;
+            }
           }
         }
         nValueProposals += propertySchema.defaultSnippets.length;
@@ -1071,6 +1085,15 @@ export class YAMLCompletion extends JSONCompletion {
 
     const textLine = document.getText().substring(start, end);
 
+    // Check if document contains only white spaces and line delimiters
+    if (document.getText().trim().length === 0) {
+      return {
+        // add empty object to be compatible with JSON
+        newText: `{${document.getText()}}\n`,
+        newPosition: textDocumentPosition,
+      };
+    }
+
     // Check if the string we are looking at is a node
     if (textLine.indexOf(':') === -1) {
       // We need to add the ":" to load the nodes
@@ -1079,9 +1102,11 @@ export class YAMLCompletion extends JSONCompletion {
       // This is for the empty line case
       const trimmedText = textLine.trim();
       if (trimmedText.length === 0 || (trimmedText.length === 1 && trimmedText[0] === '-')) {
+        //same condition as (end < start) - protect of jumping back across lines, when 'holder' is put into incorrect place
+        const spaceLength = textLine.includes(' ') ? textLine.length : 0;
         // Add a temp node that is in the document but we don't use at all.
         newText =
-          document.getText().substring(0, start + textLine.length) +
+          document.getText().substring(0, start + spaceLength) +
           (trimmedText[0] === '-' && !textLine.endsWith(' ') ? ' ' : '') +
           'holder:\r\n' +
           document.getText().substr(lineOffset[linePos + 1] || document.getText().length);

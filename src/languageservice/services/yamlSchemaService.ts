@@ -6,7 +6,7 @@
 'use strict';
 
 import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
-import { SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
+import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
 import {
   UnresolvedSchema,
   ResolvedSchema,
@@ -86,6 +86,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   private contextService: WorkspaceContextService;
   private customSchemaProvider: CustomSchemaProvider | undefined;
   private requestService: SchemaRequestService;
+  public schemaPriorityMapping: Map<string, SchemaPriority[]>;
 
   constructor(
     requestService: SchemaRequestService,
@@ -95,6 +96,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     super(requestService, contextService, promiseConstructor);
     this.customSchemaProvider = undefined;
     this.requestService = requestService;
+    this.schemaPriorityMapping = new Map();
   }
 
   registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider): void {
@@ -273,6 +275,7 @@ export class YAMLSchemaService extends JSONSchemaService {
 
       const schemaFromModeline = this.getSchemaFromModeline(doc);
       if (schemaFromModeline !== undefined) {
+        this.addSchemaPriority(schemaFromModeline, SchemaPriority.Modeline);
         schemas.push(schemaFromModeline);
         seen[schemaFromModeline] = true;
       }
@@ -300,7 +303,9 @@ export class YAMLSchemaService extends JSONSchemaService {
       }
 
       if (schemas.length > 0) {
-        const schemaHandle = super.createCombinedSchema(resource, schemas);
+        // Join all schemas with the highest priority.
+        const highestPrioSchemas = this.highestPrioritySchemas(schemas);
+        const schemaHandle = super.createCombinedSchema(resource, highestPrioSchemas);
         return schemaHandle.getResolvedSchema().then((schema) => {
           if (schema.schema) {
             schema.schema.url = schemaHandle.url;
@@ -366,6 +371,44 @@ export class YAMLSchemaService extends JSONSchemaService {
     }
   }
 
+  // Set the priority of a schema in the schema service
+  public addSchemaPriority(uri: string, priority: number): void {
+    let currSchemaArray = this.schemaPriorityMapping.get(uri);
+    if (currSchemaArray) {
+      currSchemaArray = currSchemaArray.concat(priority);
+      this.schemaPriorityMapping.set(uri, currSchemaArray);
+    } else {
+      this.schemaPriorityMapping.set(uri, [priority]);
+    }
+  }
+
+  /**
+   * Search through all the schemas and find the ones with the highest priority
+   */
+  private highestPrioritySchemas(schemas: string[]): string[] {
+    let highestPrio = 0;
+    const priorityMapping = new Map<SchemaPriority, string[]>();
+    schemas.forEach((schema) => {
+      // If the schema does not have a priority then give it a default one of [0]
+      const priority = this.schemaPriorityMapping.get(schema) || [0];
+      priority.forEach((prio) => {
+        if (prio > highestPrio) {
+          highestPrio = prio;
+        }
+
+        // Build up a mapping of priority to schemas so that we can easily get the highest priority schemas easier
+        let currPriorityArray = priorityMapping.get(prio);
+        if (currPriorityArray) {
+          currPriorityArray = (currPriorityArray as string[]).concat(schema);
+          priorityMapping.set(prio, currPriorityArray);
+        } else {
+          priorityMapping.set(prio, [schema]);
+        }
+      });
+    });
+    return priorityMapping.get(highestPrio) || [];
+  }
+
   /**
    * Retrieve schema if declared as modeline.
    * Public for testing purpose, not part of the API.
@@ -411,6 +454,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   public async saveSchema(schemaId: string, schemaContent: JSONSchema): Promise<void> {
     const id = this.normalizeId(schemaId);
     this.getOrAddSchemaHandle(id, schemaContent);
+    this.schemaPriorityMapping.set(id, [SchemaPriority.Settings]);
     return Promise.resolve(undefined);
   }
 
@@ -422,6 +466,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     if (this.schemasById[id]) {
       delete this.schemasById[id];
     }
+    this.schemaPriorityMapping.delete(id);
     return Promise.resolve(undefined);
   }
 

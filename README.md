@@ -153,6 +153,42 @@ Since `0.11.0` YAML Schemas can be used for validation:
  "/home/user/custom_schema.yaml": "someFilePattern.yaml"
 ```
 
+A schema can be associated with multiple globs using a json array, e.g.
+
+```json
+yaml.schemas: {
+    "kubernetes": ["filePattern1.yaml", "filePattern2.yaml"]
+}
+```
+
+e.g.
+
+```json
+"yaml.schemas": {
+    "http://json.schemastore.org/composer": ["/*"],
+    "file:///home/johnd/some-schema.json": ["some.yaml"],
+    "../relative/path/schema.json": ["/config*.yaml"],
+    "/Users/johnd/some-schema.json": ["some.yaml"],
+}
+```
+
+e.g.
+
+```json
+"yaml.schemas": {
+    "kubernetes": ["/myYamlFile.yaml"]
+}
+```
+
+e.g.
+
+```json
+"yaml.schemas": {
+    "http://json.schemastore.org/composer": ["/*"],
+    "kubernetes": ["/myYamlFile.yaml"]
+}
+```
+
 #### Multi root schema association:
 
 You can also use relative paths when working with multi root workspaces.
@@ -187,6 +223,16 @@ It is possible to specify a yaml schema using a modeline.
 # yaml-language-server: $schema=<urlToTheSchema>
 ```
 
+## Containerized Language Server
+An image is provided for users who would like to use the YAML language server without having to install dependencies locally.
+
+The image is located at `quay.io/redhat-developer/yaml-language-server`
+
+To run the image you can use:
+```
+docker run -it quay.io/redhat-developer/yaml-language-server:latest
+```
+
 ## Clients
 
 This repository only contains the server implementation. Here are some known clients consuming this server:
@@ -217,7 +263,7 @@ This repository only contains the server implementation. Here are some known cli
    ```bash
    $ yarn run build
    ```
-5. The new built server is now location in out/server/src/server.js.
+5. The new built server is now located in ./out/server/src/server.js.
    ```bash
    node (Yaml Language Server Location)/out/server/src/server.js [--stdio]
    ```

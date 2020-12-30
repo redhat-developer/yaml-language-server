@@ -6,7 +6,6 @@
 
 import { YAMLSchemaService, CustomSchemaProvider, SchemaAdditions, SchemaDeletions } from './services/yamlSchemaService';
 import {
-  TextDocument,
   Position,
   CompletionList,
   Diagnostic,
@@ -22,10 +21,26 @@ import { YAMLCompletion } from './services/yamlCompletion';
 import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
 import { YamlHoverDetail, YamlHoverDetailPropTableStyle } from './services/yamlHoverDetail';
+import { TextDocument, FoldingRange } from 'vscode-languageserver';
+import { getFoldingRanges } from './services/yamlFolding';
+import { FoldingRangesContext } from './yamlTypes';
+
+export enum SchemaPriority {
+  SchemaStore = 1,
+  SchemaAssociation = 2,
+  Settings = 3,
+  Modeline = 4,
+}
+
+export interface SchemasSettings {
+  priority?: SchemaPriority; // Priority represents the order in which schemas are selected. If multiple schemas match a yaml document then highest priority wins
+  fileMatch: string[];
+  schema?: unknown;
+  uri: string;
+}
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
@@ -34,7 +49,7 @@ export interface LanguageSettings {
   format?: boolean; //Setting for whether we want to have the formatter or not
   isKubernetes?: boolean; //If true then its validating against kubernetes
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  schemas?: any[]; //List of schemas,
+  schemas?: SchemasSettings[]; //List of schemas,
   customTags?: Array<string>; //Array of Custom Tags
   /**
    * Default indentation size
@@ -96,6 +111,7 @@ export interface LanguageService {
   modifySchemaContent(schemaAdditions: SchemaAdditions): void;
   deleteSchemaContent(schemaDeletions: SchemaDeletions): void;
   doHoverDetail(document: TextDocument, position: Position): Promise<Hover | null>;
+  getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | null;
 }
 
 export function getLanguageService(
@@ -114,7 +130,10 @@ export function getLanguageService(
     configure: (settings) => {
       schemaService.clearExternalSchemas();
       if (settings.schemas) {
+        schemaService.schemaPriorityMapping = new Map();
         settings.schemas.forEach((settings) => {
+          const currPriority = settings.priority ? settings.priority : 0;
+          schemaService.addSchemaPriority(settings.uri, currPriority);
           schemaService.registerExternalSchema(settings.uri, settings.fileMatch, settings.schema);
         });
       }
@@ -152,5 +171,6 @@ export function getLanguageService(
       return schemaService.deleteContent(schemaDeletions);
     },
     doHoverDetail: hoverDetail.getHoverDetail.bind(hoverDetail),
+    getFoldingRanges,
   };
 }

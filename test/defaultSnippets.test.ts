@@ -7,6 +7,7 @@ import assert = require('assert');
 import path = require('path');
 import { ServiceSetup } from './utils/serviceSetup';
 import { CompletionList } from 'vscode-languageserver';
+import { expect } from 'chai';
 
 const uri = toFsPath(path.join(__dirname, './fixtures/defaultSnippets.json'));
 const fileMatch = ['*.yml', '*.yaml'];
@@ -154,7 +155,7 @@ suite('Default Snippet Tests', () => {
       const completion = parseSetup(content, 3);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 8); // This is just checking the total number of snippets in the defaultSnippets.json
+          assert.equal(result.items.length, 9); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[4].label, 'longSnippet');
           // eslint-disable-next-line
           assert.equal(
@@ -170,7 +171,7 @@ suite('Default Snippet Tests', () => {
       const completion = parseSetup(content, 11);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 8); // This is just checking the total number of snippets in the defaultSnippets.json
+          assert.equal(result.items.length, 9); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[5].label, 'arrayArraySnippet');
           assert.equal(
             result.items[5].insertText,
@@ -226,6 +227,40 @@ suite('Default Snippet Tests', () => {
           assert.equal(result.items[0].insertText, '\n  test: true');
         })
         .then(done, done);
+    });
+
+    it('should preserve space after ":" with prefix', async () => {
+      const content = 'boolean: tr\n';
+      const result = await parseSetup(content, 9);
+
+      assert.notEqual(result.items.length, 0);
+      assert.equal(result.items[0].label, 'My boolean item');
+      assert.equal(result.items[0].textEdit.newText, 'false');
+      assert.equal(result.items[0].textEdit.range.start.line, 0);
+      assert.equal(result.items[0].textEdit.range.start.character, 9);
+      assert.equal(result.items[0].textEdit.range.end.line, 0);
+      assert.equal(result.items[0].textEdit.range.end.character, 9);
+    });
+
+    it('should preserve space after ":"', async () => {
+      const content = 'boolean: ';
+      const result = await parseSetup(content, 9);
+
+      assert.notEqual(result.items.length, 0);
+      assert.equal(result.items[0].label, 'My boolean item');
+      assert.equal(result.items[0].textEdit.newText, 'false');
+      assert.equal(result.items[0].textEdit.range.start.line, 0);
+      assert.equal(result.items[0].textEdit.range.start.character, 9);
+      assert.equal(result.items[0].textEdit.range.end.line, 0);
+      assert.equal(result.items[0].textEdit.range.end.character, 9);
+    });
+
+    it('should add space before value on root node', async () => {
+      const content = 'name\n';
+      const result = await parseSetup(content, 4);
+      const item = result.items.find((i) => i.label === 'name');
+      expect(item).is.not.undefined;
+      expect(item.textEdit.newText).to.be.equal('name: some');
     });
   });
 });
