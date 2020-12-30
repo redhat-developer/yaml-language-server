@@ -917,17 +917,16 @@ suite('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'archive:\n  exclude:\n  - name: test\n\n';
-        const completion = parseSetup(content, content.length - 1);
+        const content = 'archive:\n  exclude:\n    - name: test\n\n';
+        const completion = parseSetup(content, content.length - 1); //don't test on the last row
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
-            assert.deepEqual(
-              result.items[0],
-              createExpectedCompletion('include', 'include: ${1:test}', 3, 0, 3, 0, 10, 2, {
-                documentation: '',
-              })
-            );
+            const expectedCompletion = createExpectedCompletion('include', 'include: ${1:test}', 3, 0, 3, 0, 10, 2, {
+              documentation: '',
+            });
+            delete expectedCompletion.textEdit;
+            assert.deepEqual(result.items[0], expectedCompletion);
           })
           .then(done, done);
       });
@@ -958,7 +957,7 @@ suite('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'archive:\n  exclude:\n  - nam\n  ';
+        const content = 'archive:\n  exclude:\n    - nam\n  ';
         const completion = parseSetup(content, content.length - 1);
         completion
           .then(function (result) {
