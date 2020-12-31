@@ -574,7 +574,12 @@ function validate(
     } else if (schema.type) {
       if (!matchesType(schema.type)) {
         //get more specific name than just object
-        const schemaType = schema.type === 'object' ? Schema_Object.getSchemaType(schema) : schema.type;
+        let schemaType = schema.type;
+        if (schema.const) {
+          schemaType = schema.const;
+        } else if (schema.type === 'object') {
+          schemaType = Schema_Object.getSchemaType(schema);
+        }
         pushProblemToValidationResultAndSchema(schema, validationResult, {
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,

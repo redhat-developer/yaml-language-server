@@ -156,7 +156,7 @@ export class Schema_Object extends Schema_TypeBase implements Schema_HasProperty
       return type;
     }
     //last try is to check with magic if there is some const type.
-    const hasRequiredConst = Object.keys(this.properties)
+    const hasRequiredConst = Object.keys(this.properties || {})
       .filter((k) => this.required?.includes(k) && (this.properties[k] as Schema_Const).const)
       .map((k) => {
         return (this.properties[k] as Schema_Const).const;
