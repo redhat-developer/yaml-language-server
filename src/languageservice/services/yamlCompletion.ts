@@ -64,7 +64,14 @@ export class YAMLCompletion extends JSONCompletion {
     this.configuredIndentation = languageSettings.indentation;
   }
 
-  public doComplete(document: TextDocument, position: Position, isKubernetes = false): Promise<CompletionList> {
+  public doComplete(
+    document: TextDocument,
+    position: Position,
+    isKubernetes = false,
+    options: {
+      tryWithNewLine?: boolean;
+    } = {}
+  ): Promise<CompletionList> {
     const result: CompletionList = {
       items: [],
       isIncomplete: false,
@@ -73,21 +80,28 @@ export class YAMLCompletion extends JSONCompletion {
     if (!this.completion) {
       return Promise.resolve(result);
     }
-    const originalPosition = Position.create(position.line, position.character);
-    const completionFix = this.completionHelper(document, position);
-    const newText = completionFix.newText;
-    const doc = parseYAML(newText);
+
     if (!this.configuredIndentation) {
       const indent = guessIndentation(new TextBuffer(document), 2, true);
       this.indentation = indent.insertSpaces ? ' '.repeat(indent.tabSize) : '\t';
     } else {
       this.indentation = this.configuredIndentation;
     }
+
+    const originalPosition = Position.create(position.line, position.character);
+    const completionFix = this.completionHelper(document, position, options.tryWithNewLine);
+    const newText = completionFix.newText;
+    const doc = parseYAML(newText);
     setKubernetesParserOption(doc.documents, isKubernetes);
 
-    const offset = document.offsetAt(position);
+    //modified to support completion just behind ':' without space
+    let finalIndentCompensation: string;
+    //offset is taken form new edited text
+    let offset = completionFix.newOffset;
+    // ':' has to be check from original doc, because completionHelper can add ':' symbol
     if (document.getText()[offset] === ':') {
-      return Promise.resolve(result);
+      finalIndentCompensation = ' ';
+      offset += finalIndentCompensation.length;
     }
 
     const currentDoc = matchOffsetToDocument(offset, doc);
@@ -103,6 +117,9 @@ export class YAMLCompletion extends JSONCompletion {
     const currentWord = super.getCurrentWord(document, offset);
 
     let overwriteRange = null;
+    // didn't find reason for this overwriteRange customization
+    // makes trouble for auto newline holder
+    // but kept because of unit test
     if (node && node.type === 'null') {
       const nodeStartPos = document.positionAt(node.offset);
       nodeStartPos.character += 1;
@@ -111,6 +128,11 @@ export class YAMLCompletion extends JSONCompletion {
       overwriteRange = Range.create(nodeStartPos, nodeEndPos);
     } else if (node && (node.type === 'string' || node.type === 'number' || node.type === 'boolean')) {
       overwriteRange = Range.create(document.positionAt(node.offset), document.positionAt(node.offset + node.length));
+      if (options.tryWithNewLine) {
+        //overwriteRange makes trouble when new line with holder is added.
+        //btw, not sure why this overwriteRange customization is here
+        overwriteRange = null;
+      }
     } else {
       let overwriteStart = document.offsetAt(originalPosition) - currentWord.length;
       if (overwriteStart > 0 && document.getText()[overwriteStart - 1] === '"') {
@@ -181,12 +203,11 @@ export class YAMLCompletion extends JSONCompletion {
               label = shortendedLabel;
             }
           }
+          if (suggestion.kind === CompletionItemKind.Value) {
+            suggestion.insertText = escapeSpecialChars(suggestion.insertText);
+          }
           if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
-            let insertText = suggestion.insertText;
-            if (suggestion.kind === CompletionItemKind.Value) {
-              insertText = escapeSpecialChars(suggestion.insertText);
-            }
-            suggestion.textEdit = TextEdit.replace(overwriteRange, insertText);
+            suggestion.textEdit = TextEdit.replace(overwriteRange, suggestion.insertText);
           }
           suggestion.label = label;
           if (suggestion.isForParentSuggestion && suggestion.schemaType) {
@@ -287,8 +308,23 @@ export class YAMLCompletion extends JSONCompletion {
         this.getValueCompletions(newSchema, currentDoc, node, offset, document, collector, types);
       }
 
-      return Promise.all(collectionPromises).then(() => {
+      return Promise.all(collectionPromises).then(async () => {
         this.simplifyResult(result);
+
+        //try to add new line after offset if is first run
+        if (!result.items.length && !options.tryWithNewLine) {
+          const line = document.getText(
+            Range.create(originalPosition.line, 0, originalPosition.line, originalPosition.character)
+          );
+          if (line.match(/:\s?$/)) {
+            const res = await this.doComplete(document, position, isKubernetes, { tryWithNewLine: true });
+            insertIndentForCompletionItem(res.items, '\n' + this.indentation, this.indentation);
+            return res;
+          }
+        }
+        if (result.items.length && finalIndentCompensation) {
+          insertIndentForCompletionItem(result.items, finalIndentCompensation, finalIndentCompensation);
+        }
         return result;
       });
     });
@@ -1065,11 +1101,12 @@ export class YAMLCompletion extends JSONCompletion {
   /**
    * Corrects simple syntax mistakes to load possible nodes even if a semicolon is missing
    */
-  private completionHelper(document: TextDocument, textDocumentPosition: Position): NewTextAndPosition {
+  private completionHelper(document: TextDocument, textDocumentPosition: Position, addNewLine = false): NewTextAndPosition {
     // Get the string we are looking at via a substring
     const linePos = textDocumentPosition.line;
     const position = textDocumentPosition;
     const lineOffset = getLineOffsets(document.getText());
+    const offset = document.offsetAt(position);
     const start = lineOffset[linePos]; // Start of where the autocompletion is happening
     let end = 0; // End of where the autocompletion is happening
 
@@ -1091,6 +1128,7 @@ export class YAMLCompletion extends JSONCompletion {
         // add empty object to be compatible with JSON
         newText: `{${document.getText()}}\n`,
         newPosition: textDocumentPosition,
+        newOffset: offset,
       };
     }
 
@@ -1123,14 +1161,32 @@ export class YAMLCompletion extends JSONCompletion {
       return {
         newText: newText,
         newPosition: textDocumentPosition,
+        newOffset: offset,
       };
     } else {
+      // add holder to new line
+      if (addNewLine) {
+        const offset = start + textLine.length;
+        const indent = textLine.substring(0, textLine.search(/\S/));
+        const newLineWithIndent = '\n' + indent + this.indentation;
+        const newText =
+          document.getText().substring(0, offset) + newLineWithIndent + 'holder:\r\n' + document.getText().substring(offset);
+
+        position.character = indent.length + this.indentation.length;
+        position.line += 1;
+        return {
+          newText: newText,
+          newPosition: position,
+          newOffset: offset + newLineWithIndent.length,
+        };
+      }
       // All the nodes are loaded
       position.character = position.character - 1;
 
       return {
         newText: document.getText(),
         newPosition: position,
+        newOffset: offset - 1,
       };
     }
   }
@@ -1158,12 +1214,28 @@ function isDefined(val: any): val is object {
  */
 function escapeSpecialChars(text: string): string {
   // const regexp = new RegExp (/[\|\*\(\)\[\]\+\-\\_`#<>\n]/g);
-  const regexp = new RegExp(/[@]/g);
-  const contains = regexp.test(text);
-  if (contains) {
-    return `'${text}'`;
+  // const regexp = new RegExp(/[@]/g);
+  // const contains = regexp.test(text);
+  if (text) {
+    const addQuota = text[0] !== `'` && text.includes('@');
+    if (addQuota) {
+      return `'${text}'`;
+    }
   }
   return text;
+}
+
+function insertIndentForCompletionItem(items: CompletionItem[], begin: string, eachLine: string): void {
+  items.forEach((c) => {
+    if (c.insertText) {
+      c.insertText = begin + c.insertText.replace(/\n/g, '\n' + eachLine);
+    }
+    if (c.textEdit) {
+      // c.textEdit.range.start.character += offsetAdd;
+      // c.textEdit.range.end.character += offsetAdd;
+      c.textEdit.newText = begin + c.textEdit.newText.replace(/\n/g, '\n' + eachLine);
+    }
+  });
 }
 
 interface InsertText {
@@ -1174,4 +1246,5 @@ interface InsertText {
 interface NewTextAndPosition {
   newText: string;
   newPosition: Position;
+  newOffset: number;
 }
