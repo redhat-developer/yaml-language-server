@@ -950,6 +950,7 @@ suite('Auto Completion Tests', () => {
                         default: 'test',
                       },
                     },
+                    required: ['name'],
                   },
                 },
                 include: {
@@ -966,7 +967,7 @@ suite('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 1, 3, 1, 9, 2, {
+              createExpectedCompletion('- (array item)', `- name: ${snippet$1symbol}`, 3, 1, 3, 1, 9, 2, {
                 documentation: 'Create an item of an array',
               })
             );
@@ -1274,9 +1275,14 @@ suite('Auto Completion Tests', () => {
         const completion = parseSetup(content, content.lastIndexOf('he') + 2);
         completion
           .then(function (result) {
-            assert.equal(result.items.length, 1);
+            let items = result.items;
+            if (jigxBranchTest) {
+              //remove extra completion for parent object
+              items = items.filter((c) => c.kind !== 7);
+            }
+            assert.equal(items.length, 1);
             assert.deepEqual(
-              result.items[0],
+              items[0],
               createExpectedCompletion('helm', `helm:\n    name: ${snippet$1symbol}`, 1, 4, 1, 6, 10, 2, {
                 documentation: '',
               })
@@ -1292,9 +1298,14 @@ suite('Auto Completion Tests', () => {
         const completion = parseSetup(content, content.lastIndexOf('he') + 2);
         completion
           .then(function (result) {
-            assert.equal(result.items.length, 1);
+            let items = result.items;
+            if (jigxBranchTest) {
+              //remove extra completion for parent object
+              items = items.filter((c) => c.kind !== 7);
+            }
+            assert.equal(items.length, 1);
             assert.deepEqual(
-              result.items[0],
+              items[0],
               createExpectedCompletion('helm', `helm:\n               name: ${snippet$1symbol}`, 1, 14, 1, 16, 10, 2, {
                 documentation: '',
               })
@@ -1310,9 +1321,14 @@ suite('Auto Completion Tests', () => {
         const completion = parseSetup(content, content.lastIndexOf('he') + 2);
         completion
           .then(function (result) {
-            assert.equal(result.items.length, 1);
+            let items = result.items;
+            if (jigxBranchTest) {
+              //remove extra completion for parent object
+              items = items.filter((c) => c.kind !== 7);
+            }
+            assert.equal(items.length, 1);
             assert.deepEqual(
-              result.items[0],
+              items[0],
               createExpectedCompletion('helm', `helm:\n \t               name: ${snippet$1symbol}`, 1, 16, 1, 18, 10, 2, {
                 documentation: '',
               })
@@ -1445,9 +1461,12 @@ suite('Auto Completion Tests', () => {
         const content = 'components:\n  - id: jsakdh\n    setti';
         const completion = await parseSetup(content, 36);
         expect(completion.items).lengthOf(1);
-        expect(completion.items[0].textEdit.newText).to.equal(
-          'settings:\n  data:\n    arrayItems:\n      - show: ${1:true}\n        id: $2'
-        );
+        let exp = 'settings:\n  data:\n    arrayItems:\n      - show: ${1:true}\n        id: $2';
+        if (jigxBranchTest) {
+          //remove not required props from snippet event they are default
+          exp = `settings:\n  data:\n    arrayItems:\n      - id: ${snippet$1symbol}`;
+        }
+        expect(completion.items[0].textEdit.newText).to.equal(exp);
       });
 
       it('Object completion', (done) => {
