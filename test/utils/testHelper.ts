@@ -110,3 +110,5 @@ export function setupTextDocument(content: string): TextDocument {
 export function setupSchemaIDTextDocument(content: string): TextDocument {
   return TextDocument.create(SCHEMA_ID, 'yaml', 0, content);
 }
+
+export const jigxBranchTest = true;

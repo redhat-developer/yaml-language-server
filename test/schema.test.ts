@@ -63,6 +63,7 @@ suite('JSON Schema', () => {
       .getResolvedSchema('https://myschemastore/main')
       .then((solvedSchema) => {
         assert.deepEqual(solvedSchema.schema.properties['child'], {
+          _$ref: 'https://myschemastore/child', //jigxBranchTest
           id: 'https://myschemastore/child',
           type: 'bool',
           description: 'Test description',
@@ -110,6 +111,7 @@ suite('JSON Schema', () => {
       .getResolvedSchema('https://json.schemastore.org/swagger-2.0')
       .then((fs) => {
         assert.deepEqual(fs.schema.properties['responseValue'], {
+          _$ref: '#/definitions/jsonReference', //jigxBranchTest
           type: 'object',
           required: ['$ref'],
           properties: { $ref: { type: 'string' } },
@@ -160,16 +162,19 @@ suite('JSON Schema', () => {
       .getResolvedSchema('https://myschemastore/main/schema1.json')
       .then((fs) => {
         assert.deepEqual(fs.schema.properties['p1'], {
+          _$ref: 'schema2.json#/definitions/hello', //jigxBranchTest
           type: 'string',
           enum: ['object'],
           url: 'https://myschemastore/main/schema2.json',
         });
         assert.deepEqual(fs.schema.properties['p2'], {
+          _$ref: './schema2.json#/definitions/hello', //jigxBranchTest
           type: 'string',
           enum: ['object'],
           url: 'https://myschemastore/main/schema2.json',
         });
         assert.deepEqual(fs.schema.properties['p3'], {
+          _$ref: '/main/schema2.json#/definitions/hello', //jigxBranchTest
           type: 'string',
           enum: ['object'],
           url: 'https://myschemastore/main/schema2.json',

@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { toFsPath, setupTextDocument, configureLanguageService } from './utils/testHelper';
+import { toFsPath, setupTextDocument, configureLanguageService, jigxBranchTest } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
 import { ServiceSetup } from './utils/serviceSetup';
@@ -16,6 +16,7 @@ const languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFile
   uri,
 });
 const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+const snippet$1symbol = jigxBranchTest ? '' : '$1';
 
 suite('Default Snippet Tests', () => {
   describe('Snippet Tests', function () {
@@ -80,7 +81,7 @@ suite('Default Snippet Tests', () => {
           assert.equal(result.items.length, 2);
           assert.equal(result.items[0].insertText, 'key1: $1\nkey2: $2');
           assert.equal(result.items[0].label, 'Object item');
-          assert.equal(result.items[1].insertText, 'key:\n  $1');
+          assert.equal(result.items[1].insertText, `key:\n  ${snippet$1symbol}`);
           assert.equal(result.items[1].label, 'key');
         })
         .then(done, done);
@@ -94,7 +95,7 @@ suite('Default Snippet Tests', () => {
           assert.notEqual(result.items.length, 0);
           assert.equal(result.items[0].insertText, 'key1: $1\nkey2: $2');
           assert.equal(result.items[0].label, 'Object item');
-          assert.equal(result.items[1].insertText, 'key:\n  $1');
+          assert.equal(result.items[1].insertText, `key:\n  ${snippet$1symbol}`);
           assert.equal(result.items[1].label, 'key');
         })
         .then(done, done);
@@ -116,7 +117,7 @@ suite('Default Snippet Tests', () => {
       completion
         .then(function (result) {
           assert.notEqual(result.items.length, 0);
-          assert.equal(result.items[0].insertText, 'test $1');
+          assert.equal(result.items[0].insertText, `test ${snippet$1symbol}`);
           assert.equal(result.items[0].label, 'My string item');
         })
         .then(done, done);

@@ -2,7 +2,13 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { configureLanguageService, SCHEMA_ID, setupSchemaIDTextDocument, setupTextDocument } from './utils/testHelper';
+import {
+  configureLanguageService,
+  jigxBranchTest,
+  SCHEMA_ID,
+  setupSchemaIDTextDocument,
+  setupTextDocument,
+} from './utils/testHelper';
 import { createExpectedError } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import {
@@ -23,6 +29,8 @@ import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
 const languageSettingsSetup = new ServiceSetup().withValidate().withCustomTags(['!Test', '!Ref sequence']);
 const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+
+const schemaFilePrefix = jigxBranchTest ? 'yaml-schema: ' : 'yaml-schema: file:///';
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite('Validation Tests', () => {
@@ -106,7 +114,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(BooleanTypeError, 0, 11, 0, 15, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(BooleanTypeError, 0, 11, 0, 15, DiagnosticSeverity.Warning, `${schemaFilePrefix}${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -128,7 +136,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 5, 0, 10, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(StringTypeError, 0, 5, 0, 10, DiagnosticSeverity.Warning, `${schemaFilePrefix}${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -211,7 +219,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(BooleanTypeError, 0, 11, 0, 16, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(BooleanTypeError, 0, 11, 0, 16, DiagnosticSeverity.Warning, `${schemaFilePrefix}${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -233,7 +241,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 5, 0, 7, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(StringTypeError, 0, 5, 0, 7, DiagnosticSeverity.Warning, `${schemaFilePrefix}${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -275,7 +283,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 5, 0, 11, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(StringTypeError, 0, 5, 0, 11, DiagnosticSeverity.Warning, `${schemaFilePrefix}${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -385,7 +393,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(ObjectTypeError, 0, 9, 0, 13, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(ObjectTypeError, 0, 9, 0, 13, DiagnosticSeverity.Warning, `${schemaFilePrefix}${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -430,7 +438,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(ArrayTypeError, 0, 11, 0, 15, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(ArrayTypeError, 0, 11, 0, 15, DiagnosticSeverity.Warning, `${schemaFilePrefix}${SCHEMA_ID}`)
           );
         })
         .then(done, done);
@@ -663,7 +671,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 4, 0, 4, DiagnosticSeverity.Warning, `yaml-schema: file:///${SCHEMA_ID}`)
+            createExpectedError(StringTypeError, 0, 4, 0, 4, DiagnosticSeverity.Warning, `${schemaFilePrefix}${SCHEMA_ID}`)
           );
         })
         .then(done, done);
