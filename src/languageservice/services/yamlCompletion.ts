@@ -1227,10 +1227,13 @@ function escapeSpecialChars(text: string): string {
 
 function insertIndentForCompletionItem(items: CompletionItem[], begin: string, eachLine: string): void {
   items.forEach((c) => {
-    if (c.insertText) {
+    const isObjectAndSingleIndent = (text: string): boolean => {
+      return text[0] === '\n' && begin === ' ';
+    };
+    if (c.insertText && !isObjectAndSingleIndent(c.insertText)) {
       c.insertText = begin + c.insertText.replace(/\n/g, '\n' + eachLine);
     }
-    if (c.textEdit) {
+    if (c.textEdit && !isObjectAndSingleIndent(c.textEdit.newText)) {
       // c.textEdit.range.start.character += offsetAdd;
       // c.textEdit.range.end.character += offsetAdd;
       c.textEdit.newText = begin + c.textEdit.newText.replace(/\n/g, '\n' + eachLine);

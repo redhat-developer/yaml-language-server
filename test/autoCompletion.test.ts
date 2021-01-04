@@ -9,8 +9,9 @@ import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList, InsertTextFormat } from 'vscode-languageserver';
+import { CompletionList, InsertTextFormat, MarkupContent } from 'vscode-languageserver';
 import { expect } from 'chai';
+import { MarkedString } from 'vscode-json-languageservice';
 
 const languageSettingsSetup = new ServiceSetup().withCompletion();
 const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
@@ -399,6 +400,33 @@ suite('Auto Completion Tests', () => {
           completion
             .then(function (result) {
               assert.equal(result.items.length, 1);
+            })
+            .then(done, done);
+        });
+
+        it('Autocomplete does happen right after : under an object and with defaultSnippet', (done) => {
+          languageService.addSchema(SCHEMA_ID, {
+            type: 'object',
+            properties: {
+              scripts: {
+                type: 'object',
+                properties: {},
+                defaultSnippets: [
+                  {
+                    label: 'myOther2Sample snippet',
+                    body: { myOther2Sample: {} },
+                    markdownDescription: 'snippet\n```yaml\nmyOther2Sample:\n```\n',
+                  },
+                ],
+              },
+            },
+          });
+          const content = 'scripts:';
+          const completion = parseSetup(content, content.length);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 1);
+              assert.equal(result.items[0].insertText, '\n  myOther2Sample: ');
             })
             .then(done, done);
         });
