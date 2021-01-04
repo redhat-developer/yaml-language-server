@@ -48,6 +48,7 @@ export class YAMLCompletion extends JSONCompletion {
   private completion: boolean;
   private indentation: string;
   private configuredIndentation: string | undefined;
+  private supportsMarkdown = true;
 
   constructor(schemaService: YAMLSchemaService) {
     super(schemaService, [], Promise);
