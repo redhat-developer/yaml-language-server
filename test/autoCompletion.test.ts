@@ -356,53 +356,100 @@ suite('Auto Completion Tests', () => {
           })
           .then(done, done);
       });
-
-      it('Autocomplete does not happen right after key object', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
-          type: 'object',
-          properties: {
-            timeout: {
-              type: 'number',
-              default: 60000,
+      if (jigxBranchTest) {
+        it('Autocomplete does happen right after key object', (done) => {
+          languageService.addSchema(SCHEMA_ID, {
+            type: 'object',
+            properties: {
+              timeout: {
+                type: 'number',
+                default: 60000,
+              },
             },
-          },
+          });
+          const content = 'timeout:';
+          const completion = parseSetup(content, 9);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 1);
+            })
+            .then(done, done);
         });
-        const content = 'timeout:';
-        const completion = parseSetup(content, 9);
-        completion
-          .then(function (result) {
-            assert.equal(result.items.length, 0);
-          })
-          .then(done, done);
-      });
-
-      it('Autocomplete does not happen right after : under an object', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
-          type: 'object',
-          properties: {
-            scripts: {
-              type: 'object',
-              properties: {
-                sample: {
-                  type: 'string',
-                  enum: ['test'],
-                },
-                myOtherSample: {
-                  type: 'string',
-                  enum: ['test'],
+        it('Autocomplete does happen right after : under an object', (done) => {
+          languageService.addSchema(SCHEMA_ID, {
+            type: 'object',
+            properties: {
+              scripts: {
+                type: 'object',
+                properties: {
+                  sample: {
+                    type: 'string',
+                    enum: ['test'],
+                  },
+                  myOtherSample: {
+                    type: 'string',
+                    enum: ['test'],
+                  },
                 },
               },
             },
-          },
+          });
+          const content = 'scripts:\n  sample:';
+          const completion = parseSetup(content, 21);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 1);
+            })
+            .then(done, done);
         });
-        const content = 'scripts:\n  sample:';
-        const completion = parseSetup(content, 21);
-        completion
-          .then(function (result) {
-            assert.equal(result.items.length, 0);
-          })
-          .then(done, done);
-      });
+      } else {
+        it('Autocomplete does not happen right after key object', (done) => {
+          languageService.addSchema(SCHEMA_ID, {
+            type: 'object',
+            properties: {
+              timeout: {
+                type: 'number',
+                default: 60000,
+              },
+            },
+          });
+          const content = 'timeout:';
+          const completion = parseSetup(content, 9);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 0);
+            })
+            .then(done, done);
+        });
+
+        it('Autocomplete does not happen right after : under an object', (done) => {
+          languageService.addSchema(SCHEMA_ID, {
+            type: 'object',
+            properties: {
+              scripts: {
+                type: 'object',
+                properties: {
+                  sample: {
+                    type: 'string',
+                    enum: ['test'],
+                  },
+                  myOtherSample: {
+                    type: 'string',
+                    enum: ['test'],
+                  },
+                },
+              },
+            },
+          });
+          const content = 'scripts:\n  sample:';
+          const completion = parseSetup(content, 21);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 0);
+            })
+            .then(done, done);
+        });
+      }
 
       it('Autocomplete on multi yaml documents in a single file on root', (done) => {
         languageService.addSchema(SCHEMA_ID, {
