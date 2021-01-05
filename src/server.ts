@@ -31,6 +31,7 @@ import {
   WorkspaceContextService,
   SchemaConfiguration,
   SchemaPriority,
+  LanguageService,
 } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
 import {
@@ -394,7 +395,7 @@ const schemaRequestHandlerWrapper = (connection: IConnection, uri: string): Prom
 
 const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
 
-export const customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext);
+let customLanguageService: LanguageService;
 
 /***********************
  * Connection listeners
@@ -407,6 +408,8 @@ export const customLanguageService = getCustomLanguageService(schemaRequestServi
 connection.onInitialize(
   (params: InitializeParams): InitializeResult => {
     capabilities = params.capabilities;
+
+    customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, capabilities);
 
     // Only try to parse the workspace root if its not null. Otherwise initialize will fail
     if (params.rootUri) {
