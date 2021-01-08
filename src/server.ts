@@ -395,7 +395,7 @@ const schemaRequestHandlerWrapper = (connection: IConnection, uri: string): Prom
 
 const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
 
-let customLanguageService: LanguageService;
+let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, ClientCapabilities.LATEST);
 
 /***********************
  * Connection listeners
