@@ -54,6 +54,7 @@ import { isRelativePath, relativeToAbsolutePath, workspaceFoldersChanged } from 
 import { URI } from 'vscode-uri';
 import { KUBERNETES_SCHEMA_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 import { schemaRequestHandler } from './languageservice/services/schemaRequestHandler';
+import { ClientCapabilities as ClientJsonCapabilities } from 'vscode-json-languageservice';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
@@ -395,7 +396,7 @@ const schemaRequestHandlerWrapper = (connection: IConnection, uri: string): Prom
 
 const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
 
-let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, ClientCapabilities.LATEST);
+let customLanguageService = getCustomLanguageService(schemaRequestService, workspaceContext, ClientJsonCapabilities.LATEST);
 
 /***********************
  * Connection listeners
