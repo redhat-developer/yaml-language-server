@@ -19,6 +19,7 @@ import {
   ClientCapabilities,
   WorkspaceFolder,
   DocumentFormattingRequest,
+  DocumentSelector,
 } from 'vscode-languageserver';
 
 import { xhr, configure as configureHttpRequests } from 'request-light';
@@ -83,6 +84,7 @@ interface Settings {
     schemaStore: {
       enable: boolean;
     };
+    extraLanguage: string[];
   };
   http: {
     proxy: string;
@@ -363,7 +365,17 @@ function validateTextDocument(textDocument: TextDocument): void {
     }
   );
 }
-
+function getDocumentSelectors(settings: Settings): DocumentSelector {
+  let docSelector: DocumentSelector = [{ language: 'yaml' }];
+  if (settings.yaml.extraLanguage) {
+    docSelector = docSelector.concat(
+      settings.yaml.extraLanguage.map((l) => {
+        return { language: l };
+      })
+    );
+  }
+  return docSelector;
+}
 /*************
  * Main setup
  *************/
@@ -562,7 +574,7 @@ connection.onDidChangeConfiguration((change) => {
     if (enableFormatter) {
       if (!formatterRegistration) {
         formatterRegistration = connection.client.register(DocumentFormattingRequest.type, {
-          documentSelector: [{ language: 'yaml' }],
+          documentSelector: getDocumentSelectors(settings),
         });
       }
     } else if (formatterRegistration) {
