@@ -9,7 +9,7 @@ import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList, InsertTextFormat } from 'vscode-languageserver';
+import { CompletionList, InsertTextFormat, MarkupContent } from 'vscode-languageserver';
 import { expect } from 'chai';
 
 const languageSettingsSetup = new ServiceSetup().withCompletion();
@@ -398,6 +398,34 @@ suite('Auto Completion Tests', () => {
         completion
           .then(function (result) {
             assert.equal(result.items.length, 0);
+          })
+          .then(done, done);
+      });
+
+      it('Autocomplete with defaultSnippet markdown', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {},
+              defaultSnippets: [
+                {
+                  label: 'myOtherSample snippet',
+                  body: { myOtherSample: {} },
+                  markdownDescription: 'snippet\n```yaml\nmyOtherSample:\n```\n',
+                },
+              ],
+            },
+          },
+        });
+        const content = 'scripts: ';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.equal(result.items[0].insertText, '\n  myOtherSample: ');
+            assert.equal((result.items[0].documentation as MarkupContent).value, 'snippet\n```yaml\nmyOtherSample:\n```\n');
           })
           .then(done, done);
       });
@@ -890,7 +918,7 @@ suite('Auto Completion Tests', () => {
           .then(done, done);
       });
 
-      it('Autocompletion after array with depth', (done) => {
+      it('Autocompletion after array with depth - no indent', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -911,16 +939,60 @@ suite('Auto Completion Tests', () => {
                 },
               },
             },
+            include: {
+              type: 'string',
+              default: 'test',
+            },
           },
         });
-        const content = 'archive:\n  exclude:\n  - nam\n';
-        const completion = parseSetup(content, 29);
+        const content = 'archive:\n  exclude:\n    - name: test\n\n';
+        const completion = parseSetup(content, content.length - 1); //don't test on the last row
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            const expectedCompletion = createExpectedCompletion('include', 'include: ${1:test}', 3, 0, 3, 0, 10, 2, {
+              documentation: '',
+            });
+            delete expectedCompletion.textEdit;
+            assert.deepEqual(result.items[0], expectedCompletion);
+          })
+          .then(done, done);
+      });
+
+      it('Autocompletion after array with depth - indent', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            archive: {
+              type: 'object',
+              properties: {
+                exclude: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: {
+                        type: 'string',
+                        default: 'test',
+                      },
+                    },
+                  },
+                },
+                include: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        });
+        const content = 'archive:\n  exclude:\n    - nam\n  ';
+        const completion = parseSetup(content, content.length - 1);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 0, 3, 0, 9, 2, {
+              createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 1, 3, 1, 9, 2, {
                 documentation: 'Create an item of an array',
               })
             );

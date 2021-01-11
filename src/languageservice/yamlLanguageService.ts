@@ -23,7 +23,7 @@ import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
 import { JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
-import { TextDocument, FoldingRange } from 'vscode-languageserver';
+import { TextDocument, FoldingRange, ClientCapabilities } from 'vscode-languageserver';
 import { getFoldingRanges } from './services/yamlFolding';
 import { FoldingRangesContext } from './yamlTypes';
 
@@ -112,10 +112,11 @@ export interface LanguageService {
 
 export function getLanguageService(
   schemaRequestService: SchemaRequestService,
-  workspaceContext: WorkspaceContextService
+  workspaceContext: WorkspaceContextService,
+  clientCapabilities?: ClientCapabilities
 ): LanguageService {
   const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
-  const completer = new YAMLCompletion(schemaService);
+  const completer = new YAMLCompletion(schemaService, clientCapabilities);
   const hover = new YAMLHover(schemaService);
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
   const yamlValidation = new YAMLValidation(schemaService);

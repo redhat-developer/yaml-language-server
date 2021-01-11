@@ -30,6 +30,7 @@ import { stringifyObject, StringifySettings } from '../utils/json';
 import { guessIndentation } from '../utils/indentationGuesser';
 import { TextBuffer } from '../utils/textBuffer';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
+import { ClientCapabilities } from 'vscode-languageserver';
 const localize = nls.loadMessageBundle();
 
 export class YAMLCompletion extends JSONCompletion {
@@ -39,8 +40,8 @@ export class YAMLCompletion extends JSONCompletion {
   private indentation: string;
   private configuredIndentation: string | undefined;
 
-  constructor(schemaService: YAMLSchemaService) {
-    super(schemaService, [], Promise);
+  constructor(schemaService: YAMLSchemaService, clientCapabilities: ClientCapabilities = {}) {
+    super(schemaService, [], Promise, clientCapabilities);
     this.schemaService = schemaService;
     this.customTags = [];
     this.completion = true;
@@ -962,9 +963,11 @@ export class YAMLCompletion extends JSONCompletion {
       // This is for the empty line case
       const trimmedText = textLine.trim();
       if (trimmedText.length === 0 || (trimmedText.length === 1 && trimmedText[0] === '-')) {
+        //same condition as (end < start) - protect of jumping back across lines, when 'holder' is put into incorrect place
+        const spaceLength = textLine.includes(' ') ? textLine.length : 0;
         // Add a temp node that is in the document but we don't use at all.
         newText =
-          document.getText().substring(0, start + textLine.length) +
+          document.getText().substring(0, start + spaceLength) +
           (trimmedText[0] === '-' && !textLine.endsWith(' ') ? ' ' : '') +
           'holder:\r\n' +
           document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
