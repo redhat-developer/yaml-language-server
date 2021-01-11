@@ -32,6 +32,7 @@ import { TextBuffer } from '../utils/textBuffer';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { MarkupContent, MarkupKind } from 'vscode-languageserver';
 import { Schema_Object } from '../utils/jigx/schema-type';
+import { ClientCapabilities } from 'vscode-languageserver';
 const localize = nls.loadMessageBundle();
 
 interface CompletionsCollectorExtended extends CompletionsCollector {
@@ -48,10 +49,9 @@ export class YAMLCompletion extends JSONCompletion {
   private completion: boolean;
   private indentation: string;
   private configuredIndentation: string | undefined;
-  private supportsMarkdown = true;
 
-  constructor(schemaService: YAMLSchemaService) {
-    super(schemaService, [], Promise);
+  constructor(schemaService: YAMLSchemaService, clientCapabilities: ClientCapabilities = {}) {
+    super(schemaService, [], Promise, clientCapabilities);
     this.schemaService = schemaService;
     this.customTags = [];
     this.completion = true;
@@ -649,7 +649,7 @@ export class YAMLCompletion extends JSONCompletion {
         let insertText: string;
         let filterText: string;
         if (isDefined(value)) {
-          const type = schema.type;
+          const type = s.type || schema.type;
           if (arrayDepth === 0 && type === 'array') {
             // We know that a - isn't present yet so we need to add one
             const fixedObj = {};
@@ -679,7 +679,7 @@ export class YAMLCompletion extends JSONCompletion {
           filterText = insertText.replace(/[\n]/g, ''); // remove new lines
         }
         collector.add({
-          kind: this.getSuggestionKind(type),
+          kind: s.suggestionKind || this.getSuggestionKind(type),
           label,
           documentation: super.fromMarkup(s.markdownDescription) || s.description,
           insertText,

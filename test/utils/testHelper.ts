@@ -16,6 +16,7 @@ import { getLanguageService, LanguageSettings, LanguageService } from '../../src
 import Strings = require('../../src/languageservice/utils/strings');
 import { URI } from 'vscode-uri';
 import {
+  ClientCapabilities,
   getLanguageService as getJSONLanguageService,
   LanguageService as JSONLanguageService,
 } from 'vscode-json-languageservice';
@@ -86,8 +87,11 @@ export function toFsPath(str: unknown): string {
   return encodeURI(`file://${pathName}`).replace(/[?#]/g, encodeURIComponent);
 }
 
-export function configureLanguageService(languageSettings: LanguageSettings): LanguageService {
-  const languageService = getLanguageService(schemaRequestService, workspaceContext);
+export function configureLanguageService(
+  languageSettings: LanguageSettings,
+  clientCapabilities = ClientCapabilities.LATEST
+): LanguageService {
+  const languageService = getLanguageService(schemaRequestService, workspaceContext, clientCapabilities);
 
   languageService.configure(languageSettings);
   return languageService;

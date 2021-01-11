@@ -131,6 +131,28 @@
               "body": "some"
           }
       ]
+    },
+    "anyOf_arrayObj": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "defaultSnippets": [
+        {
+          "label": "- (array item)",
+          "type": "array",
+          "body": {
+            "key": ""
+          }
+        }
+      ]
     }
   }
 }
