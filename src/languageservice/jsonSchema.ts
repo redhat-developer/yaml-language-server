@@ -1,3 +1,5 @@
+import { CompletionItemKind } from 'vscode-json-languageservice';
+
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -64,6 +66,8 @@ export interface JSONSchema {
     label?: string;
     description?: string;
     markdownDescription?: string;
+    type?: string;
+    suggestionKind?: CompletionItemKind;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     body?: any;
     bodyText?: string;
