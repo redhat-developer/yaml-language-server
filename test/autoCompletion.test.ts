@@ -890,7 +890,7 @@ suite('Auto Completion Tests', () => {
           .then(done, done);
       });
 
-      it('Autocompletion after array with depth', (done) => {
+      it('Autocompletion after array with depth - no indent', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -911,16 +911,60 @@ suite('Auto Completion Tests', () => {
                 },
               },
             },
+            include: {
+              type: 'string',
+              default: 'test',
+            },
           },
         });
-        const content = 'archive:\n  exclude:\n  - nam\n';
-        const completion = parseSetup(content, 29);
+        const content = 'archive:\n  exclude:\n    - name: test\n\n';
+        const completion = parseSetup(content, content.length - 1); //don't test on the last row
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            const expectedCompletion = createExpectedCompletion('include', 'include: ${1:test}', 3, 0, 3, 0, 10, 2, {
+              documentation: '',
+            });
+            delete expectedCompletion.textEdit;
+            assert.deepEqual(result.items[0], expectedCompletion);
+          })
+          .then(done, done);
+      });
+
+      it('Autocompletion after array with depth - indent', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            archive: {
+              type: 'object',
+              properties: {
+                exclude: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: {
+                        type: 'string',
+                        default: 'test',
+                      },
+                    },
+                  },
+                },
+                include: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        });
+        const content = 'archive:\n  exclude:\n    - nam\n  ';
+        const completion = parseSetup(content, content.length - 1);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 0, 3, 0, 9, 2, {
+              createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 1, 3, 1, 9, 2, {
                 documentation: 'Create an item of an array',
               })
             );
