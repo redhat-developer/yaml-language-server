@@ -30,6 +30,7 @@ import { stringifyObject, StringifySettings } from '../utils/json';
 import { guessIndentation } from '../utils/indentationGuesser';
 import { TextBuffer } from '../utils/textBuffer';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
+import { ClientCapabilities } from 'vscode-languageserver';
 const localize = nls.loadMessageBundle();
 
 export class YAMLCompletion extends JSONCompletion {
@@ -39,8 +40,8 @@ export class YAMLCompletion extends JSONCompletion {
   private indentation: string;
   private configuredIndentation: string | undefined;
 
-  constructor(schemaService: YAMLSchemaService) {
-    super(schemaService, [], Promise);
+  constructor(schemaService: YAMLSchemaService, clientCapabilities: ClientCapabilities = {}) {
+    super(schemaService, [], Promise, clientCapabilities);
     this.schemaService = schemaService;
     this.customTags = [];
     this.completion = true;

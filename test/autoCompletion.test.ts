@@ -9,7 +9,7 @@ import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList, InsertTextFormat } from 'vscode-languageserver';
+import { CompletionList, InsertTextFormat, MarkupContent } from 'vscode-languageserver';
 import { expect } from 'chai';
 
 const languageSettingsSetup = new ServiceSetup().withCompletion();
@@ -398,6 +398,34 @@ suite('Auto Completion Tests', () => {
         completion
           .then(function (result) {
             assert.equal(result.items.length, 0);
+          })
+          .then(done, done);
+      });
+
+      it('Autocomplete with defaultSnippet markdown', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {},
+              defaultSnippets: [
+                {
+                  label: 'myOtherSample snippet',
+                  body: { myOtherSample: {} },
+                  markdownDescription: 'snippet\n```yaml\nmyOtherSample:\n```\n',
+                },
+              ],
+            },
+          },
+        });
+        const content = 'scripts: ';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.equal(result.items[0].insertText, '\n  myOtherSample: ');
+            assert.equal((result.items[0].documentation as MarkupContent).value, 'snippet\n```yaml\nmyOtherSample:\n```\n');
           })
           .then(done, done);
       });
