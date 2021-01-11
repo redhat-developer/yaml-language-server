@@ -1,3 +1,19 @@
+### 0.14.0
+- yaml-language-server use a non-standard LSP request to resolve schemas content on client [#359](https://github.com/redhat-developer/yaml-language-server/pull/359)
+- Fix error on completion 'null' value [#360](https://github.com/redhat-developer/yaml-language-server/pull/360)
+- Select schemas based off on their priority [#362](https://github.com/redhat-developer/yaml-language-server/pull/362)
+- Keep space before word after inserting completion [#363](https://github.com/redhat-developer/yaml-language-server/pull/363)
+- Update readme with example of an array of glob patterns for schema [#366](https://github.com/redhat-developer/yaml-language-server/pull/366)
+- Add Dockerfile [#335](https://github.com/redhat-developer/yaml-language-server/issues/335)
+- Fix: Code completion list empty on empty file [#349](https://github.com/redhat-developer/vscode-yaml/issues/349)
+- Fix: Autocompletion missing space in value for default snippets when autocompleting on root node [#364](https://github.com/redhat-developer/yaml-language-server/issues/364)
+- Check if dynamic registration is enabled before executing onDidChangeWorkspaceFolders [#378](https://github.com/redhat-developer/yaml-language-server/pull/378)
+- Fix: Array indentation in autocomplete is broken after upgrade to 0.13 [#376](https://github.com/redhat-developer/yaml-language-server/issues/376)
+- Added folding ranges provider implementation [#337](https://github.com/redhat-developer/yaml-language-server/issues/337)
+- Fix: Hover doesn't work when there is now symbol after property [#382](https://github.com/redhat-developer/yaml-language-server/pull/382)
+- Fix: Code completion array new line ending with no indent [#384](https://github.com/redhat-developer/yaml-language-server/pull/384)
+- Fix: Code completion with defaultSnippet and makdown [#385](https://github.com/redhat-developer/yaml-language-server/pull/385)
+
 ### 0.13.0
 
 - Improve 'hover' with complex k8s schemas [#347](https://github.com/redhat-developer/yaml-language-server/pull/347)
