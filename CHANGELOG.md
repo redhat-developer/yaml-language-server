@@ -11,6 +11,8 @@
 - Fix: Array indentation in autocomplete is broken after upgrade to 0.13 [#376](https://github.com/redhat-developer/yaml-language-server/issues/376)
 - Added folding ranges provider implementation [#337](https://github.com/redhat-developer/yaml-language-server/issues/337)
 - Fix: Hover doesn't work when there is now symbol after property [#382](https://github.com/redhat-developer/yaml-language-server/pull/382)
+- Fix: Code completion array new line ending with no indent [#384](https://github.com/redhat-developer/yaml-language-server/pull/384)
+- Fix: Code completion with defaultSnippet and makdown [#385](https://github.com/redhat-developer/yaml-language-server/pull/385)
 
 ### 0.13.0
 
