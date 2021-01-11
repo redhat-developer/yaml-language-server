@@ -31,7 +31,6 @@ import {
   WorkspaceContextService,
   SchemaConfiguration,
   SchemaPriority,
-  LanguageService,
 } from './languageservice/yamlLanguageService';
 import * as nls from 'vscode-nls';
 import {
