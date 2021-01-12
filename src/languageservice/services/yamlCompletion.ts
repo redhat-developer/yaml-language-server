@@ -1225,9 +1225,15 @@ export class YAMLCompletion extends JSONCompletion {
   }
 
   private getDocumentationWithMarkdownText(documentation: string, insertText: string): string | MarkupContent {
-    const res = super.doesSupportMarkdown()
-      ? (super.fromMarkup(`${documentation}\n \`\`\`\n${insertText}\n\`\`\``) as MarkupContent)
-      : documentation;
+    let res: string | MarkupContent = documentation;
+    if (super.doesSupportMarkdown()) {
+      insertText = insertText
+        .replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => {
+          return arg;
+        })
+        .replace(/\$([0-9]+)/g, '');
+      res = super.fromMarkup(`${documentation}\n \`\`\`\n${insertText}\n\`\`\``) as MarkupContent;
+    }
     return res;
   }
 }
