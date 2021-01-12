@@ -532,12 +532,17 @@ export class YAMLCompletion extends JSONCompletion {
                 this.addSchemaValueCompletions(s.schema.items[index], separatorAfter, collector, types);
               }
             } else if (typeof s.schema.items === 'object' && s.schema.items.type === 'object') {
+              const insertText = `- ${this.getInsertTextForObject(s.schema.items, separatorAfter).insertText.trimLeft()}`;
+              const documentation = this.getDocumentationWithMarkdownText(
+                `Create an item of an array${s.schema.description === undefined ? '' : '(' + s.schema.description + ')'}`,
+                insertText
+              );
               collector.add({
                 kind: super.getSuggestionKind(s.schema.items.type),
                 label: '- (array item)',
                 // eslint-disable-next-line prettier/prettier
-                documentation: `Create an item of an array${s.schema.description === undefined ? '' : '(' + s.schema.description + ')'}`,
-                insertText: `- ${this.getInsertTextForObject(s.schema.items, separatorAfter).insertText.trimLeft()}`,
+                documentation: documentation,
+                insertText: insertText,
                 insertTextFormat: InsertTextFormat.Snippet,
               });
               this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types);

@@ -813,7 +813,7 @@ suite('Auto Completion Tests', () => {
             assert.deepEqual(
               result.items[0],
               createExpectedCompletion('- (array item)', `- ${snippet$1symbol}`, 1, 2, 1, 3, 9, 2, {
-                documentation: 'Create an item of an array',
+                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- $1\n```' },
               })
             );
           })
@@ -848,7 +848,7 @@ suite('Auto Completion Tests', () => {
             assert.deepEqual(
               result.items[0],
               createExpectedCompletion('- (array item)', `- ${snippet$1symbol}`, 2, 0, 2, 0, 9, 2, {
-                documentation: 'Create an item of an array',
+                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- $1\n```' },
               })
             );
           })
@@ -1071,7 +1071,7 @@ suite('Auto Completion Tests', () => {
             assert.deepEqual(
               result.items[0],
               createExpectedCompletion('- (array item)', `- name: ${snippet$1symbol}`, 3, 1, 3, 1, 9, 2, {
-                documentation: 'Create an item of an array',
+                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- name: $1\n```' },
               })
             );
           })
@@ -1875,7 +1875,7 @@ suite('Auto Completion Tests', () => {
         const content = 'test_array_anyOf_2objects:\n  - ';
         const completion = parseSetup(content, content.length);
         completion.then(function (result) {
-          assert.equal(result.items.length, 2);
+          assert.equal(result.items.length, 4);
           assert.equal(result.items[0].label, 'obj1');
         });
       });
