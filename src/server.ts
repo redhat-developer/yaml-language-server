@@ -436,6 +436,9 @@ connection.onInitialize(
         documentSymbolProvider: true,
         documentFormattingProvider: false,
         documentRangeFormattingProvider: false,
+        documentOnTypeFormattingProvider: {
+          firstTriggerCharacter: '\n',
+        },
         documentLinkProvider: {},
         foldingRangeProvider: true,
         workspace: {
@@ -671,6 +674,14 @@ connection.onDocumentFormatting((formatParams) => {
   };
 
   return customLanguageService.doFormat(document, customFormatterSettings);
+});
+
+connection.onDocumentOnTypeFormatting((params) => {
+  const document = documents.get(params.textDocument.uri);
+  if (!document) {
+    return;
+  }
+  return customLanguageService.doDocumentOnTypeFormatting(document, params);
 });
 
 connection.onDocumentLinks((params) => {
