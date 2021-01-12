@@ -542,6 +542,26 @@ export class YAMLCompletion extends JSONCompletion {
                 insertTextFormat: InsertTextFormat.Snippet,
               });
               this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types);
+            } else if (typeof s.schema.items === 'object' && s.schema.items.anyOf) {
+              s.schema.items.anyOf
+                .filter((i) => typeof i === 'object')
+                .forEach((i: JSONSchema, index) => {
+                  const insertText = `- ${this.getInsertTextForObject(i, separatorAfter).insertText.trimLeft()}`;
+                  let documentation = `Create an item of an array${
+                    s.schema.description === undefined ? '' : '(' + s.schema.description + ')'
+                  }`;
+                  documentation = super.doesSupportMarkdown()
+                    ? super.fromMarkup(`${documentation}\n \`\`\`\n${insertText}\n\`\`\``)
+                    : documentation;
+                  collector.add({
+                    kind: super.getSuggestionKind(i.type),
+                    label: '- (array item) ' + (index + 1),
+                    documentation: documentation,
+                    insertText: insertText,
+                    insertTextFormat: InsertTextFormat.Snippet,
+                  });
+                });
+              this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types);
             } else {
               this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types);
             }
