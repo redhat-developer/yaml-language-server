@@ -30,9 +30,8 @@ import { stringifyObject, StringifySettings } from '../utils/json';
 import { guessIndentation } from '../utils/indentationGuesser';
 import { TextBuffer } from '../utils/textBuffer';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
-import { MarkupContent, MarkupKind } from 'vscode-languageserver';
+import { ClientCapabilities, MarkupContent, MarkupKind } from 'vscode-languageserver';
 import { Schema_Object } from '../utils/jigx/schema-type';
-import { ClientCapabilities } from 'vscode-languageserver';
 const localize = nls.loadMessageBundle();
 
 interface CompletionsCollectorExtended extends CompletionsCollector {
@@ -547,12 +546,11 @@ export class YAMLCompletion extends JSONCompletion {
                 .filter((i) => typeof i === 'object')
                 .forEach((i: JSONSchema, index) => {
                   const insertText = `- ${this.getInsertTextForObject(i, separatorAfter).insertText.trimLeft()}`;
-                  let documentation = `Create an item of an array${
-                    s.schema.description === undefined ? '' : '(' + s.schema.description + ')'
-                  }`;
-                  documentation = super.doesSupportMarkdown()
-                    ? super.fromMarkup(`${documentation}\n \`\`\`\n${insertText}\n\`\`\``)
-                    : documentation;
+                  //append insertText to documentation
+                  const documentation = this.getDocumentationWithMarkdownText(
+                    `Create an item of an array${s.schema.description === undefined ? '' : '(' + s.schema.description + ')'}`,
+                    insertText
+                  );
                   collector.add({
                     kind: super.getSuggestionKind(i.type),
                     label: '- (array item) ' + (index + 1),
@@ -1219,6 +1217,13 @@ export class YAMLCompletion extends JSONCompletion {
 
   private is_EOL(c: number): boolean {
     return c === 0x0a /* LF */ || c === 0x0d /* CR */;
+  }
+
+  private getDocumentationWithMarkdownText(documentation: string, insertText: string): string | MarkupContent {
+    const res = super.doesSupportMarkdown()
+      ? (super.fromMarkup(`${documentation}\n \`\`\`\n${insertText}\n\`\`\``) as MarkupContent)
+      : documentation;
+    return res;
   }
 }
 
