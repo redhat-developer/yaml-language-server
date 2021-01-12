@@ -1710,5 +1710,109 @@ suite('Auto Completion Tests', () => {
         );
       });
     });
+    describe('Array completion', () => {
+      //test_simpleArrayObject
+      // it('Simple array object completion without "-" without any item', async () => {
+      //   const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      //   languageService.addSchema(SCHEMA_ID, schema);
+      //   const content = 'test_simpleArrayObject:\n  ';
+      //   const completion = parseSetup(content, content.length);
+      //   completion.then(function (result) {
+      //     assert.equal(result.items.length, 1);
+      //     assert.equal(result.items[0]?.label, '- (array item)');
+      //   });
+      // });
+      //worked ok
+      it('Simple array object completion with "-" without any item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_simpleArrayObject:\n  -';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].label, '- (array item)');
+        });
+      });
+      //worked ok
+      it('Simple array object completion without "-" after array item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  ';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].label, '- (array item)');
+        });
+      });
+      //worked ok
+      it('Simple array object completion with "-" after array item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  -';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].label, '- (array item)');
+        });
+      });
+
+      //test_array_anyOf_2objects
+      // it('Array anyOf two objects completion without "-" without any item', async () => {
+      //   const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      //   languageService.addSchema(SCHEMA_ID, schema);
+      //   const content = 'test_array_anyOf_2objects:\n  ';
+      //   const completion = parseSetup(content, content.length);
+      //   completion.then(function (result) {
+      //     assert.equal(result.items.length, 1);
+      //     assert.equal(result.items[0].label, '- (array item)');
+      //   });
+      // });
+
+      //worked ok
+      it('Array anyOf two objects completion with "- " without any item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_array_anyOf_2objects:\n  - ';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, 'obj1');
+        });
+      });
+
+      it('Array anyOf two objects completion with "-" without any item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_array_anyOf_2objects:\n  -';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, '- (array item) 1');
+        });
+      });
+
+      it('Array anyOf two objects completion without "-" after array item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  ';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, '- (array item) 1');
+        });
+      });
+
+      //worked ok
+      it('Array anyOf two objects completion with "-" after array item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  -';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, '- (array item) 1');
+        });
+      });
+    });
   });
 });
