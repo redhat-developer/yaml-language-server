@@ -878,15 +878,7 @@ suite('Validation Tests', () => {
       const testTextDocument = setupTextDocument(content);
       const result = await languageService.doValidation(testTextDocument, true);
       expect(result[0]).deep.equal(
-        createExpectedError(
-          ArrayTypeError,
-          4,
-          10,
-          4,
-          18,
-          DiagnosticSeverity.Warning,
-          'yaml-schema: https://json.schemastore.org/composer'
-        )
+        createExpectedError(ArrayTypeError, 4, 10, 4, 18, DiagnosticSeverity.Warning, 'yaml-schema: Package')
       );
     });
 
