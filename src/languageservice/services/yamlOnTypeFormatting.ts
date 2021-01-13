@@ -21,7 +21,7 @@ export function doDocumentOnTypeFormatting(
       if (subLine.trimRight().length === 0) {
         const indentationFix = position.character - (previousLine.length - previousLine.trimLeft().length);
         if (indentationFix === params.options.tabSize && !isInArray) {
-          return;
+          return; // skip if line already has proper formatting
         }
         return [
           TextEdit.del(Range.create(position, Position.create(position.line, currentLine.length - 1))),
