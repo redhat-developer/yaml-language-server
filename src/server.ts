@@ -434,7 +434,7 @@ connection.onInitialize(
         completionProvider: { resolveProvider: false },
         hoverProvider: true,
         documentSymbolProvider: true,
-        documentFormattingProvider: false,
+        documentFormattingProvider: true,
         documentRangeFormattingProvider: false,
         documentLinkProvider: {},
         foldingRangeProvider: true,
