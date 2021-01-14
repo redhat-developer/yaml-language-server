@@ -813,7 +813,7 @@ suite('Auto Completion Tests', () => {
             assert.deepEqual(
               result.items[0],
               createExpectedCompletion('- (array item)', `- ${snippet$1symbol}`, 1, 2, 1, 3, 9, 2, {
-                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- $1\n```' },
+                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- ' + snippet$1symbol + '\n```' },
               })
             );
           })
@@ -848,7 +848,7 @@ suite('Auto Completion Tests', () => {
             assert.deepEqual(
               result.items[0],
               createExpectedCompletion('- (array item)', `- ${snippet$1symbol}`, 2, 0, 2, 0, 9, 2, {
-                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- $1\n```' },
+                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- ' + snippet$1symbol + '\n```' },
               })
             );
           })
@@ -1071,7 +1071,10 @@ suite('Auto Completion Tests', () => {
             assert.deepEqual(
               result.items[0],
               createExpectedCompletion('- (array item)', `- name: ${snippet$1symbol}`, 3, 1, 3, 1, 9, 2, {
-                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- name: $1\n```' },
+                documentation: {
+                  kind: 'markdown',
+                  value: 'Create an item of an array\n ```\n- name: ' + snippet$1symbol + '\n```',
+                },
               })
             );
           })
