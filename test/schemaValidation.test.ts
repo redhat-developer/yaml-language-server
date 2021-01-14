@@ -898,7 +898,7 @@ suite('Validation Tests', () => {
       yamlSettings.specificValidatorPaths = ['*.yml', '*.yaml'];
       const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/test.yml');
       expect(result[0]).deep.equal(
-        createExpectedError(ArrayTypeError, 4, 10, 4, 18, DiagnosticSeverity.Warning, 'yaml-schema: Package')
+        createExpectedError(ArrayTypeError, 4, 10, 4, 18, DiagnosticSeverity.Error, 'yaml-schema: Package')
       );
     });
 
