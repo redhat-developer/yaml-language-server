@@ -20,7 +20,8 @@ import {
 import { ErrorCode, JSONPath } from 'vscode-json-languageservice';
 import * as nls from 'vscode-nls';
 import { URI } from 'vscode-uri';
-import { TextDocument, Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
+import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Schema_Object } from '../utils/jigx/schema-type';
 import * as path from 'path';
 

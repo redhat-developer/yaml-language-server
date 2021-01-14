@@ -4,24 +4,43 @@
  *--------------------------------------------------------------------------------------------*/
 
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { SCHEMA_ID, setupSchemaIDTextDocument, configureLanguageService, toFsPath, jigxBranchTest } from './utils/testHelper';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, toFsPath, jigxBranchTest } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import { CompletionList, InsertTextFormat, MarkupContent } from 'vscode-languageserver';
 import { expect } from 'chai';
-import { MarkedString } from 'vscode-json-languageservice';
-
-const languageSettingsSetup = new ServiceSetup().withCompletion();
-const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { LanguageService } from '../src';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
 const snippet$1symbol = jigxBranchTest ? '' : '$1';
 
 suite('Auto Completion Tests', () => {
-  function parseSetup(content: string, position): Promise<CompletionList> {
+  let languageSettingsSetup: ServiceSetup;
+  let languageService: LanguageService;
+  let languageHandler: LanguageHandlers;
+  let yamlSettings: SettingsState;
+
+  before(() => {
+    languageSettingsSetup = new ServiceSetup().withCompletion();
+    const { languageService: langService, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(
+      languageSettingsSetup.languageSettings
+    );
+    languageService = langService;
+    languageHandler = langHandler;
+    yamlSettings = settings;
+  });
+
+  function parseSetup(content: string, position: number): Promise<CompletionList> {
     const testTextDocument = setupSchemaIDTextDocument(content);
-    return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
+    yamlSettings.documents = new TextDocumentTestManager();
+    (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+    return languageHandler.completionHandler({
+      position: testTextDocument.positionAt(position),
+      textDocument: testTextDocument,
+    });
   }
 
   afterEach(() => {

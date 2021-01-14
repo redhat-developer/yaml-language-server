@@ -126,10 +126,22 @@
     "name": {
       "type": "string",
       "defaultSnippets": [
-          {
-              "label": "some",
-              "body": "some"
+        {
+          "label": "some",
+          "body": "some"
+        }
+      ]
+    },
+    "object_any": {
+      "type": "object",
+      "defaultSnippets": [
+        {
+          "label": "Object empty",
+          "description": "Binds a root",
+          "body": {
+            "root": {}
           }
+        }
       ]
     },
     "anyOf_arrayObj": {

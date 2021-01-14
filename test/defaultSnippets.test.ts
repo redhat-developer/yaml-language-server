@@ -2,27 +2,42 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { toFsPath, setupTextDocument, configureLanguageService, jigxBranchTest } from './utils/testHelper';
+import { toFsPath, setupSchemaIDTextDocument, setupLanguageService, jigxBranchTest } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList } from 'vscode-languageserver';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { CompletionList } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 
-const uri = toFsPath(path.join(__dirname, './fixtures/defaultSnippets.json'));
-const fileMatch = ['*.yml', '*.yaml'];
-const languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
-  fileMatch,
-  uri,
-});
-const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
 const snippet$1symbol = jigxBranchTest ? '' : '$1';
 
 suite('Default Snippet Tests', () => {
+  let languageHandler: LanguageHandlers;
+  let yamlSettings: SettingsState;
+
+  before(() => {
+    const uri = toFsPath(path.join(__dirname, './fixtures/defaultSnippets.json'));
+    const fileMatch = ['*.yml', '*.yaml'];
+    const languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
+      fileMatch,
+      uri,
+    });
+    const { languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
+    languageHandler = langHandler;
+    yamlSettings = settings;
+  });
+
   describe('Snippet Tests', function () {
     function parseSetup(content: string, position: number): Promise<CompletionList> {
-      const testTextDocument = setupTextDocument(content);
-      return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
+      const testTextDocument = setupSchemaIDTextDocument(content);
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      return languageHandler.completionHandler({
+        position: testTextDocument.positionAt(position),
+        textDocument: testTextDocument,
+      });
     }
 
     it('Snippet in array schema should autocomplete with -', (done) => {
@@ -128,6 +143,16 @@ suite('Default Snippet Tests', () => {
       completion
         .then(function (result) {
           assert.equal(result.items.length, 1);
+        })
+        .then(done, done);
+    });
+
+    it('Snippet in object schema should not autocomplete on children', (done) => {
+      const content = 'object_any:\n someProp: ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 0);
         })
         .then(done, done);
     });

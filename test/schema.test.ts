@@ -11,8 +11,8 @@ import { MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/se
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 import { expect } from 'chai';
 import { ServiceSetup } from './utils/serviceSetup';
-import { configureLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper';
-import { SchemaPriority } from '../src';
+import { setupLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper';
+import { LanguageService, SchemaPriority } from '../src';
 import { Position } from 'vscode-languageserver';
 
 const requestServiceMock = function (uri: string): Promise<string> {
@@ -38,6 +38,21 @@ const schemaRequestServiceForURL = (uri: string): Promise<string> => {
 };
 
 suite('JSON Schema', () => {
+  let languageSettingsSetup: ServiceSetup;
+  let languageService: LanguageService;
+
+  before(() => {
+    languageSettingsSetup = new ServiceSetup()
+      .withValidate()
+      .withCustomTags(['!Test', '!Ref sequence'])
+      .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['.drone.yml'] })
+      .withSchemaFileMatch({ uri: 'https://json.schemastore.org/drone', fileMatch: ['.drone.yml'] })
+      .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['test.yml'] })
+      .withSchemaFileMatch({ uri: 'https://json.schemastore.org/composer', fileMatch: ['test.yml'] });
+    const { languageService: langService } = setupLanguageService(languageSettingsSetup.languageSettings);
+    languageService = langService;
+  });
+
   test('Resolving $refs', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     service.setSchemaContributions({
@@ -585,7 +600,7 @@ suite('JSON Schema', () => {
           priority: SchemaPriority.Modeline,
           schema: schemaModelineSample,
         });
-      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+      languageService.configure(languageSettingsSetup.languageSettings);
       const testTextDocument = setupTextDocument('');
       const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
       assert.strictEqual(result.items.length, 1);
@@ -612,7 +627,7 @@ suite('JSON Schema', () => {
           priority: SchemaPriority.Settings,
           schema: schemaSettingsSample,
         });
-      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+      languageService.configure(languageSettingsSetup.languageSettings);
       const testTextDocument = setupTextDocument('');
       const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
       assert.strictEqual(result.items.length, 1);
@@ -633,7 +648,7 @@ suite('JSON Schema', () => {
           priority: SchemaPriority.SchemaAssociation,
           schema: schemaAssociationSample,
         });
-      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+      languageService.configure(languageSettingsSetup.languageSettings);
       const testTextDocument = setupTextDocument('');
       const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
       assert.strictEqual(result.items.length, 1);
@@ -647,7 +662,7 @@ suite('JSON Schema', () => {
         priority: SchemaPriority.SchemaStore,
         schema: schemaStoreSample,
       });
-      const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+      languageService.configure(languageSettingsSetup.languageSettings);
       const testTextDocument = setupTextDocument('');
       const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
       assert.strictEqual(result.items.length, 1);

@@ -2,75 +2,14 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import {
-  IPCMessageReader,
-  IPCMessageWriter,
-  createConnection,
-  IConnection,
-  TextDocumentSyncKind,
-  TextDocument,
-  InitializeResult,
-} from 'vscode-languageserver';
-import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
-import { getLanguageService, LanguageSettings, LanguageService } from '../../src/languageservice/yamlLanguageService';
-import Strings = require('../../src/languageservice/utils/strings');
-import { URI } from 'vscode-uri';
-import {
-  ClientCapabilities,
-  getLanguageService as getJSONLanguageService,
-  LanguageService as JSONLanguageService,
-} from 'vscode-json-languageservice';
-import * as URL from 'url';
-import fs = require('fs');
+import { createConnection, IConnection, TextDocument } from 'vscode-languageserver';
 import path = require('path');
-
-// Create a connection for the server.
-let connection: IConnection = null;
-if (process.argv.indexOf('--stdio') === -1) {
-  connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
-} else {
-  connection = createConnection();
-}
-
-connection.onInitialize(
-  (): InitializeResult => {
-    return {
-      capabilities: {
-        // Tell the client that the server works in FULL text document sync mode
-        textDocumentSync: TextDocumentSyncKind.Full,
-        // Tell the client that the server support code complete
-        completionProvider: {
-          resolveProvider: false,
-        },
-      },
-    };
-  }
-);
-
-export const workspaceContext = {
-  resolveRelativePath: (relativePath: string, resource: string): string => {
-    return URL.resolve(resource, relativePath);
-  },
-};
-
-export const schemaRequestService = (uri: string): Promise<string> => {
-  if (Strings.startsWith(uri, 'file://')) {
-    const fsPath = URI.parse(uri).fsPath;
-    return new Promise<string>((c, e) => {
-      fs.readFile(fsPath, 'UTF-8', (err, result) => {
-        return err ? e('') : c(result.toString());
-      });
-    });
-  }
-  return xhr({ url: uri, followRedirects: 5 }).then(
-    (response) => {
-      return response.responseText;
-    },
-    (error: XHRResponse) => {
-      return Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString());
-    }
-  );
-};
+import { SettingsState } from '../../src/yamlSettings';
+import { schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler';
+import { YAMLServerInit } from '../../src/yamlServerInit';
+import { LanguageService, LanguageSettings } from '../../src';
+import { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers';
+import { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers';
 
 export function toFsPath(str: unknown): string {
   if (typeof str !== 'string') {
@@ -87,23 +26,6 @@ export function toFsPath(str: unknown): string {
   return encodeURI(`file://${pathName}`).replace(/[?#]/g, encodeURIComponent);
 }
 
-export function configureLanguageService(
-  languageSettings: LanguageSettings,
-  clientCapabilities = ClientCapabilities.LATEST
-): LanguageService {
-  const languageService = getLanguageService(schemaRequestService, workspaceContext, clientCapabilities);
-
-  languageService.configure(languageSettings);
-  return languageService;
-}
-
-export function createJSONLanguageService(): JSONLanguageService {
-  return getJSONLanguageService({
-    schemaRequestService,
-    workspaceContext,
-  });
-}
-
 export const TEST_URI = 'file://~/Desktop/vscode-k8s/test.yaml';
 export const SCHEMA_ID = 'default_schema_id.yaml';
 
@@ -111,8 +33,46 @@ export function setupTextDocument(content: string): TextDocument {
   return TextDocument.create(TEST_URI, 'yaml', 0, content);
 }
 
-export function setupSchemaIDTextDocument(content: string): TextDocument {
-  return TextDocument.create(SCHEMA_ID, 'yaml', 0, content);
+export function setupSchemaIDTextDocument(content: string, customSchemaID?: string): TextDocument {
+  if (customSchemaID) {
+    return TextDocument.create(customSchemaID, 'yaml', 0, content);
+  } else {
+    return TextDocument.create(SCHEMA_ID, 'yaml', 0, content);
+  }
+}
+
+export interface TestLanguageServerSetup {
+  languageService: LanguageService;
+  validationHandler: ValidationHandler;
+  languageHandler: LanguageHandlers;
+  yamlSettings: SettingsState;
+}
+
+export function setupLanguageService(languageSettings: LanguageSettings): TestLanguageServerSetup {
+  const yamlSettings = new SettingsState();
+  process.argv.push('--node-ipc');
+  const connection = createConnection();
+  const schemaRequestHandlerWrapper = (connection: IConnection, uri: string): Promise<string> => {
+    return schemaRequestHandler(
+      connection,
+      uri,
+      yamlSettings.workspaceFolders,
+      yamlSettings.workspaceRoot,
+      yamlSettings.useVSCodeContentRequest
+    );
+  };
+  const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
+  const serverInit = new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService);
+  const languageService = serverInit.languageService;
+  const validationHandler = serverInit.validationHandler;
+  const languageHandler = serverInit.languageHandler;
+  languageService.configure(languageSettings);
+  return {
+    languageService,
+    validationHandler,
+    languageHandler,
+    yamlSettings,
+  };
 }
 
 export const jigxBranchTest = true;
