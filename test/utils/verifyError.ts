@@ -12,7 +12,7 @@ export function createExpectedError(
   startCharacter: number,
   endLine: number,
   endCharacter: number,
-  severity: DiagnosticSeverity = 2,
+  severity: DiagnosticSeverity = 1,
   source = 'YAML'
 ): Diagnostic {
   return Diagnostic.create(Range.create(startLine, startCharacter, endLine, endCharacter), message, severity, undefined, source);

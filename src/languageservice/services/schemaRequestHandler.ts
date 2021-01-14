@@ -2,9 +2,10 @@ import { URI } from 'vscode-uri';
 import { IConnection, WorkspaceFolder } from 'vscode-languageserver';
 import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
 import * as fs from 'fs';
-
+import * as URL from 'url';
 import { CustomSchemaContentRequest, VSCodeContentRequest } from '../../requestTypes';
 import { isRelativePath, relativeToAbsolutePath } from '../utils/paths';
+import { WorkspaceContextService } from '../yamlLanguageService';
 
 /**
  * Handles schema content requests given the schema URI
@@ -80,4 +81,10 @@ export const schemaRequestHandler = (
 
   // Neither local file nor vscode, nor HTTP(S) schema request, so send it off as a custom request
   return connection.sendRequest(CustomSchemaContentRequest.type, uri) as Promise<string>;
+};
+
+export const workspaceContext: WorkspaceContextService = {
+  resolveRelativePath: (relativePath: string, resource: string) => {
+    return URL.resolve(resource, relativePath);
+  },
 };
