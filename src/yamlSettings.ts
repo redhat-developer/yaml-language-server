@@ -4,6 +4,7 @@ import { ISchemaAssociations } from './requestTypes';
 import { URI } from 'vscode-uri';
 import { JSONSchema } from './languageservice/jsonSchema';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { YamlHoverDetailPropTableStyle } from './languageservice/services/yamlHoverDetail';
 
 // Client settings interface to grab settings relevant for the language server
 export interface Settings {
@@ -17,6 +18,8 @@ export interface Settings {
     schemaStore: {
       enable: boolean;
     };
+    propTableStyle: YamlHoverDetailPropTableStyle;
+    extraLanguage: string[];
   };
   http: {
     proxy: string;
@@ -48,12 +51,13 @@ export class SettingsState {
     printWidth: 80,
     enable: true,
   } as CustomFormatterOptions;
-  yamlShouldHover = true;
+  yamlShouldHover = false;
   yamlShouldCompletion = true;
   schemaStoreSettings = [];
   customTags = [];
   schemaStoreEnabled = true;
   indentation: string | undefined = undefined;
+  propTableStyle: YamlHoverDetailPropTableStyle = 'table';
 
   // File validation helpers
   pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};

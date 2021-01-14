@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { xhr, configure as configureHttpRequests } from 'request-light';
-import { DidChangeConfigurationParams, DocumentFormattingRequest, IConnection } from 'vscode-languageserver';
+import { DidChangeConfigurationParams, DocumentFormattingRequest, DocumentSelector, IConnection } from 'vscode-languageserver';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings } from '../../languageservice/yamlLanguageService';
@@ -20,6 +20,18 @@ export class SettingsHandler {
 
   public registerHandlers(): void {
     this.connection.onDidChangeConfiguration((change) => this.configurationChangeHandler(change));
+  }
+
+  private getDocumentSelectors(settings: Settings): DocumentSelector {
+    let docSelector: DocumentSelector = [{ language: 'yaml' }];
+    if (settings.yaml.extraLanguage) {
+      docSelector = docSelector.concat(
+        settings.yaml.extraLanguage.map((l) => {
+          return { language: l };
+        })
+      );
+    }
+    return docSelector;
   }
 
   /**
@@ -40,7 +52,7 @@ export class SettingsHandler {
         this.yamlSettings.yamlShouldValidate = settings.yaml.validate;
       }
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hover')) {
-        this.yamlSettings.yamlShouldHover = settings.yaml.hover;
+        this.yamlSettings.yamlShouldHover = false; //settings.yaml.hover;
       }
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'completion')) {
         this.yamlSettings.yamlShouldCompletion = settings.yaml.completion;
@@ -68,6 +80,9 @@ export class SettingsHandler {
         if (settings.yaml.format.enable !== undefined) {
           this.yamlSettings.yamlFormatterSettings.enable = settings.yaml.format.enable;
         }
+      }
+      if (settings.yaml.propTableStyle) {
+        this.yamlSettings.propTableStyle = settings.yaml.propTableStyle;
       }
     }
 
@@ -99,7 +114,7 @@ export class SettingsHandler {
       if (enableFormatter) {
         if (!this.yamlSettings.formatterRegistration) {
           this.yamlSettings.formatterRegistration = this.connection.client.register(DocumentFormattingRequest.type, {
-            documentSelector: [{ language: 'yaml' }],
+            documentSelector: this.getDocumentSelectors(settings),
           });
         }
       } else if (this.yamlSettings.formatterRegistration) {
@@ -181,6 +196,7 @@ export class SettingsHandler {
       customTags: this.yamlSettings.customTags,
       format: this.yamlSettings.yamlFormatterSettings.enable,
       indentation: this.yamlSettings.indentation,
+      propTableStyle: this.yamlSettings.propTableStyle,
     };
 
     if (this.yamlSettings.schemaAssociations) {

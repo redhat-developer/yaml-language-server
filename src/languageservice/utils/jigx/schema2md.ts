@@ -40,7 +40,7 @@ export class Schema2Md {
   public generateMd(schema: any, propName?: string): string {
     let componentId = schema.properties && schema.properties.componentId && schema.properties.componentId.const;
     if (!componentId) {
-      componentId = Globals.ComponentPrefix + getSchemaRefTypeTitle(schema.url);
+      componentId = Globals.ComponentPrefix + getSchemaRefTypeTitle(schema.url || '');
     }
 
     const subSchemaTypes = Object.keys(schema.definitions || {}).reduce(function (map: any, subSchemaTypeName) {

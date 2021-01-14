@@ -5,17 +5,19 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { getNodePath, getNodeValue } from 'jsonc-parser';
-import { ASTNode, JSONSchema, MarkedString, MarkupContent, Range } from 'vscode-json-languageservice';
-import { JSONHover } from 'vscode-json-languageservice/lib/umd/services/jsonHover';
-import { Hover, Position, TextDocument } from 'vscode-languageserver-types';
-import { setKubernetesParserOption } from '../parser/isKubernetes';
-import { parse as parseYAML, SingleYAMLDocument } from '../parser/yamlParser07';
+import { Hover, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
-import { decycle } from '../utils/jigx/cycle';
-import { Schema2Md } from '../utils/jigx/schema2md';
 import { LanguageSettings } from '../yamlLanguageService';
+import { parse as parseYAML, SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
+import { JSONHover } from 'vscode-json-languageservice/lib/umd/services/jsonHover';
+import { setKubernetesParserOption } from '../parser/isKubernetes';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+
+import { ASTNode, JSONSchema, MarkedString, MarkupContent, Range } from 'vscode-json-languageservice';
+import { Schema2Md } from '../utils/jigx/schema2md';
+import { getNodePath, getNodeValue } from '../parser/jsonParser07';
+import { decycle } from '../utils/jigx/cycle';
 
 interface YamlHoverDetailResult {
   /**
@@ -41,11 +43,9 @@ export class YamlHoverDetail {
 
   constructor(private schemaService: YAMLSchemaService) {
     this.jsonHover = new JSONHover(schemaService, [], Promise);
-    // this.promise = promiseConstructor || Promise;
   }
 
   public configure(languageSettings: LanguageSettings): void {
-    // eslint-disable-next-line no-empty
     if (languageSettings) {
       this.propTableStyle = languageSettings.propTableStyle;
     }

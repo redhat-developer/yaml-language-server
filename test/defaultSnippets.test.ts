@@ -202,7 +202,7 @@ suite('Default Snippet Tests', () => {
       const completion = parseSetup(content, 3);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 10); // This is just checking the total number of snippets in the defaultSnippets.json
+          assert.equal(result.items.length, 11); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[4].label, 'longSnippet');
           // eslint-disable-next-line
           assert.equal(
@@ -218,7 +218,7 @@ suite('Default Snippet Tests', () => {
       const completion = parseSetup(content, 11);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 10); // This is just checking the total number of snippets in the defaultSnippets.json
+          assert.equal(result.items.length, 11); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[5].label, 'arrayArraySnippet');
           assert.equal(
             result.items[5].insertText,

@@ -29,6 +29,7 @@ suite('Document Symbols Tests', () => {
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
       return languageHandler.documentSymbolHandler({
         textDocument: testTextDocument,
+        isTest: true,
       });
     }
 
@@ -127,6 +128,7 @@ suite('Document Symbols Tests', () => {
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
       return languageHandler.documentSymbolHandler({
         textDocument: testTextDocument,
+        isTest: true,
       });
     }
 

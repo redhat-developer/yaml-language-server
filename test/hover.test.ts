@@ -160,7 +160,7 @@ suite('Hover Tests', () => {
       const firstHover = parseSetup(content, 3);
       firstHover.then(function (result) {
         assert.equal((result.contents as MarkedString[]).length, 1);
-        assert.equal(result.contents[0], 'Contains custom hooks used to trigger other automated tools');
+        assert.equal(result.contents[0].startsWith('Contains custom hooks used to trigger other automated tools'), true);
       });
 
       const secondHover = parseSetup(content, 15);
@@ -338,7 +338,7 @@ suite('Hover Tests', () => {
       hover
         .then(function (result) {
           assert.equal((result.contents as MarkedString[]).length, 1);
-          assert.equal(result.contents[0], 'should return this description');
+          assert.equal(result.contents[0].startsWith('should return this description'), true);
         })
         .then(done, done);
     });

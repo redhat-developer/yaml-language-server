@@ -52,6 +52,7 @@ export class LanguageHandlers {
     return this.languageService.findLinks(document);
   }
 
+  previousCall: { uri?: string; time?: number; request?: DocumentSymbol[] } = {};
   /**
    * Called when the code outline in an editor needs to be populated
    * Returns a list of symbols that is then shown in the code outline
@@ -63,11 +64,30 @@ export class LanguageHandlers {
       return;
     }
 
-    if (this.yamlSettings.hierarchicalDocumentSymbolSupport) {
-      return this.languageService.findDocumentSymbols2(document);
-    } else {
-      return this.languageService.findDocumentSymbols(document);
+    /**
+     * I had to combine server and client DocumentSymbol
+     * And if I use only client DocumentSymbol, outline doesn't work.
+     * So this is a prevent for double call.
+     */
+    if (
+      !documentSymbolParams.isTest && //don't use cache when testing
+      this.previousCall.request &&
+      this.previousCall.time &&
+      this.previousCall.uri === documentSymbolParams.textDocument.uri &&
+      new Date().getTime() - this.previousCall.time < 100
+    ) {
+      return this.previousCall.request;
     }
+
+    let res;
+    if (this.yamlSettings.hierarchicalDocumentSymbolSupport) {
+      res = this.languageService.findDocumentSymbols2(document);
+    } else {
+      res = this.languageService.findDocumentSymbols(document);
+    }
+
+    this.previousCall = { time: new Date().getTime(), uri: documentSymbolParams.textDocument.uri, request: res };
+    return res;
   }
 
   /**
@@ -100,7 +120,8 @@ export class LanguageHandlers {
       return Promise.resolve(undefined);
     }
 
-    return this.languageService.doHover(document, textDocumentPositionParams.position);
+    return this.languageService.doHoverDetail(document, textDocumentPositionParams.position);
+    // return this.languageService.doHover(document, textDocumentPositionParams.position);
   }
 
   /**

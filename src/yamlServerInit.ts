@@ -64,7 +64,7 @@ export class YAMLServerInit {
           capabilities: {
             textDocumentSync: this.yamlSettings.documents.syncKind,
             completionProvider: { resolveProvider: false },
-            hoverProvider: true,
+            hoverProvider: false,
             documentSymbolProvider: true,
             documentFormattingProvider: false,
             documentRangeFormattingProvider: false,
@@ -94,7 +94,7 @@ export class YAMLServerInit {
     this.languageHandler = new LanguageHandlers(this.connection, this.languageService, this.yamlSettings, this.validationHandler);
     this.languageHandler.registerHandlers();
     new NotificationHandlers(this.connection, this.languageService, this.yamlSettings, settingsHandler).registerHandlers();
-    new RequestHandlers(this.connection, this.languageService).registerHandlers();
+    new RequestHandlers(this.connection, this.languageService, this.yamlSettings).registerHandlers();
   }
 
   start(): void {

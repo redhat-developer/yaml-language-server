@@ -2,14 +2,15 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { IConnection } from 'vscode-languageserver';
+import { IConnection, TextDocumentPositionParams } from 'vscode-languageserver';
 import { MODIFICATION_ACTIONS, SchemaAdditions, SchemaDeletions } from '../../languageservice/services/yamlSchemaService';
 import { LanguageService } from '../../languageservice/yamlLanguageService';
-import { SchemaModificationNotification } from '../../requestTypes';
+import { HoverDetailRequest, SchemaModificationNotification } from '../../requestTypes';
+import { SettingsState } from '../../yamlSettings';
 
 export class RequestHandlers {
   private languageService: LanguageService;
-  constructor(private readonly connection: IConnection, languageService: LanguageService) {
+  constructor(private readonly connection: IConnection, languageService: LanguageService, private yamlSettings: SettingsState) {
     this.languageService = languageService;
   }
 
@@ -17,6 +18,14 @@ export class RequestHandlers {
     this.connection.onRequest(SchemaModificationNotification.type, (modifications) =>
       this.registerSchemaModificationNotificationHandler(modifications)
     );
+
+    /**
+     * Received request from the client that detail info is needed.
+     */
+    this.connection.onRequest(HoverDetailRequest.type, (params: TextDocumentPositionParams) => {
+      const document = this.yamlSettings.documents.get(params.textDocument.uri);
+      return this.languageService.doHoverDetail(document, params.position);
+    });
   }
 
   private registerSchemaModificationNotificationHandler(modifications: SchemaAdditions | SchemaDeletions): void {
