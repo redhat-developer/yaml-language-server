@@ -371,12 +371,12 @@ export class YAMLCompletion extends JSONCompletion {
       const matchingSchemas = doc.getMatchingSchemas(schema.schema);
       matchingSchemas.forEach((s) => {
         if (s.node === node && !s.inverted && s.schema) {
-          this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
-            newLineFirst: false,
-            indentFirstObject: false,
-            shouldIndentWithTab: false,
-          });
           if (s.schema.items) {
+            this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
+              newLineFirst: false,
+              indentFirstObject: false,
+              shouldIndentWithTab: false,
+            });
             if (Array.isArray(s.schema.items)) {
               const index = super.findItemAtOffset(node, document, offset);
               if (index < s.schema.items.length) {
