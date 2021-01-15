@@ -69,6 +69,7 @@ export class YAMLServerInit {
             documentFormattingProvider: false,
             documentRangeFormattingProvider: false,
             documentLinkProvider: {},
+            foldingRangeProvider: true,
             workspace: {
               workspaceFolders: {
                 changeNotifications: true,
