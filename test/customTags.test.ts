@@ -2,22 +2,34 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { setupTextDocument, configureLanguageService } from './utils/testHelper';
+import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 import { ServiceSetup } from './utils/serviceSetup';
 import { createExpectedError } from './utils/verifyError';
 import * as assert from 'assert';
 import { Diagnostic } from 'vscode-languageserver';
-
-const languageSettingsSetup = new ServiceSetup().withValidate();
-let languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+import { LanguageService } from '../src/languageservice/yamlLanguageService';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 
 // Defines a Mocha test suite to group tests of similar kind together
 suite('Custom Tag tests Tests', () => {
+  let languageSettingsSetup: ServiceSetup;
+  let languageService: LanguageService;
+  let validationHandler: ValidationHandler;
+
+  before(() => {
+    languageSettingsSetup = new ServiceSetup().withValidate();
+    const { languageService: langService, validationHandler: valHandler } = setupLanguageService(
+      languageSettingsSetup.languageSettings
+    );
+    validationHandler = valHandler;
+    languageService = langService;
+  });
+
   function parseSetup(content: string, customTags: string[]): Promise<Diagnostic[]> {
     const testTextDocument = setupTextDocument(content);
     languageSettingsSetup.languageSettings.customTags = customTags;
-    languageService = configureLanguageService(languageSettingsSetup.languageSettings);
-    return languageService.doValidation(testTextDocument, false);
+    languageService.configure(languageSettingsSetup.languageSettings);
+    return validationHandler.validateTextDocument(testTextDocument);
   }
 
   describe('Test that validation does not throw errors', function () {

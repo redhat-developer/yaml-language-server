@@ -5,11 +5,12 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { TextDocument, Range, Position, TextEdit, FormattingOptions } from 'vscode-languageserver-types';
+import { Range, Position, TextEdit, FormattingOptions } from 'vscode-languageserver-types';
 import { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
 import * as prettier from 'prettier';
 import { Options } from 'prettier';
 import * as parser from 'prettier/parser-yaml';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 export class YAMLFormatter {
   private formatterEnabled = true;
