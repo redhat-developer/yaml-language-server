@@ -5,13 +5,14 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { Hover, TextDocument, Position } from 'vscode-languageserver-types';
+import { Hover, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
 import { parse as parseYAML } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONHover } from 'vscode-json-languageservice/lib/umd/services/jsonHover';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 export class YAMLHover {
   private shouldHover: boolean;

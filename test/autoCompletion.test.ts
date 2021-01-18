@@ -4,21 +4,41 @@
  *--------------------------------------------------------------------------------------------*/
 
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { SCHEMA_ID, setupSchemaIDTextDocument, configureLanguageService, toFsPath } from './utils/testHelper';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, toFsPath } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import { CompletionList, InsertTextFormat, MarkupContent } from 'vscode-languageserver';
 import { expect } from 'chai';
-
-const languageSettingsSetup = new ServiceSetup().withCompletion();
-const languageService = configureLanguageService(languageSettingsSetup.languageSettings);
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { LanguageService } from '../src';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
 suite('Auto Completion Tests', () => {
-  function parseSetup(content: string, position): Promise<CompletionList> {
+  let languageSettingsSetup: ServiceSetup;
+  let languageService: LanguageService;
+  let languageHandler: LanguageHandlers;
+  let yamlSettings: SettingsState;
+
+  before(() => {
+    languageSettingsSetup = new ServiceSetup().withCompletion();
+    const { languageService: langService, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(
+      languageSettingsSetup.languageSettings
+    );
+    languageService = langService;
+    languageHandler = langHandler;
+    yamlSettings = settings;
+  });
+
+  function parseSetup(content: string, position: number): Promise<CompletionList> {
     const testTextDocument = setupSchemaIDTextDocument(content);
-    return languageService.doComplete(testTextDocument, testTextDocument.positionAt(position), false);
+    yamlSettings.documents = new TextDocumentTestManager();
+    (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+    return languageHandler.completionHandler({
+      position: testTextDocument.positionAt(position),
+      textDocument: testTextDocument,
+    });
   }
 
   afterEach(() => {
@@ -1708,6 +1728,84 @@ suite('Auto Completion Tests', () => {
         expect(completion.items[1]).eql(
           createExpectedCompletion('name', 'name: $1', 2, 0, 2, 0, 10, InsertTextFormat.Snippet, { documentation: '' })
         );
+      });
+    });
+    describe('Array completion', () => {
+      it('Simple array object completion with "-" without any item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_simpleArrayObject:\n  -';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].label, '- (array item)');
+        });
+      });
+
+      it('Simple array object completion without "-" after array item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  ';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].label, '- (array item)');
+        });
+      });
+
+      it('Simple array object completion with "-" after array item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  -';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].label, '- (array item)');
+        });
+      });
+
+      it('Array anyOf two objects completion with "- " without any item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_array_anyOf_2objects:\n  - ';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, 'obj1');
+        });
+      });
+
+      it('Array anyOf two objects completion with "-" without any item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_array_anyOf_2objects:\n  -';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, '- (array item) 1');
+        });
+      });
+
+      it('Array anyOf two objects completion without "-" after array item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  ';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, '- (array item) 1');
+        });
+      });
+
+      it('Array anyOf two objects completion with "-" after array item', async () => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  -';
+        const completion = parseSetup(content, content.length);
+        completion.then(function (result) {
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, '- (array item) 1');
+        });
       });
     });
   });
