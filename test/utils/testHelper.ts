@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { createConnection, IConnection, TextDocument } from 'vscode-languageserver';
+import { createConnection, Connection, TextDocument } from 'vscode-languageserver/node';
 import path = require('path');
 import { SettingsState } from '../../src/yamlSettings';
 import { schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler';
@@ -52,7 +52,7 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
   const yamlSettings = new SettingsState();
   process.argv.push('--node-ipc');
   const connection = createConnection();
-  const schemaRequestHandlerWrapper = (connection: IConnection, uri: string): Promise<string> => {
+  const schemaRequestHandlerWrapper = (connection: Connection, uri: string): Promise<string> => {
     return schemaRequestHandler(
       connection,
       uri,

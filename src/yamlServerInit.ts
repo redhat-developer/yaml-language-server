@@ -1,4 +1,10 @@
-import { IConnection, InitializeParams, InitializeResult } from 'vscode-languageserver';
+import {
+  Connection,
+  InitializeParams,
+  InitializeResult,
+  TextDocumentSyncKind,
+  ClientCapabilities as LSPClientCapabilities,
+} from 'vscode-languageserver/node';
 import {
   getLanguageService as getCustomLanguageService,
   LanguageService,
@@ -13,6 +19,9 @@ import { NotificationHandlers } from './languageserver/handlers/notificationHand
 import { RequestHandlers } from './languageserver/handlers/requestHandlers';
 import { ValidationHandler } from './languageserver/handlers/validationHandlers';
 import { SettingsHandler } from './languageserver/handlers/settingsHandlers';
+import { YamlCommands } from './commands';
+import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
+import { commandExecutor } from './languageserver/commandExecutor';
 import { ClientCapabilities } from 'vscode-json-languageservice';
 
 export class YAMLServerInit {
@@ -22,14 +31,19 @@ export class YAMLServerInit {
   validationHandler: ValidationHandler;
 
   constructor(
-    private readonly connection: IConnection,
+    private readonly connection: Connection,
     yamlSettings: SettingsState,
     workspaceContext: WorkspaceContextService,
     schemaRequestService: SchemaRequestService
   ) {
     this.yamlSettings = yamlSettings;
 
-    this.languageService = getCustomLanguageService(schemaRequestService, workspaceContext, ClientCapabilities.LATEST);
+    this.languageService = getCustomLanguageService(
+      schemaRequestService,
+      workspaceContext,
+      connection,
+      ClientCapabilities.LATEST as LSPClientCapabilities
+    );
 
     this.yamlSettings.documents.listen(this.connection);
 
@@ -40,7 +54,7 @@ export class YAMLServerInit {
     this.connection.onInitialize(
       (params: InitializeParams): InitializeResult => {
         this.yamlSettings.capabilities = params.capabilities;
-        this.languageService = getCustomLanguageService(schemaRequestService, workspaceContext, params.capabilities);
+        this.languageService = getCustomLanguageService(schemaRequestService, workspaceContext, connection, params.capabilities);
 
         // Only try to parse the workspace root if its not null. Otherwise initialize will fail
         if (params.rootUri) {
@@ -62,7 +76,7 @@ export class YAMLServerInit {
           this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.workspaceFolders;
         return {
           capabilities: {
-            textDocumentSync: this.yamlSettings.documents.syncKind,
+            textDocumentSync: TextDocumentSyncKind.Incremental,
             completionProvider: { resolveProvider: false },
             hoverProvider: true,
             documentSymbolProvider: true,
@@ -70,6 +84,10 @@ export class YAMLServerInit {
             documentRangeFormattingProvider: false,
             documentLinkProvider: {},
             foldingRangeProvider: true,
+            codeActionProvider: true,
+            executeCommandProvider: {
+              commands: Object.keys(YamlCommands).map((k) => YamlCommands[k]),
+            },
             workspace: {
               workspaceFolders: {
                 changeNotifications: true,
@@ -96,6 +114,7 @@ export class YAMLServerInit {
     this.languageHandler.registerHandlers();
     new NotificationHandlers(this.connection, this.languageService, this.yamlSettings, settingsHandler).registerHandlers();
     new RequestHandlers(this.connection, this.languageService).registerHandlers();
+    new WorkspaceHandlers(connection, commandExecutor).registerHandlers();
   }
 
   start(): void {

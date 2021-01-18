@@ -23,9 +23,18 @@ import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
 import { JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
-import { TextDocument, FoldingRange, ClientCapabilities } from 'vscode-languageserver';
+import {
+  TextDocument,
+  FoldingRange,
+  ClientCapabilities,
+  CodeActionParams,
+  CodeAction,
+  Connection,
+} from 'vscode-languageserver/node';
 import { getFoldingRanges } from './services/yamlFolding';
 import { FoldingRangesContext } from './yamlTypes';
+import { YamlCodeActions } from './services/yamlCodeActions';
+import { commandExecutor } from '../languageserver/commandExecutor';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -108,11 +117,13 @@ export interface LanguageService {
   modifySchemaContent(schemaAdditions: SchemaAdditions): void;
   deleteSchemaContent(schemaDeletions: SchemaDeletions): void;
   getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | null;
+  getCodeAction(document: TextDocument, params: CodeActionParams): CodeAction[] | undefined;
 }
 
 export function getLanguageService(
   schemaRequestService: SchemaRequestService,
   workspaceContext: WorkspaceContextService,
+  connection: Connection,
   clientCapabilities?: ClientCapabilities
 ): LanguageService {
   const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
@@ -121,6 +132,7 @@ export function getLanguageService(
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
   const yamlValidation = new YAMLValidation(schemaService);
   const formatter = new YAMLFormatter();
+  const yamlCodeActions = new YamlCodeActions(commandExecutor, connection);
 
   return {
     configure: (settings) => {
@@ -166,5 +178,8 @@ export function getLanguageService(
       return schemaService.deleteContent(schemaDeletions);
     },
     getFoldingRanges,
+    getCodeAction: (document, params) => {
+      return yamlCodeActions.getCodeAction(document, params);
+    },
   };
 }

@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { xhr, configure as configureHttpRequests } from 'request-light';
-import { DidChangeConfigurationParams, DocumentFormattingRequest, IConnection } from 'vscode-languageserver';
+import { DidChangeConfigurationParams, DocumentFormattingRequest, Connection } from 'vscode-languageserver';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings } from '../../languageservice/yamlLanguageService';
@@ -12,7 +12,7 @@ import { ValidationHandler } from './validationHandlers';
 
 export class SettingsHandler {
   constructor(
-    private readonly connection: IConnection,
+    private readonly connection: Connection,
     private readonly languageService: LanguageService,
     private readonly yamlSettings: SettingsState,
     private readonly validationHandler: ValidationHandler

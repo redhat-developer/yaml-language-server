@@ -13,7 +13,7 @@ import { YAMLSchemaService } from './yamlSchemaService';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { TextDocument } from 'vscode-languageserver';
 import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
-import { YAML_SOURCE } from '../parser/jsonParser07';
+import { DiagnosticExt, YAML_SOURCE } from '../parser/jsonParser07';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -28,6 +28,8 @@ export const yamlDiagToLSDiag = (yamlDiag: YAMLDocDiagnostic, textDocument: Text
 
   return Diagnostic.create(range, yamlDiag.message, yamlDiag.severity, undefined, YAML_SOURCE);
 };
+
+export const LATEST_DIAGNOSTIC = new Map<string, DiagnosticExt[]>();
 
 export class YAMLValidation {
   private validationEnabled: boolean;
@@ -102,7 +104,7 @@ export class YAMLValidation {
         foundSignatures.add(errSig);
       }
     }
-
+    LATEST_DIAGNOSTIC.set(textDocument.uri, duplicateMessagesRemoved);
     return duplicateMessagesRemoved;
   }
 }
