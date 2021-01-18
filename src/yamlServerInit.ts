@@ -67,6 +67,9 @@ export class YAMLServerInit {
             hoverProvider: true,
             documentSymbolProvider: true,
             documentFormattingProvider: false,
+            documentOnTypeFormattingProvider: {
+              firstTriggerCharacter: '\n',
+            },
             documentRangeFormattingProvider: false,
             documentLinkProvider: {},
             foldingRangeProvider: true,
