@@ -11,6 +11,7 @@ import {
   DocumentFormattingParams,
   DocumentLink,
   DocumentLinkParams,
+  DocumentOnTypeFormattingParams,
   DocumentSymbolParams,
   FoldingRangeParams,
   Connection,
@@ -47,6 +48,7 @@ export class LanguageHandlers {
     this.connection.onDidChangeWatchedFiles((change) => this.watchedFilesHandler(change));
     this.connection.onFoldingRanges((params) => this.foldingRangeHandler(params));
     this.connection.onCodeAction((params) => this.codeActionHandler(params));
+    this.connection.onDocumentOnTypeFormatting((params) => this.formatOnTypeHandler(params));
   }
 
   documentLinkHandler(params: DocumentLinkParams): Promise<DocumentLink[]> {
@@ -93,6 +95,15 @@ export class LanguageHandlers {
     };
 
     return this.languageService.doFormat(document, customFormatterSettings);
+  }
+
+  formatOnTypeHandler(params: DocumentOnTypeFormattingParams): Promise<TextEdit[] | undefined> | TextEdit[] | undefined {
+    const document = this.yamlSettings.documents.get(params.textDocument.uri);
+
+    if (!document) {
+      return;
+    }
+    return this.languageService.doDocumentOnTypeFormatting(document, params);
   }
 
   /**
