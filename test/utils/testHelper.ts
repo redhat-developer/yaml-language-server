@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { createConnection, Connection, TextDocument } from 'vscode-languageserver/node';
+import { createConnection, Connection } from 'vscode-languageserver/node';
 import path = require('path');
 import { SettingsState } from '../../src/yamlSettings';
 import { schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler';
@@ -10,6 +10,7 @@ import { YAMLServerInit } from '../../src/yamlServerInit';
 import { LanguageService, LanguageSettings } from '../../src';
 import { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers';
 import { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 export function toFsPath(str: unknown): string {
   if (typeof str !== 'string') {

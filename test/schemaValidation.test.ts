@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
-import { createExpectedError } from './utils/verifyError';
+import { createDiagnosticExt, createExpectedError } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import {
   StringTypeError,
@@ -125,10 +125,19 @@ suite('Validation Tests', () => {
       const validator = parseSetup(content);
       validator
         .then(function (result) {
-          assert.equal(result.length, 1);
-          assert.deepEqual(
+          assert.strictEqual(result.length, 1);
+          assert.deepStrictEqual(
             result[0],
-            createExpectedError(BooleanTypeError, 0, 11, 0, 15, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticExt(
+              BooleanTypeError,
+              0,
+              11,
+              0,
+              15,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -150,7 +159,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 5, 0, 10, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticExt(
+              StringTypeError,
+              0,
+              5,
+              0,
+              10,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -233,7 +251,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(BooleanTypeError, 0, 11, 0, 16, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticExt(
+              BooleanTypeError,
+              0,
+              11,
+              0,
+              16,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -255,7 +282,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 5, 0, 7, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticExt(
+              StringTypeError,
+              0,
+              5,
+              0,
+              7,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -297,7 +333,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 5, 0, 11, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticExt(
+              StringTypeError,
+              0,
+              5,
+              0,
+              11,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -407,7 +452,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(ObjectTypeError, 0, 9, 0, 13, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticExt(
+              ObjectTypeError,
+              0,
+              9,
+              0,
+              13,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -452,7 +506,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(ArrayTypeError, 0, 11, 0, 15, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticExt(
+              ArrayTypeError,
+              0,
+              11,
+              0,
+              15,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -685,7 +748,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 4, 0, 4, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticExt(
+              StringTypeError,
+              0,
+              4,
+              0,
+              4,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -882,7 +954,16 @@ suite('Validation Tests', () => {
       const content = 'analytics: 1';
       const result = await parseSetup(content);
       expect(result[0]).deep.equal(
-        createExpectedError(StringTypeError, 0, 11, 0, 12, DiagnosticSeverity.Error, 'yaml-schema: Schema Super title')
+        createDiagnosticExt(
+          StringTypeError,
+          0,
+          11,
+          0,
+          12,
+          DiagnosticSeverity.Error,
+          'yaml-schema: Schema Super title',
+          'file:///default_schema_id.yaml'
+        )
       );
     });
   });
@@ -898,7 +979,16 @@ suite('Validation Tests', () => {
       yamlSettings.specificValidatorPaths = ['*.yml', '*.yaml'];
       const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/test.yml');
       expect(result[0]).deep.equal(
-        createExpectedError(ArrayTypeError, 4, 10, 4, 18, DiagnosticSeverity.Error, 'yaml-schema: Package')
+        createDiagnosticExt(
+          ArrayTypeError,
+          4,
+          10,
+          4,
+          18,
+          DiagnosticSeverity.Error,
+          'yaml-schema: Package',
+          'https://json.schemastore.org/composer'
+        )
       );
     });
 
@@ -910,14 +1000,15 @@ suite('Validation Tests', () => {
 
       const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/.drone.yml');
       expect(result[5]).deep.equal(
-        createExpectedError(
+        createDiagnosticExt(
           propertyIsNotAllowed('apiVersion'),
           1,
           6,
           1,
           16,
           DiagnosticSeverity.Error,
-          'yaml-schema: Drone CI configuration file'
+          'yaml-schema: Drone CI configuration file',
+          'https://json.schemastore.org/drone'
         )
       );
     });

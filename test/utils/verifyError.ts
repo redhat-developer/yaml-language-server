@@ -5,6 +5,7 @@
 
 import { DocumentSymbol, SymbolKind, InsertTextFormat, Range } from 'vscode-languageserver-types';
 import { CompletionItem, CompletionItemKind, SymbolInformation, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+import { DiagnosticExt } from '../../src/languageservice/parser/jsonParser07';
 
 export function createExpectedError(
   message: string,
@@ -16,6 +17,29 @@ export function createExpectedError(
   source = 'YAML'
 ): Diagnostic {
   return Diagnostic.create(Range.create(startLine, startCharacter, endLine, endCharacter), message, severity, undefined, source);
+}
+
+export function createDiagnosticExt(
+  message: string,
+  startLine: number,
+  startCharacter: number,
+  endLine: number,
+  endCharacter: number,
+  severity: DiagnosticSeverity = 1,
+  source = 'YAML',
+  schemaUri: string
+): DiagnosticExt {
+  const diagnostic: DiagnosticExt = createExpectedError(
+    message,
+    startLine,
+    startCharacter,
+    endLine,
+    endCharacter,
+    severity,
+    source
+  );
+  diagnostic.schemaUri = schemaUri;
+  return diagnostic;
 }
 
 export function createExpectedSymbolInformation(
