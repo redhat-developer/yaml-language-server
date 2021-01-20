@@ -14,6 +14,7 @@ import { RequestHandlers } from './languageserver/handlers/requestHandlers';
 import { ValidationHandler } from './languageserver/handlers/validationHandlers';
 import { SettingsHandler } from './languageserver/handlers/settingsHandlers';
 import { ClientCapabilities } from 'vscode-json-languageservice';
+import { CharCode } from './languageservice/utils/charCode';
 
 export class YAMLServerInit {
   private yamlSettings: SettingsState;
@@ -69,6 +70,7 @@ export class YAMLServerInit {
             documentFormattingProvider: false,
             documentOnTypeFormattingProvider: {
               firstTriggerCharacter: '\n',
+              moreTriggerCharacter: ['\t'],
             },
             documentRangeFormattingProvider: false,
             documentLinkProvider: {},
