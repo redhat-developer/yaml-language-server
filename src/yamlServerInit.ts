@@ -105,6 +105,7 @@ export class YAMLServerInit {
         documentFormattingProvider: false,
         documentOnTypeFormattingProvider: {
           firstTriggerCharacter: '\n',
+          moreTriggerCharacter: ['\t'],
         },
         documentRangeFormattingProvider: false,
         definitionProvider: true,
