@@ -3,10 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { TextDocument } from 'vscode-json-languageservice';
-import { CodeAction, CodeActionParams, Command, Connection, Diagnostic, Range } from 'vscode-languageserver';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { CodeAction, CodeActionParams, Command, Connection, Diagnostic } from 'vscode-languageserver';
 import { YamlCommands } from '../../commands';
 import { CommandExecutor } from '../../languageserver/commandExecutor';
+import { isIntersect as isRangesIntersect } from '../utils/ranges';
 import { LATEST_DIAGNOSTIC } from './yamlValidation';
 
 export class YamlCodeActions {
@@ -36,7 +37,7 @@ export class YamlCodeActions {
       if (
         schemaUri &&
         (schemaUri.startsWith('file') || schemaUri.startsWith('https')) &&
-        isIntersect(params.range, diagnostic.range)
+        isRangesIntersect(params.range, diagnostic.range)
       ) {
         if (!schemaUriToDiagnostic.has(schemaUri)) {
           schemaUriToDiagnostic.set(schemaUri, []);
@@ -56,40 +57,4 @@ export class YamlCodeActions {
 
     return result;
   }
-}
-
-/**
- * Check if rangeA and rangeB is intersect
- * @param rangeA
- * @param rangeB
- */
-function isIntersect(rangeA: Range, rangeB: Range): boolean {
-  if (
-    rangeA.start.line >= rangeB.start.line &&
-    rangeA.start.character >= rangeB.start.character &&
-    rangeA.start.line <= rangeB.end.line &&
-    rangeA.start.character <= rangeB.end.character
-  ) {
-    return true;
-  }
-
-  if (
-    rangeA.end.line >= rangeB.start.line &&
-    rangeA.end.character >= rangeB.start.character &&
-    rangeA.end.line <= rangeB.end.line &&
-    rangeA.end.character <= rangeB.end.character
-  ) {
-    return true;
-  }
-
-  if (
-    rangeA.start.line >= rangeB.start.line &&
-    rangeA.start.character >= rangeB.start.character &&
-    rangeA.end.line <= rangeB.end.line &&
-    rangeA.end.character <= rangeB.end.character
-  ) {
-    return true;
-  }
-
-  return false;
 }

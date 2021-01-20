@@ -6,7 +6,7 @@
 import { ExecuteCommandParams } from 'vscode-languageserver';
 
 export interface CommandHandler {
-  (...args: any[]): void;
+  (...args: unknown[]): void;
 }
 
 export class CommandExecutor {
