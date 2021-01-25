@@ -36,7 +36,7 @@ const localize = nls.loadMessageBundle();
 
 export interface CompletionsCollectorExtended extends CompletionsCollector {
   add(suggestion: CompletionItemExtended);
-  getResult: () => CompletionList;
+  readonly result: CompletionList;
 }
 interface CompletionItemExtended extends CompletionItem {
   schemaType?: string;
@@ -146,23 +146,27 @@ export class YAMLCompletion extends JSONCompletion {
     this.overwriteRange = overwriteRange;
 
     const proposed: { [key: string]: CompletionItemExtended } = {};
+    const existingProposeItem = '__';
     const collector: CompletionsCollectorExtended = {
-      getResult: () => {
-        return result;
-      },
+      result: result, //help with debugging
       add: (suggestion: CompletionItemExtended) => {
         const addSuggestionForParent = function (suggestion: CompletionItemExtended, result: CompletionList): void {
+          const exists = proposed[suggestion.label]?.label === existingProposeItem;
           const schemaKey = suggestion.schemaType;
           const completionKind = CompletionItemKind.Class;
           let parentCompletion = result.items.find((i) => i.label === schemaKey && i.kind === completionKind);
           if (!parentCompletion) {
+            //don't put to parent suggestion if already in yaml
+            if (exists) {
+              return;
+            }
             parentCompletion = { ...suggestion };
             parentCompletion.label = schemaKey;
             parentCompletion.sortText = '_' + parentCompletion.label; //this extended completion goes first
             parentCompletion.kind = completionKind;
             // parentCompletion.documentation = suggestion.documentation;
             result.items.push(parentCompletion);
-          } else {
+          } else if (!exists) {
             //modify added props to have unique $x
             const match = parentCompletion.insertText.match(/\$([0-9]+)|\${[0-9]+:/g);
             let reindexedStr = suggestion.insertText;
@@ -293,7 +297,7 @@ export class YAMLCompletion extends JSONCompletion {
         const properties = (<ObjectASTNode>node).properties;
         properties.forEach((p) => {
           if (!currentProperty || currentProperty !== p) {
-            proposed[p.keyNode.value] = CompletionItem.create('__');
+            proposed[p.keyNode.value] = CompletionItem.create(existingProposeItem);
           }
         });
 
@@ -420,9 +424,8 @@ export class YAMLCompletion extends JSONCompletion {
                 });
                 if (
                   s.schema.required &&
-                  s.schema.required.includes(key) && //add only required props
-                  (node.properties.length === 0 || //add only if node hasn't any property in yaml
-                    (node.properties.length === 1 && node.properties[0].valueNode instanceof Parser.NullASTNodeImpl)) //offer all schemas for empty object
+                  s.schema.required.includes(key) //add only required props
+                  //removed condition: add only if node hasn't any property in yaml
                 ) {
                   const schemaType = Schema_Object.getSchemaType(s.schema); // s.schema.$id;
                   collector.add({
