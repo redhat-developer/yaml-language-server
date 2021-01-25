@@ -101,22 +101,26 @@ export class Schema_ObjectTyped extends Schema_TypeBase {
   }
   getTypeMD(subSchemas: []): string {
     const subType = this.getTypeStr(subSchemas);
-    // let link = this.propName ? `${this.propName} (${subType})` : subType;
-    let link = this.getElementTitle('', subSchemas, false);
+    if (Globals.enableLink) {
+      // let link = this.propName ? `${this.propName} (${subType})` : subType;
+      let link = this.getElementTitle('', subSchemas, false);
 
-    if (this.$ref.includes('.schema.json')) {
-      const fileInfo = getFileInfo(subType);
-      link = `${fileInfo.navigationPath + fileInfo.componentId}`;
-      const linkSubType = this.$ref.match(/.schema.json#\/definitions\/(.*)$/);
-      if (linkSubType) {
-        link += translateSectionTitleToLinkHeder(linkSubType[1]) + '-object';
+      if (this.$ref.includes('.schema.json')) {
+        const fileInfo = getFileInfo(subType);
+        link = `${fileInfo.navigationPath + fileInfo.componentId}`;
+        const linkSubType = this.$ref.match(/.schema.json#\/definitions\/(.*)$/);
+        if (linkSubType) {
+          link += translateSectionTitleToLinkHeder(linkSubType[1]) + '-object';
+        }
+      } else {
+        link = translateSectionTitleToLinkHeder(link);
       }
-    } else {
-      link = translateSectionTitleToLinkHeder(link);
-    }
 
-    const typeProcessed = `[${subType}](${link})`;
-    return typeProcessed;
+      const typeProcessed = `[${subType}](${link})`;
+      return typeProcessed;
+    } else {
+      return subType;
+    }
   }
   static get$ref(schema: any): string {
     return schema.$ref || schema._$ref;
@@ -196,7 +200,7 @@ export class Schema_Const extends Schema_TypeBase {
   type: 'const';
   const: string;
   getTypeStr(): string {
-    return `${this.const}`;
+    return `\`${this.const}\``;
   }
 }
 
@@ -342,11 +346,18 @@ export class SchemaTypeFactory {
         schema.additionalProperties.anyOf
       ) {
         return createInstance(Schema_AnyOf, schema, { propName, isPropRequired });
+      } else if (schema.const) {
+        return createInstance(Schema_Const, schema, { propName, isPropRequired });
+      } else if (Schema_ObjectTyped.get$ref(schema)) {
+        //has to be also here because parser gives to some $ref types also real type automatically
+        //in doc, this don't have to be there
+        return createInstance(Schema_ObjectTyped, schema, { propName, isPropRequired });
       }
       return createInstance(Schema_SimpleType, schema, { propName, isPropRequired }); //schema.type
-      // } else if (Schema_ObjectTyped.get$ref(schema)) {
-      //   //won't never used. Schema_Object is used instead - schema structure is little bit different
-      //   return createInstance(Schema_ObjectTyped, schema, { propName, isPropRequired });
+    } else if (Schema_ObjectTyped.get$ref(schema)) {
+      //won't never used. Schema_Object is used instead - schema structure is little bit different
+      //parser gives to some $ref types also real type automatically - so condition for schema.type is used
+      return createInstance(Schema_ObjectTyped, schema, { propName, isPropRequired });
     } else if (schema.oneOf || schema.anyOf) {
       return createInstance(Schema_AnyOf, schema, { propName, isPropRequired });
       // return (schema.oneOf || schema.anyOf).map((i: any) => getActualTypeStr(i, subSchemas)).join(tableColumnSeparator);

@@ -7,7 +7,7 @@
 
 import * as Parser from '../parser/jsonParser07';
 import { ASTNode, ObjectASTNode, PropertyASTNode } from '../jsonASTTypes';
-import { parse as parseYAML } from '../parser/yamlParser07';
+import { parse as parseYAML, SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { CompletionsCollector } from 'vscode-json-languageservice';
@@ -34,13 +34,15 @@ import { ClientCapabilities, MarkupContent, MarkupKind } from 'vscode-languagese
 import { Schema_Object } from '../utils/jigx/schema-type';
 const localize = nls.loadMessageBundle();
 
-interface CompletionsCollectorExtended extends CompletionsCollector {
+export interface CompletionsCollectorExtended extends CompletionsCollector {
   add(suggestion: CompletionItemExtended);
+  getResult: () => CompletionList;
 }
 interface CompletionItemExtended extends CompletionItem {
   schemaType?: string;
   indent?: string;
   isForParentSuggestion?: boolean;
+  isInlineObject?: boolean;
 }
 export class YAMLCompletion extends JSONCompletion {
   private schemaService: YAMLSchemaService;
@@ -48,6 +50,7 @@ export class YAMLCompletion extends JSONCompletion {
   private completion: boolean;
   private indentation: string;
   private configuredIndentation: string | undefined;
+  private overwriteRange: Range = null;
 
   constructor(schemaService: YAMLSchemaService, clientCapabilities: ClientCapabilities = {}) {
     super(schemaService, [], Promise, clientCapabilities);
@@ -116,7 +119,7 @@ export class YAMLCompletion extends JSONCompletion {
 
     const currentWord = super.getCurrentWord(document, offset);
 
-    let overwriteRange = null;
+    let overwriteRange: Range = this.overwriteRange;
     // didn't find reason for this overwriteRange customization
     // makes trouble for auto newline holder
     // but kept because of unit test
@@ -140,9 +143,13 @@ export class YAMLCompletion extends JSONCompletion {
       }
       overwriteRange = Range.create(document.positionAt(overwriteStart), originalPosition);
     }
+    this.overwriteRange = overwriteRange;
 
     const proposed: { [key: string]: CompletionItemExtended } = {};
-    const collector: CompletionsCollector = {
+    const collector: CompletionsCollectorExtended = {
+      getResult: () => {
+        return result;
+      },
       add: (suggestion: CompletionItemExtended) => {
         const addSuggestionForParent = function (suggestion: CompletionItemExtended, result: CompletionList): void {
           const schemaKey = suggestion.schemaType;
@@ -203,11 +210,16 @@ export class YAMLCompletion extends JSONCompletion {
               label = shortendedLabel;
             }
           }
+          const overwriteRangeLocal = this.overwriteRange;
+          if (suggestion.isInlineObject) {
+            suggestion.insertText = suggestion.insertText.replace(/[\n\s:]+|\$\d/g, '.').replace(/\.+$/, '');
+            // overwriteRangeLocal.start = overwriteRange.end;
+          }
           if (suggestion.kind === CompletionItemKind.Value) {
             suggestion.insertText = escapeSpecialChars(suggestion.insertText);
           }
-          if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
-            suggestion.textEdit = TextEdit.replace(overwriteRange, suggestion.insertText);
+          if (overwriteRangeLocal && overwriteRangeLocal.start.line === overwriteRangeLocal.end.line) {
+            suggestion.textEdit = TextEdit.replace(overwriteRangeLocal, suggestion.insertText);
           }
           suggestion.label = label;
           if (suggestion.isForParentSuggestion && suggestion.schemaType) {
@@ -347,10 +359,11 @@ export class YAMLCompletion extends JSONCompletion {
           item.textEdit.newText = simplifyText(item.textEdit.newText);
         }
       }
+      delete (item as CompletionItemExtended).isInlineObject;
     }
   }
 
-  private getPropertyCompletions(
+  public getPropertyCompletions(
     schema: ResolvedSchema,
     doc: Parser.JSONDocument,
     node: ObjectASTNode,
@@ -368,6 +381,9 @@ export class YAMLCompletion extends JSONCompletion {
           shouldIndentWithTab: false,
         });
         const schemaProperties = s.schema.properties;
+
+        const isInlineObject = schema.schema.inlineObject || s.schema.inlineObject;
+
         if (schemaProperties) {
           const maxProperties = s.schema.maxProperties;
           if (maxProperties === undefined || node.properties === undefined || node.properties.length <= maxProperties) {
@@ -394,10 +410,13 @@ export class YAMLCompletion extends JSONCompletion {
                     addValue,
                     separatorAfter,
                     identCompensation + this.indentation,
-                    { includeConstValue: false }
+                    {
+                      includeConstValue: false,
+                    }
                   ),
                   insertTextFormat: InsertTextFormat.Snippet,
-                  documentation: propertySchema.description || '',
+                  documentation: super.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
+                  isInlineObject: isInlineObject,
                 });
                 if (
                   s.schema.required &&
@@ -414,13 +433,16 @@ export class YAMLCompletion extends JSONCompletion {
                       addValue,
                       separatorAfter,
                       identCompensation + this.indentation,
-                      { includeConstValue: true }
+                      {
+                        includeConstValue: true,
+                      }
                     ),
                     insertTextFormat: InsertTextFormat.Snippet,
-                    documentation: s.schema.description || '',
+                    documentation: super.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
                     schemaType: schemaType,
                     indent: identCompensation,
                     isForParentSuggestion: true,
+                    isInlineObject: isInlineObject,
                   });
                 }
               }
@@ -475,7 +497,7 @@ export class YAMLCompletion extends JSONCompletion {
     node: ASTNode,
     offset: number,
     document: TextDocument,
-    collector: CompletionsCollector,
+    collector: CompletionsCollectorExtended,
     types: { [type: string]: boolean }
   ): void {
     let parentKey: string = null;
@@ -506,8 +528,9 @@ export class YAMLCompletion extends JSONCompletion {
       return;
     }
 
+    let valueNode;
     if (node.type === 'property' && offset > (<PropertyASTNode>node).colonOffset) {
-      const valueNode = node.valueNode;
+      valueNode = node.valueNode;
       if (valueNode && offset > valueNode.offset + valueNode.length) {
         return; // we are past the value node
       }
@@ -572,7 +595,7 @@ export class YAMLCompletion extends JSONCompletion {
           if (s.schema.properties) {
             const propertySchema = s.schema.properties[parentKey];
             if (propertySchema) {
-              this.addSchemaValueCompletions(propertySchema, separatorAfter, collector, types);
+              this.addSchemaValueCompletions(propertySchema, separatorAfter, collector, types, valueNode.value);
             }
           }
         }
@@ -600,18 +623,54 @@ export class YAMLCompletion extends JSONCompletion {
   private addSchemaValueCompletions(
     schema: JSONSchemaRef,
     separatorAfter: string,
-    collector: CompletionsCollector,
-    types: { [type: string]: boolean }
+    collector: CompletionsCollectorExtended,
+    types: { [type: string]: boolean },
+    nodeValue?: string
   ): void {
-    super.addSchemaValueCompletions(schema, separatorAfter, collector, types);
+    //copied from jsonCompletion:
+    // super.addSchemaValueCompletions(schema, separatorAfter, collector, types);
+    // // eslint-disable-next-line @typescript-eslint/no-this-alias
+    if (typeof schema === 'object') {
+      super.addEnumValueCompletions(schema, separatorAfter, collector);
+      this.addDefaultValueCompletions(schema, separatorAfter, collector, nodeValue);
+      super.collectTypes(schema, types);
+      if (Array.isArray(schema.allOf)) {
+        schema.allOf.forEach((s) => {
+          return this.addSchemaValueCompletions(s, separatorAfter, collector, types, nodeValue);
+        });
+      }
+      if (Array.isArray(schema.anyOf)) {
+        schema.anyOf.forEach((s) => {
+          return this.addSchemaValueCompletions(s, separatorAfter, collector, types, nodeValue);
+        });
+      }
+      if (Array.isArray(schema.oneOf)) {
+        schema.oneOf.forEach((s) => {
+          return this.addSchemaValueCompletions(s, separatorAfter, collector, types, nodeValue);
+        });
+      }
+    }
   }
 
   private addDefaultValueCompletions(
     schema: JSONSchema,
     separatorAfter: string,
-    collector: CompletionsCollector,
+    collector: CompletionsCollectorExtended,
+    value?: string,
     arrayDepth = 0
   ): void {
+    if (typeof schema === 'object' && schema.inlineObject) {
+      const newParams = prepareInlineCompletion(value || '');
+      const resolvedSchema: ResolvedSchema = { schema: schema };
+      this.overwriteRange = Range.create(
+        this.overwriteRange.end.line,
+        this.overwriteRange.end.character - newParams.rangeOffset,
+        this.overwriteRange.end.line,
+        this.overwriteRange.end.character
+      );
+      this.getPropertyCompletions(resolvedSchema, newParams.doc, newParams.node, false, separatorAfter, collector, undefined);
+      return;
+    }
     let hasProposals = false;
     if (isDefined(schema.default)) {
       let type = schema.type;
@@ -658,7 +717,7 @@ export class YAMLCompletion extends JSONCompletion {
       shouldIndentWithTab: true,
     });
     if (!hasProposals && typeof schema.items === 'object' && !Array.isArray(schema.items)) {
-      this.addDefaultValueCompletions(schema.items, separatorAfter, collector, arrayDepth + 1);
+      this.addDefaultValueCompletions(schema.items, separatorAfter, collector, value, arrayDepth + 1);
     }
   }
 
@@ -981,7 +1040,10 @@ export class YAMLCompletion extends JSONCompletion {
     addValue: boolean,
     separatorAfter: string,
     ident = this.indentation,
-    options: { includeConstValue?: boolean } = {}
+    options: {
+      includeConstValue?: boolean;
+      isInlineObject?: boolean;
+    } = {}
   ): string {
     const propertyText = this.getInsertTextForValue(key, '', 'string');
     const resultText = propertyText + ':';
@@ -1267,11 +1329,14 @@ function escapeSpecialChars(text: string): string {
   return text;
 }
 
-function insertIndentForCompletionItem(items: CompletionItem[], begin: string, eachLine: string): void {
+function insertIndentForCompletionItem(items: CompletionItemExtended[], begin: string, eachLine: string): void {
   items.forEach((c) => {
     const isObjectAndSingleIndent = (text: string): boolean => {
       return text[0] === '\n' && begin === ' ';
     };
+    if (c.isInlineObject) {
+      return;
+    }
     if (c.insertText && !isObjectAndSingleIndent(c.insertText)) {
       c.insertText = begin + c.insertText.replace(/\n/g, '\n' + eachLine);
     }
@@ -1281,6 +1346,28 @@ function insertIndentForCompletionItem(items: CompletionItem[], begin: string, e
       c.textEdit.newText = begin + c.textEdit.newText.replace(/\n/g, '\n' + eachLine);
     }
   });
+}
+
+export function prepareInlineCompletion(text: string): { doc: SingleYAMLDocument; node: ObjectASTNode; rangeOffset: number } {
+  let newText = '';
+  let rangeOffset = 0;
+  // Check if document contains only white spaces and line delimiters
+  if (text.trim().length === 0) {
+    // add empty object to be compatible with JSON
+    newText = `{${text}}\n`;
+  } else {
+    rangeOffset = text.length - text.lastIndexOf('.') - 1;
+    let index = 0;
+    newText = text.replace(/\./g, () => {
+      index++;
+      return ':\n' + ' '.repeat(index * 2);
+    });
+  }
+  const parsedDoc = parseYAML(newText);
+  const offset = newText.length;
+  const doc = matchOffsetToDocument(offset, parsedDoc);
+  const node = doc.getNodeFromOffsetEndInclusive(newText.trim().length) as ObjectASTNode;
+  return { doc, node, rangeOffset };
 }
 
 interface InsertText {

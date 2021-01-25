@@ -45,6 +45,7 @@ export interface JSONSchema {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   enum?: any[];
   format?: string;
+  inlineObject?: boolean;
 
   // schema draft 06
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

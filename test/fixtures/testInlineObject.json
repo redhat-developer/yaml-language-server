@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Expression": {
+      "type": "string",
+      "description": "Expression abcd",
+      "inlineObject": true,
+      "properties": {
+        "context": {
+          "properties": {
+            "jig": {
+              "properties": {}
+            },
+            "data": {
+              "properties": {}
+            }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "value": {
+      "inlineObject": true,
+      "properties": {
+        "context": {
+          "properties": {
+            "jig": {
+              "properties": {}
+            },
+            "data": {
+              "properties": {}
+            }
+          }
+        }
+      }
+    },
+    "value1": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "prop1": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "$ref": "#/definitions/Expression"
+        }
+      ]
+    },
+    "value2": {
+      "anyOf": [
+        {
+          "type": "string",
+          "const": "const1"
+        },
+        {
+          "type": "string",
+          "const": "const2"
+        },
+        {
+          "$ref": "#/definitions/Expression"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "type": "object"
+}

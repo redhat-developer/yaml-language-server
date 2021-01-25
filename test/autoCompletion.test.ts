@@ -1935,6 +1935,102 @@ suite('Auto Completion Tests', () => {
           assert.equal(result.items[0].label, '- (array item) 1');
         });
       });
+      describe('Inline object completion', () => {
+        const inlineObjectSchema = require(path.join(__dirname, './fixtures/testInlineObject.json'));
+        it('simple-null', (done) => {
+          languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+          const content = 'value: ';
+          const completion = parseSetup(content, content.length);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 1);
+              assert.equal(result.items[0].insertText, 'context');
+            })
+            .then(done, done);
+        });
+        it('simple-context.', (done) => {
+          languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+          const content = 'value: context.';
+          const completion = parseSetup(content, content.length);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 2);
+              assert.equal(result.items[0].insertText, 'jig');
+            })
+            .then(done, done);
+        });
+        it('simple-context.da', (done) => {
+          languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+          const content = 'value: context.da';
+          const completion = parseSetup(content, content.length);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 2);
+              assert.equal(result.items[0].insertText, 'jig');
+              assert.equal(result.items[1].insertText, 'data');
+              assert.deepStrictEqual(result.items[1].textEdit.range.start, { line: 0, character: content.lastIndexOf('.') + 1 });
+            })
+            .then(done, done);
+        });
+        it('anyOf[obj|ref]-null', (done) => {
+          languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+          const content = 'value1: ';
+          const completion = parseSetup(content, content.length);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 1);
+              assert.equal(result.items[0].insertText, 'context');
+            })
+            .then(done, done);
+        });
+        it('anyOf[obj|ref]-insideObject', (done) => {
+          languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+          const content = 'value1:\n  ';
+          const completion = parseSetup(content, content.length);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 1);
+              assert.equal(result.items[0].label, 'prop1');
+            })
+            .then(done, done);
+        });
+        it('anyOf[const|ref]-null', (done) => {
+          languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+          const content = 'value2: ';
+          const completion = parseSetup(content, content.length);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 3);
+              assert.equal(result.items[0].insertText, 'const1');
+              assert.equal(result.items[2].insertText, 'context');
+            })
+            .then(done, done);
+        });
+        it('anyOf[const|ref]-context.', (done) => {
+          languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+          const content = 'value2: context.';
+          const completion = parseSetup(content, content.length);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 4);
+              assert.equal(result.items[2].insertText, 'jig');
+            })
+            .then(done, done);
+        });
+        it('anyOf[const|ref]-context.da', (done) => {
+          languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+          const content = 'value2: context.da';
+          const completion = parseSetup(content, content.length);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 4);
+              assert.equal(result.items[2].insertText, 'jig');
+              assert.equal(result.items[3].insertText, 'data');
+              assert.deepStrictEqual(result.items[3].textEdit.range.start, { line: 0, character: content.lastIndexOf('.') + 1 });
+            })
+            .then(done, done);
+        });
+      });
     });
   });
 });
