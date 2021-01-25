@@ -106,6 +106,16 @@ suite('Default Snippet Tests', () => {
         })
         .then(done, done);
     });
+    it('Snippet custom suggestionKind', (done) => {
+      const content = 'anyOf_arrayObj:\n  ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.strictEqual(result.items.length, 1);
+          assert.strictEqual(result.items[0].kind, 9);
+        })
+        .then(done, done);
+    });
 
     it('Snippet in object schema should autocomplete on next line ', (done) => {
       const content = 'object:\n  ';
