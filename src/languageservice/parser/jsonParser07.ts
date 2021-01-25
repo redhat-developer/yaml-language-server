@@ -24,6 +24,7 @@ import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-typ
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Schema_Object } from '../utils/jigx/schema-type';
 import * as path from 'path';
+import { prepareInlineCompletion } from '../services/yamlCompletion';
 
 const localize = nls.loadMessageBundle();
 
@@ -1099,7 +1100,7 @@ function validate(
       for (const propertyName of Object.keys(schema.properties)) {
         propertyProcessed(propertyName);
         const propertySchema = schema.properties[propertyName];
-        const child = seenKeys[propertyName];
+        let child = seenKeys[propertyName];
         if (child) {
           if (isBoolean(propertySchema)) {
             if (!propertySchema) {
@@ -1119,6 +1120,10 @@ function validate(
               validationResult.propertiesValueMatches++;
             }
           } else {
+            if (propertySchema.inlineObject) {
+              const newParams = prepareInlineCompletion(child.value?.toString() || '');
+              child = newParams.node;
+            }
             propertySchema.url = schema.url ?? originalSchema.url;
             const propertyValidationResult = new ValidationResult(isKubernetes);
             validate(child, propertySchema, schema, propertyValidationResult, matchingSchemas, isKubernetes);
