@@ -505,6 +505,23 @@ suite('JSON Schema', () => {
     });
   });
 
+  test('Deleting schemas', async () => {
+    const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+    service.setSchemaContributions({
+      schemas: {
+        'https://myschemastore/main/schema1.json': {
+          type: 'object',
+        },
+      },
+    });
+    await service.deleteSchemas({
+      action: MODIFICATION_ACTIONS.deleteWhole,
+      schemas: ['https://myschemastore/main/schema1.json'],
+    } as SchemaService.SchemaDeletionsWhole);
+    const fs = await service.getResolvedSchema('https://myschemastore/main/schema1.json');
+    assert.equal(fs, undefined);
+  });
+
   test('Modifying schema works with kubernetes resolution', async () => {
     const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
     service.registerExternalSchema(KUBERNETES_SCHEMA_URL);
