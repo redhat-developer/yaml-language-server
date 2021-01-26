@@ -31,7 +31,7 @@ export declare type CustomSchemaProvider = (uri: string) => Promise<string | str
 export enum MODIFICATION_ACTIONS {
   'delete',
   'add',
-  'deleteWhole',
+  'deleteAll',
 }
 
 export interface SchemaAdditions {
@@ -52,7 +52,7 @@ export interface SchemaDeletions {
 
 export interface SchemaDeletionsWhole {
   schemas: string[];
-  action: MODIFICATION_ACTIONS.deleteWhole;
+  action: MODIFICATION_ACTIONS.deleteAll;
 }
 
 export class FilePatternAssociation {

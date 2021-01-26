@@ -31,7 +31,7 @@ export class RequestHandlers {
       this.languageService.modifySchemaContent(modifications);
     } else if (modifications.action === MODIFICATION_ACTIONS.delete) {
       this.languageService.deleteSchemaContent(modifications);
-    } else if (modifications.action === MODIFICATION_ACTIONS.deleteWhole) {
+    } else if (modifications.action === MODIFICATION_ACTIONS.deleteAll) {
       this.languageService.deleteSchemasWhole(modifications);
     }
   }
