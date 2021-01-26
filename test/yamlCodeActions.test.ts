@@ -9,6 +9,7 @@ import * as chai from 'chai';
 import { commandExecutor } from '../src/languageserver/commandExecutor';
 import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions';
 import {
+  ClientCapabilities,
   CodeAction,
   CodeActionContext,
   CodeActionParams,
@@ -24,14 +25,15 @@ const expect = chai.expect;
 chai.use(sinonChai);
 
 const JSON_SCHEMA_LOCAL = 'file://some/path/schema.json';
-const JSON_SCHEMA_REMOTE = 'https://some.come/path/schema.json';
 
 suite('CodeActions Tests', () => {
   const sandbox = sinon.createSandbox();
 
   let commandExecutorStub: sinon.SinonStub;
+  let clientCapabilities: ClientCapabilities;
   setup(() => {
     commandExecutorStub = sandbox.stub(commandExecutor, 'registerCommand');
+    clientCapabilities = {};
   });
 
   teardown(() => {
@@ -40,7 +42,7 @@ suite('CodeActions Tests', () => {
 
   suite('JumpToSchema tests', () => {
     test('should register handler for "JumpToSchema" command', () => {
-      new YamlCodeActions(commandExecutor, ({} as unknown) as Connection);
+      new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
       expect(commandExecutorStub).to.have.been.calledWithMatch(sinon.match('jumpToSchema'), sinon.match.func);
     });
 
@@ -52,7 +54,7 @@ suite('CodeActions Tests', () => {
         },
       } as unknown) as Connection;
       showDocumentStub.resolves(true);
-      new YamlCodeActions(commandExecutor, connection);
+      new YamlCodeActions(commandExecutor, connection, clientCapabilities);
       const arg = commandExecutorStub.args[0];
       await arg[1](JSON_SCHEMA_LOCAL);
       expect(showDocumentStub).to.have.been.calledWith({ uri: JSON_SCHEMA_LOCAL, external: false, takeFocus: true });
@@ -65,7 +67,7 @@ suite('CodeActions Tests', () => {
         range: undefined,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
-      const actions = new YamlCodeActions(commandExecutor, ({} as unknown) as Connection);
+      const actions = new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
       const result = actions.getCodeAction(doc, params);
       expect(result).to.be.undefined;
     });
@@ -78,7 +80,8 @@ suite('CodeActions Tests', () => {
         range: undefined,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
-      const actions = new YamlCodeActions(commandExecutor, ({} as unknown) as Connection);
+      clientCapabilities.window = { showDocument: { support: true } };
+      const actions = new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
       const result = actions.getCodeAction(doc, params);
 
       const codeAction = CodeAction.create(

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { CodeAction, CodeActionParams, Command, Connection, Diagnostic } from 'vscode-languageserver';
+import { ClientCapabilities, CodeAction, CodeActionParams, Command, Connection, Diagnostic } from 'vscode-languageserver';
 import { YamlCommands } from '../../commands';
 import { CommandExecutor } from '../../languageserver/commandExecutor';
 
@@ -12,7 +12,7 @@ interface YamlDiagnosticData {
   schemaUri: string;
 }
 export class YamlCodeActions {
-  constructor(commandExecutor: CommandExecutor, connection: Connection) {
+  constructor(commandExecutor: CommandExecutor, connection: Connection, private readonly clientCapabilities: ClientCapabilities) {
     commandExecutor.registerCommand(YamlCommands.JUMP_TO_SCHEMA, async (uri: string) => {
       if (!uri) {
         return;
@@ -32,8 +32,21 @@ export class YamlCodeActions {
     if (!params.context.diagnostics) {
       return;
     }
+
+    const result = [];
+
+    result.push(...this.getJumpToSchemaActions(params.context.diagnostics));
+
+    return result;
+  }
+
+  private getJumpToSchemaActions(diagnostics: Diagnostic[]): CodeAction[] {
+    const isOpenTextDocumentEnabled = this.clientCapabilities?.window?.showDocument?.support ?? false;
+    if (!isOpenTextDocumentEnabled) {
+      return [];
+    }
     const schemaUriToDiagnostic = new Map<string, Diagnostic[]>();
-    for (const diagnostic of params.context.diagnostics) {
+    for (const diagnostic of diagnostics) {
       const schemaUri = (diagnostic.data as YamlDiagnosticData)?.schemaUri;
       if (schemaUri && (schemaUri.startsWith('file') || schemaUri.startsWith('https'))) {
         if (!schemaUriToDiagnostic.has(schemaUri)) {

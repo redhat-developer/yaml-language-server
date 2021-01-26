@@ -134,7 +134,7 @@ export function getLanguageService(
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
   const yamlValidation = new YAMLValidation(schemaService);
   const formatter = new YAMLFormatter();
-  const yamlCodeActions = new YamlCodeActions(commandExecutor, connection);
+  const yamlCodeActions = new YamlCodeActions(commandExecutor, connection, clientCapabilities);
 
   return {
     configure: (settings) => {
