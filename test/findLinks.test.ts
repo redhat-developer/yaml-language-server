@@ -9,7 +9,7 @@ import { DocumentLink } from 'vscode-languageserver';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
-suite('FindDefintion Tests', () => {
+suite('FindDefinition Tests', () => {
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
 
@@ -20,7 +20,7 @@ suite('FindDefintion Tests', () => {
     yamlSettings = settings;
   });
 
-  describe('Jump to defintion', function () {
+  describe('Jump to definition', function () {
     function findLinks(content: string): Promise<DocumentLink[]> {
       const testTextDocument = setupTextDocument(content);
       yamlSettings.documents = new TextDocumentTestManager();
@@ -30,7 +30,7 @@ suite('FindDefintion Tests', () => {
       });
     }
 
-    it('Find source defintion', (done) => {
+    it('Find source definition', (done) => {
       const content =
         "definitions:\n  link:\n    type: string\ntype: object\nproperties:\n  uri:\n    $ref: '#/definitions/link'\n";
       const definitions = findLinks(content);

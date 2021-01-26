@@ -14,7 +14,7 @@ export class CommandExecutor {
   executeCommand(params: ExecuteCommandParams): void {
     if (this.commands.has(params.command)) {
       const handler = this.commands.get(params.command);
-      return handler(params.arguments);
+      return handler(...params.arguments);
     }
     throw new Error(`Command '${params.command}' not found`);
   }

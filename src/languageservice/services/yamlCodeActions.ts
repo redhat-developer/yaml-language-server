@@ -7,17 +7,20 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { CodeAction, CodeActionParams, Command, Connection, Diagnostic } from 'vscode-languageserver';
 import { YamlCommands } from '../../commands';
 import { CommandExecutor } from '../../languageserver/commandExecutor';
-import { isIntersect as isRangesIntersect } from '../utils/ranges';
-import { LATEST_DIAGNOSTIC } from './yamlValidation';
 
+interface YamlDiagnosticData {
+  schemaUri: string;
+}
 export class YamlCodeActions {
   constructor(commandExecutor: CommandExecutor, connection: Connection) {
-    commandExecutor.registerCommand(YamlCommands.JUMP_TO_SCHEMA, async (param: string) => {
-      let [uri] = param;
+    commandExecutor.registerCommand(YamlCommands.JUMP_TO_SCHEMA, async (uri: string) => {
+      if (!uri) {
+        return;
+      }
       if (!uri.startsWith('file')) {
         uri = 'json-schema' + uri.substring(uri.indexOf('://'), uri.length);
       }
-      console.error(uri);
+
       const result = await connection.window.showDocument({ uri: uri, external: false, takeFocus: true });
       if (!result) {
         connection.window.showErrorMessage(`Cannot open ${uri}`);
@@ -26,19 +29,13 @@ export class YamlCodeActions {
   }
 
   getCodeAction(document: TextDocument, params: CodeActionParams): CodeAction[] | undefined {
-    const diagnostics = LATEST_DIAGNOSTIC.get(document.uri);
-    if (!diagnostics || diagnostics.length === 0) {
+    if (!params.context.diagnostics) {
       return;
     }
     const schemaUriToDiagnostic = new Map<string, Diagnostic[]>();
-
-    for (const diagnostic of diagnostics) {
-      const schemaUri = diagnostic.schemaUri;
-      if (
-        schemaUri &&
-        (schemaUri.startsWith('file') || schemaUri.startsWith('https')) &&
-        isRangesIntersect(params.range, diagnostic.range)
-      ) {
+    for (const diagnostic of params.context.diagnostics) {
+      const schemaUri = (diagnostic.data as YamlDiagnosticData)?.schemaUri;
+      if (schemaUri && (schemaUri.startsWith('file') || schemaUri.startsWith('https'))) {
         if (!schemaUriToDiagnostic.has(schemaUri)) {
           schemaUriToDiagnostic.set(schemaUri, []);
         }

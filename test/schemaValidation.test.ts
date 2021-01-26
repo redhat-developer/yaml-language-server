@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
-import { createDiagnosticExt, createExpectedError } from './utils/verifyError';
+import { createDiagnosticWithData, createExpectedError } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import {
   StringTypeError,
@@ -128,7 +128,7 @@ suite('Validation Tests', () => {
           assert.strictEqual(result.length, 1);
           assert.deepStrictEqual(
             result[0],
-            createDiagnosticExt(
+            createDiagnosticWithData(
               BooleanTypeError,
               0,
               11,
@@ -159,7 +159,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createDiagnosticExt(
+            createDiagnosticWithData(
               StringTypeError,
               0,
               5,
@@ -251,7 +251,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createDiagnosticExt(
+            createDiagnosticWithData(
               BooleanTypeError,
               0,
               11,
@@ -282,7 +282,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createDiagnosticExt(
+            createDiagnosticWithData(
               StringTypeError,
               0,
               5,
@@ -333,7 +333,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createDiagnosticExt(
+            createDiagnosticWithData(
               StringTypeError,
               0,
               5,
@@ -452,7 +452,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createDiagnosticExt(
+            createDiagnosticWithData(
               ObjectTypeError,
               0,
               9,
@@ -506,7 +506,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createDiagnosticExt(
+            createDiagnosticWithData(
               ArrayTypeError,
               0,
               11,
@@ -748,7 +748,7 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createDiagnosticExt(
+            createDiagnosticWithData(
               StringTypeError,
               0,
               4,
@@ -954,7 +954,7 @@ suite('Validation Tests', () => {
       const content = 'analytics: 1';
       const result = await parseSetup(content);
       expect(result[0]).deep.equal(
-        createDiagnosticExt(
+        createDiagnosticWithData(
           StringTypeError,
           0,
           11,
@@ -979,7 +979,7 @@ suite('Validation Tests', () => {
       yamlSettings.specificValidatorPaths = ['*.yml', '*.yaml'];
       const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/test.yml');
       expect(result[0]).deep.equal(
-        createDiagnosticExt(
+        createDiagnosticWithData(
           ArrayTypeError,
           4,
           10,
@@ -1000,7 +1000,7 @@ suite('Validation Tests', () => {
 
       const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/.drone.yml');
       expect(result[5]).deep.equal(
-        createDiagnosticExt(
+        createDiagnosticWithData(
           propertyIsNotAllowed('apiVersion'),
           1,
           6,

@@ -20,8 +20,9 @@ import {
 import { ErrorCode, JSONPath } from 'vscode-json-languageservice';
 import * as nls from 'vscode-nls';
 import { URI } from 'vscode-uri';
-import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
+import { DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { Diagnostic } from 'vscode-languageserver';
 
 const localize = nls.loadMessageBundle();
 
@@ -64,7 +65,7 @@ export interface IProblem {
   schemaUri?: string;
 }
 
-export interface DiagnosticExt extends Diagnostic {
+interface DiagnosticExt extends Diagnostic {
   schemaUri?: string;
 }
 
@@ -460,8 +461,8 @@ export class JSONDocument {
           textDocument.positionAt(p.location.offset),
           textDocument.positionAt(p.location.offset + p.location.length)
         );
-        const diagnostic: DiagnosticExt = Diagnostic.create(range, p.message, p.severity, p.code, p.source);
-        diagnostic.schemaUri = p.schemaUri;
+        const diagnostic: Diagnostic = Diagnostic.create(range, p.message, p.severity, p.code, p.source);
+        diagnostic.data = { schemaUri: p.schemaUri };
         return diagnostic;
       });
     }
