@@ -1,10 +1,4 @@
-import {
-  Connection,
-  InitializeParams,
-  InitializeResult,
-  TextDocumentSyncKind,
-  ClientCapabilities as LSPClientCapabilities,
-} from 'vscode-languageserver/node';
+import { Connection, InitializeParams, InitializeResult, TextDocumentSyncKind } from 'vscode-languageserver/node';
 import {
   getLanguageService as getCustomLanguageService,
   LanguageService,
@@ -22,29 +16,18 @@ import { SettingsHandler } from './languageserver/handlers/settingsHandlers';
 import { YamlCommands } from './commands';
 import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
 import { commandExecutor } from './languageserver/commandExecutor';
-import { ClientCapabilities } from 'vscode-json-languageservice';
 
 export class YAMLServerInit {
-  private yamlSettings: SettingsState;
   languageService: LanguageService;
   languageHandler: LanguageHandlers;
   validationHandler: ValidationHandler;
 
   constructor(
     private readonly connection: Connection,
-    yamlSettings: SettingsState,
-    workspaceContext: WorkspaceContextService,
-    schemaRequestService: SchemaRequestService
+    private yamlSettings: SettingsState,
+    private workspaceContext: WorkspaceContextService,
+    private schemaRequestService: SchemaRequestService
   ) {
-    this.yamlSettings = yamlSettings;
-
-    this.languageService = getCustomLanguageService(
-      schemaRequestService,
-      workspaceContext,
-      connection,
-      ClientCapabilities.LATEST as LSPClientCapabilities
-    );
-
     this.yamlSettings.documents.listen(this.connection);
 
     /**
@@ -53,52 +36,7 @@ export class YAMLServerInit {
      */
     this.connection.onInitialize(
       (params: InitializeParams): InitializeResult => {
-        this.yamlSettings.capabilities = params.capabilities;
-        this.languageService = getCustomLanguageService(schemaRequestService, workspaceContext, connection, params.capabilities);
-
-        // Only try to parse the workspace root if its not null. Otherwise initialize will fail
-        if (params.rootUri) {
-          this.yamlSettings.workspaceRoot = URI.parse(params.rootUri);
-        }
-        this.yamlSettings.workspaceFolders = params.workspaceFolders || [];
-
-        this.yamlSettings.hierarchicalDocumentSymbolSupport = !!(
-          this.yamlSettings.capabilities.textDocument &&
-          this.yamlSettings.capabilities.textDocument.documentSymbol &&
-          this.yamlSettings.capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport
-        );
-        this.yamlSettings.clientDynamicRegisterSupport = !!(
-          this.yamlSettings.capabilities.textDocument &&
-          this.yamlSettings.capabilities.textDocument.rangeFormatting &&
-          this.yamlSettings.capabilities.textDocument.rangeFormatting.dynamicRegistration
-        );
-        this.yamlSettings.hasWorkspaceFolderCapability =
-          this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.workspaceFolders;
-        return {
-          capabilities: {
-            textDocumentSync: TextDocumentSyncKind.Incremental,
-            completionProvider: { resolveProvider: false },
-            hoverProvider: true,
-            documentSymbolProvider: true,
-            documentFormattingProvider: false,
-            documentOnTypeFormattingProvider: {
-              firstTriggerCharacter: '\n',
-            },
-            documentRangeFormattingProvider: false,
-            documentLinkProvider: {},
-            foldingRangeProvider: true,
-            codeActionProvider: true,
-            executeCommandProvider: {
-              commands: Object.keys(YamlCommands).map((k) => YamlCommands[k]),
-            },
-            workspace: {
-              workspaceFolders: {
-                changeNotifications: true,
-                supported: true,
-              },
-            },
-          },
-        };
+        return this.connectionInitialized(params);
       }
     );
     this.connection.onInitialized(() => {
@@ -108,7 +46,67 @@ export class YAMLServerInit {
         });
       }
     });
+  }
 
+  // public for test setup
+  connectionInitialized(params: InitializeParams): InitializeResult {
+    this.yamlSettings.capabilities = params.capabilities;
+    this.languageService = getCustomLanguageService(
+      this.schemaRequestService,
+      this.workspaceContext,
+      this.connection,
+      params.capabilities
+    );
+
+    // Only try to parse the workspace root if its not null. Otherwise initialize will fail
+    if (params.rootUri) {
+      this.yamlSettings.workspaceRoot = URI.parse(params.rootUri);
+    }
+    this.yamlSettings.workspaceFolders = params.workspaceFolders || [];
+
+    this.yamlSettings.hierarchicalDocumentSymbolSupport = !!(
+      this.yamlSettings.capabilities.textDocument &&
+      this.yamlSettings.capabilities.textDocument.documentSymbol &&
+      this.yamlSettings.capabilities.textDocument.documentSymbol.hierarchicalDocumentSymbolSupport
+    );
+    this.yamlSettings.clientDynamicRegisterSupport = !!(
+      this.yamlSettings.capabilities.textDocument &&
+      this.yamlSettings.capabilities.textDocument.rangeFormatting &&
+      this.yamlSettings.capabilities.textDocument.rangeFormatting.dynamicRegistration
+    );
+    this.yamlSettings.hasWorkspaceFolderCapability =
+      this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.workspaceFolders;
+
+    this.registerHandlers();
+
+    return {
+      capabilities: {
+        textDocumentSync: TextDocumentSyncKind.Incremental,
+        completionProvider: { resolveProvider: false },
+        hoverProvider: true,
+        documentSymbolProvider: true,
+        documentFormattingProvider: false,
+        documentOnTypeFormattingProvider: {
+          firstTriggerCharacter: '\n',
+        },
+        documentRangeFormattingProvider: false,
+        documentLinkProvider: {},
+        foldingRangeProvider: true,
+        codeActionProvider: true,
+        executeCommandProvider: {
+          commands: Object.keys(YamlCommands).map((k) => YamlCommands[k]),
+        },
+        workspace: {
+          workspaceFolders: {
+            changeNotifications: true,
+            supported: true,
+          },
+        },
+      },
+    };
+  }
+
+  private registerHandlers(): void {
     // Register all features that the language server has
     this.validationHandler = new ValidationHandler(this.connection, this.languageService, this.yamlSettings);
     const settingsHandler = new SettingsHandler(this.connection, this.languageService, this.yamlSettings, this.validationHandler);
@@ -117,7 +115,7 @@ export class YAMLServerInit {
     this.languageHandler.registerHandlers();
     new NotificationHandlers(this.connection, this.languageService, this.yamlSettings, settingsHandler).registerHandlers();
     new RequestHandlers(this.connection, this.languageService).registerHandlers();
-    new WorkspaceHandlers(connection, commandExecutor).registerHandlers();
+    new WorkspaceHandlers(this.connection, commandExecutor).registerHandlers();
   }
 
   start(): void {
