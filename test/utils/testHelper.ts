@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { createConnection, Connection } from 'vscode-languageserver/node';
+import { createConnection, Connection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node';
 import path = require('path');
 import { SettingsState } from '../../src/yamlSettings';
 import { schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler';
@@ -67,7 +67,7 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
   const serverInit = new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService);
   serverInit.connectionInitialized({
     processId: null,
-    capabilities: ClientCapabilities.LATEST,
+    capabilities: ClientCapabilities.LATEST as LSPClientCapabilities,
     rootUri: null,
     workspaceFolders: null,
   });
