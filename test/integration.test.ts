@@ -19,7 +19,7 @@ suite('Kubernetes Integration Tests', () => {
   let yamlSettings: SettingsState;
 
   before(() => {
-    const uri = 'https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.17.0-standalone-strict/all.json';
+    const uri = 'https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.18.1-standalone-strict/all.json';
     const fileMatch = ['*.yml', '*.yaml'];
     languageSettingsSetup = new ServiceSetup()
       .withHover()
