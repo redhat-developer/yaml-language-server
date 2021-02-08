@@ -11,7 +11,7 @@ import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { CompletionList } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 
-suite('Default Snippet Tests', () => {
+describe('Default Snippet Tests', () => {
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
 

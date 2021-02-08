@@ -101,7 +101,7 @@ const checkGoodPath = (path: string, expect1: string, expect2: string, expect3: 
   });
 };
 
-suite('File path tests', () => {
+describe('File path tests', () => {
   describe('Recognises not relative paths', () => {
     checkBadPath(join('/', 'file.json'));
     checkBadPath(join('/', 'absolutepath', 'file.json.'));

@@ -5,7 +5,7 @@
 import { getLineOffsets, removeDuplicatesObj } from '../src/languageservice/utils/arrUtils';
 import * as assert from 'assert';
 
-suite('Array Utils Tests', () => {
+describe('Array Utils Tests', () => {
   describe('Server - Array Utils', function () {
     describe('getLineOffsets', function () {
       it('No offset', () => {

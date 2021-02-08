@@ -11,7 +11,7 @@ import { setupTextDocument } from './utils/testHelper';
 
 const context: FoldingRangesContext = { rangeLimit: 10_0000 };
 
-suite('YAML Folding', () => {
+describe('YAML Folding', () => {
   it('should return undefined if no document provided', () => {
     const ranges = getFoldingRanges(undefined, context);
     expect(ranges).to.be.undefined;
