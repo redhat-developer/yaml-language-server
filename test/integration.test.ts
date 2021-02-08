@@ -11,8 +11,8 @@ import { LanguageHandlers } from '../src/languageserver/handlers/languageHandler
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 
-// Defines a Mocha test suite to group tests of similar kind together
-suite('Kubernetes Integration Tests', () => {
+// Defines a Mocha test describe to group tests of similar kind together
+describe('Kubernetes Integration Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageHandler: LanguageHandlers;
   let validationHandler: ValidationHandler;

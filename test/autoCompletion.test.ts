@@ -15,7 +15,7 @@ import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageService } from '../src';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
-suite('Auto Completion Tests', () => {
+describe('Auto Completion Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageService: LanguageService;
   let languageHandler: LanguageHandlers;

@@ -15,7 +15,7 @@ function createParams(position: Position): DocumentOnTypeFormattingParams {
     position,
   };
 }
-suite('YAML On Type Formatter', () => {
+describe('YAML On Type Formatter', () => {
   it('should react on "\n" only', () => {
     const doc = setupTextDocument('foo:');
     const params = createParams(Position.create(1, 0));

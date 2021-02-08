@@ -5,7 +5,7 @@
 import { startsWith, endsWith, convertSimple2RegExp } from '../src/languageservice/utils/strings';
 import * as assert from 'assert';
 
-suite('String Tests', () => {
+describe('String Tests', () => {
   describe('startsWith', function () {
     it('String with different lengths', () => {
       const one = 'hello';

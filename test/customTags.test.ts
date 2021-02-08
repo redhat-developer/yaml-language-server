@@ -10,8 +10,8 @@ import { Diagnostic } from 'vscode-languageserver';
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 
-// Defines a Mocha test suite to group tests of similar kind together
-suite('Custom Tag tests Tests', () => {
+// Defines a Mocha test describe to group tests of similar kind together
+describe('Custom Tag tests Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageService: LanguageService;
   let validationHandler: ValidationHandler;
