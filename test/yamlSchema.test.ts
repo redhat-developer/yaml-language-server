@@ -17,18 +17,18 @@ const workspaceContext = {
   },
 };
 
-suite('YAML Schema', () => {
+describe('YAML Schema', () => {
   const sandbox = sinon.createSandbox();
   let requestServiceStub: sinon.SinonStub;
-  setup(() => {
+  beforeEach(() => {
     requestServiceStub = sandbox.stub();
   });
 
-  teardown(() => {
+  afterEach(() => {
     sandbox.restore();
   });
 
-  test('Loading yaml scheme', async () => {
+  it('Loading yaml scheme', async () => {
     requestServiceStub.resolves(`
     properties:
       fooBar:
@@ -46,7 +46,7 @@ suite('YAML Schema', () => {
     });
   });
 
-  test('Error while loading yaml', async () => {
+  it('Error while loading yaml', async () => {
     requestServiceStub.rejects();
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('fooScheme.yaml');
@@ -54,7 +54,7 @@ suite('YAML Schema', () => {
     expect(result.errors[0]).includes('Unable to load schema from');
   });
 
-  test('Error while parsing yaml scheme', async () => {
+  it('Error while parsing yaml scheme', async () => {
     requestServiceStub.resolves(`%464*&^^&*%@$&^##$`);
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('fooScheme.yaml');

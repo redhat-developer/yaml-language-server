@@ -24,7 +24,7 @@ import { ValidationHandler } from '../src/languageserver/handlers/validationHand
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
-suite('Validation Tests', () => {
+describe('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let validationHandler: ValidationHandler;
   let languageService: LanguageService;

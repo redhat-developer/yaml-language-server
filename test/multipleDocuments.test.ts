@@ -16,8 +16,8 @@ import { LanguageHandlers } from '../src/languageserver/handlers/languageHandler
  * Setup the schema we are going to use with the language settings
  */
 
-// Defines a Mocha test suite to group tests of similar kind together
-suite('Multiple Documents Validation Tests', () => {
+// Defines a Mocha test describe to group tests of similar kind together
+describe('Multiple Documents Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageHandler: LanguageHandlers;
   let validationHandler: ValidationHandler;

@@ -11,7 +11,7 @@ import { setupTextDocument } from './utils/testHelper';
 
 const context: FoldingRangesContext = { rangeLimit: 10_0000 };
 
-suite('YAML Folding', () => {
+describe('YAML Folding', () => {
   it('should return undefined if no document provided', () => {
     const ranges = getFoldingRanges(undefined, context);
     expect(ranges).to.be.undefined;
@@ -72,5 +72,32 @@ suite('YAML Folding', () => {
     const doc = setupTextDocument(yaml);
     const ranges = getFoldingRanges(doc, context);
     expect(ranges).to.deep.include.members([FoldingRange.create(2, 4, 4, 18), FoldingRange.create(3, 4, 6, 18)]);
+  });
+
+  it('should provide proper folding for map in map with array', () => {
+    const yaml = `FirstDict:
+  FirstDictFirstKey:
+    SomeList:
+      - foo
+SecondDict:
+  SecondDictFirstKey: foo`;
+
+    const doc = setupTextDocument(yaml);
+    const ranges = getFoldingRanges(doc, context);
+    expect(ranges).to.deep.include.members([FoldingRange.create(1, 3, 2, 11)]);
+  });
+
+  it('should provide proper folding for map in map with array2', () => {
+    const yaml = `top1:
+  second11:
+    name: one
+    events:
+      - element
+  second12:
+    name: two`;
+
+    const doc = setupTextDocument(yaml);
+    const ranges = getFoldingRanges(doc, context);
+    expect(ranges).to.deep.include.members([FoldingRange.create(1, 4, 2, 15)]);
   });
 });

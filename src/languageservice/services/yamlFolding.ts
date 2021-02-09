@@ -5,6 +5,7 @@
 import { TextDocument, FoldingRange, Range } from 'vscode-languageserver';
 import { FoldingRangesContext } from '../yamlTypes';
 import { parse as parseYAML } from '../parser/yamlParser07';
+import { ASTNode } from '../jsonASTTypes';
 
 export function getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | undefined {
   if (!document) {
@@ -18,20 +19,10 @@ export function getFoldingRanges(document: TextDocument, context: FoldingRangesC
         (node.type === 'property' && node.valueNode.type === 'array') ||
         (node.type === 'object' && node.parent?.type === 'array')
       ) {
-        const startPos = document.positionAt(node.offset);
-        let endPos = document.positionAt(node.offset + node.length);
-        const textFragment = document.getText(Range.create(startPos, endPos));
-        const newLength = textFragment.length - textFragment.trimRight().length;
-        if (newLength > 0) {
-          endPos = document.positionAt(node.offset + node.length - newLength);
-        }
-
-        result.push(FoldingRange.create(startPos.line, endPos.line, startPos.character, endPos.character));
+        result.push(creteNormalizedFolding(document, node));
       }
       if (node.type === 'property' && node.valueNode.type === 'object') {
-        const startPos = document.positionAt(node.offset);
-        const endPos = document.positionAt(node.offset + node.length);
-        result.push(FoldingRange.create(startPos.line, endPos.line, startPos.character, endPos.character));
+        result.push(creteNormalizedFolding(document, node));
       }
 
       return true;
@@ -44,4 +35,15 @@ export function getFoldingRanges(document: TextDocument, context: FoldingRangesC
   }
 
   return result.slice(0, context.rangeLimit - 1);
+}
+
+function creteNormalizedFolding(document: TextDocument, node: ASTNode): FoldingRange {
+  const startPos = document.positionAt(node.offset);
+  let endPos = document.positionAt(node.offset + node.length);
+  const textFragment = document.getText(Range.create(startPos, endPos));
+  const newLength = textFragment.length - textFragment.trimRight().length;
+  if (newLength > 0) {
+    endPos = document.positionAt(node.offset + node.length - newLength);
+  }
+  return FoldingRange.create(startPos.line, endPos.line, startPos.character, endPos.character);
 }

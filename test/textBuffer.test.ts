@@ -7,8 +7,8 @@ import { TextBuffer } from '../src/languageservice/utils/textBuffer';
 import { TextDocument } from 'vscode-languageserver';
 import * as assert from 'assert';
 
-suite('TextBuffer', () => {
-  test('getLineLength should return actual line length', () => {
+describe('TextBuffer', () => {
+  it('getLineLength should return actual line length', () => {
     const buffer = new TextBuffer(TextDocument.create('file://foo/bar', 'yaml', 1, 'Foo\nbar'));
     const length = buffer.getLineLength(0);
     assert.strictEqual(length, 4);
@@ -16,7 +16,7 @@ suite('TextBuffer', () => {
     assert.strictEqual(length2, 3);
   });
 
-  test('getLineLength should return actual line length, win style', () => {
+  it('getLineLength should return actual line length, win style', () => {
     const buffer = new TextBuffer(TextDocument.create('file://foo/bar', 'yaml', 1, 'Foo\r\nbar'));
     const length = buffer.getLineLength(0);
     assert.strictEqual(length, 5);
@@ -24,19 +24,19 @@ suite('TextBuffer', () => {
     assert.strictEqual(length2, 3);
   });
 
-  test('getLineContent should return actual line content', () => {
+  it('getLineContent should return actual line content', () => {
     const buffer = new TextBuffer(TextDocument.create('file://foo/bar', 'yaml', 1, 'Foo\nbar\nfooBar\nsome'));
     const line = buffer.getLineContent(1);
     assert.strictEqual(line, 'bar\n');
   });
 
-  test('getLineContent should return last line', () => {
+  it('getLineContent should return last line', () => {
     const buffer = new TextBuffer(TextDocument.create('file://foo/bar', 'yaml', 1, 'Foo\nbar\nfooBar\nsome'));
     const line = buffer.getLineContent(3);
     assert.strictEqual(line, 'some');
   });
 
-  test('getLineCharCode should return charCode', () => {
+  it('getLineCharCode should return charCode', () => {
     const buffer = new TextBuffer(TextDocument.create('file://foo/bar', 'yaml', 1, 'Foo\nbar\nfooBar\nsome'));
     const charCode = buffer.getLineCharCode(3, 4);
     assert.strictEqual(charCode, 'B'.charCodeAt(0));

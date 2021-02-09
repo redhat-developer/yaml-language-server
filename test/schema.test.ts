@@ -37,7 +37,7 @@ const schemaRequestServiceForURL = (uri: string): Promise<string> => {
   );
 };
 
-suite('JSON Schema', () => {
+describe('JSON Schema', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageService: LanguageService;
 
@@ -53,7 +53,7 @@ suite('JSON Schema', () => {
     languageService = langService;
   });
 
-  test('Resolving $refs', function (testDone) {
+  it('Resolving $refs', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     service.setSchemaContributions({
       schemas: {
@@ -94,7 +94,7 @@ suite('JSON Schema', () => {
       );
   });
 
-  test('Resolving $refs 2', function (testDone) {
+  it('Resolving $refs 2', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     service.setSchemaContributions({
       schemas: {
@@ -140,7 +140,7 @@ suite('JSON Schema', () => {
       );
   });
 
-  test('Resolving $refs 3', function (testDone) {
+  it('Resolving $refs 3', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     service.setSchemaContributions({
       schemas: {
@@ -200,7 +200,7 @@ suite('JSON Schema', () => {
       );
   });
 
-  test('FileSchema', function (testDone) {
+  it('FileSchema', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
     service.setSchemaContributions({
@@ -239,7 +239,7 @@ suite('JSON Schema', () => {
       );
   });
 
-  test('Array FileSchema', function (testDone) {
+  it('Array FileSchema', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
     service.setSchemaContributions({
@@ -281,7 +281,7 @@ suite('JSON Schema', () => {
       );
   });
 
-  test('Missing subschema', function (testDone) {
+  it('Missing subschema', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
     service.setSchemaContributions({
@@ -314,7 +314,7 @@ suite('JSON Schema', () => {
       );
   });
 
-  test('Preloaded Schema', function (testDone) {
+  it('Preloaded Schema', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     const id = 'https://myschemastore/test1';
     const schema: JsonSchema.JSONSchema = {
@@ -350,7 +350,7 @@ suite('JSON Schema', () => {
       );
   });
 
-  test('Schema has url', async () => {
+  it('Schema has url', async () => {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     const id = 'https://myschemastore/test1';
     const schema: JsonSchema.JSONSchema = {
@@ -375,7 +375,7 @@ suite('JSON Schema', () => {
     expect(result.schema.url).equal(id);
   });
 
-  test('Null Schema', function (testDone) {
+  it('Null Schema', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
     service
@@ -393,7 +393,7 @@ suite('JSON Schema', () => {
       );
   });
 
-  test('Schema not found', function (testDone) {
+  it('Schema not found', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
     service
@@ -411,7 +411,7 @@ suite('JSON Schema', () => {
       );
   });
 
-  test('Schema with non uri registers correctly', function (testDone) {
+  it('Schema with non uri registers correctly', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     const non_uri = 'non_uri';
     service.registerExternalSchema(non_uri, ['*.yml', '*.yaml'], {
@@ -427,7 +427,7 @@ suite('JSON Schema', () => {
       testDone();
     });
   });
-  test('Modifying schema', async () => {
+  it('Modifying schema', async () => {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     service.setSchemaContributions({
       schemas: {
@@ -466,7 +466,7 @@ suite('JSON Schema', () => {
     });
   });
 
-  test('Deleting schema', async () => {
+  it('Deleting schema', async () => {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     service.setSchemaContributions({
       schemas: {
@@ -505,7 +505,7 @@ suite('JSON Schema', () => {
     });
   });
 
-  test('Modifying schema works with kubernetes resolution', async () => {
+  it('Modifying schema works with kubernetes resolution', async () => {
     const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
     service.registerExternalSchema(KUBERNETES_SCHEMA_URL);
 
@@ -521,7 +521,7 @@ suite('JSON Schema', () => {
     assert.deepEqual(fs.schema.oneOf[1].properties['kind']['enum'], ['v2', 'v3']);
   });
 
-  test('Deleting schema works with Kubernetes resolution', async () => {
+  it('Deleting schema works with Kubernetes resolution', async () => {
     const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
     service.registerExternalSchema(KUBERNETES_SCHEMA_URL);
 
@@ -536,7 +536,7 @@ suite('JSON Schema', () => {
     assert.equal(fs.schema.oneOf[1].properties['kind']['enum'], undefined);
   });
 
-  test('Adding a brand new schema', async () => {
+  it('Adding a brand new schema', async () => {
     const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
     service.saveSchema('hello_world', {
       enum: ['test1', 'test2'],
@@ -546,7 +546,7 @@ suite('JSON Schema', () => {
     assert.deepEqual(hello_world_schema.schema.enum, ['test1', 'test2']);
   });
 
-  test('Deleting an existing schema', async () => {
+  it('Deleting an existing schema', async () => {
     const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
     service.saveSchema('hello_world', {
       enum: ['test1', 'test2'],
@@ -569,7 +569,7 @@ suite('JSON Schema', () => {
     const schemaModelineSample = require(path.join(__dirname, './fixtures/sample-modeline.json'));
     const languageSettingsSetup = new ServiceSetup().withCompletion();
 
-    test('Modeline Schema takes precendence over all other schemas', async () => {
+    it('Modeline Schema takes precendence over all other schemas', async () => {
       languageSettingsSetup
         .withSchemaFileMatch({
           fileMatch: ['test.yaml'],
@@ -602,7 +602,7 @@ suite('JSON Schema', () => {
       assert.strictEqual(result.items[0].label, 'modeline');
     });
 
-    test('Manually setting schema takes precendence over all other lower priority schemas', async () => {
+    it('Manually setting schema takes precendence over all other lower priority schemas', async () => {
       languageSettingsSetup
         .withSchemaFileMatch({
           fileMatch: ['test.yaml'],
@@ -629,7 +629,7 @@ suite('JSON Schema', () => {
       assert.strictEqual(result.items[0].label, 'settings');
     });
 
-    test('SchemaAssociation takes precendence over SchemaStore', async () => {
+    it('SchemaAssociation takes precendence over SchemaStore', async () => {
       languageSettingsSetup
         .withSchemaFileMatch({
           fileMatch: ['test.yaml'],
@@ -650,7 +650,7 @@ suite('JSON Schema', () => {
       assert.strictEqual(result.items[0].label, 'association');
     });
 
-    test('SchemaStore is highest priority if nothing else is available', async () => {
+    it('SchemaStore is highest priority if nothing else is available', async () => {
       languageSettingsSetup.withSchemaFileMatch({
         fileMatch: ['test.yaml'],
         uri: TEST_URI,
@@ -666,50 +666,50 @@ suite('JSON Schema', () => {
   });
 
   describe('Test getSchemaFromModeline', function () {
-    test('simple case', async () => {
+    it('simple case', async () => {
       checkReturnSchemaUrl('# yaml-language-server: $schema=expectedUrl', 'expectedUrl');
     });
 
-    test('with several spaces between # and yaml-language-server', async () => {
+    it('with several spaces between # and yaml-language-server', async () => {
       checkReturnSchemaUrl('#    yaml-language-server: $schema=expectedUrl', 'expectedUrl');
     });
 
-    test('with several spaces between yaml-language-server and :', async () => {
+    it('with several spaces between yaml-language-server and :', async () => {
       checkReturnSchemaUrl('# yaml-language-server   : $schema=expectedUrl', 'expectedUrl');
     });
 
-    test('with several spaces between : and $schema', async () => {
+    it('with several spaces between : and $schema', async () => {
       checkReturnSchemaUrl('# yaml-language-server:    $schema=expectedUrl', 'expectedUrl');
     });
 
-    test('with several spaces at the end', async () => {
+    it('with several spaces at the end', async () => {
       checkReturnSchemaUrl('# yaml-language-server: $schema=expectedUrl   ', 'expectedUrl');
     });
 
-    test('with several spaces at several places', async () => {
+    it('with several spaces at several places', async () => {
       checkReturnSchemaUrl('#   yaml-language-server  :   $schema=expectedUrl   ', 'expectedUrl');
     });
 
-    test('with several attributes', async () => {
+    it('with several attributes', async () => {
       checkReturnSchemaUrl(
         '# yaml-language-server: anotherAttribute=test $schema=expectedUrl aSecondAttribtute=avalue',
         'expectedUrl'
       );
     });
 
-    test('with tabs', async () => {
+    it('with tabs', async () => {
       checkReturnSchemaUrl('#\tyaml-language-server:\t$schema=expectedUrl', 'expectedUrl');
     });
 
-    test('with several $schema - pick the first', async () => {
+    it('with several $schema - pick the first', async () => {
       checkReturnSchemaUrl('# yaml-language-server: $schema=url1 $schema=url2', 'url1');
     });
 
-    test('no schema returned if not yaml-language-server', async () => {
+    it('no schema returned if not yaml-language-server', async () => {
       checkReturnSchemaUrl('# somethingelse: $schema=url1', undefined);
     });
 
-    test('no schema returned if not $schema', async () => {
+    it('no schema returned if not $schema', async () => {
       checkReturnSchemaUrl('# yaml-language-server: $notschema=url1', undefined);
     });
 
