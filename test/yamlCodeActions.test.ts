@@ -26,27 +26,27 @@ chai.use(sinonChai);
 
 const JSON_SCHEMA_LOCAL = 'file://some/path/schema.json';
 
-suite('CodeActions Tests', () => {
+describe('CodeActions Tests', () => {
   const sandbox = sinon.createSandbox();
 
   let commandExecutorStub: sinon.SinonStub;
   let clientCapabilities: ClientCapabilities;
-  setup(() => {
+  beforeEach(() => {
     commandExecutorStub = sandbox.stub(commandExecutor, 'registerCommand');
     clientCapabilities = {};
   });
 
-  teardown(() => {
+  afterEach(() => {
     sandbox.restore();
   });
 
-  suite('JumpToSchema tests', () => {
-    test('should register handler for "JumpToSchema" command', () => {
+  describe('JumpToSchema tests', () => {
+    it('should register handler for "JumpToSchema" command', () => {
       new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
       expect(commandExecutorStub).to.have.been.calledWithMatch(sinon.match('jumpToSchema'), sinon.match.func);
     });
 
-    test('JumpToSchema handler should call "showDocument"', async () => {
+    it('JumpToSchema handler should call "showDocument"', async () => {
       const showDocumentStub = sandbox.stub();
       const connection = ({
         window: {
@@ -60,7 +60,7 @@ suite('CodeActions Tests', () => {
       expect(showDocumentStub).to.have.been.calledWith({ uri: JSON_SCHEMA_LOCAL, external: false, takeFocus: true });
     });
 
-    test('should not provide any actions if there are no diagnostics', () => {
+    it('should not provide any actions if there are no diagnostics', () => {
       const doc = setupTextDocument('');
       const params: CodeActionParams = {
         context: CodeActionContext.create(undefined),
@@ -72,7 +72,7 @@ suite('CodeActions Tests', () => {
       expect(result).to.be.undefined;
     });
 
-    test('should provide action if diagnostic has uri for schema', () => {
+    it('should provide action if diagnostic has uri for schema', () => {
       const doc = setupTextDocument('');
       const diagnostics = [createDiagnosticWithData('foo', 0, 0, 0, 0, 1, JSON_SCHEMA_LOCAL, JSON_SCHEMA_LOCAL)];
       const params: CodeActionParams = {
