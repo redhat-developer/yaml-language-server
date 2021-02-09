@@ -18,7 +18,7 @@
       "request": "launch",
       "name": "Launch Tests",
       "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
-      "args": ["-u", "tdd", "--timeout", "999999", "--colors", "-r", "ts-node/register", "${workspaceRoot}/test/*.test.ts"],
+      "args": ["-u", "bdd", "--timeout", "999999", "--colors", "-r", "ts-node/register", "${workspaceRoot}/test/*.test.ts"],
       "preLaunchTask": "watch typescript"
     }
   ]

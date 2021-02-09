@@ -2,13 +2,16 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import { FoldingRange } from 'vscode-json-languageservice';
 import {
   CompletionList,
   DidChangeWatchedFilesParams,
   DocumentFormattingParams,
   DocumentLink,
   DocumentLinkParams,
+  DocumentOnTypeFormattingParams,
   DocumentSymbolParams,
+  FoldingRangeParams,
   IConnection,
   TextDocumentPositionParams,
 } from 'vscode-languageserver';
@@ -41,6 +44,8 @@ export class LanguageHandlers {
     this.connection.onHover((textDocumentPositionParams) => this.hoverHandler(textDocumentPositionParams));
     this.connection.onCompletion((textDocumentPosition) => this.completionHandler(textDocumentPosition));
     this.connection.onDidChangeWatchedFiles((change) => this.watchedFilesHandler(change));
+    this.connection.onFoldingRanges((params) => this.foldingRangeHandler(params));
+    this.connection.onDocumentOnTypeFormatting((params) => this.formatOnTypeHandler(params));
   }
 
   documentLinkHandler(params: DocumentLinkParams): Promise<DocumentLink[]> {
@@ -109,6 +114,15 @@ export class LanguageHandlers {
     return this.languageService.doFormat(document, customFormatterSettings);
   }
 
+  formatOnTypeHandler(params: DocumentOnTypeFormattingParams): Promise<TextEdit[] | undefined> | TextEdit[] | undefined {
+    const document = this.yamlSettings.documents.get(params.textDocument.uri);
+
+    if (!document) {
+      return;
+    }
+    return this.languageService.doDocumentOnTypeFormatting(document, params);
+  }
+
   /**
    * Called when the user hovers with their mouse over a keyword
    * Returns an informational tooltip
@@ -162,5 +176,14 @@ export class LanguageHandlers {
     if (hasChanges) {
       this.yamlSettings.documents.all().forEach((document) => this.validationHandler.validate(document));
     }
+  }
+
+  foldingRangeHandler(params: FoldingRangeParams): Promise<FoldingRange[] | undefined> | FoldingRange[] | undefined {
+    const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
+    if (!textDocument) {
+      return;
+    }
+
+    return this.languageService.getFoldingRanges(textDocument, this.yamlSettings.capabilities.textDocument.foldingRange);
   }
 }

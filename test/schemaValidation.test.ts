@@ -26,7 +26,7 @@ import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
 const schemaFilePrefix = jigxBranchTest ? 'yaml-schema: ' : 'yaml-schema: file:///';
 
-suite('Validation Tests', () => {
+describe('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let validationHandler: ValidationHandler;
   let languageService: LanguageService;

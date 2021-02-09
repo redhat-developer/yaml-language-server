@@ -17,7 +17,7 @@ import { LanguageHandlers } from '../src/languageserver/handlers/languageHandler
 
 const snippet$1symbol = jigxBranchTest ? '' : '$1';
 
-suite('Auto Completion Tests', () => {
+describe('Auto Completion Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageService: LanguageService;
   let languageHandler: LanguageHandlers;
@@ -1833,18 +1833,6 @@ suite('Auto Completion Tests', () => {
       });
     });
     describe('Array completion', () => {
-      //test_simpleArrayObject
-      // it('Simple array object completion without "-" without any item', async () => {
-      //   const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      //   languageService.addSchema(SCHEMA_ID, schema);
-      //   const content = 'test_simpleArrayObject:\n  ';
-      //   const completion = parseSetup(content, content.length);
-      //   completion.then(function (result) {
-      //     assert.equal(result.items.length, 1);
-      //     assert.equal(result.items[0]?.label, '- (array item)');
-      //   });
-      // });
-      //worked ok
       it('Simple array object completion with "-" without any item', async () => {
         const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
         languageService.addSchema(SCHEMA_ID, schema);
@@ -1855,7 +1843,7 @@ suite('Auto Completion Tests', () => {
           assert.equal(result.items[0].label, '- (array item)');
         });
       });
-      //worked ok
+
       it('Simple array object completion without "-" after array item', async () => {
         const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
         languageService.addSchema(SCHEMA_ID, schema);
@@ -1866,7 +1854,7 @@ suite('Auto Completion Tests', () => {
           assert.equal(result.items[0].label, '- (array item)');
         });
       });
-      //worked ok
+
       it('Simple array object completion with "-" after array item', async () => {
         const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
         languageService.addSchema(SCHEMA_ID, schema);
@@ -1878,19 +1866,6 @@ suite('Auto Completion Tests', () => {
         });
       });
 
-      //test_array_anyOf_2objects
-      // it('Array anyOf two objects completion without "-" without any item', async () => {
-      //   const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      //   languageService.addSchema(SCHEMA_ID, schema);
-      //   const content = 'test_array_anyOf_2objects:\n  ';
-      //   const completion = parseSetup(content, content.length);
-      //   completion.then(function (result) {
-      //     assert.equal(result.items.length, 1);
-      //     assert.equal(result.items[0].label, '- (array item)');
-      //   });
-      // });
-
-      //worked ok
       it('Array anyOf two objects completion with "- " without any item', async () => {
         const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
         languageService.addSchema(SCHEMA_ID, schema);
@@ -1924,7 +1899,6 @@ suite('Auto Completion Tests', () => {
         });
       });
 
-      //worked ok
       it('Array anyOf two objects completion with "-" after array item', async () => {
         const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
         languageService.addSchema(SCHEMA_ID, schema);

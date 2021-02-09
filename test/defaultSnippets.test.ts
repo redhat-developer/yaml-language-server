@@ -13,7 +13,7 @@ import { expect } from 'chai';
 
 const snippet$1symbol = jigxBranchTest ? '' : '$1';
 
-suite('Default Snippet Tests', () => {
+describe('Default Snippet Tests', () => {
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
 

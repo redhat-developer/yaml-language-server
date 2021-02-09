@@ -10,6 +10,7 @@ import { YAMLServerInit } from '../../src/yamlServerInit';
 import { LanguageService, LanguageSettings } from '../../src';
 import { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers';
 import { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers';
+import { ClientCapabilities } from 'vscode-json-languageservice';
 
 export function toFsPath(str: unknown): string {
   if (typeof str !== 'string') {
@@ -63,6 +64,12 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
   };
   const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
   const serverInit = new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService);
+  serverInit.connectionInitialized({
+    processId: null,
+    capabilities: ClientCapabilities.LATEST,
+    rootUri: null,
+    workspaceFolders: null,
+  });
   const languageService = serverInit.languageService;
   const validationHandler = serverInit.validationHandler;
   const languageHandler = serverInit.languageHandler;

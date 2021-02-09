@@ -10,7 +10,7 @@ import { Hover } from 'vscode-languageserver';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 
-suite('Hover Tests', () => {
+describe('Hover Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageHandler: LanguageHandlers;
   let languageService: LanguageService;
