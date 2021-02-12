@@ -74,33 +74,45 @@ export function createExpectedDocumentSymbol(
   startCharacterSelection: number,
   endLineSelection: number,
   endCharacterSelection: number,
+  children: DocumentSymbol[] = [],
+  detail?: string
+): DocumentSymbol {
+  const docSymbol = DocumentSymbol.create(
+    name,
+    detail,
+    kind,
+    Range.create(startLine, startCharacter, endLine, endCharacter),
+    Range.create(startLineSelection, startCharacterSelection, endLineSelection, endCharacterSelection),
+    children
+  );
+
+  return docSymbol;
+}
+
+export function createExpectedDocumentSymbolNoDetail(
+  name: string,
+  kind: SymbolKind,
+  startLine: number,
+  startCharacter: number,
+  endLine: number,
+  endCharacter: number,
+  startLineSelection: number,
+  startCharacterSelection: number,
+  endLineSelection: number,
+  endCharacterSelection: number,
   children: DocumentSymbol[] = []
 ): DocumentSymbol {
-  return {
+  const docSymbol = DocumentSymbol.create(
     name,
+    undefined,
     kind,
-    range: {
-      start: {
-        character: startCharacter,
-        line: startLine,
-      },
-      end: {
-        character: endCharacter,
-        line: endLine,
-      },
-    },
-    selectionRange: {
-      start: {
-        character: startCharacterSelection,
-        line: startLineSelection,
-      },
-      end: {
-        character: endCharacterSelection,
-        line: endLineSelection,
-      },
-    },
-    children,
-  };
+    Range.create(startLine, startCharacter, endLine, endCharacter),
+    Range.create(startLineSelection, startCharacterSelection, endLineSelection, endCharacterSelection),
+    children
+  );
+
+  delete docSymbol.detail;
+  return docSymbol;
 }
 
 export function createExpectedCompletion(
