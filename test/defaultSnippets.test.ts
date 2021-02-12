@@ -8,7 +8,7 @@ import path = require('path');
 import { ServiceSetup } from './utils/serviceSetup';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { CompletionList } from 'vscode-languageserver-types';
+import { CompletionList, TextEdit } from 'vscode-languageserver';
 import { expect } from 'chai';
 
 describe('Default Snippet Tests', () => {
@@ -270,11 +270,12 @@ describe('Default Snippet Tests', () => {
 
       assert.notEqual(result.items.length, 0);
       assert.equal(result.items[0].label, 'My boolean item');
-      assert.equal(result.items[0].textEdit.newText, 'false');
-      assert.equal(result.items[0].textEdit.range.start.line, 0);
-      assert.equal(result.items[0].textEdit.range.start.character, 9);
-      assert.equal(result.items[0].textEdit.range.end.line, 0);
-      assert.equal(result.items[0].textEdit.range.end.character, 9);
+      const textEdit = result.items[0].textEdit as TextEdit;
+      assert.equal(textEdit.newText, 'false');
+      assert.equal(textEdit.range.start.line, 0);
+      assert.equal(textEdit.range.start.character, 9);
+      assert.equal(textEdit.range.end.line, 0);
+      assert.equal(textEdit.range.end.character, 9);
     });
 
     it('should preserve space after ":"', async () => {
@@ -283,11 +284,12 @@ describe('Default Snippet Tests', () => {
 
       assert.notEqual(result.items.length, 0);
       assert.equal(result.items[0].label, 'My boolean item');
-      assert.equal(result.items[0].textEdit.newText, 'false');
-      assert.equal(result.items[0].textEdit.range.start.line, 0);
-      assert.equal(result.items[0].textEdit.range.start.character, 9);
-      assert.equal(result.items[0].textEdit.range.end.line, 0);
-      assert.equal(result.items[0].textEdit.range.end.character, 9);
+      const textEdit = result.items[0].textEdit as TextEdit;
+      assert.equal(textEdit.newText, 'false');
+      assert.equal(textEdit.range.start.line, 0);
+      assert.equal(textEdit.range.start.character, 9);
+      assert.equal(textEdit.range.end.line, 0);
+      assert.equal(textEdit.range.end.character, 9);
     });
 
     it('should add space before value on root node', async () => {

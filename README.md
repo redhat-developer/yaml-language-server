@@ -234,6 +234,10 @@ To run the image you can use:
 docker run -it quay.io/redhat-developer/yaml-language-server:latest
 ```
 
+## Language Server Protocol version
+
+`yaml-language-server` use `vscode-languageserver@7.0.0` which implements [LSP 3.16](https://github.com/Microsoft/language-server-protocol/blob/gh-pages/_specifications/specification-3-16.md)
+
 ## Clients
 
 This repository only contains the server implementation. Here are some known clients consuming this server:

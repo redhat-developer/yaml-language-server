@@ -21,11 +21,20 @@ import { YAMLCompletion } from './services/yamlCompletion';
 import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
-import { JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
+import { JSONDocument, DefinitionLink, TextDocument } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
-import { TextDocument, FoldingRange, ClientCapabilities, DocumentOnTypeFormattingParams } from 'vscode-languageserver';
+import {
+  FoldingRange,
+  ClientCapabilities,
+  CodeActionParams,
+  CodeAction,
+  Connection,
+  DocumentOnTypeFormattingParams,
+} from 'vscode-languageserver/node';
 import { getFoldingRanges } from './services/yamlFolding';
 import { FoldingRangesContext } from './yamlTypes';
+import { YamlCodeActions } from './services/yamlCodeActions';
+import { commandExecutor } from '../languageserver/commandExecutor';
 import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
 
 export enum SchemaPriority {
@@ -110,11 +119,13 @@ export interface LanguageService {
   modifySchemaContent(schemaAdditions: SchemaAdditions): void;
   deleteSchemaContent(schemaDeletions: SchemaDeletions): void;
   getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | null;
+  getCodeAction(document: TextDocument, params: CodeActionParams): CodeAction[] | undefined;
 }
 
 export function getLanguageService(
   schemaRequestService: SchemaRequestService,
   workspaceContext: WorkspaceContextService,
+  connection: Connection,
   clientCapabilities?: ClientCapabilities
 ): LanguageService {
   const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
@@ -123,6 +134,7 @@ export function getLanguageService(
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
   const yamlValidation = new YAMLValidation(schemaService);
   const formatter = new YAMLFormatter();
+  const yamlCodeActions = new YamlCodeActions(commandExecutor, connection, clientCapabilities);
 
   return {
     configure: (settings) => {
@@ -169,5 +181,8 @@ export function getLanguageService(
       return schemaService.deleteContent(schemaDeletions);
     },
     getFoldingRanges,
+    getCodeAction: (document, params) => {
+      return yamlCodeActions.getCodeAction(document, params);
+    },
   };
 }

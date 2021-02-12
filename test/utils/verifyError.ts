@@ -18,6 +18,21 @@ export function createExpectedError(
   return Diagnostic.create(Range.create(startLine, startCharacter, endLine, endCharacter), message, severity, undefined, source);
 }
 
+export function createDiagnosticWithData(
+  message: string,
+  startLine: number,
+  startCharacter: number,
+  endLine: number,
+  endCharacter: number,
+  severity: DiagnosticSeverity = 1,
+  source = 'YAML',
+  schemaUri: string
+): Diagnostic {
+  const diagnostic: Diagnostic = createExpectedError(message, startLine, startCharacter, endLine, endCharacter, severity, source);
+  diagnostic.data = { schemaUri };
+  return diagnostic;
+}
+
 export function createExpectedSymbolInformation(
   name: string,
   kind: SymbolKind,
