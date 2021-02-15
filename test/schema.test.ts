@@ -517,7 +517,7 @@ describe('JSON Schema', () => {
     await service.deleteSchemas({
       action: MODIFICATION_ACTIONS.deleteAll,
       schemas: ['https://myschemastore/main/schema1.json'],
-    } as SchemaService.SchemaDeletionsWhole);
+    } as SchemaService.SchemaDeletionsAll);
     const fs = await service.getResolvedSchema('https://myschemastore/main/schema1.json');
     assert.equal(fs, undefined);
   });

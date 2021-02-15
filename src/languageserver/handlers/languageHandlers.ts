@@ -4,6 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 import { FoldingRange } from 'vscode-json-languageservice';
 import {
+  CodeAction,
+  CodeActionParams,
   CompletionList,
   DidChangeWatchedFilesParams,
   DocumentFormattingParams,
@@ -12,7 +14,7 @@ import {
   DocumentOnTypeFormattingParams,
   DocumentSymbolParams,
   FoldingRangeParams,
-  IConnection,
+  Connection,
   TextDocumentPositionParams,
 } from 'vscode-languageserver';
 import { DocumentSymbol, Hover, SymbolInformation, TextEdit } from 'vscode-languageserver-types';
@@ -27,7 +29,7 @@ export class LanguageHandlers {
   private validationHandler: ValidationHandler;
 
   constructor(
-    private readonly connection: IConnection,
+    private readonly connection: Connection,
     languageService: LanguageService,
     yamlSettings: SettingsState,
     validationHandler: ValidationHandler
@@ -45,6 +47,7 @@ export class LanguageHandlers {
     this.connection.onCompletion((textDocumentPosition) => this.completionHandler(textDocumentPosition));
     this.connection.onDidChangeWatchedFiles((change) => this.watchedFilesHandler(change));
     this.connection.onFoldingRanges((params) => this.foldingRangeHandler(params));
+    this.connection.onCodeAction((params) => this.codeActionHandler(params));
     this.connection.onDocumentOnTypeFormatting((params) => this.formatOnTypeHandler(params));
   }
 
@@ -164,5 +167,14 @@ export class LanguageHandlers {
     }
 
     return this.languageService.getFoldingRanges(textDocument, this.yamlSettings.capabilities.textDocument.foldingRange);
+  }
+
+  codeActionHandler(params: CodeActionParams): CodeAction[] | undefined {
+    const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
+    if (!textDocument) {
+      return;
+    }
+
+    return this.languageService.getCodeAction(textDocument, params);
   }
 }

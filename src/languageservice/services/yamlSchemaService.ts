@@ -50,7 +50,7 @@ export interface SchemaDeletions {
   key: string;
 }
 
-export interface SchemaDeletionsWhole {
+export interface SchemaDeletionsAll {
   schemas: string[];
   action: MODIFICATION_ACTIONS.deleteAll;
 }
@@ -464,7 +464,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   /**
    * Delete schemas on specific path
    */
-  public async deleteSchemas(deletions: SchemaDeletionsWhole): Promise<void> {
+  public async deleteSchemas(deletions: SchemaDeletionsAll): Promise<void> {
     deletions.schemas.forEach((s) => {
       this.deleteSchema(s);
     });

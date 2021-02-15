@@ -1,4 +1,4 @@
-import { TextDocuments, Disposable, ClientCapabilities, WorkspaceFolder } from 'vscode-languageserver';
+import { TextDocuments, Disposable, ClientCapabilities, WorkspaceFolder } from 'vscode-languageserver/node';
 import { CustomFormatterOptions, SchemaConfiguration } from './languageservice/yamlLanguageService';
 import { ISchemaAssociations } from './requestTypes';
 import { URI } from 'vscode-uri';
@@ -61,7 +61,7 @@ export class SettingsState {
 
   // Create a simple text document manager. The text document manager
   // supports full document sync only
-  documents: TextDocuments | TextDocumentTestManager = new TextDocuments();
+  documents: TextDocuments<TextDocument> | TextDocumentTestManager = new TextDocuments(TextDocument);
 
   // Language client configuration
   capabilities: ClientCapabilities;
@@ -73,8 +73,12 @@ export class SettingsState {
   useVSCodeContentRequest = false;
 }
 
-export class TextDocumentTestManager extends TextDocuments {
+export class TextDocumentTestManager extends TextDocuments<TextDocument> {
   testTextDocuments = new Map<string, TextDocument>();
+
+  constructor() {
+    super(TextDocument);
+  }
 
   get(uri: string): TextDocument | undefined {
     return this.testTextDocuments.get(uri);
