@@ -4,7 +4,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { YAMLSchemaService, CustomSchemaProvider, SchemaAdditions, SchemaDeletions } from './services/yamlSchemaService';
+import {
+  YAMLSchemaService,
+  CustomSchemaProvider,
+  SchemaAdditions,
+  SchemaDeletions,
+  SchemaDeletionsAll,
+} from './services/yamlSchemaService';
 import {
   Position,
   CompletionList,
@@ -118,6 +124,7 @@ export interface LanguageService {
   deleteSchema(schemaID: string): void;
   modifySchemaContent(schemaAdditions: SchemaAdditions): void;
   deleteSchemaContent(schemaDeletions: SchemaDeletions): void;
+  deleteSchemasWhole(schemaDeletions: SchemaDeletionsAll): void;
   getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | null;
   getCodeAction(document: TextDocument, params: CodeActionParams): CodeAction[] | undefined;
 }
@@ -179,6 +186,9 @@ export function getLanguageService(
     },
     deleteSchemaContent: (schemaDeletions: SchemaDeletions) => {
       return schemaService.deleteContent(schemaDeletions);
+    },
+    deleteSchemasWhole: (schemaDeletions: SchemaDeletionsAll) => {
+      return schemaService.deleteSchemas(schemaDeletions);
     },
     getFoldingRanges,
     getCodeAction: (document, params) => {
