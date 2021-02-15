@@ -30,7 +30,7 @@ import { stringifyObject, StringifySettings } from '../utils/json';
 import { guessIndentation } from '../utils/indentationGuesser';
 import { TextBuffer } from '../utils/textBuffer';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
-import { ClientCapabilities } from 'vscode-languageserver';
+import { ClientCapabilities, MarkupContent } from 'vscode-languageserver';
 const localize = nls.loadMessageBundle();
 
 export class YAMLCompletion extends JSONCompletion {
@@ -371,12 +371,12 @@ export class YAMLCompletion extends JSONCompletion {
       const matchingSchemas = doc.getMatchingSchemas(schema.schema);
       matchingSchemas.forEach((s) => {
         if (s.node === node && !s.inverted && s.schema) {
-          this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
-            newLineFirst: false,
-            indentFirstObject: false,
-            shouldIndentWithTab: false,
-          });
           if (s.schema.items) {
+            this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
+              newLineFirst: false,
+              indentFirstObject: false,
+              shouldIndentWithTab: false,
+            });
             if (Array.isArray(s.schema.items)) {
               const index = super.findItemAtOffset(node, document, offset);
               if (index < s.schema.items.length) {
@@ -392,6 +392,25 @@ export class YAMLCompletion extends JSONCompletion {
                 insertText: `- ${this.getInsertTextForObject(s.schema.items, separatorAfter).insertText.trimLeft()}`,
                 insertTextFormat: InsertTextFormat.Snippet,
               });
+              this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types);
+            } else if (typeof s.schema.items === 'object' && s.schema.items.anyOf) {
+              s.schema.items.anyOf
+                .filter((i) => typeof i === 'object')
+                .forEach((i: JSONSchema, index) => {
+                  const insertText = `- ${this.getInsertTextForObject(i, separatorAfter).insertText.trimLeft()}`;
+                  //append insertText to documentation
+                  const documentation = this.getDocumentationWithMarkdownText(
+                    `Create an item of an array${s.schema.description === undefined ? '' : '(' + s.schema.description + ')'}`,
+                    insertText
+                  );
+                  collector.add({
+                    kind: super.getSuggestionKind(i.type),
+                    label: '- (array item) ' + (index + 1),
+                    documentation: documentation,
+                    insertText: insertText,
+                    insertTextFormat: InsertTextFormat.Snippet,
+                  });
+                });
               this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types);
             } else {
               this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types);
@@ -1003,6 +1022,19 @@ export class YAMLCompletion extends JSONCompletion {
 
   private is_EOL(c: number): boolean {
     return c === 0x0a /* LF */ || c === 0x0d /* CR */;
+  }
+
+  private getDocumentationWithMarkdownText(documentation: string, insertText: string): string | MarkupContent {
+    let res: string | MarkupContent = documentation;
+    if (super.doesSupportMarkdown()) {
+      insertText = insertText
+        .replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => {
+          return arg;
+        })
+        .replace(/\$([0-9]+)/g, '');
+      res = super.fromMarkup(`${documentation}\n \`\`\`\n${insertText}\n\`\`\``) as MarkupContent;
+    }
+    return res;
   }
 }
 

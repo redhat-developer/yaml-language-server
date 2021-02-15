@@ -9,7 +9,7 @@ import { TextEdit } from 'vscode-languageserver';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
-suite('Formatter Tests', () => {
+describe('Formatter Tests', () => {
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
 

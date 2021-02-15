@@ -11,7 +11,7 @@ import { SymbolInformation } from 'vscode-languageserver';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
-suite('Document Symbols Tests', () => {
+describe('Document Symbols Tests', () => {
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
 

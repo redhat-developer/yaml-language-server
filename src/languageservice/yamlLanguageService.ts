@@ -29,9 +29,10 @@ import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
 import { JSONDocument, DefinitionLink } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
-import { TextDocument, FoldingRange, ClientCapabilities } from 'vscode-languageserver';
+import { TextDocument, FoldingRange, ClientCapabilities, DocumentOnTypeFormattingParams } from 'vscode-languageserver';
 import { getFoldingRanges } from './services/yamlFolding';
 import { FoldingRangesContext } from './yamlTypes';
+import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -109,6 +110,7 @@ export interface LanguageService {
   findLinks(document: TextDocument): Promise<DocumentLink[]>;
   resetSchema(uri: string): boolean;
   doFormat(document: TextDocument, options: CustomFormatterOptions): TextEdit[];
+  doDocumentOnTypeFormatting(document: TextDocument, params: DocumentOnTypeFormattingParams): TextEdit[] | undefined;
   addSchema(schemaID: string, schema: JSONSchema): void;
   deleteSchema(schemaID: string): void;
   modifySchemaContent(schemaAdditions: SchemaAdditions): void;
@@ -160,6 +162,7 @@ export function getLanguageService(
       return schemaService.onResourceChange(uri);
     },
     doFormat: formatter.format.bind(formatter),
+    doDocumentOnTypeFormatting,
     addSchema: (schemaID: string, schema: JSONSchema) => {
       return schemaService.saveSchema(schemaID, schema);
     },

@@ -11,15 +11,15 @@ import { LanguageHandlers } from '../src/languageserver/handlers/languageHandler
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 
-// Defines a Mocha test suite to group tests of similar kind together
-suite('Kubernetes Integration Tests', () => {
+// Defines a Mocha test describe to group tests of similar kind together
+describe('Kubernetes Integration Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageHandler: LanguageHandlers;
   let validationHandler: ValidationHandler;
   let yamlSettings: SettingsState;
 
   before(() => {
-    const uri = 'https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.17.0-standalone-strict/all.json';
+    const uri = 'https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.18.1-standalone-strict/all.json';
     const fileMatch = ['*.yml', '*.yaml'];
     languageSettingsSetup = new ServiceSetup()
       .withHover()

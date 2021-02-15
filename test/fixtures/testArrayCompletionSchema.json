@@ -1,0 +1,85 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+      "obj1": {
+        "properties": {
+          "obj1": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "obj1"
+        ],
+        "type": "object"
+      },
+      "obj2": {
+        "properties": {
+          "obj2": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "obj2"
+        ],
+        "type": "object"
+      }
+    },
+    "properties": {
+      "test_simpleArrayObject": {
+        "items": {
+          "$ref": "#/definitions/obj1"
+        },
+        "type": "array"
+      },
+      "test_array_anyOf_2objects": {
+        "items": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/obj1"
+            },
+            {
+              "$ref": "#/definitions/obj2"
+            }
+          ]
+        },
+        "type": "array"
+      },
+      "test_array_anyOf_strAndObj": {
+        "items": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/obj1"
+            }
+          ]
+        },
+        "type": "array"
+      },
+      "test_anyOfObjectAndNull": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/obj1"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "test_anyOfArrAndNull": {
+        "anyOf": [
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "type": "object"
+  }

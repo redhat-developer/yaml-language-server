@@ -5,7 +5,7 @@
 import { equals } from '../src/languageservice/utils/objects';
 import * as assert from 'assert';
 
-suite('Object Equals Tests', () => {
+describe('Object Equals Tests', () => {
   describe('Equals', function () {
     it('Both are null', () => {
       const one = null;
