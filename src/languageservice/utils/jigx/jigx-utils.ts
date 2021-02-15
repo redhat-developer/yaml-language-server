@@ -92,17 +92,22 @@ export function ensureInstance<T>(type: { new(): T }, initObj: any): T {
 /**
  * Get type name from reference url
  * @param $ref reference to the same file OR to the another component OR to the section in another component:
+ * `ja-action-list.schema.json`
+ * `dynamic-schema://globals-shared.schema.json#/definitions/Expression`
+ * `dynamic-schema://ja-go-to.schema.json`
  * `globals-shared.schema.json#/definitions/FieldDatastore`
  * `file:///Users/petr/Documents/Jigx/git/jigx-builder/assets/schemas/jc-list-item.schema.json`
  * `#/definitions/TextFormat`
+ * test: https://regex101.com/r/qcaBaQ/6
  */
 export function getSchemaRefTypeTitle($ref: string): string {
-  const match = $ref.match(/(schemas\/)?([a-z\-A-Z]*)(.schema.json)?(#\/definitions\/)?(.*)/);
-  if (match) {
-    const type = match[5] || match[2] || 'typeNotFound';
-    return type;
+  const match = $ref.match(/^(?:.*\/)?([^\.\n]*)(?:\.schema\.json)?$/);
+  let type = !!match && match[1];
+  if (!type) {
+    type = 'typeNotFound';
+    console.error(`$ref (${$ref}) not parsed properly`);
   }
-  return '';
+  return type;
 }
 
 /**
