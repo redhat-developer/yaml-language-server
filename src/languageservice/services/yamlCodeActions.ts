@@ -17,7 +17,7 @@ export class YamlCodeActions {
       if (!uri) {
         return;
       }
-      if (!uri.startsWith('file')) {
+      if (!uri.startsWith('file') && !uri.startsWith('dynamic-schema')) {
         uri = 'json-schema' + uri.substring(uri.indexOf('://'), uri.length);
       }
 
@@ -48,7 +48,10 @@ export class YamlCodeActions {
     const schemaUriToDiagnostic = new Map<string, Diagnostic[]>();
     for (const diagnostic of diagnostics) {
       const schemaUri = (diagnostic.data as YamlDiagnosticData)?.schemaUri;
-      if (schemaUri && (schemaUri.startsWith('file') || schemaUri.startsWith('https'))) {
+      if (
+        schemaUri &&
+        (schemaUri.startsWith('file') || schemaUri.startsWith('https') || schemaUri.startsWith('dynamic-schema'))
+      ) {
         if (!schemaUriToDiagnostic.has(schemaUri)) {
           schemaUriToDiagnostic.set(schemaUri, []);
         }
