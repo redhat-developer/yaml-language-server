@@ -14,6 +14,7 @@ import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageService } from '../src';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { TextEdit } from 'vscode-languageserver-textdocument';
 
 const snippet$1symbol = jigxBranchTest ? '' : '$1';
 
@@ -1884,7 +1885,7 @@ describe('Auto Completion Tests', () => {
         const completion = parseSetup(content, content.length);
         completion.then(function (result) {
           assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].label, '- (array item) 1');
+          assert.equal(result.items[0].label, '- (array item) obj1');
         });
       });
 
@@ -1895,7 +1896,7 @@ describe('Auto Completion Tests', () => {
         const completion = parseSetup(content, content.length);
         completion.then(function (result) {
           assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].label, '- (array item) 1');
+          assert.equal(result.items[0].label, '- (array item) obj1');
         });
       });
 
@@ -1906,7 +1907,7 @@ describe('Auto Completion Tests', () => {
         const completion = parseSetup(content, content.length);
         completion.then(function (result) {
           assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].label, '- (array item) 1');
+          assert.equal(result.items[0].label, '- (array item) obj1');
         });
       });
       describe('Inline object completion', () => {
@@ -1942,7 +1943,10 @@ describe('Auto Completion Tests', () => {
               assert.equal(result.items.length, 2);
               assert.equal(result.items[0].insertText, 'jig');
               assert.equal(result.items[1].insertText, 'data');
-              assert.deepStrictEqual(result.items[1].textEdit.range.start, { line: 0, character: content.lastIndexOf('.') + 1 });
+              assert.deepStrictEqual((result.items[1].textEdit as TextEdit).range.start, {
+                line: 0,
+                character: content.lastIndexOf('.') + 1,
+              });
             })
             .then(done, done);
         });
@@ -2000,7 +2004,10 @@ describe('Auto Completion Tests', () => {
               assert.equal(result.items.length, 4);
               assert.equal(result.items[2].insertText, 'jig');
               assert.equal(result.items[3].insertText, 'data');
-              assert.deepStrictEqual(result.items[3].textEdit.range.start, { line: 0, character: content.lastIndexOf('.') + 1 });
+              assert.deepStrictEqual((result.items[3].textEdit as TextEdit).range.start, {
+                line: 0,
+                character: content.lastIndexOf('.') + 1,
+              });
             })
             .then(done, done);
         });

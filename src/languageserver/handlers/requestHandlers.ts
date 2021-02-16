@@ -2,12 +2,12 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { IConnection, TextDocumentPositionParams } from 'vscode-languageserver';
+import { Connection, TextDocumentPositionParams } from 'vscode-languageserver';
 import {
   MODIFICATION_ACTIONS,
   SchemaAdditions,
   SchemaDeletions,
-  SchemaDeletionsWhole,
+  SchemaDeletionsAll,
 } from '../../languageservice/services/yamlSchemaService';
 import { LanguageService } from '../../languageservice/yamlLanguageService';
 import { HoverDetailRequest, SchemaModificationNotification } from '../../requestTypes';
@@ -15,7 +15,7 @@ import { SettingsState } from '../../yamlSettings';
 
 export class RequestHandlers {
   private languageService: LanguageService;
-  constructor(private readonly connection: IConnection, languageService: LanguageService, private yamlSettings: SettingsState) {
+  constructor(private readonly connection: Connection, languageService: LanguageService, private yamlSettings: SettingsState) {
     this.languageService = languageService;
   }
 
@@ -34,7 +34,7 @@ export class RequestHandlers {
   }
 
   private registerSchemaModificationNotificationHandler(
-    modifications: SchemaAdditions | SchemaDeletions | SchemaDeletionsWhole
+    modifications: SchemaAdditions | SchemaDeletions | SchemaDeletionsAll
   ): void {
     if (modifications.action === MODIFICATION_ACTIONS.add) {
       this.languageService.modifySchemaContent(modifications);

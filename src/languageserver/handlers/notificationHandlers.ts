@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { IConnection } from 'vscode-languageserver';
+import { Connection } from 'vscode-languageserver';
 import { CustomSchemaProvider } from '../../languageservice/services/yamlSchemaService';
 import { LanguageService, SchemaConfiguration } from '../../languageservice/yamlLanguageService';
 import {
@@ -20,7 +20,7 @@ export class NotificationHandlers {
   private settingsHandler: SettingsHandler;
 
   constructor(
-    private readonly connection: IConnection,
+    private readonly connection: Connection,
     languageService: LanguageService,
     yamlSettings: SettingsState,
     settingsHandler: SettingsHandler

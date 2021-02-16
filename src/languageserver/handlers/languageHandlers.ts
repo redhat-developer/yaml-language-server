@@ -4,6 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 import { FoldingRange } from 'vscode-json-languageservice';
 import {
+  CodeAction,
+  CodeActionParams,
   CompletionList,
   DidChangeWatchedFilesParams,
   DocumentFormattingParams,
@@ -12,7 +14,7 @@ import {
   DocumentOnTypeFormattingParams,
   DocumentSymbolParams,
   FoldingRangeParams,
-  IConnection,
+  Connection,
   TextDocumentPositionParams,
 } from 'vscode-languageserver';
 import { DocumentSymbol, Hover, SymbolInformation, TextEdit } from 'vscode-languageserver-types';
@@ -22,12 +24,13 @@ import { SettingsState } from '../../yamlSettings';
 import { ValidationHandler } from './validationHandlers';
 
 export class LanguageHandlers {
+  public isTest = false;
   private languageService: LanguageService;
   private yamlSettings: SettingsState;
   private validationHandler: ValidationHandler;
 
   constructor(
-    private readonly connection: IConnection,
+    private readonly connection: Connection,
     languageService: LanguageService,
     yamlSettings: SettingsState,
     validationHandler: ValidationHandler
@@ -45,6 +48,7 @@ export class LanguageHandlers {
     this.connection.onCompletion((textDocumentPosition) => this.completionHandler(textDocumentPosition));
     this.connection.onDidChangeWatchedFiles((change) => this.watchedFilesHandler(change));
     this.connection.onFoldingRanges((params) => this.foldingRangeHandler(params));
+    this.connection.onCodeAction((params) => this.codeActionHandler(params));
     this.connection.onDocumentOnTypeFormatting((params) => this.formatOnTypeHandler(params));
   }
 
@@ -75,7 +79,7 @@ export class LanguageHandlers {
      * So this is a prevent for double call.
      */
     if (
-      !documentSymbolParams.isTest && //don't use cache when testing
+      !this.isTest && //don't use cache when testing
       this.previousCall.request &&
       this.previousCall.time &&
       this.previousCall.uri === documentSymbolParams.textDocument.uri &&
@@ -185,5 +189,14 @@ export class LanguageHandlers {
     }
 
     return this.languageService.getFoldingRanges(textDocument, this.yamlSettings.capabilities.textDocument.foldingRange);
+  }
+
+  codeActionHandler(params: CodeActionParams): CodeAction[] | undefined {
+    const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
+    if (!textDocument) {
+      return;
+    }
+
+    return this.languageService.getCodeAction(textDocument, params);
   }
 }

@@ -3,7 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DocumentOnTypeFormattingParams, Position, Range, TextDocument, TextEdit } from 'vscode-languageserver';
+import { DocumentOnTypeFormattingParams, Position, Range, TextEdit } from 'vscode-languageserver';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import { TextBuffer } from '../utils/textBuffer';
 
 export function doDocumentOnTypeFormatting(
@@ -23,10 +24,13 @@ export function doDocumentOnTypeFormatting(
         if (indentationFix === params.options.tabSize && !isInArray) {
           return; // skip if line already has proper formatting
         }
-        return [
-          TextEdit.del(Range.create(position, Position.create(position.line, currentLine.length - 1))),
-          TextEdit.insert(position, ' '.repeat(params.options.tabSize + (isInArray ? 2 - indentationFix : 0))),
-        ];
+        const result = [];
+        if (currentLine.length > 0) {
+          result.push(TextEdit.del(Range.create(position, Position.create(position.line, currentLine.length - 1))));
+        }
+        result.push(TextEdit.insert(position, ' '.repeat(params.options.tabSize + (isInArray ? 2 - indentationFix : 0))));
+
+        return result;
       }
       if (isInArray) {
         return [TextEdit.insert(position, ' '.repeat(params.options.tabSize))];

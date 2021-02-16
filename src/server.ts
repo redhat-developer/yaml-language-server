@@ -6,7 +6,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { createConnection, IConnection, ProposedFeatures } from 'vscode-languageserver';
+import { createConnection, Connection, ProposedFeatures } from 'vscode-languageserver/node';
 import * as nls from 'vscode-nls';
 import { schemaRequestHandler, workspaceContext } from './languageservice/services/schemaRequestHandler';
 import { YAMLServerInit } from './yamlServerInit';
@@ -16,7 +16,7 @@ import { SettingsState } from './yamlSettings';
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
 
 // Create a connection for the server.
-let connection: IConnection = null;
+let connection: Connection = null;
 
 if (process.argv.indexOf('--stdio') === -1) {
   connection = createConnection(ProposedFeatures.all);
@@ -33,7 +33,7 @@ const yamlSettings = new SettingsState();
  * Handles schema content requests given the schema URI
  * @param uri can be a local file, vscode request, http(s) request or a custom request
  */
-const schemaRequestHandlerWrapper = (connection: IConnection, uri: string): Promise<string> => {
+const schemaRequestHandlerWrapper = (connection: Connection, uri: string): Promise<string> => {
   return schemaRequestHandler(
     connection,
     uri,

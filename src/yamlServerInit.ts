@@ -1,4 +1,4 @@
-import { IConnection, InitializeParams, InitializeResult } from 'vscode-languageserver';
+import { Connection, InitializeParams, InitializeResult, TextDocumentSyncKind } from 'vscode-languageserver/node';
 import {
   getLanguageService as getCustomLanguageService,
   LanguageService,
@@ -13,6 +13,9 @@ import { NotificationHandlers } from './languageserver/handlers/notificationHand
 import { RequestHandlers } from './languageserver/handlers/requestHandlers';
 import { ValidationHandler } from './languageserver/handlers/validationHandlers';
 import { SettingsHandler } from './languageserver/handlers/settingsHandlers';
+import { YamlCommands } from './commands';
+import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
+import { commandExecutor } from './languageserver/commandExecutor';
 
 export class YAMLServerInit {
   languageService: LanguageService;
@@ -20,7 +23,7 @@ export class YAMLServerInit {
   validationHandler: ValidationHandler;
 
   constructor(
-    private readonly connection: IConnection,
+    private readonly connection: Connection,
     private yamlSettings: SettingsState,
     private workspaceContext: WorkspaceContextService,
     private schemaRequestService: SchemaRequestService
@@ -48,7 +51,12 @@ export class YAMLServerInit {
   // public for test setup
   connectionInitialized(params: InitializeParams): InitializeResult {
     this.yamlSettings.capabilities = params.capabilities;
-    this.languageService = getCustomLanguageService(this.schemaRequestService, this.workspaceContext, params.capabilities);
+    this.languageService = getCustomLanguageService(
+      this.schemaRequestService,
+      this.workspaceContext,
+      this.connection,
+      params.capabilities
+    );
 
     // Only try to parse the workspace root if its not null. Otherwise initialize will fail
     if (params.rootUri) {
@@ -73,7 +81,7 @@ export class YAMLServerInit {
 
     return {
       capabilities: {
-        textDocumentSync: this.yamlSettings.documents.syncKind,
+        textDocumentSync: TextDocumentSyncKind.Incremental,
         completionProvider: { resolveProvider: false },
         hoverProvider: false,
         documentSymbolProvider: true,
@@ -84,6 +92,10 @@ export class YAMLServerInit {
         documentRangeFormattingProvider: false,
         documentLinkProvider: {},
         foldingRangeProvider: true,
+        codeActionProvider: true,
+        executeCommandProvider: {
+          commands: Object.keys(YamlCommands).map((k) => YamlCommands[k]),
+        },
         workspace: {
           workspaceFolders: {
             changeNotifications: true,
@@ -103,6 +115,7 @@ export class YAMLServerInit {
     this.languageHandler.registerHandlers();
     new NotificationHandlers(this.connection, this.languageService, this.yamlSettings, settingsHandler).registerHandlers();
     new RequestHandlers(this.connection, this.languageService, this.yamlSettings).registerHandlers();
+    new WorkspaceHandlers(this.connection, commandExecutor).registerHandlers();
   }
 
   start(): void {

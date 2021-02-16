@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { IConnection } from 'vscode-languageserver';
+import { Connection } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic } from 'vscode-languageserver-types';
 import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
@@ -14,7 +14,7 @@ export class ValidationHandler {
   private languageService: LanguageService;
   private yamlSettings: SettingsState;
 
-  constructor(private readonly connection: IConnection, languageService: LanguageService, yamlSettings: SettingsState) {
+  constructor(private readonly connection: Connection, languageService: LanguageService, yamlSettings: SettingsState) {
     this.languageService = languageService;
     this.yamlSettings = yamlSettings;
 
