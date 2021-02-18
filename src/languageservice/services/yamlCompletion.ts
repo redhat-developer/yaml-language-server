@@ -668,6 +668,9 @@ export class YAMLCompletion extends JSONCompletion {
   ): void {
     if (typeof schema === 'object' && schema.inlineObject) {
       const newParams = prepareInlineCompletion(value || '');
+      if (!newParams.node) {
+        return; // invalid syntax
+      }
       const resolvedSchema: ResolvedSchema = { schema: schema };
       this.overwriteRange = Range.create(
         this.overwriteRange.end.line,

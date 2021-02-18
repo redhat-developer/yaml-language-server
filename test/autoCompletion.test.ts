@@ -2011,6 +2011,16 @@ describe('Auto Completion Tests', () => {
             })
             .then(done, done);
         });
+        it('dont fail with dot', (done) => {
+          languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+          const content = 'value: .';
+          const completion = parseSetup(content, content.length);
+          completion
+            .then(function (result) {
+              assert.equal(result.items.length, 0);
+            })
+            .then(done, done);
+        });
       });
     });
   });
