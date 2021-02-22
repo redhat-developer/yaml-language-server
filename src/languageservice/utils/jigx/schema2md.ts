@@ -3,11 +3,11 @@
 import { JSONSchema } from 'vscode-json-languageservice';
 import { IProblem, JSONSchemaWithProblems } from '../../parser/jsonParser07';
 import { YamlHoverDetailPropTableStyle } from '../../services/yamlHoverDetail';
+import { getSchemaRefTypeTitle } from '../schemaUtils';
 import { Globals } from './globals';
 import {
   char_gt,
   char_lt,
-  getSchemaRefTypeTitle,
   replace,
   replaceSpecialCharsInDescription,
   tableColumnSeparator,

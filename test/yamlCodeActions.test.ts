@@ -25,6 +25,7 @@ const expect = chai.expect;
 chai.use(sinonChai);
 
 const JSON_SCHEMA_LOCAL = 'file://some/path/schema.json';
+const JSON_SCHEMA2_LOCAL = 'file://some/path/schema2.json';
 
 describe('CodeActions Tests', () => {
   const sandbox = sinon.createSandbox();
@@ -85,11 +86,39 @@ describe('CodeActions Tests', () => {
       const result = actions.getCodeAction(doc, params);
 
       const codeAction = CodeAction.create(
-        'Jump to schema location',
+        'Jump to schema location (schema.json)',
         Command.create('JumpToSchema', YamlCommands.JUMP_TO_SCHEMA, JSON_SCHEMA_LOCAL)
       );
       codeAction.diagnostics = diagnostics;
       expect(result[0]).to.deep.equal(codeAction);
+    });
+
+    it('should provide multiple action if diagnostic has uri for multiple schemas', () => {
+      const doc = setupTextDocument('');
+      const diagnostics = [
+        createDiagnosticWithData('foo', 0, 0, 0, 0, 1, JSON_SCHEMA_LOCAL, [JSON_SCHEMA_LOCAL, JSON_SCHEMA2_LOCAL]),
+      ];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      clientCapabilities.window = { showDocument: { support: true } };
+      const actions = new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+
+      const codeAction = CodeAction.create(
+        'Jump to schema location (schema.json)',
+        Command.create('JumpToSchema', YamlCommands.JUMP_TO_SCHEMA, JSON_SCHEMA_LOCAL)
+      );
+      const codeAction2 = CodeAction.create(
+        'Jump to schema location (schema2.json)',
+        Command.create('JumpToSchema', YamlCommands.JUMP_TO_SCHEMA, JSON_SCHEMA2_LOCAL)
+      );
+      codeAction.diagnostics = diagnostics;
+      codeAction2.diagnostics = diagnostics;
+      expect(result[0]).to.deep.equal(codeAction);
+      expect(result[1]).to.deep.equal(codeAction2);
     });
   });
 });

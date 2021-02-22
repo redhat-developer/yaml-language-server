@@ -15,6 +15,7 @@ export const NumberTypeError = 'Incorrect type. Expected "number".';
 export const BooleanTypeError = 'Incorrect type. Expected "boolean".';
 export const ArrayTypeError = 'Incorrect type. Expected "array".';
 export const ObjectTypeError = 'Incorrect type. Expected "object".';
+export const TypeMismatchWarning = 'Incorrect type. Expected "{0}".';
 
 export function propertyIsNotAllowed(name: string): string {
   return `Property ${name} is not allowed.`;

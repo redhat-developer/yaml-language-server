@@ -3,13 +3,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { JSONSchema } from 'vscode-json-languageservice';
 import { IProblem } from '../../parser/jsonParser07';
+import { getSchemaRefTypeTitle } from '../schemaUtils';
 import { Globals } from './globals';
 import {
   char_gt,
   char_lt,
   createInstance,
   getFileInfo,
-  getSchemaRefTypeTitle,
   Instantiable,
   tableColumnSeparator,
   toTsBlock,

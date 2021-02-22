@@ -26,10 +26,10 @@ export function createDiagnosticWithData(
   endCharacter: number,
   severity: DiagnosticSeverity = 1,
   source = 'YAML',
-  schemaUri: string
+  schemaUri: string | string[]
 ): Diagnostic {
   const diagnostic: Diagnostic = createExpectedError(message, startLine, startCharacter, endLine, endCharacter, severity, source);
-  diagnostic.data = { schemaUri };
+  diagnostic.data = { schemaUri: typeof schemaUri === 'string' ? [schemaUri] : schemaUri };
   return diagnostic;
 }
 

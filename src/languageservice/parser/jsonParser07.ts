@@ -26,6 +26,7 @@ import { Schema_Object } from '../utils/jigx/schema-type';
 import * as path from 'path';
 import { prepareInlineCompletion } from '../services/yamlCompletion';
 import { Diagnostic } from 'vscode-languageserver';
+import { TypeMismatchWarning } from '../../../test/utils/errorMessages';
 
 const localize = nls.loadMessageBundle();
 
@@ -58,12 +59,12 @@ const formats = {
 };
 
 export const YAML_SOURCE = 'YAML';
+const YAML_SCHEMA_PREFIX = 'yaml-schema: ';
 
 export enum ProblemType {
   missingRequiredPropWarning = 'MissingRequiredPropWarning',
   typeMismatchWarning = 'TypeMismatchWarning',
 }
-
 export interface IProblem {
   location: IRange;
   severity: DiagnosticSeverity;
@@ -73,7 +74,7 @@ export interface IProblem {
   propertyName?: string;
   problemType?: ProblemType;
   schemaType?: string;
-  schemaUri?: string;
+  schemaUri?: string[];
 }
 
 export interface JSONSchemaWithProblems extends JSONSchema {
@@ -81,7 +82,7 @@ export interface JSONSchemaWithProblems extends JSONSchema {
 }
 
 interface DiagnosticExt extends Diagnostic {
-  schemaUri?: string;
+  schemaUri?: string[];
 }
 
 export abstract class ASTNodeImpl {
@@ -362,25 +363,38 @@ export class ValidationResult {
     }
   }
 
-  static propertyApostrophe = '"';
-  static problemMessages = {
-    typeMismatchWarning:
-      'Incorrect type. Expected ' + ValidationResult.propertyApostrophe + '{0}' + ValidationResult.propertyApostrophe + '.',
-  };
   /**
    * Merge ProblemType.typeMismatchWarning together
    * @param subValidationResult another possible result
    */
   public mergeTypeMismatch(subValidationResult: ValidationResult): void {
     if (this.problems?.length) {
-      const typeMismatchBest = this.problems.find((p) => p.problemType === ProblemType.typeMismatchWarning);
-      if (typeMismatchBest) {
-        const typeMismatchSub = subValidationResult.problems?.find((p) => p.problemType === ProblemType.typeMismatchWarning);
-        if (typeMismatchSub && typeMismatchBest.location.offset === typeMismatchSub.location.offset) {
-          const pos = typeMismatchBest.message.lastIndexOf(ValidationResult.propertyApostrophe);
-          typeMismatchBest.message =
-            typeMismatchBest.message.slice(0, pos) + ` | ${typeMismatchSub.schemaType}` + typeMismatchBest.message.slice(pos);
-          typeMismatchBest.source = 'multiple schemas';
+      const bestResults = this.problems.filter((p) => p.problemType === ProblemType.typeMismatchWarning);
+      for (const bestResult of bestResults) {
+        const mergingResult = subValidationResult.problems?.find((p) => p.problemType === ProblemType.typeMismatchWarning);
+        if (mergingResult && bestResult.location.offset === mergingResult.location.offset) {
+          const pos = bestResult.message.match(/(.(?![`'"]))+$/)?.index || bestResult.message.length; //find las occurrence of some apostrophe
+          bestResult.message =
+            bestResult.message.slice(0, pos) + ` | ${mergingResult.schemaType}` + bestResult.message.slice(pos);
+          this.mergeSources(mergingResult, bestResult);
+        }
+      }
+    }
+  }
+
+  /**
+   * Merge ProblemType.missingRequiredPropWarning together
+   * @param subValidationResult another possible result
+   */
+  public mergeMissingRequiredProp(subValidationResult: ValidationResult): void {
+    if (this.problems?.length) {
+      const bestResults = this.problems.filter((p) => p.problemType === ProblemType.missingRequiredPropWarning);
+      for (const bestResult of bestResults) {
+        const mergingResult = subValidationResult.problems?.find(
+          (p) => p.problemType === bestResult.problemType && p.message === bestResult.message
+        );
+        if (mergingResult && bestResult.location.offset === mergingResult.location.offset) {
+          this.mergeSources(mergingResult, bestResult);
         }
       }
     }
@@ -397,6 +411,16 @@ export class ValidationResult {
     }
     if (propertyValidationResult.enumValueMatch && propertyValidationResult.enumValues) {
       this.primaryValueMatches++;
+    }
+  }
+
+  private mergeSources(mergingResult: IProblem, bestResult: IProblem): void {
+    const mergingSource = mergingResult.source.replace(YAML_SCHEMA_PREFIX, '');
+    if (!bestResult.source.includes(mergingSource)) {
+      bestResult.source = bestResult.source + ' | ' + mergingSource;
+    }
+    if (!bestResult.schemaUri.includes(mergingResult.schemaUri[0])) {
+      bestResult.schemaUri = bestResult.schemaUri.concat(mergingResult.schemaUri);
     }
   }
 
@@ -585,18 +609,11 @@ function validate(
     } else if (schema.type) {
       if (!matchesType(schema.type)) {
         //get more specific name than just object
-        let schemaType = schema.type;
-        if (schema.const) {
-          schemaType = schema.const;
-        } else if (schema.type === 'object') {
-          schemaType = Schema_Object.getSchemaType(schema);
-        }
-        pushProblemToValidationResultAndSchema(schema, validationResult, {
+        const schemaType = schema.type === 'object' ? Schema_Object.getSchemaType(schema) : schema.type;
+        validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message:
-            schema.errorMessage ||
-            localize('typeMismatchWarning', ValidationResult.problemMessages.typeMismatchWarning, schemaType),
+          message: schema.errorMessage || localize('typeMismatchWarning', TypeMismatchWarning, schemaType),
           source: getSchemaSource(schema, originalSchema),
           problemType: ProblemType.typeMismatchWarning,
           schemaType: schemaType,
@@ -1376,6 +1393,7 @@ function validate(
         bestMatch.matchingSchemas.merge(subMatchingSchemas);
         bestMatch.validationResult.mergeEnumValues(subValidationResult);
         bestMatch.validationResult.mergeTypeMismatch(subValidationResult);
+        bestMatch.validationResult.mergeMissingRequiredProp(subValidationResult);
       }
     }
     return bestMatch;
@@ -1412,14 +1430,14 @@ function getSchemaSource(schema: JSONSchema, originalSchema: JSONSchema): string
       }
     }
     if (label) {
-      return `yaml-schema: ${label}`;
+      return `${YAML_SCHEMA_PREFIX}${label}`;
     }
   }
 
   return YAML_SOURCE;
 }
 
-function getSchemaUri(schema: JSONSchema, originalSchema: JSONSchema): string | undefined {
+function getSchemaUri(schema: JSONSchema, originalSchema: JSONSchema): string[] {
   const uriString = schema.url ?? originalSchema.url;
-  return uriString;
+  return uriString ? [uriString] : [];
 }
