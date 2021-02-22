@@ -7,6 +7,7 @@
 import * as Json from 'jsonc-parser';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isNumber, equals, isString, isDefined, isBoolean } from '../utils/objects';
+import { getSchemaTypeName } from '../utils/schemaUtils';
 import {
   ASTNode,
   ObjectASTNode,
@@ -23,6 +24,7 @@ import { URI } from 'vscode-uri';
 import { DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic } from 'vscode-languageserver';
+import { TypeMismatchWarning } from '../../../test/utils/errorMessages';
 
 const localize = nls.loadMessageBundle();
 
@@ -55,18 +57,26 @@ const formats = {
 };
 
 export const YAML_SOURCE = 'YAML';
+const YAML_SCHEMA_PREFIX = 'yaml-schema: ';
 
+export enum ProblemType {
+  missingRequiredPropWarning = 'MissingRequiredPropWarning',
+  typeMismatchWarning = 'TypeMismatchWarning',
+}
 export interface IProblem {
   location: IRange;
   severity: DiagnosticSeverity;
   code?: ErrorCode;
   message: string;
   source?: string;
-  schemaUri?: string;
+  propertyName?: string;
+  problemType?: ProblemType;
+  schemaType?: string;
+  schemaUri?: string[];
 }
 
 interface DiagnosticExt extends Diagnostic {
-  schemaUri?: string;
+  schemaUri?: string[];
 }
 
 export abstract class ASTNodeImpl {
@@ -345,6 +355,43 @@ export class ValidationResult {
     }
   }
 
+  /**
+   * Merge ProblemType.typeMismatchWarning together
+   * @param subValidationResult another possible result
+   */
+  public mergeTypeMismatch(subValidationResult: ValidationResult): void {
+    if (this.problems?.length) {
+      const bestResults = this.problems.filter((p) => p.problemType === ProblemType.typeMismatchWarning);
+      for (const bestResult of bestResults) {
+        const mergingResult = subValidationResult.problems?.find((p) => p.problemType === ProblemType.typeMismatchWarning);
+        if (mergingResult && bestResult.location.offset === mergingResult.location.offset) {
+          const pos = bestResult.message.match(/(.(?![`'"]))+$/)?.index || bestResult.message.length; //find las occurrence of some apostrophe
+          bestResult.message =
+            bestResult.message.slice(0, pos) + ` | ${mergingResult.schemaType}` + bestResult.message.slice(pos);
+          this.mergeSources(mergingResult, bestResult);
+        }
+      }
+    }
+  }
+
+  /**
+   * Merge ProblemType.missingRequiredPropWarning together
+   * @param subValidationResult another possible result
+   */
+  public mergeMissingRequiredProp(subValidationResult: ValidationResult): void {
+    if (this.problems?.length) {
+      const bestResults = this.problems.filter((p) => p.problemType === ProblemType.missingRequiredPropWarning);
+      for (const bestResult of bestResults) {
+        const mergingResult = subValidationResult.problems?.find(
+          (p) => p.problemType === bestResult.problemType && p.message === bestResult.message
+        );
+        if (mergingResult && bestResult.location.offset === mergingResult.location.offset) {
+          this.mergeSources(mergingResult, bestResult);
+        }
+      }
+    }
+  }
+
   public mergePropertyMatch(propertyValidationResult: ValidationResult): void {
     this.merge(propertyValidationResult);
     this.propertiesMatches++;
@@ -356,6 +403,16 @@ export class ValidationResult {
     }
     if (propertyValidationResult.enumValueMatch && propertyValidationResult.enumValues) {
       this.primaryValueMatches++;
+    }
+  }
+
+  private mergeSources(mergingResult: IProblem, bestResult: IProblem): void {
+    const mergingSource = mergingResult.source.replace(YAML_SCHEMA_PREFIX, '');
+    if (!bestResult.source.includes(mergingSource)) {
+      bestResult.source = bestResult.source + ' | ' + mergingSource;
+    }
+    if (!bestResult.schemaUri.includes(mergingResult.schemaUri[0])) {
+      bestResult.schemaUri = bestResult.schemaUri.concat(mergingResult.schemaUri);
     }
   }
 
@@ -537,12 +594,16 @@ function validate(
       }
     } else if (schema.type) {
       if (!matchesType(schema.type)) {
+        //get more specific name than just object
+        const schemaType = schema.type === 'object' ? getSchemaTypeName(schema) : schema.type;
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: schema.errorMessage || localize('typeMismatchWarning', 'Incorrect type. Expected "{0}".', schema.type),
+          message: schema.errorMessage || localize('typeMismatchWarning', TypeMismatchWarning, schemaType),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
+          problemType: ProblemType.typeMismatchWarning,
+          schemaType: schemaType,
         });
       }
     }
@@ -1053,6 +1114,8 @@ function validate(
             message: localize('MissingRequiredPropWarning', 'Missing property "{0}".', propertyName),
             source: getSchemaSource(schema, originalSchema),
             schemaUri: getSchemaUri(schema, originalSchema),
+            propertyName: propertyName,
+            problemType: ProblemType.missingRequiredPropWarning,
           });
         }
       }
@@ -1277,8 +1340,21 @@ function validate(
   }
 
   //genericComparison tries to find the best matching schema using a generic comparison
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas): any {
+  function genericComparison(
+    maxOneMatch,
+    subValidationResult: ValidationResult,
+    bestMatch: {
+      schema: JSONSchema;
+      validationResult: ValidationResult;
+      matchingSchemas: ISchemaCollector;
+    },
+    subSchema,
+    subMatchingSchemas
+  ): {
+    schema: JSONSchema;
+    validationResult: ValidationResult;
+    matchingSchemas: ISchemaCollector;
+  } {
     if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
@@ -1297,6 +1373,8 @@ function validate(
         // there's already a best matching but we are as good
         bestMatch.matchingSchemas.merge(subMatchingSchemas);
         bestMatch.validationResult.mergeEnumValues(subValidationResult);
+        bestMatch.validationResult.mergeTypeMismatch(subValidationResult);
+        bestMatch.validationResult.mergeMissingRequiredProp(subValidationResult);
       }
     }
     return bestMatch;
@@ -1321,14 +1399,14 @@ function getSchemaSource(schema: JSONSchema, originalSchema: JSONSchema): string
       }
     }
     if (label) {
-      return `yaml-schema: ${label}`;
+      return `${YAML_SCHEMA_PREFIX}${label}`;
     }
   }
 
   return YAML_SOURCE;
 }
 
-function getSchemaUri(schema: JSONSchema, originalSchema: JSONSchema): string | undefined {
+function getSchemaUri(schema: JSONSchema, originalSchema: JSONSchema): string[] {
   const uriString = schema.url ?? originalSchema.url;
-  return uriString;
+  return uriString ? [uriString] : [];
 }

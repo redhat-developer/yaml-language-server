@@ -81,6 +81,7 @@ describe('JSON Schema', () => {
           id: 'https://myschemastore/child',
           type: 'bool',
           description: 'Test description',
+          _$ref: 'https://myschemastore/child',
           url: 'https://myschemastore/child',
         });
       })
@@ -128,6 +129,7 @@ describe('JSON Schema', () => {
           type: 'object',
           required: ['$ref'],
           properties: { $ref: { type: 'string' } },
+          _$ref: '#/definitions/jsonReference',
         });
       })
       .then(
@@ -177,16 +179,19 @@ describe('JSON Schema', () => {
         assert.deepEqual(fs.schema.properties['p1'], {
           type: 'string',
           enum: ['object'],
+          _$ref: 'schema2.json#/definitions/hello',
           url: 'https://myschemastore/main/schema2.json',
         });
         assert.deepEqual(fs.schema.properties['p2'], {
           type: 'string',
           enum: ['object'],
+          _$ref: './schema2.json#/definitions/hello',
           url: 'https://myschemastore/main/schema2.json',
         });
         assert.deepEqual(fs.schema.properties['p3'], {
           type: 'string',
           enum: ['object'],
+          _$ref: '/main/schema2.json#/definitions/hello',
           url: 'https://myschemastore/main/schema2.json',
         });
       })

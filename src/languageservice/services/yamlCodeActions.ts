@@ -6,10 +6,11 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { ClientCapabilities, CodeAction, CodeActionParams, Command, Connection, Diagnostic } from 'vscode-languageserver';
 import { YamlCommands } from '../../commands';
+import * as path from 'path';
 import { CommandExecutor } from '../../languageserver/commandExecutor';
 
 interface YamlDiagnosticData {
-  schemaUri: string;
+  schemaUri: string[];
 }
 export class YamlCodeActions {
   constructor(commandExecutor: CommandExecutor, connection: Connection, private readonly clientCapabilities: ClientCapabilities) {
@@ -47,18 +48,20 @@ export class YamlCodeActions {
     }
     const schemaUriToDiagnostic = new Map<string, Diagnostic[]>();
     for (const diagnostic of diagnostics) {
-      const schemaUri = (diagnostic.data as YamlDiagnosticData)?.schemaUri;
-      if (schemaUri && (schemaUri.startsWith('file') || schemaUri.startsWith('https'))) {
-        if (!schemaUriToDiagnostic.has(schemaUri)) {
-          schemaUriToDiagnostic.set(schemaUri, []);
+      const schemaUri = (diagnostic.data as YamlDiagnosticData)?.schemaUri || [];
+      for (const schemaUriStr of schemaUri) {
+        if (schemaUriStr && (schemaUriStr.startsWith('file') || schemaUriStr.startsWith('https'))) {
+          if (!schemaUriToDiagnostic.has(schemaUriStr)) {
+            schemaUriToDiagnostic.set(schemaUriStr, []);
+          }
+          schemaUriToDiagnostic.get(schemaUriStr).push(diagnostic);
         }
-        schemaUriToDiagnostic.get(schemaUri).push(diagnostic);
       }
     }
     const result = [];
     for (const schemaUri of schemaUriToDiagnostic.keys()) {
       const action = CodeAction.create(
-        'Jump to schema location',
+        `Jump to schema location (${path.basename(schemaUri)})`,
         Command.create('JumpToSchema', YamlCommands.JUMP_TO_SCHEMA, schemaUri)
       );
       action.diagnostics = schemaUriToDiagnostic.get(schemaUri);

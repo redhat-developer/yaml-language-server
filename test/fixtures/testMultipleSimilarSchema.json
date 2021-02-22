@@ -1,0 +1,69 @@
+{
+  "sharedSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+      "type1": {
+        "properties": {
+          "obj1": {
+            "type": "object"
+          },
+          "prop1": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "obj1",
+          "prop1"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+      "type2": {
+        "properties": {
+          "obj2": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "obj2"
+        ],
+        "type": "object"
+      },
+      "type3": {
+        "properties": {
+          "obj1": {
+            "type": "object"
+          },
+          "prop1": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "obj1",
+          "prop1"
+        ],
+        "type": "object"
+      }
+    },
+    "properties": {
+      "test_anyOf_objects": {
+        "anyOf": [
+          {
+            "$ref": "sharedSchema.json#/definitions/type1"
+          },
+          {
+            "$ref": "#/definitions/type2"
+          },
+          {
+            "$ref": "#/definitions/type3"
+          }
+        ]
+      }
+    },
+    "type": "object"
+  }
+}
