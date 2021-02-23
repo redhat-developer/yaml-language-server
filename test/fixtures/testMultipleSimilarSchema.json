@@ -4,16 +4,21 @@
     "definitions": {
       "type1": {
         "properties": {
-          "obj1": {
+          "objA": {
             "type": "object"
           },
-          "prop1": {
+          "propA": {
             "type": "string"
+          },
+          "constA": {
+            "type": "string",
+            "const": "constForType1"
           }
         },
         "required": [
-          "obj1",
-          "prop1"
+          "objA",
+          "propA",
+          "constA"
         ],
         "type": "object"
       }
@@ -35,16 +40,21 @@
       },
       "type3": {
         "properties": {
-          "obj1": {
+          "objA": {
             "type": "object"
           },
-          "prop1": {
+          "propA": {
             "type": "string"
+          },
+          "constA": {
+            "type": "string",
+            "const": "constForType3"
           }
         },
         "required": [
-          "obj1",
-          "prop1"
+          "objA",
+          "propA",
+          "constA"
         ],
         "type": "object"
       }

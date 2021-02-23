@@ -1145,6 +1145,32 @@ describe('Validation Tests', () => {
         'file:///default_schema_id.yaml',
       ]);
     });
+    it('should combine types in "Incorrect type error"', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+
+      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
+      languageService.addSchema(SCHEMA_ID, schema.schema);
+      const content = 'test_anyOf_objects:\n  propA:';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 3);
+      assert.strictEqual(result[2].message, 'Incorrect type. Expected "string".');
+      assert.strictEqual(result[2].source, 'yaml-schema: sharedSchema.json | default_schema_id.yaml');
+    });
+    it('should combine const value', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+
+      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
+      languageService.addSchema(SCHEMA_ID, schema.schema);
+      const content = 'test_anyOf_objects:\n  constA:';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 4);
+      assert.strictEqual(result[3].message, 'Value must be "constForType1" | "constForType3".');
+      assert.strictEqual(result[3].source, 'yaml-schema: sharedSchema.json | default_schema_id.yaml');
+    });
     it('should distinguish types in error: "Missing property from multiple schemas"', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
@@ -1154,17 +1180,22 @@ describe('Validation Tests', () => {
       const content = 'test_anyOf_objects:\n  someProp:';
       const result = await parseSetup(content);
 
-      assert.strictEqual(result.length, 2);
-      assert.strictEqual(result[0].message, 'Missing property "obj1".');
+      assert.strictEqual(result.length, 3);
+      assert.strictEqual(result[0].message, 'Missing property "objA".');
       assert.strictEqual(result[0].source, 'yaml-schema: sharedSchema.json | default_schema_id.yaml');
       assert.deepStrictEqual((result[0].data as IProblem).schemaUri, [
         'file:///sharedSchema.json',
         'file:///default_schema_id.yaml',
       ]);
-
-      assert.strictEqual(result[1].message, 'Missing property "prop1".');
+      assert.strictEqual(result[1].message, 'Missing property "propA".');
       assert.strictEqual(result[1].source, 'yaml-schema: sharedSchema.json | default_schema_id.yaml');
       assert.deepStrictEqual((result[1].data as IProblem).schemaUri, [
+        'file:///sharedSchema.json',
+        'file:///default_schema_id.yaml',
+      ]);
+      assert.strictEqual(result[2].message, 'Missing property "constA".');
+      assert.strictEqual(result[2].source, 'yaml-schema: sharedSchema.json | default_schema_id.yaml');
+      assert.deepStrictEqual((result[2].data as IProblem).schemaUri, [
         'file:///sharedSchema.json',
         'file:///default_schema_id.yaml',
       ]);

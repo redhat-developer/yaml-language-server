@@ -72,3 +72,17 @@ export function filterInvalidCustomTags(customTags: string[]): string[] {
     return false;
   });
 }
+export function isArrayEqual(fst: Array<unknown>, snd: Array<unknown>): boolean {
+  if (!snd) {
+    return false;
+  }
+  if (snd.length !== fst.length) {
+    return false;
+  }
+  for (let index = fst.length - 1; index >= 0; index--) {
+    if (fst[index] !== snd[index]) {
+      return false;
+    }
+  }
+  return true;
+}

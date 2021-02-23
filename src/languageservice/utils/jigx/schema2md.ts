@@ -318,7 +318,7 @@ export class Schema2Md {
       const props = Object.keys(type.properties).map((key) => {
         const prop = type.properties[key];
         const isRequired = this.isPropertyRequired(schema, key);
-        prop.problem = schema.problems && schema.problems.find((p) => p.propertyName === key);
+        prop.problem = schema.problems && schema.problems.find((p) => p.problemArgs.includes(key));
         const propType = SchemaTypeFactory.CreatePropTypeInstance(prop, key, isRequired);
         // const propTypeStr = propType.getTypeStr(subSchemas);
         const propTypeMD = propType.getTypeMD(subSchemas);
