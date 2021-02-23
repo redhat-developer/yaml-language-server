@@ -40,8 +40,8 @@ export class ServiceSetup {
     return this;
   }
 
-  withKubernetes(): ServiceSetup {
-    this.languageSettings.isKubernetes = true;
+  withKubernetes(allow = true): ServiceSetup {
+    this.languageSettings.isKubernetes = allow;
     return this;
   }
 
