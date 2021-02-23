@@ -24,7 +24,6 @@ import { URI } from 'vscode-uri';
 import { DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic } from 'vscode-languageserver';
-import { MissingRequiredPropWarning, TypeMismatchWarning, ConstWarning } from '../../../test/utils/errorMessages';
 import { isArrayEqual } from '../utils/arrUtils';
 
 const localize = nls.loadMessageBundle();
@@ -67,9 +66,9 @@ export enum ProblemType {
 }
 
 const ProblemTypeMessages: Record<ProblemType, string> = {
-  [ProblemType.missingRequiredPropWarning]: MissingRequiredPropWarning,
-  [ProblemType.typeMismatchWarning]: TypeMismatchWarning,
-  [ProblemType.constWarning]: ConstWarning,
+  [ProblemType.missingRequiredPropWarning]: 'Missing property "{0}".',
+  [ProblemType.typeMismatchWarning]: 'Incorrect type. Expected "{0}".',
+  [ProblemType.constWarning]: 'Value must be {0}.',
 };
 export interface IProblem {
   location: IRange;
