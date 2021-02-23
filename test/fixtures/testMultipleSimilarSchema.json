@@ -1,0 +1,79 @@
+{
+  "sharedSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+      "type1": {
+        "properties": {
+          "objA": {
+            "type": "object"
+          },
+          "propA": {
+            "type": "string"
+          },
+          "constA": {
+            "type": "string",
+            "const": "constForType1"
+          }
+        },
+        "required": [
+          "objA",
+          "propA",
+          "constA"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+      "type2": {
+        "properties": {
+          "obj2": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "obj2"
+        ],
+        "type": "object"
+      },
+      "type3": {
+        "properties": {
+          "objA": {
+            "type": "object"
+          },
+          "propA": {
+            "type": "string"
+          },
+          "constA": {
+            "type": "string",
+            "const": "constForType3"
+          }
+        },
+        "required": [
+          "objA",
+          "propA",
+          "constA"
+        ],
+        "type": "object"
+      }
+    },
+    "properties": {
+      "test_anyOf_objects": {
+        "anyOf": [
+          {
+            "$ref": "sharedSchema.json#/definitions/type1"
+          },
+          {
+            "$ref": "#/definitions/type2"
+          },
+          {
+            "$ref": "#/definitions/type3"
+          }
+        ]
+      }
+    },
+    "type": "object"
+  }
+}
