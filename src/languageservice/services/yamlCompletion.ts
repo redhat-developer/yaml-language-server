@@ -389,7 +389,7 @@ export class YAMLCompletion extends JSONCompletion {
                 documentation: `Create an item of an array${
                   s.schema.description === undefined ? '' : '(' + s.schema.description + ')'
                 }`,
-                insertText: `- ${this.getInsertTextForObject(s.schema.items, separatorAfter).insertText.trimLeft()}`,
+                insertText: `- ${this.getInsertTextForObject(s.schema.items, separatorAfter, '  ').insertText.trimLeft()}`,
                 insertTextFormat: InsertTextFormat.Snippet,
               });
               this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types);
