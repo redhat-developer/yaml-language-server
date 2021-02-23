@@ -7,6 +7,7 @@
 import * as Json from 'jsonc-parser';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isNumber, equals, isString, isDefined, isBoolean } from '../utils/objects';
+import { getSchemaTypeName } from '../utils/schemaUtils';
 import {
   ASTNode,
   ObjectASTNode,
@@ -23,6 +24,8 @@ import { URI } from 'vscode-uri';
 import { DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic } from 'vscode-languageserver';
+import { MissingRequiredPropWarning, TypeMismatchWarning, ConstWarning } from '../../../test/utils/errorMessages';
+import { isArrayEqual } from '../utils/arrUtils';
 
 const localize = nls.loadMessageBundle();
 
@@ -55,18 +58,32 @@ const formats = {
 };
 
 export const YAML_SOURCE = 'YAML';
+const YAML_SCHEMA_PREFIX = 'yaml-schema: ';
 
+export enum ProblemType {
+  missingRequiredPropWarning = 'missingRequiredPropWarning',
+  typeMismatchWarning = 'typeMismatchWarning',
+  constWarning = 'constWarning',
+}
+
+const ProblemTypeMessages: Record<ProblemType, string> = {
+  [ProblemType.missingRequiredPropWarning]: MissingRequiredPropWarning,
+  [ProblemType.typeMismatchWarning]: TypeMismatchWarning,
+  [ProblemType.constWarning]: ConstWarning,
+};
 export interface IProblem {
   location: IRange;
   severity: DiagnosticSeverity;
   code?: ErrorCode;
   message: string;
   source?: string;
-  schemaUri?: string;
+  problemType?: ProblemType;
+  problemArgs?: string[];
+  schemaUri?: string[];
 }
 
 interface DiagnosticExt extends Diagnostic {
-  schemaUri?: string;
+  schemaUri?: string[];
 }
 
 export abstract class ASTNodeImpl {
@@ -345,6 +362,35 @@ export class ValidationResult {
     }
   }
 
+  /**
+   * Merge multiple warnings with same problemType together
+   * @param subValidationResult another possible result
+   */
+  public mergeWarningGeneric(subValidationResult: ValidationResult, problemTypesToMerge: ProblemType[]): void {
+    if (this.problems?.length) {
+      for (const problemType of problemTypesToMerge) {
+        const bestResults = this.problems.filter((p) => p.problemType === problemType);
+        for (const bestResult of bestResults) {
+          const mergingResult = subValidationResult.problems?.find(
+            (p) =>
+              p.problemType === problemType &&
+              bestResult.location.offset === p.location.offset &&
+              (problemType !== ProblemType.missingRequiredPropWarning || isArrayEqual(p.problemArgs, bestResult.problemArgs)) // missingProp is merged only with same problemArg
+          );
+          if (mergingResult) {
+            if (mergingResult.problemArgs.length) {
+              mergingResult.problemArgs
+                .filter((p) => !bestResult.problemArgs.includes(p))
+                .forEach((p) => bestResult.problemArgs.push(p));
+              bestResult.message = getWarningMessage(bestResult.problemType, bestResult.problemArgs);
+            }
+            this.mergeSources(mergingResult, bestResult);
+          }
+        }
+      }
+    }
+  }
+
   public mergePropertyMatch(propertyValidationResult: ValidationResult): void {
     this.merge(propertyValidationResult);
     this.propertiesMatches++;
@@ -356,6 +402,16 @@ export class ValidationResult {
     }
     if (propertyValidationResult.enumValueMatch && propertyValidationResult.enumValues) {
       this.primaryValueMatches++;
+    }
+  }
+
+  private mergeSources(mergingResult: IProblem, bestResult: IProblem): void {
+    const mergingSource = mergingResult.source.replace(YAML_SCHEMA_PREFIX, '');
+    if (!bestResult.source.includes(mergingSource)) {
+      bestResult.source = bestResult.source + ' | ' + mergingSource;
+    }
+    if (!bestResult.schemaUri.includes(mergingResult.schemaUri[0])) {
+      bestResult.schemaUri = bestResult.schemaUri.concat(mergingResult.schemaUri);
     }
   }
 
@@ -537,12 +593,16 @@ function validate(
       }
     } else if (schema.type) {
       if (!matchesType(schema.type)) {
+        //get more specific name than just object
+        const schemaType = schema.type === 'object' ? getSchemaTypeName(schema) : schema.type;
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: schema.errorMessage || localize('typeMismatchWarning', 'Incorrect type. Expected "{0}".', schema.type),
+          message: schema.errorMessage || getWarningMessage(ProblemType.typeMismatchWarning, [schemaType]),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
+          problemType: ProblemType.typeMismatchWarning,
+          problemArgs: [schemaType],
         });
       }
     }
@@ -704,9 +764,11 @@ function validate(
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
           code: ErrorCode.EnumValueMismatch,
-          message: schema.errorMessage || localize('constWarning', 'Value must be {0}.', JSON.stringify(schema.const)),
+          problemType: ProblemType.constWarning,
+          message: schema.errorMessage || getWarningMessage(ProblemType.constWarning, [JSON.stringify(schema.const)]),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
+          problemArgs: [JSON.stringify(schema.const)],
         });
         validationResult.enumValueMatch = false;
       } else {
@@ -1050,9 +1112,11 @@ function validate(
           validationResult.problems.push({
             location: location,
             severity: DiagnosticSeverity.Warning,
-            message: localize('MissingRequiredPropWarning', 'Missing property "{0}".', propertyName),
+            message: getWarningMessage(ProblemType.missingRequiredPropWarning, [propertyName]),
             source: getSchemaSource(schema, originalSchema),
             schemaUri: getSchemaUri(schema, originalSchema),
+            problemArgs: [propertyName],
+            problemType: ProblemType.missingRequiredPropWarning,
           });
         }
       }
@@ -1277,8 +1341,21 @@ function validate(
   }
 
   //genericComparison tries to find the best matching schema using a generic comparison
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas): any {
+  function genericComparison(
+    maxOneMatch,
+    subValidationResult: ValidationResult,
+    bestMatch: {
+      schema: JSONSchema;
+      validationResult: ValidationResult;
+      matchingSchemas: ISchemaCollector;
+    },
+    subSchema,
+    subMatchingSchemas
+  ): {
+    schema: JSONSchema;
+    validationResult: ValidationResult;
+    matchingSchemas: ISchemaCollector;
+  } {
     if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
@@ -1297,6 +1374,11 @@ function validate(
         // there's already a best matching but we are as good
         bestMatch.matchingSchemas.merge(subMatchingSchemas);
         bestMatch.validationResult.mergeEnumValues(subValidationResult);
+        bestMatch.validationResult.mergeWarningGeneric(subValidationResult, [
+          ProblemType.missingRequiredPropWarning,
+          ProblemType.typeMismatchWarning,
+          ProblemType.constWarning,
+        ]);
       }
     }
     return bestMatch;
@@ -1321,14 +1403,18 @@ function getSchemaSource(schema: JSONSchema, originalSchema: JSONSchema): string
       }
     }
     if (label) {
-      return `yaml-schema: ${label}`;
+      return `${YAML_SCHEMA_PREFIX}${label}`;
     }
   }
 
   return YAML_SOURCE;
 }
 
-function getSchemaUri(schema: JSONSchema, originalSchema: JSONSchema): string | undefined {
+function getSchemaUri(schema: JSONSchema, originalSchema: JSONSchema): string[] {
   const uriString = schema.url ?? originalSchema.url;
-  return uriString;
+  return uriString ? [uriString] : [];
+}
+
+function getWarningMessage(problemType: ProblemType, args: string[]): string {
+  return localize(problemType, ProblemTypeMessages[problemType], args.join(' | '));
 }

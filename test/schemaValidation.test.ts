@@ -17,12 +17,14 @@ import {
   propertyIsNotAllowed,
 } from './utils/errorMessages';
 import * as assert from 'assert';
+import * as path from 'path';
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
+import { IProblem } from '../src/languageservice/parser/jsonParser07';
 
 describe('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -969,6 +971,11 @@ describe('Validation Tests', () => {
   });
 
   describe('Multiple schema for single file', () => {
+    after(() => {
+      // remove Kubernetes setting not to affect next tests
+      languageService.configure(languageSettingsSetup.withKubernetes(false).languageSettings);
+      yamlSettings.specificValidatorPaths = [];
+    });
     it('should add proper source to diagnostic', async () => {
       const content = `
       abandoned: v1
@@ -1105,6 +1112,90 @@ describe('Validation Tests', () => {
       const result = await parseSetup(content);
       expect(result.length).to.eq(1);
       expect(result[0].message).to.eq('String is not a URI: URI expected.');
+    });
+  });
+
+  describe('Multiple similar schemas validation', () => {
+    const sharedSchemaId = 'sharedSchema.json';
+    before(() => {
+      // remove Kubernetes setting set by previous test
+      languageService.configure(languageSettingsSetup.withKubernetes(false).languageSettings);
+      yamlSettings.specificValidatorPaths = [];
+    });
+    afterEach(() => {
+      languageService.deleteSchema(sharedSchemaId);
+    });
+    it('should distinguish types in error "Incorrect type (Expected "type1 | type2 | type3")"', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+
+      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
+      languageService.addSchema(SCHEMA_ID, schema.schema);
+      const content = 'test_anyOf_objects:\n  ';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 1);
+      assert.strictEqual(result[0].message, 'Incorrect type. Expected "type1 | type2 | type3".');
+      assert.strictEqual(result[0].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.deepStrictEqual((result[0].data as IProblem).schemaUri, [
+        'file:///sharedSchema.json',
+        'file:///default_schema_id.yaml',
+      ]);
+    });
+    it('should combine types in "Incorrect type error"', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+
+      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
+      languageService.addSchema(SCHEMA_ID, schema.schema);
+      const content = 'test_anyOf_objects:\n  propA:';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 3);
+      assert.strictEqual(result[2].message, 'Incorrect type. Expected "string".');
+      assert.strictEqual(result[2].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+    });
+    it('should combine const value', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+
+      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
+      languageService.addSchema(SCHEMA_ID, schema.schema);
+      const content = 'test_anyOf_objects:\n  constA:';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 4);
+      assert.strictEqual(result[3].message, 'Value must be "constForType1" | "constForType3".');
+      assert.strictEqual(result[3].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+    });
+    it('should distinguish types in error: "Missing property from multiple schemas"', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+
+      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
+      languageService.addSchema(SCHEMA_ID, schema.schema);
+      const content = 'test_anyOf_objects:\n  someProp:';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 3);
+      assert.strictEqual(result[0].message, 'Missing property "objA".');
+      assert.strictEqual(result[0].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.deepStrictEqual((result[0].data as IProblem).schemaUri, [
+        'file:///sharedSchema.json',
+        'file:///default_schema_id.yaml',
+      ]);
+      assert.strictEqual(result[1].message, 'Missing property "propA".');
+      assert.strictEqual(result[1].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.deepStrictEqual((result[1].data as IProblem).schemaUri, [
+        'file:///sharedSchema.json',
+        'file:///default_schema_id.yaml',
+      ]);
+      assert.strictEqual(result[2].message, 'Missing property "constA".');
+      assert.strictEqual(result[2].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.deepStrictEqual((result[2].data as IProblem).schemaUri, [
+        'file:///sharedSchema.json',
+        'file:///default_schema_id.yaml',
+      ]);
     });
   });
 });

@@ -228,6 +228,8 @@ export class YAMLSchemaService extends JSONSchemaService {
         while (next.$ref) {
           const ref = next.$ref;
           const segments = ref.split('#', 2);
+          //return back removed $ref. We lost info about referenced type without it.
+          next._$ref = next.$ref;
           delete next.$ref;
           if (segments[0].length > 0) {
             openPromises.push(resolveExternalLink(next, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies));
