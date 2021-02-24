@@ -1411,7 +1411,9 @@ function validate(
   ): void {
     validationResult.problems.push(problem);
     (<JSONSchemaWithProblems>schema).problems = (<JSONSchemaWithProblems>schema).problems || [];
-    pushIfNotExist((<JSONSchemaWithProblems>schema).problems, problem, 'propertyName');
+    pushIfNotExist((<JSONSchemaWithProblems>schema).problems, problem, (val, index, arr) => {
+      return arr.some((i) => isArrayEqual(i.problemArgs, val.problemArgs));
+    });
   }
 }
 

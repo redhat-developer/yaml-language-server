@@ -14,10 +14,11 @@ import { JSONHover } from 'vscode-json-languageservice/lib/umd/services/jsonHove
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-import { ASTNode, JSONSchema, MarkedString, MarkupContent, Range } from 'vscode-json-languageservice';
+import { ASTNode, MarkedString, MarkupContent, Range } from 'vscode-json-languageservice';
 import { Schema2Md } from '../utils/jigx/schema2md';
-import { getNodePath, getNodeValue } from '../parser/jsonParser07';
+import { getNodePath, getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
 import { decycle } from '../utils/jigx/cycle';
+import { JSONSchema } from '../jsonSchema';
 
 interface YamlHoverDetailResult {
   /**
@@ -123,73 +124,125 @@ export class YamlHoverDetail {
         //example
         //  node: componentId: '@jigx/jw-value' options: bottom:
         //      find 3 schemas - 3. last one has anyOf to 1. and 2.
-        const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
+        //todo: exclude any_of???? try to implement #70 and check what happen with hover
         const resSchemas: JSONSchema[] = [];
-        let title: string | undefined = undefined;
-        let markdownDescription: string | undefined = undefined;
-        let markdownEnumValueDescription: string | undefined = undefined,
-          enumValue: string | undefined = undefined;
-        let propertiesMd = [];
-
-        matchingSchemas.every((s) => {
-          if (s.node === node && !s.inverted && s.schema) {
-            title = title || s.schema.title;
-            markdownDescription = s.schema.markdownDescription || toMarkdown(s.schema.description);
-            if (s.schema.enum) {
-              const idx = s.schema.enum.indexOf(getNodeValue(node));
-              if (s.schema.markdownEnumDescriptions) {
-                markdownEnumValueDescription = s.schema.markdownEnumDescriptions[idx];
-              } else if (s.schema.enumDescriptions) {
-                markdownEnumValueDescription = toMarkdown(s.schema.enumDescriptions[idx]);
-              }
-              if (markdownEnumValueDescription) {
-                enumValue = s.schema.enum[idx];
-                if (typeof enumValue !== 'string') {
-                  enumValue = JSON.stringify(enumValue);
-                }
-              }
+        const hoverRes: {
+          title?: string;
+          markdownDescription?: string;
+          markdownEnumValueDescription?: string;
+          enumValue?: string;
+          propertyMd?: string;
+        }[] = [];
+        let matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
+        // take only schemas for current node offset
+        matchingSchemas = matchingSchemas.filter((s) => s.node === node && !s.inverted && s.schema);
+        const matchingSchemasDistinct = distinctSchemas(matchingSchemas);
+        matchingSchemasDistinct.every((s) => {
+          const hover = {
+            title: s.schema.title,
+            markdownDescription: s.schema.markdownDescription || toMarkdown(s.schema.description),
+            markdownEnumValueDescription: undefined,
+            enumValue: undefined,
+            propertyMd: undefined,
+          };
+          if (s.schema.enum) {
+            const idx = s.schema.enum.indexOf(getNodeValue(node));
+            if (s.schema.markdownEnumDescriptions) {
+              hover.markdownEnumValueDescription = s.schema.markdownEnumDescriptions[idx];
+            } else if (s.schema.enumDescriptions) {
+              hover.markdownEnumValueDescription = toMarkdown(s.schema.enumDescriptions[idx]);
             }
-            const decycleSchema = decycle(s.schema, 8);
-            resSchemas.push(decycleSchema);
-            if (this.propTableStyle !== 'none') {
-              const propMd = this.schema2Md.generateMd(s.schema, node.location);
-              if (propMd) {
-                // propertiesMd.push(propMd);
-                //take only last one
-                propertiesMd = [propMd];
+            if (hover.markdownEnumValueDescription) {
+              hover.enumValue = s.schema.enum[idx];
+              if (typeof hover.enumValue !== 'string') {
+                hover.enumValue = JSON.stringify(hover.enumValue);
               }
             }
           }
+          const decycleSchema = decycle(s.schema, 8);
+          resSchemas.push(decycleSchema);
+          if (this.propTableStyle !== 'none') {
+            const propMd = this.schema2Md.generateMd(s.schema, node.location);
+            if (propMd) {
+              // propertiesMd.push(propMd);
+              //take only last one
+              hover.propertyMd = propMd;
+            }
+          }
+          hoverRes.push(hover);
           return true;
         });
-        let result = '';
-        if (title) {
-          result = toMarkdown(title);
-        }
-        if (markdownDescription) {
-          if (result.length > 0) {
-            result += '\n\n';
+        const newLineWithHr = '\n\n----\n';
+        const results = [];
+        if (hoverRes.length > 1) {
+          const titleAll = hoverRes
+            .filter((h) => h.title)
+            .map((h) => toMarkdown(h.title))
+            .join(' | ');
+          if (titleAll) {
+            results.push('one of: ' + titleAll);
           }
-          result += markdownDescription;
         }
-        if (markdownEnumValueDescription) {
-          if (result.length > 0) {
-            result += '\n\n';
+        for (const hover of hoverRes) {
+          let result = '';
+          if (hover.title) {
+            result += '### ' + toMarkdown(hover.title);
           }
-          result += `\`${toMarkdownCodeBlock(enumValue)}\`: ${markdownEnumValueDescription}`;
-        }
+          if (hover.markdownDescription) {
+            if (result.length > 0) {
+              result += '\n\n';
+            }
+            result += hover.markdownDescription;
+          }
+          if (hover.markdownEnumValueDescription) {
+            if (result.length > 0) {
+              result += '\n\n';
+            }
+            result += `\`${toMarkdownCodeBlock(hover.enumValue)}\`: ${hover.markdownEnumValueDescription}`;
+          }
 
-        if (this.appendTypes && propertiesMd.length) {
-          // result += propertiesMd.length > 1 ? '\n\n Possible match count: ' + propertiesMd.length : '';
-          // result += propertiesMd.map((p, i) => '\n\n----\n' + (propertiesMd.length > 1 ? `${i + 1}.\n` : '') + p).join('');
-          result += '\n\n----\n' + propertiesMd.join('\n\n----\n');
+          if (this.appendTypes && hover.propertyMd) {
+            result += newLineWithHr + hover.propertyMd;
+          }
+          if (result) {
+            results.push(result);
+          }
         }
         const decycleNode = decycle(node, 8);
-        return createPropDetail([result], resSchemas, decycleNode);
+        return createPropDetail(results, resSchemas, decycleNode);
       }
       return null;
     });
   }
+}
+
+/**
+ * we need to filter duplicate schemas. Result contains even anyOf that reference another schemas in matchingSchemas result
+ * it takes only schemas from anyOf and referenced schemas will be removed
+ * @param matchingSchemas
+ */
+function distinctSchemas(matchingSchemas: IApplicableSchema[]): IApplicableSchema[] {
+  // sort schemas (anyOf go first)
+  let matchingSchemasDistinct = matchingSchemas.sort((a) => (a.schema.anyOf ? -1 : 1));
+  const seenSchemaFromAnyOf = [].concat(
+    ...matchingSchemasDistinct
+      .filter((s) => s.schema.anyOf || s.schema.allOf || s.schema.oneOf)
+      .map((s) =>
+        (s.schema.anyOf || s.schema.allOf || s.schema.oneOf).map((sr: JSONSchema) => sr.$id || sr._$ref || sr.url || 'noId')
+      )
+  );
+  matchingSchemasDistinct = matchingSchemasDistinct.filter(
+    (s) =>
+      s.schema.anyOf ||
+      s.schema.allOf ||
+      s.schema.oneOf ||
+      !seenSchemaFromAnyOf.includes(s.schema.$id || s.schema._$ref || s.schema.url)
+  );
+  if (matchingSchemas.length != matchingSchemasDistinct.length) {
+    const removedCount = matchingSchemas.length - matchingSchemasDistinct.length;
+    console.log('removing some schemas: ' + seenSchemaFromAnyOf.join(', ') + '. removed count:' + removedCount);
+  }
+  return matchingSchemasDistinct;
 }
 
 function toMarkdown(plain: string): string;

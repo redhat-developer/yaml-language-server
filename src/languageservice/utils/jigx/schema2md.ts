@@ -200,6 +200,8 @@ export class Schema2Md {
           })
           .join('\n')
       );
+    } else if (schema.const) {
+      // const is already in text from the beginning
     } else {
       if (this.dontPrintSimpleTypes) {
         return [];
