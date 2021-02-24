@@ -893,10 +893,10 @@ export class YAMLCompletion extends JSONCompletion {
             value = ' $1';
             break;
           case 'object':
-            value = `\n${this.indentation}`;
+            value = `\n${ident}`;
             break;
           case 'array':
-            value = `\n${this.indentation}- `;
+            value = `\n${ident}- `;
             break;
           case 'number':
           case 'integer':

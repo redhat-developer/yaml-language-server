@@ -1880,5 +1880,16 @@ describe('Auto Completion Tests', () => {
         assert.equal(result.items[0].label, '- (array item) 1');
       });
     });
+
+    it('Array anyOf two objects completion indentation', async () => {
+      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'test_array_anyOf_2objects:\n  - obj';
+      const completion = await parseSetup(content, content.length);
+      expect(completion.items.length).is.equal(2);
+      const obj1 = completion.items.find((it) => it.label === 'obj1');
+      expect(obj1).is.not.undefined;
+      expect(obj1.textEdit.newText).equal('obj1:\n    ');
+    });
   });
 });
