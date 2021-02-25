@@ -15,11 +15,15 @@ import {
   CodeActionParams,
   Command,
   Connection,
+  Range,
   TextDocumentIdentifier,
+  TextEdit,
+  WorkspaceEdit,
 } from 'vscode-languageserver';
 import { setupTextDocument, TEST_URI } from './utils/testHelper';
-import { createDiagnosticWithData } from './utils/verifyError';
+import { createDiagnosticWithData, createExpectedError } from './utils/verifyError';
 import { YamlCommands } from '../src/commands';
+import { LanguageSettings } from '../src';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -119,6 +123,40 @@ describe('CodeActions Tests', () => {
       codeAction2.diagnostics = diagnostics;
       expect(result[0]).to.deep.equal(codeAction);
       expect(result[1]).to.deep.equal(codeAction2);
+    });
+  });
+
+  describe('Convert TAB to Spaces', () => {
+    it('should add "Convert TAB to Spaces" CodeAction', () => {
+      const doc = setupTextDocument('foo:\n\t- bar');
+      const diagnostics = [createExpectedError('Using tabs can lead to unpredictable results', 1, 0, 1, 1, 1, JSON_SCHEMA_LOCAL)];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.has.length(1);
+      expect(result[0].title).to.be.equal('Convert Tab to Spaces');
+      expect(WorkspaceEdit.is(result[0].edit)).to.be.true;
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(1, 0, 1, 1), '  ')]);
+    });
+
+    it('should support current indentation chars settings', () => {
+      const doc = setupTextDocument('foo:\n\t- bar');
+      const diagnostics = [createExpectedError('Using tabs can lead to unpredictable results', 1, 0, 1, 1, 1, JSON_SCHEMA_LOCAL)];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
+      actions.configure({ indentation: '   ' } as LanguageSettings);
+      const result = actions.getCodeAction(doc, params);
+
+      expect(result[0].title).to.be.equal('Convert Tab to Spaces');
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(1, 0, 1, 1), '   ')]);
     });
   });
 });

@@ -4,15 +4,31 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { ClientCapabilities, CodeAction, CodeActionParams, Command, Connection, Diagnostic } from 'vscode-languageserver';
+import {
+  ClientCapabilities,
+  CodeAction,
+  CodeActionKind,
+  CodeActionParams,
+  Command,
+  Connection,
+  Diagnostic,
+  Position,
+  Range,
+  TextEdit,
+  WorkspaceEdit,
+} from 'vscode-languageserver';
 import { YamlCommands } from '../../commands';
 import * as path from 'path';
 import { CommandExecutor } from '../../languageserver/commandExecutor';
+import { TextBuffer } from '../utils/textBuffer';
+import { LanguageSettings } from '../yamlLanguageService';
 
 interface YamlDiagnosticData {
   schemaUri: string[];
 }
 export class YamlCodeActions {
+  private indentation = '  ';
+
   constructor(commandExecutor: CommandExecutor, connection: Connection, private readonly clientCapabilities: ClientCapabilities) {
     commandExecutor.registerCommand(YamlCommands.JUMP_TO_SCHEMA, async (uri: string) => {
       if (!uri) {
@@ -29,6 +45,10 @@ export class YamlCodeActions {
     });
   }
 
+  configure(settings: LanguageSettings): void {
+    this.indentation = settings.indentation;
+  }
+
   getCodeAction(document: TextDocument, params: CodeActionParams): CodeAction[] | undefined {
     if (!params.context.diagnostics) {
       return;
@@ -37,6 +57,7 @@ export class YamlCodeActions {
     const result = [];
 
     result.push(...this.getJumpToSchemaActions(params.context.diagnostics));
+    result.push(...this.getTabToSpaceConverting(params.context.diagnostics, document));
 
     return result;
   }
@@ -66,6 +87,46 @@ export class YamlCodeActions {
       );
       action.diagnostics = schemaUriToDiagnostic.get(schemaUri);
       result.push(action);
+    }
+
+    return result;
+  }
+
+  private getTabToSpaceConverting(diagnostics: Diagnostic[], document: TextDocument): CodeAction[] {
+    const result: CodeAction[] = [];
+    const textBuff = new TextBuffer(document);
+    const processedLine: number[] = [];
+    for (const diag of diagnostics) {
+      if (diag.message === 'Using tabs can lead to unpredictable results') {
+        if (processedLine.includes(diag.range.start.line)) {
+          continue;
+        }
+        const lineContent = textBuff.getLineContent(diag.range.start.line);
+        let replacedTabs = 0;
+        let newText = '';
+        for (let i = diag.range.start.character; i <= diag.range.end.character; i++) {
+          const char = lineContent.charAt(i);
+          if (char !== '\t') {
+            break;
+          }
+          replacedTabs++;
+          newText += this.indentation;
+        }
+        processedLine.push(diag.range.start.line);
+        const changes = {};
+        let resultRange = diag.range;
+        if (replacedTabs !== diag.range.end.character - diag.range.start.character) {
+          resultRange = Range.create(
+            diag.range.start,
+            Position.create(diag.range.end.line, diag.range.start.character + replacedTabs)
+          );
+        }
+        changes[document.uri] = [TextEdit.replace(resultRange, newText)];
+        const edit: WorkspaceEdit = {
+          changes,
+        };
+        result.push(CodeAction.create('Convert Tab to Spaces', edit, CodeActionKind.QuickFix));
+      }
     }
 
     return result;

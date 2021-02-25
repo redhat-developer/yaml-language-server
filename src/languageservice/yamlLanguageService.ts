@@ -159,6 +159,7 @@ export function getLanguageService(
       const customTagsSetting = settings && settings['customTags'] ? settings['customTags'] : [];
       completer.configure(settings, customTagsSetting);
       formatter.configure(settings);
+      yamlCodeActions.configure(settings);
     },
     registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
       schemaService.registerCustomSchemaProvider(schemaProvider);

@@ -516,7 +516,13 @@ export class JSONDocument {
           textDocument.positionAt(p.location.offset),
           textDocument.positionAt(p.location.offset + p.location.length)
         );
-        const diagnostic: Diagnostic = Diagnostic.create(range, p.message, p.severity, p.code, p.source);
+        const diagnostic: Diagnostic = Diagnostic.create(
+          range,
+          p.message,
+          p.severity,
+          p.code ? p.code : ErrorCode.Undefined,
+          p.source
+        );
         diagnostic.data = { schemaUri: p.schemaUri };
         return diagnostic;
       });
