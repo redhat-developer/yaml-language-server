@@ -113,7 +113,7 @@ export class YamlCodeActions {
           newText += this.indentation;
         }
         processedLine.push(diag.range.start.line);
-        const changes = {};
+
         let resultRange = diag.range;
         if (replacedTabs !== diag.range.end.character - diag.range.start.character) {
           resultRange = Range.create(
@@ -121,14 +121,71 @@ export class YamlCodeActions {
             Position.create(diag.range.end.line, diag.range.start.character + replacedTabs)
           );
         }
-        changes[document.uri] = [TextEdit.replace(resultRange, newText)];
-        const edit: WorkspaceEdit = {
-          changes,
-        };
-        result.push(CodeAction.create('Convert Tab to Spaces', edit, CodeActionKind.QuickFix));
+        result.push(
+          CodeAction.create(
+            'Convert Tab to Spaces',
+            createWorkspaceEdit(document.uri, [TextEdit.replace(resultRange, newText)]),
+            CodeActionKind.QuickFix
+          )
+        );
+      }
+    }
+
+    if (result.length !== 0) {
+      const replaceEdits: TextEdit[] = [];
+      for (let i = 0; i <= textBuff.getLineCount(); i++) {
+        const lineContent = textBuff.getLineContent(i);
+        let replacedTabs = 0;
+        let newText = '';
+        for (let j = 0; j < lineContent.length; j++) {
+          const char = lineContent.charAt(j);
+
+          if (char !== ' ' && char !== '\t') {
+            if (replacedTabs !== 0) {
+              replaceEdits.push(TextEdit.replace(Range.create(i, j - replacedTabs, i, j), newText));
+              replacedTabs = 0;
+              newText = '';
+            }
+            break;
+          }
+
+          if (char === ' ' && replacedTabs !== 0) {
+            replaceEdits.push(TextEdit.replace(Range.create(i, j - replacedTabs, i, j), newText));
+            replacedTabs = 0;
+            newText = '';
+            continue;
+          }
+          if (char === '\t') {
+            newText += this.indentation;
+            replacedTabs++;
+          }
+        }
+        // line contains only tabs
+        if (replacedTabs !== 0) {
+          replaceEdits.push(TextEdit.replace(Range.create(i, 0, i, textBuff.getLineLength(i)), newText));
+        }
+      }
+      if (replaceEdits.length > 0) {
+        result.push(
+          CodeAction.create(
+            'Convert all Tabs to Spaces',
+            createWorkspaceEdit(document.uri, replaceEdits),
+            CodeActionKind.QuickFix
+          )
+        );
       }
     }
 
     return result;
   }
+}
+
+function createWorkspaceEdit(uri: string, edits: TextEdit[]): WorkspaceEdit {
+  const changes = {};
+  changes[uri] = edits;
+  const edit: WorkspaceEdit = {
+    changes,
+  };
+
+  return edit;
 }
