@@ -773,8 +773,8 @@ describe('Validation Tests', () => {
       validator
         .then(function (result) {
           assert.equal(result.length, 2);
-          assert.deepEqual(result[0], createExpectedError(DuplicateKeyError, 2, 0, 2, 0));
-          assert.deepEqual(result[1], createExpectedError(DuplicateKeyError, 0, 0, 0, 0));
+          assert.deepEqual(result[0], createExpectedError(DuplicateKeyError, 2, 0, 2, 1));
+          assert.deepEqual(result[1], createExpectedError(DuplicateKeyError, 0, 0, 0, 1));
         })
         .then(done, done);
     });
