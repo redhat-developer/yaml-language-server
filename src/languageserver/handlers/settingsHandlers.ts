@@ -152,12 +152,13 @@ export class SettingsHandler {
 
         if (schema && schema.fileMatch) {
           for (const fileMatch in schema.fileMatch) {
-            const currFileMatch = schema.fileMatch[fileMatch];
+            const currFileMatch: string = schema.fileMatch[fileMatch];
             // If the schema is for files with a YAML extension, save the schema association
             if (currFileMatch.indexOf('.yml') !== -1 || currFileMatch.indexOf('.yaml') !== -1) {
               languageSettings.schemas.push({
                 uri: schema.url,
-                fileMatch: [currFileMatch],
+                // this is workaround to fix file matcher, adding '/' force to match full file name instead of just file name ends
+                fileMatch: [currFileMatch.indexOf('/') === -1 ? '/' + currFileMatch : currFileMatch],
               });
             }
           }

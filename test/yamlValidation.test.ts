@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 import { Diagnostic } from 'vscode-languageserver-types';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
 import { setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
@@ -13,15 +12,13 @@ import { createExpectedError } from './utils/verifyError';
 
 describe('YAML Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
-  let languageService: LanguageService;
   let validationHandler: ValidationHandler;
   let yamlSettings: SettingsState;
   before(() => {
     languageSettingsSetup = new ServiceSetup().withValidate();
-    const { languageService: langService, validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
+    const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
       languageSettingsSetup.languageSettings
     );
-    languageService = langService;
     validationHandler = valHandler;
     yamlSettings = settings;
   });
