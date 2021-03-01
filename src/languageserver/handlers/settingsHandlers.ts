@@ -6,7 +6,7 @@ import { xhr, configure as configureHttpRequests } from 'request-light';
 import { DidChangeConfigurationParams, DocumentFormattingRequest, Connection } from 'vscode-languageserver';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
-import { LanguageService, LanguageSettings } from '../../languageservice/yamlLanguageService';
+import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
 import { Settings, SettingsState } from '../../yamlSettings';
 import { ValidationHandler } from './validationHandlers';
 
@@ -158,6 +158,7 @@ export class SettingsHandler {
                 uri: schema.url,
                 // this is workaround to fix file matcher, adding '/' force to match full file name instead of just file name ends
                 fileMatch: [currFileMatch.indexOf('/') === -1 ? '/' + currFileMatch : currFileMatch],
+                priority: SchemaPriority.SchemaStore,
               });
             }
           }
@@ -191,7 +192,7 @@ export class SettingsHandler {
           const association = this.yamlSettings.schemaAssociations[pattern];
           if (Array.isArray(association)) {
             association.forEach((uri) => {
-              languageSettings = this.configureSchemas(uri, [pattern], null, languageSettings);
+              languageSettings = this.configureSchemas(uri, [pattern], null, languageSettings, SchemaPriority.SchemaAssociation);
             });
           }
         }
@@ -212,7 +213,13 @@ export class SettingsHandler {
             uri = relativeToAbsolutePath(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri);
           }
 
-          languageSettings = this.configureSchemas(uri, schema.fileMatch, schema.schema, languageSettings);
+          languageSettings = this.configureSchemas(
+            uri,
+            schema.fileMatch,
+            schema.schema,
+            languageSettings,
+            SchemaPriority.Settings
+          );
         }
       });
     }
@@ -235,13 +242,19 @@ export class SettingsHandler {
    * @param languageSettings current server settings
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private configureSchemas(uri: string, fileMatch: string[], schema: any, languageSettings: LanguageSettings): LanguageSettings {
+  private configureSchemas(
+    uri: string,
+    fileMatch: string[],
+    schema: any,
+    languageSettings: LanguageSettings,
+    priorityLevel: number
+  ): LanguageSettings {
     uri = checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri);
 
     if (schema === null) {
-      languageSettings.schemas.push({ uri, fileMatch: fileMatch });
+      languageSettings.schemas.push({ uri, fileMatch: fileMatch, priority: priorityLevel });
     } else {
-      languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema });
+      languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema, priority: priorityLevel });
     }
 
     if (fileMatch.constructor === Array && uri === KUBERNETES_SCHEMA_URL) {
