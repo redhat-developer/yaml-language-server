@@ -116,18 +116,17 @@ export class SettingsHandler {
    * AND the schema store setting is enabled. If the schema store setting
    * is not enabled we need to clear the schemas.
    */
-  public setSchemaStoreSettingsIfNotSet(): void {
+  public async setSchemaStoreSettingsIfNotSet(): Promise<void> {
     const schemaStoreIsSet = this.yamlSettings.schemaStoreSettings.length !== 0;
 
     if (this.yamlSettings.schemaStoreEnabled && !schemaStoreIsSet) {
-      this.getSchemaStoreMatchingSchemas()
-        .then((schemaStore) => {
-          this.yamlSettings.schemaStoreSettings = schemaStore.schemas;
-          this.updateConfiguration();
-        })
-        .catch(() => {
-          // ignore
-        });
+      try {
+        const schemaStore = await this.getSchemaStoreMatchingSchemas();
+        this.yamlSettings.schemaStoreSettings = schemaStore.schemas;
+        this.updateConfiguration();
+      } catch (err) {
+        // ignore
+      }
     } else if (!this.yamlSettings.schemaStoreEnabled) {
       this.yamlSettings.schemaStoreSettings = [];
       this.updateConfiguration();
