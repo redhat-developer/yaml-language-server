@@ -1,4 +1,21 @@
+### 0.15.0
+
+- Fix: Array new line ending with no indent [#384](https://github.com/redhat-developer/yaml-language-server/pull/384)
+- Fix: Code Completion with defaultSnippet and markdown [#385](https://github.com/redhat-developer/yaml-language-server/pull/385)
+- Fix: Test yaml-schema package [#386](https://github.com/redhat-developer/yaml-language-server/pull/386)
+- Fix: Completion with default snippet when node is array [#387](https://github.com/redhat-developer/yaml-language-server/pull/387)
+- Auto formatting for list, with `onTypeFormatting` implementation [#179](https://github.com/redhat-developer/vscode-yaml/issues/179)
+- Fix: Completion array anyOf [#390](https://github.com/redhat-developer/yaml-language-server/pull/390)
+- Fix CodeCompletion with defaultSnippet and markdown [#393](https://github.com/redhat-developer/yaml-language-server/pull/393)
+- Fix: Services initialization [#399](https://github.com/redhat-developer/yaml-language-server/pull/399)
+- Update kubernetes schema to 1.18.1 [#401](https://github.com/redhat-developer/yaml-language-server/pull/401)
+- Fix: Folding misbehaves in version 0.14.0 [#400](https://github.com/redhat-developer/yaml-language-server/issues/400)
+- Use mocha bdd interface for all tests [#403](https://github.com/redhat-developer/yaml-language-server/pull/403)
+
+Thanks to Petr Spacek and tonypai
+
 ### 0.14.0
+
 - yaml-language-server use a non-standard LSP request to resolve schemas content on client [#359](https://github.com/redhat-developer/yaml-language-server/pull/359)
 - Fix error on completion 'null' value [#360](https://github.com/redhat-developer/yaml-language-server/pull/360)
 - Select schemas based off on their priority [#362](https://github.com/redhat-developer/yaml-language-server/pull/362)

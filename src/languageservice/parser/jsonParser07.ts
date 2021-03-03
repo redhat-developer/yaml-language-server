@@ -7,6 +7,7 @@
 import * as Json from 'jsonc-parser';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isNumber, equals, isString, isDefined, isBoolean } from '../utils/objects';
+import { getSchemaTypeName } from '../utils/schemaUtils';
 import {
   ASTNode,
   ObjectASTNode,
@@ -20,8 +21,10 @@ import {
 import { ErrorCode, JSONPath } from 'vscode-json-languageservice';
 import * as nls from 'vscode-nls';
 import { URI } from 'vscode-uri';
-import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
+import { DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { Diagnostic } from 'vscode-languageserver';
+import { isArrayEqual } from '../utils/arrUtils';
 
 const localize = nls.loadMessageBundle();
 
@@ -54,13 +57,32 @@ const formats = {
 };
 
 export const YAML_SOURCE = 'YAML';
+const YAML_SCHEMA_PREFIX = 'yaml-schema: ';
 
+export enum ProblemType {
+  missingRequiredPropWarning = 'missingRequiredPropWarning',
+  typeMismatchWarning = 'typeMismatchWarning',
+  constWarning = 'constWarning',
+}
+
+const ProblemTypeMessages: Record<ProblemType, string> = {
+  [ProblemType.missingRequiredPropWarning]: 'Missing property "{0}".',
+  [ProblemType.typeMismatchWarning]: 'Incorrect type. Expected "{0}".',
+  [ProblemType.constWarning]: 'Value must be {0}.',
+};
 export interface IProblem {
   location: IRange;
   severity: DiagnosticSeverity;
   code?: ErrorCode;
   message: string;
   source?: string;
+  problemType?: ProblemType;
+  problemArgs?: string[];
+  schemaUri?: string[];
+}
+
+interface DiagnosticExt extends Diagnostic {
+  schemaUri?: string[];
 }
 
 export abstract class ASTNodeImpl {
@@ -339,6 +361,35 @@ export class ValidationResult {
     }
   }
 
+  /**
+   * Merge multiple warnings with same problemType together
+   * @param subValidationResult another possible result
+   */
+  public mergeWarningGeneric(subValidationResult: ValidationResult, problemTypesToMerge: ProblemType[]): void {
+    if (this.problems?.length) {
+      for (const problemType of problemTypesToMerge) {
+        const bestResults = this.problems.filter((p) => p.problemType === problemType);
+        for (const bestResult of bestResults) {
+          const mergingResult = subValidationResult.problems?.find(
+            (p) =>
+              p.problemType === problemType &&
+              bestResult.location.offset === p.location.offset &&
+              (problemType !== ProblemType.missingRequiredPropWarning || isArrayEqual(p.problemArgs, bestResult.problemArgs)) // missingProp is merged only with same problemArg
+          );
+          if (mergingResult) {
+            if (mergingResult.problemArgs.length) {
+              mergingResult.problemArgs
+                .filter((p) => !bestResult.problemArgs.includes(p))
+                .forEach((p) => bestResult.problemArgs.push(p));
+              bestResult.message = getWarningMessage(bestResult.problemType, bestResult.problemArgs);
+            }
+            this.mergeSources(mergingResult, bestResult);
+          }
+        }
+      }
+    }
+  }
+
   public mergePropertyMatch(propertyValidationResult: ValidationResult): void {
     this.merge(propertyValidationResult);
     this.propertiesMatches++;
@@ -350,6 +401,16 @@ export class ValidationResult {
     }
     if (propertyValidationResult.enumValueMatch && propertyValidationResult.enumValues) {
       this.primaryValueMatches++;
+    }
+  }
+
+  private mergeSources(mergingResult: IProblem, bestResult: IProblem): void {
+    const mergingSource = mergingResult.source.replace(YAML_SCHEMA_PREFIX, '');
+    if (!bestResult.source.includes(mergingSource)) {
+      bestResult.source = bestResult.source + ' | ' + mergingSource;
+    }
+    if (!bestResult.schemaUri.includes(mergingResult.schemaUri[0])) {
+      bestResult.schemaUri = bestResult.schemaUri.concat(mergingResult.schemaUri);
     }
   }
 
@@ -455,7 +516,15 @@ export class JSONDocument {
           textDocument.positionAt(p.location.offset),
           textDocument.positionAt(p.location.offset + p.location.length)
         );
-        return Diagnostic.create(range, p.message, p.severity, p.code, p.source);
+        const diagnostic: Diagnostic = Diagnostic.create(
+          range,
+          p.message,
+          p.severity,
+          p.code ? p.code : ErrorCode.Undefined,
+          p.source
+        );
+        diagnostic.data = { schemaUri: p.schemaUri };
+        return diagnostic;
       });
     }
     return null;
@@ -524,15 +593,21 @@ function validate(
             schema.errorMessage ||
             localize('typeArrayMismatchWarning', 'Incorrect type. Expected one of {0}.', (<string[]>schema.type).join(', ')),
           source: getSchemaSource(schema, originalSchema),
+          schemaUri: getSchemaUri(schema, originalSchema),
         });
       }
     } else if (schema.type) {
       if (!matchesType(schema.type)) {
+        //get more specific name than just object
+        const schemaType = schema.type === 'object' ? getSchemaTypeName(schema) : schema.type;
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: schema.errorMessage || localize('typeMismatchWarning', 'Incorrect type. Expected "{0}".', schema.type),
+          message: schema.errorMessage || getWarningMessage(ProblemType.typeMismatchWarning, [schemaType]),
           source: getSchemaSource(schema, originalSchema),
+          schemaUri: getSchemaUri(schema, originalSchema),
+          problemType: ProblemType.typeMismatchWarning,
+          problemArgs: [schemaType],
         });
       }
     }
@@ -552,6 +627,7 @@ function validate(
           severity: DiagnosticSeverity.Warning,
           message: localize('notSchemaWarning', 'Matches a schema that is not allowed.'),
           source: getSchemaSource(schema, originalSchema),
+          schemaUri: getSchemaUri(schema, originalSchema),
         });
       }
       for (const ms of subMatchingSchemas.schemas) {
@@ -596,6 +672,7 @@ function validate(
           severity: DiagnosticSeverity.Warning,
           message: localize('oneOfWarning', 'Matches multiple schemas when only one must validate.'),
           source: getSchemaSource(schema, originalSchema),
+          schemaUri: getSchemaUri(schema, originalSchema),
         });
       }
       if (bestMatch !== null) {
@@ -680,6 +757,7 @@ function validate(
                 .join(', ')
             ),
           source: getSchemaSource(schema, originalSchema),
+          schemaUri: getSchemaUri(schema, originalSchema),
         });
       }
     }
@@ -691,8 +769,11 @@ function validate(
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
           code: ErrorCode.EnumValueMismatch,
-          message: schema.errorMessage || localize('constWarning', 'Value must be {0}.', JSON.stringify(schema.const)),
+          problemType: ProblemType.constWarning,
+          message: schema.errorMessage || getWarningMessage(ProblemType.constWarning, [JSON.stringify(schema.const)]),
           source: getSchemaSource(schema, originalSchema),
+          schemaUri: getSchemaUri(schema, originalSchema),
+          problemArgs: [JSON.stringify(schema.const)],
         });
         validationResult.enumValueMatch = false;
       } else {
@@ -707,6 +788,7 @@ function validate(
         severity: DiagnosticSeverity.Warning,
         message: schema.deprecationMessage,
         source: getSchemaSource(schema, originalSchema),
+        schemaUri: getSchemaUri(schema, originalSchema),
       });
     }
   }
@@ -721,6 +803,7 @@ function validate(
           severity: DiagnosticSeverity.Warning,
           message: localize('multipleOfWarning', 'Value is not divisible by {0}.', schema.multipleOf),
           source: getSchemaSource(schema, originalSchema),
+          schemaUri: getSchemaUri(schema, originalSchema),
         });
       }
     }
@@ -746,6 +829,7 @@ function validate(
         severity: DiagnosticSeverity.Warning,
         message: localize('exclusiveMinimumWarning', 'Value is below the exclusive minimum of {0}.', exclusiveMinimum),
         source: getSchemaSource(schema, originalSchema),
+        schemaUri: getSchemaUri(schema, originalSchema),
       });
     }
     const exclusiveMaximum = getExclusiveLimit(schema.maximum, schema.exclusiveMaximum);
@@ -755,6 +839,7 @@ function validate(
         severity: DiagnosticSeverity.Warning,
         message: localize('exclusiveMaximumWarning', 'Value is above the exclusive maximum of {0}.', exclusiveMaximum),
         source: getSchemaSource(schema, originalSchema),
+        schemaUri: getSchemaUri(schema, originalSchema),
       });
     }
     const minimum = getLimit(schema.minimum, schema.exclusiveMinimum);
@@ -764,6 +849,7 @@ function validate(
         severity: DiagnosticSeverity.Warning,
         message: localize('minimumWarning', 'Value is below the minimum of {0}.', minimum),
         source: getSchemaSource(schema, originalSchema),
+        schemaUri: getSchemaUri(schema, originalSchema),
       });
     }
     const maximum = getLimit(schema.maximum, schema.exclusiveMaximum);
@@ -773,6 +859,7 @@ function validate(
         severity: DiagnosticSeverity.Warning,
         message: localize('maximumWarning', 'Value is above the maximum of {0}.', maximum),
         source: getSchemaSource(schema, originalSchema),
+        schemaUri: getSchemaUri(schema, originalSchema),
       });
     }
   }
@@ -784,6 +871,7 @@ function validate(
         severity: DiagnosticSeverity.Warning,
         message: localize('minLengthWarning', 'String is shorter than the minimum length of {0}.', schema.minLength),
         source: getSchemaSource(schema, originalSchema),
+        schemaUri: getSchemaUri(schema, originalSchema),
       });
     }
 
@@ -793,6 +881,7 @@ function validate(
         severity: DiagnosticSeverity.Warning,
         message: localize('maxLengthWarning', 'String is longer than the maximum length of {0}.', schema.maxLength),
         source: getSchemaSource(schema, originalSchema),
+        schemaUri: getSchemaUri(schema, originalSchema),
       });
     }
 
@@ -807,6 +896,7 @@ function validate(
             schema.errorMessage ||
             localize('patternWarning', 'String does not match the pattern of "{0}".', schema.pattern),
           source: getSchemaSource(schema, originalSchema),
+          schemaUri: getSchemaUri(schema, originalSchema),
         });
       }
     }
@@ -838,6 +928,7 @@ function validate(
                   schema.errorMessage ||
                   localize('uriFormatWarning', 'String is not a URI: {0}', errorMessage),
                 source: getSchemaSource(schema, originalSchema),
+                schemaUri: getSchemaUri(schema, originalSchema),
               });
             }
           }
@@ -855,6 +946,7 @@ function validate(
                 severity: DiagnosticSeverity.Warning,
                 message: schema.patternErrorMessage || schema.errorMessage || format.errorMessage,
                 source: getSchemaSource(schema, originalSchema),
+                schemaUri: getSchemaUri(schema, originalSchema),
               });
             }
           }
@@ -903,6 +995,7 @@ function validate(
               subSchemas.length
             ),
             source: getSchemaSource(schema, originalSchema),
+            schemaUri: getSchemaUri(schema, originalSchema),
           });
         }
       }
@@ -932,6 +1025,7 @@ function validate(
           severity: DiagnosticSeverity.Warning,
           message: schema.errorMessage || localize('requiredItemMissingWarning', 'Array does not contain required item.'),
           source: getSchemaSource(schema, originalSchema),
+          schemaUri: getSchemaUri(schema, originalSchema),
         });
       }
     }
@@ -942,6 +1036,7 @@ function validate(
         severity: DiagnosticSeverity.Warning,
         message: localize('minItemsWarning', 'Array has too few items. Expected {0} or more.', schema.minItems),
         source: getSchemaSource(schema, originalSchema),
+        schemaUri: getSchemaUri(schema, originalSchema),
       });
     }
 
@@ -951,6 +1046,7 @@ function validate(
         severity: DiagnosticSeverity.Warning,
         message: localize('maxItemsWarning', 'Array has too many items. Expected {0} or fewer.', schema.maxItems),
         source: getSchemaSource(schema, originalSchema),
+        schemaUri: getSchemaUri(schema, originalSchema),
       });
     }
 
@@ -965,6 +1061,7 @@ function validate(
           severity: DiagnosticSeverity.Warning,
           message: localize('uniqueItemsWarning', 'Array has duplicate items.'),
           source: getSchemaSource(schema, originalSchema),
+          schemaUri: getSchemaUri(schema, originalSchema),
         });
       }
     }
@@ -1020,8 +1117,11 @@ function validate(
           validationResult.problems.push({
             location: location,
             severity: DiagnosticSeverity.Warning,
-            message: localize('MissingRequiredPropWarning', 'Missing property "{0}".', propertyName),
+            message: getWarningMessage(ProblemType.missingRequiredPropWarning, [propertyName]),
             source: getSchemaSource(schema, originalSchema),
+            schemaUri: getSchemaUri(schema, originalSchema),
+            problemArgs: [propertyName],
+            problemType: ProblemType.missingRequiredPropWarning,
           });
         }
       }
@@ -1053,6 +1153,7 @@ function validate(
                 message:
                   schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
                 source: getSchemaSource(schema, originalSchema),
+                schemaUri: getSchemaUri(schema, originalSchema),
               });
             } else {
               validationResult.propertiesMatches++;
@@ -1090,6 +1191,7 @@ function validate(
                     message:
                       schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
                     source: getSchemaSource(schema, originalSchema),
+                    schemaUri: getSchemaUri(schema, originalSchema),
                   });
                 } else {
                   validationResult.propertiesMatches++;
@@ -1141,6 +1243,7 @@ function validate(
               message:
                 schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
               source: getSchemaSource(schema, originalSchema),
+              schemaUri: getSchemaUri(schema, originalSchema),
             });
           }
         }
@@ -1154,6 +1257,7 @@ function validate(
           severity: DiagnosticSeverity.Warning,
           message: localize('MaxPropWarning', 'Object has more properties than limit of {0}.', schema.maxProperties),
           source: getSchemaSource(schema, originalSchema),
+          schemaUri: getSchemaUri(schema, originalSchema),
         });
       }
     }
@@ -1169,6 +1273,7 @@ function validate(
             schema.minProperties
           ),
           source: getSchemaSource(schema, originalSchema),
+          schemaUri: getSchemaUri(schema, originalSchema),
         });
       }
     }
@@ -1191,6 +1296,7 @@ function validate(
                     key
                   ),
                   source: getSchemaSource(schema, originalSchema),
+                  schemaUri: getSchemaUri(schema, originalSchema),
                 });
               } else {
                 validationResult.propertiesValueMatches++;
@@ -1240,8 +1346,21 @@ function validate(
   }
 
   //genericComparison tries to find the best matching schema using a generic comparison
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas): any {
+  function genericComparison(
+    maxOneMatch,
+    subValidationResult: ValidationResult,
+    bestMatch: {
+      schema: JSONSchema;
+      validationResult: ValidationResult;
+      matchingSchemas: ISchemaCollector;
+    },
+    subSchema,
+    subMatchingSchemas
+  ): {
+    schema: JSONSchema;
+    validationResult: ValidationResult;
+    matchingSchemas: ISchemaCollector;
+  } {
     if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
@@ -1260,6 +1379,11 @@ function validate(
         // there's already a best matching but we are as good
         bestMatch.matchingSchemas.merge(subMatchingSchemas);
         bestMatch.validationResult.mergeEnumValues(subValidationResult);
+        bestMatch.validationResult.mergeWarningGeneric(subValidationResult, [
+          ProblemType.missingRequiredPropWarning,
+          ProblemType.typeMismatchWarning,
+          ProblemType.constWarning,
+        ]);
       }
     }
     return bestMatch;
@@ -1284,9 +1408,18 @@ function getSchemaSource(schema: JSONSchema, originalSchema: JSONSchema): string
       }
     }
     if (label) {
-      return `yaml-schema: ${label}`;
+      return `${YAML_SCHEMA_PREFIX}${label}`;
     }
   }
 
   return YAML_SOURCE;
+}
+
+function getSchemaUri(schema: JSONSchema, originalSchema: JSONSchema): string[] {
+  const uriString = schema.url ?? originalSchema.url;
+  return uriString ? [uriString] : [];
+}
+
+function getWarningMessage(problemType: ProblemType, args: string[]): string {
+  return localize(problemType, ProblemTypeMessages[problemType], args.join(' | '));
 }

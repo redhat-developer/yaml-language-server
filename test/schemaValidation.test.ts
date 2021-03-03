@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
-import { createExpectedError } from './utils/verifyError';
+import { createDiagnosticWithData, createExpectedError } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import {
   StringTypeError,
@@ -17,14 +17,16 @@ import {
   propertyIsNotAllowed,
 } from './utils/errorMessages';
 import * as assert from 'assert';
+import * as path from 'path';
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
+import { IProblem } from '../src/languageservice/parser/jsonParser07';
 
-suite('Validation Tests', () => {
+describe('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let validationHandler: ValidationHandler;
   let languageService: LanguageService;
@@ -125,10 +127,19 @@ suite('Validation Tests', () => {
       const validator = parseSetup(content);
       validator
         .then(function (result) {
-          assert.equal(result.length, 1);
-          assert.deepEqual(
+          assert.strictEqual(result.length, 1);
+          assert.deepStrictEqual(
             result[0],
-            createExpectedError(BooleanTypeError, 0, 11, 0, 15, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticWithData(
+              BooleanTypeError,
+              0,
+              11,
+              0,
+              15,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -150,7 +161,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 5, 0, 10, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticWithData(
+              StringTypeError,
+              0,
+              5,
+              0,
+              10,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -233,7 +253,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(BooleanTypeError, 0, 11, 0, 16, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticWithData(
+              BooleanTypeError,
+              0,
+              11,
+              0,
+              16,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -255,7 +284,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 5, 0, 7, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticWithData(
+              StringTypeError,
+              0,
+              5,
+              0,
+              7,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -297,7 +335,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 5, 0, 11, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticWithData(
+              StringTypeError,
+              0,
+              5,
+              0,
+              11,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -407,7 +454,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(ObjectTypeError, 0, 9, 0, 13, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticWithData(
+              ObjectTypeError,
+              0,
+              9,
+              0,
+              13,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -452,7 +508,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(ArrayTypeError, 0, 11, 0, 15, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticWithData(
+              ArrayTypeError,
+              0,
+              11,
+              0,
+              15,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -685,7 +750,16 @@ suite('Validation Tests', () => {
           assert.equal(result.length, 1);
           assert.deepEqual(
             result[0],
-            createExpectedError(StringTypeError, 0, 4, 0, 4, DiagnosticSeverity.Error, `yaml-schema: file:///${SCHEMA_ID}`)
+            createDiagnosticWithData(
+              StringTypeError,
+              0,
+              4,
+              0,
+              4,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
           );
         })
         .then(done, done);
@@ -699,8 +773,8 @@ suite('Validation Tests', () => {
       validator
         .then(function (result) {
           assert.equal(result.length, 2);
-          assert.deepEqual(result[0], createExpectedError(DuplicateKeyError, 2, 0, 2, 0));
-          assert.deepEqual(result[1], createExpectedError(DuplicateKeyError, 0, 0, 0, 0));
+          assert.deepEqual(result[0], createExpectedError(DuplicateKeyError, 2, 0, 2, 1));
+          assert.deepEqual(result[1], createExpectedError(DuplicateKeyError, 0, 0, 0, 1));
         })
         .then(done, done);
     });
@@ -882,12 +956,26 @@ suite('Validation Tests', () => {
       const content = 'analytics: 1';
       const result = await parseSetup(content);
       expect(result[0]).deep.equal(
-        createExpectedError(StringTypeError, 0, 11, 0, 12, DiagnosticSeverity.Error, 'yaml-schema: Schema Super title')
+        createDiagnosticWithData(
+          StringTypeError,
+          0,
+          11,
+          0,
+          12,
+          DiagnosticSeverity.Error,
+          'yaml-schema: Schema Super title',
+          'file:///default_schema_id.yaml'
+        )
       );
     });
   });
 
   describe('Multiple schema for single file', () => {
+    after(() => {
+      // remove Kubernetes setting not to affect next tests
+      languageService.configure(languageSettingsSetup.withKubernetes(false).languageSettings);
+      yamlSettings.specificValidatorPaths = [];
+    });
     it('should add proper source to diagnostic', async () => {
       const content = `
       abandoned: v1
@@ -898,7 +986,16 @@ suite('Validation Tests', () => {
       yamlSettings.specificValidatorPaths = ['*.yml', '*.yaml'];
       const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/test.yml');
       expect(result[0]).deep.equal(
-        createExpectedError(ArrayTypeError, 4, 10, 4, 18, DiagnosticSeverity.Error, 'yaml-schema: Package')
+        createDiagnosticWithData(
+          ArrayTypeError,
+          4,
+          10,
+          4,
+          18,
+          DiagnosticSeverity.Error,
+          'yaml-schema: Package',
+          'https://json.schemastore.org/composer'
+        )
       );
     });
 
@@ -910,14 +1007,15 @@ suite('Validation Tests', () => {
 
       const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/.drone.yml');
       expect(result[5]).deep.equal(
-        createExpectedError(
+        createDiagnosticWithData(
           propertyIsNotAllowed('apiVersion'),
           1,
           6,
           1,
           16,
           DiagnosticSeverity.Error,
-          'yaml-schema: Drone CI configuration file'
+          'yaml-schema: Drone CI configuration file',
+          'https://json.schemastore.org/drone'
         )
       );
     });
@@ -1014,6 +1112,90 @@ suite('Validation Tests', () => {
       const result = await parseSetup(content);
       expect(result.length).to.eq(1);
       expect(result[0].message).to.eq('String is not a URI: URI expected.');
+    });
+  });
+
+  describe('Multiple similar schemas validation', () => {
+    const sharedSchemaId = 'sharedSchema.json';
+    before(() => {
+      // remove Kubernetes setting set by previous test
+      languageService.configure(languageSettingsSetup.withKubernetes(false).languageSettings);
+      yamlSettings.specificValidatorPaths = [];
+    });
+    afterEach(() => {
+      languageService.deleteSchema(sharedSchemaId);
+    });
+    it('should distinguish types in error "Incorrect type (Expected "type1 | type2 | type3")"', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+
+      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
+      languageService.addSchema(SCHEMA_ID, schema.schema);
+      const content = 'test_anyOf_objects:\n  ';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 1);
+      assert.strictEqual(result[0].message, 'Incorrect type. Expected "type1 | type2 | type3".');
+      assert.strictEqual(result[0].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.deepStrictEqual((result[0].data as IProblem).schemaUri, [
+        'file:///sharedSchema.json',
+        'file:///default_schema_id.yaml',
+      ]);
+    });
+    it('should combine types in "Incorrect type error"', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+
+      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
+      languageService.addSchema(SCHEMA_ID, schema.schema);
+      const content = 'test_anyOf_objects:\n  propA:';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 3);
+      assert.strictEqual(result[2].message, 'Incorrect type. Expected "string".');
+      assert.strictEqual(result[2].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+    });
+    it('should combine const value', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+
+      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
+      languageService.addSchema(SCHEMA_ID, schema.schema);
+      const content = 'test_anyOf_objects:\n  constA:';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 4);
+      assert.strictEqual(result[3].message, 'Value must be "constForType1" | "constForType3".');
+      assert.strictEqual(result[3].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+    });
+    it('should distinguish types in error: "Missing property from multiple schemas"', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+
+      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
+      languageService.addSchema(SCHEMA_ID, schema.schema);
+      const content = 'test_anyOf_objects:\n  someProp:';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 3);
+      assert.strictEqual(result[0].message, 'Missing property "objA".');
+      assert.strictEqual(result[0].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.deepStrictEqual((result[0].data as IProblem).schemaUri, [
+        'file:///sharedSchema.json',
+        'file:///default_schema_id.yaml',
+      ]);
+      assert.strictEqual(result[1].message, 'Missing property "propA".');
+      assert.strictEqual(result[1].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.deepStrictEqual((result[1].data as IProblem).schemaUri, [
+        'file:///sharedSchema.json',
+        'file:///default_schema_id.yaml',
+      ]);
+      assert.strictEqual(result[2].message, 'Missing property "constA".');
+      assert.strictEqual(result[2].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.deepStrictEqual((result[2].data as IProblem).schemaUri, [
+        'file:///sharedSchema.json',
+        'file:///default_schema_id.yaml',
+      ]);
     });
   });
 });

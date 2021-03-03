@@ -1,5 +1,5 @@
 import { URI } from 'vscode-uri';
-import { IConnection, WorkspaceFolder } from 'vscode-languageserver';
+import { Connection, WorkspaceFolder } from 'vscode-languageserver';
 import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
 import * as fs from 'fs';
 import * as URL from 'url';
@@ -12,7 +12,7 @@ import { WorkspaceContextService } from '../yamlLanguageService';
  * @param uri can be a local file, vscode request, http(s) request or a custom request
  */
 export const schemaRequestHandler = (
-  connection: IConnection,
+  connection: Connection,
   uri: string,
   workspaceFolders: WorkspaceFolder[],
   workspaceRoot: URI,

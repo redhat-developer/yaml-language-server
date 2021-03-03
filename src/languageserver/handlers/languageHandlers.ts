@@ -2,14 +2,19 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import { FoldingRange } from 'vscode-json-languageservice';
 import {
+  CodeAction,
+  CodeActionParams,
   CompletionList,
   DidChangeWatchedFilesParams,
   DocumentFormattingParams,
   DocumentLink,
   DocumentLinkParams,
+  DocumentOnTypeFormattingParams,
   DocumentSymbolParams,
-  IConnection,
+  FoldingRangeParams,
+  Connection,
   TextDocumentPositionParams,
 } from 'vscode-languageserver';
 import { DocumentSymbol, Hover, SymbolInformation, TextEdit } from 'vscode-languageserver-types';
@@ -24,7 +29,7 @@ export class LanguageHandlers {
   private validationHandler: ValidationHandler;
 
   constructor(
-    private readonly connection: IConnection,
+    private readonly connection: Connection,
     languageService: LanguageService,
     yamlSettings: SettingsState,
     validationHandler: ValidationHandler
@@ -41,6 +46,9 @@ export class LanguageHandlers {
     this.connection.onHover((textDocumentPositionParams) => this.hoverHandler(textDocumentPositionParams));
     this.connection.onCompletion((textDocumentPosition) => this.completionHandler(textDocumentPosition));
     this.connection.onDidChangeWatchedFiles((change) => this.watchedFilesHandler(change));
+    this.connection.onFoldingRanges((params) => this.foldingRangeHandler(params));
+    this.connection.onCodeAction((params) => this.codeActionHandler(params));
+    this.connection.onDocumentOnTypeFormatting((params) => this.formatOnTypeHandler(params));
   }
 
   documentLinkHandler(params: DocumentLinkParams): Promise<DocumentLink[]> {
@@ -87,6 +95,15 @@ export class LanguageHandlers {
     };
 
     return this.languageService.doFormat(document, customFormatterSettings);
+  }
+
+  formatOnTypeHandler(params: DocumentOnTypeFormattingParams): Promise<TextEdit[] | undefined> | TextEdit[] | undefined {
+    const document = this.yamlSettings.documents.get(params.textDocument.uri);
+
+    if (!document) {
+      return;
+    }
+    return this.languageService.doDocumentOnTypeFormatting(document, params);
   }
 
   /**
@@ -141,5 +158,23 @@ export class LanguageHandlers {
     if (hasChanges) {
       this.yamlSettings.documents.all().forEach((document) => this.validationHandler.validate(document));
     }
+  }
+
+  foldingRangeHandler(params: FoldingRangeParams): Promise<FoldingRange[] | undefined> | FoldingRange[] | undefined {
+    const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
+    if (!textDocument) {
+      return;
+    }
+
+    return this.languageService.getFoldingRanges(textDocument, this.yamlSettings.capabilities.textDocument.foldingRange);
+  }
+
+  codeActionHandler(params: CodeActionParams): CodeAction[] | undefined {
+    const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
+    if (!textDocument) {
+      return;
+    }
+
+    return this.languageService.getCodeAction(textDocument, params);
   }
 }

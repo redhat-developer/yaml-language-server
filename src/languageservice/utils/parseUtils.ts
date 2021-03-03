@@ -2,6 +2,7 @@ import * as Yaml from 'yaml-language-server-parser';
 import { Schema, Type } from 'js-yaml';
 
 import { filterInvalidCustomTags } from './arrUtils';
+import { ErrorCode } from 'vscode-json-languageservice/lib/umd/jsonLanguageTypes';
 
 export const DUPLICATE_KEY_REASON = 'duplicate key';
 
@@ -14,9 +15,11 @@ export interface YAMLDocDiagnostic {
   location: {
     start: number;
     end: number;
+    toLineEnd: boolean;
   };
   severity: 1 | 2;
   source?: string;
+  code: ErrorCode;
 }
 
 /**
@@ -29,9 +32,11 @@ function exceptionToDiagnostic(e: Yaml.YAMLException): YAMLDocDiagnostic {
     message: `${e.reason}`,
     location: {
       start: e.mark.position,
-      end: e.mark.position + e.mark.column,
+      end: e.mark.position + 1, // we do not know actual end of error, so assuming that it 1 character
+      toLineEnd: e.mark.toLineEnd,
     },
     severity: 2,
+    code: ErrorCode.Undefined,
   };
 }
 

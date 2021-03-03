@@ -5,15 +5,16 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { Diagnostic } from 'vscode-languageserver-types';
+import { Diagnostic, Position } from 'vscode-languageserver';
 import { LanguageSettings } from '../yamlLanguageService';
 import { parse as parseYAML, YAMLDocument } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
-import { TextDocument } from 'vscode-languageserver';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
 import { YAML_SOURCE } from '../parser/jsonParser07';
+import { TextBuffer } from '../utils/textBuffer';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -21,12 +22,15 @@ import { YAML_SOURCE } from '../parser/jsonParser07';
  * @param textDocument TextDocument from the language server client
  */
 export const yamlDiagToLSDiag = (yamlDiag: YAMLDocDiagnostic, textDocument: TextDocument): Diagnostic => {
+  const start = textDocument.positionAt(yamlDiag.location.start);
   const range = {
-    start: textDocument.positionAt(yamlDiag.location.start),
-    end: textDocument.positionAt(yamlDiag.location.end),
+    start,
+    end: yamlDiag.location.toLineEnd
+      ? Position.create(start.line, new TextBuffer(textDocument).getLineLength(yamlDiag.location.start))
+      : textDocument.positionAt(yamlDiag.location.end),
   };
 
-  return Diagnostic.create(range, yamlDiag.message, yamlDiag.severity, undefined, YAML_SOURCE);
+  return Diagnostic.create(range, yamlDiag.message, yamlDiag.severity, yamlDiag.code, YAML_SOURCE);
 };
 
 export class YAMLValidation {
@@ -76,6 +80,7 @@ export class YAMLValidation {
       index++;
     }
 
+    let previousErr: Diagnostic;
     const foundSignatures = new Set();
     const duplicateMessagesRemoved: Diagnostic[] = [];
     for (let err of validationResult) {
@@ -94,6 +99,18 @@ export class YAMLValidation {
 
       if (!err.source) {
         err.source = YAML_SOURCE;
+      }
+
+      if (
+        previousErr &&
+        previousErr.message === err.message &&
+        previousErr.range.end.line === err.range.start.line &&
+        Math.abs(previousErr.range.end.character - err.range.end.character) >= 1
+      ) {
+        previousErr.range.end = err.range.end;
+        continue;
+      } else {
+        previousErr = err;
       }
 
       const errSig = err.range.start.line + ' ' + err.range.start.character + ' ' + err.message;

@@ -5,7 +5,7 @@
 import { binarySearch, getLineStartPositions, getPosition } from '../src/languageservice/utils/documentPositionCalculator';
 import * as assert from 'assert';
 
-suite('DocumentPositionCalculator Tests', () => {
+describe('DocumentPositionCalculator Tests', () => {
   describe('binarySearch', function () {
     it('Binary Search where we are looking for element to the left of center', () => {
       const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];

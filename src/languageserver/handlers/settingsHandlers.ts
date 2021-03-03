@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { xhr, configure as configureHttpRequests } from 'request-light';
-import { DidChangeConfigurationParams, DocumentFormattingRequest, IConnection } from 'vscode-languageserver';
+import { DidChangeConfigurationParams, DocumentFormattingRequest, Connection } from 'vscode-languageserver';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings } from '../../languageservice/yamlLanguageService';
@@ -12,7 +12,7 @@ import { ValidationHandler } from './validationHandlers';
 
 export class SettingsHandler {
   constructor(
-    private readonly connection: IConnection,
+    private readonly connection: Connection,
     private readonly languageService: LanguageService,
     private readonly yamlSettings: SettingsState,
     private readonly validationHandler: ValidationHandler
@@ -116,18 +116,17 @@ export class SettingsHandler {
    * AND the schema store setting is enabled. If the schema store setting
    * is not enabled we need to clear the schemas.
    */
-  public setSchemaStoreSettingsIfNotSet(): void {
+  public async setSchemaStoreSettingsIfNotSet(): Promise<void> {
     const schemaStoreIsSet = this.yamlSettings.schemaStoreSettings.length !== 0;
 
     if (this.yamlSettings.schemaStoreEnabled && !schemaStoreIsSet) {
-      this.getSchemaStoreMatchingSchemas()
-        .then((schemaStore) => {
-          this.yamlSettings.schemaStoreSettings = schemaStore.schemas;
-          this.updateConfiguration();
-        })
-        .catch(() => {
-          // ignore
-        });
+      try {
+        const schemaStore = await this.getSchemaStoreMatchingSchemas();
+        this.yamlSettings.schemaStoreSettings = schemaStore.schemas;
+        this.updateConfiguration();
+      } catch (err) {
+        // ignore
+      }
     } else if (!this.yamlSettings.schemaStoreEnabled) {
       this.yamlSettings.schemaStoreSettings = [];
       this.updateConfiguration();
@@ -152,12 +151,13 @@ export class SettingsHandler {
 
         if (schema && schema.fileMatch) {
           for (const fileMatch in schema.fileMatch) {
-            const currFileMatch = schema.fileMatch[fileMatch];
+            const currFileMatch: string = schema.fileMatch[fileMatch];
             // If the schema is for files with a YAML extension, save the schema association
             if (currFileMatch.indexOf('.yml') !== -1 || currFileMatch.indexOf('.yaml') !== -1) {
               languageSettings.schemas.push({
                 uri: schema.url,
-                fileMatch: [currFileMatch],
+                // this is workaround to fix file matcher, adding '/' force to match full file name instead of just file name ends
+                fileMatch: [currFileMatch.indexOf('/') === -1 ? '/' + currFileMatch : currFileMatch],
               });
             }
           }

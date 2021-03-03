@@ -31,6 +31,7 @@ export declare type CustomSchemaProvider = (uri: string) => Promise<string | str
 export enum MODIFICATION_ACTIONS {
   'delete',
   'add',
+  'deleteAll',
 }
 
 export interface SchemaAdditions {
@@ -47,6 +48,11 @@ export interface SchemaDeletions {
   action: MODIFICATION_ACTIONS.delete;
   path: string;
   key: string;
+}
+
+export interface SchemaDeletionsAll {
+  schemas: string[];
+  action: MODIFICATION_ACTIONS.deleteAll;
 }
 
 export class FilePatternAssociation {
@@ -222,6 +228,8 @@ export class YAMLSchemaService extends JSONSchemaService {
         while (next.$ref) {
           const ref = next.$ref;
           const segments = ref.split('#', 2);
+          //return back removed $ref. We lost info about referenced type without it.
+          next._$ref = next.$ref;
           delete next.$ref;
           if (segments[0].length > 0) {
             openPromises.push(resolveExternalLink(next, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies));
@@ -455,6 +463,15 @@ export class YAMLSchemaService extends JSONSchemaService {
     return Promise.resolve(undefined);
   }
 
+  /**
+   * Delete schemas on specific path
+   */
+  public async deleteSchemas(deletions: SchemaDeletionsAll): Promise<void> {
+    deletions.schemas.forEach((s) => {
+      this.deleteSchema(s);
+    });
+    return Promise.resolve(undefined);
+  }
   /**
    * Delete a schema with schema ID.
    */

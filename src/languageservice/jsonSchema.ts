@@ -39,6 +39,7 @@ export interface JSONSchema {
   multipleOf?: number;
   required?: string[];
   $ref?: string;
+  _$ref?: string;
   anyOf?: JSONSchemaRef[];
   allOf?: JSONSchemaRef[];
   oneOf?: JSONSchemaRef[];

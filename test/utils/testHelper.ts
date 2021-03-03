@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { createConnection, IConnection, TextDocument } from 'vscode-languageserver';
+import { createConnection, Connection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node';
 import path = require('path');
 import { SettingsState } from '../../src/yamlSettings';
 import { schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler';
@@ -10,6 +10,8 @@ import { YAMLServerInit } from '../../src/yamlServerInit';
 import { LanguageService, LanguageSettings } from '../../src';
 import { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers';
 import { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { ClientCapabilities } from 'vscode-json-languageservice';
 
 export function toFsPath(str: unknown): string {
   if (typeof str !== 'string') {
@@ -52,7 +54,7 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
   const yamlSettings = new SettingsState();
   process.argv.push('--node-ipc');
   const connection = createConnection();
-  const schemaRequestHandlerWrapper = (connection: IConnection, uri: string): Promise<string> => {
+  const schemaRequestHandlerWrapper = (connection: Connection, uri: string): Promise<string> => {
     return schemaRequestHandler(
       connection,
       uri,
@@ -63,6 +65,12 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
   };
   const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
   const serverInit = new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService);
+  serverInit.connectionInitialized({
+    processId: null,
+    capabilities: ClientCapabilities.LATEST as LSPClientCapabilities,
+    rootUri: null,
+    workspaceFolders: null,
+  });
   const languageService = serverInit.languageService;
   const validationHandler = serverInit.validationHandler;
   const languageHandler = serverInit.languageHandler;
