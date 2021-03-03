@@ -921,6 +921,7 @@ export class YAMLCompletion extends JSONCompletion {
     separatorAfter: string,
     indent = this.indentation,
     insertIndex = 1,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     options: {
       includeConstValue?: boolean;
       isInlineObject?: boolean;
