@@ -1980,7 +1980,7 @@ describe('Auto Completion Tests', () => {
       });
     });
 
-    it('XXXArray anyOf two objects completion indentation', async () => {
+    it('Array anyOf two objects completion indentation', async () => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       languageService.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj';
