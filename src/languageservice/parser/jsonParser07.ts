@@ -81,10 +81,6 @@ export interface IProblem {
   schemaUri?: string[];
 }
 
-interface DiagnosticExt extends Diagnostic {
-  schemaUri?: string[];
-}
-
 export abstract class ASTNodeImpl {
   public abstract readonly type: 'object' | 'property' | 'array' | 'number' | 'boolean' | 'null' | 'string';
 
