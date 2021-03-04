@@ -524,7 +524,7 @@ export class YAMLCompletion extends JSONCompletion {
         let insertText: string;
         let filterText: string;
         if (isDefined(value)) {
-          const type = schema.type;
+          const type = s.type || schema.type;
           if (arrayDepth === 0 && type === 'array') {
             // We know that a - isn't present yet so we need to add one
             const fixedObj = {};
@@ -554,7 +554,7 @@ export class YAMLCompletion extends JSONCompletion {
           filterText = insertText.replace(/[\n]/g, ''); // remove new lines
         }
         collector.add({
-          kind: this.getSuggestionKind(type),
+          kind: s.suggestionKind || this.getSuggestionKind(type),
           label,
           documentation: super.fromMarkup(s.markdownDescription) || s.description,
           insertText,

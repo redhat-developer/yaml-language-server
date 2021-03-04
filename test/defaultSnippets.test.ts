@@ -96,6 +96,26 @@ describe('Default Snippet Tests', () => {
         })
         .then(done, done);
     });
+    it('Snippet in anyOf array schema should autocomplete correctly with "-" symbol', (done) => {
+      const content = 'anyOf_arrayObj:\n  ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].insertText, '- key: ');
+        })
+        .then(done, done);
+    });
+    it('Snippet custom suggestionKind', (done) => {
+      const content = 'anyOf_arrayObj:\n  ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.strictEqual(result.items.length, 1);
+          assert.strictEqual(result.items[0].kind, 9);
+        })
+        .then(done, done);
+    });
 
     it('Snippet in object schema should autocomplete on next line ', (done) => {
       const content = 'object:\n  ';
@@ -190,7 +210,7 @@ describe('Default Snippet Tests', () => {
       const completion = parseSetup(content, 3);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 10); // This is just checking the total number of snippets in the defaultSnippets.json
+          assert.equal(result.items.length, 11); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[4].label, 'longSnippet');
           // eslint-disable-next-line
           assert.equal(
@@ -206,7 +226,7 @@ describe('Default Snippet Tests', () => {
       const completion = parseSetup(content, 11);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 10); // This is just checking the total number of snippets in the defaultSnippets.json
+          assert.equal(result.items.length, 11); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[5].label, 'arrayArraySnippet');
           assert.equal(
             result.items[5].insertText,
