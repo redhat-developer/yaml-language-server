@@ -776,8 +776,8 @@ describe('Validation Tests', () => {
       validator
         .then(function (result) {
           assert.equal(result.length, 2);
-          assert.deepEqual(result[0], createExpectedError(DuplicateKeyError, 2, 0, 2, 0));
-          assert.deepEqual(result[1], createExpectedError(DuplicateKeyError, 0, 0, 0, 0));
+          assert.deepEqual(result[0], createExpectedError(DuplicateKeyError, 2, 0, 2, 1));
+          assert.deepEqual(result[1], createExpectedError(DuplicateKeyError, 0, 0, 0, 1));
         })
         .then(done, done);
     });
@@ -988,7 +988,12 @@ describe('Validation Tests', () => {
       languageService.configure(languageSettingsSetup.withKubernetes().languageSettings);
       yamlSettings.specificValidatorPaths = ['*.yml', '*.yaml'];
       const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/test.yml');
-      expect(result[0]).deep.equal(
+      /* returns different result than master, be careful
+        Missing property "name".
+        Missing property "description".
+        Incorrect type. Expected "array".
+       */
+      expect(result[2]).deep.equal(
         createDiagnosticWithData(
           ArrayTypeError,
           4,

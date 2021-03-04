@@ -558,7 +558,7 @@ export class YAMLCompletion extends JSONCompletion {
                 this.addSchemaValueCompletions(s.schema.items[index], separatorAfter, collector, types);
               }
             } else if (typeof s.schema.items === 'object' && s.schema.items.type === 'object') {
-              const insertText = `- ${this.getInsertTextForObject(s.schema.items, separatorAfter).insertText.trimLeft()}`;
+              const insertText = `- ${this.getInsertTextForObject(s.schema.items, separatorAfter, '  ').insertText.trimLeft()}`;
               const documentation = this.getDocumentationWithMarkdownText(
                 `Create an item of an array${s.schema.description === undefined ? '' : '(' + s.schema.description + ')'}`,
                 insertText
@@ -1132,7 +1132,9 @@ export class YAMLCompletion extends JSONCompletion {
         return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter, ident).insertText}`;
       } else if (propertySchema.items) {
         // eslint-disable-next-line prettier/prettier
-        return `${resultText}\n${this.indentation}- ${this.getInsertTextForArray(propertySchema.items, separatorAfter).insertText}`;
+        return `${resultText}\n${this.indentation}- ${
+          this.getInsertTextForArray(propertySchema.items, separatorAfter).insertText
+        }`;
       }
       if (nValueProposals === 0) {
         switch (type) {
@@ -1143,10 +1145,10 @@ export class YAMLCompletion extends JSONCompletion {
             value = ' $1';
             break;
           case 'object':
-            value = `\n${this.indentation}`;
+            value = `\n${ident}`;
             break;
           case 'array':
-            value = `\n${this.indentation}- `;
+            value = `\n${ident}- `;
             break;
           case 'number':
           case 'integer':

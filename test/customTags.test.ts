@@ -91,7 +91,7 @@ describe('Custom Tag tests Tests', () => {
       validator
         .then(function (result) {
           assert.equal(result.length, 1);
-          assert.deepEqual(result[0], createExpectedError('unknown tag <!test>', 0, 0, 0, 0));
+          assert.deepEqual(result[0], createExpectedError('unknown tag <!test>', 0, 0, 0, 5));
         })
         .then(done, done);
     });

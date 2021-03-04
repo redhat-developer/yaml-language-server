@@ -165,6 +165,7 @@ export function getLanguageService(
       completer.configure(settings, customTagsSetting);
       formatter.configure(settings);
       hoverDetail.configure(settings);
+      yamlCodeActions.configure(settings);
     },
     registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
       schemaService.registerCustomSchemaProvider(schemaProvider);

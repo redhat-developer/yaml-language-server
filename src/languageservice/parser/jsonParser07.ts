@@ -26,7 +26,6 @@ import { Schema_Object } from '../utils/jigx/schema-type';
 import * as path from 'path';
 import { prepareInlineCompletion } from '../services/yamlCompletion';
 import { Diagnostic } from 'vscode-languageserver';
-import { MissingRequiredPropWarning, TypeMismatchWarning, ConstWarning } from '../../../test/utils/errorMessages';
 import { isArrayEqual } from '../utils/arrUtils';
 
 const localize = nls.loadMessageBundle();
@@ -69,9 +68,9 @@ export enum ProblemType {
 }
 
 const ProblemTypeMessages: Record<ProblemType, string> = {
-  [ProblemType.missingRequiredPropWarning]: MissingRequiredPropWarning,
-  [ProblemType.typeMismatchWarning]: TypeMismatchWarning,
-  [ProblemType.constWarning]: ConstWarning,
+  [ProblemType.missingRequiredPropWarning]: 'Missing property "{0}".',
+  [ProblemType.typeMismatchWarning]: 'Incorrect type. Expected "{0}".',
+  [ProblemType.constWarning]: 'Value must be {0}.',
 };
 export interface IProblem {
   location: IRange;
@@ -527,7 +526,13 @@ export class JSONDocument {
           textDocument.positionAt(p.location.offset),
           textDocument.positionAt(p.location.offset + p.location.length)
         );
-        const diagnostic: Diagnostic = Diagnostic.create(range, p.message, p.severity, p.code, p.source);
+        const diagnostic: Diagnostic = Diagnostic.create(
+          range,
+          p.message,
+          p.severity,
+          p.code ? p.code : ErrorCode.Undefined,
+          p.source
+        );
         diagnostic.data = { schemaUri: p.schemaUri };
         return diagnostic;
       });
@@ -614,8 +619,8 @@ function validate(
           severity: DiagnosticSeverity.Warning,
           message: schema.errorMessage || getWarningMessage(ProblemType.typeMismatchWarning, [schemaType]),
           source: getSchemaSource(schema, originalSchema),
-          problemType: ProblemType.typeMismatchWarning,
           schemaUri: getSchemaUri(schema, originalSchema),
+          problemType: ProblemType.typeMismatchWarning,
           problemArgs: [schemaType],
         });
       }
@@ -1129,9 +1134,9 @@ function validate(
             message: getWarningMessage(ProblemType.missingRequiredPropWarning, [propertyName]),
             source: getSchemaSource(schema, originalSchema),
             propertyName: propertyName,
-            problemType: ProblemType.missingRequiredPropWarning,
             schemaUri: getSchemaUri(schema, originalSchema),
             problemArgs: [propertyName],
+            problemType: ProblemType.missingRequiredPropWarning,
           };
           pushProblemToValidationResultAndSchema(schema, validationResult, problem);
         }

@@ -173,7 +173,7 @@ export class YamlHoverDetail {
           return true;
         });
         const newLineWithHr = '\n\n----\n';
-        const results = [];
+        let results = [];
         if (hoverRes.length > 1) {
           const titleAll = hoverRes
             .filter((h) => h.title)
@@ -209,6 +209,9 @@ export class YamlHoverDetail {
           }
         }
         const decycleNode = decycle(node, 8);
+        if (!results.length) {
+          results = [''];
+        }
         return createPropDetail(results, resSchemas, decycleNode);
       }
       return null;
