@@ -2,7 +2,7 @@
 
 - CodeAction to open json schema from yaml error [#395](https://github.com/redhat-developer/yaml-language-server/pull/395)
 - Upgrade to `4.0.2` vscode-json-languageservice  [#405](https://github.com/redhat-developer/yaml-language-server/issues/405)
-- feat: add multiple schema deletions [#397](https://github.com/redhat-developer/yaml-language-server/pull/397)
+- feat: add ability to delete all schemas from cache [#397](https://github.com/redhat-developer/yaml-language-server/pull/397)
 - feat: multiple schema distinction in validation [#410](https://github.com/redhat-developer/yaml-language-server/pull/410)
 - Fix: Object autocompletion in arrays with custom indentation produces invalid output [#432](https://github.com/redhat-developer/vscode-yaml/issues/432)
 - Fix: Auto completing an object underneath an array can produce the wrong indentation [#392](https://github.com/redhat-developer/yaml-language-server/issues/392)
