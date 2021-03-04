@@ -1,6 +1,6 @@
 ### 0.16.0
 
-- CodeAction to open json schema [#395](https://github.com/redhat-developer/yaml-language-server/pull/395)
+- CodeAction to open json schema from yaml error [#395](https://github.com/redhat-developer/yaml-language-server/pull/395)
 - Upgrade to `4.0.2` vscode-json-languageservice  [#405](https://github.com/redhat-developer/yaml-language-server/issues/405)
 - feat: add multiple schema deletions [#397](https://github.com/redhat-developer/yaml-language-server/pull/397)
 - feat: multiple schema distinction in validation [#410](https://github.com/redhat-developer/yaml-language-server/pull/410)
