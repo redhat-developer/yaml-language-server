@@ -186,15 +186,19 @@ export class SettingsHandler {
 
     if (this.yamlSettings.schemaAssociations) {
       if (Array.isArray(this.yamlSettings.schemaAssociations)) {
-        Array.prototype.push.apply(languageSettings.schemas, this.yamlSettings.schemaAssociations);
+        this.yamlSettings.schemaAssociations.forEach((association) => {
+          languageSettings = this.configureSchemas(
+            association.uri,
+            association.fileMatch,
+            association.schema,
+            languageSettings,
+            SchemaPriority.SchemaAssociation
+          );
+        });
       } else {
-        for (const pattern in this.yamlSettings.schemaAssociations) {
-          const association = this.yamlSettings.schemaAssociations[pattern];
-          if (Array.isArray(association)) {
-            association.forEach((uri) => {
-              languageSettings = this.configureSchemas(uri, [pattern], null, languageSettings, SchemaPriority.SchemaAssociation);
-            });
-          }
+        for (const uri in this.yamlSettings.schemaAssociations) {
+          const fileMatch = this.yamlSettings.schemaAssociations[uri];
+          languageSettings = this.configureSchemas(uri, fileMatch, null, languageSettings, SchemaPriority.SchemaAssociation);
         }
       }
     }
