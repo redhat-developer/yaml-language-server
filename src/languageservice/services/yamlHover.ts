@@ -8,11 +8,11 @@
 import { Hover, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
-import { parse as parseYAML } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONHover } from 'vscode-json-languageservice/lib/umd/services/jsonHover';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { yamlDocumentsCache } from '../parser/yaml-documents';
 
 export class YAMLHover {
   private shouldHover: boolean;
@@ -33,7 +33,7 @@ export class YAMLHover {
     if (!this.shouldHover || !document) {
       return Promise.resolve(undefined);
     }
-    const doc = parseYAML(document.getText());
+    const doc = yamlDocumentsCache.getYamlDocument(document);
     const offset = document.offsetAt(position);
     const currentDoc = matchOffsetToDocument(offset, doc);
     if (currentDoc === null) {

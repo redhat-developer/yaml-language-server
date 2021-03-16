@@ -2,17 +2,18 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { TextDocument, FoldingRange, Range } from 'vscode-languageserver';
+import { FoldingRange, Range } from 'vscode-languageserver';
 import { FoldingRangesContext } from '../yamlTypes';
-import { parse as parseYAML } from '../parser/yamlParser07';
 import { ASTNode } from '../jsonASTTypes';
+import { yamlDocumentsCache } from '../parser/yaml-documents';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 export function getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | undefined {
   if (!document) {
     return;
   }
   const result: FoldingRange[] = [];
-  const doc = parseYAML(document.getText());
+  const doc = yamlDocumentsCache.getYamlDocument(document);
   for (const ymlDoc of doc.documents) {
     ymlDoc.visit((node) => {
       if (

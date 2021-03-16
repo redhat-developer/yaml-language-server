@@ -5,11 +5,11 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { parse as parseYAML } from '../parser/yamlParser07';
-
-import { SymbolInformation, TextDocument, DocumentSymbol } from 'vscode-languageserver-types';
+import { SymbolInformation, DocumentSymbol } from 'vscode-languageserver-types';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONDocumentSymbols } from 'vscode-json-languageservice/lib/umd/services/jsonDocumentSymbols';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { yamlDocumentsCache } from '../parser/yaml-documents';
 
 export class YAMLDocumentSymbols {
   private jsonDocumentSymbols;
@@ -30,7 +30,7 @@ export class YAMLDocumentSymbols {
   }
 
   public findDocumentSymbols(document: TextDocument): SymbolInformation[] {
-    const doc = parseYAML(document.getText());
+    const doc = yamlDocumentsCache.getYamlDocument(document);
     if (!doc || doc['documents'].length === 0) {
       return null;
     }
@@ -46,7 +46,7 @@ export class YAMLDocumentSymbols {
   }
 
   public findHierarchicalDocumentSymbols(document: TextDocument): DocumentSymbol[] {
-    const doc = parseYAML(document.getText());
+    const doc = yamlDocumentsCache.getYamlDocument(document);
     if (!doc || doc['documents'].length === 0) {
       return null;
     }

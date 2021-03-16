@@ -93,6 +93,9 @@ export class YAMLServerInit {
         documentLinkProvider: {},
         foldingRangeProvider: true,
         codeActionProvider: true,
+        codeLensProvider: {
+          resolveProvider: false,
+        },
         executeCommandProvider: {
           commands: Object.keys(YamlCommands).map((k) => YamlCommands[k]),
         },

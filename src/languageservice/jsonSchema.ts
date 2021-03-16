@@ -90,3 +90,7 @@ export interface JSONSchema {
 export interface JSONSchemaMap {
   [name: string]: JSONSchemaRef;
 }
+
+export function isJSONSchema(schema: JSONSchemaRef): schema is JSONSchema {
+  return !(schema instanceof Boolean);
+}
