@@ -55,7 +55,7 @@ export class YamlCodeActions {
     for (const diagnostic of diagnostics) {
       const schemaUri = (diagnostic.data as YamlDiagnosticData)?.schemaUri || [];
       for (const schemaUriStr of schemaUri) {
-        if (schemaUriStr /* && (schemaUriStr.startsWith('file') || schemaUriStr.startsWith('https')) */) {
+        if (schemaUriStr) {
           if (!schemaUriToDiagnostic.has(schemaUriStr)) {
             schemaUriToDiagnostic.set(schemaUriStr, []);
           }
