@@ -54,7 +54,7 @@ describe('YAML CodeLens', () => {
     expect(result[0].command).is.deep.equal(createCommand('schema.json', 'some://url/to/schema.json'));
   });
 
-  it('should place CodeLens at beginning of the file', async () => {
+  it('should place CodeLens at beginning of the file and it has command', async () => {
     const doc = setupTextDocument('foo: bar');
     const schema: JSONSchema = {
       url: 'some://url/to/schema.json',
@@ -63,18 +63,7 @@ describe('YAML CodeLens', () => {
     const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService);
     const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
     expect(result[0].range).is.deep.equal(Range.create(0, 0, 0, 0));
-  });
-
-  it('command name should contains schema name', async () => {
-    const doc = setupTextDocument('foo: bar');
-    const schema = {
-      url: 'some://url/to/schema.json',
-      name: 'fooBar',
-    } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
-    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService);
-    const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
-    expect(result[0].command).is.deep.equal(createCommand('fooBar (schema.json)', 'some://url/to/schema.json'));
+    expect(result[0].command).is.deep.equal(createCommand('schema.json', 'some://url/to/schema.json'));
   });
 
   it('command name should contains schema title', async () => {

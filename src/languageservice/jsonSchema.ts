@@ -92,5 +92,5 @@ export interface JSONSchemaMap {
 }
 
 export function isJSONSchema(schema: JSONSchemaRef): schema is JSONSchema {
-  return !(schema instanceof Boolean);
+  return typeof schema !== 'boolean';
 }
