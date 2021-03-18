@@ -49,11 +49,6 @@ export class ValidationHandler {
       return;
     }
 
-    if (textDocument.getText().length === 0) {
-      this.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
-      return;
-    }
-
     return this.languageService
       .doValidation(textDocument, isKubernetesAssociatedDocument(textDocument, this.yamlSettings.specificValidatorPaths))
       .then(

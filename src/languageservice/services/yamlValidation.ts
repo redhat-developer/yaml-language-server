@@ -57,7 +57,12 @@ export class YAMLValidation {
       return Promise.resolve([]);
     }
 
-    const yamlDocument: YAMLDocument = parseYAML(textDocument.getText(), this.customTags);
+    let text = textDocument.getText();
+    // if text is contains only whitespace wrap all text in object to force schema selection
+    if (!/\S/.test(text)) {
+      text = `{${text}}`;
+    }
+    const yamlDocument: YAMLDocument = parseYAML(text, this.customTags);
     const validationResult = [];
 
     let index = 0;
