@@ -37,7 +37,7 @@ describe('Settings Handlers Tests', () => {
     sandbox.restore();
   });
 
-  it('SettingsHandler should modify file match patterns', async () => {
+  it('SettingsHandler should not modify file match patterns', async () => {
     xhrStub.resolves({
       responseText: `{"schemas": [
       {
@@ -62,7 +62,7 @@ describe('Settings Handlers Tests', () => {
 
     expect(settingsState.schemaStoreSettings).deep.include({
       uri: 'https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json',
-      fileMatch: ['/.adonisrc.yaml'],
+      fileMatch: ['.adonisrc.yaml'],
       priority: SchemaPriority.SchemaStore,
     });
   });
