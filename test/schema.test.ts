@@ -384,7 +384,7 @@ describe('JSON Schema', () => {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
     service
-      .getSchemaForResource('test.json', undefined)
+      .getSchemaForResource('/test.json', undefined)
       .then((schema) => {
         assert.equal(schema, null);
       })

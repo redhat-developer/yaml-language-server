@@ -156,8 +156,7 @@ export class SettingsHandler {
             if (currFileMatch.indexOf('.yml') !== -1 || currFileMatch.indexOf('.yaml') !== -1) {
               languageSettings.schemas.push({
                 uri: schema.url,
-                // this is workaround to fix file matcher, adding '/' force to match full file name instead of just file name ends
-                fileMatch: [currFileMatch.indexOf('/') === -1 ? '/' + currFileMatch : currFileMatch],
+                fileMatch: [currFileMatch],
                 priority: SchemaPriority.SchemaStore,
               });
             }

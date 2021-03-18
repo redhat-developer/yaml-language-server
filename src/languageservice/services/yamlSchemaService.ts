@@ -23,6 +23,7 @@ import { convertSimple2RegExpPattern } from '../utils/strings';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonParser07';
 import * as yaml from 'js-yaml';
+import * as micromatch from 'micromatch';
 
 const localize = nls.loadMessageBundle();
 
@@ -82,6 +83,53 @@ export class FilePatternAssociation {
   }
 }
 
+type MatchFn = (str: string) => boolean;
+export class JSONFilePatternAssociation {
+  private readonly matchers: MatchFn[];
+  private readonly isInclude: boolean[];
+  private readonly uris: string[];
+
+  constructor(pattern: string[], uris: string[]) {
+    this.isInclude = [];
+    this.matchers = [];
+    try {
+      for (let p of pattern) {
+        const include = p[0] !== '!';
+        if (!include) {
+          p = p.substring(1);
+        }
+
+        if (!p.startsWith('**/')) {
+          p = `**/${p}`;
+        }
+        this.matchers.push(micromatch.matcher(p));
+        this.isInclude.push(include);
+      }
+      this.uris = uris;
+    } catch (e) {
+      // invalid pattern
+      this.matchers.length = 0;
+      this.isInclude.length = 0;
+      this.uris = [];
+    }
+  }
+
+  matchesPattern(fileName: string): boolean {
+    let match = false;
+    for (let i = 0; i < this.matchers.length; i++) {
+      const regExp = this.matchers[i];
+      if (regExp(fileName)) {
+        match = this.isInclude[i];
+      }
+    }
+    return match;
+  }
+
+  getURIs(): string[] {
+    return this.uris;
+  }
+}
+
 export class YAMLSchemaService extends JSONSchemaService {
   // To allow to use schemasById from super.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -107,6 +155,12 @@ export class YAMLSchemaService extends JSONSchemaService {
 
   registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider): void {
     this.customSchemaProvider = customSchemaProvider;
+  }
+
+  addFilePatternAssociation(pattern: string[], uris: string[]): JSONFilePatternAssociation {
+    const fpa = new JSONFilePatternAssociation(pattern, uris);
+    this.filePatternAssociations.push(fpa);
+    return fpa;
   }
 
   public resolveSchemaContent(
@@ -285,8 +339,9 @@ export class YAMLSchemaService extends JSONSchemaService {
         seen[schemaFromModeline] = true;
       }
 
+      const normalizedResource = this.normalizeResourceForMatching(resource);
       for (const entry of this.filePatternAssociations) {
-        if (entry.matchesPattern(resource)) {
+        if (entry.matchesPattern(normalizedResource)) {
           for (const schemaId of entry.getURIs()) {
             if (!seen[schemaId]) {
               schemas.push(schemaId);
@@ -560,10 +615,14 @@ export class YAMLSchemaService extends JSONSchemaService {
     }
   }
 
-  /*
-   * Everything below here is needed because we're importing from vscode-json-languageservice umd and we need
-   * to provide a wrapper around the javascript methods we are calling since they have no type
-   */
+  normalizeResourceForMatching(resource: string): string {
+    // remove querues and fragments, normalize drive capitalization
+    try {
+      return URI.parse(resource).with({ fragment: null, query: null }).toString();
+    } catch (e) {
+      return resource;
+    }
+  }
 
   getOrAddSchemaHandle(id: string, unresolvedSchemaContent?: JSONSchema): SchemaHandle {
     return super.getOrAddSchemaHandle(id, unresolvedSchemaContent);
