@@ -15,6 +15,7 @@ import {
   BlockMappingEntryError,
   DuplicateKeyError,
   propertyIsNotAllowed,
+  MissingRequiredPropWarning,
 } from './utils/errorMessages';
 import * as assert from 'assert';
 import * as path from 'path';
@@ -1196,6 +1197,63 @@ describe('Validation Tests', () => {
         'file:///sharedSchema.json',
         'file:///default_schema_id.yaml',
       ]);
+    });
+  });
+
+  describe('Empty document validation', () => {
+    it('should provide validation for empty document', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          scripts: {
+            type: 'string',
+          },
+        },
+        required: ['scripts'],
+      });
+      const content = '';
+      const result = await parseSetup(content);
+      assert.strictEqual(result.length, 1);
+      assert.deepStrictEqual(
+        result[0],
+        createDiagnosticWithData(
+          MissingRequiredPropWarning.replace('{0}', 'scripts'),
+          0,
+          0,
+          0,
+          0,
+          DiagnosticSeverity.Error,
+          `yaml-schema: file:///${SCHEMA_ID}`,
+          `file:///${SCHEMA_ID}`
+        )
+      );
+    });
+
+    it('should provide validation for document which contains only whitespaces', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          scripts: {
+            type: 'string',
+          },
+        },
+        required: ['scripts'],
+      });
+      const content = '  \n   \n';
+      const result = await parseSetup(content);
+      assert.deepStrictEqual(
+        result[0],
+        createDiagnosticWithData(
+          MissingRequiredPropWarning.replace('{0}', 'scripts'),
+          0,
+          0,
+          0,
+          1,
+          DiagnosticSeverity.Error,
+          `yaml-schema: file:///${SCHEMA_ID}`,
+          `file:///${SCHEMA_ID}`
+        )
+      );
     });
   });
 });
