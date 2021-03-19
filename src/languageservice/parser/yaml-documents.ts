@@ -14,8 +14,15 @@ export class YamlDocuments {
   // a mapping of URIs to cached documents
   private cache = new Map<string, YamlCachedDocument>();
 
-  getYamlDocument(document: TextDocument, customTags: string[] = []): YAMLDocument {
-    this.ensureCache(document, customTags);
+  /**
+   * Get cached YAMLDocument
+   * @param document TextDocument to parse
+   * @param customTags YAML custom tags
+   * @param addRootObject if true and document is empty add empty object {} to force schema usage
+   * @returns the YAMLDocument
+   */
+  getYamlDocument(document: TextDocument, customTags: string[] = [], addRootObject = false): YAMLDocument {
+    this.ensureCache(document, customTags, addRootObject);
     return this.cache.get(document.uri).document;
   }
 
@@ -26,7 +33,7 @@ export class YamlDocuments {
     this.cache.clear();
   }
 
-  private ensureCache(document: TextDocument, customTags: string[]): void {
+  private ensureCache(document: TextDocument, customTags: string[], addRootObject: boolean): void {
     const key = document.uri;
     if (!this.cache.has(key)) {
       this.cache.set(key, { version: -1, document: new YAMLDocument([]) });
@@ -35,7 +42,7 @@ export class YamlDocuments {
     if (this.cache.get(key).version !== document.version) {
       let text = document.getText();
       // if text is contains only whitespace wrap all text in object to force schema selection
-      if (!/\S/.test(text)) {
+      if (addRootObject && !/\S/.test(text)) {
         text = `{${text}}`;
       }
       const doc = parseYAML(text, customTags);

@@ -58,7 +58,7 @@ export class YAMLValidation {
       return Promise.resolve([]);
     }
 
-    const yamlDocument: YAMLDocument = yamlDocumentsCache.getYamlDocument(textDocument, this.customTags);
+    const yamlDocument: YAMLDocument = yamlDocumentsCache.getYamlDocument(textDocument, this.customTags, true);
     const validationResult = [];
 
     let index = 0;
