@@ -91,7 +91,8 @@ export class YAMLServerInit {
         },
         documentRangeFormattingProvider: false,
         documentLinkProvider: {},
-        foldingRangeProvider: true,
+        // disabled until we not get parser which parse comments as separate nodes
+        foldingRangeProvider: false,
         codeActionProvider: true,
         codeLensProvider: {
           resolveProvider: false,

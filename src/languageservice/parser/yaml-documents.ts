@@ -33,7 +33,12 @@ export class YamlDocuments {
     }
 
     if (this.cache.get(key).version !== document.version) {
-      const doc = parseYAML(document.getText(), customTags);
+      let text = document.getText();
+      // if text is contains only whitespace wrap all text in object to force schema selection
+      if (!/\S/.test(text)) {
+        text = `{${text}}`;
+      }
+      const doc = parseYAML(text, customTags);
       this.cache.get(key).document = doc;
       this.cache.get(key).version = document.version;
     }
