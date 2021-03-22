@@ -1802,6 +1802,25 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('name', 'name: $1', 2, 0, 2, 0, 10, InsertTextFormat.Snippet, { documentation: '' })
       );
     });
+
+    it('should not provide additional ":" on existing property completion', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          kind: {
+            type: 'string',
+          },
+        },
+        required: ['kind'],
+      });
+
+      const content = 'kind: 111\n';
+      const completion = await parseSetup(content, 3);
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('kind', 'kind', 0, 0, 0, 4, 10, InsertTextFormat.Snippet, { documentation: '' })
+      );
+    });
   });
   describe('Array completion', () => {
     it('Simple array object completion with "-" without any item', async () => {
