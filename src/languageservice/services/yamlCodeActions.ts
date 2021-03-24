@@ -10,7 +10,6 @@ import {
   CodeActionKind,
   CodeActionParams,
   Command,
-  Connection,
   Diagnostic,
   Position,
   Range,
@@ -19,7 +18,6 @@ import {
 } from 'vscode-languageserver';
 import { YamlCommands } from '../../commands';
 import * as path from 'path';
-import { CommandExecutor } from '../../languageserver/commandExecutor';
 import { TextBuffer } from '../utils/textBuffer';
 import { LanguageSettings } from '../yamlLanguageService';
 
@@ -29,21 +27,7 @@ interface YamlDiagnosticData {
 export class YamlCodeActions {
   private indentation = '  ';
 
-  constructor(commandExecutor: CommandExecutor, connection: Connection, private readonly clientCapabilities: ClientCapabilities) {
-    commandExecutor.registerCommand(YamlCommands.JUMP_TO_SCHEMA, async (uri: string) => {
-      if (!uri) {
-        return;
-      }
-      if (!uri.startsWith('file')) {
-        uri = 'json-schema' + uri.substring(uri.indexOf('://'), uri.length);
-      }
-
-      const result = await connection.window.showDocument({ uri: uri, external: false, takeFocus: true });
-      if (!result) {
-        connection.window.showErrorMessage(`Cannot open ${uri}`);
-      }
-    });
-  }
+  constructor(private readonly clientCapabilities: ClientCapabilities) {}
 
   configure(settings: LanguageSettings): void {
     this.indentation = settings.indentation;
@@ -71,7 +55,7 @@ export class YamlCodeActions {
     for (const diagnostic of diagnostics) {
       const schemaUri = (diagnostic.data as YamlDiagnosticData)?.schemaUri || [];
       for (const schemaUriStr of schemaUri) {
-        if (schemaUriStr && (schemaUriStr.startsWith('file') || schemaUriStr.startsWith('https'))) {
+        if (schemaUriStr) {
           if (!schemaUriToDiagnostic.has(schemaUriStr)) {
             schemaUriToDiagnostic.set(schemaUriStr, []);
           }

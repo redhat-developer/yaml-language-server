@@ -16,8 +16,9 @@ import {
   FoldingRangeParams,
   Connection,
   TextDocumentPositionParams,
+  CodeLensParams,
 } from 'vscode-languageserver';
-import { DocumentSymbol, Hover, SymbolInformation, TextEdit } from 'vscode-languageserver-types';
+import { CodeLens, DocumentSymbol, Hover, SymbolInformation, TextEdit } from 'vscode-languageserver-types';
 import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
 import { LanguageService } from '../../languageservice/yamlLanguageService';
 import { SettingsState } from '../../yamlSettings';
@@ -49,6 +50,8 @@ export class LanguageHandlers {
     this.connection.onFoldingRanges((params) => this.foldingRangeHandler(params));
     this.connection.onCodeAction((params) => this.codeActionHandler(params));
     this.connection.onDocumentOnTypeFormatting((params) => this.formatOnTypeHandler(params));
+    this.connection.onCodeLens((params) => this.codeLensHandler(params));
+    this.connection.onCodeLensResolve((params) => this.codeLensResolveHandler(params));
   }
 
   documentLinkHandler(params: DocumentLinkParams): Promise<DocumentLink[]> {
@@ -176,5 +179,17 @@ export class LanguageHandlers {
     }
 
     return this.languageService.getCodeAction(textDocument, params);
+  }
+
+  codeLensHandler(params: CodeLensParams): Thenable<CodeLens[] | undefined> | CodeLens[] | undefined {
+    const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
+    if (!textDocument) {
+      return;
+    }
+    return this.languageService.getCodeLens(textDocument, params);
+  }
+
+  codeLensResolveHandler(param: CodeLens): Thenable<CodeLens> | CodeLens {
+    return this.languageService.resolveCodeLens(param);
   }
 }
