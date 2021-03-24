@@ -485,7 +485,7 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = '---\ntimeout: 10\n...\n---\ntime: \n...';
+        const content = '---\ntimeout: 10\n...\n---\ntime \n...';
         const completion = parseSetup(content, 26);
         completion
           .then(function (result) {
@@ -1819,6 +1819,25 @@ describe('Auto Completion Tests', () => {
       expect(completion.items).lengthOf(1);
       expect(completion.items[0]).eql(
         createExpectedCompletion('kind', 'kind', 0, 0, 0, 4, 10, InsertTextFormat.Snippet, { documentation: '' })
+      );
+    });
+
+    it('should not provide additional ":" on existing property completion when try to complete partial property', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          kind: {
+            type: 'string',
+          },
+        },
+        required: ['kind'],
+      });
+
+      const content = 'ki: 111\n';
+      const completion = await parseSetup(content, 1);
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('kind', 'kind', 0, 0, 0, 2, 10, InsertTextFormat.Snippet, { documentation: '' })
       );
     });
   });

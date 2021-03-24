@@ -276,7 +276,7 @@ export class YAMLCompletion extends JSONCompletion {
                 }
 
                 let insertText = key;
-                if (existingKey !== key || hasColumn) {
+                if (!key.startsWith(existingKey) || hasColumn) {
                   insertText = this.getInsertTextForProperty(
                     key,
                     propertySchema,
