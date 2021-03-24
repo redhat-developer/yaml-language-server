@@ -20,6 +20,7 @@ import {
   DocumentSymbol,
   TextEdit,
   DocumentLink,
+  CodeLens,
 } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
@@ -36,12 +37,15 @@ import {
   CodeAction,
   Connection,
   DocumentOnTypeFormattingParams,
+  CodeLensParams,
 } from 'vscode-languageserver/node';
 import { getFoldingRanges } from './services/yamlFolding';
 import { FoldingRangesContext } from './yamlTypes';
 import { YamlCodeActions } from './services/yamlCodeActions';
 import { commandExecutor } from '../languageserver/commandExecutor';
 import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
+import { YamlCodeLens } from './services/yamlCodeLens';
+import { registerCommands } from './services/yamlCommands';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -127,6 +131,8 @@ export interface LanguageService {
   deleteSchemasWhole(schemaDeletions: SchemaDeletionsAll): void;
   getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | null;
   getCodeAction(document: TextDocument, params: CodeActionParams): CodeAction[] | undefined;
+  getCodeLens(document: TextDocument, params: CodeLensParams): Thenable<CodeLens[] | undefined> | CodeLens[] | undefined;
+  resolveCodeLens(param: CodeLens): Thenable<CodeLens> | CodeLens;
 }
 
 export function getLanguageService(
@@ -141,8 +147,10 @@ export function getLanguageService(
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
   const yamlValidation = new YAMLValidation(schemaService);
   const formatter = new YAMLFormatter();
-  const yamlCodeActions = new YamlCodeActions(commandExecutor, connection, clientCapabilities);
-
+  const yamlCodeActions = new YamlCodeActions(clientCapabilities);
+  const yamlCodeLens = new YamlCodeLens(schemaService);
+  // register all commands
+  registerCommands(commandExecutor, connection);
   return {
     configure: (settings) => {
       schemaService.clearExternalSchemas();
@@ -195,5 +203,9 @@ export function getLanguageService(
     getCodeAction: (document, params) => {
       return yamlCodeActions.getCodeAction(document, params);
     },
+    getCodeLens: (document, params) => {
+      return yamlCodeLens.getCodeLens(document, params);
+    },
+    resolveCodeLens: (param) => yamlCodeLens.resolveCodeLens(param),
   };
 }
