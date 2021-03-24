@@ -21,7 +21,6 @@ import {
   TextEdit,
   InsertTextFormat,
 } from 'vscode-languageserver-types';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import * as nls from 'vscode-nls';
 import { getLineOffsets, filterInvalidCustomTags, matchOffsetToDocument } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
