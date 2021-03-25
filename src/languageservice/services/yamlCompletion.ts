@@ -11,6 +11,7 @@ import { parse as parseYAML } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { CompletionsCollector } from 'vscode-json-languageservice';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import {
   CompletionItem,
   CompletionItemKind,
@@ -20,7 +21,6 @@ import {
   TextEdit,
   InsertTextFormat,
 } from 'vscode-languageserver-types';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import * as nls from 'vscode-nls';
 import { getLineOffsets, filterInvalidCustomTags, matchOffsetToDocument } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
@@ -68,8 +68,9 @@ export class YAMLCompletion extends JSONCompletion {
     const completionFix = this.completionHelper(document, position);
     const newText = completionFix.newText;
     const doc = parseYAML(newText);
+    const textBuffer = new TextBuffer(document);
     if (!this.configuredIndentation) {
-      const indent = guessIndentation(new TextBuffer(document), 2, true);
+      const indent = guessIndentation(textBuffer, 2, true);
       this.indentation = indent.insertSpaces ? ' '.repeat(indent.tabSize) : '\t';
     } else {
       this.indentation = this.configuredIndentation;
@@ -200,7 +201,16 @@ export class YAMLCompletion extends JSONCompletion {
         const separatorAfter = '';
         if (newSchema) {
           // property proposals with schema
-          this.getPropertyCompletions(newSchema, currentDoc, node, addValue, separatorAfter, collector, document);
+          this.getPropertyCompletions(
+            newSchema,
+            currentDoc,
+            node,
+            addValue,
+            separatorAfter,
+            collector,
+            textBuffer,
+            overwriteRange
+          );
         }
 
         if (!schema && currentWord.length > 0 && document.getText().charAt(offset - currentWord.length - 1) !== '"') {
@@ -233,9 +243,12 @@ export class YAMLCompletion extends JSONCompletion {
     addValue: boolean,
     separatorAfter: string,
     collector: CompletionsCollector,
-    document: TextDocument
+    textBuffer: TextBuffer,
+    overwriteRange: Range
   ): void {
     const matchingSchemas = doc.getMatchingSchemas(schema.schema);
+    const existingKey = textBuffer.getText(overwriteRange);
+    const hasColumn = textBuffer.getLineContent(overwriteRange.start.line).indexOf(':') === -1;
     matchingSchemas.forEach((s) => {
       if (s.node === node && !s.inverted) {
         this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
@@ -254,23 +267,29 @@ export class YAMLCompletion extends JSONCompletion {
                 if (node.parent && node.parent.type === 'array' && node.properties.length <= 1) {
                   // because there is a slash '-' to prevent the properties generated to have the correct
                   // indent
-                  const sourceText = document.getText();
+                  const sourceText = textBuffer.getText();
                   const indexOfSlash = sourceText.lastIndexOf('-', node.offset - 1);
                   if (indexOfSlash >= 0) {
                     // add one space to compensate the '-'
                     identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.offset);
                   }
                 }
-                collector.add({
-                  kind: CompletionItemKind.Property,
-                  label: key,
-                  insertText: this.getInsertTextForProperty(
+
+                let insertText = key;
+                if (!key.startsWith(existingKey) || hasColumn) {
+                  insertText = this.getInsertTextForProperty(
                     key,
                     propertySchema,
                     addValue,
                     separatorAfter,
                     identCompensation + this.indentation
-                  ),
+                  );
+                }
+
+                collector.add({
+                  kind: CompletionItemKind.Property,
+                  label: key,
+                  insertText,
                   insertTextFormat: InsertTextFormat.Snippet,
                   documentation: propertySchema.description || '',
                 });
