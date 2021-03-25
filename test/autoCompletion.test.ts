@@ -9,7 +9,7 @@ import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList, InsertTextFormat, MarkupContent } from 'vscode-languageserver';
+import { CompletionList, InsertTextFormat, MarkupContent, MarkupKind } from 'vscode-languageserver';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageService } from '../src';
@@ -1838,6 +1838,33 @@ describe('Auto Completion Tests', () => {
       expect(completion.items).lengthOf(1);
       expect(completion.items[0]).eql(
         createExpectedCompletion('kind', 'kind', 0, 0, 0, 2, 10, InsertTextFormat.Snippet, { documentation: '' })
+      );
+    });
+
+    it('should use markdownDescription for property completion', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          kind: {
+            type: 'string',
+            description: 'Kind is a string value representing the REST',
+            markdownDescription:
+              '**kind** (string)\n\nKind is a string value representing the REST resource this object represents.',
+          },
+        },
+        required: ['kind'],
+      });
+
+      const content = 'kin';
+      const completion = await parseSetup(content, 1);
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('kind', 'kind: $1', 0, 0, 0, 3, 10, InsertTextFormat.Snippet, {
+          documentation: {
+            kind: MarkupKind.Markdown,
+            value: '**kind** (string)\n\nKind is a string value representing the REST resource this object represents.',
+          },
+        })
       );
     });
   });

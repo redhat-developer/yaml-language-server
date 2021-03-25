@@ -291,7 +291,7 @@ export class YAMLCompletion extends JSONCompletion {
                   label: key,
                   insertText,
                   insertTextFormat: InsertTextFormat.Snippet,
-                  documentation: propertySchema.description || '',
+                  documentation: super.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
                 });
               }
             });
