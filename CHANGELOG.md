@@ -1,3 +1,12 @@
+### 0.17.0
+
+- Disable folding range provider [#400](https://github.com/redhat-developer/yaml-language-server/issues/400)
+- Re-add schema priority levels [#418](https://github.com/redhat-developer/yaml-language-server/pull/418)
+- Fix: No diagnostics reported on empty files [#413](https://github.com/redhat-developer/yaml-language-server/issues/413)
+- Update kubernetes schema to 1.20.5 [#429](https://github.com/redhat-developer/yaml-language-server/pull/429)
+- Add CodeLens with links to JSON Schema used [#424](https://github.com/redhat-developer/yaml-language-server/pull/424)
+- Fix: Completion for existing property [#428](https://github.com/redhat-developer/yaml-language-server/pull/428)
+
 ### 0.16.0
 
 - CodeAction to open json schema from yaml error [#395](https://github.com/redhat-developer/yaml-language-server/pull/395)
