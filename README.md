@@ -75,6 +75,8 @@ some_mapping: !Mapping-example
 
 yaml.schemas applies a schema to a file. In other words, the schema (placed on the left) is applied to the glob pattern on the right. Your schema can be local or online. Your schema path must be relative to the project root and not an absolute path to the schema.
 
+We use [micromatch](https://github.com/micromatch/micromatch) to match glob pattern, you can use all [Matching features](https://github.com/micromatch/micromatch#matching-features)
+
 For example:
 If you have project structure
 

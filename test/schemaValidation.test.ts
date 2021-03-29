@@ -1006,7 +1006,7 @@ describe('Validation Tests', () => {
       `;
 
       const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/.drone.yml');
-      expect(result[5]).deep.equal(
+      expect(result).deep.includes(
         createDiagnosticWithData(
           propertyIsNotAllowed('apiVersion'),
           1,

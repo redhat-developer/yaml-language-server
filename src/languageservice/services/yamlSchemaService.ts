@@ -56,35 +56,8 @@ export interface SchemaDeletionsAll {
   action: MODIFICATION_ACTIONS.deleteAll;
 }
 
-export class FilePatternAssociation {
-  private schemas: string[];
-  private patternRegExp: RegExp;
-
-  constructor(pattern: string) {
-    try {
-      this.patternRegExp = new RegExp(convertSimple2RegExpPattern(pattern) + '$');
-    } catch (e) {
-      // invalid pattern
-      this.patternRegExp = null;
-    }
-    this.schemas = [];
-  }
-
-  public addSchema(id: string): void {
-    this.schemas.push(id);
-  }
-
-  public matchesPattern(fileName: string): boolean {
-    return this.patternRegExp && this.patternRegExp.test(fileName);
-  }
-
-  public getSchemas(): string[] {
-    return this.schemas;
-  }
-}
-
 type MatchFn = (str: string) => boolean;
-export class JSONFilePatternAssociation {
+export class FilePatternAssociation {
   private readonly matchers: MatchFn[];
   private readonly isInclude: boolean[];
   private readonly uris: string[];
@@ -157,8 +130,8 @@ export class YAMLSchemaService extends JSONSchemaService {
     this.customSchemaProvider = customSchemaProvider;
   }
 
-  addFilePatternAssociation(pattern: string[], uris: string[]): JSONFilePatternAssociation {
-    const fpa = new JSONFilePatternAssociation(pattern, uris);
+  addFilePatternAssociation(pattern: string[], uris: string[]): FilePatternAssociation {
+    const fpa = new FilePatternAssociation(pattern, uris);
     this.filePatternAssociations.push(fpa);
     return fpa;
   }

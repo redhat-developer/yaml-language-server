@@ -13,13 +13,9 @@ export function setKubernetesParserOption(jsonDocuments: Parser.JSONDocument[], 
 }
 
 export function isKubernetesAssociatedDocument(textDocument: TextDocument, paths: string[]): boolean {
-  for (const path in paths) {
-    const globPath = paths[path];
-    const fpa = new FilePatternAssociation(globPath);
-
-    if (fpa.matchesPattern(textDocument.uri)) {
-      return true;
-    }
+  const fpa = new FilePatternAssociation(paths, []);
+  if (fpa.matchesPattern(textDocument.uri)) {
+    return true;
   }
   return false;
 }
