@@ -73,6 +73,9 @@ export class FilePatternAssociation {
         }
 
         if (!p.startsWith('**/')) {
+          if (p.startsWith('/')) {
+            p = p.substring(1);
+          }
           p = `**/${p}`;
         }
         this.matchers.push(micromatch.matcher(p));
