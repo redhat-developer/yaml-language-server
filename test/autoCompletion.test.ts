@@ -1840,6 +1840,70 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('kind', 'kind', 0, 0, 0, 2, 10, InsertTextFormat.Snippet, { documentation: '' })
       );
     });
+
+    it('should follow $ref in additionalItems', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            $ref: '#/definitions/Recur',
+          },
+        },
+        definitions: {
+          Recur: {
+            type: 'array',
+            items: [
+              {
+                type: 'string',
+                enum: ['and'],
+              },
+            ],
+            additionalItems: {
+              $ref: '#/definitions/Recur',
+            },
+          },
+        },
+      });
+
+      const content = 'test:\n  - and\n  - - ';
+      const completion = await parseSetup(content, 19);
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('and', 'and', 2, 4, 2, 5, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
+    });
+
+    it('should follow $ref in additionalItems for flow style array', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            $ref: '#/definitions/Recur',
+          },
+        },
+        definitions: {
+          Recur: {
+            type: 'array',
+            items: [
+              {
+                type: 'string',
+                enum: ['and'],
+              },
+            ],
+            additionalItems: {
+              $ref: '#/definitions/Recur',
+            },
+          },
+        },
+      });
+
+      const content = 'test:\n  - and\n  - []';
+      const completion = await parseSetup(content, 18);
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('and', 'and', 2, 4, 2, 4, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
+    });
   });
   describe('Array completion', () => {
     it('Simple array object completion with "-" without any item', async () => {
