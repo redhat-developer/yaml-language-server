@@ -1016,12 +1016,16 @@ export class YAMLCompletion extends JSONCompletion {
           document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
 
         // For when missing semi colon case
-      } else {
+      } else if (trimmedText.indexOf('[') === -1) {
         // Add a semicolon to the end of the current line so we can validate the node
         newText =
           document.getText().substring(0, start + textLine.length) +
           ':\r\n' +
           document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
+      }
+
+      if (newText.length === 0) {
+        newText = document.getText();
       }
 
       return {

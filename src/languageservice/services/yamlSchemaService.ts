@@ -244,6 +244,7 @@ export class YAMLSchemaService extends JSONSchemaService {
 
         collectEntries(
           <JSONSchema>next.items,
+          next.additionalItems,
           <JSONSchema>next.additionalProperties,
           next.not,
           next.contains,
