@@ -152,7 +152,8 @@ describe('Auto Completion Tests', () => {
           properties: {
             name: {
               type: 'string',
-              default: '\\"yaml\\"',
+              // eslint-disable-next-line prettier/prettier, no-useless-escape
+              default: '\"yaml\"',
             },
           },
         });
