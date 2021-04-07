@@ -33,6 +33,8 @@ import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { ClientCapabilities, MarkupContent } from 'vscode-languageserver';
 const localize = nls.loadMessageBundle();
 
+const doubleQuotesEscapeRegExp = /\\"/g;
+
 export class YAMLCompletion extends JSONCompletion {
   private schemaService: YAMLSchemaService;
   private customTags: Array<string>;
@@ -490,7 +492,7 @@ export class YAMLCompletion extends JSONCompletion {
       if (typeof value == 'object') {
         label = 'Default value';
       } else {
-        label = (value as unknown).toString();
+        label = (value as unknown).toString().replace(doubleQuotesEscapeRegExp, '"');
       }
       collector.add({
         kind: this.getSuggestionKind(type),
@@ -1065,6 +1067,8 @@ const isNumberExp = /^\d+$/;
 function convertToStringValue(value: string): string {
   if (value === 'true' || value === 'false' || value === 'null' || isNumberExp.test(value)) {
     return `"${value}"`;
+  } else {
+    value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 
   return value;
