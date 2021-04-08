@@ -706,6 +706,26 @@ describe('Auto Completion Tests', () => {
           })
           .then(done, done);
       });
+
+      it('Autocompletion should escape key if needed', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            '@type': {
+              type: 'string',
+              enum: ['foo'],
+            },
+          },
+        });
+        const content = '';
+        const completion = await parseSetup(content, 0);
+        expect(completion.items.length).to.be.equal(1);
+        expect(completion.items[0]).to.deep.equal(
+          createExpectedCompletion('@type', '"@type": ${1:foo}', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
     });
 
     describe('Array Specific Tests', function () {
