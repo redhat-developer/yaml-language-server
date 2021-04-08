@@ -249,7 +249,7 @@ export class SettingsHandler {
   private configureSchemas(
     uri: string,
     fileMatch: string[],
-    schema: any,
+    schema: unknown,
     languageSettings: LanguageSettings,
     priorityLevel: number
   ): LanguageSettings {
