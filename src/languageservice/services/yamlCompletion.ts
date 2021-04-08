@@ -1067,8 +1067,15 @@ const isNumberExp = /^\d+$/;
 function convertToStringValue(value: string): string {
   if (value === 'true' || value === 'false' || value === 'null' || isNumberExp.test(value)) {
     return `"${value}"`;
-  } else {
+  }
+
+  // eslint-disable-next-line prettier/prettier, no-useless-escape
+  if (value.indexOf('\"') !== -1) {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
+  }
+
+  if (value.length > 0 && value.charAt(0) === '@') {
+    value = `"${value}"`;
   }
 
   return value;
