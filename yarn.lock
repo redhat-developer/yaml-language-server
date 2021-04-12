@@ -2536,9 +2536,9 @@ yallist@^2.1.2:
   integrity sha1-HBH5IY8HYImkfdUS+TxmmaaoHVI=
 
 yaml-language-server-parser@next:
-  version "0.1.1-e57e0a7.0"
-  resolved "https://registry.yarnpkg.com/yaml-language-server-parser/-/yaml-language-server-parser-0.1.1-e57e0a7.0.tgz#1492a3ad85a716e59db956583675614a41681cfb"
-  integrity sha512-lsrDdvJO6JuXj488NB6NTF/M5sjGUgWcf4rsu+CTNVKMkBkUPd2xGBLKpvOZRD2M0pBo1hNu4Ya4HkNXmV7Ujg==
+  version "0.1.3-fa8245c.0"
+  resolved "https://registry.yarnpkg.com/yaml-language-server-parser/-/yaml-language-server-parser-0.1.3-fa8245c.0.tgz#da6c241bd23ee7303d035a99fdc01554e0193f70"
+  integrity sha512-0QPUSsmMXHDpqj00xUrlMyqlEAwHHIAuz3wPMyprcCVYx7jh7oo91Z0nC/jhott4XAKp3iY3vjBsMxqszoZosA==
 
 yargs-parser@^13.0.0, yargs-parser@^13.1.2:
   version "13.1.2"
