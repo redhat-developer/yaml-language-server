@@ -223,5 +223,23 @@ describe('YAML parser', () => {
       assert(parsedDocument.documents[0].lineComments.length === 1);
       assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
     });
+
+    it('parse document with "str" tag from recommended schema', () => {
+      const parsedDocument = parse('"yes as a string with tag": !!str yes');
+      assert(
+        parsedDocument.documents.length === 1,
+        `1 document should be available but there are ${parsedDocument.documents.length}`
+      );
+      assert(parsedDocument.documents[0].errors.length === 0);
+    });
+
+    it('parse document with "int" tag from recommended schema', () => {
+      const parsedDocument = parse('POSTGRES_PORT: !!int 54');
+      assert(
+        parsedDocument.documents.length === 1,
+        `1 document should be available but there are ${parsedDocument.documents.length}`
+      );
+      assert(parsedDocument.documents[0].errors.length === 0, JSON.stringify(parsedDocument.documents[0].errors));
+    });
   });
 });
