@@ -1,3 +1,12 @@
+### 0.18.0
+
+- Fix: additionalItems does not support $ref [#408](https://github.com/redhat-developer/yaml-language-server/issues/408)
+- Fix: vscode/jsonschema markdownDescription support seems patchy [#417](https://github.com/redhat-developer/vscode-yaml/issues/417)
+- Fix: Inconsistent way to generate whole property snippet and value snippet, when it contains `\"` [#353](https://github.com/redhat-developer/yaml-language-server/issues/353)
+- Fix: Keys requiring quotation can bork the schema [#439](https://github.com/redhat-developer/vscode-yaml/issues/439)
+- Fix: yaml.customTags not working in `0.17.0` [#461](https://github.com/redhat-developer/vscode-yaml/issues/461)
+- Fix: unknown tag <tag:yaml.org,2002:str> [#173](https://github.com/redhat-developer/vscode-yaml/issues/173)
+
 ### 0.17.0
 
 - Disable folding range provider [#400](https://github.com/redhat-developer/yaml-language-server/issues/400)
