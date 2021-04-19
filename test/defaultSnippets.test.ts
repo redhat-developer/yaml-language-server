@@ -189,7 +189,7 @@ describe('Default Snippet Tests', () => {
         .then(done, done);
     });
 
-    it('Snippet in boolean schema should autocomplete on same line', (done) => {
+    it('Snippet in longSnipet schema should autocomplete on same line', (done) => {
       const content = 'longSnippet:  ';
       const completion = parseSetup(content, 13);
       completion
@@ -205,7 +205,7 @@ describe('Default Snippet Tests', () => {
         .then(done, done);
     });
 
-    it('Snippet in boolean schema should autocomplete on same line', (done) => {
+    it('Snippet in short snippet schema should autocomplete on same line', (done) => {
       const content = 'lon  ';
       const completion = parseSetup(content, 3);
       completion
