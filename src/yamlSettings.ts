@@ -17,6 +17,7 @@ export interface Settings {
     schemaStore: {
       enable: boolean;
     };
+    maxItemsComputed: number;
   };
   http: {
     proxy: string;
@@ -54,6 +55,7 @@ export class SettingsState {
   customTags = [];
   schemaStoreEnabled = true;
   indentation: string | undefined = undefined;
+  maxItemsComputed = 5000;
 
   // File validation helpers
   pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
