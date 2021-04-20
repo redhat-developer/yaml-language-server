@@ -23,11 +23,14 @@ import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isK
 import { LanguageService } from '../../languageservice/yamlLanguageService';
 import { SettingsState } from '../../yamlSettings';
 import { ValidationHandler } from './validationHandlers';
+import { ResultLimitReachedNotification } from '../../requestTypes';
+import * as path from 'path';
 
 export class LanguageHandlers {
   private languageService: LanguageService;
   private yamlSettings: SettingsState;
   private validationHandler: ValidationHandler;
+  private pendingLimitExceededWarnings: { [uri: string]: { features: { [name: string]: string }; timeout?: NodeJS.Timeout } };
 
   constructor(
     private readonly connection: Connection,
@@ -38,6 +41,7 @@ export class LanguageHandlers {
     this.languageService = languageService;
     this.yamlSettings = yamlSettings;
     this.validationHandler = validationHandler;
+    this.pendingLimitExceededWarnings = {};
   }
 
   public registerHandlers(): void {
@@ -52,6 +56,9 @@ export class LanguageHandlers {
     this.connection.onDocumentOnTypeFormatting((params) => this.formatOnTypeHandler(params));
     this.connection.onCodeLens((params) => this.codeLensHandler(params));
     this.connection.onCodeLensResolve((params) => this.codeLensResolveHandler(params));
+
+    this.yamlSettings.documents.onDidChangeContent((change) => this.cancelLimitExceededWarnings(change.document.uri));
+    this.yamlSettings.documents.onDidClose((event) => this.cancelLimitExceededWarnings(event.document.uri));
   }
 
   documentLinkHandler(params: DocumentLinkParams): Promise<DocumentLink[]> {
@@ -74,10 +81,18 @@ export class LanguageHandlers {
       return;
     }
 
+    const onResultLimitExceeded = this.onResultLimitExceeded(
+      document.uri,
+      this.yamlSettings.maxItemsComputed,
+      'document symbols'
+    );
+
+    const context = { resultLimit: this.yamlSettings.maxItemsComputed, onResultLimitExceeded };
+
     if (this.yamlSettings.hierarchicalDocumentSymbolSupport) {
-      return this.languageService.findDocumentSymbols2(document);
+      return this.languageService.findDocumentSymbols2(document, context);
     } else {
-      return this.languageService.findDocumentSymbols(document);
+      return this.languageService.findDocumentSymbols(document, context);
     }
   }
 
@@ -169,7 +184,17 @@ export class LanguageHandlers {
       return;
     }
 
-    return this.languageService.getFoldingRanges(textDocument, this.yamlSettings.capabilities.textDocument.foldingRange);
+    const capabilities = this.yamlSettings.capabilities.textDocument.foldingRange;
+    const rangeLimit = this.yamlSettings.maxItemsComputed || capabilities.rangeLimit;
+    const onRangeLimitExceeded = this.onResultLimitExceeded(textDocument.uri, rangeLimit, 'folding ranges');
+
+    const context = {
+      rangeLimit,
+      onRangeLimitExceeded,
+      lineFoldingOnly: capabilities.lineFoldingOnly,
+    };
+
+    return this.languageService.getFoldingRanges(textDocument, context);
   }
 
   codeActionHandler(params: CodeActionParams): CodeAction[] | undefined {
@@ -191,5 +216,41 @@ export class LanguageHandlers {
 
   codeLensResolveHandler(param: CodeLens): Thenable<CodeLens> | CodeLens {
     return this.languageService.resolveCodeLens(param);
+  }
+
+  // Adapted from:
+  // https://github.com/microsoft/vscode/blob/94c9ea46838a9a619aeafb7e8afd1170c967bb55/extensions/json-language-features/server/src/jsonServer.ts#L172
+  private cancelLimitExceededWarnings(uri: string): void {
+    const warning = this.pendingLimitExceededWarnings[uri];
+    if (warning && warning.timeout) {
+      clearTimeout(warning.timeout);
+      delete this.pendingLimitExceededWarnings[uri];
+    }
+  }
+
+  private onResultLimitExceeded(uri: string, resultLimit: number, name: string) {
+    return () => {
+      let warning = this.pendingLimitExceededWarnings[uri];
+      if (warning) {
+        if (!warning.timeout) {
+          // already shown
+          return;
+        }
+        warning.features[name] = name;
+        warning.timeout.refresh();
+      } else {
+        warning = { features: { [name]: name } };
+        warning.timeout = setTimeout(() => {
+          this.connection.sendNotification(
+            ResultLimitReachedNotification.type,
+            `${path.basename(uri)}: For performance reasons, ${Object.keys(warning.features).join(
+              ' and '
+            )} have been limited to ${resultLimit} items.`
+          );
+          warning.timeout = undefined;
+        }, 2000);
+        this.pendingLimitExceededWarnings[uri] = warning;
+      }
+    };
   }
 }

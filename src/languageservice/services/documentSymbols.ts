@@ -8,6 +8,7 @@
 import { SymbolInformation, DocumentSymbol } from 'vscode-languageserver-types';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONDocumentSymbols } from 'vscode-json-languageservice/lib/umd/services/jsonDocumentSymbols';
+import { DocumentSymbolsContext } from 'vscode-json-languageservice/lib/umd/jsonLanguageTypes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 
@@ -29,7 +30,10 @@ export class YAMLDocumentSymbols {
     };
   }
 
-  public findDocumentSymbols(document: TextDocument): SymbolInformation[] {
+  public findDocumentSymbols(
+    document: TextDocument,
+    context: DocumentSymbolsContext = { resultLimit: Number.MAX_VALUE }
+  ): SymbolInformation[] {
     const doc = yamlDocumentsCache.getYamlDocument(document);
     if (!doc || doc['documents'].length === 0) {
       return null;
@@ -38,14 +42,17 @@ export class YAMLDocumentSymbols {
     let results = [];
     for (const yamlDoc of doc['documents']) {
       if (yamlDoc.root) {
-        results = results.concat(this.jsonDocumentSymbols.findDocumentSymbols(document, yamlDoc));
+        results = results.concat(this.jsonDocumentSymbols.findDocumentSymbols(document, yamlDoc, context));
       }
     }
 
     return results;
   }
 
-  public findHierarchicalDocumentSymbols(document: TextDocument): DocumentSymbol[] {
+  public findHierarchicalDocumentSymbols(
+    document: TextDocument,
+    context: DocumentSymbolsContext = { resultLimit: Number.MAX_VALUE }
+  ): DocumentSymbol[] {
     const doc = yamlDocumentsCache.getYamlDocument(document);
     if (!doc || doc['documents'].length === 0) {
       return null;
@@ -54,7 +61,7 @@ export class YAMLDocumentSymbols {
     let results = [];
     for (const yamlDoc of doc['documents']) {
       if (yamlDoc.root) {
-        results = results.concat(this.jsonDocumentSymbols.findDocumentSymbols2(document, yamlDoc));
+        results = results.concat(this.jsonDocumentSymbols.findDocumentSymbols2(document, yamlDoc, context));
       }
     }
 
