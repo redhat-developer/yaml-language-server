@@ -38,7 +38,7 @@ export function getFoldingRanges(document: TextDocument, context: FoldingRangesC
     context.onRangeLimitExceeded(document.uri);
   }
 
-  return result.slice(0, context.rangeLimit - 1);
+  return result.slice(0, context.rangeLimit);
 }
 
 function creteNormalizedFolding(document: TextDocument, node: ASTNode): FoldingRange {
