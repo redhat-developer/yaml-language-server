@@ -4,8 +4,89 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { isArrayEqual } from '../utils/arrUtils';
-import { YAMLDocument, parse as parseYAML } from './yamlParser07';
+import { JSONDocument } from './jsonParser07';
+import { Document, visit, YAMLError } from 'yaml';
+import { ASTNode } from '../jsonASTTypes';
+import { parse as parseYAML } from './yamlParser07';
+import { ErrorCode } from 'vscode-json-languageservice';
+import { Node } from 'yaml/dist/nodes/Node';
+import { convertAST } from './ast-converter';
+
+/**
+ * These documents are collected into a final YAMLDocument
+ * and passed to the `parseYAML` caller.
+ */
+export class SingleYAMLDocument extends JSONDocument {
+  private lines: number[];
+  private _internalDocument: Document;
+  public root: ASTNode;
+  public currentDocIndex: number;
+  private _lineComments: string[];
+
+  constructor(lines?: number[]) {
+    super(null, []);
+    this.lines = lines;
+  }
+
+  private collectLineComments(): void {
+    this._lineComments = [];
+    if (this._internalDocument.commentBefore) {
+      this._lineComments.push(`#${this._internalDocument.commentBefore}`);
+    }
+    visit(this.internalDocument, (_key, node: Node) => {
+      if (node.commentBefore) {
+        this._lineComments.push(`#${node.commentBefore}`);
+      }
+    });
+  }
+
+  set internalDocument(document: Document) {
+    this._internalDocument = document;
+    this.root = convertAST(null, this._internalDocument.contents as Node, this._internalDocument);
+  }
+
+  get internalDocument(): Document {
+    return this._internalDocument;
+  }
+
+  get lineComments(): string[] {
+    if (!this._lineComments) {
+      this.collectLineComments();
+    }
+    return this._lineComments;
+  }
+  set lineComments(val: string[]) {
+    this._lineComments = val;
+  }
+  get errors(): YAMLDocDiagnostic[] {
+    return this.internalDocument.errors.map(YAMLErrorToYamlDocDiagnostics);
+  }
+  get warnings(): YAMLDocDiagnostic[] {
+    return this.internalDocument.errors.map(YAMLErrorToYamlDocDiagnostics);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+  public getSchemas(schema: any, doc: any, node: any): any[] {
+    const matchingSchemas = [];
+    doc.validate(schema, matchingSchemas, node.start);
+    return matchingSchemas;
+  }
+}
+
+/**
+ * Contains the SingleYAMLDocuments, to be passed
+ * to the `parseYAML` caller.
+ */
+export class YAMLDocument {
+  public documents: SingleYAMLDocument[];
+  private errors: YAMLDocDiagnostic[];
+  private warnings: YAMLDocDiagnostic[];
+
+  constructor(documents: SingleYAMLDocument[]) {
+    this.documents = documents;
+    this.errors = [];
+    this.warnings = [];
+  }
+}
 
 interface YamlCachedDocument {
   version: number;
@@ -56,3 +137,16 @@ export class YamlDocuments {
 }
 
 export const yamlDocumentsCache = new YamlDocuments();
+
+function YAMLErrorToYamlDocDiagnostics(error: YAMLError): YAMLDocDiagnostic {
+  return {
+    message: error.message,
+    location: {
+      start: error.pos[0],
+      end: error.pos[1],
+      toLineEnd: true,
+    },
+    severity: 1,
+    code: ErrorCode.Undefined,
+  };
+}
