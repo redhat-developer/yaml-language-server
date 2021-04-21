@@ -8,6 +8,7 @@ import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/ut
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
 import { Settings, SettingsState } from '../../yamlSettings';
+import { Telemetry } from '../telemetry';
 import { ValidationHandler } from './validationHandlers';
 
 export class SettingsHandler {
@@ -15,7 +16,8 @@ export class SettingsHandler {
     private readonly connection: Connection,
     private readonly languageService: LanguageService,
     private readonly yamlSettings: SettingsState,
-    private readonly validationHandler: ValidationHandler
+    private readonly validationHandler: ValidationHandler,
+    private readonly telemetry: Telemetry
   ) {}
 
   public registerHandlers(): void {
@@ -84,7 +86,7 @@ export class SettingsHandler {
 
       const schemaObj = {
         fileMatch: Array.isArray(globPattern) ? globPattern : [globPattern],
-        uri: checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri),
+        uri: checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri, this.telemetry),
       };
       this.yamlSettings.schemaConfigurationSettings.push(schemaObj);
     }
@@ -253,7 +255,7 @@ export class SettingsHandler {
     languageSettings: LanguageSettings,
     priorityLevel: number
   ): LanguageSettings {
-    uri = checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri);
+    uri = checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri, this.telemetry);
 
     if (schema === null) {
       languageSettings.schemas.push({ uri, fileMatch: fileMatch, priority: priorityLevel });
