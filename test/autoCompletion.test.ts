@@ -168,6 +168,28 @@ describe('Auto Completion Tests', () => {
         );
       });
 
+      it('Autocomplete name and value with \\"', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              // eslint-disable-next-line prettier/prettier, no-useless-escape
+              default: '\"yaml\"',
+            },
+          },
+        });
+        const content = 'name';
+        const completion = await parseSetup(content, 3);
+        assert.strictEqual(completion.items.length, 1);
+        assert.deepStrictEqual(
+          completion.items[0],
+          createExpectedCompletion('name', 'name: ${1:"yaml"}', 0, 0, 0, 4, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
       it('Autocomplete on default value (with value content)', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
