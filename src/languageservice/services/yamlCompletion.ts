@@ -33,7 +33,7 @@ import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { ClientCapabilities, MarkupContent } from 'vscode-languageserver';
 const localize = nls.loadMessageBundle();
 
-const doubleQuotesEscapeRegExp = /\\"/g;
+const doubleQuotesEscapeRegExp = /[\\]+"/g;
 
 export class YAMLCompletion extends JSONCompletion {
   private schemaService: YAMLSchemaService;
