@@ -619,6 +619,42 @@ describe('Validation Tests', () => {
         })
         .then(done, done);
     });
+
+    it('Nested object anchors should expand properly', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        additionalProperties: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            akey: {
+              type: 'string',
+            },
+          },
+          required: ['akey'],
+        },
+      });
+      const content = `
+        l1: &l1
+          akey: avalue
+
+        l2: &l2
+          <<: *l1
+
+        l3: &l3
+          <<: *l2
+
+        l4:
+          <<: *l3
+      `;
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          console.debug(result);
+          assert.equal(result.length, 0);
+        })
+        .then(done, done);
+    });
   });
 
   describe('Custom tag tests', () => {
