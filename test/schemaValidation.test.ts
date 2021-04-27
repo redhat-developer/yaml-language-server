@@ -526,7 +526,7 @@ describe('Validation Tests', () => {
   });
 
   describe('Anchor tests', () => {
-    it('Anchor should not not error', (done) => {
+    it('Anchor should not error', (done) => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -549,7 +549,7 @@ describe('Validation Tests', () => {
         .then(done, done);
     });
 
-    it('Anchor with multiple references should not not error', (done) => {
+    it('Anchor with multiple references should not error', (done) => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -572,7 +572,7 @@ describe('Validation Tests', () => {
         .then(done, done);
     });
 
-    it('Multiple Anchor in array of references should not not error', (done) => {
+    it('Multiple Anchor in array of references should not error', (done) => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
