@@ -51,24 +51,19 @@ export class ValidationHandler {
 
     return this.languageService
       .doValidation(textDocument, isKubernetesAssociatedDocument(textDocument, this.yamlSettings.specificValidatorPaths))
-      .then(
-        (diagnosticResults) => {
-          const diagnostics = [];
-          for (const diagnosticItem in diagnosticResults) {
-            diagnosticResults[diagnosticItem].severity = 1; //Convert all warnings to errors
-            diagnostics.push(diagnosticResults[diagnosticItem]);
-          }
-
-          const removeDuplicatesDiagnostics = removeDuplicatesObj(diagnostics);
-          this.connection.sendDiagnostics({
-            uri: textDocument.uri,
-            diagnostics: removeDuplicatesDiagnostics,
-          });
-          return removeDuplicatesDiagnostics;
-        },
-        () => {
-          return [];
+      .then((diagnosticResults) => {
+        const diagnostics = [];
+        for (const diagnosticItem in diagnosticResults) {
+          diagnosticResults[diagnosticItem].severity = 1; //Convert all warnings to errors
+          diagnostics.push(diagnosticResults[diagnosticItem]);
         }
-      );
+
+        const removeDuplicatesDiagnostics = removeDuplicatesObj(diagnostics);
+        this.connection.sendDiagnostics({
+          uri: textDocument.uri,
+          diagnostics: removeDuplicatesDiagnostics,
+        });
+        return removeDuplicatesDiagnostics;
+      });
   }
 }
