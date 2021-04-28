@@ -64,7 +64,7 @@ export class SingleYAMLDocument extends JSONDocument {
     return this.internalDocument.errors.map(YAMLErrorToYamlDocDiagnostics);
   }
   get warnings(): YAMLDocDiagnostic[] {
-    return this.internalDocument.errors.map(YAMLErrorToYamlDocDiagnostics);
+    return this.internalDocument.warnings.map(YAMLErrorToYamlDocDiagnostics);
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
   public getSchemas(schema: any, doc: any, node: any): any[] {
