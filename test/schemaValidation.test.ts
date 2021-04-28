@@ -1264,4 +1264,62 @@ describe('Validation Tests', () => {
       );
     });
   });
+  describe('Additional properties validation', () => {
+    it('should allow additional props on object by default', async () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          prop1: {
+            type: 'string',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = `prop2: you could be there 'prop2'`;
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(0);
+    });
+
+    describe('Additional properties validation with enabled disableAdditionalProperties', () => {
+      before(() => {
+        languageSettingsSetup.languageSettings.disableAdditionalProperties = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+      });
+      after(() => {
+        languageSettingsSetup.languageSettings.disableAdditionalProperties = false;
+      });
+
+      it('should return additional prop error when there is extra prop', async () => {
+        const schema = {
+          type: 'object',
+          properties: {
+            prop1: {
+              type: 'string',
+            },
+          },
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = `prop2: you should not be there 'prop2'`;
+        const result = await parseSetup(content);
+        expect(result.length).to.eq(1);
+        expect(result[0].message).to.eq('Property prop2 is not allowed.');
+      });
+
+      it('should allow additional props on object when additionalProp is true on object', async () => {
+        const schema = {
+          type: 'object',
+          properties: {
+            prop1: {
+              type: 'string',
+            },
+          },
+          additionalProperties: true,
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = `prop2: you could be there 'prop2'`;
+        const result = await parseSetup(content);
+        expect(result.length).to.eq(0);
+      });
+    });
+  });
 });

@@ -20,6 +20,7 @@ export interface Settings {
     };
     propTableStyle: YamlHoverDetailPropTableStyle;
     extraLanguage: string[];
+    disableAdditionalProperties: boolean;
   };
   http: {
     proxy: string;
@@ -59,6 +60,7 @@ export class SettingsState {
   indentation: string | undefined = undefined;
   propTableStyle: YamlHoverDetailPropTableStyle = 'table';
 
+  disableAdditionalProperties = false;
   // File validation helpers
   pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
   validationDelayMs = 200;

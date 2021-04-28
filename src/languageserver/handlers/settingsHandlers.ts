@@ -84,6 +84,7 @@ export class SettingsHandler {
       if (settings.yaml.propTableStyle) {
         this.yamlSettings.propTableStyle = settings.yaml.propTableStyle;
       }
+      this.yamlSettings.disableAdditionalProperties = settings.yaml.disableAdditionalProperties;
     }
 
     this.yamlSettings.schemaConfigurationSettings = [];
@@ -198,6 +199,7 @@ export class SettingsHandler {
       format: this.yamlSettings.yamlFormatterSettings.enable,
       indentation: this.yamlSettings.indentation,
       propTableStyle: this.yamlSettings.propTableStyle,
+      disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
     };
 
     if (this.yamlSettings.schemaAssociations) {

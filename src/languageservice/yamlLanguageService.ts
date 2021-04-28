@@ -77,6 +77,11 @@ export interface LanguageSettings {
   indentation?: string;
 
   propTableStyle?: YamlHoverDetailPropTableStyle;
+  /**
+   * Globally set additionalProperties to false if additionalProperties is not set and if schema.type is object.
+   * So if its true, no extra properties are allowed inside yaml.
+   */
+  disableAdditionalProperties?: boolean;
 }
 
 export interface WorkspaceContextService {
