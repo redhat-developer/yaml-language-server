@@ -17,6 +17,7 @@ export interface Settings {
     schemaStore: {
       enable: boolean;
     };
+    disableAdditionalProperties: boolean;
   };
   http: {
     proxy: string;
@@ -54,7 +55,7 @@ export class SettingsState {
   customTags = [];
   schemaStoreEnabled = true;
   indentation: string | undefined = undefined;
-
+  disableAdditionalProperties = false;
   // File validation helpers
   pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
   validationDelayMs = 200;

@@ -38,6 +38,7 @@ export class YAMLValidation {
   private validationEnabled: boolean;
   private customTags: string[];
   private jsonValidation;
+  private disableAdditionalProperties: boolean;
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
@@ -50,6 +51,7 @@ export class YAMLValidation {
     if (settings) {
       this.validationEnabled = settings.validate;
       this.customTags = settings.customTags;
+      this.disableAdditionalProperties = settings.disableAdditionalProperties;
     }
   }
 
@@ -65,6 +67,7 @@ export class YAMLValidation {
     for (const currentYAMLDoc of yamlDocument.documents) {
       currentYAMLDoc.isKubernetes = isKubernetes;
       currentYAMLDoc.currentDocIndex = index;
+      currentYAMLDoc.disableAdditionalProperties = this.disableAdditionalProperties;
 
       const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
 

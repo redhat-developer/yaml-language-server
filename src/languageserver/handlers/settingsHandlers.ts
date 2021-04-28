@@ -69,6 +69,7 @@ export class SettingsHandler {
           this.yamlSettings.yamlFormatterSettings.enable = settings.yaml.format.enable;
         }
       }
+      this.yamlSettings.disableAdditionalProperties = settings.yaml.disableAdditionalProperties;
     }
 
     this.yamlSettings.schemaConfigurationSettings = [];
@@ -182,6 +183,7 @@ export class SettingsHandler {
       customTags: this.yamlSettings.customTags,
       format: this.yamlSettings.yamlFormatterSettings.enable,
       indentation: this.yamlSettings.indentation,
+      disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
     };
 
     if (this.yamlSettings.schemaAssociations) {
