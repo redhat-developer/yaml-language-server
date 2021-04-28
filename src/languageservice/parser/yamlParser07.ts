@@ -7,8 +7,7 @@
 
 import { Parser, Composer, Document, LineCounter, Tags, ParseOptions, DocumentOptions, SchemaOptions } from 'yaml';
 import { YAMLDocument, SingleYAMLDocument } from './yaml-documents';
-import { customTagsToTags } from '../utils/parseUtils';
-
+import { customTagsToAdditionalOptions } from '../utils/parseUtils';
 
 export { YAMLDocument, SingleYAMLDocument };
 
@@ -20,7 +19,7 @@ export { YAMLDocument, SingleYAMLDocument };
 export function parse(text: string, customTags = []): YAMLDocument {
   const options: ParseOptions & DocumentOptions & SchemaOptions = {
     strict: true,
-    customTags: customTagsToTags(customTags),
+    customTags: customTagsToAdditionalOptions(customTags),
   };
   const composer = new Composer(options);
   const lineCounter = new LineCounter();
@@ -29,14 +28,14 @@ export function parse(text: string, customTags = []): YAMLDocument {
   const docs = composer.compose(tokens);
 
   // Generate the SingleYAMLDocs from the AST nodes
-  const yamlDocs: SingleYAMLDocument[] = Array.from(docs, (doc) => parsedDocToSingleYAMLDocument(doc, lineCounter.lineStarts));
+  const yamlDocs: SingleYAMLDocument[] = Array.from(docs, (doc) => parsedDocToSingleYAMLDocument(doc, lineCounter));
 
   // Consolidate the SingleYAMLDocs
   return new YAMLDocument(yamlDocs);
 }
 
-function parsedDocToSingleYAMLDocument(parsedDoc: Document, lineStarts: number[]): SingleYAMLDocument {
-  const syd = new SingleYAMLDocument(lineStarts);
+function parsedDocToSingleYAMLDocument(parsedDoc: Document, lineCounter: LineCounter): SingleYAMLDocument {
+  const syd = new SingleYAMLDocument(lineCounter);
   syd.internalDocument = parsedDoc;
   return syd;
 }

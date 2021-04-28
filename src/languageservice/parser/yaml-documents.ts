@@ -5,27 +5,29 @@
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { JSONDocument } from './jsonParser07';
-import { Document, visit, YAMLError } from 'yaml';
+import { Document, LineCounter, visit, YAMLError } from 'yaml';
 import { ASTNode } from '../jsonASTTypes';
 import { parse as parseYAML } from './yamlParser07';
 import { ErrorCode } from 'vscode-json-languageservice';
 import { Node } from 'yaml/dist/nodes/Node';
 import { convertAST } from './ast-converter';
+import { YAMLDocDiagnostic } from '../utils/parseUtils';
+import { isArrayEqual } from '../utils/arrUtils';
 
 /**
  * These documents are collected into a final YAMLDocument
  * and passed to the `parseYAML` caller.
  */
 export class SingleYAMLDocument extends JSONDocument {
-  private lines: number[];
+  private lineCounter: LineCounter;
   private _internalDocument: Document;
   public root: ASTNode;
   public currentDocIndex: number;
   private _lineComments: string[];
 
-  constructor(lines?: number[]) {
+  constructor(lineCounter?: LineCounter) {
     super(null, []);
-    this.lines = lines;
+    this.lineCounter = lineCounter;
   }
 
   private collectLineComments(): void {
@@ -42,7 +44,7 @@ export class SingleYAMLDocument extends JSONDocument {
 
   set internalDocument(document: Document) {
     this._internalDocument = document;
-    this.root = convertAST(null, this._internalDocument.contents as Node, this._internalDocument);
+    this.root = convertAST(null, this._internalDocument.contents as Node, this._internalDocument, this.lineCounter);
   }
 
   get internalDocument(): Document {
