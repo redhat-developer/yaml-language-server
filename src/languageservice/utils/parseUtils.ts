@@ -1,9 +1,6 @@
-import * as Yaml from 'yaml';
-import { Schema } from 'yaml-language-server-parser/dist/src/schema';
-import { Type } from 'yaml-language-server-parser/dist/src/type';
-
 import { filterInvalidCustomTags } from './arrUtils';
 import { ErrorCode } from 'vscode-json-languageservice/lib/umd/jsonLanguageTypes';
+import { Tags } from 'yaml';
 
 export const DUPLICATE_KEY_REASON = 'duplicate key';
 
@@ -23,7 +20,7 @@ export interface YAMLDocDiagnostic {
   code: ErrorCode;
 }
 
-export function customTagsToAdditionalOptions(customTags: string[]): Type {
+export function customTagsToAdditionalOptions(customTags: string[]): Tags {
   const yamlTags = [];
   const filteredTags = filterInvalidCustomTags(customTags);
 
