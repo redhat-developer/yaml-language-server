@@ -162,7 +162,8 @@
           "type": "array",
           "body": {
             "key": ""
-          }
+          },
+          "suggestionKind": 9
         }
       ]
     }

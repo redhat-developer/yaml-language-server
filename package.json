@@ -1,7 +1,7 @@
 {
   "name": "yaml-language-server",
   "description": "YAML language server",
-  "version": "0.15.0",
+  "version": "0.18.0",
   "author": "Gorkem Ercan (Red Hat)",
   "license": "MIT",
   "contributors": [
@@ -39,7 +39,7 @@
     "js-yaml": "^3.13.1",
     "jsonc-parser": "^2.2.1",
     "request-light": "0.4.0",
-    "vscode-json-languageservice": "^4.0.2",
+    "vscode-json-languageservice": "^4.1.0",
     "vscode-languageserver": "^7.0.0",
     "vscode-languageserver-textdocument": "^1.0.1",
     "vscode-languageserver-types": "^3.16.0",
@@ -54,8 +54,8 @@
     "@types/prettier": "2.0.2",
     "@types/sinon": "^9.0.5",
     "@types/sinon-chai": "^3.2.5",
-    "@typescript-eslint/eslint-plugin": "^3.2.0",
-    "@typescript-eslint/parser": "^3.2.0",
+    "@typescript-eslint/eslint-plugin": "^4.16.1",
+    "@typescript-eslint/parser": "^4.16.1",
     "chai": "^4.2.0",
     "coveralls": "^3.0.5",
     "eslint": "^7.2.0",

@@ -9,7 +9,7 @@ import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList, InsertTextFormat, MarkupContent } from 'vscode-languageserver';
+import { CompletionList, InsertTextFormat, MarkupContent, MarkupKind } from 'vscode-languageserver';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageService } from '../src';
@@ -146,6 +146,50 @@ describe('Auto Completion Tests', () => {
             );
           })
           .then(done, done);
+      });
+
+      it('Autocomplete on default value with \\"', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              // eslint-disable-next-line prettier/prettier, no-useless-escape
+              default: '"yaml"',
+            },
+          },
+        });
+        const content = 'name: ';
+        const completion = await parseSetup(content, 6);
+        assert.strictEqual(completion.items.length, 1);
+        assert.deepStrictEqual(
+          completion.items[0],
+          createExpectedCompletion('"yaml"', '"yaml"', 0, 6, 0, 6, 12, 2, {
+            detail: 'Default value',
+          })
+        );
+      });
+
+      it('Autocomplete name and value with \\"', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              // eslint-disable-next-line prettier/prettier, no-useless-escape
+              default: '"yaml"',
+            },
+          },
+        });
+        const content = 'name';
+        const completion = await parseSetup(content, 3);
+        assert.strictEqual(completion.items.length, 1);
+        assert.deepStrictEqual(
+          completion.items[0],
+          createExpectedCompletion('name', 'name: ${1:"yaml"}', 0, 0, 0, 4, 10, 2, {
+            documentation: '',
+          })
+        );
       });
 
       it('Autocomplete on default value (with value content)', (done) => {
@@ -561,7 +605,7 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = '---\ntimeout: 10\n...\n---\ntime: \n...';
+        const content = '---\ntimeout: 10\n...\n---\ntime \n...';
         const completion = parseSetup(content, 26);
         completion
           .then(function (result) {
@@ -759,6 +803,26 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 0);
           })
           .then(done, done);
+      });
+
+      it('Autocompletion should escape key if needed', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            '@type': {
+              type: 'string',
+              enum: ['foo'],
+            },
+          },
+        });
+        const content = '';
+        const completion = await parseSetup(content, 0);
+        expect(completion.items.length).to.be.equal(1);
+        expect(completion.items[0]).to.deep.equal(
+          createExpectedCompletion('@type', '"@type": ${1:foo}', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
       });
     });
 
@@ -1899,6 +1963,147 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('name', 'name: ' + snippet$1symbol, 2, 0, 2, 0, 10, InsertTextFormat.Snippet, {
           documentation: '',
         })
+      );
+    });
+
+    it('should not provide additional ":" on existing property completion', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          kind: {
+            type: 'string',
+          },
+        },
+        required: ['kind'],
+      });
+
+      const content = 'kind: 111\n';
+      const completion = await parseSetup(content, 3);
+      if (jigxBranchTest) {
+        //remove extra completion for parent object
+        completion.items = completion.items.filter((c) => c.kind !== 7);
+      }
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('kind', 'kind', 0, 0, 0, 4, 10, InsertTextFormat.Snippet, { documentation: '' })
+      );
+    });
+
+    it('should not provide additional ":" on existing property completion when try to complete partial property', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          kind: {
+            type: 'string',
+          },
+        },
+        required: ['kind'],
+      });
+
+      const content = 'ki: 111\n';
+      const completion = await parseSetup(content, 1);
+      if (jigxBranchTest) {
+        //remove extra completion for parent object
+        completion.items = completion.items.filter((c) => c.kind !== 7);
+      }
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('kind', 'kind', 0, 0, 0, 2, 10, InsertTextFormat.Snippet, { documentation: '' })
+      );
+    });
+
+    it('should use markdownDescription for property completion', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          kind: {
+            type: 'string',
+            description: 'Kind is a string value representing the REST',
+            markdownDescription:
+              '**kind** (string)\n\nKind is a string value representing the REST resource this object represents.',
+          },
+        },
+        required: ['kind'],
+      });
+
+      const content = 'kin';
+      const completion = await parseSetup(content, 1);
+      if (jigxBranchTest) {
+        //remove extra completion for parent object
+        completion.items = completion.items.filter((c) => c.kind !== 7);
+      }
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('kind', 'kind: ' + snippet$1symbol, 0, 0, 0, 3, 10, InsertTextFormat.Snippet, {
+          documentation: {
+            kind: MarkupKind.Markdown,
+            value: '**kind** (string)\n\nKind is a string value representing the REST resource this object represents.',
+          },
+        })
+      );
+    });
+
+    it('should follow $ref in additionalItems', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            $ref: '#/definitions/Recur',
+          },
+        },
+        definitions: {
+          Recur: {
+            type: 'array',
+            items: [
+              {
+                type: 'string',
+                enum: ['and'],
+              },
+            ],
+            additionalItems: {
+              $ref: '#/definitions/Recur',
+            },
+          },
+        },
+      });
+
+      const content = 'test:\n  - and\n  - - ';
+      const completion = await parseSetup(content, 19);
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('and', 'and', 2, 4, 2, 5, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
+    });
+
+    it('should follow $ref in additionalItems for flow style array', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            $ref: '#/definitions/Recur',
+          },
+        },
+        definitions: {
+          Recur: {
+            type: 'array',
+            items: [
+              {
+                type: 'string',
+                enum: ['and'],
+              },
+            ],
+            additionalItems: {
+              $ref: '#/definitions/Recur',
+            },
+          },
+        },
+      });
+
+      const content = 'test:\n  - and\n  - []';
+      const completion = await parseSetup(content, 18);
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('and', 'and', 2, 4, 2, 4, 12, InsertTextFormat.Snippet, { documentation: undefined })
       );
     });
   });

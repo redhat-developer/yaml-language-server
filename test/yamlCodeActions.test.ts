@@ -6,7 +6,6 @@
 import * as sinon from 'sinon';
 import * as sinonChai from 'sinon-chai';
 import * as chai from 'chai';
-import { commandExecutor } from '../src/languageserver/commandExecutor';
 import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions';
 import {
   ClientCapabilities,
@@ -14,7 +13,6 @@ import {
   CodeActionContext,
   CodeActionParams,
   Command,
-  Connection,
   Range,
   TextDocumentIdentifier,
   TextEdit,
@@ -34,10 +32,8 @@ const JSON_SCHEMA2_LOCAL = 'file://some/path/schema2.json';
 describe('CodeActions Tests', () => {
   const sandbox = sinon.createSandbox();
 
-  let commandExecutorStub: sinon.SinonStub;
   let clientCapabilities: ClientCapabilities;
   beforeEach(() => {
-    commandExecutorStub = sandbox.stub(commandExecutor, 'registerCommand');
     clientCapabilities = {};
   });
 
@@ -46,25 +42,6 @@ describe('CodeActions Tests', () => {
   });
 
   describe('JumpToSchema tests', () => {
-    it('should register handler for "JumpToSchema" command', () => {
-      new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
-      expect(commandExecutorStub).to.have.been.calledWithMatch(sinon.match('jumpToSchema'), sinon.match.func);
-    });
-
-    it('JumpToSchema handler should call "showDocument"', async () => {
-      const showDocumentStub = sandbox.stub();
-      const connection = ({
-        window: {
-          showDocument: showDocumentStub,
-        },
-      } as unknown) as Connection;
-      showDocumentStub.resolves(true);
-      new YamlCodeActions(commandExecutor, connection, clientCapabilities);
-      const arg = commandExecutorStub.args[0];
-      await arg[1](JSON_SCHEMA_LOCAL);
-      expect(showDocumentStub).to.have.been.calledWith({ uri: JSON_SCHEMA_LOCAL, external: false, takeFocus: true });
-    });
-
     it('should not provide any actions if there are no diagnostics', () => {
       const doc = setupTextDocument('');
       const params: CodeActionParams = {
@@ -72,7 +49,7 @@ describe('CodeActions Tests', () => {
         range: undefined,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
-      const actions = new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
+      const actions = new YamlCodeActions(clientCapabilities);
       const result = actions.getCodeAction(doc, params);
       expect(result).to.be.undefined;
     });
@@ -86,7 +63,7 @@ describe('CodeActions Tests', () => {
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       clientCapabilities.window = { showDocument: { support: true } };
-      const actions = new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
+      const actions = new YamlCodeActions(clientCapabilities);
       const result = actions.getCodeAction(doc, params);
 
       const codeAction = CodeAction.create(
@@ -108,7 +85,7 @@ describe('CodeActions Tests', () => {
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       clientCapabilities.window = { showDocument: { support: true } };
-      const actions = new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
+      const actions = new YamlCodeActions(clientCapabilities);
       const result = actions.getCodeAction(doc, params);
 
       const codeAction = CodeAction.create(
@@ -135,7 +112,7 @@ describe('CodeActions Tests', () => {
         range: undefined,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
-      const actions = new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
+      const actions = new YamlCodeActions(clientCapabilities);
       const result = actions.getCodeAction(doc, params);
       expect(result).to.has.length(2);
       expect(result[0].title).to.be.equal('Convert Tab to Spaces');
@@ -151,7 +128,7 @@ describe('CodeActions Tests', () => {
         range: undefined,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
-      const actions = new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
+      const actions = new YamlCodeActions(clientCapabilities);
       actions.configure({ indentation: '   ' } as LanguageSettings);
       const result = actions.getCodeAction(doc, params);
 
@@ -167,7 +144,7 @@ describe('CodeActions Tests', () => {
         range: undefined,
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
-      const actions = new YamlCodeActions(commandExecutor, ({} as unknown) as Connection, clientCapabilities);
+      const actions = new YamlCodeActions(clientCapabilities);
       const result = actions.getCodeAction(doc, params);
 
       expect(result[1].title).to.be.equal('Convert all Tabs to Spaces');

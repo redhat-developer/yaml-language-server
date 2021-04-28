@@ -10,7 +10,6 @@ import {
   CodeActionKind,
   CodeActionParams,
   Command,
-  Connection,
   Diagnostic,
   Position,
   Range,
@@ -19,10 +18,9 @@ import {
 } from 'vscode-languageserver';
 import { YamlCommands } from '../../commands';
 import * as path from 'path';
-import { CommandExecutor } from '../../languageserver/commandExecutor';
-import { Globals } from '../utils/jigx/globals';
 import { TextBuffer } from '../utils/textBuffer';
 import { LanguageSettings } from '../yamlLanguageService';
+import { Globals } from '../utils/jigx/globals';
 
 interface YamlDiagnosticData {
   schemaUri: string[];
@@ -30,21 +28,7 @@ interface YamlDiagnosticData {
 export class YamlCodeActions {
   private indentation = '  ';
 
-  constructor(commandExecutor: CommandExecutor, connection: Connection, private readonly clientCapabilities: ClientCapabilities) {
-    commandExecutor.registerCommand(YamlCommands.JUMP_TO_SCHEMA, async (uri: string) => {
-      if (!uri) {
-        return;
-      }
-      if (!uri.startsWith('file') && !uri.startsWith(Globals.dynamicSchema)) {
-        uri = 'json-schema' + uri.substring(uri.indexOf('://'), uri.length);
-      }
-
-      const result = await connection.window.showDocument({ uri: uri, external: false, takeFocus: true });
-      if (!result) {
-        connection.window.showErrorMessage(`Cannot open ${uri}`);
-      }
-    });
-  }
+  constructor(private readonly clientCapabilities: ClientCapabilities) {}
 
   configure(settings: LanguageSettings): void {
     this.indentation = settings.indentation;

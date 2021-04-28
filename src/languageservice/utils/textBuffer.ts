@@ -43,4 +43,8 @@ export class TextBuffer {
   getLineCharCode(lineNumber: number, index: number): number {
     return this.doc.getText(Range.create(lineNumber - 1, index - 1, lineNumber - 1, index)).charCodeAt(0);
   }
+
+  getText(range?: Range): string {
+    return this.doc.getText(range);
+  }
 }

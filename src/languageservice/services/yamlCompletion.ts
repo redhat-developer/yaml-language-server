@@ -11,11 +11,11 @@ import { parse as parseYAML, SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { CompletionsCollector } from 'vscode-json-languageservice';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import {
   CompletionItem,
   CompletionItemKind,
   CompletionList,
-  TextDocument,
   Position,
   Range,
   TextEdit,
@@ -44,6 +44,8 @@ interface CompletionItemExtended extends CompletionItem {
   isForParentSuggestion?: boolean;
   isInlineObject?: boolean;
 }
+const doubleQuotesEscapeRegExp = /[\\]+"/g;
+
 export class YAMLCompletion extends JSONCompletion {
   private schemaService: YAMLSchemaService;
   private customTags: Array<string>;
@@ -83,9 +85,9 @@ export class YAMLCompletion extends JSONCompletion {
     if (!this.completion) {
       return Promise.resolve(result);
     }
-
+    const textBuffer = new TextBuffer(document);
     if (!this.configuredIndentation) {
-      const indent = guessIndentation(new TextBuffer(document), 2, true);
+      const indent = guessIndentation(textBuffer, 2, true);
       this.indentation = indent.insertSpaces ? ' '.repeat(indent.tabSize) : '\t';
     } else {
       this.indentation = this.configuredIndentation;
@@ -304,7 +306,16 @@ export class YAMLCompletion extends JSONCompletion {
         const separatorAfter = '';
         if (newSchema) {
           // property proposals with schema
-          this.getPropertyCompletions(newSchema, currentDoc, node, addValue, separatorAfter, collector, document);
+          this.getPropertyCompletions(
+            newSchema,
+            currentDoc,
+            node,
+            addValue,
+            separatorAfter,
+            collector,
+            textBuffer,
+            overwriteRange
+          );
         }
 
         if (!schema && currentWord.length > 0 && document.getText().charAt(offset - currentWord.length - 1) !== '"') {
@@ -374,9 +385,12 @@ export class YAMLCompletion extends JSONCompletion {
     addValue: boolean,
     separatorAfter: string,
     collector: CompletionsCollectorExtended,
-    document: TextDocument
+    textBuffer: TextBuffer,
+    overwriteRange: Range
   ): void {
     const matchingSchemas = doc.getMatchingSchemas(schema.schema);
+    const existingKey = textBuffer?.getText(overwriteRange);
+    const hasColumn = textBuffer?.getLineContent(overwriteRange?.start.line).indexOf(':') === -1;
     matchingSchemas.forEach((s) => {
       if (s.node === node && !s.inverted) {
         this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
@@ -398,17 +412,17 @@ export class YAMLCompletion extends JSONCompletion {
                 if (node.parent && node.parent.type === 'array' && node.properties.length <= 1) {
                   // because there is a slash '-' to prevent the properties generated to have the correct
                   // indent
-                  const sourceText = document.getText();
+                  const sourceText = textBuffer.getText();
                   const indexOfSlash = sourceText.lastIndexOf('-', node.offset - 1);
                   if (indexOfSlash >= 0) {
                     // add one space to compensate the '-'
                     identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.offset);
                   }
                 }
-                collector.add({
-                  kind: CompletionItemKind.Property,
-                  label: key,
-                  insertText: this.getInsertTextForProperty(
+
+                let insertText = key;
+                if (!key.startsWith(existingKey) || hasColumn) {
+                  insertText = this.getInsertTextForProperty(
                     key,
                     propertySchema,
                     addValue,
@@ -417,7 +431,13 @@ export class YAMLCompletion extends JSONCompletion {
                     {
                       includeConstValue: false,
                     }
-                  ),
+                  );
+                }
+
+                collector.add({
+                  kind: CompletionItemKind.Property,
+                  label: key,
+                  insertText,
                   insertTextFormat: InsertTextFormat.Snippet,
                   documentation: super.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
                   isInlineObject: isInlineObject,
@@ -678,7 +698,16 @@ export class YAMLCompletion extends JSONCompletion {
         this.overwriteRange.end.line,
         this.overwriteRange.end.character
       );
-      this.getPropertyCompletions(resolvedSchema, newParams.doc, newParams.node, false, separatorAfter, collector, undefined);
+      this.getPropertyCompletions(
+        resolvedSchema,
+        newParams.doc,
+        newParams.node,
+        false,
+        separatorAfter,
+        collector,
+        undefined,
+        undefined
+      );
       return;
     }
     let hasProposals = false;
@@ -693,7 +722,7 @@ export class YAMLCompletion extends JSONCompletion {
       if (typeof value == 'object') {
         label = 'Default value';
       } else {
-        label = (value as unknown).toString();
+        label = (value as unknown).toString().replace(doubleQuotesEscapeRegExp, '"');
       }
       collector.add({
         kind: this.getSuggestionKind(type),
@@ -1263,12 +1292,16 @@ export class YAMLCompletion extends JSONCompletion {
           document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
 
         // For when missing semi colon case
-      } else {
+      } else if (trimmedText.indexOf('[') === -1) {
         // Add a semicolon to the end of the current line so we can validate the node
         newText =
           document.getText().substring(0, start + textLine.length) +
           ':\r\n' +
           document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
+      }
+
+      if (newText.length === 0) {
+        newText = document.getText();
       }
 
       return {
@@ -1326,6 +1359,15 @@ const isNumberExp = /^\d+$/;
 function convertToStringValue(value: string): string {
   if (value === 'true' || value === 'false' || value === 'null' || isNumberExp.test(value)) {
     return `"${value}"`;
+  }
+
+  // eslint-disable-next-line prettier/prettier, no-useless-escape
+  if (value.indexOf('"') !== -1) {
+    value = value.replace(doubleQuotesEscapeRegExp, '"');
+  }
+
+  if (value.length > 0 && value.charAt(0) === '@') {
+    value = `"${value}"`;
   }
 
   return value;

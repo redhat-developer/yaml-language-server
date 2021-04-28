@@ -7,7 +7,7 @@
 
 import { Diagnostic, Position } from 'vscode-languageserver';
 import { LanguageSettings } from '../yamlLanguageService';
-import { parse as parseYAML, YAMLDocument } from '../parser/yamlParser07';
+import { YAMLDocument } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
@@ -15,6 +15,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
 import { YAML_SOURCE } from '../parser/jsonParser07';
 import { TextBuffer } from '../utils/textBuffer';
+import { yamlDocumentsCache } from '../parser/yaml-documents';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -57,7 +58,7 @@ export class YAMLValidation {
       return Promise.resolve([]);
     }
 
-    const yamlDocument: YAMLDocument = parseYAML(textDocument.getText(), this.customTags);
+    const yamlDocument: YAMLDocument = yamlDocumentsCache.getYamlDocument(textDocument, this.customTags, true);
     const validationResult = [];
 
     let index = 0;

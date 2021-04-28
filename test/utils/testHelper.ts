@@ -12,6 +12,7 @@ import { ValidationHandler } from '../../src/languageserver/handlers/validationH
 import { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { ClientCapabilities } from 'vscode-json-languageservice';
+import { yamlDocumentsCache } from '../../src/languageservice/parser/yaml-documents';
 
 export function toFsPath(str: unknown): string {
   if (typeof str !== 'string') {
@@ -32,10 +33,12 @@ export const TEST_URI = 'file://~/Desktop/vscode-k8s/test.yaml';
 export const SCHEMA_ID = 'default_schema_id.yaml';
 
 export function setupTextDocument(content: string): TextDocument {
+  yamlDocumentsCache.clear(); // clear cache
   return TextDocument.create(TEST_URI, 'yaml', 0, content);
 }
 
 export function setupSchemaIDTextDocument(content: string, customSchemaID?: string): TextDocument {
+  yamlDocumentsCache.clear(); // clear cache
   if (customSchemaID) {
     return TextDocument.create(customSchemaID, 'yaml', 0, content);
   } else {

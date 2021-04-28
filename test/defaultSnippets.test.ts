@@ -108,6 +108,16 @@ describe('Default Snippet Tests', () => {
         })
         .then(done, done);
     });
+    it('Snippet custom suggestionKind', (done) => {
+      const content = 'anyOf_arrayObj:\n  ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.strictEqual(result.items.length, 1);
+          assert.strictEqual(result.items[0].kind, 9);
+        })
+        .then(done, done);
+    });
 
     it('Snippet in object schema should autocomplete on next line ', (done) => {
       const content = 'object:\n  ';
@@ -181,7 +191,7 @@ describe('Default Snippet Tests', () => {
         .then(done, done);
     });
 
-    it('Snippet in boolean schema should autocomplete on same line', (done) => {
+    it('Snippet in longSnipet schema should autocomplete on same line', (done) => {
       const content = 'longSnippet:  ';
       const completion = parseSetup(content, 13);
       completion
@@ -197,7 +207,7 @@ describe('Default Snippet Tests', () => {
         .then(done, done);
     });
 
-    it('Snippet in boolean schema should autocomplete on same line', (done) => {
+    it('Snippet in short snippet schema should autocomplete on same line', (done) => {
       const content = 'lon  ';
       const completion = parseSetup(content, 3);
       completion

@@ -1,3 +1,36 @@
+### 0.18.0
+
+- Fix: additionalItems does not support $ref [#408](https://github.com/redhat-developer/yaml-language-server/issues/408)
+- Fix: vscode/jsonschema markdownDescription support seems patchy [#417](https://github.com/redhat-developer/vscode-yaml/issues/417)
+- Fix: Inconsistent way to generate whole property snippet and value snippet, when it contains `\"` [#353](https://github.com/redhat-developer/yaml-language-server/issues/353)
+- Fix: Keys requiring quotation can bork the schema [#439](https://github.com/redhat-developer/vscode-yaml/issues/439)
+- Fix: yaml.customTags not working in `0.17.0` [#461](https://github.com/redhat-developer/vscode-yaml/issues/461)
+- Fix: unknown tag <tag:yaml.org,2002:str> [#173](https://github.com/redhat-developer/vscode-yaml/issues/173)
+
+### 0.17.0
+
+- Disable folding range provider [#400](https://github.com/redhat-developer/yaml-language-server/issues/400)
+- Re-add schema priority levels [#418](https://github.com/redhat-developer/yaml-language-server/pull/418)
+- Fix: No diagnostics reported on empty files [#413](https://github.com/redhat-developer/yaml-language-server/issues/413)
+- Update kubernetes schema to 1.20.5 [#429](https://github.com/redhat-developer/yaml-language-server/pull/429)
+- Add CodeLens with links to JSON Schema used [#424](https://github.com/redhat-developer/yaml-language-server/pull/424)
+- Fix: Completion for existing property [#428](https://github.com/redhat-developer/yaml-language-server/pull/428)
+
+### 0.16.0
+
+- CodeAction to open json schema from yaml error [#395](https://github.com/redhat-developer/yaml-language-server/pull/395)
+- Upgrade to `4.0.2` vscode-json-languageservice  [#405](https://github.com/redhat-developer/yaml-language-server/issues/405)
+- feat: add ability to delete all schemas from cache [#397](https://github.com/redhat-developer/yaml-language-server/pull/397)
+- feat: multiple schema distinction in validation [#410](https://github.com/redhat-developer/yaml-language-server/pull/410)
+- Fix: Object autocompletion in arrays with custom indentation produces invalid output [#432](https://github.com/redhat-developer/vscode-yaml/issues/432)
+- Fix: Auto completing an object underneath an array can produce the wrong indentation [#392](https://github.com/redhat-developer/yaml-language-server/issues/392)
+- CodeAction to convert Tab characters to spaces [#416](https://github.com/redhat-developer/yaml-language-server/pull/416)
+- Fix: Incorrect Matching Against Schema Store [#354](https://github.com/redhat-developer/vscode-yaml/issues/354)
+- Fix: Uses the wrong schema, even when yaml.schemas is set [#397](https://github.com/redhat-developer/vscode-yaml/issues/397)
+- feat: add new params to completion snippet [#388](https://github.com/redhat-developer/yaml-language-server/pull/388)
+
+Thanks to Petr Spacek
+
 ### 0.15.0
 
 - Fix: Array new line ending with no indent [#384](https://github.com/redhat-developer/yaml-language-server/pull/384)

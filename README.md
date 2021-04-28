@@ -257,7 +257,7 @@ This repository only contains the server implementation. Here are some known cli
 
 1. Install prerequisites:
    - latest [Visual Studio Code](https://code.visualstudio.com/)
-   - [Node.js](https://nodejs.org/) v6.0.0 or higher
+   - [Node.js](https://nodejs.org/) v12.0.0 or higher
 2. Fork and clone this repository
 3. Install the dependencies
    ```bash

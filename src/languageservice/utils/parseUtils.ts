@@ -1,5 +1,6 @@
 import * as Yaml from 'yaml-language-server-parser';
-import { Schema, Type } from 'js-yaml';
+import { Schema } from 'yaml-language-server-parser/dist/src/schema';
+import { Type } from 'yaml-language-server-parser/dist/src/type';
 
 import { filterInvalidCustomTags } from './arrUtils';
 import { ErrorCode } from 'vscode-json-languageservice/lib/umd/jsonLanguageTypes';
@@ -64,7 +65,7 @@ export function formatWarnings(exceptions: Yaml.YAMLException[], text: string): 
     .map((e) => exceptionToDiagnostic(e));
 }
 
-export function customTagsToAdditionalOptions(customTags: string[]): Type {
+export function customTagsToAdditionalOptions(customTags: string[]): Yaml.LoadOptions {
   const filteredTags = filterInvalidCustomTags(customTags);
 
   const schemaWithAdditionalTags = Schema.create(
