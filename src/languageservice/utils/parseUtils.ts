@@ -51,6 +51,20 @@ class CommonTagImpl {
   }
 }
 
+class IncludeTag {
+  public readonly tag = '!include';
+  public readonly type = 'scalar';
+  default: never;
+  collection: never;
+  identify?: (value: unknown) => boolean;
+  resolve(value: string, onError: (message: string) => void): string {
+    if (value && value.length > 0 && value.trim()) {
+      return value;
+    }
+    onError('!include without value');
+  }
+}
+
 export function customTagsToAdditionalOptions(customTags: string[]): Tags {
   const tags = [];
   const filteredTags = filterInvalidCustomTags(customTags);
@@ -60,5 +74,6 @@ export function customTagsToAdditionalOptions(customTags: string[]): Tags {
     const tagType = (typeInfo[1] && typeInfo[1].toLowerCase()) || 'scalar';
     tags.push(new CommonTagImpl(tagName, tagType));
   }
+  tags.push(new IncludeTag());
   return tags;
 }

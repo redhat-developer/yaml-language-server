@@ -808,7 +808,7 @@ obj:
       validator
         .then(function (result) {
           assert.equal(result.length, 1);
-          assert.deepEqual(result[0], createExpectedError(IncludeWithoutValueError, 0, 19, 0, 19));
+          assert.deepEqual(result[0], createExpectedError(IncludeWithoutValueError, 0, 11, 0, 19));
         })
         .then(done, done);
     });
