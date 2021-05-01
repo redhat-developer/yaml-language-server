@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { Parser, Composer, Document, LineCounter, Tags, ParseOptions, DocumentOptions, SchemaOptions } from 'yaml';
+import { Parser, Composer, Document, LineCounter, ParseOptions, DocumentOptions, SchemaOptions } from 'yaml';
 import { YAMLDocument, SingleYAMLDocument } from './yaml-documents';
 import { customTagsToAdditionalOptions } from '../utils/parseUtils';
 
@@ -18,7 +18,7 @@ export { YAMLDocument, SingleYAMLDocument };
  */
 export function parse(text: string, customTags = []): YAMLDocument {
   const options: ParseOptions & DocumentOptions & SchemaOptions = {
-    strict: true,
+    strict: false,
     customTags: customTagsToAdditionalOptions(customTags),
   };
   const composer = new Composer(options);

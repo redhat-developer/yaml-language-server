@@ -106,7 +106,7 @@ describe('Validation Tests', () => {
           },
         },
       });
-      const content = 'analytics: no';
+      const content = '%YAML 1.1\n---\nanalytics: no';
       const validator = parseSetup(content);
       validator
         .then(function (result) {
@@ -278,7 +278,7 @@ describe('Validation Tests', () => {
           },
         },
       });
-      const content = 'cwd: no';
+      const content = '%YAML 1.1\n---\ncwd: no';
       const validator = parseSetup(content);
       validator
         .then(function (result) {
@@ -287,9 +287,9 @@ describe('Validation Tests', () => {
             result[0],
             createDiagnosticWithData(
               StringTypeError,
-              0,
+              2,
               5,
-              0,
+              2,
               7,
               DiagnosticSeverity.Error,
               `yaml-schema: file:///${SCHEMA_ID}`,
