@@ -7,7 +7,7 @@
 
 import { Parser, Composer, Document, LineCounter, ParseOptions, DocumentOptions, SchemaOptions } from 'yaml';
 import { YAMLDocument, SingleYAMLDocument } from './yaml-documents';
-import { customTagsToAdditionalOptions } from '../utils/parseUtils';
+import { getCustomTags } from './custom-tag-provider';
 
 export { YAMLDocument, SingleYAMLDocument };
 
@@ -19,7 +19,7 @@ export { YAMLDocument, SingleYAMLDocument };
 export function parse(text: string, customTags = []): YAMLDocument {
   const options: ParseOptions & DocumentOptions & SchemaOptions = {
     strict: false,
-    customTags: customTagsToAdditionalOptions(customTags),
+    customTags: getCustomTags(customTags),
   };
   const composer = new Composer(options);
   const lineCounter = new LineCounter();
