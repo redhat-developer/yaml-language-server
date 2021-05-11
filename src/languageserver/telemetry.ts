@@ -6,7 +6,7 @@
 import { Connection } from 'vscode-languageserver/lib/common/server';
 
 /**
- * Doe to LSP limitation this object must be JSON serializable
+ * Due to LSP limitation this object must be JSON serializable
  */
 export interface TelemetryEvent {
   type?: string;
