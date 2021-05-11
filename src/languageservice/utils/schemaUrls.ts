@@ -14,7 +14,7 @@ export function checkSchemaURI(
   telemetry: Telemetry
 ): string {
   if (uri.trim().toLowerCase() === 'kubernetes') {
-    telemetry.send({ name: 'schema_configured', properties: { kubernetes: true } });
+    telemetry.send({ name: 'yaml.schema.configured', properties: { kubernetes: true } });
     return KUBERNETES_SCHEMA_URL;
   } else if (isRelativePath(uri)) {
     return relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);

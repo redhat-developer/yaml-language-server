@@ -146,7 +146,7 @@ export class YAMLCompletion extends JSONCompletion {
       },
       error: (message: string) => {
         console.error(message);
-        this.telemetry.sendError('competion_error', { message });
+        this.telemetry.sendError('competion_error', { error: message });
       },
       log: (message: string) => {
         console.log(message);
