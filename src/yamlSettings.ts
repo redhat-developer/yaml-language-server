@@ -15,6 +15,7 @@ export interface Settings {
     completion: boolean;
     customTags: Array<string>;
     schemaStore: {
+      url: string;
       enable: boolean;
     };
     disableAdditionalProperties: boolean;
@@ -55,6 +56,7 @@ export class SettingsState {
   schemaStoreSettings = [];
   customTags = [];
   schemaStoreEnabled = true;
+  schemaStoreUrl = 'https://www.schemastore.org/api/json/catalog.json';
   indentation: string | undefined = undefined;
   disableAdditionalProperties = false;
   maxItemsComputed = 5000;

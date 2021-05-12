@@ -51,6 +51,9 @@ export class SettingsHandler {
 
       if (settings.yaml.schemaStore) {
         this.yamlSettings.schemaStoreEnabled = settings.yaml.schemaStore.enable;
+        if (settings.yaml.schemaStore.url.length !== 0) {
+          this.yamlSettings.schemaStoreUrl = settings.yaml.schemaStore.url;
+        }
       }
 
       if (settings.yaml.format) {
@@ -121,10 +124,16 @@ export class SettingsHandler {
    */
   public async setSchemaStoreSettingsIfNotSet(): Promise<void> {
     const schemaStoreIsSet = this.yamlSettings.schemaStoreSettings.length !== 0;
+    let schemaStoreUrl = '';
+    if (this.yamlSettings.schemaStoreUrl.length !== 0) {
+      schemaStoreUrl = this.yamlSettings.schemaStoreUrl;
+    } else {
+      schemaStoreUrl = JSON_SCHEMASTORE_URL;
+    }
 
     if (this.yamlSettings.schemaStoreEnabled && !schemaStoreIsSet) {
       try {
-        const schemaStore = await this.getSchemaStoreMatchingSchemas();
+        const schemaStore = await this.getSchemaStoreMatchingSchemas(schemaStoreUrl);
         this.yamlSettings.schemaStoreSettings = schemaStore.schemas;
         this.updateConfiguration();
       } catch (err) {
@@ -140,8 +149,8 @@ export class SettingsHandler {
    * When the schema store is enabled, download and store YAML schema associations
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getSchemaStoreMatchingSchemas(): Promise<{ schemas: any[] }> {
-    return xhr({ url: JSON_SCHEMASTORE_URL }).then((response) => {
+  private getSchemaStoreMatchingSchemas(schemaStoreUrl: string): Promise<{ schemas: any[] }> {
+    return xhr({ url: schemaStoreUrl }).then((response) => {
       const languageSettings = {
         schemas: [],
       };
