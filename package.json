@@ -18,7 +18,9 @@
     }
   ],
   "engines": {
-    "node": "*"
+    "node": "*",
+    "npm": "\n\nERROR: Please use yarn, npm is not supported in this repository!!!\n\n",
+    "yarn": "^1.22.5"
   },
   "bin": {
     "yaml-language-server": "./bin/yaml-language-server"
