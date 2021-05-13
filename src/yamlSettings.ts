@@ -17,6 +17,7 @@ export interface Settings {
     schemaStore: {
       enable: boolean;
     };
+    disableAdditionalProperties: boolean;
     maxItemsComputed: number;
   };
   http: {
@@ -55,6 +56,7 @@ export class SettingsState {
   customTags = [];
   schemaStoreEnabled = true;
   indentation: string | undefined = undefined;
+  disableAdditionalProperties = false;
   maxItemsComputed = 5000;
 
   // File validation helpers

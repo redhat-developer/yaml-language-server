@@ -74,6 +74,12 @@ export interface LanguageSettings {
    * Default indentation size
    */
   indentation?: string;
+
+  /**
+   * Globally set additionalProperties to false if additionalProperties is not set and if schema.type is object.
+   * So if its true, no extra properties are allowed inside yaml.
+   */
+  disableAdditionalProperties?: boolean;
 }
 
 export interface WorkspaceContextService {
