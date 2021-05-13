@@ -18,6 +18,7 @@ export interface Settings {
       enable: boolean;
     };
     disableAdditionalProperties: boolean;
+    maxItemsComputed: number;
   };
   http: {
     proxy: string;
@@ -56,6 +57,8 @@ export class SettingsState {
   schemaStoreEnabled = true;
   indentation: string | undefined = undefined;
   disableAdditionalProperties = false;
+  maxItemsComputed = 5000;
+
   // File validation helpers
   pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
   validationDelayMs = 200;

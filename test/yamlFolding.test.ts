@@ -7,7 +7,7 @@ import { expect } from 'chai';
 import { FoldingRange } from 'vscode-languageserver';
 import { getFoldingRanges } from '../src/languageservice/services/yamlFolding';
 import { FoldingRangesContext } from '../src/languageservice/yamlTypes';
-import { setupTextDocument } from './utils/testHelper';
+import { setupTextDocument, TEST_URI } from './utils/testHelper';
 
 const context: FoldingRangesContext = { rangeLimit: 10_0000 };
 
@@ -99,5 +99,32 @@ SecondDict:
     const doc = setupTextDocument(yaml);
     const ranges = getFoldingRanges(doc, context);
     expect(ranges).to.deep.include.members([FoldingRange.create(1, 4, 2, 15)]);
+  });
+
+  it('should respect range limits', () => {
+    const yaml = `
+      a:
+        - 1
+      b:
+        - 2
+    `;
+
+    const warnings = [];
+
+    const doc = setupTextDocument(yaml);
+
+    const unlimitedRanges = getFoldingRanges(doc, {
+      rangeLimit: 10,
+      onRangeLimitExceeded: (uri) => warnings.push(uri),
+    });
+    expect(unlimitedRanges.length).to.equal(2);
+    expect(warnings).to.be.empty;
+
+    const limitedRanges = getFoldingRanges(doc, {
+      rangeLimit: 1,
+      onRangeLimitExceeded: (uri) => warnings.push(uri),
+    });
+    expect(limitedRanges.length).to.equal(1);
+    expect(warnings).to.deep.equal([TEST_URI]);
   });
 });

@@ -9,6 +9,10 @@ export interface FoldingRangesContext {
    */
   rangeLimit?: number;
   /**
+   * Called when the result was cropped.
+   */
+  onRangeLimitExceeded?: (uri: string) => void;
+  /**
    * If set, the client signals that it only supports folding complete lines. If set, client will
    * ignore specified `startCharacter` and `endCharacter` properties in a FoldingRange.
    */

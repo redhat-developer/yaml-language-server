@@ -28,7 +28,7 @@ import { YAMLCompletion } from './services/yamlCompletion';
 import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
-import { JSONDocument, DefinitionLink, TextDocument } from 'vscode-json-languageservice';
+import { JSONDocument, DefinitionLink, TextDocument, DocumentSymbolsContext } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
 import {
   FoldingRange,
@@ -123,8 +123,8 @@ export interface LanguageService {
   doComplete(document: TextDocument, position: Position, isKubernetes: boolean): Promise<CompletionList>;
   doValidation(document: TextDocument, isKubernetes: boolean): Promise<Diagnostic[]>;
   doHover(document: TextDocument, position: Position): Promise<Hover | null>;
-  findDocumentSymbols(document: TextDocument): SymbolInformation[];
-  findDocumentSymbols2(document: TextDocument): DocumentSymbol[];
+  findDocumentSymbols(document: TextDocument, context: DocumentSymbolsContext): SymbolInformation[];
+  findDocumentSymbols2(document: TextDocument, context: DocumentSymbolsContext): DocumentSymbol[];
   findDefinition(document: TextDocument, position: Position, doc: JSONDocument): Promise<DefinitionLink[]>;
   findLinks(document: TextDocument): Promise<DocumentLink[]>;
   resetSchema(uri: string): boolean;
