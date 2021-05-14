@@ -4,6 +4,7 @@ import { ISchemaAssociations } from './requestTypes';
 import { URI } from 'vscode-uri';
 import { JSONSchema } from './languageservice/jsonSchema';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { YamlVersion } from './languageservice/parser/yamlParser07';
 
 // Client settings interface to grab settings relevant for the language server
 export interface Settings {
@@ -17,6 +18,7 @@ export interface Settings {
     schemaStore: {
       enable: boolean;
     };
+    yamlVersion: YamlVersion;
   };
   http: {
     proxy: string;
@@ -71,6 +73,7 @@ export class SettingsState {
   hierarchicalDocumentSymbolSupport = false;
   hasWorkspaceFolderCapability = false;
   useVSCodeContentRequest = false;
+  yamlVersion: YamlVersion = '1.2';
 }
 
 export class TextDocumentTestManager extends TextDocuments<TextDocument> {

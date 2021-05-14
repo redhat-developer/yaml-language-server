@@ -8,7 +8,7 @@
       "type": "shell",
       "command": "yarn run watch",
       "presentation": {
-        "reveal": "silent"
+        "reveal": "never"
       },
       "isBackground": true,
       "problemMatcher": "$tsc-watch",
