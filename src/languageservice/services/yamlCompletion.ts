@@ -31,6 +31,7 @@ import { guessIndentation } from '../utils/indentationGuesser';
 import { TextBuffer } from '../utils/textBuffer';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { ClientCapabilities, MarkupContent } from 'vscode-languageserver';
+import { endsWith } from '../utils/strings';
 const localize = nls.loadMessageBundle();
 
 const doubleQuotesEscapeRegExp = /[\\]+"/g;
@@ -91,7 +92,7 @@ export class YAMLCompletion extends JSONCompletion {
     const currentDocIndex = doc.documents.indexOf(currentDoc);
     let node = currentDoc.getNodeFromOffsetEndInclusive(offset);
     // if (this.isInComment(document, node ? node.start : 0, offset)) {
-    // 	return Promise.resolve(result);
+    //  return Promise.resolve(result);
     // }
 
     const currentWord = super.getCurrentWord(document, offset);
@@ -288,13 +289,22 @@ export class YAMLCompletion extends JSONCompletion {
                   );
                 }
 
-                collector.add({
+                const proposal: CompletionItem = {
                   kind: CompletionItemKind.Property,
                   label: key,
                   insertText,
                   insertTextFormat: InsertTextFormat.Snippet,
                   documentation: super.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
-                });
+                };
+
+                if (proposal.insertText && endsWith(proposal.insertText, `$1${separatorAfter}`)) {
+                  proposal.command = {
+                    title: 'Suggest',
+                    command: 'editor.action.triggerSuggest',
+                  };
+                }
+
+                collector.add(proposal);
               }
             });
           }
