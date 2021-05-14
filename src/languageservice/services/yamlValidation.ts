@@ -7,7 +7,7 @@
 
 import { Diagnostic, Position } from 'vscode-languageserver';
 import { LanguageSettings } from '../yamlLanguageService';
-import { YAMLDocument } from '../parser/yamlParser07';
+import { YAMLDocument, YamlVersion } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
@@ -39,6 +39,7 @@ export class YAMLValidation {
   private customTags: string[];
   private jsonValidation;
   private disableAdditionalProperties: boolean;
+  private yamlVersion: YamlVersion;
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
@@ -52,6 +53,7 @@ export class YAMLValidation {
       this.validationEnabled = settings.validate;
       this.customTags = settings.customTags;
       this.disableAdditionalProperties = settings.disableAdditionalProperties;
+      this.yamlVersion = settings.yamlVersion;
     }
   }
 
@@ -60,7 +62,11 @@ export class YAMLValidation {
       return Promise.resolve([]);
     }
 
-    const yamlDocument: YAMLDocument = yamlDocumentsCache.getYamlDocument(textDocument, this.customTags, true);
+    const yamlDocument: YAMLDocument = yamlDocumentsCache.getYamlDocument(
+      textDocument,
+      { customTags: this.customTags, yamlVersion: this.yamlVersion },
+      true
+    );
     const validationResult = [];
 
     let index = 0;

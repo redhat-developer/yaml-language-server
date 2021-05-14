@@ -11,15 +11,25 @@ import { getCustomTags } from './custom-tag-provider';
 
 export { YAMLDocument, SingleYAMLDocument };
 
+export type YamlVersion = '1.1' | '1.2';
+export interface ParserOptions {
+  customTags: string[];
+  yamlVersion: YamlVersion;
+}
+export const defaultOptions: ParserOptions = {
+  customTags: [],
+  yamlVersion: '1.2',
+};
 /**
  * `yaml-ast-parser-custom-tags` parses the AST and
  * returns YAML AST nodes, which are then formatted
  * for consumption via the language server.
  */
-export function parse(text: string, customTags = []): YAMLDocument {
+export function parse(text: string, parserOptions: ParserOptions = defaultOptions): YAMLDocument {
   const options: ParseOptions & DocumentOptions & SchemaOptions = {
     strict: false,
-    customTags: getCustomTags(customTags),
+    customTags: getCustomTags(parserOptions.customTags),
+    version: parserOptions.yamlVersion,
   };
   const composer = new Composer(options);
   const lineCounter = new LineCounter();

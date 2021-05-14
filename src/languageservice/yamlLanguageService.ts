@@ -47,6 +47,7 @@ import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
 import { YamlCodeLens } from './services/yamlCodeLens';
 import { registerCommands } from './services/yamlCommands';
 import { Telemetry } from '../languageserver/telemetry';
+import { YamlVersion } from './parser/yamlParser07';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -81,6 +82,10 @@ export interface LanguageSettings {
    * So if its true, no extra properties are allowed inside yaml.
    */
   disableAdditionalProperties?: boolean;
+  /**
+   * Default yaml lang version
+   */
+  yamlVersion?: YamlVersion;
 }
 
 export interface WorkspaceContextService {
