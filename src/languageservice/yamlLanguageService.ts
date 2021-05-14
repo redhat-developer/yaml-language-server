@@ -46,6 +46,7 @@ import { commandExecutor } from '../languageserver/commandExecutor';
 import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
 import { YamlCodeLens } from './services/yamlCodeLens';
 import { registerCommands } from './services/yamlCommands';
+import { YamlVersion } from './parser/yamlParser07';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -74,6 +75,10 @@ export interface LanguageSettings {
    * Default indentation size
    */
   indentation?: string;
+  /**
+   * Default yaml lang version
+   */
+  yamlVersion?: YamlVersion;
 }
 
 export interface WorkspaceContextService {

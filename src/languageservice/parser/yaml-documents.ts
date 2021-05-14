@@ -7,7 +7,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { JSONDocument } from './jsonParser07';
 import { Document, LineCounter, visit, YAMLError } from 'yaml';
 import { ASTNode } from '../jsonASTTypes';
-import { parse as parseYAML } from './yamlParser07';
+import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07';
 import { ErrorCode } from 'vscode-json-languageservice';
 import { Node } from 'yaml/dist/nodes/Node';
 import { convertAST } from './ast-converter';
@@ -92,7 +92,7 @@ export class YAMLDocument {
 
 interface YamlCachedDocument {
   version: number;
-  customTags: string[];
+  parserOptions: ParserOptions;
   document: YAMLDocument;
 }
 export class YamlDocuments {
@@ -106,8 +106,8 @@ export class YamlDocuments {
    * @param addRootObject if true and document is empty add empty object {} to force schema usage
    * @returns the YAMLDocument
    */
-  getYamlDocument(document: TextDocument, customTags?: string[], addRootObject = false): YAMLDocument {
-    this.ensureCache(document, customTags, addRootObject);
+  getYamlDocument(document: TextDocument, parserOptions?: ParserOptions, addRootObject = false): YAMLDocument {
+    this.ensureCache(document, parserOptions ?? defaultOptions, addRootObject);
     return this.cache.get(document.uri).document;
   }
 
@@ -118,22 +118,25 @@ export class YamlDocuments {
     this.cache.clear();
   }
 
-  private ensureCache(document: TextDocument, customTags: string[], addRootObject: boolean): void {
+  private ensureCache(document: TextDocument, parserOptions: ParserOptions, addRootObject: boolean): void {
     const key = document.uri;
     if (!this.cache.has(key)) {
-      this.cache.set(key, { version: -1, document: new YAMLDocument([]), customTags: [] });
+      this.cache.set(key, { version: -1, document: new YAMLDocument([]), parserOptions: defaultOptions });
     }
     const cacheEntry = this.cache.get(key);
-    if (cacheEntry.version !== document.version || (customTags && !isArrayEqual(cacheEntry.customTags, customTags))) {
+    if (
+      cacheEntry.version !== document.version ||
+      (parserOptions.customTags && !isArrayEqual(cacheEntry.parserOptions.customTags, parserOptions.customTags))
+    ) {
       let text = document.getText();
       // if text is contains only whitespace wrap all text in object to force schema selection
       if (addRootObject && !/\S/.test(text)) {
         text = `{${text}}`;
       }
-      const doc = parseYAML(text, customTags);
+      const doc = parseYAML(text, parserOptions);
       cacheEntry.document = doc;
       cacheEntry.version = document.version;
-      cacheEntry.customTags = customTags;
+      cacheEntry.parserOptions = parserOptions;
     }
   }
 }

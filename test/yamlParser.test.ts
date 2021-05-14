@@ -14,7 +14,7 @@ describe('YAML parser', () => {
 
     it('parse only comment', () => {
       const parsedDocument = parse('# a comment');
-      assert(parsedDocument.documents.length === 1, 'No document has been created when there is a comment');
+      assert(parsedDocument.documents.length === 0, 'A document has been created when there is a comment');
     });
 
     it('parse single document with --- at the start of the file', () => {
@@ -240,6 +240,18 @@ describe('YAML parser', () => {
         `1 document should be available but there are ${parsedDocument.documents.length}`
       );
       assert(parsedDocument.documents[0].errors.length === 0, JSON.stringify(parsedDocument.documents[0].errors));
+    });
+  });
+
+  describe('YAML version', () => {
+    it('should use yaml 1.2 by default', () => {
+      const parsedDocument = parse('SOME_BOOLEAN : !!bool yes');
+      assert(parsedDocument.documents[0].warnings.length === 1);
+    });
+
+    it('should respect yaml 1.1', () => {
+      const parsedDocument = parse('SOME_BOOLEAN : !!bool yes', { customTags: [], yamlVersion: '1.1' });
+      assert(parsedDocument.documents[0].warnings.length === 0);
     });
   });
 });

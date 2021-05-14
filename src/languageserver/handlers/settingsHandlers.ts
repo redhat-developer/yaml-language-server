@@ -51,6 +51,8 @@ export class SettingsHandler {
         this.yamlSettings.schemaStoreEnabled = settings.yaml.schemaStore.enable;
       }
 
+      this.yamlSettings.yamlVersion = settings.yaml.yamlVersion;
+
       if (settings.yaml.format) {
         this.yamlSettings.yamlFormatterSettings = {
           proseWrap: settings.yaml.format.proseWrap || 'preserve',
@@ -182,6 +184,7 @@ export class SettingsHandler {
       customTags: this.yamlSettings.customTags,
       format: this.yamlSettings.yamlFormatterSettings.enable,
       indentation: this.yamlSettings.indentation,
+      yamlVersion: this.yamlSettings.yamlVersion,
     };
 
     if (this.yamlSettings.schemaAssociations) {

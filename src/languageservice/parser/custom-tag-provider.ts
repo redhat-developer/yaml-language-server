@@ -1,4 +1,4 @@
-import { Tags, isSeq, isMap, YAMLMap, YAMLSeq } from 'yaml'
+import { Tags, isSeq, isMap, YAMLMap, YAMLSeq } from 'yaml';
 import { filterInvalidCustomTags } from '../utils/arrUtils';
 
 class CommonTagImpl {
@@ -47,7 +47,7 @@ class IncludeTag {
 }
 
 /**
- * Converts the tags from settings and adds known tags such as !include 
+ * Converts the tags from settings and adds known tags such as !include
  * and returns Tags that can be used by the parser.
  * @param customTags Tags for parser
  */
