@@ -4,6 +4,7 @@ import { ISchemaAssociations } from './requestTypes';
 import { URI } from 'vscode-uri';
 import { JSONSchema } from './languageservice/jsonSchema';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 
 // Client settings interface to grab settings relevant for the language server
 export interface Settings {
@@ -56,7 +57,7 @@ export class SettingsState {
   schemaStoreSettings = [];
   customTags = [];
   schemaStoreEnabled = true;
-  schemaStoreUrl = 'https://www.schemastore.org/api/json/catalog.json';
+  schemaStoreUrl = JSON_SCHEMASTORE_URL;
   indentation: string | undefined = undefined;
   disableAdditionalProperties = false;
   maxItemsComputed = 5000;
