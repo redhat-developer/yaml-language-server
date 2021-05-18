@@ -11,8 +11,19 @@ import * as Yaml from 'yaml-language-server-parser';
 import { ASTNode } from '../jsonASTTypes';
 import { parseYamlBoolean } from './scalar-type';
 
+const maxRefCount = 1000;
+let refDepth = 0;
 export default function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode): ASTNode {
   if (!node) {
+    return;
+  }
+  if (!parent) {
+    // first invocation
+    refDepth = 0;
+  }
+
+  if (refDepth > maxRefCount && node.kind === Yaml.Kind.ANCHOR_REF) {
+    // document contains excessive aliasing
     return;
   }
 
@@ -138,7 +149,7 @@ export default function recursivelyBuildAst(parent: ASTNode, node: Yaml.YAMLNode
     }
     case Yaml.Kind.ANCHOR_REF: {
       const instance = (<Yaml.YAMLAnchorReference>node).value;
-
+      refDepth++;
       return (
         recursivelyBuildAst(parent, instance) ||
         new NullASTNodeImpl(parent, node.startPosition, node.endPosition - node.startPosition)
