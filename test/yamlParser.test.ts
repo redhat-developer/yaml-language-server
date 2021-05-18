@@ -242,4 +242,30 @@ describe('YAML parser', () => {
       assert(parsedDocument.documents[0].errors.length === 0, JSON.stringify(parsedDocument.documents[0].errors));
     });
   });
+
+  describe('YAML parser bugs', () => {
+    it('should work with "Billion Laughs" attack', () => {
+      const yaml = `apiVersion: v1
+data:
+  a: &a ["web","web","web","web","web","web","web","web","web"]
+  b: &b [*a,*a,*a,*a,*a,*a,*a,*a,*a]
+  c: &c [*b,*b,*b,*b,*b,*b,*b,*b,*b]
+  d: &d [*c,*c,*c,*c,*c,*c,*c,*c,*c]
+  e: &e [*d,*d,*d,*d,*d,*d,*d,*d,*d]
+  f: &f [*e,*e,*e,*e,*e,*e,*e,*e,*e]
+  g: &g [*f,*f,*f,*f,*f,*f,*f,*f,*f]
+  h: &h [*g,*g,*g,*g,*g,*g,*g,*g,*g]
+  i: &i [*h,*h,*h,*h,*h,*h,*h,*h,*h]
+kind: ConfigMap
+metadata:
+  name: yaml-bomb
+  namespace: defaul`;
+      const parsedDocument = parse(yaml);
+      assert.strictEqual(
+        parsedDocument.documents.length,
+        1,
+        `1 document should be available but there are ${parsedDocument.documents.length}`
+      );
+    });
+  });
 });
