@@ -1,3 +1,11 @@
+### 0.19.1
+
+- Fix: "Billion Laughs" attack [#463](https://github.com/redhat-developer/yaml-language-server/issues/463)
+- Added implementation of telemetry event [#439](https://github.com/redhat-developer/yaml-language-server/issues/439)
+- Added option to specify custom schema store [#459](https://github.com/redhat-developer/yaml-language-server/pull/459)
+
+Thanks to Ryan (hackercat)
+
 ### 0.19.0
 
 - Fix: Inconsistent way to generate whole property snippet and value snippet, when it contains `\"` [#353](https://github.com/redhat-developer/yaml-language-server/issues/353)
