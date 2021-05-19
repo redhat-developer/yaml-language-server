@@ -46,6 +46,7 @@ import { commandExecutor } from '../languageserver/commandExecutor';
 import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
 import { YamlCodeLens } from './services/yamlCodeLens';
 import { registerCommands } from './services/yamlCommands';
+import { Telemetry } from '../languageserver/telemetry';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -145,10 +146,11 @@ export function getLanguageService(
   schemaRequestService: SchemaRequestService,
   workspaceContext: WorkspaceContextService,
   connection: Connection,
+  telemetry: Telemetry,
   clientCapabilities?: ClientCapabilities
 ): LanguageService {
   const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
-  const completer = new YAMLCompletion(schemaService, clientCapabilities);
+  const completer = new YAMLCompletion(schemaService, clientCapabilities, telemetry);
   const hover = new YAMLHover(schemaService);
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
   const yamlValidation = new YAMLValidation(schemaService);

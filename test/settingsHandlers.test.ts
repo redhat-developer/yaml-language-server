@@ -13,6 +13,7 @@ import { ValidationHandler } from '../src/languageserver/handlers/validationHand
 import { LanguageService, LanguageSettings, SchemaConfiguration, SchemaPriority } from '../src';
 import * as request from 'request-light';
 import { setupLanguageService } from './utils/testHelper';
+import { Telemetry } from '../src/languageserver/telemetry';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -53,7 +54,8 @@ describe('Settings Handlers Tests', () => {
       (connectionStub as unknown) as Connection,
       (languageService as unknown) as LanguageService,
       settingsState,
-      (validationHandler as unknown) as ValidationHandler
+      (validationHandler as unknown) as ValidationHandler,
+      {} as Telemetry
     );
 
     sandbox.stub(settingsHandler, 'updateConfiguration').returns();
@@ -79,7 +81,8 @@ describe('Settings Handlers Tests', () => {
         (connectionStub as unknown) as Connection,
         languageService,
         settingsState,
-        (validationHandler as unknown) as ValidationHandler
+        (validationHandler as unknown) as ValidationHandler,
+        {} as Telemetry
       );
 
       const configureSpy = sinon.spy(languageService, 'configure');

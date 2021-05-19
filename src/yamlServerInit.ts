@@ -16,12 +16,14 @@ import { SettingsHandler } from './languageserver/handlers/settingsHandlers';
 import { YamlCommands } from './commands';
 import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
 import { commandExecutor } from './languageserver/commandExecutor';
+import { Telemetry } from './languageserver/telemetry';
 
 export class YAMLServerInit {
   languageService: LanguageService;
   languageHandler: LanguageHandlers;
   validationHandler: ValidationHandler;
 
+  private telemetry: Telemetry;
   constructor(
     private readonly connection: Connection,
     private yamlSettings: SettingsState,
@@ -29,6 +31,7 @@ export class YAMLServerInit {
     private schemaRequestService: SchemaRequestService
   ) {
     this.yamlSettings.documents.listen(this.connection);
+    this.telemetry = new Telemetry(this.connection);
 
     /**
      * Run when the client connects to the server after it is activated.
@@ -55,6 +58,7 @@ export class YAMLServerInit {
       this.schemaRequestService,
       this.workspaceContext,
       this.connection,
+      this.telemetry,
       params.capabilities
     );
 
@@ -113,7 +117,13 @@ export class YAMLServerInit {
   private registerHandlers(): void {
     // Register all features that the language server has
     this.validationHandler = new ValidationHandler(this.connection, this.languageService, this.yamlSettings);
-    const settingsHandler = new SettingsHandler(this.connection, this.languageService, this.yamlSettings, this.validationHandler);
+    const settingsHandler = new SettingsHandler(
+      this.connection,
+      this.languageService,
+      this.yamlSettings,
+      this.validationHandler,
+      this.telemetry
+    );
     settingsHandler.registerHandlers();
     this.languageHandler = new LanguageHandlers(this.connection, this.languageService, this.yamlSettings, this.validationHandler);
     this.languageHandler.registerHandlers();

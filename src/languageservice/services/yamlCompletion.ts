@@ -31,6 +31,7 @@ import { guessIndentation } from '../utils/indentationGuesser';
 import { TextBuffer } from '../utils/textBuffer';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { ClientCapabilities, MarkupContent } from 'vscode-languageserver';
+import { Telemetry } from '../../languageserver/telemetry';
 const localize = nls.loadMessageBundle();
 
 const doubleQuotesEscapeRegExp = /[\\]+"/g;
@@ -42,7 +43,11 @@ export class YAMLCompletion extends JSONCompletion {
   private indentation: string;
   private configuredIndentation: string | undefined;
 
-  constructor(schemaService: YAMLSchemaService, clientCapabilities: ClientCapabilities = {}) {
+  constructor(
+    schemaService: YAMLSchemaService,
+    clientCapabilities: ClientCapabilities = {},
+    private readonly telemetry: Telemetry
+  ) {
     super(schemaService, [], Promise, clientCapabilities);
     this.schemaService = schemaService;
     this.customTags = [];
@@ -141,6 +146,7 @@ export class YAMLCompletion extends JSONCompletion {
       },
       error: (message: string) => {
         console.error(message);
+        this.telemetry.sendError('yaml.completion.error', { error: message });
       },
       log: (message: string) => {
         console.log(message);
