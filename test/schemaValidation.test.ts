@@ -526,7 +526,7 @@ describe('Validation Tests', () => {
   });
 
   describe('Anchor tests', () => {
-    it('Anchor should not not error', (done) => {
+    it('Anchor should not error', (done) => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -549,7 +549,7 @@ describe('Validation Tests', () => {
         .then(done, done);
     });
 
-    it('Anchor with multiple references should not not error', (done) => {
+    it('Anchor with multiple references should not error', (done) => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -572,7 +572,7 @@ describe('Validation Tests', () => {
         .then(done, done);
     });
 
-    it('Multiple Anchor in array of references should not not error', (done) => {
+    it('Multiple Anchor in array of references should not error', (done) => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -616,6 +616,91 @@ describe('Validation Tests', () => {
       validator
         .then(function (result) {
           assert.equal(result.length, 0);
+        })
+        .then(done, done);
+    });
+
+    it('Nested object anchors should expand properly', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        additionalProperties: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            akey: {
+              type: 'string',
+            },
+          },
+          required: ['akey'],
+        },
+      });
+      const content = `
+        l1: &l1
+          akey: avalue
+
+        l2: &l2
+          <<: *l1
+
+        l3: &l3
+          <<: *l2
+
+        l4:
+          <<: *l3
+      `;
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.equal(result.length, 0);
+        })
+        .then(done, done);
+    });
+
+    it('Anchor reference with a validation error in a sub-object emits the error in the right location', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          src: {},
+          dest: {
+            type: 'object',
+            properties: {
+              outer: {
+                type: 'object',
+                required: ['otherkey'],
+              },
+            },
+          },
+        },
+        required: ['src', 'dest'],
+      });
+      const content = `
+        src: &src
+          outer:
+            akey: avalue
+
+        dest:
+          <<: *src
+      `;
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.equal(result.length, 1);
+          // The key thing we're checking is *where* the validation error gets reported.
+          // "outer" isn't required to contain "otherkey" inside "src", but it is inside
+          // "dest". Since "outer" doesn't appear inside "dest" because of the alias, we
+          // need to move the error into "src".
+          assert.deepEqual(
+            result[0],
+            createDiagnosticWithData(
+              MissingRequiredPropWarning.replace('{0}', 'otherkey'),
+              2,
+              10,
+              2,
+              15,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
+          );
         })
         .then(done, done);
     });
@@ -1254,6 +1339,64 @@ describe('Validation Tests', () => {
           `file:///${SCHEMA_ID}`
         )
       );
+    });
+  });
+  describe('Additional properties validation', () => {
+    it('should allow additional props on object by default', async () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          prop1: {
+            type: 'string',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = `prop2: you could be there 'prop2'`;
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(0);
+    });
+
+    describe('Additional properties validation with enabled disableAdditionalProperties', () => {
+      before(() => {
+        languageSettingsSetup.languageSettings.disableAdditionalProperties = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+      });
+      after(() => {
+        languageSettingsSetup.languageSettings.disableAdditionalProperties = false;
+      });
+
+      it('should return additional prop error when there is extra prop', async () => {
+        const schema = {
+          type: 'object',
+          properties: {
+            prop1: {
+              type: 'string',
+            },
+          },
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = `prop2: you should not be there 'prop2'`;
+        const result = await parseSetup(content);
+        expect(result.length).to.eq(1);
+        expect(result[0].message).to.eq('Property prop2 is not allowed.');
+      });
+
+      it('should allow additional props on object when additionalProp is true on object', async () => {
+        const schema = {
+          type: 'object',
+          properties: {
+            prop1: {
+              type: 'string',
+            },
+          },
+          additionalProperties: true,
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = `prop2: you could be there 'prop2'`;
+        const result = await parseSetup(content);
+        expect(result.length).to.eq(0);
+      });
     });
   });
 });

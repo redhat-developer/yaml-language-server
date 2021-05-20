@@ -8,6 +8,7 @@ import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/ut
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
 import { Settings, SettingsState } from '../../yamlSettings';
+import { Telemetry } from '../telemetry';
 import { ValidationHandler } from './validationHandlers';
 
 export class SettingsHandler {
@@ -15,7 +16,8 @@ export class SettingsHandler {
     private readonly connection: Connection,
     private readonly languageService: LanguageService,
     private readonly yamlSettings: SettingsState,
-    private readonly validationHandler: ValidationHandler
+    private readonly validationHandler: ValidationHandler,
+    private readonly telemetry: Telemetry
   ) {}
 
   public registerHandlers(): void {
@@ -47,8 +49,13 @@ export class SettingsHandler {
       }
       this.yamlSettings.customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
 
+      this.yamlSettings.maxItemsComputed = Math.trunc(Math.max(0, Number(settings.yaml.maxItemsComputed))) || 5000;
+
       if (settings.yaml.schemaStore) {
         this.yamlSettings.schemaStoreEnabled = settings.yaml.schemaStore.enable;
+        if (settings.yaml.schemaStore.url.length !== 0) {
+          this.yamlSettings.schemaStoreUrl = settings.yaml.schemaStore.url;
+        }
       }
 
       this.yamlSettings.yamlVersion = settings.yaml.yamlVersion;
@@ -71,6 +78,7 @@ export class SettingsHandler {
           this.yamlSettings.yamlFormatterSettings.enable = settings.yaml.format.enable;
         }
       }
+      this.yamlSettings.disableAdditionalProperties = settings.yaml.disableAdditionalProperties;
     }
 
     this.yamlSettings.schemaConfigurationSettings = [];
@@ -86,7 +94,7 @@ export class SettingsHandler {
 
       const schemaObj = {
         fileMatch: Array.isArray(globPattern) ? globPattern : [globPattern],
-        uri: checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri),
+        uri: checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri, this.telemetry),
       };
       this.yamlSettings.schemaConfigurationSettings.push(schemaObj);
     }
@@ -120,10 +128,16 @@ export class SettingsHandler {
    */
   public async setSchemaStoreSettingsIfNotSet(): Promise<void> {
     const schemaStoreIsSet = this.yamlSettings.schemaStoreSettings.length !== 0;
+    let schemaStoreUrl = '';
+    if (this.yamlSettings.schemaStoreUrl.length !== 0) {
+      schemaStoreUrl = this.yamlSettings.schemaStoreUrl;
+    } else {
+      schemaStoreUrl = JSON_SCHEMASTORE_URL;
+    }
 
     if (this.yamlSettings.schemaStoreEnabled && !schemaStoreIsSet) {
       try {
-        const schemaStore = await this.getSchemaStoreMatchingSchemas();
+        const schemaStore = await this.getSchemaStoreMatchingSchemas(schemaStoreUrl);
         this.yamlSettings.schemaStoreSettings = schemaStore.schemas;
         this.updateConfiguration();
       } catch (err) {
@@ -139,8 +153,8 @@ export class SettingsHandler {
    * When the schema store is enabled, download and store YAML schema associations
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getSchemaStoreMatchingSchemas(): Promise<{ schemas: any[] }> {
-    return xhr({ url: JSON_SCHEMASTORE_URL }).then((response) => {
+  private getSchemaStoreMatchingSchemas(schemaStoreUrl: string): Promise<{ schemas: any[] }> {
+    return xhr({ url: schemaStoreUrl }).then((response) => {
       const languageSettings = {
         schemas: [],
       };
@@ -185,6 +199,7 @@ export class SettingsHandler {
       format: this.yamlSettings.yamlFormatterSettings.enable,
       indentation: this.yamlSettings.indentation,
       yamlVersion: this.yamlSettings.yamlVersion,
+      disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
     };
 
     if (this.yamlSettings.schemaAssociations) {
@@ -256,7 +271,7 @@ export class SettingsHandler {
     languageSettings: LanguageSettings,
     priorityLevel: number
   ): LanguageSettings {
-    uri = checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri);
+    uri = checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri, this.telemetry);
 
     if (schema === null) {
       languageSettings.schemas.push({ uri, fileMatch: fileMatch, priority: priorityLevel });

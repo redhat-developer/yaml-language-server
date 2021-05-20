@@ -21,6 +21,10 @@ export namespace VSCodeContentRequestRegistration {
   export const type: NotificationType<{}> = new NotificationType('yaml/registerContentRequest');
 }
 
+export namespace ResultLimitReachedNotification {
+  export const type: NotificationType<string> = new NotificationType('yaml/resultLimitReached');
+}
+
 export namespace VSCodeContentRequest {
   export const type: RequestType<{}, {}, {}> = new RequestType('vscode/content');
 }

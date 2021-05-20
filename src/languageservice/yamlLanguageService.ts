@@ -28,7 +28,7 @@ import { YAMLCompletion } from './services/yamlCompletion';
 import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
-import { JSONDocument, DefinitionLink, TextDocument } from 'vscode-json-languageservice';
+import { JSONDocument, DefinitionLink, TextDocument, DocumentSymbolsContext } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
 import {
   FoldingRange,
@@ -47,6 +47,7 @@ import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
 import { YamlCodeLens } from './services/yamlCodeLens';
 import { registerCommands } from './services/yamlCommands';
 import { YamlVersion } from './parser/yamlParser07';
+import { Telemetry } from '../languageserver/telemetry';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -79,6 +80,12 @@ export interface LanguageSettings {
    * Default yaml lang version
    */
   yamlVersion?: YamlVersion;
+
+  /**
+   * Globally set additionalProperties to false if additionalProperties is not set and if schema.type is object.
+   * So if its true, no extra properties are allowed inside yaml.
+   */
+  disableAdditionalProperties?: boolean;
 }
 
 export interface WorkspaceContextService {
@@ -122,8 +129,8 @@ export interface LanguageService {
   doComplete(document: TextDocument, position: Position, isKubernetes: boolean): Promise<CompletionList>;
   doValidation(document: TextDocument, isKubernetes: boolean): Promise<Diagnostic[]>;
   doHover(document: TextDocument, position: Position): Promise<Hover | null>;
-  findDocumentSymbols(document: TextDocument): SymbolInformation[];
-  findDocumentSymbols2(document: TextDocument): DocumentSymbol[];
+  findDocumentSymbols(document: TextDocument, context: DocumentSymbolsContext): SymbolInformation[];
+  findDocumentSymbols2(document: TextDocument, context: DocumentSymbolsContext): DocumentSymbol[];
   findDefinition(document: TextDocument, position: Position, doc: JSONDocument): Promise<DefinitionLink[]>;
   findLinks(document: TextDocument): Promise<DocumentLink[]>;
   resetSchema(uri: string): boolean;
@@ -144,10 +151,11 @@ export function getLanguageService(
   schemaRequestService: SchemaRequestService,
   workspaceContext: WorkspaceContextService,
   connection: Connection,
+  telemetry: Telemetry,
   clientCapabilities?: ClientCapabilities
 ): LanguageService {
   const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
-  const completer = new YAMLCompletion(schemaService, clientCapabilities);
+  const completer = new YAMLCompletion(schemaService, clientCapabilities, telemetry);
   const hover = new YAMLHover(schemaService);
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
   const yamlValidation = new YAMLValidation(schemaService);

@@ -12,10 +12,10 @@
       },
       "isBackground": true,
       "problemMatcher": "$tsc-watch",
-     "group": {
-       "kind": "build",
-       "isDefault": true
-     }
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     },
     {
       "type": "npm",
