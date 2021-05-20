@@ -36,7 +36,7 @@ export class SingleYAMLDocument extends JSONDocument {
       this._lineComments.push(`#${this._internalDocument.commentBefore}`);
     }
     visit(this.internalDocument, (_key, node: Node) => {
-      if (node.commentBefore) {
+      if (node?.commentBefore) {
         this._lineComments.push(`#${node.commentBefore}`);
       }
     });

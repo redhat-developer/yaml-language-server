@@ -25,7 +25,15 @@ import {
   BooleanASTNodeImpl,
 } from './jsonParser07';
 
+const maxRefCount = 1000;
+let refDepth = 0;
+
 export function convertAST(parent: ASTNode, node: Node, doc: Document, lineCounter: LineCounter): ASTNode {
+  if (!parent) {
+    // first invocation
+    refDepth = 0;
+  }
+
   if (!node) {
     return;
   }
@@ -42,7 +50,11 @@ export function convertAST(parent: ASTNode, node: Node, doc: Document, lineCount
     return convertScalar(node, parent);
   }
   if (isAlias(node)) {
-    return convertAlias(node, parent);
+    if (refDepth > maxRefCount) {
+      // document contains excessive aliasing
+      return;
+    }
+    return convertAlias(node, parent, doc, lineCounter);
   }
 }
 
@@ -72,7 +84,13 @@ function convertPair(node: Pair, parent: ASTNode, doc: Document, lineCounter: Li
     parent as ObjectASTNodeImpl,
     ...toFixedOffsetLength([rangeStart, rangeEnd, nodeEnd], lineCounter)
   );
-  result.keyNode = <StringASTNodeImpl>convertAST(result, keyNode, doc, lineCounter);
+  if (isAlias(keyNode)) {
+    const keyAlias = new StringASTNodeImpl(parent, ...toOffsetLength(keyNode.range));
+    keyAlias.value = keyNode.source;
+    result.keyNode = keyAlias;
+  } else {
+    result.keyNode = <StringASTNodeImpl>convertAST(result, keyNode, doc, lineCounter);
+  }
   result.valueNode = convertAST(result, valueNode, doc, lineCounter);
   return result;
 }
@@ -109,12 +127,9 @@ function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
   }
 }
 
-function convertAlias(node: Alias, parent: ASTNode): ASTNode {
-  //node.resolve() will break Document Symbols as selection range will be not inside Symbol range
-  // to be compatible with JSON AST
-  const result = new StringASTNodeImpl(parent, ...toOffsetLength(node.range));
-  result.value = node.source;
-  return result;
+function convertAlias(node: Alias, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
+  refDepth++;
+  return convertAST(parent, node.resolve(doc), doc, lineCounter);
 }
 
 function toOffsetLength(range: [number, number, number]): [number, number] {

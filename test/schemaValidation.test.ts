@@ -11,7 +11,6 @@ import {
   ArrayTypeError,
   ObjectTypeError,
   IncludeWithoutValueError,
-  ColonMissingError,
   BlockMappingEntryError,
   DuplicateKeyError,
   propertyIsNotAllowed,
@@ -620,7 +619,7 @@ describe('Validation Tests', () => {
         .then(done, done);
     });
 
-    it('Nested object anchors should expand properly', (done) => {
+    it('Nested object anchors should expand properly', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         additionalProperties: {
@@ -647,12 +646,9 @@ describe('Validation Tests', () => {
         l4:
           <<: *l3
       `;
-      const validator = parseSetup(content);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 0);
-        })
-        .then(done, done);
+      const validator = await parseSetup(content);
+
+      assert.strictEqual(validator.length, 0);
     });
 
     it('Anchor reference with a validation error in a sub-object emits the error in the right location', (done) => {
@@ -707,7 +703,7 @@ describe('Validation Tests', () => {
   });
 
   describe('Custom tag tests', () => {
-    it('Custom Tags without type', (done) => {
+    it('Custom Tags without type', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -717,12 +713,21 @@ describe('Validation Tests', () => {
         },
       });
       const content = 'analytics: !Test false';
-      const validator = parseSetup(content);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 0);
-        })
-        .then(done, done);
+      const result = await parseSetup(content);
+      assert.equal(result.length, 1);
+      assert.deepStrictEqual(
+        result[0],
+        createDiagnosticWithData(
+          BooleanTypeError,
+          0,
+          17,
+          0,
+          22,
+          DiagnosticSeverity.Error,
+          `yaml-schema: file:///${SCHEMA_ID}`,
+          `file:///${SCHEMA_ID}`
+        )
+      );
     });
 
     it('Custom Tags with type', (done) => {
@@ -813,9 +818,8 @@ describe('Validation Tests', () => {
       const validator = parseSetup(content);
       validator
         .then(function (result) {
-          assert.equal(result.length, 2);
-          assert.deepEqual(result[0], createExpectedError(BlockMappingEntryError, 1, 2, 1, 2));
-          assert.deepEqual(result[1], createExpectedError(ColonMissingError, 1, 2, 1, 2));
+          assert.equal(result.length, 1);
+          assert.deepEqual(result[0], createExpectedError(BlockMappingEntryError, 1, 0, 1, 2));
         })
         .then(done, done);
     });
