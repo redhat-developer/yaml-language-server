@@ -1071,7 +1071,7 @@ describe('Validation Tests', () => {
       languageService.configure(languageSettingsSetup.withKubernetes().languageSettings);
       yamlSettings.specificValidatorPaths = ['*.yml', '*.yaml'];
       const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/test.yml');
-      expect(result[2]).deep.equal(
+      expect(result[0]).deep.equal(
         createDiagnosticWithData(
           ArrayTypeError,
           4,
