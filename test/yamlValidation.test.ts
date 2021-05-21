@@ -35,7 +35,7 @@ describe('YAML Validation Tests', () => {
       const result = await parseSetup(yaml);
       expect(result).is.not.empty;
       expect(result.length).to.be.equal(1);
-      expect(result[0]).deep.equal(createExpectedError('Tabs are not allowed as indentation', 1, 0, 1, 11));
+      expect(result[0]).deep.equal(createExpectedError('Tabs are not allowed as indentation', 1, 0, 1, 6));
     });
 
     it('Should report one error for TAB character present in a row', async () => {
@@ -43,7 +43,7 @@ describe('YAML Validation Tests', () => {
       const result = await parseSetup(yaml);
       expect(result).is.not.empty;
       expect(result.length).to.be.equal(1);
-      expect(result[0]).deep.equal(createExpectedError('Tabs are not allowed as indentation', 1, 0, 1, 12));
+      expect(result[0]).deep.equal(createExpectedError('Tabs are not allowed as indentation', 1, 0, 1, 7));
     });
 
     it('Should report one error for TAB`s characters present in the middle of indentation', async () => {
@@ -51,7 +51,7 @@ describe('YAML Validation Tests', () => {
       const result = await parseSetup(yaml);
       expect(result).is.not.empty;
       expect(result.length).to.be.equal(1);
-      expect(result[0]).deep.equal(createExpectedError('Tabs are not allowed as indentation', 1, 1, 1, 15));
+      expect(result[0]).deep.equal(createExpectedError('Tabs are not allowed as indentation', 1, 1, 1, 10));
     });
   });
 });

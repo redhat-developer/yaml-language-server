@@ -27,7 +27,7 @@ export const yamlDiagToLSDiag = (yamlDiag: YAMLDocDiagnostic, textDocument: Text
   const range = {
     start,
     end: yamlDiag.location.toLineEnd
-      ? Position.create(start.line, new TextBuffer(textDocument).getLineLength(yamlDiag.location.start))
+      ? Position.create(start.line, new TextBuffer(textDocument).getLineLength(start.line))
       : textDocument.positionAt(yamlDiag.location.end),
   };
 

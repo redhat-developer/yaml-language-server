@@ -113,8 +113,7 @@ export abstract class ASTNodeImpl {
     const foundNode = findNode(this);
     let currMinDist = Number.MAX_VALUE;
     let currMinNode = null;
-    for (const possibleNode in collector) {
-      const currNode = collector[possibleNode];
+    for (const currNode of collector) {
       const minDist = currNode.length + currNode.offset - offset + (offset - currNode.offset);
       if (minDist < currMinDist) {
         currMinNode = currNode;
