@@ -72,6 +72,14 @@ export class SettingsHandler {
           this.yamlSettings.yamlFormatterSettings.bracketSpacing = settings.yaml.format.bracketSpacing;
         }
 
+        if (settings.yaml.format.doNotIndent !== undefined) {
+          this.yamlSettings.yamlFormatterSettings.doNotIndent = settings.yaml.format.doNotIndent;
+        }
+
+        if (settings.yaml.format.commentSpacesFromContent !== undefined) {
+          this.yamlSettings.yamlFormatterSettings.commentSpacesFromContent = settings.yaml.format.commentSpacesFromContent;
+        }
+
         if (settings.yaml.format.enable !== undefined) {
           this.yamlSettings.yamlFormatterSettings.enable = settings.yaml.format.enable;
         }

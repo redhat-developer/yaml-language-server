@@ -51,6 +51,8 @@ export class SettingsState {
     proseWrap: 'preserve',
     printWidth: 80,
     enable: true,
+    doNotIndent: false,
+    commentSpacesFromContent: 1,
   } as CustomFormatterOptions;
   yamlShouldHover = true;
   yamlShouldCompletion = true;
