@@ -22,7 +22,10 @@ export class YAMLServerInit {
   languageService: LanguageService;
   languageHandler: LanguageHandlers;
   validationHandler: ValidationHandler;
+<<<<<<< HEAD
   settingsHandler: SettingsHandler;
+=======
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
 
   private telemetry: Telemetry;
   constructor(
@@ -49,9 +52,12 @@ export class YAMLServerInit {
           this.yamlSettings.workspaceFolders = workspaceFoldersChanged(this.yamlSettings.workspaceFolders, changedFolders);
         });
       }
+<<<<<<< HEAD
       // need to call this after connection initialized
       this.settingsHandler.registerHandlers();
       this.settingsHandler.pullConfiguration();
+=======
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
     });
   }
 
@@ -85,9 +91,12 @@ export class YAMLServerInit {
     this.yamlSettings.hasWorkspaceFolderCapability =
       this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.workspaceFolders;
 
+<<<<<<< HEAD
     this.yamlSettings.hasConfigurationCapability = !!(
       this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.configuration
     );
+=======
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
     this.registerHandlers();
 
     return {
@@ -124,17 +133,28 @@ export class YAMLServerInit {
   private registerHandlers(): void {
     // Register all features that the language server has
     this.validationHandler = new ValidationHandler(this.connection, this.languageService, this.yamlSettings);
+<<<<<<< HEAD
     this.settingsHandler = new SettingsHandler(
+=======
+    const settingsHandler = new SettingsHandler(
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
       this.connection,
       this.languageService,
       this.yamlSettings,
       this.validationHandler,
       this.telemetry
     );
+<<<<<<< HEAD
     // this.settingsHandler.registerHandlers();
     this.languageHandler = new LanguageHandlers(this.connection, this.languageService, this.yamlSettings, this.validationHandler);
     this.languageHandler.registerHandlers();
     new NotificationHandlers(this.connection, this.languageService, this.yamlSettings, this.settingsHandler).registerHandlers();
+=======
+    settingsHandler.registerHandlers();
+    this.languageHandler = new LanguageHandlers(this.connection, this.languageService, this.yamlSettings, this.validationHandler);
+    this.languageHandler.registerHandlers();
+    new NotificationHandlers(this.connection, this.languageService, this.yamlSettings, settingsHandler).registerHandlers();
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
     new RequestHandlers(this.connection, this.languageService).registerHandlers();
     new WorkspaceHandlers(this.connection, commandExecutor).registerHandlers();
   }

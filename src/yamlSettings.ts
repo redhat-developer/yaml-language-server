@@ -26,10 +26,15 @@ export interface Settings {
     proxy: string;
     proxyStrictSSL: boolean;
   };
+<<<<<<< HEAD
   yamlEditor: {
     'editor.tabSize': number;
     'editor.insertSpaces': boolean;
     'editor.formatOnType': boolean;
+=======
+  editor: {
+    tabSize: number;
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
   };
 }
 
@@ -53,6 +58,11 @@ export class SettingsState {
     proseWrap: 'preserve',
     printWidth: 80,
     enable: true,
+<<<<<<< HEAD
+=======
+    doNotIndent: false,
+    commentSpacesFromContent: 1,
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
   } as CustomFormatterOptions;
   yamlShouldHover = true;
   yamlShouldCompletion = true;
@@ -79,7 +89,10 @@ export class SettingsState {
   clientDynamicRegisterSupport = false;
   hierarchicalDocumentSymbolSupport = false;
   hasWorkspaceFolderCapability = false;
+<<<<<<< HEAD
   hasConfigurationCapability = false;
+=======
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
   useVSCodeContentRequest = false;
 }
 

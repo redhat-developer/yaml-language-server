@@ -13,8 +13,12 @@ export function registerCommands(commandExecutor: CommandExecutor, connection: C
     if (!uri) {
       return;
     }
+<<<<<<< HEAD
     // if uri points to local file of its a windows path
     if (!uri.startsWith('file') && !/^[a-z]:[\\/]/i.test(uri)) {
+=======
+    if (!uri.startsWith('file')) {
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
       const origUri = URI.parse(uri);
       const customUri = URI.from({
         scheme: 'json-schema',
@@ -25,12 +29,15 @@ export function registerCommands(commandExecutor: CommandExecutor, connection: C
       uri = customUri.toString();
     }
 
+<<<<<<< HEAD
     // test if uri is windows path, ie starts with 'c:\' and convert to URI
     if (/^[a-z]:[\\/]/i.test(uri)) {
       const winUri = URI.file(uri);
       uri = winUri.toString();
     }
 
+=======
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
     const result = await connection.window.showDocument({ uri: uri, external: false, takeFocus: true });
     if (!result) {
       connection.window.showErrorMessage(`Cannot open ${uri}`);

@@ -40,10 +40,14 @@ describe('Validation Tests', () => {
       .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['.drone.yml'] })
       .withSchemaFileMatch({ uri: 'https://json.schemastore.org/drone', fileMatch: ['.drone.yml'] })
       .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['test.yml'] })
+<<<<<<< HEAD
       .withSchemaFileMatch({
         uri: 'https://raw.githubusercontent.com/composer/composer/master/res/composer-schema.json',
         fileMatch: ['test.yml'],
       });
+=======
+      .withSchemaFileMatch({ uri: 'https://json.schemastore.org/composer', fileMatch: ['test.yml'] });
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
     const { languageService: langService, validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
       languageSettingsSetup.languageSettings
     );
@@ -1083,7 +1087,11 @@ describe('Validation Tests', () => {
           18,
           DiagnosticSeverity.Error,
           'yaml-schema: Package',
+<<<<<<< HEAD
           'https://raw.githubusercontent.com/composer/composer/master/res/composer-schema.json'
+=======
+          'https://json.schemastore.org/composer'
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
         )
       );
     });

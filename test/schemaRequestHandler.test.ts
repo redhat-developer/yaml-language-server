@@ -7,12 +7,17 @@ import { schemaRequestHandler } from '../src/languageservice/services/schemaRequ
 import * as sinon from 'sinon';
 import * as fs from 'fs';
 import { Connection } from 'vscode-languageserver';
+<<<<<<< HEAD
 import { URI } from 'vscode-uri';
 import * as chai from 'chai';
 import * as sinonChai from 'sinon-chai';
 
 const expect = chai.expect;
 chai.use(sinonChai);
+=======
+import * as assert from 'assert';
+import { URI } from 'vscode-uri';
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
 
 describe('Schema Request Handler Tests', () => {
   describe('schemaRequestHandler', () => {
@@ -29,10 +34,17 @@ describe('Schema Request Handler Tests', () => {
     it('Should care Win URI', async () => {
       const connection = <Connection>{};
       const resultPromise = schemaRequestHandler(connection, 'c:\\some\\window\\path\\scheme.json', [], URI.parse(''), false);
+<<<<<<< HEAD
       expect(readFileStub).calledOnceWith('c:\\some\\window\\path\\scheme.json');
       readFileStub.callArgWith(2, undefined, '{some: "json"}');
       const result = await resultPromise;
       expect(result).to.be.equal('{some: "json"}');
+=======
+      assert.ok(readFileStub.calledOnceWith('c:\\some\\window\\path\\scheme.json'));
+      readFileStub.callArgWith(2, undefined, '{some: "json"}');
+      const result = await resultPromise;
+      assert.equal(result, '{some: "json"}');
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
     });
 
     it('UNIX URI should works', async () => {
@@ -40,6 +52,7 @@ describe('Schema Request Handler Tests', () => {
       const resultPromise = schemaRequestHandler(connection, '/some/unix/path/', [], URI.parse(''), false);
       readFileStub.callArgWith(2, undefined, '{some: "json"}');
       const result = await resultPromise;
+<<<<<<< HEAD
       expect(result).to.be.equal('{some: "json"}');
     });
 
@@ -50,6 +63,9 @@ describe('Schema Request Handler Tests', () => {
       readFileStub.callArgWith(2, undefined, '{some: "json"}');
       const result = await resultPromise;
       expect(result).to.be.equal('{some: "json"}');
+=======
+      assert.equal(result, '{some: "json"}');
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
     });
   });
 });

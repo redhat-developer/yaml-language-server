@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ![CI](https://github.com/redhat-developer/yaml-language-server/workflows/CI/badge.svg) [![Build Status](https://travis-ci.org/redhat-developer/yaml-language-server.svg?branch=main)](https://travis-ci.org/redhat-developer/yaml-language-server) [![version](https://img.shields.io/npm/v/yaml-language-server.svg)](https://www.npmjs.com/package/yaml-language-server) [![Coverage Status](https://coveralls.io/repos/github/redhat-developer/yaml-language-server/badge.svg?branch=main)](https://coveralls.io/github/redhat-developer/yaml-language-server?branch=main)
+=======
+![CI](https://github.com/redhat-developer/yaml-language-server/workflows/CI/badge.svg) [![Build Status](https://travis-ci.org/redhat-developer/yaml-language-server.svg?branch=master)](https://travis-ci.org/redhat-developer/yaml-language-server) [![version](https://img.shields.io/npm/v/yaml-language-server.svg)](https://www.npmjs.com/package/yaml-language-server) [![Coverage Status](https://coveralls.io/repos/github/redhat-developer/yaml-language-server/badge.svg?branch=master)](https://coveralls.io/github/redhat-developer/yaml-language-server?branch=master)
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
 
 # YAML Language Server
 
@@ -286,5 +290,9 @@ Building the YAML Language Server produces [CommonJS](http://www.commonjs.org/) 
 
 ### CI
 
+<<<<<<< HEAD
 We use a GitHub Action to publish each change in the `main` branch to [npm registry](https://www.npmjs.com/package/yaml-language-server) with the `next` tag.
+=======
+We use a GitHub Action to publish each change in the `master` branch to [npm registry](https://www.npmjs.com/package/yaml-language-server) with the `next` tag.
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
 You may use the `next` version to adopt the latest changes into your project.

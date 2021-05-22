@@ -729,7 +729,11 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
+<<<<<<< HEAD
       it('Autocompletion should escape @', async () => {
+=======
+      it('Autocompletion should escape key if needed', async () => {
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -748,6 +752,7 @@ describe('Auto Completion Tests', () => {
           })
         );
       });
+<<<<<<< HEAD
 
       it('Autocompletion should escape colon', async () => {
         languageService.addSchema(SCHEMA_ID, {
@@ -773,6 +778,8 @@ describe('Auto Completion Tests', () => {
           })
         );
       });
+=======
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
     });
 
     describe('Array Specific Tests', function () {

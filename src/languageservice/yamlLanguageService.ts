@@ -116,6 +116,11 @@ export interface CustomFormatterOptions {
   proseWrap?: string;
   printWidth?: number;
   enable?: boolean;
+<<<<<<< HEAD
+=======
+  commentSpacesFromContent?: number;
+  doNotIndent?: boolean;
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
 }
 
 export interface LanguageService {

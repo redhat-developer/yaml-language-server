@@ -42,6 +42,11 @@ export class YAMLFormatter {
         // 'preserve' is the default for Options.proseWrap. See also server.ts
         proseWrap: 'always' === options.proseWrap ? 'always' : 'never' === options.proseWrap ? 'never' : 'preserve',
         printWidth: options.printWidth,
+<<<<<<< HEAD
+=======
+        commentSpacesFromContent: options.commentSpacesFromContent,
+        doNotIndent: options.doNotIndent,
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
       };
 
       const formatted = prettier.format(text, prettierOptions);

@@ -1080,7 +1080,11 @@ function convertToStringValue(value: string): string {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 
+<<<<<<< HEAD
   if ((value.length > 0 && value.charAt(0) === '@') || value.includes(':')) {
+=======
+  if (value.length > 0 && value.charAt(0) === '@') {
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
     value = `"${value}"`;
   }
 

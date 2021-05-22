@@ -31,7 +31,11 @@ export const schemaRequestHandler = (
   let scheme = URI.parse(uri).scheme.toLowerCase();
 
   // test if uri is windows path, ie starts with 'c:\'
+<<<<<<< HEAD
   if (/^[a-z]:[\\/]/i.test(uri)) {
+=======
+  if (/^[a-z]:\\/i.test(uri)) {
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
     const winUri = URI.file(uri);
     scheme = winUri.scheme.toLowerCase();
     uri = winUri.toString();

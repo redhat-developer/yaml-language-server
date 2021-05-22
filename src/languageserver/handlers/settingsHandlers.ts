@@ -3,7 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { xhr, configure as configureHttpRequests } from 'request-light';
+<<<<<<< HEAD
 import { DocumentFormattingRequest, Connection, DidChangeConfigurationNotification } from 'vscode-languageserver';
+=======
+import { DidChangeConfigurationParams, DocumentFormattingRequest, Connection } from 'vscode-languageserver';
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
@@ -21,6 +25,7 @@ export class SettingsHandler {
   ) {}
 
   public registerHandlers(): void {
+<<<<<<< HEAD
     if (this.yamlSettings.hasConfigurationCapability) {
       // Register for all configuration changes.
       this.connection.client.register(DidChangeConfigurationNotification.type, undefined);
@@ -50,6 +55,18 @@ export class SettingsHandler {
   }
 
   setConfiguration(settings: Settings): void {
+=======
+    this.connection.onDidChangeConfiguration((change) => this.configurationChangeHandler(change));
+  }
+
+  /**
+   * Run when the editor configuration is changed
+   * The client syncs the 'yaml', 'http.proxy', 'http.proxyStrictSSL' settings sections
+   * Update relevant settings with fallback to defaults if needed
+   */
+  private configurationChangeHandler(change: DidChangeConfigurationParams): void {
+    const settings = change.settings as Settings;
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
     configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
 
     this.yamlSettings.specificValidatorPaths = [];
@@ -91,6 +108,17 @@ export class SettingsHandler {
           this.yamlSettings.yamlFormatterSettings.bracketSpacing = settings.yaml.format.bracketSpacing;
         }
 
+<<<<<<< HEAD
+=======
+        if (settings.yaml.format.doNotIndent !== undefined) {
+          this.yamlSettings.yamlFormatterSettings.doNotIndent = settings.yaml.format.doNotIndent;
+        }
+
+        if (settings.yaml.format.commentSpacesFromContent !== undefined) {
+          this.yamlSettings.yamlFormatterSettings.commentSpacesFromContent = settings.yaml.format.commentSpacesFromContent;
+        }
+
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
         if (settings.yaml.format.enable !== undefined) {
           this.yamlSettings.yamlFormatterSettings.enable = settings.yaml.format.enable;
         }
@@ -100,8 +128,15 @@ export class SettingsHandler {
 
     this.yamlSettings.schemaConfigurationSettings = [];
 
+<<<<<<< HEAD
     if (settings.yamlEditor && settings.yamlEditor['editor.tabSize']) {
       this.yamlSettings.indentation = ' '.repeat(settings.yamlEditor['editor.tabSize']);
+=======
+    if (settings['[yaml]'] && settings['[yaml]']['editor.tabSize']) {
+      this.yamlSettings.indentation = ' '.repeat(settings['[yaml]']['editor.tabSize']);
+    } else if (settings.editor?.tabSize) {
+      this.yamlSettings.indentation = ' '.repeat(settings.editor.tabSize);
+>>>>>>> 101b734 (feat(prettier): Support doNotIndent and commentSpacesFromContent)
     }
 
     for (const uri in this.yamlSettings.yamlConfigurationSettings) {
