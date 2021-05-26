@@ -729,7 +729,7 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
-      it('Autocompletion should escape key if needed', async () => {
+      it('Autocompletion should escape @', async () => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -744,6 +744,31 @@ describe('Auto Completion Tests', () => {
         expect(completion.items.length).to.be.equal(1);
         expect(completion.items[0]).to.deep.equal(
           createExpectedCompletion('@type', '"@type": ${1:foo}', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
+      it('Autocompletion should escape colon', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            'test: colon': {
+              type: 'object',
+              properties: {
+                none: {
+                  type: 'boolean',
+                  enum: [true],
+                },
+              },
+            },
+          },
+        });
+        const content = '';
+        const completion = await parseSetup(content, 0);
+        expect(completion.items.length).to.be.equal(1);
+        expect(completion.items[0]).to.deep.equal(
+          createExpectedCompletion('test: colon', '"test: colon":\n  $1', 0, 0, 0, 0, 10, 2, {
             documentation: '',
           })
         );
