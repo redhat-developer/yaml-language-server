@@ -1080,7 +1080,7 @@ function convertToStringValue(value: string): string {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 
-  if (value.length > 0 && value.charAt(0) === '@') {
+  if ((value.length > 0 && value.charAt(0) === '@') || value.includes(':')) {
     value = `"${value}"`;
   }
 
