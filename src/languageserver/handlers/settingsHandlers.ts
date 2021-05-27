@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { xhr, configure as configureHttpRequests } from 'request-light';
-import { DidChangeConfigurationParams, DocumentFormattingRequest, Connection } from 'vscode-languageserver';
+import { DocumentFormattingRequest, Connection, DidChangeConfigurationNotification } from 'vscode-languageserver';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
@@ -21,16 +21,35 @@ export class SettingsHandler {
   ) {}
 
   public registerHandlers(): void {
-    this.connection.onDidChangeConfiguration((change) => this.configurationChangeHandler(change));
+    if (this.yamlSettings.hasConfigurationCapability) {
+      // Register for all configuration changes.
+      this.connection.client.register(DidChangeConfigurationNotification.type, undefined);
+    }
+    this.connection.onDidChangeConfiguration(() => this.pullConfiguration());
   }
 
   /**
-   * Run when the editor configuration is changed
-   * The client syncs the 'yaml', 'http.proxy', 'http.proxyStrictSSL' settings sections
-   * Update relevant settings with fallback to defaults if needed
+   *  The server pull the 'yaml', 'http.proxy', 'http.proxyStrictSSL', '[yaml]' settings sections
    */
-  private configurationChangeHandler(change: DidChangeConfigurationParams): void {
-    const settings = change.settings as Settings;
+  async pullConfiguration(): Promise<void> {
+    const config = await this.connection.workspace.getConfiguration([
+      { section: 'yaml' },
+      { section: 'http.proxy' },
+      { section: 'http.proxyStrictSSL' },
+      { section: '[yaml]' },
+    ]);
+    const settings: Settings = {
+      yaml: config[0],
+      http: {
+        proxy: config[1],
+        proxyStrictSSL: config[2],
+      },
+      yamlEditor: config[3],
+    };
+    this.setConfiguration(settings);
+  }
+
+  setConfiguration(settings: Settings): void {
     configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
 
     this.yamlSettings.specificValidatorPaths = [];
@@ -81,10 +100,8 @@ export class SettingsHandler {
 
     this.yamlSettings.schemaConfigurationSettings = [];
 
-    if (settings['[yaml]'] && settings['[yaml]']['editor.tabSize']) {
-      this.yamlSettings.indentation = ' '.repeat(settings['[yaml]']['editor.tabSize']);
-    } else if (settings.editor?.tabSize) {
-      this.yamlSettings.indentation = ' '.repeat(settings.editor.tabSize);
+    if (settings.yamlEditor && settings.yamlEditor['editor.tabSize']) {
+      this.yamlSettings.indentation = ' '.repeat(settings.yamlEditor['editor.tabSize']);
     }
 
     for (const uri in this.yamlSettings.yamlConfigurationSettings) {

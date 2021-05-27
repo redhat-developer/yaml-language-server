@@ -22,6 +22,7 @@ export class YAMLServerInit {
   languageService: LanguageService;
   languageHandler: LanguageHandlers;
   validationHandler: ValidationHandler;
+  settingsHandler: SettingsHandler;
 
   private telemetry: Telemetry;
   constructor(
@@ -48,6 +49,9 @@ export class YAMLServerInit {
           this.yamlSettings.workspaceFolders = workspaceFoldersChanged(this.yamlSettings.workspaceFolders, changedFolders);
         });
       }
+      // need to call this after connection initialized
+      this.settingsHandler.registerHandlers();
+      this.settingsHandler.pullConfiguration();
     });
   }
 
@@ -81,6 +85,9 @@ export class YAMLServerInit {
     this.yamlSettings.hasWorkspaceFolderCapability =
       this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.workspaceFolders;
 
+    this.yamlSettings.hasConfigurationCapability = !!(
+      this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.configuration
+    );
     this.registerHandlers();
 
     return {
@@ -117,17 +124,17 @@ export class YAMLServerInit {
   private registerHandlers(): void {
     // Register all features that the language server has
     this.validationHandler = new ValidationHandler(this.connection, this.languageService, this.yamlSettings);
-    const settingsHandler = new SettingsHandler(
+    this.settingsHandler = new SettingsHandler(
       this.connection,
       this.languageService,
       this.yamlSettings,
       this.validationHandler,
       this.telemetry
     );
-    settingsHandler.registerHandlers();
+    // this.settingsHandler.registerHandlers();
     this.languageHandler = new LanguageHandlers(this.connection, this.languageService, this.yamlSettings, this.validationHandler);
     this.languageHandler.registerHandlers();
-    new NotificationHandlers(this.connection, this.languageService, this.yamlSettings, settingsHandler).registerHandlers();
+    new NotificationHandlers(this.connection, this.languageService, this.yamlSettings, this.settingsHandler).registerHandlers();
     new RequestHandlers(this.connection, this.languageService).registerHandlers();
     new WorkspaceHandlers(this.connection, commandExecutor).registerHandlers();
   }

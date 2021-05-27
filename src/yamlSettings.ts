@@ -26,8 +26,10 @@ export interface Settings {
     proxy: string;
     proxyStrictSSL: boolean;
   };
-  editor: {
-    tabSize: number;
+  yamlEditor: {
+    'editor.tabSize': number;
+    'editor.insertSpaces': boolean;
+    'editor.formatOnType': boolean;
   };
 }
 
@@ -77,6 +79,7 @@ export class SettingsState {
   clientDynamicRegisterSupport = false;
   hierarchicalDocumentSymbolSupport = false;
   hasWorkspaceFolderCapability = false;
+  hasConfigurationCapability = false;
   useVSCodeContentRequest = false;
 }
 
