@@ -7,7 +7,6 @@ import { schemaRequestHandler } from '../src/languageservice/services/schemaRequ
 import * as sinon from 'sinon';
 import * as fs from 'fs';
 import { Connection } from 'vscode-languageserver';
-import * as assert from 'assert';
 import { URI } from 'vscode-uri';
 import * as chai from 'chai';
 import * as sinonChai from 'sinon-chai';
@@ -47,7 +46,7 @@ describe('Schema Request Handler Tests', () => {
     it('should handle not valid Windows path', async () => {
       const connection = <Connection>{};
       const resultPromise = schemaRequestHandler(connection, 'A:/some/window/path/scheme.json', [], URI.parse(''), false);
-      expect(readFileStub).calledOnceWith('a:/some/window/path/scheme.json');
+      expect(readFileStub).calledOnceWith(URI.file('a:/some/window/path/scheme.json').fsPath);
       readFileStub.callArgWith(2, undefined, '{some: "json"}');
       const result = await resultPromise;
       expect(result).to.be.equal('{some: "json"}');
