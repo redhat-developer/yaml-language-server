@@ -9,6 +9,11 @@ import * as fs from 'fs';
 import { Connection } from 'vscode-languageserver';
 import * as assert from 'assert';
 import { URI } from 'vscode-uri';
+import * as chai from 'chai';
+import * as sinonChai from 'sinon-chai';
+
+const expect = chai.expect;
+chai.use(sinonChai);
 
 describe('Schema Request Handler Tests', () => {
   describe('schemaRequestHandler', () => {
@@ -25,10 +30,10 @@ describe('Schema Request Handler Tests', () => {
     it('Should care Win URI', async () => {
       const connection = <Connection>{};
       const resultPromise = schemaRequestHandler(connection, 'c:\\some\\window\\path\\scheme.json', [], URI.parse(''), false);
-      assert.ok(readFileStub.calledOnceWith('c:\\some\\window\\path\\scheme.json'));
+      expect(readFileStub).calledOnceWith('c:\\some\\window\\path\\scheme.json');
       readFileStub.callArgWith(2, undefined, '{some: "json"}');
       const result = await resultPromise;
-      assert.equal(result, '{some: "json"}');
+      expect(result).to.be.equal('{some: "json"}');
     });
 
     it('UNIX URI should works', async () => {
@@ -36,7 +41,16 @@ describe('Schema Request Handler Tests', () => {
       const resultPromise = schemaRequestHandler(connection, '/some/unix/path/', [], URI.parse(''), false);
       readFileStub.callArgWith(2, undefined, '{some: "json"}');
       const result = await resultPromise;
-      assert.equal(result, '{some: "json"}');
+      expect(result).to.be.equal('{some: "json"}');
+    });
+
+    it('should handle not valid Windows path', async () => {
+      const connection = <Connection>{};
+      const resultPromise = schemaRequestHandler(connection, 'A:/some/window/path/scheme.json', [], URI.parse(''), false);
+      expect(readFileStub).calledOnceWith('a:/some/window/path/scheme.json');
+      readFileStub.callArgWith(2, undefined, '{some: "json"}');
+      const result = await resultPromise;
+      expect(result).to.be.equal('{some: "json"}');
     });
   });
 });

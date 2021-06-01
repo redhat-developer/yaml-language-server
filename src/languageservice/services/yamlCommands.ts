@@ -13,7 +13,8 @@ export function registerCommands(commandExecutor: CommandExecutor, connection: C
     if (!uri) {
       return;
     }
-    if (!uri.startsWith('file')) {
+    // if uri points to local file of its a windows path
+    if (!uri.startsWith('file') && !/^[a-z]:[\\/]/i.test(uri)) {
       const origUri = URI.parse(uri);
       const customUri = URI.from({
         scheme: 'json-schema',
