@@ -36,4 +36,4 @@ export const IncludeWithoutValueError = '!include without value';
 /**
  * Duplicate Key error
  */
-export const DuplicateKeyError = 'duplicate key';
+export const DuplicateKeyError = 'Map keys must be unique';
