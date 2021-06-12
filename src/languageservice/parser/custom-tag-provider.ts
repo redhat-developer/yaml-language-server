@@ -2,8 +2,8 @@ import { Tags, isSeq, isMap, YAMLMap, YAMLSeq } from 'yaml';
 import { filterInvalidCustomTags } from '../utils/arrUtils';
 
 class CommonTagImpl {
-  public tag: string;
-  public readonly type: string;
+  tag: string;
+  readonly type: string;
   default: never;
   constructor(tag: string, type: string) {
     this.tag = tag;
