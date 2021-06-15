@@ -9,6 +9,7 @@ import * as chai from 'chai';
 import { registerCommands } from '../src/languageservice/services/yamlCommands';
 import { commandExecutor } from '../src/languageserver/commandExecutor';
 import { Connection } from 'vscode-languageserver/node';
+import { URI } from 'vscode-uri';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -58,7 +59,7 @@ describe('Yaml Commands', () => {
     const arg = commandExecutorStub.args[0];
     await arg[1]('a:\\some\\path\\to\\schema.json');
     expect(showDocumentStub).to.have.been.calledWith({
-      uri: 'file:///a%3A%5Csome%5Cpath%5Cto%5Cschema.json',
+      uri: URI.file('a:\\some\\path\\to\\schema.json').toString(),
       external: false,
       takeFocus: true,
     });
