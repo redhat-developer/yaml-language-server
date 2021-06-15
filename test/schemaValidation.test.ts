@@ -598,7 +598,28 @@ describe('Validation Tests', () => {
         .then(done, done);
     });
 
-    it('Multiple Anchors being referenced in same level at same time', (done) => {
+    it('Multiple Anchors being referenced in same level at same time for yaml 1.1', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          customize: {
+            type: 'object',
+            properties: {
+              register: {
+                type: 'string',
+              },
+            },
+          },
+        },
+      });
+      const content =
+        '%YAML 1.1\n---\ndefault: &DEFAULT\n  name: Anchor\ncustomname: &CUSTOMNAME\n  custom_name: Anchor\nanchor_test:\n  <<: *DEFAULT\n  <<: *CUSTOMNAME\n';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 0);
+    });
+
+    it('Multiple Anchors being referenced in same level at same time for yaml generate error for 1.2', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -614,12 +635,10 @@ describe('Validation Tests', () => {
       });
       const content =
         'default: &DEFAULT\n  name: Anchor\ncustomname: &CUSTOMNAME\n  custom_name: Anchor\nanchor_test:\n  <<: *DEFAULT\n  <<: *CUSTOMNAME\n';
-      const validator = parseSetup(content);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 0);
-        })
-        .then(done, done);
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 1);
+      assert.deepStrictEqual(result[0], createExpectedError('Map keys must be unique', 6, 2, 6, 18, DiagnosticSeverity.Error));
     });
 
     it('Nested object anchors should expand properly', async () => {
