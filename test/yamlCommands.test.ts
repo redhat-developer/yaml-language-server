@@ -58,7 +58,7 @@ describe('Yaml Commands', () => {
     const arg = commandExecutorStub.args[0];
     await arg[1]('a:\\some\\path\\to\\schema.json');
     expect(showDocumentStub).to.have.been.calledWith({
-      uri: 'a:\\some\\path\\to\\schema.json',
+      uri: 'file:///a%3A%5Csome%5Cpath%5Cto%5Cschema.json',
       external: false,
       takeFocus: true,
     });
