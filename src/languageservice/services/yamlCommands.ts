@@ -25,6 +25,12 @@ export function registerCommands(commandExecutor: CommandExecutor, connection: C
       uri = customUri.toString();
     }
 
+    // test if uri is windows path, ie starts with 'c:\' and convert to URI
+    if (/^[a-z]:[\\/]/i.test(uri)) {
+      const winUri = URI.file(uri);
+      uri = winUri.toString();
+    }
+
     const result = await connection.window.showDocument({ uri: uri, external: false, takeFocus: true });
     if (!result) {
       connection.window.showErrorMessage(`Cannot open ${uri}`);
