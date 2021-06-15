@@ -7,27 +7,30 @@ import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers
 import * as sinon from 'sinon';
 import * as chai from 'chai';
 import * as sinonChai from 'sinon-chai';
-import { Connection } from 'vscode-languageserver';
+import { Connection, RemoteWorkspace } from 'vscode-languageserver';
 import { SettingsState } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 import { LanguageService, LanguageSettings, SchemaConfiguration, SchemaPriority } from '../src';
 import * as request from 'request-light';
 import { setupLanguageService } from './utils/testHelper';
 import { Telemetry } from '../src/languageserver/telemetry';
+import { TestWorkspace } from './utils/testsTypes';
 
 const expect = chai.expect;
 chai.use(sinonChai);
 
 describe('Settings Handlers Tests', () => {
   const sandbox = sinon.createSandbox();
-  let connectionStub: sinon.SinonMockStatic;
+  const connection: Connection = {} as Connection;
+  let workspaceStub: sinon.SinonStubbedInstance<RemoteWorkspace>;
   let languageService: sinon.SinonMockStatic;
   let settingsState: SettingsState;
   let validationHandler: sinon.SinonMock;
   let xhrStub: sinon.SinonStub;
 
   beforeEach(() => {
-    connectionStub = sandbox.mock();
+    workspaceStub = sandbox.createStubInstance(TestWorkspace);
+    connection.workspace = (workspaceStub as unknown) as RemoteWorkspace;
     languageService = sandbox.mock();
     settingsState = new SettingsState();
     validationHandler = sandbox.mock(ValidationHandler);
@@ -38,7 +41,7 @@ describe('Settings Handlers Tests', () => {
     sandbox.restore();
   });
 
-  it('SettingsHandler should modify file match patterns', async () => {
+  it('SettingsHandler should not modify file match patterns', async () => {
     xhrStub.resolves({
       responseText: `{"schemas": [
       {
@@ -51,7 +54,7 @@ describe('Settings Handlers Tests', () => {
       }]}`,
     });
     const settingsHandler = new SettingsHandler(
-      (connectionStub as unknown) as Connection,
+      connection,
       (languageService as unknown) as LanguageService,
       settingsState,
       (validationHandler as unknown) as ValidationHandler,
@@ -64,7 +67,7 @@ describe('Settings Handlers Tests', () => {
 
     expect(settingsState.schemaStoreSettings).deep.include({
       uri: 'https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json',
-      fileMatch: ['/.adonisrc.yaml'],
+      fileMatch: ['.adonisrc.yaml'],
       priority: SchemaPriority.SchemaStore,
     });
   });
@@ -78,7 +81,7 @@ describe('Settings Handlers Tests', () => {
 
       const languageService = languageServerSetup.languageService;
       const settingsHandler = new SettingsHandler(
-        (connectionStub as unknown) as Connection,
+        connection,
         languageService,
         settingsState,
         (validationHandler as unknown) as ValidationHandler,
@@ -141,6 +144,31 @@ describe('Settings Handlers Tests', () => {
         fileMatch: testSchemaFileMatch,
         priority: SchemaPriority.SchemaAssociation,
       });
+    });
+  });
+
+  describe('Settings fetch', () => {
+    it('should fetch preferences', async () => {
+      const settingsHandler = new SettingsHandler(
+        connection,
+        (languageService as unknown) as LanguageService,
+        settingsState,
+        (validationHandler as unknown) as ValidationHandler,
+        {} as Telemetry
+      );
+      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      const setConfigurationStub = sandbox.stub(settingsHandler, 'setConfiguration');
+
+      await settingsHandler.pullConfiguration();
+
+      expect(workspaceStub.getConfiguration).calledOnceWith([
+        { section: 'yaml' },
+        { section: 'http.proxy' },
+        { section: 'http.proxyStrictSSL' },
+        { section: '[yaml]' },
+      ]);
+
+      expect(setConfigurationStub).calledOnce;
     });
   });
 });
