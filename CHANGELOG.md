@@ -1,3 +1,10 @@
+### 0.20.0
+
+- Fix: Autocomplete not working when certain characters are in object property keys [#496](https://github.com/redhat-developer/vscode-yaml/issues/496) [#474](https://github.com/redhat-developer/yaml-language-server/issues/474)
+- `workspace/configuration` request used to fetch preferences [#327](https://github.com/redhat-developer/yaml-language-server/issues/327)
+- Now `main` branch used as default [#472](https://github.com/redhat-developer/yaml-language-server/issues/472)
+- Fix: Schema link does not work when schema is a local file [#513](https://github.com/redhat-developer/vscode-yaml/issues/513)
+
 ### 0.19.2
 
 - Remove fileMatch workaround, now glob patterns should work as expected [#467](https://github.com/redhat-developer/yaml-language-server/pull/467)
