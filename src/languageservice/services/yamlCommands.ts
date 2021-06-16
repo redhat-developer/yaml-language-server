@@ -13,7 +13,8 @@ export function registerCommands(commandExecutor: CommandExecutor, connection: C
     if (!uri) {
       return;
     }
-    if (!uri.startsWith('file')) {
+    // if uri points to local file of its a windows path
+    if (!uri.startsWith('file') && !/^[a-z]:[\\/]/i.test(uri)) {
       const origUri = URI.parse(uri);
       const customUri = URI.from({
         scheme: 'json-schema',
@@ -22,6 +23,12 @@ export function registerCommands(commandExecutor: CommandExecutor, connection: C
         fragment: uri,
       });
       uri = customUri.toString();
+    }
+
+    // test if uri is windows path, ie starts with 'c:\' and convert to URI
+    if (/^[a-z]:[\\/]/i.test(uri)) {
+      const winUri = URI.file(uri);
+      uri = winUri.toString();
     }
 
     const result = await connection.window.showDocument({ uri: uri, external: false, takeFocus: true });

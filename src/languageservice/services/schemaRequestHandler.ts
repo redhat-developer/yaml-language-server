@@ -31,7 +31,7 @@ export const schemaRequestHandler = (
   let scheme = URI.parse(uri).scheme.toLowerCase();
 
   // test if uri is windows path, ie starts with 'c:\'
-  if (/^[a-z]:\\/i.test(uri)) {
+  if (/^[a-z]:[\\/]/i.test(uri)) {
     const winUri = URI.file(uri);
     scheme = winUri.scheme.toLowerCase();
     uri = winUri.toString();

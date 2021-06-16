@@ -9,6 +9,7 @@ import * as chai from 'chai';
 import { registerCommands } from '../src/languageservice/services/yamlCommands';
 import { commandExecutor } from '../src/languageserver/commandExecutor';
 import { Connection } from 'vscode-languageserver/node';
+import { URI } from 'vscode-uri';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -44,5 +45,23 @@ describe('Yaml Commands', () => {
     const arg = commandExecutorStub.args[0];
     await arg[1](JSON_SCHEMA_LOCAL);
     expect(showDocumentStub).to.have.been.calledWith({ uri: JSON_SCHEMA_LOCAL, external: false, takeFocus: true });
+  });
+
+  it('JumpToSchema handler should call "showDocument" with plain win path', async () => {
+    const showDocumentStub = sandbox.stub();
+    const connection = ({
+      window: {
+        showDocument: showDocumentStub,
+      },
+    } as unknown) as Connection;
+    showDocumentStub.resolves(true);
+    registerCommands(commandExecutor, connection);
+    const arg = commandExecutorStub.args[0];
+    await arg[1]('a:\\some\\path\\to\\schema.json');
+    expect(showDocumentStub).to.have.been.calledWith({
+      uri: URI.file('a:\\some\\path\\to\\schema.json').toString(),
+      external: false,
+      takeFocus: true,
+    });
   });
 });
