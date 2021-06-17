@@ -26,8 +26,7 @@ export function propertyIsNotAllowed(name: string): string {
 /**
  * Parse errors
  */
-export const BlockMappingEntryError = 'can not read a block mapping entry; a multiline key may not be an implicit key';
-export const ColonMissingError = 'can not read an implicit mapping pair; a colon is missed';
+export const BlockMappingEntryError = 'Implicit map keys need to be followed by map values';
 
 /**
  * Value Errors
@@ -37,4 +36,4 @@ export const IncludeWithoutValueError = '!include without value';
 /**
  * Duplicate Key error
  */
-export const DuplicateKeyError = 'duplicate key';
+export const DuplicateKeyError = 'Map keys must be unique';

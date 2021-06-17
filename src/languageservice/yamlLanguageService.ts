@@ -46,6 +46,7 @@ import { commandExecutor } from '../languageserver/commandExecutor';
 import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
 import { YamlCodeLens } from './services/yamlCodeLens';
 import { registerCommands } from './services/yamlCommands';
+import { YamlVersion } from './parser/yamlParser07';
 import { Telemetry } from '../languageserver/telemetry';
 
 export enum SchemaPriority {
@@ -75,6 +76,10 @@ export interface LanguageSettings {
    * Default indentation size
    */
   indentation?: string;
+  /**
+   * Default yaml lang version
+   */
+  yamlVersion?: YamlVersion;
 
   /**
    * Globally set additionalProperties to false if additionalProperties is not set and if schema.type is object.

@@ -7,7 +7,7 @@
 
 import { Diagnostic, Position } from 'vscode-languageserver';
 import { LanguageSettings } from '../yamlLanguageService';
-import { YAMLDocument } from '../parser/yamlParser07';
+import { YAMLDocument, YamlVersion } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
@@ -27,7 +27,7 @@ export const yamlDiagToLSDiag = (yamlDiag: YAMLDocDiagnostic, textDocument: Text
   const range = {
     start,
     end: yamlDiag.location.toLineEnd
-      ? Position.create(start.line, new TextBuffer(textDocument).getLineLength(yamlDiag.location.start))
+      ? Position.create(start.line, new TextBuffer(textDocument).getLineLength(start.line))
       : textDocument.positionAt(yamlDiag.location.end),
   };
 
@@ -38,6 +38,7 @@ export class YAMLValidation {
   private validationEnabled: boolean;
   private customTags: string[];
   private jsonValidation;
+  private yamlVersion: YamlVersion;
   private disableAdditionalProperties: boolean;
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
@@ -51,6 +52,7 @@ export class YAMLValidation {
     if (settings) {
       this.validationEnabled = settings.validate;
       this.customTags = settings.customTags;
+      this.yamlVersion = settings.yamlVersion;
       this.disableAdditionalProperties = settings.disableAdditionalProperties;
     }
   }
@@ -60,7 +62,11 @@ export class YAMLValidation {
       return Promise.resolve([]);
     }
 
-    const yamlDocument: YAMLDocument = yamlDocumentsCache.getYamlDocument(textDocument, this.customTags, true);
+    const yamlDocument: YAMLDocument = yamlDocumentsCache.getYamlDocument(
+      textDocument,
+      { customTags: this.customTags, yamlVersion: this.yamlVersion },
+      true
+    );
     const validationResult = [];
 
     let index = 0;

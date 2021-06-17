@@ -18,6 +18,7 @@ export class ServiceSetup {
     schemas: [],
     customTags: [],
     indentation: undefined,
+    yamlVersion: '1.2',
   };
 
   withValidate(): ServiceSetup {

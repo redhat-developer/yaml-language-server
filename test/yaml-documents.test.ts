@@ -60,7 +60,7 @@ describe('YAML Documents Cache Tests', () => {
     parseStub.onSecondCall().returns({ foo: 'bar' });
 
     const result1 = cache.getYamlDocument(doc);
-    const result2 = cache.getYamlDocument(doc, ['some']);
+    const result2 = cache.getYamlDocument(doc, getParserOptions(['some']));
 
     expect(parseStub).calledTwice;
     expect(result1).to.not.equal(result2);
@@ -72,10 +72,14 @@ describe('YAML Documents Cache Tests', () => {
     parseStub.onFirstCall().returns({});
     parseStub.onSecondCall().returns({ foo: 'bar' });
 
-    const result1 = cache.getYamlDocument(doc, ['some']);
-    const result2 = cache.getYamlDocument(doc, ['some']);
+    const result1 = cache.getYamlDocument(doc, getParserOptions(['some']));
+    const result2 = cache.getYamlDocument(doc, getParserOptions(['some']));
 
     expect(parseStub).calledOnce;
     expect(result1).to.be.equal(result2);
   });
 });
+
+function getParserOptions(customTags: string[]): yamlParser.ParserOptions {
+  return { customTags, yamlVersion: '1.2' };
+}
