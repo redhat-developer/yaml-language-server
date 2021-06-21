@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
-    "jsonc-parser": "^2.2.1",
+    "jsonc-parser": "^3.0.0",
     "request-light": "^0.2.4",
     "vscode-json-languageservice": "^4.1.0",
     "vscode-languageserver": "^7.0.0",
