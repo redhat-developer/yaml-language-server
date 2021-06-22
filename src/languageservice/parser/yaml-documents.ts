@@ -23,7 +23,7 @@ export class YamlDocuments {
    * @param addRootObject if true and document is empty add empty object {} to force schema usage
    * @returns the YAMLDocument
    */
-  getYamlDocument(document: TextDocument, customTags?: string[], addRootObject = false): YAMLDocument {
+  getYamlDocument(document: TextDocument, customTags: string[] = [], addRootObject = false): YAMLDocument {
     this.ensureCache(document, customTags, addRootObject);
     return this.cache.get(document.uri).document;
   }
