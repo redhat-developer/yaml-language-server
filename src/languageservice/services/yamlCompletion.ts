@@ -974,9 +974,6 @@ export class YAMLCompletion extends JSONCompletion {
     if (Array.isArray(value)) {
       return JSON.stringify(value);
     }
-    if (typeof value === 'object') {
-      return JSON.stringify(value);
-    }
     return value as string;
   }
 
