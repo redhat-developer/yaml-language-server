@@ -1815,6 +1815,26 @@ describe('Auto Completion Tests', () => {
       expect(trueItem.textEdit.newText).equal('"true"');
     });
 
+    it('should provide label as string for examples completion item', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          fooBar: {
+            type: 'array',
+            items: {
+              type: 'string',
+              examples: ['test'],
+            },
+          },
+        },
+      });
+
+      const content = 'fooBar: \n';
+      const completion = await parseSetup(content, 8);
+
+      expect(completion.items).length(1);
+    });
+
     it('should provide completion for flow map', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
