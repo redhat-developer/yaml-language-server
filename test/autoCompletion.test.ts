@@ -1581,7 +1581,6 @@ describe('Auto Completion Tests', () => {
     it('should handle relative path', async () => {
       const documentContent = `# yaml-language-server: $schema=./fixtures/testArrayMaxProperties.json anothermodeline=value\n- `;
       const content = `${documentContent}\n---\n- `;
-      // const result = await parseSetup(content, documentContent.length);
 
       const testTextDocument = setupSchemaIDTextDocument(content, path.join(__dirname, 'test.yaml'));
       yamlSettings.documents = new TextDocumentTestManager();

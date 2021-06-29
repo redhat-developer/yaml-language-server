@@ -284,9 +284,9 @@ export class YAMLSchemaService extends JSONSchemaService {
         if (!schemaFromModeline.startsWith('file:')) {
           if (!path.isAbsolute(schemaFromModeline)) {
             const resUri = URI.parse(resource);
-            schemaFromModeline = URI.parse(path.resolve(path.parse(resUri.fsPath).dir, schemaFromModeline)).toString();
+            schemaFromModeline = URI.file(path.resolve(path.parse(resUri.fsPath).dir, schemaFromModeline)).toString();
           } else {
-            schemaFromModeline = URI.parse(schemaFromModeline).toString();
+            schemaFromModeline = URI.file(schemaFromModeline).toString();
           }
         }
         this.addSchemaPriority(schemaFromModeline, SchemaPriority.Modeline);
