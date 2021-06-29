@@ -1567,6 +1567,31 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       }, done);
     });
+
+    it('should handle absolute path', async () => {
+      const documentContent = `# yaml-language-server: $schema=${path.join(
+        __dirname,
+        './fixtures/testArrayMaxProperties.json'
+      )} anothermodeline=value\n- `;
+      const content = `${documentContent}\n---\n- `;
+      const result = await parseSetup(content, documentContent.length);
+      assert.strictEqual(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
+    });
+
+    it('should handle relative path', async () => {
+      const documentContent = `# yaml-language-server: $schema=./fixtures/testArrayMaxProperties.json anothermodeline=value\n- `;
+      const content = `${documentContent}\n---\n- `;
+      // const result = await parseSetup(content, documentContent.length);
+
+      const testTextDocument = setupSchemaIDTextDocument(content, path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(documentContent.length),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
+    });
   });
 
   describe('Configuration based indentation', () => {

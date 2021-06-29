@@ -23,6 +23,7 @@ import { convertSimple2RegExpPattern } from '../utils/strings';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonParser07';
 import { load } from 'js-yaml';
+import * as path from 'path';
 
 const localize = nls.loadMessageBundle();
 
@@ -90,9 +91,8 @@ export class YAMLSchemaService extends JSONSchemaService {
   private customSchemaProvider: CustomSchemaProvider | undefined;
   private filePatternAssociations: JSONSchemaService.FilePatternAssociation[];
   private contextService: WorkspaceContextService;
-  private customSchemaProvider: CustomSchemaProvider | undefined;
   private requestService: SchemaRequestService;
-  public schemaPriorityMapping: Map<string, SchemaPriority[]>;
+  public schemaPriorityMapping: Map<string, Set<SchemaPriority>>;
 
   constructor(
     requestService: SchemaRequestService,
@@ -279,8 +279,16 @@ export class YAMLSchemaService extends JSONSchemaService {
       const seen: { [schemaId: string]: boolean } = Object.create(null);
       const schemas: string[] = [];
 
-      const schemaFromModeline = this.getSchemaFromModeline(doc);
+      let schemaFromModeline = this.getSchemaFromModeline(doc);
       if (schemaFromModeline !== undefined) {
+        if (!schemaFromModeline.startsWith('file:')) {
+          if (!path.isAbsolute(schemaFromModeline)) {
+            const resUri = URI.parse(resource);
+            schemaFromModeline = URI.parse(path.resolve(path.parse(resUri.fsPath).dir, schemaFromModeline)).toString();
+          } else {
+            schemaFromModeline = URI.parse(schemaFromModeline).toString();
+          }
+        }
         this.addSchemaPriority(schemaFromModeline, SchemaPriority.Modeline);
         schemas.push(schemaFromModeline);
         seen[schemaFromModeline] = true;
@@ -381,10 +389,10 @@ export class YAMLSchemaService extends JSONSchemaService {
   public addSchemaPriority(uri: string, priority: number): void {
     let currSchemaArray = this.schemaPriorityMapping.get(uri);
     if (currSchemaArray) {
-      currSchemaArray = currSchemaArray.concat(priority);
+      currSchemaArray = currSchemaArray.add(priority);
       this.schemaPriorityMapping.set(uri, currSchemaArray);
     } else {
-      this.schemaPriorityMapping.set(uri, [priority]);
+      this.schemaPriorityMapping.set(uri, new Set<SchemaPriority>().add(priority));
     }
   }
 
@@ -460,7 +468,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   public async saveSchema(schemaId: string, schemaContent: JSONSchema): Promise<void> {
     const id = this.normalizeId(schemaId);
     this.getOrAddSchemaHandle(id, schemaContent);
-    this.schemaPriorityMapping.set(id, [SchemaPriority.Settings]);
+    this.schemaPriorityMapping.set(id, new Set<SchemaPriority>().add(SchemaPriority.Settings));
     return Promise.resolve(undefined);
   }
 
