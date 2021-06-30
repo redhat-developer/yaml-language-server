@@ -222,8 +222,20 @@ yaml.schemas: {
 
 It is possible to specify a yaml schema using a modeline.
 
-```
+```yaml
 # yaml-language-server: $schema=<urlToTheSchema>
+```
+
+Also it is possible to use relative path in a modeline:
+
+```yaml
+# yaml-language-server: $schema=../relative/path/to/schema
+```
+
+or absolute path:
+
+```yaml
+# yaml-language-server: $schema=/absolute/path/to/schema
 ```
 
 ## Containerized Language Server
