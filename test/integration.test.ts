@@ -4,8 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 import * as assert from 'assert';
-import { MarkedString } from '../src';
-import { Diagnostic, CompletionList, Hover } from 'vscode-languageserver';
+import { Diagnostic, CompletionList, Hover, MarkupContent } from 'vscode-languageserver';
 import { ServiceSetup } from './utils/serviceSetup';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
@@ -316,14 +315,11 @@ describe('Kubernetes Integration Tests', () => {
       });
     }
 
-    it('Hover on incomplete kubernetes document', (done) => {
+    it('Hover on incomplete kubernetes document', async () => {
       const content = 'apiVersion: v1\nmetadata:\n  name: test\nkind: Deployment\nspec:\n   ';
-      const hover = parseSetup(content, 58);
-      hover
-        .then(function (result) {
-          assert.equal((result.contents as MarkedString[]).length, 1);
-        })
-        .then(done, done);
+      const hover = await parseSetup(content, 58);
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).value, '');
     });
   });
 });

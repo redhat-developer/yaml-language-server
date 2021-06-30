@@ -4,9 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 import { ServiceSetup } from './utils/serviceSetup';
 import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
-import { LanguageService, MarkedString } from '../src';
+import { LanguageService } from '../src';
 import * as assert from 'assert';
-import { Hover } from 'vscode-languageserver';
+import { Hover, MarkupContent } from 'vscode-languageserver';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 
@@ -41,7 +41,7 @@ describe('Hover Tests', () => {
       });
     }
 
-    it('Hover on key on root', (done) => {
+    it('Hover on key on root', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -53,19 +53,17 @@ describe('Hover Tests', () => {
         },
       });
       const content = 'cwd: test';
-      const hover = parseSetup(content, 1);
-      hover
-        .then(function (result) {
-          assert.equal((result.contents as string).length, 1);
-          assert.equal(
-            result.contents[0],
-            'The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.'
-          );
-        })
-        .then(done, done);
+      const hover = await parseSetup(content, 1);
+
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (hover.contents as MarkupContent).value,
+        `The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
     });
 
-    it('Hover on value on root', (done) => {
+    it('Hover on value on root', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -77,19 +75,17 @@ describe('Hover Tests', () => {
         },
       });
       const content = 'cwd: test';
-      const hover = parseSetup(content, 6);
-      hover
-        .then(function (result) {
-          assert.equal((result.contents as string).length, 1);
-          assert.equal(
-            result.contents[0],
-            'The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.'
-          );
-        })
-        .then(done, done);
+      const result = await parseSetup(content, 6);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
     });
 
-    it('Hover on key with depth', (done) => {
+    it('Hover on key with depth', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -105,16 +101,17 @@ describe('Hover Tests', () => {
         },
       });
       const content = 'scripts:\n  postinstall: test';
-      const hover = parseSetup(content, 15);
-      hover
-        .then(function (result) {
-          assert.equal((result.contents as MarkedString[]).length, 1);
-          assert.equal(result.contents[0], 'A script to run after install');
-        })
-        .then(done, done);
+      const result = await parseSetup(content, 15);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `A script to run after install\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
     });
 
-    it('Hover on value with depth', (done) => {
+    it('Hover on value with depth', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -130,16 +127,17 @@ describe('Hover Tests', () => {
         },
       });
       const content = 'scripts:\n  postinstall: test';
-      const hover = parseSetup(content, 26);
-      hover
-        .then(function (result) {
-          assert.equal((result.contents as MarkedString[]).length, 1);
-          assert.equal(result.contents[0], 'A script to run after install');
-        })
-        .then(done, done);
+      const result = await parseSetup(content, 26);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `A script to run after install\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
     });
 
-    it('Hover works on both root node and child nodes works', (done) => {
+    it('Hover works on both root node and child nodes works', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -157,22 +155,25 @@ describe('Hover Tests', () => {
       });
       const content = 'scripts:\n  postinstall: test';
 
-      const firstHover = parseSetup(content, 3);
-      firstHover.then(function (result) {
-        assert.equal((result.contents as MarkedString[]).length, 1);
-        assert.equal(result.contents[0], 'Contains custom hooks used to trigger other automated tools');
-      });
+      const firstHover = await parseSetup(content, 3);
 
-      const secondHover = parseSetup(content, 15);
-      secondHover
-        .then(function (result) {
-          assert.equal((result.contents as MarkedString[]).length, 1);
-          assert.equal(result.contents[0], 'A script to run after install');
-        })
-        .then(done, done);
+      assert.strictEqual(MarkupContent.is(firstHover.contents), true);
+      assert.strictEqual((firstHover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (firstHover.contents as MarkupContent).value,
+        `Contains custom hooks used to trigger other automated tools\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+
+      const secondHover = await parseSetup(content, 15);
+
+      assert.strictEqual(MarkupContent.is(secondHover.contents), true);
+      assert.strictEqual(
+        (secondHover.contents as MarkupContent).value,
+        `A script to run after install\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
     });
 
-    it('Hover does not show results when there isnt description field', (done) => {
+    it('Hover does not show results when there isnt description field', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -182,16 +183,13 @@ describe('Hover Tests', () => {
         },
       });
       const content = 'analytics: true';
-      const hover = parseSetup(content, 3);
-      hover
-        .then(function (result) {
-          assert.equal((result.contents as MarkedString[]).length, 1);
-          assert.equal(result.contents[0], '');
-        })
-        .then(done, done);
+      const result = await parseSetup(content, 3);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).value, '');
     });
 
-    it('Hover on first document in multi document', (done) => {
+    it('Hover on first document in multi document', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -201,16 +199,13 @@ describe('Hover Tests', () => {
         },
       });
       const content = '---\nanalytics: true\n...\n---\njson: test\n...';
-      const hover = parseSetup(content, 10);
-      hover
-        .then(function (result) {
-          assert.equal((result.contents as MarkedString[]).length, 1);
-          assert.equal(result.contents[0], '');
-        })
-        .then(done, done);
+      const result = await parseSetup(content, 10);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).value, '');
     });
 
-    it('Hover on second document in multi document', (done) => {
+    it('Hover on second document in multi document', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -224,46 +219,40 @@ describe('Hover Tests', () => {
         },
       });
       const content = '---\nanalytics: true\n...\n---\njson: test\n...';
-      const hover = parseSetup(content, 30);
-      hover
-        .then(function (result) {
-          assert.equal((result.contents as MarkedString[]).length, 1);
-          assert.equal(result.contents[0], 'A file path to the configuration file');
-        })
-        .then(done, done);
+      const result = await parseSetup(content, 30);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `A file path to the configuration file\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
     });
 
-    it('Hover should not return anything on key', (done) => {
+    it('Hover should not return anything on key', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {},
       });
       const content = 'my_unknown_hover: test';
-      const hover = parseSetup(content, 1);
-      hover
-        .then(function (result) {
-          assert.equal((result.contents as MarkedString[]).length, 1);
-          assert.equal(result.contents[0], '');
-        })
-        .then(done, done);
+      const result = await parseSetup(content, 1);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).value, '');
     });
 
-    it('Hover should not return anything on value', (done) => {
+    it('Hover should not return anything on value', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {},
       });
       const content = 'my_unknown_hover: test';
-      const hover = parseSetup(content, 21);
-      hover
-        .then(function (result) {
-          assert.equal((result.contents as MarkedString[]).length, 1);
-          assert.equal(result.contents[0], '');
-        })
-        .then(done, done);
+      const result = await parseSetup(content, 21);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).value, '');
     });
 
-    it('Hover works on array nodes', (done) => {
+    it('Hover works on array nodes', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -282,16 +271,16 @@ describe('Hover Tests', () => {
         },
       });
       const content = 'authors:\n  - name: Josh';
-      const hover = parseSetup(content, 14);
-      hover
-        .then(function (result) {
-          assert.notEqual((result.contents as MarkedString[]).length, 0);
-          assert.equal(result.contents[0], 'Full name of the author\\.');
-        })
-        .then(done, done);
+      const result = await parseSetup(content, 14);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `Full name of the author\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
     });
 
-    it('Hover works on additional array nodes', (done) => {
+    it('Hover works on additional array nodes', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -314,16 +303,16 @@ describe('Hover Tests', () => {
         },
       });
       const content = 'authors:\n  - name: Josh\n  - email: jp';
-      const hover = parseSetup(content, 28);
-      hover
-        .then(function (result) {
-          assert.notEqual((result.contents as MarkedString[]).length, 0);
-          assert.equal(result.contents[0], 'Email address of the author\\.');
-        })
-        .then(done, done);
+      const result = await parseSetup(content, 28);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `Email address of the author\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
     });
 
-    it('Hover on null property', (done) => {
+    it('Hover on null property', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -334,13 +323,13 @@ describe('Hover Tests', () => {
         },
       });
       const content = 'childObject: \n';
-      const hover = parseSetup(content, 1);
-      hover
-        .then(function (result) {
-          assert.equal((result.contents as MarkedString[]).length, 1);
-          assert.equal(result.contents[0], 'should return this description');
-        })
-        .then(done, done);
+      const result = await parseSetup(content, 1);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
     });
   });
 });
