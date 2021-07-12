@@ -1591,20 +1591,6 @@ describe('Auto Completion Tests', () => {
       });
       assert.strictEqual(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
     });
-
-    it('should handle http(s) url', async () => {
-      const documentContent = `# yaml-language-server: $schema=http://json-schema.org/draft-07/schema# anothermodeline=value\n`;
-      const content = `${documentContent}\n---\n- `;
-
-      const testTextDocument = setupSchemaIDTextDocument(content, path.join(__dirname, 'test.yaml'));
-      yamlSettings.documents = new TextDocumentTestManager();
-      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
-      const result = await languageHandler.completionHandler({
-        position: testTextDocument.positionAt(documentContent.length),
-        textDocument: testTextDocument,
-      });
-      assert.strictEqual(result.items.length, 44, `Expecting 44 items in completion but found ${result.items.length}`);
-    });
   });
 
   describe('Configuration based indentation', () => {
