@@ -27,6 +27,18 @@ if (process.argv.indexOf('--stdio') === -1) {
 console.log = connection.console.log.bind(connection.console);
 console.error = connection.console.error.bind(connection.console);
 
+// temporary, if some code call console.log(null), we log trace to find the place where it was called
+console.error = (arg) => {
+  connection.console.error(arg);
+  if (arg === null) {
+    try {
+      throw new Error();
+    } catch (err) {
+      connection.console.error(err.stack);
+    }
+  }
+};
+
 const yamlSettings = new SettingsState();
 
 /**
