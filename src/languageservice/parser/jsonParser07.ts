@@ -82,21 +82,30 @@ export interface IProblem {
 }
 
 export abstract class ASTNodeImpl {
-  public abstract readonly type: 'object' | 'property' | 'array' | 'number' | 'boolean' | 'null' | 'string';
+  abstract readonly type: 'object' | 'property' | 'array' | 'number' | 'boolean' | 'null' | 'string';
 
-  public offset: number;
-  public length: number;
-  public readonly parent: ASTNode;
-  public location: string;
+  offset: number;
+  length: number;
+  readonly parent: ASTNode;
+  location: string;
 
   constructor(parent: ASTNode, offset: number, length?: number) {
     this.offset = offset;
     this.length = length;
     this.parent = parent;
+    this.updateParentPosition();
   }
 
-  public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
-    const collector = [];
+  private updateParentPosition(): void {
+    if (this.parent && this.parent.offset + this.parent.length < this.offset + this.length) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this.parent as any).length += this.offset + this.length - this.parent.offset - this.parent.length;
+      ((this.parent as unknown) as ASTNodeImpl).updateParentPosition();
+    }
+  }
+
+  getNodeFromOffsetEndInclusive(offset: number): ASTNode {
+    const collector: (ASTNode | ASTNodeImpl)[] = [];
     const findNode = (node: ASTNode | ASTNodeImpl): ASTNode | ASTNodeImpl => {
       if (offset >= node.offset && offset <= node.offset + node.length) {
         const children = node.children;
@@ -123,11 +132,11 @@ export abstract class ASTNodeImpl {
     return currMinNode || foundNode;
   }
 
-  public get children(): ASTNode[] {
+  get children(): ASTNode[] {
     return [];
   }
 
-  public toString(): string {
+  toString(): string {
     return (
       'type: ' +
       this.type +

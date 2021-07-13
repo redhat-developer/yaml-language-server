@@ -7,7 +7,7 @@
 
 import { Diagnostic, Position } from 'vscode-languageserver';
 import { LanguageSettings } from '../yamlLanguageService';
-import { YAMLDocument, YamlVersion } from '../parser/yamlParser07';
+import { defaultOptions, YAMLDocument, YamlVersion } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
@@ -52,7 +52,7 @@ export class YAMLValidation {
     if (settings) {
       this.validationEnabled = settings.validate;
       this.customTags = settings.customTags;
-      this.yamlVersion = settings.yamlVersion;
+      this.yamlVersion = settings.yamlVersion ?? defaultOptions.yamlVersion;
       this.disableAdditionalProperties = settings.disableAdditionalProperties;
     }
   }

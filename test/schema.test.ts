@@ -738,7 +738,7 @@ describe('JSON Schema', () => {
 
     function checkReturnSchemaUrl(modeline: string, expectedResult: string): void {
       const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
-      const yamlDoc = new parser.SingleYAMLDocument(new LineCounter());
+      const yamlDoc = new parser.SingleYAMLDocument('', new LineCounter());
       yamlDoc.lineComments = [modeline];
       assert.equal(service.getSchemaFromModeline(yamlDoc), expectedResult);
     }
