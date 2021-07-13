@@ -1,3 +1,8 @@
+### 0.21.1
+
+- Fix: Unable to load remote schema with http protocol [#550](https://github.com/redhat-developer/vscode-yaml/issues/550)
+- Log more errors in to telemetry [#508](https://github.com/redhat-developer/yaml-language-server/pull/508)
+
 ### 0.21.0
 
 - Upgrade jsonc-parser to latest version [#492](https://github.com/redhat-developer/yaml-language-server/pull/492)
