@@ -281,7 +281,7 @@ export class YAMLSchemaService extends JSONSchemaService {
 
       let schemaFromModeline = this.getSchemaFromModeline(doc);
       if (schemaFromModeline !== undefined) {
-        if (!schemaFromModeline.startsWith('file:')) {
+        if (!schemaFromModeline.startsWith('file:') && !schemaFromModeline.startsWith('http')) {
           if (!path.isAbsolute(schemaFromModeline)) {
             const resUri = URI.parse(resource);
             schemaFromModeline = URI.file(path.resolve(path.parse(resUri.fsPath).dir, schemaFromModeline)).toString();
