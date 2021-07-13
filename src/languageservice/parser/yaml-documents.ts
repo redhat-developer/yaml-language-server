@@ -24,10 +24,12 @@ export class SingleYAMLDocument extends JSONDocument {
   public root: ASTNode;
   public currentDocIndex: number;
   private _lineComments: string[];
+  private text: string;
 
-  constructor(lineCounter?: LineCounter) {
+  constructor(text: string, lineCounter?: LineCounter) {
     super(null, []);
     this.lineCounter = lineCounter;
+    this.text = text;
   }
 
   private collectLineComments(): void {
@@ -44,7 +46,7 @@ export class SingleYAMLDocument extends JSONDocument {
 
   set internalDocument(document: Document) {
     this._internalDocument = document;
-    this.root = convertAST(null, this._internalDocument.contents as Node, this._internalDocument, this.lineCounter);
+    this.root = convertAST(null, this._internalDocument.contents as Node, this._internalDocument, this.text, this.lineCounter);
   }
 
   get internalDocument(): Document {

@@ -1020,7 +1020,7 @@ export class YAMLCompletion extends JSONCompletion {
         newText =
           document.getText().substring(0, start + spaceLength) +
           (trimmedText[0] === '-' && !textLine.endsWith(' ') ? ' ' : '') +
-          'holder:\r\n' +
+          'holder:\n' +
           document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
 
         // For when missing semi colon case
@@ -1028,7 +1028,7 @@ export class YAMLCompletion extends JSONCompletion {
         // Add a semicolon to the end of the current line so we can validate the node
         newText =
           document.getText().substring(0, start + textLine.length) +
-          ':\r\n' +
+          ':\n' +
           document.getText().substr(lineOffset[linePos + 1] || document.getText().length);
       }
 

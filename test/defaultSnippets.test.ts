@@ -74,16 +74,13 @@ describe('Default Snippet Tests', () => {
         .then(done, done);
     });
 
-    it('Snippet in array schema should autocomplete correctly on array level ', (done) => {
+    it('Snippet in array schema should autocomplete correctly on array level ', async () => {
       const content = 'array:\n  - item1: asd\n    item2: asd\n  ';
-      const completion = parseSetup(content, content.length);
-      completion
-        .then(function (result) {
-          assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].insertText, '- item1: $1\n  item2: $2');
-          assert.equal(result.items[0].label, 'My array item');
-        })
-        .then(done, done);
+      const result = await parseSetup(content, content.length);
+
+      assert.equal(result.items.length, 1);
+      assert.equal(result.items[0].insertText, '- item1: $1\n  item2: $2');
+      assert.equal(result.items[0].label, 'My array item');
     });
     it('Snippet in array schema should autocomplete correctly inside array item ', (done) => {
       const content = 'array:\n  - item1: asd\n    item2: asd\n    ';

@@ -255,6 +255,21 @@ describe('YAML parser', () => {
     });
   });
 
+  describe('YAML AST converting', () => {
+    it('should include array node to new line', () => {
+      const parsedDocument = parse('authors:\n  - name: test\n  holder:\r\n');
+      const node = parsedDocument.documents[0].getNodeFromOffsetEndInclusive(24);
+      assert.strictEqual(node.type, 'array');
+    });
+
+    it('should include array node to new line2', () => {
+      const content = 'array:\n  - item1: asd\n    item2: asd\n   holder:\n';
+      const parsedDocument = parse(content);
+      const node = parsedDocument.documents[0].getNodeFromOffsetEndInclusive(39);
+      assert.strictEqual(node.type, 'array');
+    });
+  });
+
   describe('YAML parser bugs', () => {
     it('should work with "Billion Laughs" attack', () => {
       const yaml = `apiVersion: v1

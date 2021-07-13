@@ -38,14 +38,14 @@ export function parse(text: string, parserOptions: ParserOptions = defaultOption
   const docs = composer.compose(tokens);
 
   // Generate the SingleYAMLDocs from the AST nodes
-  const yamlDocs: SingleYAMLDocument[] = Array.from(docs, (doc) => parsedDocToSingleYAMLDocument(doc, lineCounter));
+  const yamlDocs: SingleYAMLDocument[] = Array.from(docs, (doc) => parsedDocToSingleYAMLDocument(doc, text, lineCounter));
 
   // Consolidate the SingleYAMLDocs
   return new YAMLDocument(yamlDocs);
 }
 
-function parsedDocToSingleYAMLDocument(parsedDoc: Document, lineCounter: LineCounter): SingleYAMLDocument {
-  const syd = new SingleYAMLDocument(lineCounter);
+function parsedDocToSingleYAMLDocument(parsedDoc: Document, text: string, lineCounter: LineCounter): SingleYAMLDocument {
+  const syd = new SingleYAMLDocument(text, lineCounter);
   syd.internalDocument = parsedDoc;
   return syd;
 }

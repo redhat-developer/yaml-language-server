@@ -28,7 +28,7 @@ import {
 const maxRefCount = 1000;
 let refDepth = 0;
 
-export function convertAST(parent: ASTNode, node: Node, doc: Document, lineCounter: LineCounter): ASTNode {
+export function convertAST(parent: ASTNode, node: Node, doc: Document, text: string, lineCounter: LineCounter): ASTNode {
   if (!parent) {
     // first invocation
     refDepth = 0;
@@ -38,13 +38,13 @@ export function convertAST(parent: ASTNode, node: Node, doc: Document, lineCount
     return;
   }
   if (isMap(node)) {
-    return convertMap(node, parent, doc, lineCounter);
+    return convertMap(node, parent, doc, text, lineCounter);
   }
   if (isPair(node)) {
-    return convertPair(node, parent, doc, lineCounter);
+    return convertPair(node, parent, doc, text, lineCounter);
   }
   if (isSeq(node)) {
-    return convertSeq(node, parent, doc, lineCounter);
+    return convertSeq(node, parent, doc, text, lineCounter);
   }
   if (isScalar(node)) {
     return convertScalar(node, parent);
@@ -54,21 +54,27 @@ export function convertAST(parent: ASTNode, node: Node, doc: Document, lineCount
       // document contains excessive aliasing
       return;
     }
-    return convertAlias(node, parent, doc, lineCounter);
+    return convertAlias(node, parent, doc, text, lineCounter);
   }
 }
 
-function convertMap(node: YAMLMap<unknown, unknown>, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
+function convertMap(
+  node: YAMLMap<unknown, unknown>,
+  parent: ASTNode,
+  doc: Document,
+  text: string,
+  lineCounter: LineCounter
+): ASTNode {
   const result = new ObjectASTNodeImpl(parent, ...toFixedOffsetLength(node.range, lineCounter));
   for (const it of node.items) {
     if (isPair(it)) {
-      result.properties.push(<PropertyASTNodeImpl>convertAST(result, it, doc, lineCounter));
+      result.properties.push(<PropertyASTNodeImpl>convertAST(result, it, doc, text, lineCounter));
     }
   }
   return result;
 }
 
-function convertPair(node: Pair, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
+function convertPair(node: Pair, parent: ASTNode, doc: Document, text: string, lineCounter: LineCounter): ASTNode {
   const keyNode = <Node>node.key;
   const valueNode = <Node>node.value;
   const rangeStart = keyNode.range[0];
@@ -89,17 +95,17 @@ function convertPair(node: Pair, parent: ASTNode, doc: Document, lineCounter: Li
     keyAlias.value = keyNode.source;
     result.keyNode = keyAlias;
   } else {
-    result.keyNode = <StringASTNodeImpl>convertAST(result, keyNode, doc, lineCounter);
+    result.keyNode = <StringASTNodeImpl>convertAST(result, keyNode, doc, text, lineCounter);
   }
-  result.valueNode = convertAST(result, valueNode, doc, lineCounter);
+  result.valueNode = convertAST(result, valueNode, doc, text, lineCounter);
   return result;
 }
 
-function convertSeq(node: YAMLSeq, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
-  const result = new ArrayASTNodeImpl(parent, ...toOffsetLength(node.range));
+function convertSeq(node: YAMLSeq, parent: ASTNode, doc: Document, text: string, lineCounter: LineCounter): ASTNode {
+  const result = new ArrayASTNodeImpl(parent, ...toOffsetLengthWithExtendedRange(node.range, text, lineCounter, node.flow));
   for (const it of node.items) {
     if (isNode(it)) {
-      result.children.push(convertAST(result, it, doc, lineCounter));
+      result.children.push(convertAST(result, it, doc, text, lineCounter));
     }
   }
   return result;
@@ -127,9 +133,9 @@ function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
   }
 }
 
-function convertAlias(node: Alias, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
+function convertAlias(node: Alias, parent: ASTNode, doc: Document, text: string, lineCounter: LineCounter): ASTNode {
   refDepth++;
-  return convertAST(parent, node.resolve(doc), doc, lineCounter);
+  return convertAST(parent, node.resolve(doc), doc, text, lineCounter);
 }
 
 function toOffsetLength(range: [number, number, number]): [number, number] {
@@ -153,4 +159,25 @@ function toFixedOffsetLength(range: [number, number, number], lineCounter: LineC
   }
 
   return result;
+}
+
+const whiteSpaceReg = /\S/;
+
+function toOffsetLengthWithExtendedRange(
+  range: [number, number, number],
+  text: string,
+  lineCounter: LineCounter,
+  flow?: boolean
+): [number, number] {
+  if (!flow) {
+    const result: [number, number] = [range[0], range[2] - range[0]];
+    let i = 0;
+    while (!whiteSpaceReg.test(text.charAt(range[1] + i)) && range[1] + i < text.length) {
+      i++;
+    }
+    result[1] += i;
+    return result;
+  } else {
+    return toFixedOffsetLength(range, lineCounter);
+  }
 }
