@@ -11,6 +11,7 @@ import { setupTextDocument } from './utils/testHelper';
 import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { CodeLens, Command, Range } from 'vscode-languageserver-protocol';
 import { YamlCommands } from '../src/commands';
+import { Telemetry } from '../src/languageserver/telemetry';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -18,9 +19,13 @@ chai.use(sinonChai);
 describe('YAML CodeLens', () => {
   const sandbox = sinon.createSandbox();
   let yamlSchemaService: sinon.SinonStubbedInstance<YAMLSchemaService>;
+  let telemetryStub: sinon.SinonStubbedInstance<Telemetry>;
+  let telemetry: Telemetry;
 
   beforeEach(() => {
     yamlSchemaService = sandbox.createStubInstance(YAMLSchemaService);
+    telemetryStub = sandbox.createStubInstance(Telemetry);
+    telemetry = (telemetryStub as unknown) as Telemetry;
   });
 
   afterEach(() => {
@@ -47,7 +52,7 @@ describe('YAML CodeLens', () => {
       url: 'some://url/to/schema.json',
     };
     yamlSchemaService.getSchemaForResource.resolves({ schema });
-    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService);
+    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
     expect(result).is.not.empty;
     expect(result[0].command).is.not.undefined;
@@ -60,7 +65,7 @@ describe('YAML CodeLens', () => {
       url: 'some://url/to/schema.json',
     };
     yamlSchemaService.getSchemaForResource.resolves({ schema });
-    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService);
+    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
     expect(result[0].range).is.deep.equal(Range.create(0, 0, 0, 0));
     expect(result[0].command).is.deep.equal(createCommand('schema.json', 'some://url/to/schema.json'));
@@ -73,7 +78,7 @@ describe('YAML CodeLens', () => {
       title: 'fooBar',
     } as JSONSchema;
     yamlSchemaService.getSchemaForResource.resolves({ schema });
-    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService);
+    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
     expect(result[0].command).is.deep.equal(createCommand('fooBar (schema.json)', 'some://url/to/schema.json'));
   });
@@ -91,7 +96,7 @@ describe('YAML CodeLens', () => {
       ],
     } as JSONSchema;
     yamlSchemaService.getSchemaForResource.resolves({ schema });
-    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService);
+    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
     expect(result).has.length(2);
     expect(result).is.deep.equal([
@@ -113,7 +118,7 @@ describe('YAML CodeLens', () => {
       ],
     } as JSONSchema;
     yamlSchemaService.getSchemaForResource.resolves({ schema });
-    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService);
+    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
     expect(result).has.length(2);
     expect(result).is.deep.equal([
@@ -135,7 +140,7 @@ describe('YAML CodeLens', () => {
       ],
     } as JSONSchema;
     yamlSchemaService.getSchemaForResource.resolves({ schema });
-    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService);
+    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
     expect(result).has.length(2);
     expect(result).is.deep.equal([
