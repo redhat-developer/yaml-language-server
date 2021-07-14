@@ -162,7 +162,7 @@ export class YAMLCompletion extends JSONCompletion {
 
     currentDoc.currentDocIndex = currentDocIndex;
     return this.schemaService.getSchemaForResource(document.uri, currentDoc).then((schema) => {
-      if (!schema) {
+      if (!schema || schema.errors.length) {
         return Promise.resolve(result);
       }
       const newSchema = schema;

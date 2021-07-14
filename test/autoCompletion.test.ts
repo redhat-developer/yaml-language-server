@@ -9,7 +9,7 @@ import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList, InsertTextFormat, MarkupContent, MarkupKind } from 'vscode-languageserver';
+import { CompletionList, InsertTextFormat, MarkupContent, MarkupKind, Position } from 'vscode-languageserver';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageService } from '../src';
@@ -22,7 +22,10 @@ describe('Auto Completion Tests', () => {
   let yamlSettings: SettingsState;
 
   before(() => {
-    languageSettingsSetup = new ServiceSetup().withCompletion();
+    languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
+      uri: 'http://google.com',
+      fileMatch: ['bad-schema.yaml'],
+    });
     const { languageService: langService, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(
       languageSettingsSetup.languageSettings
     );
@@ -2064,7 +2067,20 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('and', 'and', 2, 4, 2, 4, 12, InsertTextFormat.Snippet, { documentation: undefined })
       );
     });
+
+    it('completion should handle bad schema', async () => {
+      const doc = setupSchemaIDTextDocument('foo:\n bar', 'bad-schema.yaml');
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(doc);
+      const result = await languageHandler.completionHandler({
+        position: Position.create(0, 1),
+        textDocument: doc,
+      });
+
+      expect(result.items).to.be.empty;
+    });
   });
+
   describe('Array completion', () => {
     it('Simple array object completion with "-" without any item', async () => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));

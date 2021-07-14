@@ -321,7 +321,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         const highestPrioSchemas = this.highestPrioritySchemas(schemas);
         const schemaHandle = super.createCombinedSchema(resource, highestPrioSchemas);
         return schemaHandle.getResolvedSchema().then((schema) => {
-          if (schema.schema) {
+          if (schema.schema && typeof schema.schema !== 'string') {
             schema.schema.url = schemaHandle.url;
           }
 

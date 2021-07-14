@@ -91,7 +91,7 @@ export class YAMLHover {
     };
 
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
-      if (schema && node) {
+      if (schema && node && !schema.errors.length) {
         const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
 
         let title: string | undefined = undefined;
