@@ -6,9 +6,10 @@ import { ServiceSetup } from './utils/serviceSetup';
 import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { LanguageService } from '../src';
 import * as assert from 'assert';
-import { Hover, MarkupContent } from 'vscode-languageserver';
+import { Hover, MarkupContent, Position } from 'vscode-languageserver';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { expect } from 'chai';
 
 describe('Hover Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -17,7 +18,10 @@ describe('Hover Tests', () => {
   let yamlSettings: SettingsState;
 
   before(() => {
-    languageSettingsSetup = new ServiceSetup().withHover();
+    languageSettingsSetup = new ServiceSetup().withHover().withSchemaFileMatch({
+      uri: 'http://google.com',
+      fileMatch: ['bad-schema.yaml'],
+    });
     const { languageService: langService, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(
       languageSettingsSetup.languageSettings
     );
@@ -330,6 +334,18 @@ describe('Hover Tests', () => {
         (result.contents as MarkupContent).value,
         `should return this description\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
+    });
+
+    it('should work with bad schema', async () => {
+      const doc = setupSchemaIDTextDocument('foo:\n bar', 'bad-schema.yaml');
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(doc);
+      const result = await languageHandler.hoverHandler({
+        position: Position.create(0, 1),
+        textDocument: doc,
+      });
+
+      expect(result).to.be.null;
     });
   });
 });
