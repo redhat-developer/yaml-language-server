@@ -24,6 +24,7 @@ import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonParser07';
 import { load } from 'js-yaml';
 import * as path from 'path';
+import { settings } from 'cluster';
 
 const localize = nls.loadMessageBundle();
 
@@ -256,6 +257,13 @@ export class YAMLSchemaService extends JSONSchemaService {
         collectMapEntries(next.definitions, next.properties, next.patternProperties, <JSONSchemaMap>next.dependencies);
         collectArrayEntries(next.anyOf, next.allOf, next.oneOf, <JSONSchema[]>next.items, next.schemaSequence);
       };
+
+      if (parentSchemaURL.indexOf('#') > 0) {
+        const segments = parentSchemaURL.split('#', 2);
+        if (segments[0].length > 0 && segments[1].length > 0) {
+          openPromises.push(resolveExternalLink(node, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies));
+        }
+      }
 
       while (toWalk.length) {
         const next = toWalk.pop();
