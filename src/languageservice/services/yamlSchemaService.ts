@@ -24,7 +24,6 @@ import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonParser07';
 import { load } from 'js-yaml';
 import * as path from 'path';
-import { settings } from 'cluster';
 
 const localize = nls.loadMessageBundle();
 
