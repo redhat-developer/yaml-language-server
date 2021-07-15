@@ -116,6 +116,8 @@ export interface CustomFormatterOptions {
   proseWrap?: string;
   printWidth?: number;
   enable?: boolean;
+  commentSpacesFromContent?: number;
+  doNotIndent?: boolean;
 }
 
 export interface LanguageService {

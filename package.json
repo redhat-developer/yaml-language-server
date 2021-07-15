@@ -35,7 +35,7 @@
     "url": "https://github.com/redhat-developer/yaml-language-server.git"
   },
   "optionalDependencies": {
-    "prettier": "2.0.5"
+    "prettier": "2.4.0"
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
