@@ -257,6 +257,13 @@ export class YAMLSchemaService extends JSONSchemaService {
         collectArrayEntries(next.anyOf, next.allOf, next.oneOf, <JSONSchema[]>next.items, next.schemaSequence);
       };
 
+      if (parentSchemaURL.indexOf('#') > 0) {
+        const segments = parentSchemaURL.split('#', 2);
+        if (segments[0].length > 0 && segments[1].length > 0) {
+          openPromises.push(resolveExternalLink(node, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies));
+        }
+      }
+
       while (toWalk.length) {
         const next = toWalk.pop();
         if (seen.indexOf(next) >= 0) {
