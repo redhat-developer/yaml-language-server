@@ -156,19 +156,21 @@ describe('Settings Handlers Tests', () => {
         (validationHandler as unknown) as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      workspaceStub.getConfiguration.resolves([{}, {}, {}]);
       const setConfigurationStub = sandbox.stub(settingsHandler, 'setConfiguration');
 
       await settingsHandler.pullConfiguration();
 
-      expect(workspaceStub.getConfiguration).calledOnceWith([
-        { section: 'yaml' },
-        { section: 'http.proxy' },
-        { section: 'http.proxyStrictSSL' },
-        { section: '[yaml]' },
-      ]);
+      expect(workspaceStub.getConfiguration).calledOnceWith([{ section: 'yaml' }, { section: 'http' }, { section: '[yaml]' }]);
 
-      expect(setConfigurationStub).calledOnce;
+      expect(setConfigurationStub).calledOnceWith({
+        yaml: {},
+        http: {
+          proxy: '',
+          proxyStrictSSL: false,
+        },
+        yamlEditor: {},
+      });
     });
   });
 });
