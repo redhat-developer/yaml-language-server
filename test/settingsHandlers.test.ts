@@ -161,11 +161,7 @@ describe('Settings Handlers Tests', () => {
 
       await settingsHandler.pullConfiguration();
 
-      expect(workspaceStub.getConfiguration).calledOnceWith([
-        { section: 'yaml' },
-        { section: 'http' },
-        { section: '[yaml]' },
-      ]);
+      expect(workspaceStub.getConfiguration).calledOnceWith([{ section: 'yaml' }, { section: 'http' }, { section: '[yaml]' }]);
 
       expect(setConfigurationStub).calledOnceWith({
         yaml: {},
@@ -173,7 +169,7 @@ describe('Settings Handlers Tests', () => {
           proxy: '',
           proxyStrictSSL: false,
         },
-        yamlEditor: {}
+        yamlEditor: {},
       });
     });
   });
