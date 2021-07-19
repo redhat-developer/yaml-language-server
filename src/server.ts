@@ -27,15 +27,12 @@ if (process.argv.indexOf('--stdio') === -1) {
 console.log = connection.console.log.bind(connection.console);
 console.error = connection.console.error.bind(connection.console);
 
-// temporary, if some code call console.log(null), we log trace to find the place where it was called
+//vscode-nls calls console.error(null) in some cases, so we put that in info, to predict sending "null" in to telemetry
 console.error = (arg) => {
-  connection.console.error(arg);
   if (arg === null) {
-    try {
-      throw new Error();
-    } catch (err) {
-      connection.console.error(err.stack);
-    }
+    connection.console.info(arg);
+  } else {
+    connection.console.error(arg);
   }
 };
 
