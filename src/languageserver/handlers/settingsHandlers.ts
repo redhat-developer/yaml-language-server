@@ -34,17 +34,16 @@ export class SettingsHandler {
   async pullConfiguration(): Promise<void> {
     const config = await this.connection.workspace.getConfiguration([
       { section: 'yaml' },
-      { section: 'http.proxy' },
-      { section: 'http.proxyStrictSSL' },
+      { section: 'http' },
       { section: '[yaml]' },
     ]);
     const settings: Settings = {
       yaml: config[0],
       http: {
-        proxy: config[1],
-        proxyStrictSSL: config[2],
+        proxy: config[1]?.proxy ?? '',
+        proxyStrictSSL: config[1]?.proxyStrictSSL ?? false,
       },
-      yamlEditor: config[3],
+      yamlEditor: config[2],
     };
     this.setConfiguration(settings);
   }
