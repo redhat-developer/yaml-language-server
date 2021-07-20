@@ -20,10 +20,15 @@ export class SettingsHandler {
     private readonly telemetry: Telemetry
   ) {}
 
-  public registerHandlers(): void {
-    if (this.yamlSettings.hasConfigurationCapability) {
-      // Register for all configuration changes.
-      this.connection.client.register(DidChangeConfigurationNotification.type, undefined);
+  async registerHandlers(): Promise<void> {
+    if (this.yamlSettings.hasConfigurationCapability && this.yamlSettings.clientDynamicRegisterSupport) {
+      try {
+        // Register for all configuration changes.
+        await this.connection.client.register(DidChangeConfigurationNotification.type, undefined);
+      } catch (err) {
+        console.warn(err);
+        this.telemetry.sendError('yaml.settings.error', { error: err });
+      }
     }
     this.connection.onDidChangeConfiguration(() => this.pullConfiguration());
   }
