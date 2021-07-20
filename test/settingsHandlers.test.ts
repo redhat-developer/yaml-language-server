@@ -7,7 +7,7 @@ import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers
 import * as sinon from 'sinon';
 import * as chai from 'chai';
 import * as sinonChai from 'sinon-chai';
-import { Connection, RemoteWorkspace } from 'vscode-languageserver';
+import { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver';
 import { SettingsState } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 import { LanguageService, LanguageSettings, SchemaConfiguration, SchemaPriority } from '../src';
@@ -31,6 +31,9 @@ describe('Settings Handlers Tests', () => {
   beforeEach(() => {
     workspaceStub = sandbox.createStubInstance(TestWorkspace);
     connection.workspace = (workspaceStub as unknown) as RemoteWorkspace;
+    connection.onDidChangeConfiguration = sandbox.mock();
+    connection.client = {} as RemoteClient;
+    connection.client.register = sandbox.mock();
     languageService = sandbox.mock();
     settingsState = new SettingsState();
     validationHandler = sandbox.mock(ValidationHandler);
@@ -39,6 +42,36 @@ describe('Settings Handlers Tests', () => {
 
   afterEach(() => {
     sandbox.restore();
+  });
+
+  it('should not register configuration notification handler if client not supports dynamic handlers', () => {
+    settingsState.clientDynamicRegisterSupport = false;
+    settingsState.hasConfigurationCapability = false;
+    const settingsHandler = new SettingsHandler(
+      connection,
+      (languageService as unknown) as LanguageService,
+      settingsState,
+      (validationHandler as unknown) as ValidationHandler,
+      {} as Telemetry
+    );
+
+    settingsHandler.registerHandlers();
+    expect(connection.client.register).not.called;
+  });
+
+  it('should register configuration notification handler only if client supports dynamic handlers', () => {
+    settingsState.clientDynamicRegisterSupport = true;
+    settingsState.hasConfigurationCapability = true;
+    const settingsHandler = new SettingsHandler(
+      connection,
+      (languageService as unknown) as LanguageService,
+      settingsState,
+      (validationHandler as unknown) as ValidationHandler,
+      {} as Telemetry
+    );
+
+    settingsHandler.registerHandlers();
+    expect(connection.client.register).calledOnce;
   });
 
   it('SettingsHandler should not modify file match patterns', async () => {
