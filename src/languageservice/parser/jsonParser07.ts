@@ -6,7 +6,7 @@
 
 import * as Json from 'jsonc-parser';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
-import { isNumber, equals, isString, isDefined, isBoolean } from '../utils/objects';
+import { isNumber, equals, isString, isDefined, isBoolean, isIterable } from '../utils/objects';
 import { getSchemaTypeName } from '../utils/schemaUtils';
 import {
   ASTNode,
@@ -1097,7 +1097,9 @@ function validate(
           }
           case 'array': {
             propertyNode.valueNode['items'].forEach((sequenceNode) => {
-              unprocessedNodes.push(...sequenceNode['properties']);
+              if (sequenceNode && isIterable(sequenceNode['properties'])) {
+                unprocessedNodes.push(...sequenceNode['properties']);
+              }
             });
             break;
           }

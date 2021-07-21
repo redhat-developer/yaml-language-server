@@ -73,3 +73,12 @@ export function isBoolean(val: unknown): val is boolean {
 export function isString(val: unknown): val is string {
   return typeof val === 'string';
 }
+
+/**
+ * Check that provided value is Iterable
+ * @param val the value to check
+ * @returns true if val is iterable, false otherwise
+ */
+export function isIterable(val: unknown): boolean {
+  return Symbol.iterator in Object(val);
+}
