@@ -707,6 +707,41 @@ describe('Validation Tests', () => {
         })
         .then(done, done);
     });
+
+    it('Array Anchor merge', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          arr: {
+            type: 'array',
+            items: {
+              type: 'number',
+            },
+          },
+          obj: {
+            properties: {
+              arr2: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = `
+arr: &a
+  - 1
+  - 2
+obj:
+  <<: *a
+  arr2:
+    - << *a
+`;
+      const result = await parseSetup(content);
+      assert.equal(result.length, 0);
+    });
   });
 
   describe('Custom tag tests', () => {
