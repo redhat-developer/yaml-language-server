@@ -1,3 +1,16 @@
+### 0.22.0
+
+- Fix: fetching nested http settings [#511](https://github.com/redhat-developer/yaml-language-server/pull/511)
+- Fix: Cannot create property 'url' on string 'en' [#556](https://github.com/redhat-developer/vscode-yaml/issues/556)
+- Fix: Error on 'textDocument/codeLens' request [#497](https://github.com/redhat-developer/yaml-language-server/issues/497)
+- Do not send `null` in to telemetry [#513](https://github.com/redhat-developer/yaml-language-server/pull/513)
+- Fix: UnhandledPromiseRejectionWarning on jsonParser [#494](https://github.com/redhat-developer/yaml-language-server/issues/494)
+- Fix: Schema URL fragments broken since 0.21.0 [#557](https://github.com/redhat-developer/vscode-yaml/issues/557)
+- Fix: Unhandled Promise rejections with dynamicRegistration disabled [#498](https://github.com/redhat-developer/yaml-language-server/issues/498)
+
+
+Thanks to Rob Anderson
+
 ### 0.21.1
 
 - Fix: Unable to load remote schema with http protocol [#550](https://github.com/redhat-developer/vscode-yaml/issues/550)
