@@ -24,7 +24,6 @@ import {
 } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
-import { YAMLCompletion } from './services/yamlCompletion';
 import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
@@ -48,6 +47,8 @@ import { YamlCodeLens } from './services/yamlCodeLens';
 import { registerCommands } from './services/yamlCommands';
 import { YamlVersion } from './parser/yamlParser07';
 import { Telemetry } from '../languageserver/telemetry';
+import { YamlCompletion } from './services/yamlCompletion';
+import { yamlDocumentsCache } from './parser/yaml-documents';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -155,7 +156,8 @@ export function getLanguageService(
   clientCapabilities?: ClientCapabilities
 ): LanguageService {
   const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
-  const completer = new YAMLCompletion(schemaService, clientCapabilities, telemetry);
+  // const completer = new YAMLCompletion(schemaService, clientCapabilities, telemetry);
+  const completer = new YamlCompletion(schemaService, clientCapabilities, yamlDocumentsCache, telemetry);
   const hover = new YAMLHover(schemaService);
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService, telemetry);
   const yamlValidation = new YAMLValidation(schemaService);
@@ -177,8 +179,7 @@ export function getLanguageService(
       }
       yamlValidation.configure(settings);
       hover.configure(settings);
-      const customTagsSetting = settings && settings['customTags'] ? settings['customTags'] : [];
-      completer.configure(settings, customTagsSetting);
+      completer.configure(settings);
       formatter.configure(settings);
       yamlCodeActions.configure(settings);
     },

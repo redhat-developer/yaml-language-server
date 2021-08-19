@@ -59,7 +59,7 @@ export function convertAST(parent: ASTNode, node: Node, doc: Document, lineCount
 }
 
 function convertMap(node: YAMLMap<unknown, unknown>, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
-  const result = new ObjectASTNodeImpl(parent, ...toFixedOffsetLength(node.range, lineCounter));
+  const result = new ObjectASTNodeImpl(parent, node, ...toFixedOffsetLength(node.range, lineCounter));
   for (const it of node.items) {
     if (isPair(it)) {
       result.properties.push(<PropertyASTNodeImpl>convertAST(result, it, doc, lineCounter));
@@ -82,10 +82,11 @@ function convertPair(node: Pair, parent: ASTNode, doc: Document, lineCounter: Li
   // Pair does not return a range using the key/value ranges to fake one.
   const result = new PropertyASTNodeImpl(
     parent as ObjectASTNodeImpl,
+    node,
     ...toFixedOffsetLength([rangeStart, rangeEnd, nodeEnd], lineCounter)
   );
   if (isAlias(keyNode)) {
-    const keyAlias = new StringASTNodeImpl(parent, ...toOffsetLength(keyNode.range));
+    const keyAlias = new StringASTNodeImpl(parent, keyNode, ...toOffsetLength(keyNode.range));
     keyAlias.value = keyNode.source;
     result.keyNode = keyAlias;
   } else {
@@ -96,7 +97,7 @@ function convertPair(node: Pair, parent: ASTNode, doc: Document, lineCounter: Li
 }
 
 function convertSeq(node: YAMLSeq, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
-  const result = new ArrayASTNodeImpl(parent, ...toOffsetLength(node.range));
+  const result = new ArrayASTNodeImpl(parent, node, ...toOffsetLength(node.range));
   for (const it of node.items) {
     if (isNode(it)) {
       result.children.push(convertAST(result, it, doc, lineCounter));
@@ -107,19 +108,19 @@ function convertSeq(node: YAMLSeq, parent: ASTNode, doc: Document, lineCounter: 
 
 function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
   if (node.value === null) {
-    return new NullASTNodeImpl(parent, ...toOffsetLength(node.range));
+    return new NullASTNodeImpl(parent, node, ...toOffsetLength(node.range));
   }
 
   switch (typeof node.value) {
     case 'string': {
-      const result = new StringASTNodeImpl(parent, ...toOffsetLength(node.range));
+      const result = new StringASTNodeImpl(parent, node, ...toOffsetLength(node.range));
       result.value = node.value;
       return result;
     }
     case 'boolean':
-      return new BooleanASTNodeImpl(parent, node.value, ...toOffsetLength(node.range));
+      return new BooleanASTNodeImpl(parent, node, node.value, ...toOffsetLength(node.range));
     case 'number': {
-      const result = new NumberASTNodeImpl(parent, ...toOffsetLength(node.range));
+      const result = new NumberASTNodeImpl(parent, node, ...toOffsetLength(node.range));
       result.value = node.value;
       result.isInteger = Number.isInteger(result.value);
       return result;
@@ -132,7 +133,7 @@ function convertAlias(node: Alias, parent: ASTNode, doc: Document, lineCounter: 
   return convertAST(parent, node.resolve(doc), doc, lineCounter);
 }
 
-function toOffsetLength(range: [number, number, number]): [number, number] {
+export function toOffsetLength(range: [number, number, number]): [number, number] {
   return [range[0], range[1] - range[0]];
 }
 

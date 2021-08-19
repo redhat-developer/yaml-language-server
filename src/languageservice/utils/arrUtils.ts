@@ -45,12 +45,15 @@ export function removeDuplicatesObj(objArray: any[]): any[] {
 
 export function matchOffsetToDocument(offset: number, jsonDocuments: YAMLDocument): SingleYAMLDocument | null {
   for (const jsonDoc of jsonDocuments.documents) {
-    if (jsonDoc.root && jsonDoc.root.offset <= offset && jsonDoc.root.length + jsonDoc.root.offset >= offset) {
+    if (jsonDoc.internalDocument && jsonDoc.internalDocument.range[0] <= offset && jsonDoc.internalDocument.range[2] >= offset) {
       return jsonDoc;
     }
   }
 
-  // TODO: Fix this so that it returns the correct document
+  if (jsonDocuments.documents.length === 1) {
+    return jsonDocuments.documents[0];
+  }
+
   return null;
 }
 

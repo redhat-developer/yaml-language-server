@@ -1065,7 +1065,6 @@ describe('Auto Completion Tests', () => {
             const expectedCompletion = createExpectedCompletion('include', 'include: ${1:test}', 3, 0, 3, 0, 10, 2, {
               documentation: '',
             });
-            delete expectedCompletion.textEdit;
             assert.deepEqual(result.items[0], expectedCompletion);
           })
           .then(done, done);
@@ -1097,14 +1096,14 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'archive:\n  exclude:\n    - nam\n  ';
+        const content = 'archive:\n  exclude:\n    - nam\n     ';
         const completion = parseSetup(content, content.length - 1);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 1, 3, 1, 9, 2, {
+              createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 4, 3, 4, 9, 2, {
                 documentation: 'Create an item of an array',
               })
             );
@@ -1556,19 +1555,14 @@ describe('Auto Completion Tests', () => {
         .then(done, done);
     });
 
-    it('Provide completion from schema declared in file with several documents', (done) => {
+    it('Provide completion from schema declared in file with several documents', async () => {
       const documentContent1 = `# yaml-language-server: $schema=${uri} anothermodeline=value\n- `;
       const content = `${documentContent1}\n---\n- `;
-      const completionDoc1 = parseSetup(content, documentContent1.length);
-      completionDoc1.then(function (result) {
-        assert.equal(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
-        const completionDoc2 = parseSetup(content, content.length);
-        completionDoc2
-          .then(function (resultDoc2) {
-            assert.equal(resultDoc2.items.length, 0, `Expecting no items in completion but found ${resultDoc2.items.length}`);
-          })
-          .then(done, done);
-      }, done);
+      const result = await parseSetup(content, documentContent1.length);
+      assert.equal(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
+
+      const resultDoc2 = await parseSetup(content, content.length);
+      assert.equal(resultDoc2.items.length, 0, `Expecting no items in completion but found ${resultDoc2.items.length}`);
     });
 
     it('should handle absolute path', async () => {
