@@ -38,7 +38,6 @@
     "prettier": "2.0.5"
   },
   "dependencies": {
-    "js-yaml": "^4.1.0",
     "jsonc-parser": "^3.0.0",
     "request-light": "^0.2.4",
     "vscode-json-languageservice": "^4.1.0",
@@ -47,11 +46,11 @@
     "vscode-languageserver-types": "^3.16.0",
     "vscode-nls": "^4.1.2",
     "vscode-uri": "^2.1.1",
+    "yaml": "2.0.0-7",
     "yaml-language-server-parser": "next"
   },
   "devDependencies": {
     "@types/chai": "^4.2.12",
-    "@types/js-yaml": "^4.0.1",
     "@types/mocha": "8.2.2",
     "@types/node": "^12.11.7",
     "@types/prettier": "2.0.2",
