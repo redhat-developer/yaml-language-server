@@ -6,7 +6,7 @@ import * as path from 'path';
 import { setupLanguageService, setupTextDocument, toFsPath } from './utils/testHelper';
 import * as assert from 'assert';
 import { ServiceSetup } from './utils/serviceSetup';
-import { Diagnostic, Hover } from 'vscode-languageserver';
+import { Diagnostic, Hover, MarkupContent } from 'vscode-languageserver';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
@@ -120,15 +120,13 @@ cwd: False
         .then(done, done);
     });
 
-    it('Should hover in first document', (done) => {
+    it('Should hover in first document', async () => {
       const content = 'name: jack\nage: 22\n---\ncwd: False';
-      const hover = hoverSetup(content, 1 + content.indexOf('age'));
-      hover
-        .then(function (result) {
-          assert.notEqual((result.contents as []).length, 0);
-          assert.equal(result.contents[0], 'The age of this person');
-        })
-        .then(done, done);
+      const result = await hoverSetup(content, 1 + content.indexOf('age'));
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual((result.contents as MarkupContent).value, 'The age of this person');
     });
   });
 });

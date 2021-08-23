@@ -22,7 +22,8 @@ import * as nls from 'vscode-nls';
 import { convertSimple2RegExpPattern } from '../utils/strings';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonParser07';
-import { load } from 'js-yaml';
+import { parse } from 'yaml';
+import * as path from 'path';
 
 const localize = nls.loadMessageBundle();
 
@@ -90,9 +91,8 @@ export class YAMLSchemaService extends JSONSchemaService {
   private customSchemaProvider: CustomSchemaProvider | undefined;
   private filePatternAssociations: JSONSchemaService.FilePatternAssociation[];
   private contextService: WorkspaceContextService;
-  private customSchemaProvider: CustomSchemaProvider | undefined;
   private requestService: SchemaRequestService;
-  public schemaPriorityMapping: Map<string, SchemaPriority[]>;
+  public schemaPriorityMapping: Map<string, Set<SchemaPriority>>;
 
   constructor(
     requestService: SchemaRequestService,
@@ -257,6 +257,13 @@ export class YAMLSchemaService extends JSONSchemaService {
         collectArrayEntries(next.anyOf, next.allOf, next.oneOf, <JSONSchema[]>next.items, next.schemaSequence);
       };
 
+      if (parentSchemaURL.indexOf('#') > 0) {
+        const segments = parentSchemaURL.split('#', 2);
+        if (segments[0].length > 0 && segments[1].length > 0) {
+          openPromises.push(resolveExternalLink(node, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies));
+        }
+      }
+
       while (toWalk.length) {
         const next = toWalk.pop();
         if (seen.indexOf(next) >= 0) {
@@ -279,8 +286,16 @@ export class YAMLSchemaService extends JSONSchemaService {
       const seen: { [schemaId: string]: boolean } = Object.create(null);
       const schemas: string[] = [];
 
-      const schemaFromModeline = this.getSchemaFromModeline(doc);
+      let schemaFromModeline = this.getSchemaFromModeline(doc);
       if (schemaFromModeline !== undefined) {
+        if (!schemaFromModeline.startsWith('file:') && !schemaFromModeline.startsWith('http')) {
+          if (!path.isAbsolute(schemaFromModeline)) {
+            const resUri = URI.parse(resource);
+            schemaFromModeline = URI.file(path.resolve(path.parse(resUri.fsPath).dir, schemaFromModeline)).toString();
+          } else {
+            schemaFromModeline = URI.file(schemaFromModeline).toString();
+          }
+        }
         this.addSchemaPriority(schemaFromModeline, SchemaPriority.Modeline);
         schemas.push(schemaFromModeline);
         seen[schemaFromModeline] = true;
@@ -313,7 +328,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         const highestPrioSchemas = this.highestPrioritySchemas(schemas);
         const schemaHandle = super.createCombinedSchema(resource, highestPrioSchemas);
         return schemaHandle.getResolvedSchema().then((schema) => {
-          if (schema.schema) {
+          if (schema.schema && typeof schema.schema !== 'string') {
             schema.schema.url = schemaHandle.url;
           }
 
@@ -381,10 +396,10 @@ export class YAMLSchemaService extends JSONSchemaService {
   public addSchemaPriority(uri: string, priority: number): void {
     let currSchemaArray = this.schemaPriorityMapping.get(uri);
     if (currSchemaArray) {
-      currSchemaArray = currSchemaArray.concat(priority);
+      currSchemaArray = currSchemaArray.add(priority);
       this.schemaPriorityMapping.set(uri, currSchemaArray);
     } else {
-      this.schemaPriorityMapping.set(uri, [priority]);
+      this.schemaPriorityMapping.set(uri, new Set<SchemaPriority>().add(priority));
     }
   }
 
@@ -460,7 +475,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   public async saveSchema(schemaId: string, schemaContent: JSONSchema): Promise<void> {
     const id = this.normalizeId(schemaId);
     this.getOrAddSchemaHandle(id, schemaContent);
-    this.schemaPriorityMapping.set(id, [SchemaPriority.Settings]);
+    this.schemaPriorityMapping.set(id, new Set<SchemaPriority>().add(SchemaPriority.Settings));
     return Promise.resolve(undefined);
   }
 
@@ -587,7 +602,7 @@ export class YAMLSchemaService extends JSONSchemaService {
             }
 
             try {
-              const schemaContent = load(content) as JSONSchema;
+              const schemaContent = parse(content);
               return new UnresolvedSchema(schemaContent, []);
             } catch (yamlError) {
               const errorMessage = localize(

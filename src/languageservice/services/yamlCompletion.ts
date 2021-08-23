@@ -162,7 +162,7 @@ export class YAMLCompletion extends JSONCompletion {
 
     currentDoc.currentDocIndex = currentDocIndex;
     return this.schemaService.getSchemaForResource(document.uri, currentDoc).then((schema) => {
-      if (!schema) {
+      if (!schema || schema.errors.length) {
         return Promise.resolve(result);
       }
       const newSchema = schema;
@@ -519,7 +519,7 @@ export class YAMLCompletion extends JSONCompletion {
         }
         collector.add({
           kind: this.getSuggestionKind(type),
-          label: value,
+          label: this.getLabelForValue(value),
           insertText: this.getInsertTextForValue(value, separatorAfter, type),
           insertTextFormat: InsertTextFormat.Snippet,
         });
@@ -967,11 +967,14 @@ export class YAMLCompletion extends JSONCompletion {
     return this.getInsertTextForValue(value, separatorAfter, type);
   }
 
-  private getLabelForValue(value: string): string {
+  private getLabelForValue(value: unknown): string {
     if (value === null) {
       return 'null'; // return string with 'null' value if schema contains null as possible value
     }
-    return value;
+    if (Array.isArray(value)) {
+      return JSON.stringify(value);
+    }
+    return value as string;
   }
 
   /**

@@ -9,7 +9,7 @@ import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList, InsertTextFormat, MarkupContent, MarkupKind } from 'vscode-languageserver';
+import { CompletionList, InsertTextFormat, MarkupContent, MarkupKind, Position } from 'vscode-languageserver';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageService } from '../src';
@@ -22,7 +22,10 @@ describe('Auto Completion Tests', () => {
   let yamlSettings: SettingsState;
 
   before(() => {
-    languageSettingsSetup = new ServiceSetup().withCompletion();
+    languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
+      uri: 'http://google.com',
+      fileMatch: ['bad-schema.yaml'],
+    });
     const { languageService: langService, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(
       languageSettingsSetup.languageSettings
     );
@@ -1567,6 +1570,30 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       }, done);
     });
+
+    it('should handle absolute path', async () => {
+      const documentContent = `# yaml-language-server: $schema=${path.join(
+        __dirname,
+        './fixtures/testArrayMaxProperties.json'
+      )} anothermodeline=value\n- `;
+      const content = `${documentContent}\n---\n- `;
+      const result = await parseSetup(content, documentContent.length);
+      assert.strictEqual(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
+    });
+
+    it('should handle relative path', async () => {
+      const documentContent = `# yaml-language-server: $schema=./fixtures/testArrayMaxProperties.json anothermodeline=value\n- `;
+      const content = `${documentContent}\n---\n- `;
+
+      const testTextDocument = setupSchemaIDTextDocument(content, path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(documentContent.length),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
+    });
   });
 
   describe('Configuration based indentation', () => {
@@ -1815,6 +1842,26 @@ describe('Auto Completion Tests', () => {
       expect(trueItem.textEdit.newText).equal('"true"');
     });
 
+    it('should provide label as string for examples completion item', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          fooBar: {
+            type: 'array',
+            items: {
+              type: 'string',
+              examples: ['test'],
+            },
+          },
+        },
+      });
+
+      const content = 'fooBar: \n';
+      const completion = await parseSetup(content, 8);
+
+      expect(completion.items).length(1);
+    });
+
     it('should provide completion for flow map', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
@@ -2020,7 +2067,20 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('and', 'and', 2, 4, 2, 4, 12, InsertTextFormat.Snippet, { documentation: undefined })
       );
     });
+
+    it('completion should handle bad schema', async () => {
+      const doc = setupSchemaIDTextDocument('foo:\n bar', 'bad-schema.yaml');
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(doc);
+      const result = await languageHandler.completionHandler({
+        position: Position.create(0, 1),
+        textDocument: doc,
+      });
+
+      expect(result.items).to.be.empty;
+    });
   });
+
   describe('Array completion', () => {
     it('Simple array object completion with "-" without any item', async () => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));

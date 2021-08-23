@@ -157,11 +157,11 @@ export function getLanguageService(
   const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
   const completer = new YAMLCompletion(schemaService, clientCapabilities, telemetry);
   const hover = new YAMLHover(schemaService);
-  const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService);
+  const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService, telemetry);
   const yamlValidation = new YAMLValidation(schemaService);
   const formatter = new YAMLFormatter();
   const yamlCodeActions = new YamlCodeActions(clientCapabilities);
-  const yamlCodeLens = new YamlCodeLens(schemaService);
+  const yamlCodeLens = new YamlCodeLens(schemaService, telemetry);
   // register all commands
   registerCommands(commandExecutor, connection);
   return {

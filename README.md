@@ -222,8 +222,20 @@ yaml.schemas: {
 
 It is possible to specify a yaml schema using a modeline.
 
-```
+```yaml
 # yaml-language-server: $schema=<urlToTheSchema>
+```
+
+Also it is possible to use relative path in a modeline:
+
+```yaml
+# yaml-language-server: $schema=../relative/path/to/schema
+```
+
+or absolute path:
+
+```yaml
+# yaml-language-server: $schema=/absolute/path/to/schema
 ```
 
 ## Containerized Language Server
@@ -252,7 +264,7 @@ This repository only contains the server implementation. Here are some known cli
 - [lsp-mode](https://github.com/emacs-lsp/lsp-mode) for Emacs
 - [vim-lsp](https://github.com/prabirshrestha/vim-lsp) for Vim
 - [LSP-yaml](https://packagecontrol.io/packages/LSP-yaml) for Sublime Text
-- [monaco-yaml](https://github.com/pengx17/monaco-yaml) for Monaco editor
+- [monaco-yaml](https://monaco-yaml.js.org) for Monaco editor
 
 ## Developer Support
 
