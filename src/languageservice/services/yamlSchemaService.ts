@@ -22,7 +22,7 @@ import * as nls from 'vscode-nls';
 import { convertSimple2RegExpPattern } from '../utils/strings';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonParser07';
-import { load } from 'js-yaml';
+import { parse } from 'yaml';
 import * as path from 'path';
 
 const localize = nls.loadMessageBundle();
@@ -602,7 +602,7 @@ export class YAMLSchemaService extends JSONSchemaService {
             }
 
             try {
-              const schemaContent = load(content) as JSONSchema;
+              const schemaContent = parse(content);
               return new UnresolvedSchema(schemaContent, []);
             } catch (yamlError) {
               const errorMessage = localize(
