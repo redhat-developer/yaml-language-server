@@ -109,17 +109,16 @@ export class YAMLSchemaService extends JSONSchemaService {
     this.customSchemaProvider = customSchemaProvider;
   }
 
-  public resolveSchemaContent(
+  async resolveSchemaContent(
     schemaToResolve: UnresolvedSchema,
     schemaURL: string,
     dependencies: SchemaDependencies
   ): Promise<ResolvedSchema> {
     const resolveErrors: string[] = schemaToResolve.errors.slice(0);
-    const schema = schemaToResolve.schema;
+    let schema = schemaToResolve.schema;
     const contextService = this.contextService;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const findSection = (schema: JSONSchema, path: string): any => {
+    const findSection = (schema: JSONSchema, path: string): JSONSchema => {
       if (!path) {
         return schema;
       }
@@ -176,7 +175,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       });
     };
 
-    const resolveRefs = (
+    const resolveRefs = async (
       node: JSONSchema,
       parentSchema: JSONSchema,
       parentSchemaURL: string,
@@ -184,7 +183,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any> => {
       if (!node || typeof node !== 'object') {
-        return Promise.resolve(null);
+        return null;
       }
 
       const toWalk: JSONSchema[] = [node];
@@ -260,7 +259,17 @@ export class YAMLSchemaService extends JSONSchemaService {
       if (parentSchemaURL.indexOf('#') > 0) {
         const segments = parentSchemaURL.split('#', 2);
         if (segments[0].length > 0 && segments[1].length > 0) {
-          openPromises.push(resolveExternalLink(node, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies));
+          const newSchema = {};
+          await resolveExternalLink(newSchema, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies);
+          for (const key in schema) {
+            if (key === 'required') {
+              continue;
+            }
+            if (Object.prototype.hasOwnProperty.call(schema, key) && !Object.prototype.hasOwnProperty.call(newSchema, key)) {
+              newSchema[key] = schema[key];
+            }
+          }
+          schema = newSchema;
         }
       }
 
@@ -275,9 +284,8 @@ export class YAMLSchemaService extends JSONSchemaService {
       return Promise.all(openPromises);
     };
 
-    return resolveRefs(schema, schema, schemaURL, dependencies).then(() => {
-      return new ResolvedSchema(schema, resolveErrors);
-    });
+    await resolveRefs(schema, schema, schemaURL, dependencies);
+    return new ResolvedSchema(schema, resolveErrors);
   }
 
   public getSchemaForResource(resource: string, doc: JSONDocument): Promise<ResolvedSchema> {

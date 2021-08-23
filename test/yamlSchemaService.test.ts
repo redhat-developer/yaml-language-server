@@ -65,5 +65,31 @@ describe('YAML Schema Service', () => {
 
       expect(schema.schema.type).eqls('array');
     });
+
+    it('should handle url with fragments when root object is schema', async () => {
+      const content = `# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#/definitions/schemaArray`;
+      const yamlDock = parse(content);
+
+      requestServiceMock = sandbox.fake.resolves(`{"definitions": {"schemaArray": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "$ref": "#" }
+    },
+    "bar": {
+      "type": "string"
+    } 
+  }, "properties": {"foo": {"type": "boolean"}}, "required": ["foo"]}`);
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      expect(requestServiceMock).calledTwice;
+      expect(requestServiceMock).calledWithExactly('https://json-schema.org/draft-07/schema');
+      expect(requestServiceMock).calledWithExactly('https://json-schema.org/draft-07/schema#/definitions/schemaArray');
+
+      expect(schema.schema.type).eqls('array');
+      expect(schema.schema.required).is.undefined;
+      expect(schema.schema.definitions.bar.type).eqls('string');
+    });
   });
 });
