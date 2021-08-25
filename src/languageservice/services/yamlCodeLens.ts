@@ -20,9 +20,9 @@ export class YamlCodeLens {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async getCodeLens(document: TextDocument, params: CodeLensParams): Promise<CodeLens[]> {
-    const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
     const result = [];
     try {
+      const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
       for (const currentYAMLDoc of yamlDocument.documents) {
         const schema = await this.schemaService.getSchemaForResource(document.uri, currentYAMLDoc);
         if (schema?.schema) {

@@ -17,12 +17,13 @@ import { getNodeValue } from '../parser/jsonParser07';
 import { JSONSchema } from '../jsonSchema';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
+import { Telemetry } from '../../languageserver/telemetry';
 
 export class YAMLHover {
   private shouldHover: boolean;
   private schemaService: YAMLSchemaService;
 
-  constructor(schemaService: YAMLSchemaService) {
+  constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
     this.shouldHover = true;
     this.schemaService = schemaService;
   }
@@ -34,20 +35,24 @@ export class YAMLHover {
   }
 
   doHover(document: TextDocument, position: Position, isKubernetes = false): Promise<Hover | null> {
-    if (!this.shouldHover || !document) {
-      return Promise.resolve(undefined);
-    }
-    const doc = yamlDocumentsCache.getYamlDocument(document);
-    const offset = document.offsetAt(position);
-    const currentDoc = matchOffsetToDocument(offset, doc);
-    if (currentDoc === null) {
-      return Promise.resolve(undefined);
-    }
+    try {
+      if (!this.shouldHover || !document) {
+        return Promise.resolve(undefined);
+      }
+      const doc = yamlDocumentsCache.getYamlDocument(document);
+      const offset = document.offsetAt(position);
+      const currentDoc = matchOffsetToDocument(offset, doc);
+      if (currentDoc === null) {
+        return Promise.resolve(undefined);
+      }
 
-    setKubernetesParserOption(doc.documents, isKubernetes);
-    const currentDocIndex = doc.documents.indexOf(currentDoc);
-    currentDoc.currentDocIndex = currentDocIndex;
-    return this.getHover(document, position, currentDoc);
+      setKubernetesParserOption(doc.documents, isKubernetes);
+      const currentDocIndex = doc.documents.indexOf(currentDoc);
+      currentDoc.currentDocIndex = currentDocIndex;
+      return this.getHover(document, position, currentDoc);
+    } catch (error) {
+      this.telemetry.sendError('yaml.hover.error', { error, documentUri: document.uri });
+    }
   }
 
   // method copied from https://github.com/microsoft/vscode-json-languageservice/blob/2ea5ad3d2ffbbe40dea11cfe764a502becf113ce/src/services/jsonHover.ts#L23
