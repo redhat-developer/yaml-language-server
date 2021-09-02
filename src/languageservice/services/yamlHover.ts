@@ -101,13 +101,17 @@ export class YAMLHover {
         matchingSchemas.every((s) => {
           if (s.node === node && !s.inverted && s.schema) {
             title = title || s.schema.title;
-            markdownDescription = markdownDescription || s.schema.markdownDescription || toMarkdown(s.schema.description);
+            markdownDescription =
+              markdownDescription ||
+              s.schema.markdownDescription ||
+              ('openapi' in schema.schema ? s.schema.description : toMarkdown(s.schema.description));
             if (s.schema.enum) {
               const idx = s.schema.enum.indexOf(getNodeValue(node));
               if (s.schema.markdownEnumDescriptions) {
                 markdownEnumValueDescription = s.schema.markdownEnumDescriptions[idx];
               } else if (s.schema.enumDescriptions) {
-                markdownEnumValueDescription = toMarkdown(s.schema.enumDescriptions[idx]);
+                markdownEnumValueDescription =
+                  'openapi' in schema.schema ? s.schema.description : toMarkdown(s.schema.enumDescriptions[idx]);
               }
               if (markdownEnumValueDescription) {
                 enumValue = s.schema.enum[idx];
