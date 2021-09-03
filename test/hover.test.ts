@@ -359,6 +359,29 @@ describe('Hover Tests', () => {
       );
     });
 
+    it('Hover treats descriptions as markdown for Swagger documents', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        // @ts-expect-error This property doesn’t exist on schemas,
+        // but Swagger documents are also supported through nested JSON references.
+        swagger: '2.0',
+        type: 'object',
+        properties: {
+          childObject: {
+            type: 'object',
+            description: 'should return **this**\ndescription',
+          },
+        },
+      });
+      const content = 'childObject: \n';
+      const result = await parseSetup(content, 1);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return **this**\ndescription\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
     it('should work with bad schema', async () => {
       const doc = setupSchemaIDTextDocument('foo:\n bar', 'bad-schema.yaml');
       yamlSettings.documents = new TextDocumentTestManager();

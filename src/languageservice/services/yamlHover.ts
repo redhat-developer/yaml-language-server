@@ -92,6 +92,7 @@ export class YAMLHover {
 
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
       if (schema && node && !schema.errors.length) {
+        const descriptionsAreMarkdown = 'openapi' in schema.schema || 'swagger' in schema.schema;
         const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
 
         let title: string | undefined = undefined;
@@ -104,14 +105,15 @@ export class YAMLHover {
             markdownDescription =
               markdownDescription ||
               s.schema.markdownDescription ||
-              ('openapi' in schema.schema ? s.schema.description : toMarkdown(s.schema.description));
+              (descriptionsAreMarkdown ? s.schema.description : toMarkdown(s.schema.description));
             if (s.schema.enum) {
               const idx = s.schema.enum.indexOf(getNodeValue(node));
               if (s.schema.markdownEnumDescriptions) {
                 markdownEnumValueDescription = s.schema.markdownEnumDescriptions[idx];
               } else if (s.schema.enumDescriptions) {
-                markdownEnumValueDescription =
-                  'openapi' in schema.schema ? s.schema.description : toMarkdown(s.schema.enumDescriptions[idx]);
+                markdownEnumValueDescription = descriptionsAreMarkdown
+                  ? s.schema.description
+                  : toMarkdown(s.schema.enumDescriptions[idx]);
               }
               if (markdownEnumValueDescription) {
                 enumValue = s.schema.enum[idx];
