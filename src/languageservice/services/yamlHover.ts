@@ -112,7 +112,7 @@ export class YAMLHover {
                 markdownEnumValueDescription = s.schema.markdownEnumDescriptions[idx];
               } else if (s.schema.enumDescriptions) {
                 markdownEnumValueDescription = descriptionsAreMarkdown
-                  ? s.schema.description
+                  ? s.schema.enumDescriptions[idx]
                   : toMarkdown(s.schema.enumDescriptions[idx]);
               }
               if (markdownEnumValueDescription) {
