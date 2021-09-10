@@ -7,7 +7,7 @@
 
 import { Hover, MarkupContent, Position, Range } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
-import { LanguageSettings } from '../yamlLanguageService';
+import { LanguageSettings, SchemasSettings } from '../yamlLanguageService';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -92,7 +92,6 @@ export class YAMLHover {
 
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
       if (schema && node && !schema.errors.length) {
-        const descriptionsAreMarkdown = 'openapi' in schema.schema || 'swagger' in schema.schema;
         const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
 
         let title: string | undefined = undefined;
@@ -105,13 +104,13 @@ export class YAMLHover {
             markdownDescription =
               markdownDescription ||
               s.schema.markdownDescription ||
-              (descriptionsAreMarkdown ? s.schema.description : toMarkdown(s.schema.description));
+              (hasMarkdownDescriptions(schema) ? s.schema.description : toMarkdown(s.schema.description));
             if (s.schema.enum) {
               const idx = s.schema.enum.indexOf(getNodeValue(node));
               if (s.schema.markdownEnumDescriptions) {
                 markdownEnumValueDescription = s.schema.markdownEnumDescriptions[idx];
               } else if (s.schema.enumDescriptions) {
-                markdownEnumValueDescription = descriptionsAreMarkdown
+                markdownEnumValueDescription = hasMarkdownDescriptions(schema)
                   ? s.schema.enumDescriptions[idx]
                   : toMarkdown(s.schema.enumDescriptions[idx]);
               }
@@ -162,6 +161,16 @@ function getSchemaName(schema: JSONSchema): string {
     result = schema.title;
   }
   return result;
+}
+
+/**
+ * Determine whether the schema descriptions should be treated as markdown or as plain text.
+ *
+ * @param schema The schema settings to check.
+ * @returns True if the schema descriptions are markdown, false if they are plain text.
+ */
+function hasMarkdownDescriptions(schema: SchemasSettings): boolean {
+  return typeof schema.schema == 'object' && ('openapi' in schema.schema || 'swagger' in schema.schema);
 }
 
 // copied from https://github.com/microsoft/vscode-json-languageservice/blob/2ea5ad3d2ffbbe40dea11cfe764a502becf113ce/src/services/jsonHover.ts#L112
