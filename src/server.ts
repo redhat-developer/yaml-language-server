@@ -11,6 +11,7 @@ import * as nls from 'vscode-nls';
 import { schemaRequestHandler, workspaceContext } from './languageservice/services/schemaRequestHandler';
 import { YAMLServerInit } from './yamlServerInit';
 import { SettingsState } from './yamlSettings';
+import { promises as fs } from 'fs';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
@@ -38,6 +39,12 @@ console.error = (arg) => {
 
 const yamlSettings = new SettingsState();
 
+const fileSystem = {
+  readFile: (fsPath: string, encoding?: string) => {
+    return fs.readFile(fsPath, encoding).then((b) => b.toString());
+  },
+};
+
 /**
  * Handles schema content requests given the schema URI
  * @param uri can be a local file, vscode request, http(s) request or a custom request
@@ -48,7 +55,8 @@ const schemaRequestHandlerWrapper = (connection: Connection, uri: string): Promi
     uri,
     yamlSettings.workspaceFolders,
     yamlSettings.workspaceRoot,
-    yamlSettings.useVSCodeContentRequest
+    yamlSettings.useVSCodeContentRequest,
+    fileSystem
   );
 };
 

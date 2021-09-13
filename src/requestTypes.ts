@@ -26,11 +26,11 @@ export namespace ResultLimitReachedNotification {
 }
 
 export namespace VSCodeContentRequest {
-  export const type: RequestType<{}, {}, {}> = new RequestType('vscode/content');
+  export const type: RequestType<string, string, {}> = new RequestType('vscode/content');
 }
 
 export namespace CustomSchemaContentRequest {
-  export const type: RequestType<{}, {}, {}> = new RequestType('custom/schema/content');
+  export const type: RequestType<string, string, {}> = new RequestType('custom/schema/content');
 }
 
 export namespace CustomSchemaRequest {
