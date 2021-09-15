@@ -283,9 +283,13 @@ This repository only contains the server implementation. Here are some known cli
    ```bash
    $ yarn run build
    ```
-5. The new built server is now located in ./out/server/src/server.js.
+5. ~~The new built server is now located in ./out/server/src/server.js.~~ __Deprecated__: Please, use webpack bundled version, see 6.
    ```bash
    node (Yaml Language Server Location)/out/server/src/server.js [--stdio]
+   ```
+6. The new built server is now located in ./out/server/language_server.js.
+   ```bash
+   node (Yaml Language Server Location)/out/server/language_server.js [--stdio]
    ```
 
 ### Connecting to the language server via stdio

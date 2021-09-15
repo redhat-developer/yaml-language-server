@@ -65,23 +65,28 @@
     "sinon": "^9.0.3",
     "sinon-chai": "^3.5.0",
     "source-map-support": "^0.5.19",
+    "ts-loader": "^9.2.5",
     "ts-node": "^10.0.0",
-    "typescript": "^3.8.3"
+    "typescript": "^3.8.3",
+    "umd-compat-loader": "^2.1.2",
+    "webpack": "^5.52.1",
+    "webpack-cli": "^4.8.0"
   },
   "scripts": {
     "clean": "rimraf out/server && rimraf lib",
     "compile": "tsc -p .",
-    "watch": "tsc --watch -p .",
+    "watch": "webpack --mode development --watch",
     "test": "mocha --require ts-node/register --timeout 5000 --ui bdd ./test/*.test.ts",
     "coverage": "nyc mocha --require ts-node/register --timeout 5000 --require source-map-support/register --recursive --ui bdd ./test/*.test.ts",
     "coveralls": "nyc --reporter=lcov --reporter=text mocha --timeout 5000 --require ts-node/register --require source-map-support/register --recursive --ui bdd ./test/*.test.ts",
     "lint": "eslint -c .eslintrc.js --ext .ts src test",
     "prettier-fix": "yarn prettier --write .",
-    "build": "yarn clean && yarn lint && yarn compile && yarn build:libs",
+    "build": "yarn clean && yarn lint && yarn compile && yarn build:libs && yarn webpack:package",
     "build:libs": "yarn compile:umd && yarn compile:esm",
     "compile:umd": "tsc -p ./tsconfig.umd.json",
     "compile:esm": "tsc -p ./tsconfig.esm.json",
-    "check-dependencies": "node ./scripts/check-dependencies.js"
+    "check-dependencies": "node ./scripts/check-dependencies.js",
+    "webpack:package": "yarn webpack --mode production"
   },
   "nyc": {
     "extension": [
