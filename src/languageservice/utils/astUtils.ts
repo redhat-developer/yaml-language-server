@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Document, isDocument, Node, Pair, visit } from 'yaml';
+import { Document, isDocument, Node, visit } from 'yaml';
 
 export function getParent(doc: Document, nodeToFind: Node): Node | undefined {
   let parentNode: Node;
@@ -19,15 +19,4 @@ export function getParent(doc: Document, nodeToFind: Node): Node | undefined {
   }
 
   return parentNode;
-}
-
-export function getNodePath(doc: Document, node: Node): readonly (Document | Node | Pair)[] | undefined {
-  let result: readonly (Document | Node | Pair)[];
-  visit(doc, (_, vNode: Node, path) => {
-    if (node === vNode) {
-      result = path;
-      return visit.BREAK;
-    }
-  });
-  return result;
 }

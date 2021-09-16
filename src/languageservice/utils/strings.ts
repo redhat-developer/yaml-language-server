@@ -63,5 +63,6 @@ export function getIndentation(lineContent: string, position: number): number {
     }
   }
 
+  // assuming that current position is indentation
   return position;
 }

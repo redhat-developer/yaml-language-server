@@ -156,8 +156,13 @@ export class SingleYAMLDocument extends JSONDocument {
     return getParent(this.internalDocument, node);
   }
 
-  getMatchingSchemasNew(schema: JSONSchema, focusOffset = -1, exclude: Node = null): ApplicableSchema[] {
-    const matchingSchemas = new SchemaCollectorImpl(focusOffset, exclude);
+  /**
+   * Match JSON Schemas to this document
+   * @param schema the JSON Schema
+   * @returns array of matching schemas
+   */
+  matchSchemas(schema: JSONSchema): ApplicableSchema[] {
+    const matchingSchemas = new SchemaCollectorImpl(-1, null);
     if (this.internalDocument.contents && schema) {
       validate(
         this.internalDocument.contents as Node,

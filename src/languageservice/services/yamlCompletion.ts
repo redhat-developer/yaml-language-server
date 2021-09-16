@@ -91,7 +91,6 @@ export class YamlCompletion {
 
     const offset = document.offsetAt(position);
 
-    //TODO: should we keep this?
     if (document.getText().charAt(offset - 1) === ':') {
       return Promise.resolve(result);
     }
@@ -338,7 +337,7 @@ export class YamlCompletion {
     textBuffer: TextBuffer,
     overwriteRange: Range
   ): void {
-    const matchingSchemas = doc.getMatchingSchemasNew(schema.schema);
+    const matchingSchemas = doc.matchSchemas(schema.schema);
     const existingKey = textBuffer.getText(overwriteRange);
     const hasColumn = textBuffer.getLineContent(overwriteRange.start.line).indexOf(':') === -1;
 
@@ -451,21 +450,6 @@ export class YamlCompletion {
       node = doc.getParent(node);
     }
 
-    if (node && isScalar(node) && node.value === 'null') {
-      // const nodeParent = doc.getParent(node);
-      /*
-       * This is going to be an object for some reason and we need to find the property
-       * Its an issue with the null node
-       */
-      // if (nodeParent && isMap(nodeParent)) {
-      //   for (const currNode of nodeParent.items) {
-      //     if (currNode.key && currNode.key.value === node.location) {
-      //       node = currNode;
-      //     }
-      //   }
-      // }
-    }
-
     if (!node) {
       this.addSchemaValueCompletions(schema.schema, '', collector, types);
       return;
@@ -482,7 +466,7 @@ export class YamlCompletion {
 
     if (node && (parentKey !== null || isSeq(node))) {
       const separatorAfter = '';
-      const matchingSchemas = doc.getMatchingSchemasNew(schema.schema);
+      const matchingSchemas = doc.matchSchemas(schema.schema);
       for (const s of matchingSchemas) {
         if (s.node === node && !s.inverted && s.schema) {
           if (s.schema.items) {

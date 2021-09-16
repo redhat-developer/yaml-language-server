@@ -156,7 +156,6 @@ export function getLanguageService(
   clientCapabilities?: ClientCapabilities
 ): LanguageService {
   const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
-  // const completer = new YAMLCompletion(schemaService, clientCapabilities, telemetry);
   const completer = new YamlCompletion(schemaService, clientCapabilities, yamlDocumentsCache, telemetry);
   const hover = new YAMLHover(schemaService);
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService, telemetry);
