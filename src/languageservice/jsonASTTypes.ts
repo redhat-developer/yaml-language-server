@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { Node } from 'yaml';
+
 export type ASTNode =
   | ObjectASTNode
   | PropertyASTNode
@@ -19,6 +21,7 @@ export interface BaseASTNode {
   readonly length: number;
   readonly children?: ASTNode[];
   readonly value?: string | boolean | number | null;
+  readonly internalNode: Node;
   location: string;
   getNodeFromOffsetEndInclusive(offset: number): ASTNode;
 }

@@ -81,7 +81,7 @@ export class SettingsHandler {
         }
       }
 
-      this.yamlSettings.yamlVersion = settings.yaml.yamlVersion;
+      this.yamlSettings.yamlVersion = settings.yaml.yamlVersion ?? '1.2';
 
       if (settings.yaml.format) {
         this.yamlSettings.yamlFormatterSettings = {

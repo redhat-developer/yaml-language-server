@@ -47,7 +47,7 @@ describe('YAML Schema Service', () => {
     });
 
     it('should handle url with fragments', async () => {
-      const content = `# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#/definitions/schemaArray`;
+      const content = `# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#/definitions/schemaArray\nfoo: bar`;
       const yamlDock = parse(content);
 
       requestServiceMock = sandbox.fake.resolves(`{"definitions": {"schemaArray": {

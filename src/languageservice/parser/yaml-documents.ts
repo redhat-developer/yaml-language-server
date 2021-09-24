@@ -4,15 +4,20 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONDocument } from './jsonParser07';
-import { Document, LineCounter, visit, YAMLError } from 'yaml';
+import { JSONDocument, ValidationResult } from './jsonParser07';
+import { Document, isPair, isScalar, LineCounter, visit, YAMLError } from 'yaml';
 import { ASTNode } from '../jsonASTTypes';
 import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07';
 import { ErrorCode } from 'vscode-json-languageservice';
-import { Node } from 'yaml/dist/nodes/Node';
+import { Node } from 'yaml';
 import { convertAST } from './ast-converter';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { isArrayEqual } from '../utils/arrUtils';
+import { getParent } from '../utils/astUtils';
+import { ApplicableSchema, SchemaCollectorImpl, validate } from './json-schema07-validator';
+import { JSONSchema } from '../jsonSchema';
+import { TextBuffer } from '../utils/textBuffer';
+import { getIndentation } from '../utils/strings';
 
 /**
  * These documents are collected into a final YAMLDocument
@@ -71,6 +76,108 @@ export class SingleYAMLDocument extends JSONDocument {
     const matchingSchemas = [];
     doc.validate(schema, matchingSchemas, node.start);
     return matchingSchemas;
+  }
+
+  getNodeFromPosition(positionOffset: number): Node | undefined {
+    let closestNode: Node;
+    visit(this.internalDocument, (key, node: Node) => {
+      if (!node) {
+        return;
+      }
+      const range = node.range;
+      if (!range) {
+        return;
+      }
+
+      if (range[0] <= positionOffset && range[1] >= positionOffset) {
+        closestNode = node;
+      } else {
+        return visit.SKIP;
+      }
+    });
+
+    return closestNode;
+  }
+
+  findClosestNode(offset: number, textBuffer: TextBuffer): Node {
+    let offsetDiff = this.internalDocument.range[2];
+    let maxOffset = this.internalDocument.range[0];
+    let closestNode: Node;
+    visit(this.internalDocument, (key, node: Node) => {
+      if (!node) {
+        return;
+      }
+      const range = node.range;
+      if (!range) {
+        return;
+      }
+      const diff = Math.abs(range[2] - offset);
+      if (maxOffset <= range[0] && diff <= offsetDiff) {
+        offsetDiff = diff;
+        maxOffset = range[0];
+        closestNode = node;
+      }
+    });
+
+    const position = textBuffer.getPosition(offset);
+    const lineContent = textBuffer.getLineContent(position.line);
+    const indentation = getIndentation(lineContent, position.character);
+
+    if (isScalar(closestNode) && closestNode.value === null) {
+      return closestNode;
+    }
+
+    if (indentation === position.character) {
+      closestNode = this.getProperParentByIndentation(indentation, closestNode, textBuffer);
+    }
+
+    return closestNode;
+  }
+
+  private getProperParentByIndentation(indentation: number, node: Node, textBuffer: TextBuffer): Node {
+    if (node.range) {
+      const position = textBuffer.getPosition(node.range[0]);
+      if (position.character !== indentation && position.character > 0) {
+        const parent = this.getParent(node);
+        if (parent) {
+          return this.getProperParentByIndentation(indentation, parent, textBuffer);
+        }
+      } else {
+        return node;
+      }
+    } else if (isPair(node)) {
+      const parent = this.getParent(node);
+      return this.getProperParentByIndentation(indentation, parent, textBuffer);
+    }
+    return node;
+  }
+
+  getParent(node: Node): Node | undefined {
+    return getParent(this.internalDocument, node);
+  }
+
+  /**
+   * Match JSON Schemas to this document
+   * @param schema the JSON Schema
+   * @returns array of matching schemas
+   */
+  matchSchemas(schema: JSONSchema): ApplicableSchema[] {
+    const matchingSchemas = new SchemaCollectorImpl(-1, null);
+    if (this.internalDocument.contents && schema) {
+      validate(
+        this.internalDocument.contents as Node,
+        this.internalDocument,
+        schema,
+        schema,
+        new ValidationResult(this.isKubernetes),
+        matchingSchemas,
+        {
+          isKubernetes: this.isKubernetes,
+          disableAdditionalProperties: this.disableAdditionalProperties,
+        }
+      );
+    }
+    return matchingSchemas.schemas;
   }
 }
 

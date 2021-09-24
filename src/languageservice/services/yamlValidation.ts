@@ -62,32 +62,36 @@ export class YAMLValidation {
       return Promise.resolve([]);
     }
 
-    const yamlDocument: YAMLDocument = yamlDocumentsCache.getYamlDocument(
-      textDocument,
-      { customTags: this.customTags, yamlVersion: this.yamlVersion },
-      true
-    );
     const validationResult = [];
+    try {
+      const yamlDocument: YAMLDocument = yamlDocumentsCache.getYamlDocument(
+        textDocument,
+        { customTags: this.customTags, yamlVersion: this.yamlVersion },
+        true
+      );
 
-    let index = 0;
-    for (const currentYAMLDoc of yamlDocument.documents) {
-      currentYAMLDoc.isKubernetes = isKubernetes;
-      currentYAMLDoc.currentDocIndex = index;
-      currentYAMLDoc.disableAdditionalProperties = this.disableAdditionalProperties;
+      let index = 0;
+      for (const currentYAMLDoc of yamlDocument.documents) {
+        currentYAMLDoc.isKubernetes = isKubernetes;
+        currentYAMLDoc.currentDocIndex = index;
+        currentYAMLDoc.disableAdditionalProperties = this.disableAdditionalProperties;
 
-      const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
+        const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
 
-      const syd = (currentYAMLDoc as unknown) as SingleYAMLDocument;
-      if (syd.errors.length > 0) {
-        // TODO: Get rid of these type assertions (shouldn't need them)
-        validationResult.push(...syd.errors);
+        const syd = (currentYAMLDoc as unknown) as SingleYAMLDocument;
+        if (syd.errors.length > 0) {
+          // TODO: Get rid of these type assertions (shouldn't need them)
+          validationResult.push(...syd.errors);
+        }
+        if (syd.warnings.length > 0) {
+          validationResult.push(...syd.warnings);
+        }
+
+        validationResult.push(...validation);
+        index++;
       }
-      if (syd.warnings.length > 0) {
-        validationResult.push(...syd.warnings);
-      }
-
-      validationResult.push(...validation);
-      index++;
+    } catch (err) {
+      console.error(err.toString());
     }
 
     let previousErr: Diagnostic;
