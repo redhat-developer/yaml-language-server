@@ -25,7 +25,7 @@ export class Telemetry {
   }
 
   sendError(name: string, properties: unknown): void {
-    this.send({ name, type: 'error', properties: properties });
+    this.send({ name, type: 'track', properties: properties });
   }
 
   sendTrack(name: string, properties: unknown): void {
