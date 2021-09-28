@@ -122,6 +122,11 @@ export class YAMLCompletion extends JSONCompletion {
     const collector: CompletionsCollector = {
       add: (suggestion: CompletionItem) => {
         let label = suggestion.label;
+        if (!label) {
+          // we receive not valid CompletionItem as `label` is mandatory field, so just ignore it and report to telemetry
+          this.telemetry.sendTrack('yaml.completion.missing.label', { data: suggestion });
+          return;
+        }
         const existing = proposed[label];
         if (!existing) {
           label = label.replace(/[\n]/g, '↵');
