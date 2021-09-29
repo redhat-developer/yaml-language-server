@@ -122,6 +122,11 @@ export class YAMLCompletion extends JSONCompletion {
     const collector: CompletionsCollector = {
       add: (suggestion: CompletionItem) => {
         let label = suggestion.label;
+        if (!label) {
+          // we receive not valid CompletionItem as `label` is mandatory field, so just ignore it
+          console.warn(`Ignoring CompletionItem without label: ${JSON.stringify(suggestion)}`);
+          return;
+        }
         const existing = proposed[label];
         if (!existing) {
           label = label.replace(/[\n]/g, '↵');
