@@ -55,7 +55,7 @@ describe('Document Symbols Tests', () => {
     it('Document is empty', (done) => {
       const content = '';
       const symbols = parseNonHierarchicalSetup(content);
-      assert.equal(symbols, null);
+      assert.deepStrictEqual(symbols, []);
       done();
     });
 
@@ -163,7 +163,7 @@ describe('Document Symbols Tests', () => {
     it('Document is empty', (done) => {
       const content = '';
       const symbols = parseHierarchicalSetup(content);
-      assert.equal(symbols, null);
+      assert.deepStrictEqual(symbols, []);
       done();
     });
 

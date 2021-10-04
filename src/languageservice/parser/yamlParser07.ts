@@ -35,7 +35,7 @@ export function parse(text: string, parserOptions: ParserOptions = defaultOption
   const lineCounter = new LineCounter();
   const parser = new Parser(lineCounter.addNewLine);
   const tokens = parser.parse(text);
-  const docs = composer.compose(tokens);
+  const docs = composer.compose(tokens, true);
 
   // Generate the SingleYAMLDocs from the AST nodes
   const yamlDocs: SingleYAMLDocument[] = Array.from(docs, (doc) => parsedDocToSingleYAMLDocument(doc, lineCounter));

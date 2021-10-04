@@ -9,12 +9,12 @@ describe('YAML parser', () => {
   describe('YAML parser', function () {
     it('parse emtpy text', () => {
       const parsedDocument = parse('');
-      assert(parsedDocument.documents.length === 0, 'A document has been created for an empty text');
+      assert(parsedDocument.documents.length === 1, 'A document has been created for an empty text');
     });
 
     it('parse only comment', () => {
       const parsedDocument = parse('# a comment');
-      assert(parsedDocument.documents.length === 0, 'A document has been created when there is a comment');
+      assert(parsedDocument.documents.length === 1, 'A document has been created when there is a comment');
     });
 
     it('parse single document with --- at the start of the file', () => {
