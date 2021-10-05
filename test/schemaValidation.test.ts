@@ -11,7 +11,6 @@ import {
   ArrayTypeError,
   ObjectTypeError,
   IncludeWithoutValueError,
-  ColonMissingError,
   BlockMappingEntryError,
   DuplicateKeyError,
   propertyIsNotAllowed,
@@ -109,7 +108,7 @@ describe('Validation Tests', () => {
           },
         },
       });
-      const content = 'analytics: no';
+      const content = '%YAML 1.1\n---\nanalytics: no';
       const validator = parseSetup(content);
       validator
         .then(function (result) {
@@ -281,7 +280,7 @@ describe('Validation Tests', () => {
           },
         },
       });
-      const content = 'cwd: no';
+      const content = '%YAML 1.1\n---\ncwd: no';
       const validator = parseSetup(content);
       validator
         .then(function (result) {
@@ -290,9 +289,9 @@ describe('Validation Tests', () => {
             result[0],
             createDiagnosticWithData(
               StringTypeError,
-              0,
+              2,
               5,
-              0,
+              2,
               7,
               DiagnosticSeverity.Error,
               `yaml-schema: file:///${SCHEMA_ID}`,
@@ -599,7 +598,28 @@ describe('Validation Tests', () => {
         .then(done, done);
     });
 
-    it('Multiple Anchors being referenced in same level at same time', (done) => {
+    it('Multiple Anchors being referenced in same level at same time for yaml 1.1', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          customize: {
+            type: 'object',
+            properties: {
+              register: {
+                type: 'string',
+              },
+            },
+          },
+        },
+      });
+      const content =
+        '%YAML 1.1\n---\ndefault: &DEFAULT\n  name: Anchor\ncustomname: &CUSTOMNAME\n  custom_name: Anchor\nanchor_test:\n  <<: *DEFAULT\n  <<: *CUSTOMNAME\n';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 0);
+    });
+
+    it('Multiple Anchors being referenced in same level at same time for yaml generate error for 1.2', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -615,15 +635,13 @@ describe('Validation Tests', () => {
       });
       const content =
         'default: &DEFAULT\n  name: Anchor\ncustomname: &CUSTOMNAME\n  custom_name: Anchor\nanchor_test:\n  <<: *DEFAULT\n  <<: *CUSTOMNAME\n';
-      const validator = parseSetup(content);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 0);
-        })
-        .then(done, done);
+      const result = await parseSetup(content);
+
+      assert.strictEqual(result.length, 1);
+      assert.deepStrictEqual(result[0], createExpectedError('Map keys must be unique', 6, 2, 6, 18, DiagnosticSeverity.Error));
     });
 
-    it('Nested object anchors should expand properly', (done) => {
+    it('Nested object anchors should expand properly', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         additionalProperties: {
@@ -650,12 +668,9 @@ describe('Validation Tests', () => {
         l4:
           <<: *l3
       `;
-      const validator = parseSetup(content);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 0);
-        })
-        .then(done, done);
+      const validator = await parseSetup(content);
+
+      assert.strictEqual(validator.length, 0);
     });
 
     it('Anchor reference with a validation error in a sub-object emits the error in the right location', (done) => {
@@ -745,7 +760,7 @@ obj:
   });
 
   describe('Custom tag tests', () => {
-    it('Custom Tags without type', (done) => {
+    it('Custom Tags without type', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -755,12 +770,21 @@ obj:
         },
       });
       const content = 'analytics: !Test false';
-      const validator = parseSetup(content);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 0);
-        })
-        .then(done, done);
+      const result = await parseSetup(content);
+      assert.equal(result.length, 1);
+      assert.deepStrictEqual(
+        result[0],
+        createDiagnosticWithData(
+          BooleanTypeError,
+          0,
+          17,
+          0,
+          22,
+          DiagnosticSeverity.Error,
+          `yaml-schema: file:///${SCHEMA_ID}`,
+          `file:///${SCHEMA_ID}`
+        )
+      );
     });
 
     it('Custom Tags with type', (done) => {
@@ -808,7 +832,7 @@ obj:
       validator
         .then(function (result) {
           assert.equal(result.length, 1);
-          assert.deepEqual(result[0], createExpectedError(IncludeWithoutValueError, 0, 19, 0, 19));
+          assert.deepEqual(result[0], createExpectedError(IncludeWithoutValueError, 0, 11, 0, 19));
         })
         .then(done, done);
     });
@@ -851,9 +875,8 @@ obj:
       const validator = parseSetup(content);
       validator
         .then(function (result) {
-          assert.equal(result.length, 2);
-          assert.deepEqual(result[0], createExpectedError(BlockMappingEntryError, 1, 2, 1, 2));
-          assert.deepEqual(result[1], createExpectedError(ColonMissingError, 1, 2, 1, 2));
+          assert.equal(result.length, 1);
+          assert.deepEqual(result[0], createExpectedError(BlockMappingEntryError, 1, 0, 1, 2));
         })
         .then(done, done);
     });
@@ -896,9 +919,8 @@ obj:
       const validator = parseSetup(content);
       validator
         .then(function (result) {
-          assert.equal(result.length, 2);
-          assert.deepEqual(result[0], createExpectedError(DuplicateKeyError, 2, 0, 2, 1));
-          assert.deepEqual(result[1], createExpectedError(DuplicateKeyError, 0, 0, 0, 1));
+          assert.equal(result.length, 1);
+          assert.deepEqual(result[0], createExpectedError(DuplicateKeyError, 2, 0, 2, 7));
         })
         .then(done, done);
     });

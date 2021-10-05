@@ -14,6 +14,7 @@ import { ServiceSetup } from './utils/serviceSetup';
 import { setupLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper';
 import { LanguageService, SchemaPriority } from '../src';
 import { Position } from 'vscode-languageserver';
+import { LineCounter } from 'yaml';
 
 const requestServiceMock = function (uri: string): Promise<string> {
   return Promise.reject<string>(`Resource ${uri} not found.`);
@@ -737,7 +738,7 @@ describe('JSON Schema', () => {
 
     function checkReturnSchemaUrl(modeline: string, expectedResult: string): void {
       const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
-      const yamlDoc = new parser.SingleYAMLDocument([]);
+      const yamlDoc = new parser.SingleYAMLDocument(new LineCounter());
       yamlDoc.lineComments = [modeline];
       assert.equal(service.getSchemaFromModeline(yamlDoc), expectedResult);
     }

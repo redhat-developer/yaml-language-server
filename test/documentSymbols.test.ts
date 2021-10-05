@@ -55,7 +55,7 @@ describe('Document Symbols Tests', () => {
     it('Document is empty', (done) => {
       const content = '';
       const symbols = parseNonHierarchicalSetup(content);
-      assert.equal(symbols, null);
+      assert.deepStrictEqual(symbols, []);
       done();
     });
 
@@ -163,7 +163,7 @@ describe('Document Symbols Tests', () => {
     it('Document is empty', (done) => {
       const content = '';
       const symbols = parseHierarchicalSetup(content);
-      assert.equal(symbols, null);
+      assert.deepStrictEqual(symbols, []);
       done();
     });
 
@@ -289,7 +289,7 @@ describe('Document Symbols Tests', () => {
 
       const height = createExpectedDocumentSymbol('height', SymbolKind.Number, 10, 18, 10, 28, 10, 18, 10, 24, [], '41');
       const style = createExpectedDocumentSymbol('style', SymbolKind.Module, 9, 16, 10, 28, 9, 16, 9, 21, [height]);
-      const root2 = createExpectedDocumentSymbol('root', SymbolKind.Module, 7, 17, 10, 28, 7, 17, 7, 21, [style]);
+      const root2 = createExpectedDocumentSymbol('root', SymbolKind.Module, 7, 16, 10, 28, 7, 16, 7, 21, [style]);
 
       assert.deepEqual(
         symbols[1],

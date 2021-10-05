@@ -24,6 +24,20 @@
         "${workspaceFolder}/**",
         "!**/node_modules/**"
       ],
+    },
+    // A launch configuration that compiles the server and runs mocha unit tests
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Single File Tests",
+      "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+      "args": ["-u", "bdd", "--timeout", "999999", "--colors", "-r", "ts-node/register", "${workspaceRoot}/${relativeFile}"],
+      "preLaunchTask": "watch typescript",
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
     }
   ]
 }
