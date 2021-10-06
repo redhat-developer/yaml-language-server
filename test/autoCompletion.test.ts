@@ -2073,6 +2073,28 @@ describe('Auto Completion Tests', () => {
 
       expect(result.items).to.be.empty;
     });
+
+    it('should convert to string non string completion label', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          version: {
+            default: 2.1,
+            enum: [2, 2.1],
+          },
+        },
+      });
+
+      const content = 'version: ';
+      const completion = await parseSetup(content, 9);
+      expect(completion.items).lengthOf(2);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('2', '2', 0, 9, 0, 9, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
+      expect(completion.items[1]).eql(
+        createExpectedCompletion('2.1', '2.1', 0, 9, 0, 9, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
+    });
   });
 
   describe('Array completion', () => {
