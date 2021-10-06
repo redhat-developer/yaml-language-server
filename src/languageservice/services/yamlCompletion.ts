@@ -28,7 +28,7 @@ import { YAMLSchemaService } from './yamlSchemaService';
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { stringifyObject, StringifySettings } from '../utils/json';
-import { isDefined } from '../utils/objects';
+import { isDefined, isString } from '../utils/objects';
 import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 
@@ -133,6 +133,9 @@ export class YamlCompletion {
           // we receive not valid CompletionItem as `label` is mandatory field, so just ignore it
           console.warn(`Ignoring CompletionItem without label: ${JSON.stringify(completionItem)}`);
           return;
+        }
+        if (!isString(label)) {
+          label = String(label);
         }
         const existing = proposed[label];
         if (!existing) {
