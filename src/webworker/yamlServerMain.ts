@@ -9,8 +9,6 @@ import { schemaRequestHandler, workspaceContext } from '../languageservice/servi
 import { YAMLServerInit } from '../yamlServerInit';
 import { SettingsState } from '../yamlSettings';
 
-declare const self: any;
-
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace FSReadFile {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -18,8 +16,8 @@ namespace FSReadFile {
   export const type: RequestType<string, string, {}> = new RequestType('fs/readFile');
 }
 
-const messageReader = new BrowserMessageReader(self);
-const messageWriter = new BrowserMessageWriter(self);
+const messageReader = new BrowserMessageReader(globalThis);
+const messageWriter = new BrowserMessageWriter(globalThis);
 
 const connection = createConnection(messageReader, messageWriter);
 
