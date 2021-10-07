@@ -1,3 +1,17 @@
+### 1.0.0
+- Use [eemeli/yaml](https://github.com/eemeli/yaml) as YAML parser [#421](https://github.com/redhat-developer/yaml-language-server/issues/421)
+- Fix: Completion provider: t.replace is not a function [#547](https://github.com/redhat-developer/yaml-language-server/issues/547)
+
+### 0.23.0
+- Replace js-yaml with yaml [#526](https://github.com/redhat-developer/yaml-language-server/pull/526)
+- Update monaco-yaml link in docs [#527](https://github.com/redhat-developer/yaml-language-server/pull/527)
+- Update vscode-nls and vscode-uri dependencies [#531](https://github.com/redhat-developer/yaml-language-server/pull/531)
+- Fix: error handling in hover and codelens [#534](https://github.com/redhat-developer/yaml-language-server/pull/534)
+- Fix: 'label.replace is not a function' error [#544](https://github.com/redhat-developer/yaml-language-server/pull/544)
+- Fix: Fragment resolution from #512 doesn't always work [#522](https://github.com/redhat-developer/yaml-language-server/issues/522)
+
+Thanks to Remco Haszing
+
 ### 0.22.0
 
 - Fix: fetching nested http settings [#511](https://github.com/redhat-developer/yaml-language-server/pull/511)

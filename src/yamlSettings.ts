@@ -5,6 +5,7 @@ import { URI } from 'vscode-uri';
 import { JSONSchema } from './languageservice/jsonSchema';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
+import { YamlVersion } from './languageservice/parser/yamlParser07';
 
 // Client settings interface to grab settings relevant for the language server
 export interface Settings {
@@ -21,6 +22,7 @@ export interface Settings {
     };
     disableAdditionalProperties: boolean;
     maxItemsComputed: number;
+    yamlVersion: YamlVersion;
   };
   http: {
     proxy: string;
@@ -81,6 +83,7 @@ export class SettingsState {
   hasWorkspaceFolderCapability = false;
   hasConfigurationCapability = false;
   useVSCodeContentRequest = false;
+  yamlVersion: YamlVersion = '1.2';
 }
 
 export class TextDocumentTestManager extends TextDocuments<TextDocument> {

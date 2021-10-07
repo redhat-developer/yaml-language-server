@@ -81,6 +81,8 @@ export class SettingsHandler {
         }
       }
 
+      this.yamlSettings.yamlVersion = settings.yaml.yamlVersion ?? '1.2';
+
       if (settings.yaml.format) {
         this.yamlSettings.yamlFormatterSettings = {
           proseWrap: settings.yaml.format.proseWrap || 'preserve',
@@ -217,6 +219,7 @@ export class SettingsHandler {
       format: this.yamlSettings.yamlFormatterSettings.enable,
       indentation: this.yamlSettings.indentation,
       disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
+      yamlVersion: this.yamlSettings.yamlVersion,
     };
 
     if (this.yamlSettings.schemaAssociations) {

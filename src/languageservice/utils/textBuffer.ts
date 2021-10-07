@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument } from 'vscode-json-languageservice';
-import { Range } from 'vscode-languageserver-types';
+import { Position, Range } from 'vscode-languageserver-types';
 
 interface FullTextDocument {
   getLineOffsets(): number[];
@@ -46,5 +46,9 @@ export class TextBuffer {
 
   getText(range?: Range): string {
     return this.doc.getText(range);
+  }
+
+  getPosition(offest: number): Position {
+    return this.doc.positionAt(offest);
   }
 }
