@@ -47,7 +47,7 @@ export function setupSchemaIDTextDocument(content: string, customSchemaID?: stri
   }
 }
 
-export const testFileSystem : FileSystem = { readFile: (fsPath: string) => fs.readFile(fsPath).then((c) => c.toString()) };
+export const testFileSystem: FileSystem = { readFile: (fsPath: string) => fs.readFile(fsPath).then((c) => c.toString()) };
 
 export interface TestLanguageServerSetup {
   languageService: LanguageService;
