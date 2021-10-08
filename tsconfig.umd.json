@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "lib": ["dom"],
+    "lib": ["webworker"],
     "module": "umd",
     "outDir": "./lib/umd",
   },

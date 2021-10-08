@@ -3,12 +3,13 @@
     "alwaysStrict": true,
     "declaration": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["es2016"],
+    "lib": ["es2016", "WebWorker"],
     "module": "commonjs",
     "moduleResolution": "node",
     "outDir": "./out/server",
     "sourceMap": true,
     "target": "es6",
   },
+  "include": [ "src", "test" ],
   "exclude": ["node_modules", "out"]
 }
