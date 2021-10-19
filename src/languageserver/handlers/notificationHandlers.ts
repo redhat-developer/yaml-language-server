@@ -9,6 +9,7 @@ import {
   CustomSchemaRequest,
   DynamicCustomSchemaRequestRegistration,
   SchemaAssociationNotification,
+  SchemaSelectionRequests,
   VSCodeContentRequestRegistration,
 } from '../../requestTypes';
 import { SettingsState } from '../../yamlSettings';
@@ -36,6 +37,7 @@ export class NotificationHandlers {
     );
     this.connection.onNotification(DynamicCustomSchemaRequestRegistration.type, () => this.dynamicSchemaRequestHandler());
     this.connection.onNotification(VSCodeContentRequestRegistration.type, () => this.vscodeContentRequestHandler());
+    this.connection.onNotification(SchemaSelectionRequests.type, () => this.schemaSelectionRequestHandler());
   }
 
   /**
@@ -67,5 +69,9 @@ export class NotificationHandlers {
    */
   private vscodeContentRequestHandler(): void {
     this.yamlSettings.useVSCodeContentRequest = true;
+  }
+
+  private schemaSelectionRequestHandler(): void {
+    this.yamlSettings.useSchemaSelectionRequests = true;
   }
 }

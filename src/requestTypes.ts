@@ -6,6 +6,32 @@ import { SchemaConfiguration } from './languageservice/yamlLanguageService';
 
 export type ISchemaAssociations = Record<string, string[]>;
 
+export interface JSONSchemaDescription {
+  /**
+   * Schema URI
+   */
+  uri: string;
+  /**
+   * Schema name, from schema store
+   */
+  name?: string;
+  /**
+   * Schema description, from schema store
+   */
+  description?: string;
+}
+
+export interface JSONSchemaDescriptionExt extends JSONSchemaDescription {
+  /**
+   * Is schema used for current document
+   */
+  usedForCurrentFile: boolean;
+  /**
+   * Is schema from schema store
+   */
+  fromStore: boolean;
+}
+
 export namespace SchemaAssociationNotification {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export const type: NotificationType<ISchemaAssociations | SchemaConfiguration[]> = new NotificationType(
@@ -43,4 +69,11 @@ export namespace ColorSymbolRequest {
 
 export namespace SchemaModificationNotification {
   export const type: RequestType<SchemaAdditions | SchemaDeletions, void, {}> = new RequestType('json/schema/modify');
+}
+
+export namespace SchemaSelectionRequests {
+  export const type: NotificationType<void> = new NotificationType('yaml/supportSchemaSelection');
+  export const getSchema: RequestType<string, JSONSchemaDescription[], {}> = new RequestType('yaml/get/jsonSchema');
+  export const getAllSchemas: RequestType<string, JSONSchemaDescriptionExt[], {}> = new RequestType('yaml/get/all/jsonSchemas');
+  export const schemaStoreInitialized: NotificationType<{}> = new NotificationType('yaml/schema/store/initialized');
 }

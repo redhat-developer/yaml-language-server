@@ -254,6 +254,90 @@ docker run -it quay.io/redhat-developer/yaml-language-server:latest
 
 `yaml-language-server` use `vscode-languageserver@7.0.0` which implements [LSP 3.16](https://github.com/Microsoft/language-server-protocol/blob/gh-pages/_specifications/specification-3-16.md)
 
+## Language Server Protocol extensions
+
+### SchemaSelectionRequests
+
+#### SupportSchemaSelection Notification
+
+The support schema selection notification is sent from a client to the server to inform server that client support JSON Schema selection.
+
+_Notification:_
+- method: `'yaml/supportSchemaSelection'`
+- params: `void` 
+
+#### SchemaStoreInitialized Notification
+
+The schema store initialized notification is sent from the server to a client to inform client that server finish initializing/loading schemas from schema store, and client now can ask for schemas.
+
+_Notification:_
+- method: `'yaml/schema/store/initialized'`
+- params: `void`
+
+#### GetAllSchemas Request
+
+The get all schemas request sent from a client to server to get all known schemas.
+
+_Request:_
+- method: `'yaml/get/all/jsonSchemas'`;
+- params: the document uri, server will mark used schema for document
+
+_Response:_
+
+- result: `JSONSchemaDescriptionExt[]`
+```typescript
+interface JSONSchemaDescriptionExt {
+  /**
+   * Schema URI
+   */
+  uri: string;
+  /**
+   * Schema name, from schema store
+   */
+  name?: string;
+  /**
+   * Schema description, from schema store
+   */
+  description?: string;
+  /**
+   * Is schema used for current document
+   */
+  usedForCurrentFile: boolean;
+  /**
+   * Is schema from schema store
+   */
+  fromStore: boolean;
+}
+```
+
+#### GetSchemas Request
+
+The request sent from a client to server to get schemas used for current document. Client can use this method to indicate in UI which schemas used for current YAML document.
+
+_Request:_
+- method: `'yaml/get/jsonSchema'`;
+- params: the document uri to get used schemas
+
+_Response:_
+- result: `JSONSchemaDescription[]`
+
+```typescript
+interface JSONSchemaDescriptionExt {
+  /**
+   * Schema URI
+   */
+  uri: string;
+  /**
+   * Schema name, from schema store
+   */
+  name?: string;
+  /**
+   * Schema description, from schema store
+   */
+  description?: string;
+}
+```
+
 ## Clients
 
 This repository only contains the server implementation. Here are some known clients consuming this server:
