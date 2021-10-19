@@ -269,7 +269,10 @@ export class YamlCompletion {
               }
             } else if (isMap(node)) {
               if (!foundByClosest && lineContent.trim().length === 0 && isSeq(parent)) {
-                node = parent;
+                const nextLine = textBuffer.getLineContent(position.line + 1);
+                if (textBuffer.getLineCount() === position.line + 1 || nextLine.trim().length === 0) {
+                  node = parent;
+                }
               }
             }
           } else if (isScalar(node)) {
