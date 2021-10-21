@@ -1588,6 +1588,52 @@ describe('Auto Completion Tests', () => {
       });
       assert.strictEqual(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
     });
+
+    const inlineSchemaLabel = 'Inline schema';
+
+    it('should provide modeline completion on first character with no schema associated and no modeline yet', async () => {
+      const testTextDocument = setupSchemaIDTextDocument('', path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(0),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.strictEqual(result.items[0].label, inlineSchemaLabel);
+    });
+
+    it('should not provide modeline completion on first character when schema is associated', async () => {
+      const specificSchemaId = path.join(__dirname, 'test.yaml');
+      const testTextDocument = setupSchemaIDTextDocument('', specificSchemaId);
+      languageService.addSchema(specificSchemaId, {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+          },
+        },
+      });
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(0),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.notStrictEqual(result.items[0].label, inlineSchemaLabel);
+    });
+
+    it('should not provide modeline completion on first character when modeline already present', async () => {
+      const testTextDocument = setupSchemaIDTextDocument('# yaml-language-server', path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(0),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 0, `Expecting 0 item in completion but found ${result.items.length}`);
+    });
   });
 
   describe('Configuration based indentation', () => {

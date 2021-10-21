@@ -175,6 +175,15 @@ export class YamlCompletion {
     try {
       const schema = await this.schemaService.getSchemaForResource(document.uri, currentDoc);
       if (!schema || schema.errors.length) {
+        if (position.line === 0 && position.character === 0 && !textBuffer.getLineContent(0).includes('# yaml-language-server')) {
+          const inlineSchemaCompletion = {
+            kind: CompletionItemKind.Text,
+            label: 'Inline schema',
+            insertText: '# yaml-language-server: $schema=',
+            insertTextFormat: InsertTextFormat.PlainText,
+          };
+          result.items.push(inlineSchemaCompletion);
+        }
         return result;
       }
 
