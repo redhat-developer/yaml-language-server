@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Document, isDocument, Node, visit } from 'yaml';
+import { Document, isDocument, Node, visit, YAMLSeq } from 'yaml';
 
 export function getParent(doc: Document, nodeToFind: Node): Node | undefined {
   let parentNode: Node;
@@ -19,4 +19,13 @@ export function getParent(doc: Document, nodeToFind: Node): Node | undefined {
   }
 
   return parentNode;
+}
+
+export function indexOf(seq: YAMLSeq, item: Node): number | undefined {
+  for (const [i, obj] of seq.items.entries()) {
+    if (item === obj) {
+      return i;
+    }
+  }
+  return undefined;
 }

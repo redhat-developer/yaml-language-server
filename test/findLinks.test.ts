@@ -20,16 +20,16 @@ describe('FindDefintion Tests', () => {
     yamlSettings = settings;
   });
 
-  describe('Jump to definition', function () {
-    function findLinks(content: string): Promise<DocumentLink[]> {
-      const testTextDocument = setupTextDocument(content);
-      yamlSettings.documents = new TextDocumentTestManager();
-      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
-      return languageHandler.documentLinkHandler({
-        textDocument: testTextDocument,
-      });
-    }
+  function findLinks(content: string): Promise<DocumentLink[]> {
+    const testTextDocument = setupTextDocument(content);
+    yamlSettings.documents = new TextDocumentTestManager();
+    (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+    return languageHandler.documentLinkHandler({
+      textDocument: testTextDocument,
+    });
+  }
 
+  describe('Jump to definition', function () {
     it('Find source definition', (done) => {
       const content =
         "definitions:\n  link:\n    type: string\ntype: object\nproperties:\n  uri:\n    $ref: '#/definitions/link'\n";
@@ -50,6 +50,15 @@ describe('FindDefintion Tests', () => {
           assert.deepEqual(results[0].target, 'file://~/Desktop/vscode-k8s/test.yaml#3,5');
         })
         .then(done, done);
+    });
+  });
+
+  describe('Bug fixes', () => {
+    it('should work with flow map', async () => {
+      const content = 'f: {ffff: fff, aa: [ddd, drr: {}]}';
+      const results = await findLinks(content);
+
+      assert.equal(results.length, 0);
     });
   });
 });
