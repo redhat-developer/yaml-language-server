@@ -10,6 +10,7 @@ import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
 import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { expect } from 'chai';
+import { createExpectedCompletion } from './utils/verifyError';
 
 describe('Auto Completion Fix Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -43,6 +44,60 @@ describe('Auto Completion Fix Tests', () => {
   afterEach(() => {
     languageService.deleteSchema(SCHEMA_ID);
     languageService.configure(languageSettingsSetup.languageSettings);
+  });
+
+  it('should show completion on map under array', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          from: {
+            type: 'object',
+            properties: {
+              foo: {
+                type: 'boolean',
+              },
+            },
+          },
+        },
+      },
+    });
+    const content = '- from:\n    ';
+    const completion = await parseSetup(content, 1, 3);
+    expect(completion.items).lengthOf(1);
+    expect(completion.items[0]).eql(
+      createExpectedCompletion('foo', 'foo: $1', 1, 3, 1, 3, 10, 2, {
+        documentation: '',
+      })
+    );
+  });
+
+  it('should show completion on array empty array item', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          from: {
+            type: 'object',
+            properties: {
+              foo: {
+                type: 'boolean',
+              },
+            },
+          },
+        },
+      },
+    });
+    const content = '- ';
+    const completion = await parseSetup(content, 0, 2);
+    expect(completion.items).lengthOf(1);
+    expect(completion.items[0]).eql(
+      createExpectedCompletion('from', 'from:\n    $1', 0, 2, 0, 2, 10, 2, {
+        documentation: '',
+      })
+    );
   });
 
   it('should show completion items in the middle of map in array', async () => {
