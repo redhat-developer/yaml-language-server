@@ -44,7 +44,15 @@ export class SingleYAMLDocument extends JSONDocument {
       if (node?.commentBefore) {
         this._lineComments.push(`#${node.commentBefore}`);
       }
+
+      if (node?.comment) {
+        this._lineComments.push(`#${node.comment}`);
+      }
     });
+
+    if (this._internalDocument.comment) {
+      this._lineComments.push(`#${this._internalDocument.comment}`);
+    }
   }
 
   set internalDocument(document: Document) {

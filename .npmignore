@@ -10,3 +10,4 @@ coverage/
 .eslintrc.js
 .prettierrc.json
 .travis.yml
+.mocharc.json
