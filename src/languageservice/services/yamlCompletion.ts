@@ -32,6 +32,7 @@ import { isDefined, isString } from '../utils/objects';
 import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { isMapContainsEmptyPair } from '../utils/astUtils';
+import { indexOf } from '../utils/astUtils';
 
 const localize = nls.loadMessageBundle();
 
@@ -114,7 +115,7 @@ export class YamlCompletion {
       overwriteRange = Range.create(nodeStartPos, nodeEndPos);
     } else if (node && isScalar(node)) {
       const start = document.positionAt(node.range[0]);
-      if (offset > 0 && document.getText().charAt(offset - 1) === '-') {
+      if (offset > 0 && start.character > 0 && document.getText().charAt(offset - 1) === '-') {
         start.character -= 1;
       }
       overwriteRange = Range.create(start, document.positionAt(node.range[1]));
@@ -207,7 +208,15 @@ export class YamlCompletion {
                   if (parent.value === node) {
                     if (lineContent.trim().length > 0 && lineContent.indexOf(':') < 0) {
                       const map = this.createTempObjNode(currentWord, node, currentDoc);
-                      currentDoc.internalDocument.set(parent.key, map);
+                      if (isSeq(currentDoc.internalDocument.contents)) {
+                        const index = indexOf(currentDoc.internalDocument.contents, parent);
+                        if (typeof index === 'number') {
+                          currentDoc.internalDocument.set(index, map); //TODO: problem there
+                        }
+                      } else {
+                        currentDoc.internalDocument.set(parent.key, map);
+                      }
+
                       currentProperty = (map as YAMLMap).items[0];
                       node = map;
                     } else if (lineContent.trim().length === 0) {
@@ -480,7 +489,7 @@ export class YamlCompletion {
 
     if (isPair(node)) {
       const valueNode: Node = node.value as Node;
-      if (valueNode && offset > valueNode.range[0] + valueNode.range[2]) {
+      if (valueNode && valueNode.range && offset > valueNode.range[0] + valueNode.range[2]) {
         return; // we are past the value node
       }
       parentKey = isScalar(node.key) ? node.key.value.toString() : null;

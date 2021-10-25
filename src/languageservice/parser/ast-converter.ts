@@ -1,3 +1,8 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Red Hat, Inc. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
 import {
   Node,
   isScalar,
@@ -24,6 +29,8 @@ import {
   ArrayASTNodeImpl,
   BooleanASTNodeImpl,
 } from './jsonParser07';
+
+type NodeRange = [number, number, number];
 
 const maxRefCount = 1000;
 let refDepth = 0;
@@ -59,7 +66,13 @@ export function convertAST(parent: ASTNode, node: Node, doc: Document, lineCount
 }
 
 function convertMap(node: YAMLMap<unknown, unknown>, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
-  const result = new ObjectASTNodeImpl(parent, node, ...toFixedOffsetLength(node.range, lineCounter));
+  let range: NodeRange;
+  if (node.flow && !node.range) {
+    range = collectFlowMapRange(node);
+  } else {
+    range = node.range;
+  }
+  const result = new ObjectASTNodeImpl(parent, node, ...toFixedOffsetLength(range, lineCounter));
   for (const it of node.items) {
     if (isPair(it)) {
       result.properties.push(<PropertyASTNodeImpl>convertAST(result, it, doc, lineCounter));
@@ -133,7 +146,7 @@ function convertAlias(node: Alias, parent: ASTNode, doc: Document, lineCounter: 
   return convertAST(parent, node.resolve(doc), doc, lineCounter);
 }
 
-export function toOffsetLength(range: [number, number, number]): [number, number] {
+export function toOffsetLength(range: NodeRange): [number, number] {
   return [range[0], range[1] - range[0]];
 }
 
@@ -143,7 +156,7 @@ export function toOffsetLength(range: [number, number, number]): [number, number
  * @param lineCounter the line counter
  * @returns the offset and length
  */
-function toFixedOffsetLength(range: [number, number, number], lineCounter: LineCounter): [number, number] {
+function toFixedOffsetLength(range: NodeRange, lineCounter: LineCounter): [number, number] {
   const start = lineCounter.linePos(range[0]);
   const end = lineCounter.linePos(range[1]);
 
@@ -154,4 +167,26 @@ function toFixedOffsetLength(range: [number, number, number], lineCounter: LineC
   }
 
   return result;
+}
+
+function collectFlowMapRange(node: YAMLMap): NodeRange {
+  let start = Number.MAX_SAFE_INTEGER;
+  let end = 0;
+  for (const it of node.items) {
+    if (isPair(it)) {
+      if (isNode(it.key)) {
+        if (it.key.range && it.key.range[0] <= start) {
+          start = it.key.range[0];
+        }
+      }
+
+      if (isNode(it.value)) {
+        if (it.value.range && it.value.range[2] >= end) {
+          end = it.value.range[2];
+        }
+      }
+    }
+  }
+
+  return [start, end, end];
 }

@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Document, isDocument, isNode, isScalar, Node, visit, YAMLMap } from 'yaml';
+import { Document, isDocument, isScalar, Node, visit, YAMLMap, YAMLSeq } from 'yaml';
 
 export function getParent(doc: Document, nodeToFind: Node): Node | undefined {
   let parentNode: Node;
@@ -31,4 +31,13 @@ export function isMapContainsEmptyPair(map: YAMLMap): boolean {
   }
 
   return false;
+}
+
+export function indexOf(seq: YAMLSeq, item: Node): number | undefined {
+  for (const [i, obj] of seq.items.entries()) {
+    if (item === obj) {
+      return i;
+    }
+  }
+  return undefined;
 }

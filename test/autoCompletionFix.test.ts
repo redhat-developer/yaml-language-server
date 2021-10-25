@@ -114,4 +114,16 @@ spec:
     const completion = await parseSetup(content, 7, 6);
     expect(completion.items).length.greaterThan(1);
   });
+
+  it('should show completion on array item on first line', async () => {
+    const content = '-d';
+    const completion = await parseSetup(content, 0, 1);
+    expect(completion.items).is.empty;
+  });
+
+  it('should complete without error on map inside array', async () => {
+    const content = '- foo\n- bar:\n    so';
+    const completion = await parseSetup(content, 2, 6);
+    expect(completion.items).is.empty;
+  });
 });
