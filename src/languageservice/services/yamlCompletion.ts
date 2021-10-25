@@ -31,6 +31,7 @@ import { stringifyObject, StringifySettings } from '../utils/json';
 import { isDefined, isString } from '../utils/objects';
 import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
+import { isMapContainsEmptyPair } from '../utils/astUtils';
 import { indexOf } from '../utils/astUtils';
 
 const localize = nls.loadMessageBundle();
@@ -242,28 +243,34 @@ export class YamlCompletion {
                   }
                 }
               } else if (node.value === null) {
-                if (isPair(parent) && parent.key === node) {
-                  node = parent;
-                } else if (
-                  isPair(parent) &&
-                  lineContent.trim().length === 0 &&
-                  textBuffer.getLineContent(position.line - 1).indexOf(':') > 0 &&
-                  textBuffer.getLineContent(position.line - 1).indexOf('-') < 0
-                ) {
-                  const map = this.createTempObjNode(currentWord, node, currentDoc);
-
-                  const parentParent = currentDoc.getParent(parent);
-                  if (parentParent && (isMap(parentParent) || isSeq(parentParent))) {
-                    parentParent.set(parent.key, map);
+                if (isPair(parent)) {
+                  if (parent.key === node) {
+                    node = parent;
                   } else {
-                    currentDoc.internalDocument.set(parent.key, map);
-                  }
-                  currentProperty = (map as YAMLMap).items[0];
-                  node = map;
-                } else if (lineContent.trim().length === 0) {
-                  const parentParent = currentDoc.getParent(parent);
-                  if (parentParent) {
-                    node = parentParent;
+                    if (isNode(parent.key) && parent.key.range) {
+                      const parentParent = currentDoc.getParent(parent);
+                      if (foundByClosest && parentParent && isMap(parentParent) && isMapContainsEmptyPair(parentParent)) {
+                        node = parentParent;
+                      } else {
+                        const parentPosition = document.positionAt(parent.key.range[0]);
+                        //if cursor has bigger indentation that parent key, then we need to complete new empty object
+                        if (position.character > parentPosition.character && position.line !== parentPosition.line) {
+                          const map = this.createTempObjNode(currentWord, node, currentDoc);
+
+                          if (parentParent && (isMap(parentParent) || isSeq(parentParent))) {
+                            parentParent.set(parent.key, map);
+                          } else {
+                            currentDoc.internalDocument.set(parent.key, map);
+                          }
+                          currentProperty = (map as YAMLMap).items[0];
+                          node = map;
+                        } else if (parentPosition.character === position.character) {
+                          if (parentParent) {
+                            node = parentParent;
+                          }
+                        }
+                      }
+                    }
                   }
                 } else if (isSeq(parent)) {
                   if (lineContent.charAt(position.character - 1) !== '-') {
@@ -373,7 +380,12 @@ export class YamlCompletion {
         const schemaProperties = schema.schema.properties;
         if (schemaProperties) {
           const maxProperties = schema.schema.maxProperties;
-          if (maxProperties === undefined || node.items === undefined || node.items.length < maxProperties) {
+          if (
+            maxProperties === undefined ||
+            node.items === undefined ||
+            node.items.length < maxProperties ||
+            isMapContainsEmptyPair(node)
+          ) {
             for (const key in schemaProperties) {
               if (Object.prototype.hasOwnProperty.call(schemaProperties, key)) {
                 const propertySchema = schemaProperties[key];
