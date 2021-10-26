@@ -33,6 +33,7 @@ import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { isMapContainsEmptyPair } from '../utils/astUtils';
 import { indexOf } from '../utils/astUtils';
+import { isModeline } from './modelineUtil';
 
 const localize = nls.loadMessageBundle();
 
@@ -172,10 +173,15 @@ export class YamlCompletion {
       this.getCustomTagValueCompletions(collector);
     }
 
+    let lineContent = textBuffer.getLineContent(position.line);
+    if (lineContent.endsWith('\n')) {
+      lineContent = lineContent.substr(0, lineContent.length - 1);
+    }
+
     try {
       const schema = await this.schemaService.getSchemaForResource(document.uri, currentDoc);
       if (!schema || schema.errors.length) {
-        if (position.line === 0 && position.character === 0 && !textBuffer.getLineContent(0).includes('# yaml-language-server')) {
+        if (position.line === 0 && position.character === 0 && !isModeline(lineContent)) {
           const inlineSchemaCompletion = {
             kind: CompletionItemKind.Text,
             label: 'Inline schema',
@@ -183,6 +189,20 @@ export class YamlCompletion {
             insertTextFormat: InsertTextFormat.PlainText,
           };
           result.items.push(inlineSchemaCompletion);
+        }
+        if (isModeline(lineContent)) {
+          const schemaIndex = lineContent.indexOf('$schema=');
+          if (schemaIndex !== -1 && schemaIndex + '$schema='.length === position.character) {
+            this.schemaService.getRegisteredSchemaIds().forEach((schemaId) => {
+              const schemaIdCompletion = {
+                kind: CompletionItemKind.Text,
+                label: schemaId,
+                insertText: schemaId,
+                insertTextFormat: InsertTextFormat.PlainText,
+              };
+              result.items.push(schemaIdCompletion);
+            });
+          }
         }
         return result;
       }
@@ -201,10 +221,6 @@ export class YamlCompletion {
         }
       }
 
-      let lineContent = textBuffer.getLineContent(position.line);
-      if (lineContent.endsWith('\n')) {
-        lineContent = lineContent.substr(0, lineContent.length - 1);
-      }
       if (node) {
         if (lineContent.length === 0) {
           node = currentDoc.internalDocument.contents as Node;

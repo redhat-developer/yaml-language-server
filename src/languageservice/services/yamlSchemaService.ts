@@ -24,6 +24,7 @@ import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonParser07';
 import { parse } from 'yaml';
 import * as path from 'path';
+import { getSchemaFromModeline } from './modelineUtil';
 
 const localize = nls.loadMessageBundle();
 
@@ -294,7 +295,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       const seen: { [schemaId: string]: boolean } = Object.create(null);
       const schemas: string[] = [];
 
-      let schemaFromModeline = this.getSchemaFromModeline(doc);
+      let schemaFromModeline = getSchemaFromModeline(doc);
       if (schemaFromModeline !== undefined) {
         if (!schemaFromModeline.startsWith('file:') && !schemaFromModeline.startsWith('http')) {
           if (!path.isAbsolute(schemaFromModeline)) {
@@ -436,32 +437,6 @@ export class YAMLSchemaService extends JSONSchemaService {
       });
     });
     return priorityMapping.get(highestPrio) || [];
-  }
-
-  /**
-   * Retrieve schema if declared as modeline.
-   * Public for testing purpose, not part of the API.
-   * @param doc
-   */
-  public getSchemaFromModeline(doc: SingleYAMLDocument | JSONDocument): string {
-    if (doc instanceof SingleYAMLDocument) {
-      const yamlLanguageServerModeline = doc.lineComments.find((lineComment) => {
-        const matchModeline = lineComment.match(/^#\s+yaml-language-server\s*:/g);
-        return matchModeline !== null && matchModeline.length === 1;
-      });
-      if (yamlLanguageServerModeline != undefined) {
-        const schemaMatchs = yamlLanguageServerModeline.match(/\$schema=\S+/g);
-        if (schemaMatchs !== null && schemaMatchs.length >= 1) {
-          if (schemaMatchs.length >= 2) {
-            console.log(
-              'Several $schema attributes have been found on the yaml-language-server modeline. The first one will be picked.'
-            );
-          }
-          return schemaMatchs[0].substring('$schema='.length);
-        }
-      }
-    }
-    return undefined;
   }
 
   private async resolveCustomSchema(schemaUri, doc): ResolvedSchema {
