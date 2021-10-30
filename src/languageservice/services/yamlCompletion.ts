@@ -1218,6 +1218,10 @@ export class YamlCompletion {
 
 const isNumberExp = /^\d+$/;
 function convertToStringValue(value: string): string {
+  if (value.length === 0) {
+    return value;
+  }
+
   if (value === 'true' || value === 'false' || value === 'null' || isNumberExp.test(value)) {
     return `"${value}"`;
   }
@@ -1227,7 +1231,30 @@ function convertToStringValue(value: string): string {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 
-  if ((value.length > 0 && value.charAt(0) === '@') || value.includes(':')) {
+  let doQuote = value.charAt(0) === '@';
+
+  if (!doQuote) {
+    // need to quote value if in `foo: bar`, `foo : bar` (mapping) or `foo:` (partial map) format
+    // but `foo:bar` and `:bar` (colon without white-space after it) are just plain string
+    let idx = value.indexOf(':', 0);
+    for (; idx > 0 && idx < value.length; idx = value.indexOf(':', idx + 1)) {
+      if (idx === value.length - 1) {
+        // `foo:` (partial map) format
+        doQuote = true;
+        break;
+      }
+
+      // there are only two valid kinds of white-space in yaml: space or tab
+      // ref: https://yaml.org/spec/1.2.1/#id2775170
+      const nextChar = value.charAt(idx + 1);
+      if (nextChar === '\t' || nextChar === ' ') {
+        doQuote = true;
+        break;
+      }
+    }
+  }
+
+  if (doQuote) {
     value = `"${value}"`;
   }
 
