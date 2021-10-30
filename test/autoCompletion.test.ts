@@ -752,7 +752,7 @@ describe('Auto Completion Tests', () => {
         );
       });
 
-      it('Autocompletion should escape colon', async () => {
+      it('Autocompletion should escape colon when indicating map', async () => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -772,6 +772,56 @@ describe('Auto Completion Tests', () => {
         expect(completion.items.length).to.be.equal(1);
         expect(completion.items[0]).to.deep.equal(
           createExpectedCompletion('test: colon', '"test: colon":\n  $1', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
+      it('Autocompletion should not escape colon when no white-space following', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            'test:colon': {
+              type: 'object',
+              properties: {
+                none: {
+                  type: 'boolean',
+                  enum: [true],
+                },
+              },
+            },
+          },
+        });
+        const content = '';
+        const completion = await parseSetup(content, 0);
+        expect(completion.items.length).to.be.equal(1);
+        expect(completion.items[0]).to.deep.equal(
+          createExpectedCompletion('test:colon', 'test:colon:\n  $1', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
+      it('Autocompletion should not escape colon when no key part present', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            ':colon': {
+              type: 'object',
+              properties: {
+                none: {
+                  type: 'boolean',
+                  enum: [true],
+                },
+              },
+            },
+          },
+        });
+        const content = '';
+        const completion = await parseSetup(content, 0);
+        expect(completion.items.length).to.be.equal(1);
+        expect(completion.items[0]).to.deep.equal(
+          createExpectedCompletion(':colon', ':colon:\n  $1', 0, 0, 0, 0, 10, 2, {
             documentation: '',
           })
         );
