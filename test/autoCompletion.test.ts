@@ -1645,7 +1645,20 @@ describe('Auto Completion Tests', () => {
         textDocument: testTextDocument,
       });
       assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
-      assert.strictEqual(result.items[0].label, 'http://google.com/');
+      assert.strictEqual(result.items[0].label, 'http://google.com');
+    });
+
+    it('should provide schema id completion in modeline for any line', async () => {
+      const modeline = 'foo:\n  bar\n# yaml-language-server: $schema=';
+      const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(modeline.length),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.strictEqual(result.items[0].label, 'http://google.com');
     });
   });
 

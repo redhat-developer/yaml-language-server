@@ -10,6 +10,7 @@ import {
   CompletionItemKind,
   CompletionList,
   InsertTextFormat,
+  InsertTextMode,
   MarkupContent,
   MarkupKind,
   Position,
@@ -31,7 +32,7 @@ import { stringifyObject, StringifySettings } from '../utils/json';
 import { isDefined, isString } from '../utils/objects';
 import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
-import { isMapContainsEmptyPair } from '../utils/astUtils';
+import { isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
 import { indexOf } from '../utils/astUtils';
 import { isModeline } from './modelineUtil';
 
@@ -180,6 +181,7 @@ export class YamlCompletion {
 
     try {
       const schema = await this.schemaService.getSchemaForResource(document.uri, currentDoc);
+
       if (!schema || schema.errors.length) {
         if (position.line === 0 && position.character === 0 && !isModeline(lineContent)) {
           const inlineSchemaCompletion = {
@@ -190,20 +192,27 @@ export class YamlCompletion {
           };
           result.items.push(inlineSchemaCompletion);
         }
-        if (isModeline(lineContent)) {
-          const schemaIndex = lineContent.indexOf('$schema=');
-          if (schemaIndex !== -1 && schemaIndex + '$schema='.length === position.character) {
-            this.schemaService.getRegisteredSchemaIds().forEach((schemaId) => {
-              const schemaIdCompletion = {
-                kind: CompletionItemKind.Text,
-                label: schemaId,
-                insertText: schemaId,
-                insertTextFormat: InsertTextFormat.PlainText,
-              };
-              result.items.push(schemaIdCompletion);
-            });
-          }
+      }
+
+      if (isModeline(lineContent) || isInComment(doc.tokens, offset)) {
+        const schemaIndex = lineContent.indexOf('$schema=');
+        if (schemaIndex !== -1 && schemaIndex + '$schema='.length <= position.character) {
+          this.schemaService.getAllSchemas().forEach((schema) => {
+            const schemaIdCompletion: CompletionItem = {
+              kind: CompletionItemKind.Constant,
+              label: schema.name ?? schema.uri,
+              detail: schema.description,
+              insertText: schema.uri,
+              insertTextFormat: InsertTextFormat.PlainText,
+              insertTextMode: InsertTextMode.asIs,
+            };
+            result.items.push(schemaIdCompletion);
+          });
         }
+        return result;
+      }
+
+      if (!schema || schema.errors.length) {
         return result;
       }
 

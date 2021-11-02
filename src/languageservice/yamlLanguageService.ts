@@ -62,6 +62,8 @@ export interface SchemasSettings {
   fileMatch: string[];
   schema?: unknown;
   uri: string;
+  name?: string;
+  description?: string;
 }
 
 export interface LanguageSettings {
@@ -173,7 +175,13 @@ export function getLanguageService(
         settings.schemas.forEach((settings) => {
           const currPriority = settings.priority ? settings.priority : 0;
           schemaService.addSchemaPriority(settings.uri, currPriority);
-          schemaService.registerExternalSchema(settings.uri, settings.fileMatch, settings.schema);
+          schemaService.registerExternalSchema(
+            settings.uri,
+            settings.fileMatch,
+            settings.schema,
+            settings.name,
+            settings.description
+          );
         });
       }
       yamlValidation.configure(settings);

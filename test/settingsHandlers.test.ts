@@ -102,6 +102,8 @@ describe('Settings Handlers Tests', () => {
       uri: 'https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json',
       fileMatch: ['.adonisrc.yaml'],
       priority: SchemaPriority.SchemaStore,
+      name: '.adonisrc.json',
+      description: 'AdonisJS configuration file',
     });
   });
 

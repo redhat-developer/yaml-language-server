@@ -18,6 +18,7 @@ import { ApplicableSchema, SchemaCollectorImpl, validate } from './json-schema07
 import { JSONSchema } from '../jsonSchema';
 import { TextBuffer } from '../utils/textBuffer';
 import { getIndentation } from '../utils/strings';
+import { Token } from 'yaml/dist/parse/cst';
 
 /**
  * These documents are collected into a final YAMLDocument
@@ -194,12 +195,15 @@ export class SingleYAMLDocument extends JSONDocument {
  * to the `parseYAML` caller.
  */
 export class YAMLDocument {
-  public documents: SingleYAMLDocument[];
+  documents: SingleYAMLDocument[];
+  tokens: Token[];
+
   private errors: YAMLDocDiagnostic[];
   private warnings: YAMLDocDiagnostic[];
 
-  constructor(documents: SingleYAMLDocument[]) {
+  constructor(documents: SingleYAMLDocument[], tokens: Token[]) {
     this.documents = documents;
+    this.tokens = tokens;
     this.errors = [];
     this.warnings = [];
   }
@@ -236,7 +240,7 @@ export class YamlDocuments {
   private ensureCache(document: TextDocument, parserOptions: ParserOptions, addRootObject: boolean): void {
     const key = document.uri;
     if (!this.cache.has(key)) {
-      this.cache.set(key, { version: -1, document: new YAMLDocument([]), parserOptions: defaultOptions });
+      this.cache.set(key, { version: -1, document: new YAMLDocument([], []), parserOptions: defaultOptions });
     }
     const cacheEntry = this.cache.get(key);
     if (

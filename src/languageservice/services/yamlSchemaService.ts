@@ -25,6 +25,7 @@ import { JSONDocument } from '../parser/jsonParser07';
 import { parse } from 'yaml';
 import * as path from 'path';
 import { getSchemaFromModeline } from './modelineUtil';
+import { JSONSchemaDescriptionExt } from '../../requestTypes';
 
 const localize = nls.loadMessageBundle();
 
@@ -95,6 +96,8 @@ export class YAMLSchemaService extends JSONSchemaService {
   private requestService: SchemaRequestService;
   public schemaPriorityMapping: Map<string, Set<SchemaPriority>>;
 
+  private schemaUriToNameAndDescription = new Map<string, [string, string]>();
+
   constructor(
     requestService: SchemaRequestService,
     contextService?: WorkspaceContextService,
@@ -108,6 +111,33 @@ export class YAMLSchemaService extends JSONSchemaService {
 
   registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider): void {
     this.customSchemaProvider = customSchemaProvider;
+  }
+
+  getAllSchemas(): JSONSchemaDescriptionExt[] {
+    const result: JSONSchemaDescriptionExt[] = [];
+    const schemaUris = new Set<string>();
+    for (const filePattern of this.filePatternAssociations) {
+      const schemaUri = filePattern.uris[0];
+      if (schemaUris.has(schemaUri)) {
+        continue;
+      }
+      schemaUris.add(schemaUri);
+      const schemaHandle: JSONSchemaDescriptionExt = {
+        uri: schemaUri,
+        fromStore: false,
+        usedForCurrentFile: false,
+      };
+
+      if (this.schemaUriToNameAndDescription.has(schemaUri)) {
+        const [name, description] = this.schemaUriToNameAndDescription.get(schemaUri);
+        schemaHandle.name = name;
+        schemaHandle.description = description;
+        schemaHandle.fromStore = true;
+      }
+      result.push(schemaHandle);
+    }
+
+    return result;
   }
 
   async resolveSchemaContent(
@@ -610,11 +640,25 @@ export class YAMLSchemaService extends JSONSchemaService {
         );
       }
       unresolvedJsonSchema.uri = schemaUri;
+      if (this.schemaUriToNameAndDescription.has(schemaUri)) {
+        const [name, description] = this.schemaUriToNameAndDescription.get(schemaUri);
+        unresolvedJsonSchema.schema.title = name ?? unresolvedJsonSchema.schema.title;
+        unresolvedJsonSchema.schema.description = description ?? unresolvedJsonSchema.schema.description;
+      }
       return unresolvedJsonSchema;
     });
   }
 
-  registerExternalSchema(uri: string, filePatterns?: string[], unresolvedSchema?: JSONSchema): SchemaHandle {
+  registerExternalSchema(
+    uri: string,
+    filePatterns?: string[],
+    unresolvedSchema?: JSONSchema,
+    name?: string,
+    description?: string
+  ): SchemaHandle {
+    if (name || description) {
+      this.schemaUriToNameAndDescription.set(uri, [name, description]);
+    }
     return super.registerExternalSchema(uri, filePatterns, unresolvedSchema);
   }
 

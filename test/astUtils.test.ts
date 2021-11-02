@@ -6,7 +6,7 @@
 import * as chai from 'chai';
 import { isPair, isSeq, Pair, YAMLSeq } from 'yaml';
 import { YamlDocuments } from '../src/languageservice/parser/yaml-documents';
-import { getParent } from '../src/languageservice/utils/astUtils';
+import { getParent, isInComment } from '../src/languageservice/utils/astUtils';
 import { setupTextDocument } from './utils/testHelper';
 const expect = chai.expect;
 
@@ -72,6 +72,22 @@ describe('AST Utils Tests', () => {
       expect(result).is.not.undefined;
       expect(isPair(result)).is.true;
       expect((result as Pair).key).property('value', 'foo');
+    });
+  });
+
+  describe('Is Offset in comment', () => {
+    it('should detect that offset in comment', () => {
+      const doc = setupTextDocument('#some comment\nfoo: bar');
+      const yamlDoc = documents.getYamlDocument(doc);
+      const result = isInComment(yamlDoc.tokens, 4);
+      expect(result).to.be.true;
+    });
+
+    it('should detect that comment inside object', () => {
+      const doc = setupTextDocument('obj:\n#some comment\n  foo: bar');
+      const yamlDoc = documents.getYamlDocument(doc);
+      const result = isInComment(yamlDoc.tokens, 12);
+      expect(result).to.be.true;
     });
   });
 });
