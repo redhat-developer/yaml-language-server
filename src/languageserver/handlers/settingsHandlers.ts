@@ -87,6 +87,7 @@ export class SettingsHandler {
         this.yamlSettings.yamlFormatterSettings = {
           proseWrap: settings.yaml.format.proseWrap || 'preserve',
           printWidth: settings.yaml.format.printWidth || 80,
+          sequenceItemIndent: settings.yaml.format.sequenceItemIndent || 0,
         };
 
         if (settings.yaml.format.singleQuote !== undefined) {

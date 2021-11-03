@@ -55,6 +55,7 @@ export class SettingsState {
     proseWrap: 'preserve',
     printWidth: 80,
     enable: true,
+    sequenceItemIndent: 0,
   } as CustomFormatterOptions;
   yamlShouldHover = true;
   yamlShouldCompletion = true;
