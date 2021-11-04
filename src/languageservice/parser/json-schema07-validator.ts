@@ -14,6 +14,7 @@ import { getSchemaTypeName } from '../utils/schemaUtils';
 import { isMap, isPair, isScalar, isSeq } from 'yaml';
 import { toOffsetLength } from './ast-converter';
 import { getParent } from '../utils/astUtils';
+import { safeCreateUnicodeRegExp } from '../utils/strings';
 
 const localize = nls.loadMessageBundle();
 
@@ -533,7 +534,7 @@ export function validate(
     }
 
     if (isString(schema.pattern)) {
-      const regex = new RegExp(schema.pattern, 'u');
+      const regex = safeCreateUnicodeRegExp(schema.pattern);
       if (!regex.test(node.value)) {
         const [offset, length] = toOffsetLength(node.range);
         validationResult.problems.push({
@@ -830,7 +831,7 @@ export function validate(
 
     if (schema.patternProperties) {
       for (const propertyPattern of Object.keys(schema.patternProperties)) {
-        const regex = new RegExp(propertyPattern, 'u');
+        const regex = safeCreateUnicodeRegExp(propertyPattern);
         for (const propertyName of unprocessedProperties.slice(0)) {
           if (regex.test(propertyName)) {
             propertyProcessed(propertyName);

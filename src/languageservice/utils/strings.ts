@@ -66,3 +66,32 @@ export function getIndentation(lineContent: string, position: number): number {
   // assuming that current position is indentation
   return position;
 }
+
+const replaceEscapedChars: [RegExp, string][] = [
+  [new RegExp('\\\\ ', 'g'), ' '],
+  [new RegExp('\\\\!', 'g'), '!'],
+  [new RegExp('\\\\"', 'g'), '"'],
+  [new RegExp('\\\\#', 'g'), '#'],
+  [new RegExp('\\\\%', 'g'), '%'],
+  [new RegExp('\\\\&', 'g'), '&'],
+  [new RegExp("\\\\'", 'g'), "'"],
+  [new RegExp('\\\\,', 'g'), ','],
+  [new RegExp('\\\\-', 'g'), '-'],
+  [new RegExp('\\\\:', 'g'), ':'],
+  [new RegExp('\\\\;', 'g'), ';'],
+  [new RegExp('\\\\<', 'g'), '<'],
+  [new RegExp('\\\\=', 'g'), '='],
+  [new RegExp('\\\\>', 'g'), '>'],
+  [new RegExp('\\\\@', 'g'), '@'],
+  [new RegExp('\\\\_', 'g'), '_'],
+  [new RegExp('\\\\`', 'g'), '`'],
+  [new RegExp('\\\\~', 'g'), '~'],
+];
+
+export function safeCreateUnicodeRegExp(pattern: string): RegExp {
+  for (const unEscape of replaceEscapedChars) {
+    pattern = pattern.replace(unEscape[0], unEscape[1]);
+  }
+
+  return new RegExp(pattern, 'u');
+}
