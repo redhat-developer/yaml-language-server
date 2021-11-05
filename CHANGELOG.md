@@ -1,3 +1,8 @@
+### 1.1.1
+
+- Fix: Autocomplete should not escape colon without white-space following [#571](https://github.com/redhat-developer/yaml-language-server/issues/571)
+- Fix: Unescape regexp string to be compatible with 'u' flag [#576](https://github.com/redhat-developer/yaml-language-server/pull/576)
+
 ### 1.1.0
 
 - Add Web VSCode support [#594](https://github.com/redhat-developer/vscode-yaml/pull/594)
