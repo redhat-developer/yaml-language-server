@@ -188,7 +188,7 @@ export class YamlCompletion {
       }
 
       let currentProperty: Node = null;
-      // let foundByClosest = false;
+
       if (!node) {
         if (!currentDoc.internalDocument.contents || isScalar(currentDoc.internalDocument.contents)) {
           const map = currentDoc.internalDocument.createNode({});
@@ -220,7 +220,7 @@ export class YamlCompletion {
                       if (isSeq(currentDoc.internalDocument.contents)) {
                         const index = indexOf(currentDoc.internalDocument.contents, parent);
                         if (typeof index === 'number') {
-                          currentDoc.internalDocument.set(index, map); //TODO: problem there
+                          currentDoc.internalDocument.set(index, map);
                         }
                       } else {
                         currentDoc.internalDocument.set(parent.key, map);
