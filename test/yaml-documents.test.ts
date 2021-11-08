@@ -10,7 +10,7 @@ import { YamlDocuments } from '../src/languageservice/parser/yaml-documents';
 import { setupTextDocument } from './utils/testHelper';
 import * as yamlParser from '../src/languageservice/parser/yamlParser07';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { isMap, isScalar, isSeq, Scalar, YAMLMap, YAMLSeq } from 'yaml';
+import { isMap, isPair, isScalar, isSeq, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
 import { TextBuffer } from '../src/languageservice/utils/textBuffer';
 
 const expect = chai.expect;
@@ -96,7 +96,7 @@ describe('YAML Documents', () => {
       const doc = setupTextDocument('foo: bar');
       const yamlDoc = documents.getYamlDocument(doc);
 
-      const result = yamlDoc.documents[0].getNodeFromPosition(2);
+      const [result] = yamlDoc.documents[0].getNodeFromPosition(2, new TextBuffer(doc));
 
       expect(result).is.not.undefined;
       expect(isScalar(result)).is.true;
@@ -107,7 +107,7 @@ describe('YAML Documents', () => {
       const doc = setupTextDocument('foo: bar');
       const yamlDoc = documents.getYamlDocument(doc);
 
-      const result = yamlDoc.documents[0].getNodeFromPosition(6);
+      const [result] = yamlDoc.documents[0].getNodeFromPosition(6, new TextBuffer(doc));
 
       expect(result).is.not.undefined;
       expect(isScalar(result)).is.true;
@@ -118,7 +118,7 @@ describe('YAML Documents', () => {
       const doc = setupTextDocument('foo: bar');
       const yamlDoc = documents.getYamlDocument(doc);
 
-      const result = yamlDoc.documents[0].getNodeFromPosition(4);
+      const [result] = yamlDoc.documents[0].getNodeFromPosition(4, new TextBuffer(doc));
 
       expect(result).is.not.undefined;
       expect(isMap(result)).is.true;
@@ -129,7 +129,7 @@ describe('YAML Documents', () => {
       const doc = setupTextDocument('foo:\n  - bar');
       const yamlDoc = documents.getYamlDocument(doc);
 
-      const result = yamlDoc.documents[0].getNodeFromPosition(9);
+      const [result] = yamlDoc.documents[0].getNodeFromPosition(9, new TextBuffer(doc));
 
       expect(result).is.not.undefined;
       expect(isScalar(result)).is.true;
@@ -140,7 +140,7 @@ describe('YAML Documents', () => {
       const doc = setupTextDocument('foo:\n  - bar');
       const yamlDoc = documents.getYamlDocument(doc);
 
-      const result = yamlDoc.documents[0].getNodeFromPosition(8);
+      const [result] = yamlDoc.documents[0].getNodeFromPosition(8, new TextBuffer(doc));
 
       expect(result).is.not.undefined;
       expect(isSeq(result)).is.true;
@@ -151,7 +151,7 @@ describe('YAML Documents', () => {
       const doc = setupTextDocument('foo:\n  - bar');
       const yamlDoc = documents.getYamlDocument(doc);
 
-      const result = yamlDoc.documents[0].getNodeFromPosition(6);
+      const [result] = yamlDoc.documents[0].getNodeFromPosition(6, new TextBuffer(doc));
 
       expect(result).is.not.undefined;
       expect(isMap(result)).is.true;
@@ -162,7 +162,7 @@ describe('YAML Documents', () => {
       const doc = setupTextDocument('{foo: bar}');
       const yamlDoc = documents.getYamlDocument(doc);
 
-      const result = yamlDoc.documents[0].getNodeFromPosition(3);
+      const [result] = yamlDoc.documents[0].getNodeFromPosition(3, new TextBuffer(doc));
 
       expect(result).is.not.undefined;
       expect(isScalar(result)).is.true;
@@ -173,11 +173,30 @@ describe('YAML Documents', () => {
       const doc = setupTextDocument('{foo: bar}');
       const yamlDoc = documents.getYamlDocument(doc);
 
-      const result = yamlDoc.documents[0].getNodeFromPosition(8);
+      const [result] = yamlDoc.documents[0].getNodeFromPosition(8, new TextBuffer(doc));
 
       expect(result).is.not.undefined;
       expect(isScalar(result)).is.true;
       expect((result as Scalar).value).eqls('bar');
+    });
+
+    it('get pair parent in array', () => {
+      const doc = setupTextDocument(`objA:
+  - name: nameA1
+    
+objB:
+  size: midle
+  name: nameB2
+`);
+      const yamlDoc = documents.getYamlDocument(doc);
+
+      const result = yamlDoc.documents[0].findClosestNode(27, new TextBuffer(doc));
+
+      expect(result).is.not.undefined;
+      expect(isMap(result)).is.true;
+      const resultItem: Pair = (result as YAMLMap).items[0];
+      expect(resultItem.key as Scalar).property('value', 'name');
+      expect(resultItem.value as Scalar).property('value', 'nameA1');
     });
 
     it('Find closes node: map', () => {
