@@ -67,38 +67,11 @@ export function getIndentation(lineContent: string, position: number): number {
   return position;
 }
 
-const replaceEscapedChars: [RegExp, string][] = [
-  [new RegExp('\\\\ ', 'g'), ' '],
-  [new RegExp('\\\\!', 'g'), '!'],
-  [new RegExp('\\\\"', 'g'), '"'],
-  [new RegExp('\\\\#', 'g'), '#'],
-  [new RegExp('\\\\%', 'g'), '%'],
-  [new RegExp('\\\\&', 'g'), '&'],
-  [new RegExp("\\\\'", 'g'), "'"],
-  [new RegExp('\\\\,', 'g'), ','],
-  [new RegExp('\\\\-', 'g'), '-'],
-  [new RegExp('\\\\:', 'g'), ':'],
-  [new RegExp('\\\\;', 'g'), ';'],
-  [new RegExp('\\\\<', 'g'), '<'],
-  [new RegExp('\\\\=', 'g'), '='],
-  [new RegExp('\\\\>', 'g'), '>'],
-  [new RegExp('\\\\@', 'g'), '@'],
-  [new RegExp('\\\\_', 'g'), '_'],
-  [new RegExp('\\\\`', 'g'), '`'],
-  [new RegExp('\\\\~', 'g'), '~'],
-];
-
 export function safeCreateUnicodeRegExp(pattern: string): RegExp {
-  const origPattern = pattern;
-
-  for (const unEscape of replaceEscapedChars) {
-    pattern = pattern.replace(unEscape[0], unEscape[1]);
-  }
-
   // fall back to regular regexp if we cannot create Unicode one
   try {
     return new RegExp(pattern, 'u');
   } catch (ignore) {
-    return new RegExp(origPattern);
+    return new RegExp(pattern);
   }
 }
