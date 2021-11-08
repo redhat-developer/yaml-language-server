@@ -89,9 +89,16 @@ const replaceEscapedChars: [RegExp, string][] = [
 ];
 
 export function safeCreateUnicodeRegExp(pattern: string): RegExp {
+  const origPattern = pattern;
+
   for (const unEscape of replaceEscapedChars) {
     pattern = pattern.replace(unEscape[0], unEscape[1]);
   }
 
-  return new RegExp(pattern, 'u');
+  // fall back to regular regexp if we cannot create Unicode one
+  try {
+    return new RegExp(pattern, 'u');
+  } catch (ignore) {
+    return new RegExp(origPattern);
+  }
 }
