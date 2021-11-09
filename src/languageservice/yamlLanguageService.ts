@@ -21,13 +21,14 @@ import {
   TextEdit,
   DocumentLink,
   CodeLens,
+  DefinitionLink,
 } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
-import { JSONDocument, DefinitionLink, TextDocument, DocumentSymbolsContext } from 'vscode-json-languageservice';
+import { DocumentSymbolsContext } from 'vscode-json-languageservice';
 import { findLinks } from './services/yamlLinks';
 import {
   FoldingRange,
@@ -37,7 +38,9 @@ import {
   Connection,
   DocumentOnTypeFormattingParams,
   CodeLensParams,
+  DefinitionParams,
 } from 'vscode-languageserver/node';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getFoldingRanges } from './services/yamlFolding';
 import { FoldingRangesContext } from './yamlTypes';
 import { YamlCodeActions } from './services/yamlCodeActions';
@@ -49,6 +52,7 @@ import { Telemetry } from '../languageserver/telemetry';
 import { YamlVersion } from './parser/yamlParser07';
 import { YamlCompletion } from './services/yamlCompletion';
 import { yamlDocumentsCache } from './parser/yaml-documents';
+import { getDefinition } from './services/yamlDefinition';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -132,10 +136,10 @@ export interface LanguageService {
   doHover(document: TextDocument, position: Position): Promise<Hover | null>;
   findDocumentSymbols(document: TextDocument, context: DocumentSymbolsContext): SymbolInformation[];
   findDocumentSymbols2(document: TextDocument, context: DocumentSymbolsContext): DocumentSymbol[];
-  findDefinition(document: TextDocument, position: Position, doc: JSONDocument): Promise<DefinitionLink[]>;
   findLinks(document: TextDocument): Promise<DocumentLink[]>;
   resetSchema(uri: string): boolean;
   doFormat(document: TextDocument, options: CustomFormatterOptions): TextEdit[];
+  doDefinition(document: TextDocument, params: DefinitionParams): DefinitionLink[] | undefined;
   doDocumentOnTypeFormatting(document: TextDocument, params: DocumentOnTypeFormattingParams): TextEdit[] | undefined;
   addSchema(schemaID: string, schema: JSONSchema): void;
   deleteSchema(schemaID: string): void;
@@ -185,13 +189,13 @@ export function getLanguageService(
     registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
       schemaService.registerCustomSchemaProvider(schemaProvider);
     },
-    findDefinition: () => Promise.resolve([]),
     findLinks,
     doComplete: completer.doComplete.bind(completer),
     doValidation: yamlValidation.doValidation.bind(yamlValidation),
     doHover: hover.doHover.bind(hover),
     findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols),
     findDocumentSymbols2: yamlDocumentSymbols.findHierarchicalDocumentSymbols.bind(yamlDocumentSymbols),
+    doDefinition: getDefinition.bind(getDefinition),
     resetSchema: (uri: string) => {
       return schemaService.onResourceChange(uri);
     },

@@ -17,8 +17,9 @@ import {
   Connection,
   TextDocumentPositionParams,
   CodeLensParams,
+  DefinitionParams,
 } from 'vscode-languageserver';
-import { CodeLens, DocumentSymbol, Hover, SymbolInformation, TextEdit } from 'vscode-languageserver-types';
+import { CodeLens, DefinitionLink, DocumentSymbol, Hover, SymbolInformation, TextEdit } from 'vscode-languageserver-types';
 import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
 import { LanguageService } from '../../languageservice/yamlLanguageService';
 import { SettingsState } from '../../yamlSettings';
@@ -57,6 +58,7 @@ export class LanguageHandlers {
     this.connection.onDocumentOnTypeFormatting((params) => this.formatOnTypeHandler(params));
     this.connection.onCodeLens((params) => this.codeLensHandler(params));
     this.connection.onCodeLensResolve((params) => this.codeLensResolveHandler(params));
+    this.connection.onDefinition((params) => this.definitionHandler(params));
 
     this.yamlSettings.documents.onDidChangeContent((change) => this.cancelLimitExceededWarnings(change.document.uri));
     this.yamlSettings.documents.onDidClose((event) => this.cancelLimitExceededWarnings(event.document.uri));
@@ -217,6 +219,15 @@ export class LanguageHandlers {
 
   codeLensResolveHandler(param: CodeLens): Thenable<CodeLens> | CodeLens {
     return this.languageService.resolveCodeLens(param);
+  }
+
+  definitionHandler(params: DefinitionParams): DefinitionLink[] {
+    const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
+    if (!textDocument) {
+      return;
+    }
+
+    return this.languageService.doDefinition(textDocument, params);
   }
 
   // Adapted from:
