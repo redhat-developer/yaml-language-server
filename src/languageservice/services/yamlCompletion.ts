@@ -194,6 +194,8 @@ export class YamlCompletion {
           const map = currentDoc.internalDocument.createNode({});
           map.range = [offset, offset + 1, offset + 1];
           currentDoc.internalDocument.contents = map;
+          // eslint-disable-next-line no-self-assign
+          currentDoc.internalDocument = currentDoc.internalDocument;
           node = map;
         } else {
           node = currentDoc.findClosestNode(offset, textBuffer);
@@ -220,10 +222,14 @@ export class YamlCompletion {
                       if (isSeq(currentDoc.internalDocument.contents)) {
                         const index = indexOf(currentDoc.internalDocument.contents, parent);
                         if (typeof index === 'number') {
-                          currentDoc.internalDocument.set(index, map); //TODO: problem there
+                          currentDoc.internalDocument.set(index, map);
+                          // eslint-disable-next-line no-self-assign
+                          currentDoc.internalDocument = currentDoc.internalDocument;
                         }
                       } else {
                         currentDoc.internalDocument.set(parent.key, map);
+                        // eslint-disable-next-line no-self-assign
+                        currentDoc.internalDocument = currentDoc.internalDocument;
                       }
 
                       currentProperty = (map as YAMLMap).items[0];
@@ -246,6 +252,8 @@ export class YamlCompletion {
                     const map = this.createTempObjNode(currentWord, node, currentDoc);
                     parent.delete(node);
                     parent.add(map);
+                    // eslint-disable-next-line no-self-assign
+                    currentDoc.internalDocument = currentDoc.internalDocument;
                     node = map;
                   } else {
                     node = parent;
@@ -268,8 +276,12 @@ export class YamlCompletion {
 
                           if (parentParent && (isMap(parentParent) || isSeq(parentParent))) {
                             parentParent.set(parent.key, map);
+                            // eslint-disable-next-line no-self-assign
+                            currentDoc.internalDocument = currentDoc.internalDocument;
                           } else {
                             currentDoc.internalDocument.set(parent.key, map);
+                            // eslint-disable-next-line no-self-assign
+                            currentDoc.internalDocument = currentDoc.internalDocument;
                           }
                           currentProperty = (map as YAMLMap).items[0];
                           node = map;
@@ -286,6 +298,8 @@ export class YamlCompletion {
                     const map = this.createTempObjNode(currentWord, node, currentDoc);
                     parent.delete(node);
                     parent.add(map);
+                    // eslint-disable-next-line no-self-assign
+                    currentDoc.internalDocument = currentDoc.internalDocument;
                     node = map;
                   } else {
                     node = parent;
@@ -303,6 +317,8 @@ export class YamlCompletion {
           } else if (isScalar(node)) {
             const map = this.createTempObjNode(currentWord, node, currentDoc);
             currentDoc.internalDocument.contents = map;
+            // eslint-disable-next-line no-self-assign
+            currentDoc.internalDocument = currentDoc.internalDocument;
             currentProperty = map.items[0];
             node = map;
           } else if (isMap(node)) {
@@ -373,13 +389,13 @@ export class YamlCompletion {
     textBuffer: TextBuffer,
     overwriteRange: Range
   ): void {
-    const matchingSchemas = doc.matchSchemas(schema.schema);
+    const matchingSchemas = doc.getMatchingSchemas(schema.schema);
     const existingKey = textBuffer.getText(overwriteRange);
     const hasColumn = textBuffer.getLineContent(overwriteRange.start.line).indexOf(':') === -1;
 
     const nodeParent = doc.getParent(node);
     for (const schema of matchingSchemas) {
-      if (schema.node === node && !schema.inverted) {
+      if (schema.node.internalNode === node && !schema.inverted) {
         this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
           newLineFirst: false,
           indentFirstObject: false,
@@ -444,7 +460,7 @@ export class YamlCompletion {
         }
       }
 
-      if (nodeParent && schema.node === nodeParent && schema.schema.defaultSnippets) {
+      if (nodeParent && schema.node.internalNode === nodeParent && schema.schema.defaultSnippets) {
         // For some reason the first item in the array needs to be treated differently, otherwise
         // the indentation will not be correct
         if (node.items.length === 1) {
@@ -507,9 +523,9 @@ export class YamlCompletion {
 
     if (node && (parentKey !== null || isSeq(node))) {
       const separatorAfter = '';
-      const matchingSchemas = doc.matchSchemas(schema.schema);
+      const matchingSchemas = doc.getMatchingSchemas(schema.schema);
       for (const s of matchingSchemas) {
-        if (s.node === node && !s.inverted && s.schema) {
+        if (s.node.internalNode === node && !s.inverted && s.schema) {
           if (s.schema.items) {
             this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
               newLineFirst: false,
