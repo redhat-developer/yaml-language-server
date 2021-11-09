@@ -86,7 +86,13 @@ export class SingleYAMLDocument extends JSONDocument {
     return matchingSchemas;
   }
 
-  getNodeFromPosition(positionOffset: number): Node | undefined {
+  getNodeFromPosition(positionOffset: number, textBuffer: TextBuffer): [Node | undefined, boolean] {
+    const position = textBuffer.getPosition(positionOffset);
+    const lineContent = textBuffer.getLineContent(position.line);
+    if (lineContent.trim().length === 0) {
+      return [this.findClosestNode(positionOffset, textBuffer), true];
+    }
+
     let closestNode: Node;
     visit(this.internalDocument, (key, node: Node) => {
       if (!node) {
@@ -104,7 +110,7 @@ export class SingleYAMLDocument extends JSONDocument {
       }
     });
 
-    return closestNode;
+    return [closestNode, false];
   }
 
   findClosestNode(offset: number, textBuffer: TextBuffer): Node {
@@ -143,6 +149,9 @@ export class SingleYAMLDocument extends JSONDocument {
   }
 
   private getProperParentByIndentation(indentation: number, node: Node, textBuffer: TextBuffer): Node {
+    if (!node) {
+      return this.internalDocument.contents as Node;
+    }
     if (node.range) {
       const position = textBuffer.getPosition(node.range[0]);
       if (position.character !== indentation && position.character > 0) {

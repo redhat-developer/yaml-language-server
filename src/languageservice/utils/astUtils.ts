@@ -3,14 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Document, isDocument, isScalar, Node, visit, YAMLMap, YAMLSeq } from 'yaml';
+import { Document, isDocument, isScalar, Node, visit as cstVisit, YAMLMap, YAMLSeq } from 'yaml';
 
 export function getParent(doc: Document, nodeToFind: Node): Node | undefined {
   let parentNode: Node;
-  visit(doc, (_, node: Node, path) => {
+  cstVisit(doc, (_, node: Node, path) => {
     if (node === nodeToFind) {
       parentNode = path[path.length - 1] as Node;
-      return visit.BREAK;
+      return cstVisit.BREAK;
     }
   });
 

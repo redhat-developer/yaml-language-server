@@ -11,6 +11,7 @@ import { ServiceSetup } from './utils/serviceSetup';
 import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
+import * as path from 'path';
 
 describe('Auto Completion Fix Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -125,5 +126,20 @@ spec:
     const content = '- foo\n- bar:\n    so';
     const completion = await parseSetup(content, 2, 6);
     expect(completion.items).is.empty;
+  });
+
+  it('should complete  array', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const schema = require(path.join(__dirname, './fixtures/test-nested-object-array.json'));
+    languageService.addSchema(SCHEMA_ID, schema);
+    const content = `objA:
+  - name: nameA1
+      
+objB:
+  size: midle
+  name: nameB2  
+`;
+    const completion = await parseSetup(content, 2, 4);
+    expect(completion.items).is.not.empty;
   });
 });
