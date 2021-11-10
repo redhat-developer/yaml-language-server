@@ -1,3 +1,20 @@
+### 1.1.1
+
+- Fix: Autocomplete should not escape colon without white-space following [#571](https://github.com/redhat-developer/yaml-language-server/issues/571)
+- Fix: Unescape regexp string to be compatible with 'u' flag [#576](https://github.com/redhat-developer/yaml-language-server/pull/576)
+
+### 1.1.0
+
+- Add Web VSCode support [#594](https://github.com/redhat-developer/vscode-yaml/pull/594)
+- schemas: Unicode support for pattern and patternProperties keywords [#554](https://github.com/redhat-developer/yaml-language-server/issues/554)
+- Fix: IntelliSense broken with v1.0.0 [#616](https://github.com/redhat-developer/vscode-yaml/issues/616)
+- Fix: Cannot read property '0' of undefined Code [#617](https://github.com/redhat-developer/vscode-yaml/issues/617)
+- Fix: Completion of second level for Camel K files are no more working [#619](https://github.com/redhat-developer/vscode-yaml/issues/619)
+- Provide completion for inlined schema syntax [#559](https://github.com/redhat-developer/yaml-language-server/issues/559)
+- Fix: Schema comment ignored if it isn't the first line in the file. [#618](https://github.com/redhat-developer/vscode-yaml/issues/618)
+
+Thanks to Johnny Graettinger, Martin Aeschlimann and Aurélien Pupier
+
 ### 1.0.0
 - Use [eemeli/yaml](https://github.com/eemeli/yaml) as YAML parser [#421](https://github.com/redhat-developer/yaml-language-server/issues/421)
 - Fix: Completion provider: t.replace is not a function [#547](https://github.com/redhat-developer/yaml-language-server/issues/547)

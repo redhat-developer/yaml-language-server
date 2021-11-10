@@ -17,7 +17,7 @@ import {
   Range,
   TextEdit,
 } from 'vscode-languageserver/node';
-import { Node, isPair, isScalar, isMap, YAMLMap, isSeq, YAMLSeq, isNode } from 'yaml';
+import { Node, isPair, isScalar, isMap, YAMLMap, isSeq, YAMLSeq, isNode, Pair } from 'yaml';
 import { Telemetry } from '../../languageserver/telemetry';
 import { SingleYAMLDocument, YamlDocuments } from '../parser/yaml-documents';
 import { YamlVersion } from '../parser/yamlParser07';
@@ -104,7 +104,7 @@ export class YamlCompletion {
       return Promise.resolve(result);
     }
 
-    let node = currentDoc.getNodeFromPosition(offset);
+    let [node, foundByClosest] = currentDoc.getNodeFromPosition(offset, textBuffer);
 
     const currentWord = this.getCurrentWord(document, offset);
 
@@ -115,7 +115,7 @@ export class YamlCompletion {
       const nodeEndPos = document.positionAt(node.range[2]);
       nodeEndPos.character += 1;
       overwriteRange = Range.create(nodeStartPos, nodeEndPos);
-    } else if (node && isScalar(node)) {
+    } else if (node && isScalar(node) && node.value) {
       const start = document.positionAt(node.range[0]);
       if (offset > 0 && start.character > 0 && document.getText().charAt(offset - 1) === '-') {
         start.character -= 1;
@@ -217,12 +217,14 @@ export class YamlCompletion {
       }
 
       let currentProperty: Node = null;
-      let foundByClosest = false;
+
       if (!node) {
         if (!currentDoc.internalDocument.contents || isScalar(currentDoc.internalDocument.contents)) {
           const map = currentDoc.internalDocument.createNode({});
           map.range = [offset, offset + 1, offset + 1];
           currentDoc.internalDocument.contents = map;
+          // eslint-disable-next-line no-self-assign
+          currentDoc.internalDocument = currentDoc.internalDocument;
           node = map;
         } else {
           node = currentDoc.findClosestNode(offset, textBuffer);
@@ -245,10 +247,14 @@ export class YamlCompletion {
                       if (isSeq(currentDoc.internalDocument.contents)) {
                         const index = indexOf(currentDoc.internalDocument.contents, parent);
                         if (typeof index === 'number') {
-                          currentDoc.internalDocument.set(index, map); //TODO: problem there
+                          currentDoc.internalDocument.set(index, map);
+                          // eslint-disable-next-line no-self-assign
+                          currentDoc.internalDocument = currentDoc.internalDocument;
                         }
                       } else {
                         currentDoc.internalDocument.set(parent.key, map);
+                        // eslint-disable-next-line no-self-assign
+                        currentDoc.internalDocument = currentDoc.internalDocument;
                       }
 
                       currentProperty = (map as YAMLMap).items[0];
@@ -271,6 +277,8 @@ export class YamlCompletion {
                     const map = this.createTempObjNode(currentWord, node, currentDoc);
                     parent.delete(node);
                     parent.add(map);
+                    // eslint-disable-next-line no-self-assign
+                    currentDoc.internalDocument = currentDoc.internalDocument;
                     node = map;
                   } else {
                     node = parent;
@@ -293,8 +301,12 @@ export class YamlCompletion {
 
                           if (parentParent && (isMap(parentParent) || isSeq(parentParent))) {
                             parentParent.set(parent.key, map);
+                            // eslint-disable-next-line no-self-assign
+                            currentDoc.internalDocument = currentDoc.internalDocument;
                           } else {
                             currentDoc.internalDocument.set(parent.key, map);
+                            // eslint-disable-next-line no-self-assign
+                            currentDoc.internalDocument = currentDoc.internalDocument;
                           }
                           currentProperty = (map as YAMLMap).items[0];
                           node = map;
@@ -311,6 +323,8 @@ export class YamlCompletion {
                     const map = this.createTempObjNode(currentWord, node, currentDoc);
                     parent.delete(node);
                     parent.add(map);
+                    // eslint-disable-next-line no-self-assign
+                    currentDoc.internalDocument = currentDoc.internalDocument;
                     node = map;
                   } else {
                     node = parent;
@@ -328,6 +342,8 @@ export class YamlCompletion {
           } else if (isScalar(node)) {
             const map = this.createTempObjNode(currentWord, node, currentDoc);
             currentDoc.internalDocument.contents = map;
+            // eslint-disable-next-line no-self-assign
+            currentDoc.internalDocument = currentDoc.internalDocument;
             currentProperty = map.items[0];
             node = map;
           } else if (isMap(node)) {
@@ -398,13 +414,13 @@ export class YamlCompletion {
     textBuffer: TextBuffer,
     overwriteRange: Range
   ): void {
-    const matchingSchemas = doc.matchSchemas(schema.schema);
+    const matchingSchemas = doc.getMatchingSchemas(schema.schema);
     const existingKey = textBuffer.getText(overwriteRange);
     const hasColumn = textBuffer.getLineContent(overwriteRange.start.line).indexOf(':') === -1;
 
     const nodeParent = doc.getParent(node);
     for (const schema of matchingSchemas) {
-      if (schema.node === node && !schema.inverted) {
+      if (schema.node.internalNode === node && !schema.inverted) {
         this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
           newLineFirst: false,
           indentFirstObject: false,
@@ -434,6 +450,41 @@ export class YamlCompletion {
                     if (indexOfSlash >= 0) {
                       // add one space to compensate the '-'
                       identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.range[0]);
+                    }
+                  }
+
+                  // if check that current node has last pair with "null" value and key witch match key from schema,
+                  // and if schema has array definition it add completion item for array item creation
+                  let pair: Pair;
+                  if (
+                    propertySchema.type === 'array' &&
+                    (pair = node.items.find(
+                      (it) =>
+                        isScalar(it.key) &&
+                        it.key.range &&
+                        it.key.value === key &&
+                        isScalar(it.value) &&
+                        !it.value.value &&
+                        textBuffer.getPosition(it.key.range[2]).line === overwriteRange.end.line - 1
+                    )) &&
+                    pair
+                  ) {
+                    if (Array.isArray(propertySchema.items)) {
+                      this.addSchemaValueCompletions(propertySchema.items[0], separatorAfter, collector, {});
+                    } else if (typeof propertySchema.items === 'object' && propertySchema.items.type === 'object') {
+                      collector.add({
+                        kind: this.getSuggestionKind(propertySchema.items.type),
+                        label: '- (array item)',
+                        documentation: `Create an item of an array${
+                          propertySchema.description === undefined ? '' : '(' + propertySchema.description + ')'
+                        }`,
+                        insertText: `- ${this.getInsertTextForObject(
+                          propertySchema.items,
+                          separatorAfter,
+                          '  '
+                        ).insertText.trimLeft()}`,
+                        insertTextFormat: InsertTextFormat.Snippet,
+                      });
                     }
                   }
 
@@ -469,7 +520,7 @@ export class YamlCompletion {
         }
       }
 
-      if (nodeParent && schema.node === nodeParent && schema.schema.defaultSnippets) {
+      if (nodeParent && schema.node.internalNode === nodeParent && schema.schema.defaultSnippets) {
         // For some reason the first item in the array needs to be treated differently, otherwise
         // the indentation will not be correct
         if (node.items.length === 1) {
@@ -532,9 +583,9 @@ export class YamlCompletion {
 
     if (node && (parentKey !== null || isSeq(node))) {
       const separatorAfter = '';
-      const matchingSchemas = doc.matchSchemas(schema.schema);
+      const matchingSchemas = doc.getMatchingSchemas(schema.schema);
       for (const s of matchingSchemas) {
-        if (s.node === node && !s.inverted && s.schema) {
+        if (s.node.internalNode === node && !s.inverted && s.schema) {
           if (s.schema.items) {
             this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
               newLineFirst: false,
@@ -1243,6 +1294,10 @@ export class YamlCompletion {
 
 const isNumberExp = /^\d+$/;
 function convertToStringValue(value: string): string {
+  if (value.length === 0) {
+    return value;
+  }
+
   if (value === 'true' || value === 'false' || value === 'null' || isNumberExp.test(value)) {
     return `"${value}"`;
   }
@@ -1252,7 +1307,30 @@ function convertToStringValue(value: string): string {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 
-  if ((value.length > 0 && value.charAt(0) === '@') || value.includes(':')) {
+  let doQuote = value.charAt(0) === '@';
+
+  if (!doQuote) {
+    // need to quote value if in `foo: bar`, `foo : bar` (mapping) or `foo:` (partial map) format
+    // but `foo:bar` and `:bar` (colon without white-space after it) are just plain string
+    let idx = value.indexOf(':', 0);
+    for (; idx > 0 && idx < value.length; idx = value.indexOf(':', idx + 1)) {
+      if (idx === value.length - 1) {
+        // `foo:` (partial map) format
+        doQuote = true;
+        break;
+      }
+
+      // there are only two valid kinds of white-space in yaml: space or tab
+      // ref: https://yaml.org/spec/1.2.1/#id2775170
+      const nextChar = value.charAt(idx + 1);
+      if (nextChar === '\t' || nextChar === ' ') {
+        doQuote = true;
+        break;
+      }
+    }
+  }
+
+  if (doQuote) {
     value = `"${value}"`;
   }
 

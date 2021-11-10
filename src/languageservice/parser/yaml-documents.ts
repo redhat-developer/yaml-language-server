@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONDocument, ValidationResult } from './jsonParser07';
+import { JSONDocument } from './jsonParser07';
 import { Document, isPair, isScalar, LineCounter, visit, YAMLError } from 'yaml';
 import { ASTNode } from '../jsonASTTypes';
 import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07';
@@ -14,8 +14,6 @@ import { convertAST } from './ast-converter';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { isArrayEqual } from '../utils/arrUtils';
 import { getParent } from '../utils/astUtils';
-import { ApplicableSchema, SchemaCollectorImpl, validate } from './json-schema07-validator';
-import { JSONSchema } from '../jsonSchema';
 import { TextBuffer } from '../utils/textBuffer';
 import { getIndentation } from '../utils/strings';
 import { Token } from 'yaml/dist/parse/cst';
@@ -87,7 +85,13 @@ export class SingleYAMLDocument extends JSONDocument {
     return matchingSchemas;
   }
 
-  getNodeFromPosition(positionOffset: number): Node | undefined {
+  getNodeFromPosition(positionOffset: number, textBuffer: TextBuffer): [Node | undefined, boolean] {
+    const position = textBuffer.getPosition(positionOffset);
+    const lineContent = textBuffer.getLineContent(position.line);
+    if (lineContent.trim().length === 0) {
+      return [this.findClosestNode(positionOffset, textBuffer), true];
+    }
+
     let closestNode: Node;
     visit(this.internalDocument, (key, node: Node) => {
       if (!node) {
@@ -105,7 +109,7 @@ export class SingleYAMLDocument extends JSONDocument {
       }
     });
 
-    return closestNode;
+    return [closestNode, false];
   }
 
   findClosestNode(offset: number, textBuffer: TextBuffer): Node {
@@ -144,6 +148,9 @@ export class SingleYAMLDocument extends JSONDocument {
   }
 
   private getProperParentByIndentation(indentation: number, node: Node, textBuffer: TextBuffer): Node {
+    if (!node) {
+      return this.internalDocument.contents as Node;
+    }
     if (node.range) {
       const position = textBuffer.getPosition(node.range[0]);
       if (position.character !== indentation && position.character > 0) {
@@ -163,30 +170,6 @@ export class SingleYAMLDocument extends JSONDocument {
 
   getParent(node: Node): Node | undefined {
     return getParent(this.internalDocument, node);
-  }
-
-  /**
-   * Match JSON Schemas to this document
-   * @param schema the JSON Schema
-   * @returns array of matching schemas
-   */
-  matchSchemas(schema: JSONSchema): ApplicableSchema[] {
-    const matchingSchemas = new SchemaCollectorImpl(-1, null);
-    if (this.internalDocument.contents && schema) {
-      validate(
-        this.internalDocument.contents as Node,
-        this.internalDocument,
-        schema,
-        schema,
-        new ValidationResult(this.isKubernetes),
-        matchingSchemas,
-        {
-          isKubernetes: this.isKubernetes,
-          disableAdditionalProperties: this.disableAdditionalProperties,
-        }
-      );
-    }
-    return matchingSchemas.schemas;
   }
 }
 
