@@ -1710,7 +1710,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should not provide modeline completion on first character when modeline already present', async () => {
-      const testTextDocument = setupSchemaIDTextDocument('# yaml-language-server', path.join(__dirname, 'test.yaml'));
+      const testTextDocument = setupSchemaIDTextDocument('# yaml-language-server:', path.join(__dirname, 'test.yaml'));
       yamlSettings.documents = new TextDocumentTestManager();
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
       const result = await languageHandler.completionHandler({
@@ -1718,6 +1718,32 @@ describe('Auto Completion Tests', () => {
         textDocument: testTextDocument,
       });
       assert.strictEqual(result.items.length, 0, `Expecting 0 item in completion but found ${result.items.length}`);
+    });
+
+    it('should provide schema id completion in modeline', async () => {
+      const modeline = '# yaml-language-server: $schema=';
+      const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(modeline.length),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.strictEqual(result.items[0].label, 'http://google.com');
+    });
+
+    it('should provide schema id completion in modeline for any line', async () => {
+      const modeline = 'foo:\n  bar\n# yaml-language-server: $schema=';
+      const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(modeline.length),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.strictEqual(result.items[0].label, 'http://google.com');
     });
   });
 
