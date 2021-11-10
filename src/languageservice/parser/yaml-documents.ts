@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONDocument, ValidationResult } from './jsonParser07';
+import { JSONDocument } from './jsonParser07';
 import { Document, isPair, isScalar, LineCounter, visit, YAMLError } from 'yaml';
 import { ASTNode } from '../jsonASTTypes';
 import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07';
@@ -14,8 +14,6 @@ import { convertAST } from './ast-converter';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { isArrayEqual } from '../utils/arrUtils';
 import { getParent } from '../utils/astUtils';
-import { ApplicableSchema, SchemaCollectorImpl, validate } from './json-schema07-validator';
-import { JSONSchema } from '../jsonSchema';
 import { TextBuffer } from '../utils/textBuffer';
 import { getIndentation } from '../utils/strings';
 
@@ -171,30 +169,6 @@ export class SingleYAMLDocument extends JSONDocument {
 
   getParent(node: Node): Node | undefined {
     return getParent(this.internalDocument, node);
-  }
-
-  /**
-   * Match JSON Schemas to this document
-   * @param schema the JSON Schema
-   * @returns array of matching schemas
-   */
-  matchSchemas(schema: JSONSchema): ApplicableSchema[] {
-    const matchingSchemas = new SchemaCollectorImpl(-1, null);
-    if (this.internalDocument.contents && schema) {
-      validate(
-        this.internalDocument.contents as Node,
-        this.internalDocument,
-        schema,
-        schema,
-        new ValidationResult(this.isKubernetes),
-        matchingSchemas,
-        {
-          isKubernetes: this.isKubernetes,
-          disableAdditionalProperties: this.disableAdditionalProperties,
-        }
-      );
-    }
-    return matchingSchemas.schemas;
   }
 }
 
