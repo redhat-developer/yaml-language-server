@@ -100,5 +100,11 @@ describe('String Tests', () => {
       const result = safeCreateUnicodeRegExp('^x-[\\w\\d\\.\\-\\_]+$');
       expect(result).is.not.undefined;
     });
+
+    it('should create unicode RegExp for non unicode patterns5', () => {
+      // eslint-disable-next-line prettier/prettier
+      const result = safeCreateUnicodeRegExp('^[\\w\\-_]+$');
+      expect(result).is.not.undefined;
+    });
   });
 });

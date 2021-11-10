@@ -16,7 +16,7 @@ import {
   Range,
   TextEdit,
 } from 'vscode-languageserver/node';
-import { Node, isPair, isScalar, isMap, YAMLMap, isSeq, YAMLSeq, isNode } from 'yaml';
+import { Node, isPair, isScalar, isMap, YAMLMap, isSeq, YAMLSeq, isNode, Pair } from 'yaml';
 import { Telemetry } from '../../languageserver/telemetry';
 import { SingleYAMLDocument, YamlDocuments } from '../parser/yaml-documents';
 import { YamlVersion } from '../parser/yamlParser07';
@@ -102,7 +102,7 @@ export class YamlCompletion {
       return Promise.resolve(result);
     }
 
-    let node = currentDoc.getNodeFromPosition(offset);
+    let [node, foundByClosest] = currentDoc.getNodeFromPosition(offset, textBuffer);
 
     const currentWord = this.getCurrentWord(document, offset);
 
@@ -113,7 +113,7 @@ export class YamlCompletion {
       const nodeEndPos = document.positionAt(node.range[2]);
       nodeEndPos.character += 1;
       overwriteRange = Range.create(nodeStartPos, nodeEndPos);
-    } else if (node && isScalar(node)) {
+    } else if (node && isScalar(node) && node.value) {
       const start = document.positionAt(node.range[0]);
       if (offset > 0 && start.character > 0 && document.getText().charAt(offset - 1) === '-') {
         start.character -= 1;
@@ -188,7 +188,7 @@ export class YamlCompletion {
       }
 
       let currentProperty: Node = null;
-      let foundByClosest = false;
+
       if (!node) {
         if (!currentDoc.internalDocument.contents || isScalar(currentDoc.internalDocument.contents)) {
           const map = currentDoc.internalDocument.createNode({});
@@ -425,6 +425,41 @@ export class YamlCompletion {
                     if (indexOfSlash >= 0) {
                       // add one space to compensate the '-'
                       identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.range[0]);
+                    }
+                  }
+
+                  // if check that current node has last pair with "null" value and key witch match key from schema,
+                  // and if schema has array definition it add completion item for array item creation
+                  let pair: Pair;
+                  if (
+                    propertySchema.type === 'array' &&
+                    (pair = node.items.find(
+                      (it) =>
+                        isScalar(it.key) &&
+                        it.key.range &&
+                        it.key.value === key &&
+                        isScalar(it.value) &&
+                        !it.value.value &&
+                        textBuffer.getPosition(it.key.range[2]).line === overwriteRange.end.line - 1
+                    )) &&
+                    pair
+                  ) {
+                    if (Array.isArray(propertySchema.items)) {
+                      this.addSchemaValueCompletions(propertySchema.items[0], separatorAfter, collector, {});
+                    } else if (typeof propertySchema.items === 'object' && propertySchema.items.type === 'object') {
+                      collector.add({
+                        kind: this.getSuggestionKind(propertySchema.items.type),
+                        label: '- (array item)',
+                        documentation: `Create an item of an array${
+                          propertySchema.description === undefined ? '' : '(' + propertySchema.description + ')'
+                        }`,
+                        insertText: `- ${this.getInsertTextForObject(
+                          propertySchema.items,
+                          separatorAfter,
+                          '  '
+                        ).insertText.trimLeft()}`,
+                        insertTextFormat: InsertTextFormat.Snippet,
+                      });
                     }
                   }
 

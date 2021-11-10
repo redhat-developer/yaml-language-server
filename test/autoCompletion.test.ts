@@ -926,13 +926,48 @@ describe('Auto Completion Tests', () => {
           },
         });
         const content = 'authors:\n  - name: test\n  ';
-        const completion = parseSetup(content, 24);
+        const completion = parseSetup(content, 26);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- $1', 2, 0, 2, 0, 9, 2, {
+              createExpectedCompletion('- (array item)', '- $1', 2, 2, 2, 2, 9, 2, {
+                documentation: 'Create an item of an array',
+              })
+            );
+          })
+          .then(done, done);
+      });
+
+      it('Array autocomplete on empty node with array from schema', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            authors: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  name: {
+                    type: 'string',
+                  },
+                  email: {
+                    type: 'string',
+                  },
+                },
+              },
+            },
+          },
+        });
+        const content = 'authors:\n';
+        const completion = parseSetup(content, 9);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.deepEqual(
+              result.items[0],
+              createExpectedCompletion('- (array item)', '- $1', 1, 0, 1, 0, 9, 2, {
                 documentation: 'Create an item of an array',
               })
             );

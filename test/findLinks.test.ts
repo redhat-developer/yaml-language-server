@@ -9,7 +9,7 @@ import { DocumentLink } from 'vscode-languageserver';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
-describe('FindDefintion Tests', () => {
+describe('Find Links Tests', () => {
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
 
