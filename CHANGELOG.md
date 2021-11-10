@@ -1,3 +1,13 @@
+### 1.2.0
+
+- Fix: Pattern (Regex) not parsed correctly, e.g. `^[\w\-_]+$` [#636](https://github.com/redhat-developer/vscode-yaml/issues/636)
+- Fix: Autocomplete bug with nested objects in arrays in the 1.0.0 version [#621](https://github.com/redhat-developer/vscode-yaml/issues/621)
+- Add: Implementation `Go to Definition` for alias nodes [#541](https://github.com/redhat-developer/yaml-language-server/issues/541)
+- Provide completion for reachable schema [#560](https://github.com/redhat-developer/yaml-language-server/issues/560)
+- Fix: very slow completion with aws cloudformation schema [#626](https://github.com/redhat-developer/vscode-yaml/issues/626)
+
+Thanks to Aurélien Pupier
+
 ### 1.1.1
 
 - Fix: Autocomplete should not escape colon without white-space following [#571](https://github.com/redhat-developer/yaml-language-server/issues/571)
