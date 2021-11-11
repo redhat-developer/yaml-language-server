@@ -35,13 +35,13 @@ export function parse(text: string, parserOptions: ParserOptions = defaultOption
   const lineCounter = new LineCounter();
   const parser = new Parser(lineCounter.addNewLine);
   const tokens = parser.parse(text);
-  const docs = composer.compose(tokens, true);
-
+  const tokensArr = Array.from(tokens);
+  const docs = composer.compose(tokensArr, true, text.length);
   // Generate the SingleYAMLDocs from the AST nodes
   const yamlDocs: SingleYAMLDocument[] = Array.from(docs, (doc) => parsedDocToSingleYAMLDocument(doc, lineCounter));
 
   // Consolidate the SingleYAMLDocs
-  return new YAMLDocument(yamlDocs);
+  return new YAMLDocument(yamlDocs, tokensArr);
 }
 
 function parsedDocToSingleYAMLDocument(parsedDoc: Document, lineCounter: LineCounter): SingleYAMLDocument {

@@ -2,8 +2,9 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { startsWith, endsWith, convertSimple2RegExp } from '../src/languageservice/utils/strings';
+import { startsWith, endsWith, convertSimple2RegExp, safeCreateUnicodeRegExp } from '../src/languageservice/utils/strings';
 import * as assert from 'assert';
+import { expect } from 'chai';
 
 describe('String Tests', () => {
   describe('startsWith', function () {
@@ -70,6 +71,40 @@ describe('String Tests', () => {
 
       result = convertSimple2RegExp('toc.yml').test('TOC.yml');
       assert.equal(result, false);
+    });
+  });
+
+  describe('safeCreateUnicodeRegExp', () => {
+    it('should create unicode RegExp for non unicode patterns', () => {
+      const result = safeCreateUnicodeRegExp(
+        // eslint-disable-next-line prettier/prettier
+        '^([2-9])\\.([0-9]+)\\.([0-9]+)(\\-[0-9a-z-]+(\\.[0-9a-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$'
+      );
+      expect(result).is.not.undefined;
+    });
+
+    it('should create unicode RegExp for non unicode patterns2', () => {
+      // eslint-disable-next-line prettier/prettier
+      const result = safeCreateUnicodeRegExp('^[^\\/~\\^\\: \\[\\]\\\\]+(\\/[^\\/~\\^\\: \\[\\]\\\\]+)*$');
+      expect(result).is.not.undefined;
+    });
+
+    it('should create unicode RegExp for non unicode patterns3', () => {
+      // eslint-disable-next-line prettier/prettier
+      const result = safeCreateUnicodeRegExp('^(\\s?)+=[^\\=](.+)');
+      expect(result).is.not.undefined;
+    });
+
+    it('should create unicode RegExp for non unicode patterns4', () => {
+      // eslint-disable-next-line prettier/prettier
+      const result = safeCreateUnicodeRegExp('^x-[\\w\\d\\.\\-\\_]+$');
+      expect(result).is.not.undefined;
+    });
+
+    it('should create unicode RegExp for non unicode patterns5', () => {
+      // eslint-disable-next-line prettier/prettier
+      const result = safeCreateUnicodeRegExp('^[\\w\\-_]+$');
+      expect(result).is.not.undefined;
     });
   });
 });

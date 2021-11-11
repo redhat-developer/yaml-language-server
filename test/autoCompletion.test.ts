@@ -752,7 +752,7 @@ describe('Auto Completion Tests', () => {
         );
       });
 
-      it('Autocompletion should escape colon', async () => {
+      it('Autocompletion should escape colon when indicating map', async () => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -772,6 +772,56 @@ describe('Auto Completion Tests', () => {
         expect(completion.items.length).to.be.equal(1);
         expect(completion.items[0]).to.deep.equal(
           createExpectedCompletion('test: colon', '"test: colon":\n  $1', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
+      it('Autocompletion should not escape colon when no white-space following', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            'test:colon': {
+              type: 'object',
+              properties: {
+                none: {
+                  type: 'boolean',
+                  enum: [true],
+                },
+              },
+            },
+          },
+        });
+        const content = '';
+        const completion = await parseSetup(content, 0);
+        expect(completion.items.length).to.be.equal(1);
+        expect(completion.items[0]).to.deep.equal(
+          createExpectedCompletion('test:colon', 'test:colon:\n  $1', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
+      it('Autocompletion should not escape colon when no key part present', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            ':colon': {
+              type: 'object',
+              properties: {
+                none: {
+                  type: 'boolean',
+                  enum: [true],
+                },
+              },
+            },
+          },
+        });
+        const content = '';
+        const completion = await parseSetup(content, 0);
+        expect(completion.items.length).to.be.equal(1);
+        expect(completion.items[0]).to.deep.equal(
+          createExpectedCompletion(':colon', ':colon:\n  $1', 0, 0, 0, 0, 10, 2, {
             documentation: '',
           })
         );
@@ -876,13 +926,48 @@ describe('Auto Completion Tests', () => {
           },
         });
         const content = 'authors:\n  - name: test\n  ';
-        const completion = parseSetup(content, 24);
+        const completion = parseSetup(content, 26);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- $1', 2, 0, 2, 0, 9, 2, {
+              createExpectedCompletion('- (array item)', '- $1', 2, 2, 2, 2, 9, 2, {
+                documentation: 'Create an item of an array',
+              })
+            );
+          })
+          .then(done, done);
+      });
+
+      it('Array autocomplete on empty node with array from schema', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            authors: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  name: {
+                    type: 'string',
+                  },
+                  email: {
+                    type: 'string',
+                  },
+                },
+              },
+            },
+          },
+        });
+        const content = 'authors:\n';
+        const completion = parseSetup(content, 9);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.deepEqual(
+              result.items[0],
+              createExpectedCompletion('- (array item)', '- $1', 1, 0, 1, 0, 9, 2, {
                 documentation: 'Create an item of an array',
               })
             );
@@ -1587,6 +1672,78 @@ describe('Auto Completion Tests', () => {
         textDocument: testTextDocument,
       });
       assert.strictEqual(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
+    });
+
+    const inlineSchemaLabel = 'Inline schema';
+
+    it('should provide modeline completion on first character with no schema associated and no modeline yet', async () => {
+      const testTextDocument = setupSchemaIDTextDocument('', path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(0),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.strictEqual(result.items[0].label, inlineSchemaLabel);
+    });
+
+    it('should not provide modeline completion on first character when schema is associated', async () => {
+      const specificSchemaId = path.join(__dirname, 'test.yaml');
+      const testTextDocument = setupSchemaIDTextDocument('', specificSchemaId);
+      languageService.addSchema(specificSchemaId, {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+          },
+        },
+      });
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(0),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.notStrictEqual(result.items[0].label, inlineSchemaLabel);
+    });
+
+    it('should not provide modeline completion on first character when modeline already present', async () => {
+      const testTextDocument = setupSchemaIDTextDocument('# yaml-language-server:', path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(0),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 0, `Expecting 0 item in completion but found ${result.items.length}`);
+    });
+
+    it('should provide schema id completion in modeline', async () => {
+      const modeline = '# yaml-language-server: $schema=';
+      const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(modeline.length),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.strictEqual(result.items[0].label, 'http://google.com');
+    });
+
+    it('should provide schema id completion in modeline for any line', async () => {
+      const modeline = 'foo:\n  bar\n# yaml-language-server: $schema=';
+      const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(modeline.length),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.strictEqual(result.items[0].label, 'http://google.com');
     });
   });
 

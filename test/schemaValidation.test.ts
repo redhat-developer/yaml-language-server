@@ -303,6 +303,97 @@ describe('Validation Tests', () => {
     });
   });
 
+  describe('Pattern tests', () => {
+    it('Test a valid Unicode pattern', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          prop: {
+            type: 'string',
+            pattern: '^tes\\p{Letter}$',
+          },
+        },
+      });
+      parseSetup('prop: "tesT"')
+        .then(function (result) {
+          assert.equal(result.length, 0);
+        })
+        .then(done, done);
+    });
+    it('Test an invalid Unicode pattern', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          prop: {
+            type: 'string',
+            pattern: '^tes\\p{Letter}$',
+          },
+        },
+      });
+      parseSetup('prop: "tes "')
+        .then(function (result) {
+          assert.equal(result.length, 1);
+          assert.ok(result[0].message.startsWith('String does not match the pattern'));
+          assert.deepEqual(
+            result[0],
+            createDiagnosticWithData(
+              result[0].message,
+              0,
+              6,
+              0,
+              12,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
+          );
+        })
+        .then(done, done);
+    });
+
+    it('Test a valid Unicode patternProperty', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        patternProperties: {
+          '^tes\\p{Letter}$': true,
+        },
+        additionalProperties: false,
+      });
+      parseSetup('tesT: true')
+        .then(function (result) {
+          assert.equal(result.length, 0);
+        })
+        .then(done, done);
+    });
+    it('Test an invalid Unicode patternProperty', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        patternProperties: {
+          '^tes\\p{Letter}$': true,
+        },
+        additionalProperties: false,
+      });
+      parseSetup('tes9: true')
+        .then(function (result) {
+          assert.equal(result.length, 1);
+          assert.deepEqual(
+            result[0],
+            createDiagnosticWithData(
+              'Property tes9 is not allowed.',
+              0,
+              0,
+              0,
+              4,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
+          );
+        })
+        .then(done, done);
+    });
+  });
+
   describe('Number tests', () => {
     it('Type Number does not error on valid node', (done) => {
       languageService.addSchema(SCHEMA_ID, {

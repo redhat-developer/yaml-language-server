@@ -10,13 +10,14 @@ import {
   CompletionItemKind,
   CompletionList,
   InsertTextFormat,
+  InsertTextMode,
   MarkupContent,
   MarkupKind,
   Position,
   Range,
   TextEdit,
 } from 'vscode-languageserver/node';
-import { Node, isPair, isScalar, isMap, YAMLMap, isSeq, YAMLSeq, isNode } from 'yaml';
+import { Node, isPair, isScalar, isMap, YAMLMap, isSeq, YAMLSeq, isNode, Pair } from 'yaml';
 import { Telemetry } from '../../languageserver/telemetry';
 import { SingleYAMLDocument, YamlDocuments } from '../parser/yaml-documents';
 import { YamlVersion } from '../parser/yamlParser07';
@@ -31,6 +32,9 @@ import { stringifyObject, StringifySettings } from '../utils/json';
 import { isDefined, isString } from '../utils/objects';
 import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
+import { isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
+import { indexOf } from '../utils/astUtils';
+import { isModeline } from './modelineUtil';
 
 const localize = nls.loadMessageBundle();
 
@@ -100,7 +104,7 @@ export class YamlCompletion {
       return Promise.resolve(result);
     }
 
-    let node = currentDoc.getNodeFromPosition(offset);
+    let [node, foundByClosest] = currentDoc.getNodeFromPosition(offset, textBuffer);
 
     const currentWord = this.getCurrentWord(document, offset);
 
@@ -111,9 +115,9 @@ export class YamlCompletion {
       const nodeEndPos = document.positionAt(node.range[2]);
       nodeEndPos.character += 1;
       overwriteRange = Range.create(nodeStartPos, nodeEndPos);
-    } else if (node && isScalar(node)) {
+    } else if (node && isScalar(node) && node.value) {
       const start = document.positionAt(node.range[0]);
-      if (offset > 0 && document.getText().charAt(offset - 1) === '-') {
+      if (offset > 0 && start.character > 0 && document.getText().charAt(offset - 1) === '-') {
         start.character -= 1;
       }
       overwriteRange = Range.create(start, document.positionAt(node.range[1]));
@@ -170,19 +174,57 @@ export class YamlCompletion {
       this.getCustomTagValueCompletions(collector);
     }
 
+    let lineContent = textBuffer.getLineContent(position.line);
+    if (lineContent.endsWith('\n')) {
+      lineContent = lineContent.substr(0, lineContent.length - 1);
+    }
+
     try {
       const schema = await this.schemaService.getSchemaForResource(document.uri, currentDoc);
+
+      if (!schema || schema.errors.length) {
+        if (position.line === 0 && position.character === 0 && !isModeline(lineContent)) {
+          const inlineSchemaCompletion = {
+            kind: CompletionItemKind.Text,
+            label: 'Inline schema',
+            insertText: '# yaml-language-server: $schema=',
+            insertTextFormat: InsertTextFormat.PlainText,
+          };
+          result.items.push(inlineSchemaCompletion);
+        }
+      }
+
+      if (isModeline(lineContent) || isInComment(doc.tokens, offset)) {
+        const schemaIndex = lineContent.indexOf('$schema=');
+        if (schemaIndex !== -1 && schemaIndex + '$schema='.length <= position.character) {
+          this.schemaService.getAllSchemas().forEach((schema) => {
+            const schemaIdCompletion: CompletionItem = {
+              kind: CompletionItemKind.Constant,
+              label: schema.name ?? schema.uri,
+              detail: schema.description,
+              insertText: schema.uri,
+              insertTextFormat: InsertTextFormat.PlainText,
+              insertTextMode: InsertTextMode.asIs,
+            };
+            result.items.push(schemaIdCompletion);
+          });
+        }
+        return result;
+      }
+
       if (!schema || schema.errors.length) {
         return result;
       }
 
       let currentProperty: Node = null;
-      let foundByClosest = false;
+
       if (!node) {
         if (!currentDoc.internalDocument.contents || isScalar(currentDoc.internalDocument.contents)) {
           const map = currentDoc.internalDocument.createNode({});
           map.range = [offset, offset + 1, offset + 1];
           currentDoc.internalDocument.contents = map;
+          // eslint-disable-next-line no-self-assign
+          currentDoc.internalDocument = currentDoc.internalDocument;
           node = map;
         } else {
           node = currentDoc.findClosestNode(offset, textBuffer);
@@ -190,10 +232,6 @@ export class YamlCompletion {
         }
       }
 
-      let lineContent = textBuffer.getLineContent(position.line);
-      if (lineContent.endsWith('\n')) {
-        lineContent = lineContent.substr(0, lineContent.length - 1);
-      }
       if (node) {
         if (lineContent.length === 0) {
           node = currentDoc.internalDocument.contents as Node;
@@ -206,7 +244,19 @@ export class YamlCompletion {
                   if (parent.value === node) {
                     if (lineContent.trim().length > 0 && lineContent.indexOf(':') < 0) {
                       const map = this.createTempObjNode(currentWord, node, currentDoc);
-                      currentDoc.internalDocument.set(parent.key, map);
+                      if (isSeq(currentDoc.internalDocument.contents)) {
+                        const index = indexOf(currentDoc.internalDocument.contents, parent);
+                        if (typeof index === 'number') {
+                          currentDoc.internalDocument.set(index, map);
+                          // eslint-disable-next-line no-self-assign
+                          currentDoc.internalDocument = currentDoc.internalDocument;
+                        }
+                      } else {
+                        currentDoc.internalDocument.set(parent.key, map);
+                        // eslint-disable-next-line no-self-assign
+                        currentDoc.internalDocument = currentDoc.internalDocument;
+                      }
+
                       currentProperty = (map as YAMLMap).items[0];
                       node = map;
                     } else if (lineContent.trim().length === 0) {
@@ -227,40 +277,54 @@ export class YamlCompletion {
                     const map = this.createTempObjNode(currentWord, node, currentDoc);
                     parent.delete(node);
                     parent.add(map);
+                    // eslint-disable-next-line no-self-assign
+                    currentDoc.internalDocument = currentDoc.internalDocument;
                     node = map;
                   } else {
                     node = parent;
                   }
                 }
               } else if (node.value === null) {
-                if (isPair(parent) && parent.key === node) {
-                  node = parent;
-                } else if (
-                  isPair(parent) &&
-                  lineContent.trim().length === 0 &&
-                  textBuffer.getLineContent(position.line - 1).indexOf(':') > 0 &&
-                  textBuffer.getLineContent(position.line - 1).indexOf('-') < 0
-                ) {
-                  const map = this.createTempObjNode(currentWord, node, currentDoc);
-
-                  const parentParent = currentDoc.getParent(parent);
-                  if (parentParent && (isMap(parentParent) || isSeq(parentParent))) {
-                    parentParent.set(parent.key, map);
+                if (isPair(parent)) {
+                  if (parent.key === node) {
+                    node = parent;
                   } else {
-                    currentDoc.internalDocument.set(parent.key, map);
-                  }
-                  currentProperty = (map as YAMLMap).items[0];
-                  node = map;
-                } else if (lineContent.trim().length === 0) {
-                  const parentParent = currentDoc.getParent(parent);
-                  if (parentParent) {
-                    node = parentParent;
+                    if (isNode(parent.key) && parent.key.range) {
+                      const parentParent = currentDoc.getParent(parent);
+                      if (foundByClosest && parentParent && isMap(parentParent) && isMapContainsEmptyPair(parentParent)) {
+                        node = parentParent;
+                      } else {
+                        const parentPosition = document.positionAt(parent.key.range[0]);
+                        //if cursor has bigger indentation that parent key, then we need to complete new empty object
+                        if (position.character > parentPosition.character && position.line !== parentPosition.line) {
+                          const map = this.createTempObjNode(currentWord, node, currentDoc);
+
+                          if (parentParent && (isMap(parentParent) || isSeq(parentParent))) {
+                            parentParent.set(parent.key, map);
+                            // eslint-disable-next-line no-self-assign
+                            currentDoc.internalDocument = currentDoc.internalDocument;
+                          } else {
+                            currentDoc.internalDocument.set(parent.key, map);
+                            // eslint-disable-next-line no-self-assign
+                            currentDoc.internalDocument = currentDoc.internalDocument;
+                          }
+                          currentProperty = (map as YAMLMap).items[0];
+                          node = map;
+                        } else if (parentPosition.character === position.character) {
+                          if (parentParent) {
+                            node = parentParent;
+                          }
+                        }
+                      }
+                    }
                   }
                 } else if (isSeq(parent)) {
                   if (lineContent.charAt(position.character - 1) !== '-') {
                     const map = this.createTempObjNode(currentWord, node, currentDoc);
                     parent.delete(node);
                     parent.add(map);
+                    // eslint-disable-next-line no-self-assign
+                    currentDoc.internalDocument = currentDoc.internalDocument;
                     node = map;
                   } else {
                     node = parent;
@@ -269,12 +333,17 @@ export class YamlCompletion {
               }
             } else if (isMap(node)) {
               if (!foundByClosest && lineContent.trim().length === 0 && isSeq(parent)) {
-                node = parent;
+                const nextLine = textBuffer.getLineContent(position.line + 1);
+                if (textBuffer.getLineCount() === position.line + 1 || nextLine.trim().length === 0) {
+                  node = parent;
+                }
               }
             }
           } else if (isScalar(node)) {
             const map = this.createTempObjNode(currentWord, node, currentDoc);
             currentDoc.internalDocument.contents = map;
+            // eslint-disable-next-line no-self-assign
+            currentDoc.internalDocument = currentDoc.internalDocument;
             currentProperty = map.items[0];
             node = map;
           } else if (isMap(node)) {
@@ -345,13 +414,13 @@ export class YamlCompletion {
     textBuffer: TextBuffer,
     overwriteRange: Range
   ): void {
-    const matchingSchemas = doc.matchSchemas(schema.schema);
+    const matchingSchemas = doc.getMatchingSchemas(schema.schema);
     const existingKey = textBuffer.getText(overwriteRange);
     const hasColumn = textBuffer.getLineContent(overwriteRange.start.line).indexOf(':') === -1;
 
     const nodeParent = doc.getParent(node);
     for (const schema of matchingSchemas) {
-      if (schema.node === node && !schema.inverted) {
+      if (schema.node.internalNode === node && !schema.inverted) {
         this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
           newLineFirst: false,
           indentFirstObject: false,
@@ -361,7 +430,12 @@ export class YamlCompletion {
         const schemaProperties = schema.schema.properties;
         if (schemaProperties) {
           const maxProperties = schema.schema.maxProperties;
-          if (maxProperties === undefined || node.items === undefined || node.items.length < maxProperties) {
+          if (
+            maxProperties === undefined ||
+            node.items === undefined ||
+            node.items.length < maxProperties ||
+            isMapContainsEmptyPair(node)
+          ) {
             for (const key in schemaProperties) {
               if (Object.prototype.hasOwnProperty.call(schemaProperties, key)) {
                 const propertySchema = schemaProperties[key];
@@ -376,6 +450,41 @@ export class YamlCompletion {
                     if (indexOfSlash >= 0) {
                       // add one space to compensate the '-'
                       identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.range[0]);
+                    }
+                  }
+
+                  // if check that current node has last pair with "null" value and key witch match key from schema,
+                  // and if schema has array definition it add completion item for array item creation
+                  let pair: Pair;
+                  if (
+                    propertySchema.type === 'array' &&
+                    (pair = node.items.find(
+                      (it) =>
+                        isScalar(it.key) &&
+                        it.key.range &&
+                        it.key.value === key &&
+                        isScalar(it.value) &&
+                        !it.value.value &&
+                        textBuffer.getPosition(it.key.range[2]).line === overwriteRange.end.line - 1
+                    )) &&
+                    pair
+                  ) {
+                    if (Array.isArray(propertySchema.items)) {
+                      this.addSchemaValueCompletions(propertySchema.items[0], separatorAfter, collector, {});
+                    } else if (typeof propertySchema.items === 'object' && propertySchema.items.type === 'object') {
+                      collector.add({
+                        kind: this.getSuggestionKind(propertySchema.items.type),
+                        label: '- (array item)',
+                        documentation: `Create an item of an array${
+                          propertySchema.description === undefined ? '' : '(' + propertySchema.description + ')'
+                        }`,
+                        insertText: `- ${this.getInsertTextForObject(
+                          propertySchema.items,
+                          separatorAfter,
+                          '  '
+                        ).insertText.trimLeft()}`,
+                        insertTextFormat: InsertTextFormat.Snippet,
+                      });
                     }
                   }
 
@@ -411,7 +520,7 @@ export class YamlCompletion {
         }
       }
 
-      if (nodeParent && schema.node === nodeParent && schema.schema.defaultSnippets) {
+      if (nodeParent && schema.node.internalNode === nodeParent && schema.schema.defaultSnippets) {
         // For some reason the first item in the array needs to be treated differently, otherwise
         // the indentation will not be correct
         if (node.items.length === 1) {
@@ -465,7 +574,7 @@ export class YamlCompletion {
 
     if (isPair(node)) {
       const valueNode: Node = node.value as Node;
-      if (valueNode && offset > valueNode.range[0] + valueNode.range[2]) {
+      if (valueNode && valueNode.range && offset > valueNode.range[0] + valueNode.range[2]) {
         return; // we are past the value node
       }
       parentKey = isScalar(node.key) ? node.key.value.toString() : null;
@@ -474,9 +583,9 @@ export class YamlCompletion {
 
     if (node && (parentKey !== null || isSeq(node))) {
       const separatorAfter = '';
-      const matchingSchemas = doc.matchSchemas(schema.schema);
+      const matchingSchemas = doc.getMatchingSchemas(schema.schema);
       for (const s of matchingSchemas) {
-        if (s.node === node && !s.inverted && s.schema) {
+        if (s.node.internalNode === node && !s.inverted && s.schema) {
           if (s.schema.items) {
             this.collectDefaultSnippets(s.schema, separatorAfter, collector, {
               newLineFirst: false,
@@ -1185,6 +1294,10 @@ export class YamlCompletion {
 
 const isNumberExp = /^\d+$/;
 function convertToStringValue(value: string): string {
+  if (value.length === 0) {
+    return value;
+  }
+
   if (value === 'true' || value === 'false' || value === 'null' || isNumberExp.test(value)) {
     return `"${value}"`;
   }
@@ -1194,7 +1307,30 @@ function convertToStringValue(value: string): string {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 
-  if ((value.length > 0 && value.charAt(0) === '@') || value.includes(':')) {
+  let doQuote = value.charAt(0) === '@';
+
+  if (!doQuote) {
+    // need to quote value if in `foo: bar`, `foo : bar` (mapping) or `foo:` (partial map) format
+    // but `foo:bar` and `:bar` (colon without white-space after it) are just plain string
+    let idx = value.indexOf(':', 0);
+    for (; idx > 0 && idx < value.length; idx = value.indexOf(':', idx + 1)) {
+      if (idx === value.length - 1) {
+        // `foo:` (partial map) format
+        doQuote = true;
+        break;
+      }
+
+      // there are only two valid kinds of white-space in yaml: space or tab
+      // ref: https://yaml.org/spec/1.2.1/#id2775170
+      const nextChar = value.charAt(idx + 1);
+      if (nextChar === '\t' || nextChar === ' ') {
+        doQuote = true;
+        break;
+      }
+    }
+  }
+
+  if (doQuote) {
     value = `"${value}"`;
   }
 

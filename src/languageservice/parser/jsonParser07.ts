@@ -26,6 +26,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic } from 'vscode-languageserver';
 import { isArrayEqual } from '../utils/arrUtils';
 import { Node } from 'yaml';
+import { safeCreateUnicodeRegExp } from '../utils/strings';
 
 const localize = nls.loadMessageBundle();
 
@@ -895,7 +896,7 @@ function validate(
     }
 
     if (isString(schema.pattern)) {
-      const regex = new RegExp(schema.pattern);
+      const regex = safeCreateUnicodeRegExp(schema.pattern);
       if (!regex.test(node.value)) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
@@ -1178,7 +1179,7 @@ function validate(
 
     if (schema.patternProperties) {
       for (const propertyPattern of Object.keys(schema.patternProperties)) {
-        const regex = new RegExp(propertyPattern);
+        const regex = safeCreateUnicodeRegExp(propertyPattern);
         for (const propertyName of unprocessedProperties.slice(0)) {
           if (regex.test(propertyName)) {
             propertyProcessed(propertyName);
