@@ -196,6 +196,8 @@ export class SettingsHandler {
                 uri: schema.url,
                 fileMatch: [currFileMatch],
                 priority: SchemaPriority.SchemaStore,
+                name: schema.name,
+                description: schema.description,
               });
             }
           }
