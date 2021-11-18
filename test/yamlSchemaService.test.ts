@@ -102,5 +102,16 @@ describe('YAML Schema Service', () => {
 
       expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
     });
+
+    it('should handle modeline schema comment in multiline comments', () => {
+      const documentContent = `foo:\n  bar\n#first comment\n# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#\naa:bbb\n`;
+      const content = `${documentContent}`;
+      const yamlDock = parse(content);
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      service.getSchemaForResource('', yamlDock.documents[0]);
+
+      expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
+    });
   });
 });

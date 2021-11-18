@@ -37,11 +37,13 @@ export class SingleYAMLDocument extends JSONDocument {
   private collectLineComments(): void {
     this._lineComments = [];
     if (this._internalDocument.commentBefore) {
-      this._lineComments.push(`#${this._internalDocument.commentBefore}`);
+      const comments = this._internalDocument.commentBefore.split('\n');
+      comments.forEach((comment) => this._lineComments.push(`#${comment}`));
     }
     visit(this.internalDocument, (_key, node: Node) => {
       if (node?.commentBefore) {
-        this._lineComments.push(`#${node.commentBefore}`);
+        const comments = node?.commentBefore.split('\n');
+        comments.forEach((comment) => this._lineComments.push(`#${comment}`));
       }
 
       if (node?.comment) {
