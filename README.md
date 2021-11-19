@@ -33,7 +33,7 @@ The following settings are supported:
 - `yaml.format.enable`: Enable/disable default YAML formatter (requires restart)
 - `yaml.format.singleQuote`: Use single quotes instead of double quotes
 - `yaml.format.bracketSpacing`: Print spaces between brackets in objects
-- `yaml.format.proseWrap`: Always: wrap prose if it exeeds the print width, Never: never wrap the prose, Preserve: wrap prose as-is
+- `yaml.format.proseWrap`: Always: wrap prose if it exceeds the print width, Never: never wrap the prose, Preserve: wrap prose as-is
 - `yaml.format.printWidth`: Specify the line length that the printer will wrap on
 - `yaml.validate`: Enable/disable validation feature
 - `yaml.hover`: Enable/disable hover
@@ -292,7 +292,7 @@ This repository only contains the server implementation. Here are some known cli
 
 ### Connecting to the language server via stdio
 
-We have included the option to connect to the language server via [stdio](https://github.com/redhat-developer/yaml-language-server/blob/681985b5a059c2cb55c8171235b07e1651b6c546/src/server.ts#L46-L51) to help with intergrating the language server into different clients.
+We have included the option to connect to the language server via [stdio](https://github.com/redhat-developer/yaml-language-server/blob/681985b5a059c2cb55c8171235b07e1651b6c546/src/server.ts#L46-L51) to help with integrating the language server into different clients.
 
 ### ESM and UMD Modules
 
