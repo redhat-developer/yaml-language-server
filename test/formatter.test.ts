@@ -5,7 +5,7 @@
 import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 import { ServiceSetup } from './utils/serviceSetup';
 import * as assert from 'assert';
-import { TextEdit } from 'vscode-languageserver';
+import { TextEdit } from 'vscode-languageserver-types';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 

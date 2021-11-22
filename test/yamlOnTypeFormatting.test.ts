@@ -3,7 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { expect } from 'chai';
-import { DocumentOnTypeFormattingParams, FormattingOptions, Position, Range, TextEdit } from 'vscode-languageserver';
+import { DocumentOnTypeFormattingParams } from 'vscode-languageserver-protocol';
+import { FormattingOptions, Position, Range, TextEdit } from 'vscode-languageserver-types';
 import { doDocumentOnTypeFormatting } from '../src/languageservice/services/yamlOnTypeFormatting';
 import { setupTextDocument } from './utils/testHelper';
 

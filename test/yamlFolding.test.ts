@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { expect } from 'chai';
-import { FoldingRange } from 'vscode-languageserver';
+import { FoldingRange } from 'vscode-languageserver-types';
 import { getFoldingRanges } from '../src/languageservice/services/yamlFolding';
 import { FoldingRangesContext } from '../src/languageservice/yamlTypes';
 import { setupTextDocument, TEST_URI } from './utils/testHelper';

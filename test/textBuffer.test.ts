@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextBuffer } from '../src/languageservice/utils/textBuffer';
-import { TextDocument } from 'vscode-languageserver';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import * as assert from 'assert';
 
 describe('TextBuffer', () => {

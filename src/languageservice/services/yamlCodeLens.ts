@@ -11,7 +11,6 @@ import { YAMLSchemaService } from './yamlSchemaService';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
 import { JSONSchema } from '../jsonSchema';
-import { CodeLensParams } from 'vscode-languageserver-protocol';
 import { Telemetry } from '../../languageserver/telemetry';
 import { getSchemaUrls } from '../utils/schemaUrls';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
@@ -19,8 +18,7 @@ import { convertErrorToTelemetryMsg } from '../utils/objects';
 export class YamlCodeLens {
   constructor(private schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async getCodeLens(document: TextDocument, params: CodeLensParams): Promise<CodeLens[]> {
+  async getCodeLens(document: TextDocument): Promise<CodeLens[]> {
     const result = [];
     try {
       const yamlDocument = yamlDocumentsCache.getYamlDocument(document);

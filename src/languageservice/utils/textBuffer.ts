@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { TextDocument } from 'vscode-json-languageservice';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Position, Range } from 'vscode-languageserver-types';
 
 interface FullTextDocument {

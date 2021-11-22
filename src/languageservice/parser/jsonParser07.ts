@@ -21,9 +21,8 @@ import {
 import { ErrorCode } from 'vscode-json-languageservice';
 import * as nls from 'vscode-nls';
 import { URI } from 'vscode-uri';
-import { DiagnosticSeverity, Range } from 'vscode-languageserver-types';
+import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Diagnostic } from 'vscode-languageserver';
 import { isArrayEqual } from '../utils/arrUtils';
 import { Node, Pair } from 'yaml';
 import { safeCreateUnicodeRegExp } from '../utils/strings';

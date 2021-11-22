@@ -1,4 +1,4 @@
-import { TextDocuments, Disposable, ClientCapabilities, WorkspaceFolder } from 'vscode-languageserver/node';
+import { TextDocuments, Disposable, ClientCapabilities, WorkspaceFolder } from 'vscode-languageserver';
 import { CustomFormatterOptions, SchemaConfiguration } from './languageservice/yamlLanguageService';
 import { ISchemaAssociations } from './requestTypes';
 import { URI } from 'vscode-uri';
