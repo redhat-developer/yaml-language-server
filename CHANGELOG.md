@@ -1,3 +1,11 @@
+### 1.2.1
+- Fix: Can not load schema file when the URL is redirected. [#586](https://github.com/redhat-developer/vscode-yaml/issues/586)
+- docs: fix typos [#592](https://github.com/redhat-developer/yaml-language-server/pull/592)
+- Fix: Schema comment still not working properly in 1.1.0. [#629](https://github.com/redhat-developer/vscode-yaml/issues/629)
+- Fix: document symbols, when key is not string [#594](https://github.com/redhat-developer/yaml-language-server/pull/594)
+
+Thanks to Alexander Steppke and dundargoc
+
 ### 1.2.0
 
 - Fix: Pattern (Regex) not parsed correctly, e.g. `^[\w\-_]+$` [#636](https://github.com/redhat-developer/vscode-yaml/issues/636)
