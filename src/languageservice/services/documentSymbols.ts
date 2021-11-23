@@ -12,7 +12,7 @@ import { DocumentSymbolsContext } from 'vscode-json-languageservice/lib/umd/json
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { Telemetry } from '../../languageserver/telemetry';
-import { isMap, isScalar, isSeq } from 'yaml';
+import { isMap, isSeq, Node } from 'yaml';
 
 export class YAMLDocumentSymbols {
   private jsonDocumentSymbols;
@@ -23,25 +23,16 @@ export class YAMLDocumentSymbols {
     // override 'getKeyLabel' to handle complex mapping
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.jsonDocumentSymbols.getKeyLabel = (property: any) => {
-      const keyNode = property.keyNode.internalNode;
+      const keyNode: Node = property.keyNode.internalNode;
       let name = '';
-      if (isScalar(keyNode)) {
-        name = keyNode.source;
-      } else if (isMap(keyNode)) {
+      if (isMap(keyNode)) {
         name = '{}';
       } else if (isSeq(keyNode)) {
         name = '[]';
       } else {
         name = keyNode.source;
       }
-
-      if (name) {
-        name = name.replace(/[\n]/g, '↵');
-      }
-      if (name && name.trim()) {
-        return name;
-      }
-      return `"${name}"`;
+      return name;
     };
   }
 
