@@ -12,22 +12,27 @@ import { DocumentSymbolsContext } from 'vscode-json-languageservice/lib/umd/json
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { Telemetry } from '../../languageserver/telemetry';
+import { isMap, isSeq, Node } from 'yaml';
 
 export class YAMLDocumentSymbols {
   private jsonDocumentSymbols;
 
   constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
     this.jsonDocumentSymbols = new JSONDocumentSymbols(schemaService);
-    const origKeyLabel = this.jsonDocumentSymbols.getKeyLabel;
 
     // override 'getKeyLabel' to handle complex mapping
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.jsonDocumentSymbols.getKeyLabel = (property: any) => {
-      if (typeof property.keyNode.value === 'object') {
-        return property.keyNode.value.value;
+      const keyNode: Node = property.keyNode.internalNode;
+      let name = '';
+      if (isMap(keyNode)) {
+        name = '{}';
+      } else if (isSeq(keyNode)) {
+        name = '[]';
       } else {
-        return origKeyLabel.call(this.jsonDocumentSymbols, property);
+        name = keyNode.source;
       }
+      return name;
     };
   }
 
@@ -48,7 +53,7 @@ export class YAMLDocumentSymbols {
         }
       }
     } catch (err) {
-      this.telemetry.sendError('yaml.documentSymbols.error', { error: err, documentUri: document.uri });
+      this.telemetry.sendError('yaml.documentSymbols.error', { error: err.toString() });
     }
     return results;
   }
@@ -70,7 +75,7 @@ export class YAMLDocumentSymbols {
         }
       }
     } catch (err) {
-      this.telemetry.sendError('yaml.hierarchicalDocumentSymbols.error', { error: err, documentUri: document.uri });
+      this.telemetry.sendError('yaml.hierarchicalDocumentSymbols.error', { error: err.toString() });
     }
 
     return results;
