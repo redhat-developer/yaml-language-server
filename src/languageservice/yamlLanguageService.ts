@@ -29,7 +29,7 @@ import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
 import { DocumentSymbolsContext } from 'vscode-json-languageservice';
-import { findLinks } from './services/yamlLinks';
+import { YamlLinks } from './services/yamlLinks';
 import {
   FoldingRange,
   ClientCapabilities,
@@ -169,6 +169,7 @@ export function getLanguageService(
   const formatter = new YAMLFormatter();
   const yamlCodeActions = new YamlCodeActions(clientCapabilities);
   const yamlCodeLens = new YamlCodeLens(schemaService, telemetry);
+  const yamlLinks = new YamlLinks(telemetry);
   // register all commands
   registerCommands(commandExecutor, connection);
   return {
@@ -197,7 +198,7 @@ export function getLanguageService(
     registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
       schemaService.registerCustomSchemaProvider(schemaProvider);
     },
-    findLinks,
+    findLinks: yamlLinks.findLinks.bind(yamlLinks),
     doComplete: completer.doComplete.bind(completer),
     doValidation: yamlValidation.doValidation.bind(yamlValidation),
     doHover: hover.doHover.bind(hover),

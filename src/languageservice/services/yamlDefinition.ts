@@ -28,7 +28,7 @@ export function getDefinition(document: TextDocument, params: DefinitionParams):
       }
     }
   } catch (err) {
-    this.telemetry.sendError('yaml.definition.error', { error: err });
+    this.telemetry.sendError('yaml.definition.error', { error: err.toString() });
   }
 
   return undefined;
