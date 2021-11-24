@@ -22,7 +22,6 @@ export class YamlLinks {
       // Wait for all the promises to return and then flatten them into one DocumentLink array
       return Promise.all(linkPromises).then((yamlLinkArray) => [].concat(...yamlLinkArray));
     } catch (err) {
-      console.warn(err.toString());
       this.telemetry.sendError('yaml.documentLink.error', { error: err.toString() });
     }
   }
