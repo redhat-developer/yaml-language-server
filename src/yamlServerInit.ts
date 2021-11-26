@@ -44,7 +44,7 @@ export class YAMLServerInit {
       }
     );
     this.connection.onInitialized(() => {
-      if (this.yamlSettings.hasWsChangeWathedFileDynamicRegistraton) {
+      if (this.yamlSettings.hasWsChangeWatchedFileDynamicRegistration) {
         this.connection.workspace.onDidChangeWorkspaceFolders((changedFolders) => {
           this.yamlSettings.workspaceFolders = workspaceFoldersChanged(this.yamlSettings.workspaceFolders, changedFolders);
         });
@@ -89,7 +89,7 @@ export class YAMLServerInit {
       this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.configuration
     );
 
-    this.yamlSettings.hasWsChangeWathedFileDynamicRegistraton = !!(
+    this.yamlSettings.hasWsChangeWatchedFileDynamicRegistration = !!(
       this.yamlSettings.capabilities.workspace &&
       this.yamlSettings.capabilities.workspace.didChangeWatchedFiles &&
       this.yamlSettings.capabilities.workspace.didChangeWatchedFiles.dynamicRegistration
