@@ -81,6 +81,7 @@ export class SettingsState {
   hasWorkspaceFolderCapability = false;
   hasConfigurationCapability = false;
   useVSCodeContentRequest = false;
+  hasWsChangeWathedFileDynamicRegistraton = false;
 }
 
 export class TextDocumentTestManager extends TextDocuments<TextDocument> {
