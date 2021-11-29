@@ -317,5 +317,22 @@ describe('Document Symbols Tests', () => {
 
       assertLimitWarning();
     });
+
+    it('Document Symbols with numbers as keys', () => {
+      const content = 'items:\n  1: test\n  2: test';
+      const symbols = parseHierarchicalSetup(content);
+      assert.equal(symbols.length, 1);
+      const child1 = createExpectedDocumentSymbol('1', SymbolKind.String, 1, 2, 1, 9, 1, 2, 1, 3, undefined, 'test');
+      const child2 = createExpectedDocumentSymbol('2', SymbolKind.String, 2, 2, 2, 9, 2, 2, 2, 3, undefined, 'test');
+      const children = [child1, child2];
+      assert.deepEqual(symbols[0], createExpectedDocumentSymbol('items', SymbolKind.Module, 0, 0, 2, 9, 0, 0, 0, 5, children));
+    });
+
+    it('Document Symbols with mapping as keys', () => {
+      const content = '{foo: bar}: foo';
+      const symbols = parseHierarchicalSetup(content);
+      assert.equal(symbols.length, 1);
+      assert.deepEqual(symbols[0], createExpectedDocumentSymbol('{}', SymbolKind.String, 0, 0, 0, 15, 0, 0, 0, 10, [], 'foo'));
+    });
   });
 });
