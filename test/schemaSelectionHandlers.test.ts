@@ -98,7 +98,6 @@ describe('Schema Selection Handlers', () => {
   });
 
   it('getSchemas should handle empty schemas', async () => {
-    // service.registerExternalSchema('https://some.com/some.json', [SCHEMA_ID], undefined, 'Schema name', 'Schema description');
     const settings = new SettingsState();
     const testTextDocument = setupSchemaIDTextDocument('');
     settings.documents = new TextDocumentTestManager();
