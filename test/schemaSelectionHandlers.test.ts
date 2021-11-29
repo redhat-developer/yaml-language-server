@@ -96,4 +96,17 @@ describe('Schema Selection Handlers', () => {
       description: 'Schema description',
     });
   });
+
+  it('getSchemas should handle empty schemas', async () => {
+    // service.registerExternalSchema('https://some.com/some.json', [SCHEMA_ID], undefined, 'Schema name', 'Schema description');
+    const settings = new SettingsState();
+    const testTextDocument = setupSchemaIDTextDocument('');
+    settings.documents = new TextDocumentTestManager();
+    (settings.documents as TextDocumentTestManager).set(testTextDocument);
+    const selection = new JSONSchemaSelection(service, settings, connection);
+
+    const result = await selection.getSchemas(testTextDocument.uri);
+
+    expect(result).length(0);
+  });
 });

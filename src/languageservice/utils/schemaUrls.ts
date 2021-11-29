@@ -35,9 +35,9 @@ export function getSchemaUrls(schema: JSONSchema): Map<string, JSONSchema> {
   if (!schema) {
     return result;
   }
-  const url = schema.url;
-  if (url) {
-    if (url.startsWith('schemaservice://combinedSchema/')) {
+
+  if (schema.url) {
+    if (schema.url.startsWith('schemaservice://combinedSchema/')) {
       addSchemasForOf(schema, result);
     } else {
       result.set(schema.url, schema);

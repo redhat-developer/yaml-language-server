@@ -260,7 +260,7 @@ docker run -it quay.io/redhat-developer/yaml-language-server:latest
 
 #### SupportSchemaSelection Notification
 
-The support schema selection notification is sent from a client to the server to inform server that client support JSON Schema selection.
+The support schema selection notification is sent from a client to the server to inform server that client supports JSON Schema selection.
 
 _Notification:_
 - method: `'yaml/supportSchemaSelection'`
@@ -268,7 +268,7 @@ _Notification:_
 
 #### SchemaStoreInitialized Notification
 
-The schema store initialized notification is sent from the server to a client to inform client that server finish initializing/loading schemas from schema store, and client now can ask for schemas.
+The schema store initialized notification is sent from the server to a client to inform client that server has finished initializing/loading schemas from schema store, and client now can ask for schemas.
 
 _Notification:_
 - method: `'yaml/schema/store/initialized'`
