@@ -63,6 +63,7 @@ export class YAMLServerInit {
       this.workspaceContext,
       this.connection,
       this.telemetry,
+      this.yamlSettings,
       params.capabilities
     );
 

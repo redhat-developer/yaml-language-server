@@ -52,6 +52,8 @@ import { Telemetry } from '../languageserver/telemetry';
 import { YamlVersion } from './parser/yamlParser07';
 import { YamlCompletion } from './services/yamlCompletion';
 import { yamlDocumentsCache } from './parser/yaml-documents';
+import { SettingsState } from '../yamlSettings';
+import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers';
 import { getDefinition } from './services/yamlDefinition';
 
 export enum SchemaPriority {
@@ -159,6 +161,7 @@ export function getLanguageService(
   workspaceContext: WorkspaceContextService,
   connection: Connection,
   telemetry: Telemetry,
+  yamlSettings: SettingsState,
   clientCapabilities?: ClientCapabilities
 ): LanguageService {
   const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
@@ -169,6 +172,9 @@ export function getLanguageService(
   const formatter = new YAMLFormatter();
   const yamlCodeActions = new YamlCodeActions(clientCapabilities);
   const yamlCodeLens = new YamlCodeLens(schemaService, telemetry);
+
+  new JSONSchemaSelection(schemaService, yamlSettings, connection);
+
   // register all commands
   registerCommands(commandExecutor, connection);
   return {
