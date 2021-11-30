@@ -6,7 +6,7 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import {
   ClientCapabilities,
-  CompletionItem,
+  CompletionItem as CompletionItemBase,
   CompletionItemKind,
   CompletionList,
   InsertTextFormat,
@@ -35,11 +35,18 @@ import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
 import { indexOf } from '../utils/astUtils';
 import { isModeline } from './modelineUtil';
+import { getSchemaTypeName } from '../utils/schemaUtils';
 
 const localize = nls.loadMessageBundle();
 
 const doubleQuotesEscapeRegExp = /[\\]+"/g;
 
+interface CompletionItem extends CompletionItemBase {
+  schemaType?: string;
+  indent?: string;
+  isForParentSuggestion?: boolean;
+  isInlineObject?: boolean;
+}
 interface CompletionsCollector {
   add(suggestion: CompletionItem): void;
   error(message: string): void;
@@ -130,8 +137,58 @@ export class YamlCompletion {
     }
 
     const proposed: { [key: string]: CompletionItem } = {};
+    const existingProposeItem = '__';
     const collector: CompletionsCollector = {
       add: (completionItem: CompletionItem) => {
+        const addSuggestionForParent = function (completionItem: CompletionItem): void {
+          const exists = proposed[completionItem.label]?.label === existingProposeItem;
+          const schemaKey = completionItem.schemaType;
+          const completionKind = CompletionItemKind.Class;
+          let parentCompletion = result.items.find((i) => i.label === schemaKey && i.kind === completionKind);
+
+          if (!parentCompletion) {
+            //don't put to parent suggestion if already in yaml
+            if (exists) {
+              return;
+            }
+            parentCompletion = { ...completionItem };
+            parentCompletion.label = schemaKey;
+            parentCompletion.sortText = '_' + parentCompletion.label; //this extended completion goes first
+            parentCompletion.kind = completionKind;
+            result.items.push(parentCompletion);
+          } else if (!exists) {
+            //modify added props to have unique $x
+            const match = parentCompletion.insertText.match(/\$([0-9]+)|\${[0-9]+:/g);
+            let reindexedStr = completionItem.insertText;
+
+            if (match) {
+              const max$index = match
+                .map((m) => +m.replace(/\${([0-9]+)[:|]/g, '$1').replace('$', ''))
+                .reduce((p, n) => (n > p ? n : p), 0);
+              reindexedStr = completionItem.insertText
+                .replace(/\$([0-9]+)/g, (s, args) => '$' + (+args + max$index))
+                .replace(/\${([0-9]+)[:|]/g, (s, args) => '${' + (+args + max$index) + ':');
+            }
+            parentCompletion.insertText += '\n' + (completionItem.indent || '') + reindexedStr;
+          }
+
+          // remove $x for documentation
+          const mdText = parentCompletion.insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
+
+          parentCompletion.documentation = <MarkupContent>{
+            kind: MarkupKind.Markdown,
+            value: [
+              ...(completionItem.documentation ? [completionItem.documentation, '', '----', ''] : []),
+              '```yaml',
+              mdText,
+              '```',
+            ].join('\n'),
+          };
+
+          if (parentCompletion.textEdit) {
+            parentCompletion.textEdit.newText = parentCompletion.insertText;
+          }
+        };
         let label = completionItem.label;
         if (!label) {
           // we receive not valid CompletionItem as `label` is mandatory field, so just ignore it
@@ -142,7 +199,7 @@ export class YamlCompletion {
           label = String(label);
         }
         const existing = proposed[label];
-        if (!existing) {
+        if (!existing || completionItem.isForParentSuggestion) {
           label = label.replace(/[\n]/g, '↵');
           if (label.length > 60) {
             const shortendedLabel = label.substr(0, 57).trim() + '...';
@@ -151,11 +208,19 @@ export class YamlCompletion {
             }
           }
           if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
+            if (completionItem.kind === CompletionItemKind.Value) {
+              completionItem.insertText = escapeSpecialChars(completionItem.insertText);
+            }
             completionItem.textEdit = TextEdit.replace(overwriteRange, completionItem.insertText);
           }
           completionItem.label = label;
-          proposed[label] = completionItem;
-          result.items.push(completionItem);
+          if (completionItem.isForParentSuggestion && completionItem.schemaType) {
+            addSuggestionForParent(completionItem);
+          }
+          if (!existing) {
+            proposed[label] = completionItem;
+            result.items.push(completionItem);
+          }
         }
       },
       error: (message: string) => {
@@ -363,7 +428,7 @@ export class YamlCompletion {
         for (const p of properties) {
           if (!currentProperty || currentProperty !== p) {
             if (isScalar(p.key)) {
-              proposed[p.key.value.toString()] = CompletionItem.create('__');
+              proposed[p.key.value.toString()] = CompletionItemBase.create(existingProposeItem);
             }
           }
         }
@@ -494,7 +559,10 @@ export class YamlCompletion {
                       key,
                       propertySchema,
                       separatorAfter,
-                      identCompensation + this.indentation
+                      identCompensation + this.indentation,
+                      {
+                        includeConstValue: false,
+                      }
                     );
                   }
 
@@ -505,6 +573,27 @@ export class YamlCompletion {
                     insertTextFormat: InsertTextFormat.Snippet,
                     documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
                   });
+                  // if the prop is required add it also to parent suggestion
+                  if (schema.schema.required?.includes(key)) {
+                    const schemaType = getSchemaTypeName(schema.schema);
+                    collector.add({
+                      label: key,
+                      insertText: this.getInsertTextForProperty(
+                        key,
+                        propertySchema,
+                        separatorAfter,
+                        identCompensation + this.indentation,
+                        {
+                          includeConstValue: true,
+                        }
+                      ),
+                      insertTextFormat: InsertTextFormat.Snippet,
+                      documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
+                      schemaType: schemaType,
+                      indent: identCompensation,
+                      isForParentSuggestion: true,
+                    });
+                  }
                 }
               }
             }
@@ -657,7 +746,10 @@ export class YamlCompletion {
     key: string,
     propertySchema: JSONSchema,
     separatorAfter: string,
-    ident = this.indentation
+    ident = this.indentation,
+    options: {
+      includeConstValue?: boolean;
+    } = {}
   ): string {
     const propertyText = this.getInsertTextForValue(key, '', 'string');
     const resultText = propertyText + ':';
@@ -671,6 +763,8 @@ export class YamlCompletion {
           type = 'object';
         } else if (propertySchema.items) {
           type = 'array';
+        } else if (propertySchema.anyOf) {
+          type = 'anyOf';
         }
       }
       if (Array.isArray(propertySchema.defaultSnippets)) {
@@ -701,6 +795,15 @@ export class YamlCompletion {
         }
         nValueProposals += propertySchema.enum.length;
       }
+
+      if (propertySchema.const && options.includeConstValue) {
+        if (!value) {
+          value = escapeSpecialChars(propertySchema.const);
+          value = ' ' + this.getInsertTextForGuessedValue(value, '', type);
+        }
+        nValueProposals++;
+      }
+
       if (isDefined(propertySchema.default)) {
         if (!value) {
           value = ' ' + this.getInsertTextForGuessedValue(propertySchema.default, '', type);
@@ -741,6 +844,9 @@ export class YamlCompletion {
           case 'null':
             value = ' ${1:null}';
             break;
+          case 'anyOf':
+            value = ' $1';
+            break;
           default:
             return propertyText;
         }
@@ -768,6 +874,9 @@ export class YamlCompletion {
       const propertySchema = schema.properties[key] as JSONSchema;
       let type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
       if (!type) {
+        if (propertySchema.anyOf) {
+          type = 'anyOf';
+        }
         if (propertySchema.properties) {
           type = 'object';
         }
@@ -781,6 +890,7 @@ export class YamlCompletion {
           case 'string':
           case 'number':
           case 'integer':
+          case 'anyOf':
             insertText += `${indent}${key}: $${insertIndex++}\n`;
             break;
           case 'array':
@@ -1302,8 +1412,7 @@ function convertToStringValue(value: string): string {
     return `"${value}"`;
   }
 
-  // eslint-disable-next-line prettier/prettier, no-useless-escape
-  if (value.indexOf('\"') !== -1) {
+  if (value.indexOf('"') !== -1) {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 
@@ -1335,4 +1444,17 @@ function convertToStringValue(value: string): string {
   }
 
   return value;
+}
+
+/**
+ * if value stars with special chars (&*@), text will be put into apostrophes
+ */
+function escapeSpecialChars(text: string): string {
+  if (text) {
+    const addQuota = text[0] !== `'` && text.match(/^[&*@]/);
+    if (addQuota) {
+      return `'${text}'`;
+    }
+  }
+  return text;
 }
