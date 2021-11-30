@@ -51,7 +51,7 @@ export class YAMLHover {
       currentDoc.currentDocIndex = currentDocIndex;
       return this.getHover(document, position, currentDoc);
     } catch (error) {
-      this.telemetry.sendError('yaml.hover.error', { error, documentUri: document.uri });
+      this.telemetry.sendError('yaml.hover.error', { error: error.toString() });
     }
   }
 

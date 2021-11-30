@@ -42,7 +42,7 @@ export class YamlCodeLens {
         }
       }
     } catch (err) {
-      this.telemetry.sendError('yaml.codeLens.error', { error: err, documentUri: document.uri });
+      this.telemetry.sendError('yaml.codeLens.error', { error: err.toString() });
     }
 
     return result;
