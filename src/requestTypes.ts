@@ -70,3 +70,10 @@ export namespace ColorSymbolRequest {
 export namespace SchemaModificationNotification {
   export const type: RequestType<SchemaAdditions | SchemaDeletions, void, {}> = new RequestType('json/schema/modify');
 }
+
+export namespace SchemaSelectionRequests {
+  export const type: NotificationType<void> = new NotificationType('yaml/supportSchemaSelection');
+  export const getSchema: RequestType<string, JSONSchemaDescription[], {}> = new RequestType('yaml/get/jsonSchema');
+  export const getAllSchemas: RequestType<string, JSONSchemaDescriptionExt[], {}> = new RequestType('yaml/get/all/jsonSchemas');
+  export const schemaStoreInitialized: NotificationType<{}> = new NotificationType('yaml/schema/store/initialized');
+}

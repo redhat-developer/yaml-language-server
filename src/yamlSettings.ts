@@ -84,6 +84,8 @@ export class SettingsState {
   hasConfigurationCapability = false;
   useVSCodeContentRequest = false;
   yamlVersion: YamlVersion = '1.2';
+  useSchemaSelectionRequests = false;
+  hasWsChangeWatchedFileDynamicRegistration = false;
 }
 
 export class TextDocumentTestManager extends TextDocuments<TextDocument> {
