@@ -151,6 +151,9 @@ export class YamlCompletion {
             }
           }
           if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
+            if (completionItem.kind === CompletionItemKind.Value) {
+              completionItem.insertText = escapeSpecialChars(completionItem.insertText);
+            }
             completionItem.textEdit = TextEdit.replace(overwriteRange, completionItem.insertText);
           }
           completionItem.label = label;
@@ -1335,4 +1338,17 @@ function convertToStringValue(value: string): string {
   }
 
   return value;
+}
+
+/**
+ * if contains special chars (@), text will be into apostrophes
+ */
+function escapeSpecialChars(text: string): string {
+  if (text) {
+    const addQuota = text[0] !== `'` && (text.startsWith('@') || text.startsWith('&'));
+    if (addQuota) {
+      return `'${text}'`;
+    }
+  }
+  return text;
 }
