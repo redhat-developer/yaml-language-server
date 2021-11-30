@@ -4,8 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 import { createConnection, Connection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node';
 import path = require('path');
+import { promises as fs } from 'fs';
 import { SettingsState } from '../../src/yamlSettings';
-import { schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler';
+import { FileSystem, schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler';
 import { YAMLServerInit } from '../../src/yamlServerInit';
 import { LanguageService, LanguageSettings } from '../../src';
 import { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers';
@@ -46,6 +47,8 @@ export function setupSchemaIDTextDocument(content: string, customSchemaID?: stri
   }
 }
 
+export const testFileSystem: FileSystem = { readFile: (fsPath: string) => fs.readFile(fsPath).then((c) => c.toString()) };
+
 export interface TestLanguageServerSetup {
   languageService: LanguageService;
   validationHandler: ValidationHandler;
@@ -63,7 +66,8 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
       uri,
       yamlSettings.workspaceFolders,
       yamlSettings.workspaceRoot,
-      yamlSettings.useVSCodeContentRequest
+      yamlSettings.useVSCodeContentRequest,
+      testFileSystem
     );
   };
   const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
@@ -88,3 +92,4 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
 }
 
 export const jigxBranchTest = true;
+export const jigxBranchTestCompletion = false; // delete this after success completion merge

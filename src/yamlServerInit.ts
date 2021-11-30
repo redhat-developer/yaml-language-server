@@ -1,4 +1,4 @@
-import { Connection, InitializeParams, InitializeResult, TextDocumentSyncKind } from 'vscode-languageserver/node';
+import { Connection, InitializeParams, InitializeResult, TextDocumentSyncKind } from 'vscode-languageserver';
 import {
   getLanguageService as getCustomLanguageService,
   LanguageService,
@@ -16,12 +16,15 @@ import { SettingsHandler } from './languageserver/handlers/settingsHandlers';
 import { YamlCommands } from './commands';
 import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
 import { commandExecutor } from './languageserver/commandExecutor';
+import { Telemetry } from './languageserver/telemetry';
 
 export class YAMLServerInit {
   languageService: LanguageService;
   languageHandler: LanguageHandlers;
   validationHandler: ValidationHandler;
+  settingsHandler: SettingsHandler;
 
+  private telemetry: Telemetry;
   constructor(
     private readonly connection: Connection,
     private yamlSettings: SettingsState,
@@ -29,6 +32,7 @@ export class YAMLServerInit {
     private schemaRequestService: SchemaRequestService
   ) {
     this.yamlSettings.documents.listen(this.connection);
+    this.telemetry = new Telemetry(this.connection);
 
     /**
      * Run when the client connects to the server after it is activated.
@@ -40,11 +44,14 @@ export class YAMLServerInit {
       }
     );
     this.connection.onInitialized(() => {
-      if (this.yamlSettings.hasWorkspaceFolderCapability) {
+      if (this.yamlSettings.hasWsChangeWatchedFileDynamicRegistration) {
         this.connection.workspace.onDidChangeWorkspaceFolders((changedFolders) => {
           this.yamlSettings.workspaceFolders = workspaceFoldersChanged(this.yamlSettings.workspaceFolders, changedFolders);
         });
       }
+      // need to call this after connection initialized
+      this.settingsHandler.registerHandlers();
+      this.settingsHandler.pullConfiguration();
     });
   }
 
@@ -55,6 +62,7 @@ export class YAMLServerInit {
       this.schemaRequestService,
       this.workspaceContext,
       this.connection,
+      this.telemetry,
       params.capabilities
     );
 
@@ -77,6 +85,15 @@ export class YAMLServerInit {
     this.yamlSettings.hasWorkspaceFolderCapability =
       this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.workspaceFolders;
 
+    this.yamlSettings.hasConfigurationCapability = !!(
+      this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.configuration
+    );
+
+    this.yamlSettings.hasWsChangeWatchedFileDynamicRegistration = !!(
+      this.yamlSettings.capabilities.workspace &&
+      this.yamlSettings.capabilities.workspace.didChangeWatchedFiles &&
+      this.yamlSettings.capabilities.workspace.didChangeWatchedFiles.dynamicRegistration
+    );
     this.registerHandlers();
 
     return {
@@ -90,6 +107,7 @@ export class YAMLServerInit {
           firstTriggerCharacter: '\n',
         },
         documentRangeFormattingProvider: false,
+        definitionProvider: true,
         documentLinkProvider: {},
         // disabled until we not get parser which parse comments as separate nodes
         foldingRangeProvider: false,
@@ -113,11 +131,17 @@ export class YAMLServerInit {
   private registerHandlers(): void {
     // Register all features that the language server has
     this.validationHandler = new ValidationHandler(this.connection, this.languageService, this.yamlSettings);
-    const settingsHandler = new SettingsHandler(this.connection, this.languageService, this.yamlSettings, this.validationHandler);
-    settingsHandler.registerHandlers();
+    this.settingsHandler = new SettingsHandler(
+      this.connection,
+      this.languageService,
+      this.yamlSettings,
+      this.validationHandler,
+      this.telemetry
+    );
+    // this.settingsHandler.registerHandlers();
     this.languageHandler = new LanguageHandlers(this.connection, this.languageService, this.yamlSettings, this.validationHandler);
     this.languageHandler.registerHandlers();
-    new NotificationHandlers(this.connection, this.languageService, this.yamlSettings, settingsHandler).registerHandlers();
+    new NotificationHandlers(this.connection, this.languageService, this.yamlSettings, this.settingsHandler).registerHandlers();
     new RequestHandlers(this.connection, this.languageService, this.yamlSettings).registerHandlers();
     new WorkspaceHandlers(this.connection, commandExecutor).registerHandlers();
   }

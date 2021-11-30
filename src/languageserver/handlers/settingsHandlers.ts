@@ -3,11 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { xhr, configure as configureHttpRequests } from 'request-light';
-import { DidChangeConfigurationParams, DocumentFormattingRequest, DocumentSelector, Connection } from 'vscode-languageserver';
+import { DocumentFormattingRequest, Connection, DidChangeConfigurationNotification } from 'vscode-languageserver';
+import { DocumentSelector } from 'vscode-languageserver'; // jigx
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
 import { Settings, SettingsState } from '../../yamlSettings';
+import { Telemetry } from '../telemetry';
 import { ValidationHandler } from './validationHandlers';
 
 export class SettingsHandler {
@@ -15,11 +17,21 @@ export class SettingsHandler {
     private readonly connection: Connection,
     private readonly languageService: LanguageService,
     private readonly yamlSettings: SettingsState,
-    private readonly validationHandler: ValidationHandler
+    private readonly validationHandler: ValidationHandler,
+    private readonly telemetry: Telemetry
   ) {}
 
-  public registerHandlers(): void {
-    this.connection.onDidChangeConfiguration((change) => this.configurationChangeHandler(change));
+  async registerHandlers(): Promise<void> {
+    if (this.yamlSettings.hasConfigurationCapability && this.yamlSettings.clientDynamicRegisterSupport) {
+      try {
+        // Register for all configuration changes.
+        await this.connection.client.register(DidChangeConfigurationNotification.type, undefined);
+      } catch (err) {
+        console.warn(err);
+        this.telemetry.sendError('yaml.settings.error', { error: err });
+      }
+    }
+    this.connection.onDidChangeConfiguration(() => this.pullConfiguration());
   }
 
   private getDocumentSelectors(settings: Settings): DocumentSelector {
@@ -35,12 +47,26 @@ export class SettingsHandler {
   }
 
   /**
-   * Run when the editor configuration is changed
-   * The client syncs the 'yaml', 'http.proxy', 'http.proxyStrictSSL' settings sections
-   * Update relevant settings with fallback to defaults if needed
+   *  The server pull the 'yaml', 'http.proxy', 'http.proxyStrictSSL', '[yaml]' settings sections
    */
-  private configurationChangeHandler(change: DidChangeConfigurationParams): void {
-    const settings = change.settings as Settings;
+  async pullConfiguration(): Promise<void> {
+    const config = await this.connection.workspace.getConfiguration([
+      { section: 'yaml' },
+      { section: 'http' },
+      { section: '[yaml]' },
+    ]);
+    const settings: Settings = {
+      yaml: config[0],
+      http: {
+        proxy: config[1]?.proxy ?? '',
+        proxyStrictSSL: config[1]?.proxyStrictSSL ?? false,
+      },
+      yamlEditor: config[2],
+    };
+    this.setConfiguration(settings);
+  }
+
+  setConfiguration(settings: Settings): void {
     configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
 
     this.yamlSettings.specificValidatorPaths = [];
@@ -59,9 +85,16 @@ export class SettingsHandler {
       }
       this.yamlSettings.customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
 
+      this.yamlSettings.maxItemsComputed = Math.trunc(Math.max(0, Number(settings.yaml.maxItemsComputed))) || 5000;
+
       if (settings.yaml.schemaStore) {
         this.yamlSettings.schemaStoreEnabled = settings.yaml.schemaStore.enable;
+        if (settings.yaml.schemaStore.url.length !== 0) {
+          this.yamlSettings.schemaStoreUrl = settings.yaml.schemaStore.url;
+        }
       }
+
+      this.yamlSettings.yamlVersion = settings.yaml.yamlVersion ?? '1.2';
 
       if (settings.yaml.format) {
         this.yamlSettings.yamlFormatterSettings = {
@@ -89,10 +122,8 @@ export class SettingsHandler {
 
     this.yamlSettings.schemaConfigurationSettings = [];
 
-    if (settings['[yaml]'] && settings['[yaml]']['editor.tabSize']) {
-      this.yamlSettings.indentation = ' '.repeat(settings['[yaml]']['editor.tabSize']);
-    } else if (settings.editor?.tabSize) {
-      this.yamlSettings.indentation = ' '.repeat(settings.editor.tabSize);
+    if (settings.yamlEditor && settings.yamlEditor['editor.tabSize']) {
+      this.yamlSettings.indentation = ' '.repeat(settings.yamlEditor['editor.tabSize']);
     }
 
     for (const uri in this.yamlSettings.yamlConfigurationSettings) {
@@ -100,7 +131,7 @@ export class SettingsHandler {
 
       const schemaObj = {
         fileMatch: Array.isArray(globPattern) ? globPattern : [globPattern],
-        uri: checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri),
+        uri: checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri, this.telemetry),
       };
       this.yamlSettings.schemaConfigurationSettings.push(schemaObj);
     }
@@ -134,10 +165,16 @@ export class SettingsHandler {
    */
   public async setSchemaStoreSettingsIfNotSet(): Promise<void> {
     const schemaStoreIsSet = this.yamlSettings.schemaStoreSettings.length !== 0;
+    let schemaStoreUrl = '';
+    if (this.yamlSettings.schemaStoreUrl.length !== 0) {
+      schemaStoreUrl = this.yamlSettings.schemaStoreUrl;
+    } else {
+      schemaStoreUrl = JSON_SCHEMASTORE_URL;
+    }
 
     if (this.yamlSettings.schemaStoreEnabled && !schemaStoreIsSet) {
       try {
-        const schemaStore = await this.getSchemaStoreMatchingSchemas();
+        const schemaStore = await this.getSchemaStoreMatchingSchemas(schemaStoreUrl);
         this.yamlSettings.schemaStoreSettings = schemaStore.schemas;
         this.updateConfiguration();
       } catch (err) {
@@ -153,8 +190,8 @@ export class SettingsHandler {
    * When the schema store is enabled, download and store YAML schema associations
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getSchemaStoreMatchingSchemas(): Promise<{ schemas: any[] }> {
-    return xhr({ url: JSON_SCHEMASTORE_URL }).then((response) => {
+  private getSchemaStoreMatchingSchemas(schemaStoreUrl: string): Promise<{ schemas: any[] }> {
+    return xhr({ url: schemaStoreUrl }).then((response) => {
       const languageSettings = {
         schemas: [],
       };
@@ -172,9 +209,10 @@ export class SettingsHandler {
             if (currFileMatch.indexOf('.yml') !== -1 || currFileMatch.indexOf('.yaml') !== -1) {
               languageSettings.schemas.push({
                 uri: schema.url,
-                // this is workaround to fix file matcher, adding '/' force to match full file name instead of just file name ends
-                fileMatch: [currFileMatch.indexOf('/') === -1 ? '/' + currFileMatch : currFileMatch],
+                fileMatch: [currFileMatch],
                 priority: SchemaPriority.SchemaStore,
+                name: schema.name,
+                description: schema.description,
               });
             }
           }
@@ -200,6 +238,7 @@ export class SettingsHandler {
       indentation: this.yamlSettings.indentation,
       propTableStyle: this.yamlSettings.propTableStyle,
       disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
+      yamlVersion: this.yamlSettings.yamlVersion,
     };
 
     if (this.yamlSettings.schemaAssociations) {
@@ -271,7 +310,7 @@ export class SettingsHandler {
     languageSettings: LanguageSettings,
     priorityLevel: number
   ): LanguageSettings {
-    uri = checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri);
+    uri = checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri, this.telemetry);
 
     if (schema === null) {
       languageSettings.schemas.push({ uri, fileMatch: fileMatch, priority: priorityLevel });

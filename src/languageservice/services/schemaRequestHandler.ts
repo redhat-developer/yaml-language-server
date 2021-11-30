@@ -1,11 +1,14 @@
 import { URI } from 'vscode-uri';
 import { Connection, WorkspaceFolder } from 'vscode-languageserver';
 import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
-import * as fs from 'fs';
 import * as URL from 'url';
 import { CustomSchemaContentRequest, VSCodeContentRequest } from '../../requestTypes';
 import { isRelativePath, relativeToAbsolutePath } from '../utils/paths';
 import { WorkspaceContextService } from '../yamlLanguageService';
+
+export interface FileSystem {
+  readFile(fsPath: string, encoding?: string): Promise<string>;
+}
 
 /**
  * Handles schema content requests given the schema URI
@@ -16,7 +19,8 @@ export const schemaRequestHandler = (
   uri: string,
   workspaceFolders: WorkspaceFolder[],
   workspaceRoot: URI,
-  useVSCodeContentRequest: boolean
+  useVSCodeContentRequest: boolean,
+  fs: FileSystem
 ): Promise<string> => {
   if (!uri) {
     return Promise.reject('No schema specified');
@@ -31,7 +35,7 @@ export const schemaRequestHandler = (
   let scheme = URI.parse(uri).scheme.toLowerCase();
 
   // test if uri is windows path, ie starts with 'c:\'
-  if (/^[a-z]:\\/i.test(uri)) {
+  if (/^[a-z]:[\\/]/i.test(uri)) {
     const winUri = URI.file(uri);
     scheme = winUri.scheme.toLowerCase();
     uri = winUri.toString();
@@ -41,14 +45,10 @@ export const schemaRequestHandler = (
   if (scheme === 'file') {
     const fsPath = URI.parse(uri).fsPath;
 
-    return new Promise<string>((c, e) => {
-      fs.readFile(fsPath, 'UTF-8', (err, result) =>
-        // If there was an error reading the file, return empty error message
-        // Otherwise return the file contents as a string
-        {
-          return err ? e('') : c(result.toString());
-        }
-      );
+    return fs.readFile(fsPath, 'UTF-8').catch(() => {
+      // If there was an error reading the file, return empty error message
+      // Otherwise return the file contents as a string
+      return '';
     });
   }
 

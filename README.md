@@ -1,8 +1,9 @@
-![CI](https://github.com/redhat-developer/yaml-language-server/workflows/CI/badge.svg) [![Build Status](https://travis-ci.org/redhat-developer/yaml-language-server.svg?branch=master)](https://travis-ci.org/redhat-developer/yaml-language-server) [![version](https://img.shields.io/npm/v/yaml-language-server.svg)](https://www.npmjs.com/package/yaml-language-server) [![Coverage Status](https://coveralls.io/repos/github/redhat-developer/yaml-language-server/badge.svg?branch=master)](https://coveralls.io/github/redhat-developer/yaml-language-server?branch=master)
+![CI](https://github.com/redhat-developer/yaml-language-server/workflows/CI/badge.svg) [![Build Status](https://travis-ci.org/redhat-developer/yaml-language-server.svg?branch=main)](https://travis-ci.org/redhat-developer/yaml-language-server) [![version](https://img.shields.io/npm/v/yaml-language-server.svg)](https://www.npmjs.com/package/yaml-language-server) [![Coverage Status](https://coveralls.io/repos/github/redhat-developer/yaml-language-server/badge.svg?branch=main)](https://coveralls.io/github/redhat-developer/yaml-language-server?branch=main)
 
 # YAML Language Server
 
 Supports JSON Schema 7 and below.
+Starting from `1.0.0` the language server uses [eemeli/yaml](https://github.com/eemeli/yaml) as the new YAML parser, which strictly enforces the specified YAML spec version. Default YAML spec version is `1.2`, it can be changed with `yaml.yamlVersion` setting.
 
 ## Features
 
@@ -28,17 +29,20 @@ Supports JSON Schema 7 and below.
 
 The following settings are supported:
 
+- `yaml.yamlVersion`: Set default YAML spec version (1.2 or 1.1)
 - `yaml.format.enable`: Enable/disable default YAML formatter (requires restart)
 - `yaml.format.singleQuote`: Use single quotes instead of double quotes
 - `yaml.format.bracketSpacing`: Print spaces between brackets in objects
-- `yaml.format.proseWrap`: Always: wrap prose if it exeeds the print width, Never: never wrap the prose, Preserve: wrap prose as-is
+- `yaml.format.proseWrap`: Always: wrap prose if it exceeds the print width, Never: never wrap the prose, Preserve: wrap prose as-is
 - `yaml.format.printWidth`: Specify the line length that the printer will wrap on
 - `yaml.validate`: Enable/disable validation feature
 - `yaml.hover`: Enable/disable hover
 - `yaml.completion`: Enable/disable autocompletion
 - `yaml.schemas`: Helps you associate schemas with files in a glob pattern
 - `yaml.schemaStore.enable`: When set to true the YAML language server will pull in all available schemas from [JSON Schema Store](https://www.schemastore.org/json/)
+- `yaml.schemaStore.url`: URL of a schema store catalog to use when downloading schemas.
 - `yaml.customTags`: Array of custom tags that the parser will validate against. It has two ways to be used. Either an item in the array is a custom tag such as "!Ref" and it will automatically map !Ref to scalar or you can specify the type of the object !Ref should be e.g. "!Ref sequence". The type of object can be either scalar (for strings and booleans), sequence (for arrays), map (for objects).
+- `yaml.maxItemsComputed`: The maximum number of outline symbols and folding regions computed (limited for performance reasons).
 - `[yaml].editor.tabSize`: the number of spaces to use when autocompleting. Takes priority over editor.tabSize.
 - `editor.tabSize`: the number of spaces to use when autocompleting. Default is 2.
 - `http.proxy`: The URL of the proxy server that will be used when attempting to download a schema. If it is not set or it is undefined no proxy server will be used.
@@ -220,8 +224,20 @@ yaml.schemas: {
 
 It is possible to specify a yaml schema using a modeline.
 
-```
+```yaml
 # yaml-language-server: $schema=<urlToTheSchema>
+```
+
+Also it is possible to use relative path in a modeline:
+
+```yaml
+# yaml-language-server: $schema=../relative/path/to/schema
+```
+
+or absolute path:
+
+```yaml
+# yaml-language-server: $schema=/absolute/path/to/schema
 ```
 
 ## Containerized Language Server
@@ -250,6 +266,7 @@ This repository only contains the server implementation. Here are some known cli
 - [lsp-mode](https://github.com/emacs-lsp/lsp-mode) for Emacs
 - [vim-lsp](https://github.com/prabirshrestha/vim-lsp) for Vim
 - [LSP-yaml](https://packagecontrol.io/packages/LSP-yaml) for Sublime Text
+- [monaco-yaml](https://monaco-yaml.js.org) for Monaco editor
 
 ## Developer Support
 
@@ -275,7 +292,7 @@ This repository only contains the server implementation. Here are some known cli
 
 ### Connecting to the language server via stdio
 
-We have included the option to connect to the language server via [stdio](https://github.com/redhat-developer/yaml-language-server/blob/681985b5a059c2cb55c8171235b07e1651b6c546/src/server.ts#L46-L51) to help with intergrating the language server into different clients.
+We have included the option to connect to the language server via [stdio](https://github.com/redhat-developer/yaml-language-server/blob/681985b5a059c2cb55c8171235b07e1651b6c546/src/server.ts#L46-L51) to help with integrating the language server into different clients.
 
 ### ESM and UMD Modules
 
@@ -283,5 +300,5 @@ Building the YAML Language Server produces [CommonJS](http://www.commonjs.org/) 
 
 ### CI
 
-We use a GitHub Action to publish each change in the `master` branch to [npm registry](https://www.npmjs.com/package/yaml-language-server) with the `next` tag.
+We use a GitHub Action to publish each change in the `main` branch to [npm registry](https://www.npmjs.com/package/yaml-language-server) with the `next` tag.
 You may use the `next` version to adopt the latest changes into your project.

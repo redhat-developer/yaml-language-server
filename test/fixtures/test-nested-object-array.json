@@ -1,0 +1,58 @@
+{
+  "allOf": [
+    { "$ref": "#/$configs/objectA" }, 
+    { "$ref": "#/$configs/objectB" }
+  ],
+
+  "$defs": {
+    "name": {      
+      "name": { "type": "string", "description": "name" }
+    },
+    "prop1": {
+      "prop1": { "type": "string", "description": "prop1" }
+    },
+    "prop2": {
+      "prop1": { "type": "string", "description": "prop2" }
+    }
+  },  
+
+  "$configs": {
+    "objectA": {
+      "type": "object",
+      "title": "Object A",
+      "properties": {
+        "objA": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "$ref": "#/$defs/name" },
+              "color": { "type": "string", "description": "color" },
+              "prop1": { "$ref": "#/$defs/prop1" },
+              "prop2": { "$ref": "#/$defs/prop2" }
+            },
+            "required": ["name"],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "objectB": {
+      "type": "object",
+      "title": "Object B",
+      "properties": {
+        "objB": {
+          "type": "object",
+          "properties": {
+            "name": { "$ref": "#/$defs/name" },
+            "size": { "type": "string", "description": "size" },
+            "prop1": { "$ref": "#/$defs/prop1" },
+            "prop2": { "$ref": "#/$defs/prop2" }
+          },
+          "required": ["name", "size"],
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}

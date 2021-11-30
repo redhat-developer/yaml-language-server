@@ -8,17 +8,20 @@
 import { Hover, Position } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
-import { parse as parseYAML, SingleYAMLDocument } from '../parser/yamlParser07';
+import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONHover } from 'vscode-json-languageservice/lib/umd/services/jsonHover';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-
+import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { ASTNode, MarkedString, MarkupContent, Range } from 'vscode-json-languageservice';
 import { Schema2Md } from '../utils/jigx/schema2md';
 import { getNodePath, getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
 import { decycle } from '../utils/jigx/cycle';
 import { JSONSchema } from '../jsonSchema';
+import { Telemetry } from '../../languageserver/telemetry';
+import { URI } from 'vscode-uri';
+import * as path from 'path';
 
 interface YamlHoverDetailResult {
   /**
@@ -36,42 +39,50 @@ interface YamlHoverDetailResult {
 }
 export type YamlHoverDetailPropTableStyle = 'table' | 'tsBlock' | 'none';
 export class YamlHoverDetail {
+  private shouldHover: boolean;
+  private schemaService: YAMLSchemaService;
   private jsonHover;
   private appendTypes = true;
-  private promise: PromiseConstructor;
   private schema2Md = new Schema2Md();
   propTableStyle: YamlHoverDetailPropTableStyle;
 
-  constructor(private schemaService: YAMLSchemaService) {
+  constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
+    // this.shouldHover = true;
+    this.schemaService = schemaService;
     this.jsonHover = new JSONHover(schemaService, [], Promise);
   }
 
   public configure(languageSettings: LanguageSettings): void {
     if (languageSettings) {
       this.propTableStyle = languageSettings.propTableStyle;
+      // this.shouldHover = languageSettings.hover;
     }
     this.schema2Md.configure({ propTableStyle: this.propTableStyle });
   }
 
-  public getHoverDetail(document: TextDocument, position: Position, isKubernetes = false): Thenable<Hover> {
-    if (!document) {
-      return Promise.resolve(undefined);
-    }
-    const doc = parseYAML(document.getText());
-    const offset = document.offsetAt(position);
-    const currentDoc = matchOffsetToDocument(offset, doc);
-    if (currentDoc === null) {
-      return Promise.resolve(undefined);
-    }
+  public doHoverDetail(document: TextDocument, position: Position, isKubernetes = false): Thenable<Hover> {
+    try {
+      if (/*!this.shouldHover ||*/ !document) {
+        return Promise.resolve(undefined);
+      }
+      const doc = yamlDocumentsCache.getYamlDocument(document);
+      const offset = document.offsetAt(position);
+      const currentDoc = matchOffsetToDocument(offset, doc);
+      if (currentDoc === null) {
+        return Promise.resolve(undefined);
+      }
 
-    setKubernetesParserOption(doc.documents, isKubernetes);
-    const currentDocIndex = doc.documents.indexOf(currentDoc);
-    currentDoc.currentDocIndex = currentDocIndex;
-    const detail = this.getHoverSchemaDetail(document, position, currentDoc);
-    return detail;
+      setKubernetesParserOption(doc.documents, isKubernetes);
+      const currentDocIndex = doc.documents.indexOf(currentDoc);
+      currentDoc.currentDocIndex = currentDocIndex;
+      const detail = this.getHover(document, position, currentDoc);
+      return detail;
+    } catch (error) {
+      this.telemetry.sendError('yaml.hover.error', { error, documentUri: document.uri });
+    }
   }
 
-  private getHoverSchemaDetail(document: TextDocument, position: Position, doc: SingleYAMLDocument): Thenable<Hover | null> {
+  private getHover(document: TextDocument, position: Position, doc: SingleYAMLDocument): Thenable<Hover | null> {
     const offset = document.offsetAt(position);
     let node = doc.getNodeFromOffset(offset);
     if (
@@ -88,7 +99,7 @@ export class YamlHoverDetail {
       if (parent && parent.type === 'property' && parent.keyNode === node) {
         node = parent.valueNode;
         if (!node) {
-          return this.promise.resolve(null);
+          return Promise.resolve(null);
         }
       }
     }
@@ -98,9 +109,13 @@ export class YamlHoverDetail {
       document.positionAt(hoverRangeNode.offset + hoverRangeNode.length)
     );
 
-    const createPropDetail = (contents: MarkedString[], schemas: JSONSchema[], node: ASTNode): YamlHoverDetailResult => {
+    const createHover = (contents: string, schemas: JSONSchema[], node: ASTNode): YamlHoverDetailResult => {
+      const markupContent: MarkupContent = {
+        kind: 'markdown',
+        value: contents,
+      };
       const result: YamlHoverDetailResult = {
-        contents: contents,
+        contents: markupContent,
         range: hoverRange,
         schemas: schemas,
         node: node,
@@ -113,12 +128,12 @@ export class YamlHoverDetail {
       const contribution = this.jsonHover.contributions[i];
       const promise = contribution.getInfoContribution(document.uri, location);
       if (promise) {
-        return promise.then((htmlContent) => createPropDetail(htmlContent, [], node));
+        return promise.then((htmlContent) => createHover(htmlContent, [], node));
       }
     }
 
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
-      if (schema && node) {
+      if (schema && node && !schema.errors.length) {
         //for each node from yaml it will find schema part
         //for node from yaml, there could be more schemas subpart
         //example
@@ -173,7 +188,7 @@ export class YamlHoverDetail {
           return true;
         });
         const newLineWithHr = '\n\n----\n';
-        let results = [];
+        let results: string[] = [];
         if (hoverRes.length > 1) {
           const titleAll = hoverRes
             .filter((h) => h.title)
@@ -208,11 +223,21 @@ export class YamlHoverDetail {
             results.push(result);
           }
         }
+
         const decycleNode = decycle(node, 8);
+
+        if (results.length && schema.schema.url) {
+          if (results.some((l) => l.includes(newLineWithHr))) {
+            results.push('----');
+          }
+          results.push(`Source: [${getSchemaName(schema.schema)}](${schema.schema.url})`);
+        }
+
         if (!results.length) {
           results = [''];
         }
-        return createPropDetail(results, resSchemas, decycleNode);
+
+        return createHover(results.join('\n\n'), resSchemas, decycleNode);
       }
       return null;
     });
@@ -246,6 +271,18 @@ function distinctSchemas(matchingSchemas: IApplicableSchema[]): IApplicableSchem
     console.log('removing some schemas: ' + seenSchemaFromAnyOf.join(', ') + '. removed count:' + removedCount);
   }
   return matchingSchemasDistinct;
+}
+
+function getSchemaName(schema: JSONSchema): string {
+  let result = 'JSON Schema';
+  const urlString = schema.url;
+  if (urlString) {
+    const url = URI.parse(urlString);
+    result = path.basename(url.fsPath);
+  } else if (schema.title) {
+    result = schema.title;
+  }
+  return result;
 }
 
 function toMarkdown(plain: string): string;

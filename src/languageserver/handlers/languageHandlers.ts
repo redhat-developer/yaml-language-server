@@ -17,18 +17,23 @@ import {
   Connection,
   TextDocumentPositionParams,
   CodeLensParams,
+  DefinitionParams,
 } from 'vscode-languageserver';
-import { CodeLens, DocumentSymbol, Hover, SymbolInformation, TextEdit } from 'vscode-languageserver-types';
+import { CodeLens, DefinitionLink, DocumentSymbol, Hover, SymbolInformation, TextEdit } from 'vscode-languageserver-types';
 import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
 import { LanguageService } from '../../languageservice/yamlLanguageService';
 import { SettingsState } from '../../yamlSettings';
 import { ValidationHandler } from './validationHandlers';
+import { ResultLimitReachedNotification } from '../../requestTypes';
+import * as path from 'path';
 
 export class LanguageHandlers {
   public isTest = false;
   private languageService: LanguageService;
   private yamlSettings: SettingsState;
   private validationHandler: ValidationHandler;
+
+  pendingLimitExceededWarnings: { [uri: string]: { features: { [name: string]: string }; timeout?: NodeJS.Timeout } };
 
   constructor(
     private readonly connection: Connection,
@@ -39,6 +44,7 @@ export class LanguageHandlers {
     this.languageService = languageService;
     this.yamlSettings = yamlSettings;
     this.validationHandler = validationHandler;
+    this.pendingLimitExceededWarnings = {};
   }
 
   public registerHandlers(): void {
@@ -53,6 +59,10 @@ export class LanguageHandlers {
     this.connection.onDocumentOnTypeFormatting((params) => this.formatOnTypeHandler(params));
     this.connection.onCodeLens((params) => this.codeLensHandler(params));
     this.connection.onCodeLensResolve((params) => this.codeLensResolveHandler(params));
+    this.connection.onDefinition((params) => this.definitionHandler(params));
+
+    this.yamlSettings.documents.onDidChangeContent((change) => this.cancelLimitExceededWarnings(change.document.uri));
+    this.yamlSettings.documents.onDidClose((event) => this.cancelLimitExceededWarnings(event.document.uri));
   }
 
   documentLinkHandler(params: DocumentLinkParams): Promise<DocumentLink[]> {
@@ -64,18 +74,8 @@ export class LanguageHandlers {
     return this.languageService.findLinks(document);
   }
 
-  previousCall: { uri?: string; time?: number; request?: DocumentSymbol[] } = {};
-  /**
-   * Called when the code outline in an editor needs to be populated
-   * Returns a list of symbols that is then shown in the code outline
-   */
-  documentSymbolHandler(documentSymbolParams: DocumentSymbolParams): DocumentSymbol[] | SymbolInformation[] {
-    const document = this.yamlSettings.documents.get(documentSymbolParams.textDocument.uri);
-
-    if (!document) {
-      return;
-    }
-
+  previousCall: { uri?: string; time?: number; request?: DocumentSymbol[] | SymbolInformation[] } = {};
+  documentSymbolHandlerFix(documentSymbolParams: DocumentSymbolParams): DocumentSymbol[] | SymbolInformation[] {
     /**
      * I had to combine server and client DocumentSymbol
      * And if I use only client DocumentSymbol, outline doesn't work.
@@ -91,15 +91,41 @@ export class LanguageHandlers {
       return this.previousCall.request;
     }
 
-    let res;
-    if (this.yamlSettings.hierarchicalDocumentSymbolSupport) {
-      res = this.languageService.findDocumentSymbols2(document);
-    } else {
-      res = this.languageService.findDocumentSymbols(document);
+    const res = this.documentSymbolHandler(documentSymbolParams);
+    this.previousCall = {
+      time: new Date().getTime(),
+      uri: documentSymbolParams.textDocument.uri,
+      request: res,
+    };
+  }
+
+  /**
+   * Called when the code outline in an editor needs to be populated
+   * Returns a list of symbols that is then shown in the code outline
+   */
+  documentSymbolHandler(documentSymbolParams: DocumentSymbolParams): DocumentSymbol[] | SymbolInformation[] {
+    const document = this.yamlSettings.documents.get(documentSymbolParams.textDocument.uri);
+
+    if (!document) {
+      return;
     }
 
-    this.previousCall = { time: new Date().getTime(), uri: documentSymbolParams.textDocument.uri, request: res };
-    return res;
+    const onResultLimitExceeded = this.onResultLimitExceeded(
+      document.uri,
+      this.yamlSettings.maxItemsComputed,
+      'document symbols'
+    );
+
+    const context = {
+      resultLimit: this.yamlSettings.maxItemsComputed,
+      onResultLimitExceeded,
+    };
+
+    if (this.yamlSettings.hierarchicalDocumentSymbolSupport) {
+      return this.languageService.findDocumentSymbols2(document, context);
+    } else {
+      return this.languageService.findDocumentSymbols(document, context);
+    }
   }
 
   /**
@@ -191,7 +217,17 @@ export class LanguageHandlers {
       return;
     }
 
-    return this.languageService.getFoldingRanges(textDocument, this.yamlSettings.capabilities.textDocument.foldingRange);
+    const capabilities = this.yamlSettings.capabilities.textDocument.foldingRange;
+    const rangeLimit = this.yamlSettings.maxItemsComputed || capabilities.rangeLimit;
+    const onRangeLimitExceeded = this.onResultLimitExceeded(textDocument.uri, rangeLimit, 'folding ranges');
+
+    const context = {
+      rangeLimit,
+      onRangeLimitExceeded,
+      lineFoldingOnly: capabilities.lineFoldingOnly,
+    };
+
+    return this.languageService.getFoldingRanges(textDocument, context);
   }
 
   codeActionHandler(params: CodeActionParams): CodeAction[] | undefined {
@@ -213,5 +249,50 @@ export class LanguageHandlers {
 
   codeLensResolveHandler(param: CodeLens): Thenable<CodeLens> | CodeLens {
     return this.languageService.resolveCodeLens(param);
+  }
+
+  definitionHandler(params: DefinitionParams): DefinitionLink[] {
+    const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
+    if (!textDocument) {
+      return;
+    }
+
+    return this.languageService.doDefinition(textDocument, params);
+  }
+
+  // Adapted from:
+  // https://github.com/microsoft/vscode/blob/94c9ea46838a9a619aeafb7e8afd1170c967bb55/extensions/json-language-features/server/src/jsonServer.ts#L172
+  private cancelLimitExceededWarnings(uri: string): void {
+    const warning = this.pendingLimitExceededWarnings[uri];
+    if (warning && warning.timeout) {
+      clearTimeout(warning.timeout);
+      delete this.pendingLimitExceededWarnings[uri];
+    }
+  }
+
+  private onResultLimitExceeded(uri: string, resultLimit: number, name: string) {
+    return () => {
+      let warning = this.pendingLimitExceededWarnings[uri];
+      if (warning) {
+        if (!warning.timeout) {
+          // already shown
+          return;
+        }
+        warning.features[name] = name;
+        warning.timeout.refresh();
+      } else {
+        warning = { features: { [name]: name } };
+        warning.timeout = setTimeout(() => {
+          this.connection.sendNotification(
+            ResultLimitReachedNotification.type,
+            `${path.basename(uri)}: For performance reasons, ${Object.keys(warning.features).join(
+              ' and '
+            )} have been limited to ${resultLimit} items.`
+          );
+          warning.timeout = undefined;
+        }, 2000);
+        this.pendingLimitExceededWarnings[uri] = warning;
+      }
+    };
   }
 }

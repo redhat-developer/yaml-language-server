@@ -13,31 +13,36 @@ import * as path from 'path';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { CodeLensParams } from 'vscode-languageserver-protocol';
 import { isBoolean } from '../utils/objects';
+import { Telemetry } from '../../languageserver/telemetry';
 
 export class YamlCodeLens {
-  constructor(private schemaService: YAMLSchemaService) {}
+  constructor(private schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {}
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async getCodeLens(document: TextDocument, params: CodeLensParams): Promise<CodeLens[]> {
-    const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
     const result = [];
-    for (const currentYAMLDoc of yamlDocument.documents) {
-      const schema = await this.schemaService.getSchemaForResource(document.uri, currentYAMLDoc);
-      if (schema?.schema) {
-        const schemaUrls = getSchemaUrl(schema?.schema);
-        if (schemaUrls.size === 0) {
-          continue;
-        }
-        for (const urlToSchema of schemaUrls) {
-          const lens = CodeLens.create(Range.create(0, 0, 0, 0));
-          lens.command = {
-            title: getCommandTitle(urlToSchema[0], urlToSchema[1]),
-            command: YamlCommands.JUMP_TO_SCHEMA,
-            arguments: [urlToSchema[0]],
-          };
-          result.push(lens);
+    try {
+      const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
+      for (const currentYAMLDoc of yamlDocument.documents) {
+        const schema = await this.schemaService.getSchemaForResource(document.uri, currentYAMLDoc);
+        if (schema?.schema) {
+          const schemaUrls = getSchemaUrl(schema?.schema);
+          if (schemaUrls.size === 0) {
+            continue;
+          }
+          for (const urlToSchema of schemaUrls) {
+            const lens = CodeLens.create(Range.create(0, 0, 0, 0));
+            lens.command = {
+              title: getCommandTitle(urlToSchema[0], urlToSchema[1]),
+              command: YamlCommands.JUMP_TO_SCHEMA,
+              arguments: [urlToSchema[0]],
+            };
+            result.push(lens);
+          }
         }
       }
+    } catch (err) {
+      this.telemetry.sendError('yaml.codeLens.error', { error: err, documentUri: document.uri });
     }
 
     return result;

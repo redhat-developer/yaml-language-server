@@ -6,6 +6,7 @@
 import { DocumentSymbol, SymbolKind, InsertTextFormat, Range } from 'vscode-languageserver-types';
 import { CompletionItem, CompletionItemKind, SymbolInformation, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { ErrorCode } from 'vscode-json-languageservice';
+import { jigxBranchTest } from './testHelper';
 
 export function createExpectedError(
   message: string,
@@ -30,6 +31,9 @@ export function createDiagnosticWithData(
   source = 'YAML',
   schemaUri: string | string[]
 ): Diagnostic {
+  if (jigxBranchTest) {
+    source = source.replace('yaml-schema: file:///', 'yaml-schema: ');
+  }
   const diagnostic: Diagnostic = createExpectedError(message, startLine, startCharacter, endLine, endCharacter, severity, source);
   diagnostic.data = { schemaUri: typeof schemaUri === 'string' ? [schemaUri] : schemaUri };
   return diagnostic;
@@ -128,6 +132,12 @@ export function createExpectedCompletion(
   insertTextFormat: InsertTextFormat = 2,
   extra = {}
 ): CompletionItem {
+  if (jigxBranchTest) {
+    // remove $1 from snippets, where is no other $2
+    if (insertText.includes('$1') && !insertText.includes('$2')) {
+      insertText = insertText.replace('$1', '');
+    }
+  }
   return {
     ...{
       insertText,

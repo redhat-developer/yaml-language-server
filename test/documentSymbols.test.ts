@@ -19,12 +19,28 @@ describe('Document Symbols Tests', () => {
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
 
+  const limitContent = `
+    a: [1, 2, 3]
+    b: [4, 5, 6]
+  `;
+
   before(() => {
     const languageSettingsSetup = new ServiceSetup();
     const { languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
     languageHandler = langHandler;
     yamlSettings = settings;
   });
+
+  afterEach(() => {
+    yamlSettings.maxItemsComputed = 5000;
+  });
+
+  function assertLimitWarning(): void {
+    const warnings = languageHandler.pendingLimitExceededWarnings;
+    assert.deepEqual(Object.keys(warnings), [TEST_URI]);
+    assert.deepEqual(warnings[TEST_URI].features, { 'document symbols': 'document symbols' });
+    assert(warnings[TEST_URI].timeout);
+  }
 
   describe('Document Symbols Tests (Non Hierarchical)', function () {
     function parseNonHierarchicalSetup(content: string): SymbolInformation[] | DocumentSymbol[] {
@@ -39,7 +55,7 @@ describe('Document Symbols Tests', () => {
     it('Document is empty', (done) => {
       const content = '';
       const symbols = parseNonHierarchicalSetup(content);
-      assert.equal(symbols, null);
+      assert.deepStrictEqual(symbols, []);
       done();
     });
 
@@ -121,6 +137,16 @@ describe('Document Symbols Tests', () => {
       assert.deepEqual(symbols[0], createExpectedSymbolInformation('analytics', 17, '', TEST_URI, 1, 0, 1, 15));
       assert.deepEqual(symbols[1], createExpectedSymbolInformation('json', 15, '', TEST_URI, 4, 0, 4, 10));
     });
+
+    it('Document symbols with a limit', () => {
+      yamlSettings.maxItemsComputed = 1;
+
+      const symbols = parseNonHierarchicalSetup(limitContent);
+      assert.equal(symbols.length, 1);
+      assert.deepEqual(symbols[0], createExpectedSymbolInformation('a', SymbolKind.Array, '', TEST_URI, 1, 4, 1, 16));
+
+      assertLimitWarning();
+    });
   });
 
   describe('Document Symbols Tests (Hierarchical)', function () {
@@ -137,7 +163,7 @@ describe('Document Symbols Tests', () => {
     it('Document is empty', (done) => {
       const content = '';
       const symbols = parseHierarchicalSetup(content);
-      assert.equal(symbols, null);
+      assert.deepStrictEqual(symbols, []);
       done();
     });
 
@@ -263,7 +289,7 @@ describe('Document Symbols Tests', () => {
 
       const height = createExpectedDocumentSymbol('height', SymbolKind.Number, 10, 18, 10, 28, 10, 18, 10, 24, [], '41');
       const style = createExpectedDocumentSymbol('style', SymbolKind.Module, 9, 16, 10, 28, 9, 16, 9, 21, [height]);
-      const root2 = createExpectedDocumentSymbol('root', SymbolKind.Module, 7, 17, 10, 28, 7, 17, 7, 21, [style]);
+      const root2 = createExpectedDocumentSymbol('root', SymbolKind.Module, 7, 16, 10, 28, 7, 16, 7, 21, [style]);
 
       assert.deepEqual(
         symbols[1],
@@ -274,6 +300,39 @@ describe('Document Symbols Tests', () => {
         symbols[2],
         createExpectedDocumentSymbol('conditions', SymbolKind.Module, 6, 12, 10, 28, 6, 12, 6, 22, [root2])
       );
+    });
+
+    it('Document symbols with a limit', () => {
+      yamlSettings.maxItemsComputed = 3;
+
+      const symbols = parseHierarchicalSetup(limitContent) as DocumentSymbol[];
+      assert.equal(symbols.length, 2);
+      assert.equal(symbols[0].children.length, 1);
+      assert.equal(symbols[1].children.length, 0);
+
+      const el = createExpectedDocumentSymbolNoDetail('0', SymbolKind.Number, 1, 8, 1, 9, 1, 8, 1, 9, []);
+      const root = createExpectedDocumentSymbol('a', SymbolKind.Array, 1, 4, 1, 16, 1, 4, 1, 5, [el]);
+
+      assert.deepEqual(symbols[0], root);
+
+      assertLimitWarning();
+    });
+
+    it('Document Symbols with numbers as keys', () => {
+      const content = 'items:\n  1: test\n  2: test';
+      const symbols = parseHierarchicalSetup(content);
+      assert.equal(symbols.length, 1);
+      const child1 = createExpectedDocumentSymbol('1', SymbolKind.String, 1, 2, 1, 9, 1, 2, 1, 3, undefined, 'test');
+      const child2 = createExpectedDocumentSymbol('2', SymbolKind.String, 2, 2, 2, 9, 2, 2, 2, 3, undefined, 'test');
+      const children = [child1, child2];
+      assert.deepEqual(symbols[0], createExpectedDocumentSymbol('items', SymbolKind.Module, 0, 0, 2, 9, 0, 0, 0, 5, children));
+    });
+
+    it('Document Symbols with mapping as keys', () => {
+      const content = '{foo: bar}: foo';
+      const symbols = parseHierarchicalSetup(content);
+      assert.equal(symbols.length, 1);
+      assert.deepEqual(symbols[0], createExpectedDocumentSymbol('{}', SymbolKind.String, 0, 0, 0, 15, 0, 0, 0, 10, [], 'foo'));
     });
   });
 });

@@ -11,6 +11,7 @@ import * as nls from 'vscode-nls';
 import { schemaRequestHandler, workspaceContext } from './languageservice/services/schemaRequestHandler';
 import { YAMLServerInit } from './yamlServerInit';
 import { SettingsState } from './yamlSettings';
+import { promises as fs } from 'fs';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
@@ -27,7 +28,22 @@ if (process.argv.indexOf('--stdio') === -1) {
 console.log = connection.console.log.bind(connection.console);
 console.error = connection.console.error.bind(connection.console);
 
+//vscode-nls calls console.error(null) in some cases, so we put that in info, to predict sending "null" in to telemetry
+console.error = (arg) => {
+  if (arg === null) {
+    connection.console.info(arg);
+  } else {
+    connection.console.error(arg);
+  }
+};
+
 const yamlSettings = new SettingsState();
+
+const fileSystem = {
+  readFile: (fsPath: string, encoding?: string) => {
+    return fs.readFile(fsPath, encoding).then((b) => b.toString());
+  },
+};
 
 /**
  * Handles schema content requests given the schema URI
@@ -39,7 +55,8 @@ const schemaRequestHandlerWrapper = (connection: Connection, uri: string): Promi
     uri,
     yamlSettings.workspaceFolders,
     yamlSettings.workspaceRoot,
-    yamlSettings.useVSCodeContentRequest
+    yamlSettings.useVSCodeContentRequest,
+    fileSystem
   );
 };
 

@@ -29,6 +29,7 @@ export class RequestHandlers {
      */
     this.connection.onRequest(HoverDetailRequest.type, (params: TextDocumentPositionParams) => {
       const document = this.yamlSettings.documents.get(params.textDocument.uri);
+      // return this.languageService.doHover(document, params.position);
       return this.languageService.doHoverDetail(document, params.position);
     });
   }

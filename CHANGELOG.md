@@ -1,3 +1,110 @@
+### 1.2.1
+- Fix: Can not load schema file when the URL is redirected. [#586](https://github.com/redhat-developer/vscode-yaml/issues/586)
+- docs: fix typos [#592](https://github.com/redhat-developer/yaml-language-server/pull/592)
+- Fix: Schema comment still not working properly in 1.1.0. [#629](https://github.com/redhat-developer/vscode-yaml/issues/629)
+- Fix: document symbols, when key is not string [#594](https://github.com/redhat-developer/yaml-language-server/pull/594)
+
+Thanks to Alexander Steppke and dundargoc
+
+### 1.2.0
+
+- Fix: Pattern (Regex) not parsed correctly, e.g. `^[\w\-_]+$` [#636](https://github.com/redhat-developer/vscode-yaml/issues/636)
+- Fix: Autocomplete bug with nested objects in arrays in the 1.0.0 version [#621](https://github.com/redhat-developer/vscode-yaml/issues/621)
+- Add: Implementation `Go to Definition` for alias nodes [#541](https://github.com/redhat-developer/yaml-language-server/issues/541)
+- Provide completion for reachable schema [#560](https://github.com/redhat-developer/yaml-language-server/issues/560)
+- Fix: very slow completion with aws cloudformation schema [#626](https://github.com/redhat-developer/vscode-yaml/issues/626)
+
+Thanks to Aurélien Pupier
+
+### 1.1.1
+
+- Fix: Autocomplete should not escape colon without white-space following [#571](https://github.com/redhat-developer/yaml-language-server/issues/571)
+- Fix: Unescape regexp string to be compatible with 'u' flag [#576](https://github.com/redhat-developer/yaml-language-server/pull/576)
+
+### 1.1.0
+
+- Add Web VSCode support [#594](https://github.com/redhat-developer/vscode-yaml/pull/594)
+- schemas: Unicode support for pattern and patternProperties keywords [#554](https://github.com/redhat-developer/yaml-language-server/issues/554)
+- Fix: IntelliSense broken with v1.0.0 [#616](https://github.com/redhat-developer/vscode-yaml/issues/616)
+- Fix: Cannot read property '0' of undefined Code [#617](https://github.com/redhat-developer/vscode-yaml/issues/617)
+- Fix: Completion of second level for Camel K files are no more working [#619](https://github.com/redhat-developer/vscode-yaml/issues/619)
+- Provide completion for inlined schema syntax [#559](https://github.com/redhat-developer/yaml-language-server/issues/559)
+- Fix: Schema comment ignored if it isn't the first line in the file. [#618](https://github.com/redhat-developer/vscode-yaml/issues/618)
+
+Thanks to Johnny Graettinger, Martin Aeschlimann and Aurélien Pupier
+
+### 1.0.0
+- Use [eemeli/yaml](https://github.com/eemeli/yaml) as YAML parser [#421](https://github.com/redhat-developer/yaml-language-server/issues/421)
+- Fix: Completion provider: t.replace is not a function [#547](https://github.com/redhat-developer/yaml-language-server/issues/547)
+
+### 0.23.0
+- Replace js-yaml with yaml [#526](https://github.com/redhat-developer/yaml-language-server/pull/526)
+- Update monaco-yaml link in docs [#527](https://github.com/redhat-developer/yaml-language-server/pull/527)
+- Update vscode-nls and vscode-uri dependencies [#531](https://github.com/redhat-developer/yaml-language-server/pull/531)
+- Fix: error handling in hover and codelens [#534](https://github.com/redhat-developer/yaml-language-server/pull/534)
+- Fix: 'label.replace is not a function' error [#544](https://github.com/redhat-developer/yaml-language-server/pull/544)
+- Fix: Fragment resolution from #512 doesn't always work [#522](https://github.com/redhat-developer/yaml-language-server/issues/522)
+
+Thanks to Remco Haszing
+
+### 0.22.0
+
+- Fix: fetching nested http settings [#511](https://github.com/redhat-developer/yaml-language-server/pull/511)
+- Fix: Cannot create property 'url' on string 'en' [#556](https://github.com/redhat-developer/vscode-yaml/issues/556)
+- Fix: Error on 'textDocument/codeLens' request [#497](https://github.com/redhat-developer/yaml-language-server/issues/497)
+- Do not send `null` in to telemetry [#513](https://github.com/redhat-developer/yaml-language-server/pull/513)
+- Fix: UnhandledPromiseRejectionWarning on jsonParser [#494](https://github.com/redhat-developer/yaml-language-server/issues/494)
+- Fix: Schema URL fragments broken since 0.21.0 [#557](https://github.com/redhat-developer/vscode-yaml/issues/557)
+- Fix: Unhandled Promise rejections with dynamicRegistration disabled [#498](https://github.com/redhat-developer/yaml-language-server/issues/498)
+
+
+Thanks to Rob Anderson
+
+### 0.21.1
+
+- Fix: Unable to load remote schema with http protocol [#550](https://github.com/redhat-developer/vscode-yaml/issues/550)
+- Log more errors in to telemetry [#508](https://github.com/redhat-developer/yaml-language-server/pull/508)
+
+### 0.21.0
+
+- Upgrade jsonc-parser to latest version [#492](https://github.com/redhat-developer/yaml-language-server/pull/492)
+- Fix: Request textDocument/completion failed with message: label.replace is not a function [#536](https://github.com/redhat-developer/vscode-yaml/issues/536)
+- Fix: `TypeError: customTags.filter is not a function` [#495](https://github.com/redhat-developer/yaml-language-server/pull/495)
+- Support relative path in inline schema comment [#499](https://github.com/redhat-developer/yaml-language-server/pull/499)
+- Improve hover to include title, description and source schema link [#480](https://github.com/redhat-developer/yaml-language-server/issues/480)
+
+### 0.20.0
+
+- Fix: Autocomplete not working when certain characters are in object property keys [#496](https://github.com/redhat-developer/vscode-yaml/issues/496) [#474](https://github.com/redhat-developer/yaml-language-server/issues/474)
+- `workspace/configuration` request used to fetch preferences [#327](https://github.com/redhat-developer/yaml-language-server/issues/327)
+- Now `main` branch used as default [#472](https://github.com/redhat-developer/yaml-language-server/issues/472)
+- Fix: Schema link does not work when schema is a local file [#513](https://github.com/redhat-developer/vscode-yaml/issues/513)
+
+### 0.19.2
+
+- Remove fileMatch workaround, now glob patterns should work as expected [#467](https://github.com/redhat-developer/yaml-language-server/pull/467)
+
+### 0.19.1
+
+- Fix: "Billion Laughs" attack [#463](https://github.com/redhat-developer/yaml-language-server/issues/463)
+- Added implementation of telemetry event [#439](https://github.com/redhat-developer/yaml-language-server/issues/439)
+- Added option to specify custom schema store [#459](https://github.com/redhat-developer/yaml-language-server/pull/459)
+
+Thanks to Ryan (hackercat)
+
+### 0.19.0
+
+- Fix: Inconsistent way to generate whole property snippet and value snippet, when it contains `\"` [#353](https://github.com/redhat-developer/yaml-language-server/issues/353)
+- Upgrade to `4.1.0` version of `vscode-json-languageservice` which enables used of the extended glob patterns. [#448](https://github.com/redhat-developer/yaml-language-server/pull/448)
+- Fix: Anchor on property which uses alias fails validation [#273](https://github.com/redhat-developer/yaml-language-server/issues/273)
+- Update `js-yaml` to `4.1.0` [#454](https://github.com/redhat-developer/yaml-language-server/pull/454)
+- Add monaco-yaml in the readme under clients [#455](https://github.com/redhat-developer/yaml-language-server/pull/455)
+- Add support for `maxItemsComputed` for document symbols and folding ranges [#444](https://github.com/redhat-developer/yaml-language-server/pull/444)
+- Add config parameter to disable additional properties [#452](https://github.com/redhat-developer/yaml-language-server/pull/452)
+- add safety measure for preventing use of npm instead of yarn (engines version trick) [#458](https://github.com/redhat-developer/yaml-language-server/pull/458)
+
+Thanks to Andrew Metcalf, Remco Haszing, Petr Spacek and Sorin Sbarnea
+
 ### 0.18.0
 
 - Fix: additionalItems does not support $ref [#408](https://github.com/redhat-developer/yaml-language-server/issues/408)

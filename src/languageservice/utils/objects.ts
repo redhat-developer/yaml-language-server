@@ -97,3 +97,11 @@ export function pushIfNotExist<T>(
     }
   }
 }
+
+/* Check that provided value is Iterable
+ * @param val the value to check
+ * @returns true if val is iterable, false otherwise
+ */
+export function isIterable(val: unknown): boolean {
+  return Symbol.iterator in Object(val);
+}

@@ -69,7 +69,7 @@ export class Schema_TypeBase implements Instantiable {
     // const propNameQuoted = this.propName ? `\`${this.propName}\`` : '';
     const propNameQuoted = this.propName ? toTsBlock(this.propName + ':' + extraStr, octothorpes.length) : '';
     // const mdTitle = `${octothorpes} ${propNameQuoted}${extraStr}`;
-    const mdTitle = `${octothorpes} ${propNameQuoted}`;
+    const mdTitle = propNameQuoted ? `${octothorpes} ${propNameQuoted}` : '';
     // if we need custom section link...
     // const htmlTitle = `\<h${octothorpes.length} id="${this.propName}" \>${this.propName ? `\<code\>${this.propName}\</code\>` : ''}${extraStr}\</h${octothorpes.length}\>`;
     return mdTitle;

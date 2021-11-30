@@ -5,6 +5,8 @@ import { URI } from 'vscode-uri';
 import { JSONSchema } from './languageservice/jsonSchema';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { YamlHoverDetailPropTableStyle } from './languageservice/services/yamlHoverDetail';
+import { JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
+import { YamlVersion } from './languageservice/parser/yamlParser07';
 
 // Client settings interface to grab settings relevant for the language server
 export interface Settings {
@@ -16,18 +18,23 @@ export interface Settings {
     completion: boolean;
     customTags: Array<string>;
     schemaStore: {
+      url: string;
       enable: boolean;
     };
     propTableStyle: YamlHoverDetailPropTableStyle;
     extraLanguage: string[];
     disableAdditionalProperties: boolean;
+    maxItemsComputed: number;
+    yamlVersion: YamlVersion;
   };
   http: {
     proxy: string;
     proxyStrictSSL: boolean;
   };
-  editor: {
-    tabSize: number;
+  yamlEditor: {
+    'editor.tabSize': number;
+    'editor.insertSpaces': boolean;
+    'editor.formatOnType': boolean;
   };
 }
 
@@ -57,10 +64,12 @@ export class SettingsState {
   schemaStoreSettings = [];
   customTags = [];
   schemaStoreEnabled = true;
+  schemaStoreUrl = JSON_SCHEMASTORE_URL;
   indentation: string | undefined = undefined;
   propTableStyle: YamlHoverDetailPropTableStyle = 'table';
-
   disableAdditionalProperties = false;
+  maxItemsComputed = 5000;
+
   // File validation helpers
   pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
   validationDelayMs = 200;
@@ -76,7 +85,10 @@ export class SettingsState {
   clientDynamicRegisterSupport = false;
   hierarchicalDocumentSymbolSupport = false;
   hasWorkspaceFolderCapability = false;
+  hasConfigurationCapability = false;
   useVSCodeContentRequest = false;
+  yamlVersion: YamlVersion = '1.2';
+  hasWsChangeWatchedFileDynamicRegistration = false;
 }
 
 export class TextDocumentTestManager extends TextDocuments<TextDocument> {
