@@ -9,7 +9,7 @@ import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList, InsertTextFormat, MarkupContent, MarkupKind } from 'vscode-languageserver';
+import { CompletionList, InsertTextFormat, MarkupContent, MarkupKind, Position } from 'vscode-languageserver';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageService } from '../src';
@@ -22,7 +22,10 @@ describe('Auto Completion Tests', () => {
   let yamlSettings: SettingsState;
 
   before(() => {
-    languageSettingsSetup = new ServiceSetup().withCompletion();
+    languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
+      uri: 'http://google.com',
+      fileMatch: ['bad-schema.yaml'],
+    });
     const { languageService: langService, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(
       languageSettingsSetup.languageSettings
     );
@@ -749,7 +752,7 @@ describe('Auto Completion Tests', () => {
         );
       });
 
-      it('Autocompletion should escape colon', async () => {
+      it('Autocompletion should escape colon when indicating map', async () => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -769,6 +772,56 @@ describe('Auto Completion Tests', () => {
         expect(completion.items.length).to.be.equal(1);
         expect(completion.items[0]).to.deep.equal(
           createExpectedCompletion('test: colon', '"test: colon":\n  $1', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
+      it('Autocompletion should not escape colon when no white-space following', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            'test:colon': {
+              type: 'object',
+              properties: {
+                none: {
+                  type: 'boolean',
+                  enum: [true],
+                },
+              },
+            },
+          },
+        });
+        const content = '';
+        const completion = await parseSetup(content, 0);
+        expect(completion.items.length).to.be.equal(1);
+        expect(completion.items[0]).to.deep.equal(
+          createExpectedCompletion('test:colon', 'test:colon:\n  $1', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
+      it('Autocompletion should not escape colon when no key part present', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            ':colon': {
+              type: 'object',
+              properties: {
+                none: {
+                  type: 'boolean',
+                  enum: [true],
+                },
+              },
+            },
+          },
+        });
+        const content = '';
+        const completion = await parseSetup(content, 0);
+        expect(completion.items.length).to.be.equal(1);
+        expect(completion.items[0]).to.deep.equal(
+          createExpectedCompletion(':colon', ':colon:\n  $1', 0, 0, 0, 0, 10, 2, {
             documentation: '',
           })
         );
@@ -873,13 +926,48 @@ describe('Auto Completion Tests', () => {
           },
         });
         const content = 'authors:\n  - name: test\n  ';
-        const completion = parseSetup(content, 24);
+        const completion = parseSetup(content, 26);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- $1', 2, 0, 2, 0, 9, 2, {
+              createExpectedCompletion('- (array item)', '- $1', 2, 2, 2, 2, 9, 2, {
+                documentation: 'Create an item of an array',
+              })
+            );
+          })
+          .then(done, done);
+      });
+
+      it('Array autocomplete on empty node with array from schema', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            authors: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  name: {
+                    type: 'string',
+                  },
+                  email: {
+                    type: 'string',
+                  },
+                },
+              },
+            },
+          },
+        });
+        const content = 'authors:\n';
+        const completion = parseSetup(content, 9);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.deepEqual(
+              result.items[0],
+              createExpectedCompletion('- (array item)', '- $1', 1, 0, 1, 0, 9, 2, {
                 documentation: 'Create an item of an array',
               })
             );
@@ -1062,7 +1150,6 @@ describe('Auto Completion Tests', () => {
             const expectedCompletion = createExpectedCompletion('include', 'include: ${1:test}', 3, 0, 3, 0, 10, 2, {
               documentation: '',
             });
-            delete expectedCompletion.textEdit;
             assert.deepEqual(result.items[0], expectedCompletion);
           })
           .then(done, done);
@@ -1094,14 +1181,14 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'archive:\n  exclude:\n    - nam\n  ';
+        const content = 'archive:\n  exclude:\n    - nam\n     ';
         const completion = parseSetup(content, content.length - 1);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 1, 3, 1, 9, 2, {
+              createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 4, 3, 4, 9, 2, {
                 documentation: 'Create an item of an array',
               })
             );
@@ -1553,19 +1640,110 @@ describe('Auto Completion Tests', () => {
         .then(done, done);
     });
 
-    it('Provide completion from schema declared in file with several documents', (done) => {
+    it('Provide completion from schema declared in file with several documents', async () => {
       const documentContent1 = `# yaml-language-server: $schema=${uri} anothermodeline=value\n- `;
       const content = `${documentContent1}\n---\n- `;
-      const completionDoc1 = parseSetup(content, documentContent1.length);
-      completionDoc1.then(function (result) {
-        assert.equal(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
-        const completionDoc2 = parseSetup(content, content.length);
-        completionDoc2
-          .then(function (resultDoc2) {
-            assert.equal(resultDoc2.items.length, 0, `Expecting no items in completion but found ${resultDoc2.items.length}`);
-          })
-          .then(done, done);
-      }, done);
+      const result = await parseSetup(content, documentContent1.length);
+      assert.equal(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
+
+      const resultDoc2 = await parseSetup(content, content.length);
+      assert.equal(resultDoc2.items.length, 0, `Expecting no items in completion but found ${resultDoc2.items.length}`);
+    });
+
+    it('should handle absolute path', async () => {
+      const documentContent = `# yaml-language-server: $schema=${path.join(
+        __dirname,
+        './fixtures/testArrayMaxProperties.json'
+      )} anothermodeline=value\n- `;
+      const content = `${documentContent}\n---\n- `;
+      const result = await parseSetup(content, documentContent.length);
+      assert.strictEqual(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
+    });
+
+    it('should handle relative path', async () => {
+      const documentContent = `# yaml-language-server: $schema=./fixtures/testArrayMaxProperties.json anothermodeline=value\n- `;
+      const content = `${documentContent}\n---\n- `;
+
+      const testTextDocument = setupSchemaIDTextDocument(content, path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(documentContent.length),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
+    });
+
+    const inlineSchemaLabel = 'Inline schema';
+
+    it('should provide modeline completion on first character with no schema associated and no modeline yet', async () => {
+      const testTextDocument = setupSchemaIDTextDocument('', path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(0),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.strictEqual(result.items[0].label, inlineSchemaLabel);
+    });
+
+    it('should not provide modeline completion on first character when schema is associated', async () => {
+      const specificSchemaId = path.join(__dirname, 'test.yaml');
+      const testTextDocument = setupSchemaIDTextDocument('', specificSchemaId);
+      languageService.addSchema(specificSchemaId, {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+          },
+        },
+      });
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(0),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.notStrictEqual(result.items[0].label, inlineSchemaLabel);
+    });
+
+    it('should not provide modeline completion on first character when modeline already present', async () => {
+      const testTextDocument = setupSchemaIDTextDocument('# yaml-language-server:', path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(0),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 0, `Expecting 0 item in completion but found ${result.items.length}`);
+    });
+
+    it('should provide schema id completion in modeline', async () => {
+      const modeline = '# yaml-language-server: $schema=';
+      const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(modeline.length),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.strictEqual(result.items[0].label, 'http://google.com');
+    });
+
+    it('should provide schema id completion in modeline for any line', async () => {
+      const modeline = 'foo:\n  bar\n# yaml-language-server: $schema=';
+      const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(modeline.length),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.strictEqual(result.items[0].label, 'http://google.com');
     });
   });
 
@@ -1815,6 +1993,26 @@ describe('Auto Completion Tests', () => {
       expect(trueItem.textEdit.newText).equal('"true"');
     });
 
+    it('should provide label as string for examples completion item', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          fooBar: {
+            type: 'array',
+            items: {
+              type: 'string',
+              examples: ['test'],
+            },
+          },
+        },
+      });
+
+      const content = 'fooBar: \n';
+      const completion = await parseSetup(content, 8);
+
+      expect(completion.items).length(1);
+    });
+
     it('should provide completion for flow map', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
@@ -2020,7 +2218,42 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('and', 'and', 2, 4, 2, 4, 12, InsertTextFormat.Snippet, { documentation: undefined })
       );
     });
+
+    it('completion should handle bad schema', async () => {
+      const doc = setupSchemaIDTextDocument('foo:\n bar', 'bad-schema.yaml');
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(doc);
+      const result = await languageHandler.completionHandler({
+        position: Position.create(0, 1),
+        textDocument: doc,
+      });
+
+      expect(result.items).to.be.empty;
+    });
+
+    it('should convert to string non string completion label', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          version: {
+            default: 2.1,
+            enum: [2, 2.1],
+          },
+        },
+      });
+
+      const content = 'version: ';
+      const completion = await parseSetup(content, 9);
+      expect(completion.items).lengthOf(2);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('2', '2', 0, 9, 0, 9, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
+      expect(completion.items[1]).eql(
+        createExpectedCompletion('2.1', '2.1', 0, 9, 0, 9, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
+    });
   });
+
   describe('Array completion', () => {
     it('Simple array object completion with "-" without any item', async () => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));

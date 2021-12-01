@@ -4,6 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
+import { CharCode } from './charCode';
+
 export function startsWith(haystack: string, needle: string): boolean {
   if (haystack.length < needle.length) {
     return false;
@@ -47,4 +49,29 @@ function convertRegexString2RegExp(pattern: string, flag: string): RegExp {
 
 export function convertSimple2RegExpPattern(pattern: string): string {
   return pattern.replace(/[-\\{}+?|^$.,[\]()#\s]/g, '\\$&').replace(/[*]/g, '.*');
+}
+
+export function getIndentation(lineContent: string, position: number): number {
+  if (lineContent.length < position) {
+    return 0;
+  }
+
+  for (let i = 0; i < position; i++) {
+    const char = lineContent.charCodeAt(i);
+    if (char !== CharCode.Space && char !== CharCode.Tab) {
+      return i;
+    }
+  }
+
+  // assuming that current position is indentation
+  return position;
+}
+
+export function safeCreateUnicodeRegExp(pattern: string): RegExp {
+  // fall back to regular regexp if we cannot create Unicode one
+  try {
+    return new RegExp(pattern, 'u');
+  } catch (ignore) {
+    return new RegExp(pattern);
+  }
 }

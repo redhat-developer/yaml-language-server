@@ -5,10 +5,14 @@
 
 import { schemaRequestHandler } from '../src/languageservice/services/schemaRequestHandler';
 import * as sinon from 'sinon';
-import * as fs from 'fs';
 import { Connection } from 'vscode-languageserver';
-import * as assert from 'assert';
 import { URI } from 'vscode-uri';
+import * as chai from 'chai';
+import * as sinonChai from 'sinon-chai';
+
+const expect = chai.expect;
+chai.use(sinonChai);
+import { testFileSystem } from './utils/testHelper';
 
 describe('Schema Request Handler Tests', () => {
   describe('schemaRequestHandler', () => {
@@ -16,7 +20,8 @@ describe('Schema Request Handler Tests', () => {
     let readFileStub: sinon.SinonStub;
 
     beforeEach(() => {
-      readFileStub = sandbox.stub(fs, 'readFile');
+      readFileStub = sandbox.stub(testFileSystem, 'readFile');
+      readFileStub.returns(Promise.resolve('{some: "json"}'));
     });
 
     afterEach(() => {
@@ -24,19 +29,39 @@ describe('Schema Request Handler Tests', () => {
     });
     it('Should care Win URI', async () => {
       const connection = <Connection>{};
-      const resultPromise = schemaRequestHandler(connection, 'c:\\some\\window\\path\\scheme.json', [], URI.parse(''), false);
-      assert.ok(readFileStub.calledOnceWith('c:\\some\\window\\path\\scheme.json'));
-      readFileStub.callArgWith(2, undefined, '{some: "json"}');
+      const resultPromise = schemaRequestHandler(
+        connection,
+        'c:\\some\\window\\path\\scheme.json',
+        [],
+        URI.parse(''),
+        false,
+        testFileSystem
+      );
+      expect(readFileStub).calledOnceWith('c:\\some\\window\\path\\scheme.json');
       const result = await resultPromise;
-      assert.equal(result, '{some: "json"}');
+      expect(result).to.be.equal('{some: "json"}');
     });
 
     it('UNIX URI should works', async () => {
       const connection = <Connection>{};
-      const resultPromise = schemaRequestHandler(connection, '/some/unix/path/', [], URI.parse(''), false);
-      readFileStub.callArgWith(2, undefined, '{some: "json"}');
+      const resultPromise = schemaRequestHandler(connection, '/some/unix/path/', [], URI.parse(''), false, testFileSystem);
       const result = await resultPromise;
-      assert.equal(result, '{some: "json"}');
+      expect(result).to.be.equal('{some: "json"}');
+    });
+
+    it('should handle not valid Windows path', async () => {
+      const connection = <Connection>{};
+      const resultPromise = schemaRequestHandler(
+        connection,
+        'A:/some/window/path/scheme.json',
+        [],
+        URI.parse(''),
+        false,
+        testFileSystem
+      );
+      expect(readFileStub).calledOnceWith(URI.file('a:/some/window/path/scheme.json').fsPath);
+      const result = await resultPromise;
+      expect(result).to.be.equal('{some: "json"}');
     });
   });
 });

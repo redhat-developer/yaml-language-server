@@ -295,7 +295,7 @@ describe('Default Snippet Tests', () => {
       assert.equal(textEdit.range.start.line, 0);
       assert.equal(textEdit.range.start.character, 9);
       assert.equal(textEdit.range.end.line, 0);
-      assert.equal(textEdit.range.end.character, 9);
+      assert.equal(textEdit.range.end.character, 11);
     });
 
     it('should preserve space after ":"', async () => {

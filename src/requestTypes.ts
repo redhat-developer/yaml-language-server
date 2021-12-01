@@ -6,6 +6,32 @@ import { SchemaConfiguration } from './languageservice/yamlLanguageService';
 
 export type ISchemaAssociations = Record<string, string[]>;
 
+export interface JSONSchemaDescription {
+  /**
+   * Schema URI
+   */
+  uri: string;
+  /**
+   * Schema name, from schema store
+   */
+  name?: string;
+  /**
+   * Schema description, from schema store
+   */
+  description?: string;
+}
+
+export interface JSONSchemaDescriptionExt extends JSONSchemaDescription {
+  /**
+   * Is schema used for current document
+   */
+  usedForCurrentFile: boolean;
+  /**
+   * Is schema from schema store
+   */
+  fromStore: boolean;
+}
+
 export namespace SchemaAssociationNotification {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export const type: NotificationType<ISchemaAssociations | SchemaConfiguration[]> = new NotificationType(
@@ -26,11 +52,11 @@ export namespace ResultLimitReachedNotification {
 }
 
 export namespace VSCodeContentRequest {
-  export const type: RequestType<{}, {}, {}> = new RequestType('vscode/content');
+  export const type: RequestType<string, string, {}> = new RequestType('vscode/content');
 }
 
 export namespace CustomSchemaContentRequest {
-  export const type: RequestType<{}, {}, {}> = new RequestType('custom/schema/content');
+  export const type: RequestType<string, string, {}> = new RequestType('custom/schema/content');
 }
 
 export namespace CustomSchemaRequest {

@@ -11,11 +11,12 @@ import { JSONDocumentSymbols } from 'vscode-json-languageservice/lib/umd/service
 import { DocumentSymbolsContext } from 'vscode-json-languageservice/lib/umd/jsonLanguageTypes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
+import { Telemetry } from '../../languageserver/telemetry';
 
 export class YAMLDocumentSymbols {
   private jsonDocumentSymbols;
 
-  constructor(schemaService: YAMLSchemaService) {
+  constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
     this.jsonDocumentSymbols = new JSONDocumentSymbols(schemaService);
     const origKeyLabel = this.jsonDocumentSymbols.getKeyLabel;
 
@@ -34,18 +35,21 @@ export class YAMLDocumentSymbols {
     document: TextDocument,
     context: DocumentSymbolsContext = { resultLimit: Number.MAX_VALUE }
   ): SymbolInformation[] {
-    const doc = yamlDocumentsCache.getYamlDocument(document);
-    if (!doc || doc['documents'].length === 0) {
-      return null;
-    }
-
     let results = [];
-    for (const yamlDoc of doc['documents']) {
-      if (yamlDoc.root) {
-        results = results.concat(this.jsonDocumentSymbols.findDocumentSymbols(document, yamlDoc, context));
+    try {
+      const doc = yamlDocumentsCache.getYamlDocument(document);
+      if (!doc || doc['documents'].length === 0) {
+        return null;
       }
-    }
 
+      for (const yamlDoc of doc['documents']) {
+        if (yamlDoc.root) {
+          results = results.concat(this.jsonDocumentSymbols.findDocumentSymbols(document, yamlDoc, context));
+        }
+      }
+    } catch (err) {
+      this.telemetry.sendError('yaml.documentSymbols.error', { error: err, documentUri: document.uri });
+    }
     return results;
   }
 
@@ -53,16 +57,20 @@ export class YAMLDocumentSymbols {
     document: TextDocument,
     context: DocumentSymbolsContext = { resultLimit: Number.MAX_VALUE }
   ): DocumentSymbol[] {
-    const doc = yamlDocumentsCache.getYamlDocument(document);
-    if (!doc || doc['documents'].length === 0) {
-      return null;
-    }
-
     let results = [];
-    for (const yamlDoc of doc['documents']) {
-      if (yamlDoc.root) {
-        results = results.concat(this.jsonDocumentSymbols.findDocumentSymbols2(document, yamlDoc, context));
+    try {
+      const doc = yamlDocumentsCache.getYamlDocument(document);
+      if (!doc || doc['documents'].length === 0) {
+        return null;
       }
+
+      for (const yamlDoc of doc['documents']) {
+        if (yamlDoc.root) {
+          results = results.concat(this.jsonDocumentSymbols.findDocumentSymbols2(document, yamlDoc, context));
+        }
+      }
+    } catch (err) {
+      this.telemetry.sendError('yaml.hierarchicalDocumentSymbols.error', { error: err, documentUri: document.uri });
     }
 
     return results;

@@ -20,10 +20,15 @@ export class SettingsHandler {
     private readonly telemetry: Telemetry
   ) {}
 
-  public registerHandlers(): void {
-    if (this.yamlSettings.hasConfigurationCapability) {
-      // Register for all configuration changes.
-      this.connection.client.register(DidChangeConfigurationNotification.type, undefined);
+  async registerHandlers(): Promise<void> {
+    if (this.yamlSettings.hasConfigurationCapability && this.yamlSettings.clientDynamicRegisterSupport) {
+      try {
+        // Register for all configuration changes.
+        await this.connection.client.register(DidChangeConfigurationNotification.type, undefined);
+      } catch (err) {
+        console.warn(err);
+        this.telemetry.sendError('yaml.settings.error', { error: err });
+      }
     }
     this.connection.onDidChangeConfiguration(() => this.pullConfiguration());
   }
@@ -34,17 +39,16 @@ export class SettingsHandler {
   async pullConfiguration(): Promise<void> {
     const config = await this.connection.workspace.getConfiguration([
       { section: 'yaml' },
-      { section: 'http.proxy' },
-      { section: 'http.proxyStrictSSL' },
+      { section: 'http' },
       { section: '[yaml]' },
     ]);
     const settings: Settings = {
       yaml: config[0],
       http: {
-        proxy: config[1],
-        proxyStrictSSL: config[2],
+        proxy: config[1]?.proxy ?? '',
+        proxyStrictSSL: config[1]?.proxyStrictSSL ?? false,
       },
-      yamlEditor: config[3],
+      yamlEditor: config[2],
     };
     this.setConfiguration(settings);
   }
@@ -76,6 +80,8 @@ export class SettingsHandler {
           this.yamlSettings.schemaStoreUrl = settings.yaml.schemaStore.url;
         }
       }
+
+      this.yamlSettings.yamlVersion = settings.yaml.yamlVersion ?? '1.2';
 
       if (settings.yaml.format) {
         this.yamlSettings.yamlFormatterSettings = {
@@ -189,6 +195,8 @@ export class SettingsHandler {
                 uri: schema.url,
                 fileMatch: [currFileMatch],
                 priority: SchemaPriority.SchemaStore,
+                name: schema.name,
+                description: schema.description,
               });
             }
           }
@@ -213,6 +221,7 @@ export class SettingsHandler {
       format: this.yamlSettings.yamlFormatterSettings.enable,
       indentation: this.yamlSettings.indentation,
       disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
+      yamlVersion: this.yamlSettings.yamlVersion,
     };
 
     if (this.yamlSettings.schemaAssociations) {
