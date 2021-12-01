@@ -208,9 +208,6 @@ export class YamlCompletion {
             }
           }
           if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
-            if (completionItem.kind === CompletionItemKind.Value) {
-              completionItem.insertText = escapeSpecialChars(completionItem.insertText);
-            }
             completionItem.textEdit = TextEdit.replace(overwriteRange, completionItem.insertText);
           }
           completionItem.label = label;
@@ -798,8 +795,7 @@ export class YamlCompletion {
 
       if (propertySchema.const && options.includeConstValue) {
         if (!value) {
-          value = escapeSpecialChars(propertySchema.const);
-          value = this.getInsertTextForGuessedValue(value, '', type);
+          value = this.getInsertTextForGuessedValue(propertySchema.const, '', type);
           value = removeTab1Symbol(value); // prevent const being selected after snippet insert
           value = ' ' + value;
         }
@@ -1167,7 +1163,7 @@ export class YamlCompletion {
       collector.add({
         kind: this.getSuggestionKind(schema.type),
         label: this.getLabelForValue(schema.const),
-        insertText: this.getInsertTextForValue(schema.const, separatorAfter, undefined),
+        insertText: this.getInsertTextForValue(schema.const, separatorAfter, schema.type),
         insertTextFormat: InsertTextFormat.Snippet,
         documentation: this.fromMarkup(schema.markdownDescription) || schema.description,
       });
@@ -1446,19 +1442,6 @@ function convertToStringValue(value: string): string {
   }
 
   return value;
-}
-
-/**
- * if value stars with special chars (&*@), text will be put into apostrophes
- */
-function escapeSpecialChars(text: string): string {
-  if (text) {
-    const addQuota = text[0] !== `'` && text.match(/^[&*@]/);
-    if (addQuota) {
-      return `'${text}'`;
-    }
-  }
-  return text;
 }
 
 /**

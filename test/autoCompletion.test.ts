@@ -1572,7 +1572,7 @@ describe('Auto Completion Tests', () => {
 
       expect(completion.items.length).equal(1);
       expect(completion.items[0]).to.deep.equal(
-        createExpectedCompletion('@test', "'@test'", 0, 6, 0, 6, 12, 2, {
+        createExpectedCompletion('@test', '"@test"', 0, 6, 0, 6, 12, 2, {
           documentation: undefined,
         })
       );
