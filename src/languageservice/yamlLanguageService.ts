@@ -89,6 +89,12 @@ export interface LanguageSettings {
    * So if its true, no extra properties are allowed inside yaml.
    */
   disableAdditionalProperties?: boolean;
+
+  /**
+   * Disable adding not required properties with default values into completion text.
+   */
+  disableDefaultProperties?: boolean;
+
   /**
    * Default yaml lang version
    */
