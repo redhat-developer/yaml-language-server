@@ -799,7 +799,9 @@ export class YamlCompletion {
       if (propertySchema.const && options.includeConstValue) {
         if (!value) {
           value = escapeSpecialChars(propertySchema.const);
-          value = ' ' + this.getInsertTextForGuessedValue(value, '', type);
+          value = this.getInsertTextForGuessedValue(value, '', type);
+          value = removeTab1Symbol(value); // prevent const being selected after snippet insert
+          value = ' ' + value;
         }
         nValueProposals++;
       }
@@ -1457,4 +1459,12 @@ function escapeSpecialChars(text: string): string {
     }
   }
   return text;
+}
+
+/**
+ * simplify `{$1:value}` to `value`
+ */
+function removeTab1Symbol(value: string): string {
+  const result = value.replace(/\$\{1:(.*)\}/, '$1');
+  return result;
 }

@@ -2421,7 +2421,7 @@ describe('Auto Completion Tests', () => {
       expect(result.items.length).equal(4);
       expect(result.items[0]).to.deep.equal(createExpectedCompletion('type', 'type', 0, 0, 0, 0, 10, 2, { documentation: '' }));
       expect(result.items[1]).to.deep.equal(
-        createExpectedCompletion('obj1', 'type: ${1:type obj1}\noptions:\n  label: $2', 0, 0, 0, 0, 7, 2, {
+        createExpectedCompletion('obj1', 'type: type obj1\noptions:\n  label: $1', 0, 0, 0, 0, 7, 2, {
           documentation: {
             kind: 'markdown',
             value: '```yaml\ntype: type obj1\noptions:\n  label: \n```',
@@ -2436,7 +2436,7 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('options', 'options:\n  label: $1', 0, 0, 0, 0, 10, 2, { documentation: '' })
       );
       expect(result.items[3]).to.deep.equal(
-        createExpectedCompletion('obj2', 'type: ${1:type obj2}\noptions:\n  description: $2', 0, 0, 0, 0, 7, 2, {
+        createExpectedCompletion('obj2', 'type: type obj2\noptions:\n  description: $1', 0, 0, 0, 0, 7, 2, {
           documentation: {
             kind: 'markdown',
             value: '```yaml\ntype: type obj2\noptions:\n  description: \n```',
@@ -2449,7 +2449,7 @@ describe('Auto Completion Tests', () => {
       );
     });
 
-    it.only('Should suggest complete object skeleton - array', async () => {
+    it('Should suggest complete object skeleton - array', async () => {
       const schema = {
         definitions: {
           obj1,
@@ -2474,7 +2474,7 @@ describe('Auto Completion Tests', () => {
       expect(result.items.length).equal(4);
       expect(result.items[0]).to.deep.equal(createExpectedCompletion('type', 'type', 0, 2, 0, 2, 10, 2, { documentation: '' }));
       expect(result.items[1]).to.deep.equal(
-        createExpectedCompletion('obj1', 'type: ${1:type obj1}\n  options:\n    label: $2', 0, 2, 0, 2, 7, 2, {
+        createExpectedCompletion('obj1', 'type: type obj1\n  options:\n    label: $1', 0, 2, 0, 2, 7, 2, {
           documentation: {
             kind: 'markdown',
             value: '```yaml\ntype: type obj1\n  options:\n    label: \n```',
@@ -2489,7 +2489,7 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('options', 'options:\n    label: $1', 0, 2, 0, 2, 10, 2, { documentation: '' })
       );
       expect(result.items[3]).to.deep.equal(
-        createExpectedCompletion('obj2', 'type: ${1:type obj2}\n  options:\n    description: $2', 0, 2, 0, 2, 7, 2, {
+        createExpectedCompletion('obj2', 'type: type obj2\n  options:\n    description: $1', 0, 2, 0, 2, 7, 2, {
           documentation: {
             kind: 'markdown',
             value: '```yaml\ntype: type obj2\n  options:\n    description: \n```',
