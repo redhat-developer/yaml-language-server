@@ -54,7 +54,7 @@ import { YamlCompletion } from './services/yamlCompletion';
 import { yamlDocumentsCache } from './parser/yaml-documents';
 import { SettingsState } from '../yamlSettings';
 import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers';
-import { getDefinition } from './services/yamlDefinition';
+import { YamlDefinition } from './services/yamlDefinition';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -173,6 +173,7 @@ export function getLanguageService(
   const yamlCodeActions = new YamlCodeActions(clientCapabilities);
   const yamlCodeLens = new YamlCodeLens(schemaService, telemetry);
   const yamlLinks = new YamlLinks(telemetry);
+  const yamlDefinition = new YamlDefinition(telemetry);
 
   new JSONSchemaSelection(schemaService, yamlSettings, connection);
 
@@ -210,7 +211,7 @@ export function getLanguageService(
     doHover: hover.doHover.bind(hover),
     findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols),
     findDocumentSymbols2: yamlDocumentSymbols.findHierarchicalDocumentSymbols.bind(yamlDocumentSymbols),
-    doDefinition: getDefinition.bind(getDefinition),
+    doDefinition: yamlDefinition.getDefinition.bind(yamlDefinition),
     resetSchema: (uri: string) => {
       return schemaService.onResourceChange(uri);
     },
