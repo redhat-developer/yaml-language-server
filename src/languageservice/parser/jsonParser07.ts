@@ -6,7 +6,7 @@
 
 import * as Json from 'jsonc-parser';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
-import { isNumber, equals, isString, isDefined, isBoolean } from '../utils/objects';
+import { isNumber, equals, isString, isDefined, isBoolean, isIterable } from '../utils/objects';
 import { getSchemaTypeName } from '../utils/schemaUtils';
 import {
   ASTNode,
@@ -25,6 +25,8 @@ import { DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic } from 'vscode-languageserver';
 import { isArrayEqual } from '../utils/arrUtils';
+import { Node } from 'yaml';
+import { safeCreateUnicodeRegExp } from '../utils/strings';
 
 const localize = nls.loadMessageBundle();
 
@@ -33,7 +35,7 @@ export interface IRange {
   length: number;
 }
 
-const formats = {
+export const formats = {
   'color-hex': {
     errorMessage: localize('colorHexFormatWarning', 'Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.'),
     pattern: /^#([0-9A-Fa-f]{3,4}|([0-9A-Fa-f]{2}){3,4})$/,
@@ -65,7 +67,7 @@ export enum ProblemType {
   constWarning = 'constWarning',
 }
 
-const ProblemTypeMessages: Record<ProblemType, string> = {
+export const ProblemTypeMessages: Record<ProblemType, string> = {
   [ProblemType.missingRequiredPropWarning]: 'Missing property "{0}".',
   [ProblemType.typeMismatchWarning]: 'Incorrect type. Expected "{0}".',
   [ProblemType.constWarning]: 'Value must be {0}.',
@@ -88,11 +90,13 @@ export abstract class ASTNodeImpl {
   public length: number;
   public readonly parent: ASTNode;
   public location: string;
+  readonly internalNode: Node;
 
-  constructor(parent: ASTNode, offset: number, length?: number) {
+  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
     this.offset = offset;
     this.length = length;
     this.parent = parent;
+    this.internalNode = internalNode;
   }
 
   public getNodeFromOffsetEndInclusive(offset: number): ASTNode {
@@ -113,8 +117,7 @@ export abstract class ASTNodeImpl {
     const foundNode = findNode(this);
     let currMinDist = Number.MAX_VALUE;
     let currMinNode = null;
-    for (const possibleNode in collector) {
-      const currNode = collector[possibleNode];
+    for (const currNode of collector) {
       const minDist = currNode.length + currNode.offset - offset + (offset - currNode.offset);
       if (minDist < currMinDist) {
         currMinNode = currNode;
@@ -145,8 +148,8 @@ export abstract class ASTNodeImpl {
 export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
   public type: 'null' = 'null';
   public value = null;
-  constructor(parent: ASTNode, offset: number, length?: number) {
-    super(parent, offset, length);
+  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
+    super(parent, internalNode, offset, length);
   }
 }
 
@@ -154,8 +157,8 @@ export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
   public type: 'boolean' = 'boolean';
   public value: boolean;
 
-  constructor(parent: ASTNode, boolValue: boolean, offset: number, length?: number) {
-    super(parent, offset, length);
+  constructor(parent: ASTNode, internalNode: Node, boolValue: boolean, offset: number, length?: number) {
+    super(parent, internalNode, offset, length);
     this.value = boolValue;
   }
 }
@@ -164,8 +167,8 @@ export class ArrayASTNodeImpl extends ASTNodeImpl implements ArrayASTNode {
   public type: 'array' = 'array';
   public items: ASTNode[];
 
-  constructor(parent: ASTNode, offset: number, length?: number) {
-    super(parent, offset, length);
+  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
+    super(parent, internalNode, offset, length);
     this.items = [];
   }
 
@@ -179,8 +182,8 @@ export class NumberASTNodeImpl extends ASTNodeImpl implements NumberASTNode {
   public isInteger: boolean;
   public value: number;
 
-  constructor(parent: ASTNode, offset: number, length?: number) {
-    super(parent, offset, length);
+  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
+    super(parent, internalNode, offset, length);
     this.isInteger = true;
     this.value = Number.NaN;
   }
@@ -190,8 +193,8 @@ export class StringASTNodeImpl extends ASTNodeImpl implements StringASTNode {
   public type: 'string' = 'string';
   public value: string;
 
-  constructor(parent: ASTNode, offset: number, length?: number) {
-    super(parent, offset, length);
+  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
+    super(parent, internalNode, offset, length);
     this.value = '';
   }
 }
@@ -202,8 +205,8 @@ export class PropertyASTNodeImpl extends ASTNodeImpl implements PropertyASTNode 
   public valueNode: ASTNode;
   public colonOffset: number;
 
-  constructor(parent: ObjectASTNode, offset: number, length?: number) {
-    super(parent, offset, length);
+  constructor(parent: ObjectASTNode, internalNode: Node, offset: number, length?: number) {
+    super(parent, internalNode, offset, length);
     this.colonOffset = -1;
   }
 
@@ -216,8 +219,8 @@ export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
   public type: 'object' = 'object';
   public properties: PropertyASTNode[];
 
-  constructor(parent: ASTNode, offset: number, length?: number) {
-    super(parent, offset, length);
+  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
+    super(parent, internalNode, offset, length);
 
     this.properties = [];
   }
@@ -893,7 +896,7 @@ function validate(
     }
 
     if (isString(schema.pattern)) {
-      const regex = new RegExp(schema.pattern);
+      const regex = safeCreateUnicodeRegExp(schema.pattern);
       if (!regex.test(node.value)) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
@@ -1009,12 +1012,21 @@ function validate(
     } else {
       const itemSchema = asSchema(schema.items);
       if (itemSchema) {
-        for (const item of node.items) {
-          const itemValidationResult = new ValidationResult(isKubernetes);
-          validate(item, itemSchema, schema, itemValidationResult, matchingSchemas, options);
-          validationResult.mergePropertyMatch(itemValidationResult);
-          validationResult.mergeEnumValues(itemValidationResult);
-        }
+        const itemValidationResult = new ValidationResult(isKubernetes);
+        node.items.forEach((item) => {
+          if (itemSchema.oneOf && itemSchema.oneOf.length === 1) {
+            const subSchemaRef = itemSchema.oneOf[0];
+            const subSchema = asSchema(subSchemaRef);
+            subSchema.title = schema.title;
+            validate(item, subSchema, schema, itemValidationResult, matchingSchemas, options);
+            validationResult.mergePropertyMatch(itemValidationResult);
+            validationResult.mergeEnumValues(itemValidationResult);
+          } else {
+            validate(item, itemSchema, schema, itemValidationResult, matchingSchemas, options);
+            validationResult.mergePropertyMatch(itemValidationResult);
+            validationResult.mergeEnumValues(itemValidationResult);
+          }
+        });
       }
     }
 
@@ -1097,7 +1109,9 @@ function validate(
           }
           case 'array': {
             propertyNode.valueNode['items'].forEach((sequenceNode) => {
-              unprocessedNodes.push(...sequenceNode['properties']);
+              if (sequenceNode && isIterable(sequenceNode['properties'])) {
+                unprocessedNodes.push(...sequenceNode['properties']);
+              }
             });
             break;
           }
@@ -1174,7 +1188,7 @@ function validate(
 
     if (schema.patternProperties) {
       for (const propertyPattern of Object.keys(schema.patternProperties)) {
-        const regex = new RegExp(propertyPattern);
+        const regex = safeCreateUnicodeRegExp(propertyPattern);
         for (const propertyName of unprocessedProperties.slice(0)) {
           if (regex.test(propertyName)) {
             propertyProcessed(propertyName);
