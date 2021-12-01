@@ -150,6 +150,10 @@ export class YamlCompletion {
               label = shortendedLabel;
             }
           }
+          // trim $1 from end of completion
+          if (completionItem.insertText.endsWith('$1')) {
+            completionItem.insertText = completionItem.insertText.substr(0, completionItem.insertText.length - 2);
+          }
           if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
             completionItem.textEdit = TextEdit.replace(overwriteRange, completionItem.insertText);
           }
@@ -1302,8 +1306,7 @@ function convertToStringValue(value: string): string {
     return `"${value}"`;
   }
 
-  // eslint-disable-next-line prettier/prettier, no-useless-escape
-  if (value.indexOf('\"') !== -1) {
+  if (value.indexOf('"') !== -1) {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 

@@ -67,7 +67,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('name', 'name: $1', 0, 0, 0, 0, 10, 2, {
+              createExpectedCompletion('name', 'name: ', 0, 0, 0, 0, 10, 2, {
                 documentation: '',
               })
             );
@@ -91,7 +91,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('name', 'name: $1', 0, 0, 0, 2, 10, 2, {
+              createExpectedCompletion('name', 'name: ', 0, 0, 0, 2, 10, 2, {
                 documentation: '',
               })
             );
@@ -155,8 +155,7 @@ describe('Auto Completion Tests', () => {
           properties: {
             name: {
               type: 'string',
-              // eslint-disable-next-line prettier/prettier, no-useless-escape
-              default: '\"yaml\"',
+              default: '"yaml"',
             },
           },
         });
@@ -177,8 +176,7 @@ describe('Auto Completion Tests', () => {
           properties: {
             name: {
               type: 'string',
-              // eslint-disable-next-line prettier/prettier, no-useless-escape
-              default: '\"yaml\"',
+              default: '"yaml"',
             },
           },
         });
@@ -640,7 +638,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('top', 'top:\n      prop1: $1', 2, 2, 2, 2, 10, 2, {
+              createExpectedCompletion('top', 'top:\n      prop1: ', 2, 2, 2, 2, 10, 2, {
                 documentation: '',
               })
             );
@@ -658,7 +656,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('top', 'top:\n    prop1: $1', 0, 2, 0, 2, 10, 2, {
+              createExpectedCompletion('top', 'top:\n    prop1: ', 0, 2, 0, 2, 10, 2, {
                 documentation: '',
               })
             );
@@ -676,19 +674,19 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 3);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('prop1', 'prop1: $1', 0, 2, 0, 2, 10, 2, {
+              createExpectedCompletion('prop1', 'prop1: ', 0, 2, 0, 2, 10, 2, {
                 documentation: '',
               })
             );
             assert.deepEqual(
               result.items[1],
-              createExpectedCompletion('prop2', 'prop2: $1', 0, 2, 0, 2, 10, 2, {
+              createExpectedCompletion('prop2', 'prop2: ', 0, 2, 0, 2, 10, 2, {
                 documentation: '',
               })
             );
             assert.deepEqual(
               result.items[2],
-              createExpectedCompletion('prop3', 'prop3: $1', 0, 2, 0, 2, 10, 2, {
+              createExpectedCompletion('prop3', 'prop3: ', 0, 2, 0, 2, 10, 2, {
                 documentation: '',
               })
             );
@@ -706,13 +704,13 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 2);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('prop2', 'prop2: $1', 1, 2, 1, 2, 10, 2, {
+              createExpectedCompletion('prop2', 'prop2: ', 1, 2, 1, 2, 10, 2, {
                 documentation: '',
               })
             );
             assert.deepEqual(
               result.items[1],
-              createExpectedCompletion('prop3', 'prop3: $1', 1, 2, 1, 2, 10, 2, {
+              createExpectedCompletion('prop3', 'prop3: ', 1, 2, 1, 2, 10, 2, {
                 documentation: '',
               })
             );
@@ -771,7 +769,7 @@ describe('Auto Completion Tests', () => {
         const completion = await parseSetup(content, 0);
         expect(completion.items.length).to.be.equal(1);
         expect(completion.items[0]).to.deep.equal(
-          createExpectedCompletion('test: colon', '"test: colon":\n  $1', 0, 0, 0, 0, 10, 2, {
+          createExpectedCompletion('test: colon', '"test: colon":\n  ', 0, 0, 0, 0, 10, 2, {
             documentation: '',
           })
         );
@@ -796,7 +794,7 @@ describe('Auto Completion Tests', () => {
         const completion = await parseSetup(content, 0);
         expect(completion.items.length).to.be.equal(1);
         expect(completion.items[0]).to.deep.equal(
-          createExpectedCompletion('test:colon', 'test:colon:\n  $1', 0, 0, 0, 0, 10, 2, {
+          createExpectedCompletion('test:colon', 'test:colon:\n  ', 0, 0, 0, 0, 10, 2, {
             documentation: '',
           })
         );
@@ -821,7 +819,7 @@ describe('Auto Completion Tests', () => {
         const completion = await parseSetup(content, 0);
         expect(completion.items.length).to.be.equal(1);
         expect(completion.items[0]).to.deep.equal(
-          createExpectedCompletion(':colon', ':colon:\n  $1', 0, 0, 0, 0, 10, 2, {
+          createExpectedCompletion(':colon', ':colon:\n  ', 0, 0, 0, 0, 10, 2, {
             documentation: '',
           })
         );
@@ -865,7 +863,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('name', 'name: $1', 1, 4, 1, 4, 10, 2, {
+              createExpectedCompletion('name', 'name: ', 1, 4, 1, 4, 10, 2, {
                 documentation: '',
               })
             );
@@ -897,7 +895,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- $1', 1, 2, 1, 3, 9, 2, {
+              createExpectedCompletion('- (array item)', '- ', 1, 2, 1, 3, 9, 2, {
                 documentation: 'Create an item of an array',
               })
             );
@@ -932,7 +930,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- $1', 2, 2, 2, 2, 9, 2, {
+              createExpectedCompletion('- (array item)', '- ', 2, 2, 2, 2, 9, 2, {
                 documentation: 'Create an item of an array',
               })
             );
@@ -967,7 +965,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- $1', 1, 0, 1, 0, 9, 2, {
+              createExpectedCompletion('- (array item)', '- ', 1, 0, 1, 0, 9, 2, {
                 documentation: 'Create an item of an array',
               })
             );
@@ -999,7 +997,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('name', 'name: $1', 1, 4, 1, 5, 10, 2, {
+              createExpectedCompletion('name', 'name: ', 1, 4, 1, 5, 10, 2, {
                 documentation: '',
               })
             );
@@ -1034,7 +1032,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('email', 'email: $1', 2, 4, 2, 4, 10, 2, {
+              createExpectedCompletion('email', 'email: ', 2, 4, 2, 4, 10, 2, {
                 documentation: '',
               })
             );
@@ -1069,7 +1067,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('email', 'email: $1', 2, 3, 2, 3, 10, 2, {
+              createExpectedCompletion('email', 'email: ', 2, 3, 2, 3, 10, 2, {
                 documentation: '',
               })
             );
@@ -1107,7 +1105,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('load', 'load: $1', 2, 0, 2, 0, 10, 2, {
+              createExpectedCompletion('load', 'load: ', 2, 0, 2, 0, 10, 2, {
                 documentation: '',
               })
             );
@@ -1572,7 +1570,7 @@ describe('Auto Completion Tests', () => {
           assert.equal(result.items.length, 1);
           assert.deepEqual(
             result.items[0],
-            createExpectedCompletion('helm', 'helm:\n    name: $1', 1, 4, 1, 6, 10, 2, {
+            createExpectedCompletion('helm', 'helm:\n    name: ', 1, 4, 1, 6, 10, 2, {
               documentation: '',
             })
           );
@@ -1590,7 +1588,7 @@ describe('Auto Completion Tests', () => {
           assert.equal(result.items.length, 1);
           assert.deepEqual(
             result.items[0],
-            createExpectedCompletion('helm', 'helm:\n               name: $1', 1, 14, 1, 16, 10, 2, {
+            createExpectedCompletion('helm', 'helm:\n               name: ', 1, 14, 1, 16, 10, 2, {
               documentation: '',
             })
           );
@@ -1608,7 +1606,7 @@ describe('Auto Completion Tests', () => {
           assert.equal(result.items.length, 1);
           assert.deepEqual(
             result.items[0],
-            createExpectedCompletion('helm', 'helm:\n \t               name: $1', 1, 16, 1, 18, 10, 2, {
+            createExpectedCompletion('helm', 'helm:\n \t               name: ', 1, 16, 1, 18, 10, 2, {
               documentation: '',
             })
           );
@@ -2083,10 +2081,10 @@ describe('Auto Completion Tests', () => {
       const completion = await parseSetup(content, 3);
       expect(completion.items).lengthOf(2);
       expect(completion.items[0]).eql(
-        createExpectedCompletion('kind', 'kind: $1', 2, 0, 2, 0, 10, InsertTextFormat.Snippet, { documentation: '' })
+        createExpectedCompletion('kind', 'kind: ', 2, 0, 2, 0, 10, InsertTextFormat.Snippet, { documentation: '' })
       );
       expect(completion.items[1]).eql(
-        createExpectedCompletion('name', 'name: $1', 2, 0, 2, 0, 10, InsertTextFormat.Snippet, { documentation: '' })
+        createExpectedCompletion('name', 'name: ', 2, 0, 2, 0, 10, InsertTextFormat.Snippet, { documentation: '' })
       );
     });
 
@@ -2146,7 +2144,7 @@ describe('Auto Completion Tests', () => {
       const completion = await parseSetup(content, 1);
       expect(completion.items).lengthOf(1);
       expect(completion.items[0]).eql(
-        createExpectedCompletion('kind', 'kind: $1', 0, 0, 0, 3, 10, InsertTextFormat.Snippet, {
+        createExpectedCompletion('kind', 'kind: ', 0, 0, 0, 3, 10, InsertTextFormat.Snippet, {
           documentation: {
             kind: MarkupKind.Markdown,
             value: '**kind** (string)\n\nKind is a string value representing the REST resource this object represents.',
