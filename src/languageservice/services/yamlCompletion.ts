@@ -29,7 +29,7 @@ import { YAMLSchemaService } from './yamlSchemaService';
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { stringifyObject, StringifySettings } from '../utils/json';
-import { isDefined, isString } from '../utils/objects';
+import { convertErrorToTelemetryMsg, isDefined, isString } from '../utils/objects';
 import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
@@ -159,8 +159,7 @@ export class YamlCompletion {
         }
       },
       error: (message: string) => {
-        console.error(message);
-        this.telemetry.sendError('yaml.completion.error', { error: message });
+        this.telemetry.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(message) });
       },
       log: (message: string) => {
         console.log(message);
@@ -384,12 +383,7 @@ export class YamlCompletion {
       const types: { [type: string]: boolean } = {};
       this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types);
     } catch (err) {
-      if (err.stack) {
-        console.error(err.stack);
-      } else {
-        console.error(err);
-      }
-      this.telemetry.sendError('yaml.completion.error', { error: err });
+      this.telemetry.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
     return result;

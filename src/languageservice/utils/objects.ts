@@ -82,3 +82,15 @@ export function isString(val: unknown): val is string {
 export function isIterable(val: unknown): boolean {
   return Symbol.iterator in Object(val);
 }
+
+/**
+ * Convert error to string witch should be sended to telemetry.
+ * @param err any error
+ */
+export function convertErrorToTelemetryMsg(err: unknown): string {
+  if (err instanceof Error) {
+    return err.stack ?? err.toString();
+  }
+
+  return err.toString();
+}
