@@ -35,6 +35,7 @@ import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
 import { indexOf } from '../utils/astUtils';
 import { isModeline } from './modelineUtil';
+import { getSchemaTypeName } from '../utils/schemaUtils';
 
 const localize = nls.loadMessageBundle();
 
@@ -614,15 +615,18 @@ export class YamlCompletion {
                 s.schema.items.anyOf
                   .filter((i) => typeof i === 'object')
                   .forEach((i: JSONSchema, index) => {
+                    const schemaType = getSchemaTypeName(i);
                     const insertText = `- ${this.getInsertTextForObject(i, separatorAfter).insertText.trimLeft()}`;
                     //append insertText to documentation
+                    const schemaTypeTitle = schemaType ? ' type `' + schemaType + '`' : '';
+                    const schemaDescription = s.schema.description ? ' (' + s.schema.description + ')' : '';
                     const documentation = this.getDocumentationWithMarkdownText(
-                      `Create an item of an array${s.schema.description === undefined ? '' : '(' + s.schema.description + ')'}`,
+                      `Create an item of an array${schemaTypeTitle}${schemaDescription}`,
                       insertText
                     );
                     collector.add({
                       kind: this.getSuggestionKind(i.type),
-                      label: '- (array item) ' + (index + 1),
+                      label: '- (array item) ' + (schemaType || index + 1),
                       documentation: documentation,
                       insertText: insertText,
                       insertTextFormat: InsertTextFormat.Snippet,
@@ -1302,8 +1306,7 @@ function convertToStringValue(value: string): string {
     return `"${value}"`;
   }
 
-  // eslint-disable-next-line prettier/prettier, no-useless-escape
-  if (value.indexOf('\"') !== -1) {
+  if (value.indexOf('"') !== -1) {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 

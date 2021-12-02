@@ -155,8 +155,7 @@ describe('Auto Completion Tests', () => {
           properties: {
             name: {
               type: 'string',
-              // eslint-disable-next-line prettier/prettier, no-useless-escape
-              default: '\"yaml\"',
+              default: '"yaml"',
             },
           },
         });
@@ -177,8 +176,7 @@ describe('Auto Completion Tests', () => {
           properties: {
             name: {
               type: 'string',
-              // eslint-disable-next-line prettier/prettier, no-useless-escape
-              default: '\"yaml\"',
+              default: '"yaml"',
             },
           },
         });
@@ -2255,81 +2253,95 @@ describe('Auto Completion Tests', () => {
   });
 
   describe('Array completion', () => {
-    it('Simple array object completion with "-" without any item', async () => {
+    it('Simple array object completion with "-" without any item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       languageService.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  -';
       const completion = parseSetup(content, content.length);
-      completion.then(function (result) {
-        assert.equal(result.items.length, 1);
-        assert.equal(result.items[0].label, '- (array item)');
-      });
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].label, '- (array item)');
+        })
+        .then(done, done);
     });
 
-    it('Simple array object completion without "-" after array item', async () => {
+    it('Simple array object completion without "-" after array item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       languageService.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  ';
       const completion = parseSetup(content, content.length);
-      completion.then(function (result) {
-        assert.equal(result.items.length, 1);
-        assert.equal(result.items[0].label, '- (array item)');
-      });
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].label, '- (array item)');
+        })
+        .then(done, done);
     });
 
-    it('Simple array object completion with "-" after array item', async () => {
+    it('Simple array object completion with "-" after array item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       languageService.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  -';
       const completion = parseSetup(content, content.length);
-      completion.then(function (result) {
-        assert.equal(result.items.length, 1);
-        assert.equal(result.items[0].label, '- (array item)');
-      });
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].label, '- (array item)');
+        })
+        .then(done, done);
     });
 
-    it('Array anyOf two objects completion with "- " without any item', async () => {
+    it('Array anyOf two objects completion with "- " without any item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       languageService.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - ';
       const completion = parseSetup(content, content.length);
-      completion.then(function (result) {
-        assert.equal(result.items.length, 2);
-        assert.equal(result.items[0].label, 'obj1');
-      });
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, 'obj1');
+        })
+        .then(done, done);
     });
 
-    it('Array anyOf two objects completion with "-" without any item', async () => {
+    it('Array anyOf two objects completion with "-" without any item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       languageService.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  -';
       const completion = parseSetup(content, content.length);
-      completion.then(function (result) {
-        assert.equal(result.items.length, 2);
-        assert.equal(result.items[0].label, '- (array item) 1');
-      });
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, '- (array item) obj1');
+        })
+        .then(done, done);
     });
 
-    it('Array anyOf two objects completion without "-" after array item', async () => {
+    it('Array anyOf two objects completion without "-" after array item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       languageService.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  ';
       const completion = parseSetup(content, content.length);
-      completion.then(function (result) {
-        assert.equal(result.items.length, 2);
-        assert.equal(result.items[0].label, '- (array item) 1');
-      });
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, '- (array item) obj1');
+        })
+        .then(done, done);
     });
 
-    it('Array anyOf two objects completion with "-" after array item', async () => {
+    it('Array anyOf two objects completion with "-" after array item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       languageService.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  -';
       const completion = parseSetup(content, content.length);
-      completion.then(function (result) {
-        assert.equal(result.items.length, 2);
-        assert.equal(result.items[0].label, '- (array item) 1');
-      });
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, '- (array item) obj1');
+        })
+        .then(done, done);
     });
 
     it('Array anyOf two objects completion indentation', async () => {
