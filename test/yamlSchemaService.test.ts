@@ -92,6 +92,26 @@ describe('YAML Schema Service', () => {
       expect(schema.schema.definitions.bar.type).eqls('string');
     });
 
+    it('should handle file path with fragments', async () => {
+      const content = `# yaml-language-server: $schema=schema.json#/definitions/schemaArray\nfoo: bar`;
+      const yamlDock = parse(content);
+
+      requestServiceMock = sandbox.fake.resolves(`{"definitions": {"schemaArray": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "$ref": "#" }
+    }}, "properties": {}}`);
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      expect(requestServiceMock).calledTwice;
+      expect(requestServiceMock).calledWithExactly('file:///schema.json');
+      expect(requestServiceMock).calledWithExactly('file:///schema.json#/definitions/schemaArray');
+
+      expect(schema.schema.type).eqls('array');
+    });
+
     it('should handle modeline schema comment in the middle of file', () => {
       const documentContent = `foo:\n  bar\n# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#\naa:bbb\n`;
       const content = `${documentContent}`;
