@@ -106,8 +106,13 @@ describe('YAML Schema Service', () => {
       const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
 
       expect(requestServiceMock).calledTwice;
-      expect(requestServiceMock).calledWithExactly('file:///schema.json');
-      expect(requestServiceMock).calledWithExactly('file:///schema.json#/definitions/schemaArray');
+      if (process.platform === 'win32') {
+        expect(requestServiceMock).calledWithExactly('file:///d%3A/schema.json');
+        expect(requestServiceMock).calledWithExactly('file:///d%3A/schema.json#/definitions/schemaArray');
+      } else {
+        expect(requestServiceMock).calledWithExactly('file:///schema.json');
+        expect(requestServiceMock).calledWithExactly('file:///schema.json#/definitions/schemaArray');
+      }
 
       expect(schema.schema.type).eqls('array');
     });
