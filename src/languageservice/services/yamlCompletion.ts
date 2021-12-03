@@ -77,6 +77,95 @@ export class YamlCompletion {
   }
 
   async doComplete(document: TextDocument, position: Position, isKubernetes = false): Promise<CompletionList> {
+    let result = CompletionList.create([], false);
+    if (!this.completionEnabled) {
+      return result;
+    }
+
+    const offset = document.offsetAt(position);
+    const textBuffer = new TextBuffer(document);
+    const lineContent = textBuffer.getLineContent(position.line);
+
+    // auto add space after : if needed
+    if (document.getText().charAt(offset - 1) === ':') {
+      const newPosition = Position.create(position.line, position.character + 1);
+      result = await this.doCompletionWithModification(result, document, position, isKubernetes, newPosition, ' ');
+    } else {
+      result = await this.doCompleteInternal(document, position, isKubernetes);
+    }
+
+    // try as a object if is on property line
+    if (lineContent.match(/:\s?$/)) {
+      const lineIndent = lineContent.match(/\s*/)[0];
+      const fullIndent = lineIndent + this.indentation;
+      const firstPrefix = '\n' + this.indentation;
+      const newPosition = Position.create(position.line + 1, fullIndent.length);
+      result = await this.doCompletionWithModification(
+        result,
+        document,
+        position,
+        isKubernetes,
+        newPosition,
+        firstPrefix,
+        fullIndent
+      );
+    }
+    return result;
+  }
+
+  private async doCompletionWithModification(
+    result: CompletionList,
+    document: TextDocument,
+    position: Position, // original position
+    isKubernetes: boolean,
+    newPosition: Position, // new position
+    firstPrefix: string,
+    eachLinePrefix = ''
+  ): Promise<CompletionList> {
+    TextDocument.update(document, [{ range: Range.create(position, position), text: firstPrefix }], document.version + 1);
+    const resultLocal = await this.doCompleteInternal(document, newPosition, isKubernetes);
+    resultLocal.items.map((item) => {
+      let firstPrefixLocal = firstPrefix;
+      // if there is single space (space after colon) and insert text already starts with \n (it's a object), don't add space
+      // example are snippets
+      if (item.insertText.startsWith('\n') && firstPrefix === ' ') {
+        firstPrefixLocal = '';
+      }
+      if (item.insertText) {
+        item.insertText = firstPrefixLocal + item.insertText.replace(/\n/g, '\n' + eachLinePrefix);
+      }
+      if (item.textEdit) {
+        item.textEdit.newText = firstPrefixLocal + item.textEdit.newText.replace(/\n/g, '\n' + eachLinePrefix);
+        if (TextEdit.is(item.textEdit)) {
+          item.textEdit.range = Range.create(position, position);
+        }
+      }
+    });
+    // revert document edit
+    TextDocument.update(document, [{ range: Range.create(position, newPosition), text: '' }], document.version + 1);
+    // remove from cache
+    this.yamlDocument.delete(document);
+
+    if (!result.items.length) {
+      result = resultLocal;
+      return result;
+    }
+
+    // join with previous result, but remove the duplicity (snippet for example cause the duplicity)
+    resultLocal.items.forEach((item) => {
+      if (
+        !resultLocal.items.some(
+          (resultItem) =>
+            resultItem.label === item.label && resultItem.insertText === item.insertText && resultItem.kind === item.kind
+        )
+      ) {
+        result.items.push(item);
+      }
+    });
+    return result;
+  }
+
+  private async doCompleteInternal(document: TextDocument, position: Position, isKubernetes = false): Promise<CompletionList> {
     const result = CompletionList.create([], false);
     if (!this.completionEnabled) {
       return result;
@@ -1303,7 +1392,7 @@ function convertToStringValue(value: string): string {
   }
 
   // eslint-disable-next-line prettier/prettier, no-useless-escape
-  if (value.indexOf('\"') !== -1) {
+  if (value.indexOf('"') !== -1) {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 

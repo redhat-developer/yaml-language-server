@@ -155,8 +155,7 @@ describe('Auto Completion Tests', () => {
           properties: {
             name: {
               type: 'string',
-              // eslint-disable-next-line prettier/prettier, no-useless-escape
-              default: '\"yaml\"',
+              default: '"yaml"',
             },
           },
         });
@@ -177,8 +176,7 @@ describe('Auto Completion Tests', () => {
           properties: {
             name: {
               type: 'string',
-              // eslint-disable-next-line prettier/prettier, no-useless-escape
-              default: '\"yaml\"',
+              default: '"yaml"',
             },
           },
         });
@@ -422,7 +420,8 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
-      it('Autocomplete does not happen right after key object', (done) => {
+      // replaced by on of the next test
+      it.skip('Autocomplete does not happen right after key object', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -441,7 +440,8 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
-      it('Autocomplete does not happen right after : under an object', (done) => {
+      // replaced by on of the next test
+      it.skip('Autocomplete does not happen right after : under an object', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -465,6 +465,92 @@ describe('Auto Completion Tests', () => {
         completion
           .then(function (result) {
             assert.equal(result.items.length, 0);
+          })
+          .then(done, done);
+      });
+
+      it('Autocomplete does happen right after key object', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            timeout: {
+              type: 'number',
+              default: 60000,
+            },
+          },
+        });
+        const content = 'timeout:';
+        const completion = parseSetup(content, 9);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.deepEqual(
+              result.items[0],
+              createExpectedCompletion('60000', ' 60000', 0, 8, 0, 8, 12, 2, {
+                detail: 'Default value',
+              })
+            );
+          })
+          .then(done, done);
+      });
+
+      it('Autocomplete does happen right after : under an object', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'string',
+                  enum: ['test'],
+                },
+                myOtherSample: {
+                  type: 'string',
+                  enum: ['test'],
+                },
+              },
+            },
+          },
+        });
+        const content = 'scripts:';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 2);
+            assert.deepEqual(
+              result.items[0],
+              createExpectedCompletion('sample', '\n  sample: ${1:test}', 0, 8, 0, 8, 10, 2, {
+                documentation: '',
+              })
+            );
+          })
+          .then(done, done);
+      });
+
+      it('Autocomplete does happen right after : under an object and with defaultSnippet', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {},
+              defaultSnippets: [
+                {
+                  label: 'myOther2Sample snippet',
+                  body: { myOther2Sample: {} },
+                  markdownDescription: 'snippet\n```yaml\nmyOther2Sample:\n```\n',
+                },
+              ],
+            },
+          },
+        });
+        const content = 'scripts:';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.equal(result.items[0].insertText, '\n  myOther2Sample: ');
           })
           .then(done, done);
       });
