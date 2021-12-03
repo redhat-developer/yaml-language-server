@@ -154,7 +154,7 @@ export class YamlCompletion {
     // join with previous result, but remove the duplicity (snippet for example cause the duplicity)
     resultLocal.items.forEach((item) => {
       if (
-        !resultLocal.items.some(
+        !result.items.some(
           (resultItem) =>
             resultItem.label === item.label && resultItem.insertText === item.insertText && resultItem.kind === item.kind
         )
