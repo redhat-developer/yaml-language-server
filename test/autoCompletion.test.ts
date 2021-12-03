@@ -386,6 +386,42 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
+      // todo fix
+      it.skip('Autocomplete key with default value in middle of file - nested object', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'object',
+                  properties: {
+                    detail: {
+                      type: 'string',
+                      default: 'test',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+        const content = 'scripts:\n  sample:\n    det';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.deepEqual(
+              result.items[0],
+              createExpectedCompletion('detail', 'detail: ${1:test}', 1, 2, 1, 5, 10, 2, {
+                documentation: '',
+              })
+            );
+          })
+          .then(done, done);
+      });
+
       it('Autocomplete second key in middle of file', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
