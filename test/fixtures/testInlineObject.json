@@ -2,13 +2,12 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
     "Expression": {
-      "type": "string",
+      "type": "object",
       "description": "Expression abcd",
-      "inlineObject": true,
       "properties": {
-        "context": {
+        "=@ctx": {
           "properties": {
-            "jig": {
+            "user": {
               "properties": {}
             },
             "data": {
@@ -21,11 +20,10 @@
   },
   "properties": {
     "value": {
-      "inlineObject": true,
       "properties": {
-        "context": {
+        "=@ctx": {
           "properties": {
-            "jig": {
+            "user": {
               "properties": {}
             },
             "data": {
@@ -44,6 +42,9 @@
               "type": "string"
             }
           }
+        },
+        {
+          "type": "string"
         },
         {
           "$ref": "#/definitions/Expression"

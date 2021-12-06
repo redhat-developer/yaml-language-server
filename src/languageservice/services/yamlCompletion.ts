@@ -47,6 +47,8 @@ interface CompletionItem extends CompletionItemBase {
   isForParentSuggestion?: boolean;
   isInlineObject?: boolean;
 }
+const inlineSymbol = '=@ctx';
+
 interface CompletionsCollector {
   add(suggestion: CompletionItem): void;
   error(message: string): void;
@@ -94,7 +96,18 @@ export class YamlCompletion {
     const offset = document.offsetAt(position);
     const textBuffer = new TextBuffer(document);
     const lineContent = textBuffer.getLineContent(position.line);
+    if (!this.configuredIndentation) {
+      const indent = guessIndentation(textBuffer, 2, true);
+      this.indentation = indent.insertSpaces ? ' '.repeat(indent.tabSize) : '\t';
+      this.configuredIndentation = this.indentation; // to cache this result
+    } else {
+      this.indentation = this.configuredIndentation;
+    }
 
+    if (inlineSymbol && lineContent.match(new RegExp(`:\\s*${inlineSymbol}\\..*`))) {
+      result = await this.doInlineCompletion(document, position, isKubernetes, offset, lineContent);
+      return result;
+    }
     // auto add space after : if needed
     if (document.getText().charAt(offset - 1) === ':') {
       const newPosition = Position.create(position.line, position.character + 1);
@@ -119,6 +132,7 @@ export class YamlCompletion {
         fullIndent
       );
     }
+    this.processInlineInitialization(result, lineContent);
     return result;
   }
 
@@ -172,6 +186,68 @@ export class YamlCompletion {
       }
     });
     return result;
+  }
+
+  private async doInlineCompletion(
+    document: TextDocument,
+    position: Position,
+    isKubernetes: boolean,
+    offset: number,
+    lineContent: string
+  ): Promise<CompletionList> {
+    const inlineSymbolPosition = lineContent.indexOf(inlineSymbol);
+    const lineIndent = lineContent.match(/\s*/)[0];
+    const originalText = lineContent.slice(inlineSymbolPosition);
+    const props = originalText.split('.');
+    let newText = props.reduce((reducer, prop, index) => {
+      if (!prop) {
+        return reducer;
+      }
+      // support =@ctx.da
+      if (index === props.length - 1 && !originalText.endsWith('.')) {
+        reducer += prop;
+        return reducer;
+      }
+
+      reducer += `${prop}:\n${lineIndent}${this.indentation.repeat(index + 2)}`;
+      return reducer;
+    }, '');
+    newText = `\n${lineIndent}${this.indentation}${newText}`;
+    const newStartPosition = Position.create(position.line, inlineSymbolPosition);
+    const removedCount = originalText.length; // position.character - newStartPosition.character;
+    TextDocument.update(document, [{ range: Range.create(newStartPosition, position), text: newText }], document.version + 1);
+    const newPosition = document.positionAt(offset - removedCount + newText.length);
+    const resultLocal = await this.doCompleteInternal(document, newPosition, isKubernetes);
+    resultLocal.items.forEach((inlineItem) => {
+      let inlineText = inlineItem.insertText;
+      inlineText = inlineText.replace(/:\n?\s*(\$1)?/g, '.').replace(/\.$/, '');
+      inlineItem.insertText = inlineText;
+      if (inlineItem.textEdit) {
+        inlineItem.textEdit.newText = inlineText;
+        if (TextEdit.is(inlineItem.textEdit)) {
+          inlineItem.textEdit.range = Range.create(position, position);
+        }
+      }
+    });
+    // revert document edit
+    TextDocument.update(
+      document,
+      [{ range: Range.create(newStartPosition, newPosition), text: originalText }],
+      document.version + 1
+    );
+    // remove from cache
+    this.yamlDocument.delete(document);
+    return resultLocal; // don't merge with anything, inline should be combined with others
+  }
+  private processInlineInitialization(result: CompletionList, lineContent: string): void {
+    // make always online - happens when general completion returns inline label
+    const inlineItem = result.items.find((item) => item.label === inlineSymbol);
+    if (inlineItem) {
+      inlineItem.insertText = (lineContent.endsWith(':') ? ' ' : '') + inlineSymbol;
+      if (inlineItem.textEdit) {
+        inlineItem.textEdit.newText = inlineItem.insertText;
+      }
+    }
   }
 
   private async doCompleteInternal(document: TextDocument, position: Position, isKubernetes = false): Promise<CompletionList> {
