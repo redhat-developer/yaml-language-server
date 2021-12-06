@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { toFsPath, setupSchemaIDTextDocument, setupLanguageService, jigxBranchTestCompletion } from './utils/testHelper';
+import { toFsPath, setupSchemaIDTextDocument, setupLanguageService } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
 import { ServiceSetup } from './utils/serviceSetup';
@@ -10,9 +10,6 @@ import { LanguageHandlers } from '../src/languageserver/handlers/languageHandler
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { CompletionList, TextEdit } from 'vscode-languageserver';
 import { expect } from 'chai';
-
-// TODO Petr check if we really need this
-const snippet$1symbol = jigxBranchTestCompletion ? '' : '$1';
 
 describe('Default Snippet Tests', () => {
   let languageHandler: LanguageHandlers;
@@ -129,7 +126,7 @@ describe('Default Snippet Tests', () => {
           assert.equal(result.items.length, 2);
           assert.equal(result.items[0].insertText, 'key1: $1\nkey2: $2');
           assert.equal(result.items[0].label, 'Object item');
-          assert.equal(result.items[1].insertText, `key:\n  ${snippet$1symbol}`);
+          assert.equal(result.items[1].insertText, 'key:\n  ');
           assert.equal(result.items[1].label, 'key');
         })
         .then(done, done);
@@ -143,7 +140,7 @@ describe('Default Snippet Tests', () => {
           assert.notEqual(result.items.length, 0);
           assert.equal(result.items[0].insertText, 'key1: $1\nkey2: $2');
           assert.equal(result.items[0].label, 'Object item');
-          assert.equal(result.items[1].insertText, `key:\n  ${snippet$1symbol}`);
+          assert.equal(result.items[1].insertText, 'key:\n  ');
           assert.equal(result.items[1].label, 'key');
         })
         .then(done, done);
@@ -175,7 +172,7 @@ describe('Default Snippet Tests', () => {
       completion
         .then(function (result) {
           assert.notEqual(result.items.length, 0);
-          assert.equal(result.items[0].insertText, `test ${snippet$1symbol}`);
+          assert.equal(result.items[0].insertText, 'test ');
           assert.equal(result.items[0].label, 'My string item');
         })
         .then(done, done);
