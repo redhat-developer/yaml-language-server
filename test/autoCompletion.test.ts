@@ -16,7 +16,7 @@ import { LanguageService } from '../src';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
 //TODO Petr fix merge
-describe.skip('Auto Completion Tests', () => {
+describe('Auto Completion Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageService: LanguageService;
   let languageHandler: LanguageHandlers;
@@ -156,7 +156,6 @@ describe.skip('Auto Completion Tests', () => {
           properties: {
             name: {
               type: 'string',
-              // eslint-disable-next-line prettier/prettier, no-useless-escape
               default: '"yaml"',
             },
           },
@@ -178,7 +177,6 @@ describe.skip('Auto Completion Tests', () => {
           properties: {
             name: {
               type: 'string',
-              // eslint-disable-next-line prettier/prettier, no-useless-escape
               default: '"yaml"',
             },
           },
@@ -1603,6 +1601,26 @@ describe.skip('Auto Completion Tests', () => {
         })
         .then(done, done);
     });
+    it('should insert quotation value if there is special char', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          from: {
+            type: 'string',
+            const: '@test',
+          },
+        },
+      });
+      const content = 'from: ';
+      const completion = await parseSetup(content, content.length);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0]).to.deep.equal(
+        createExpectedCompletion('@test', '"@test"', 0, 6, 0, 6, 12, 2, {
+          documentation: undefined,
+        })
+      );
+    });
   });
 
   describe('Indentation Specific Tests', function () {
@@ -1613,11 +1631,7 @@ describe.skip('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.lastIndexOf('he') + 2);
       completion
         .then(function (result) {
-          if (jigxBranchTest) {
-            //remove extra completion for parent object
-            result.items = result.items.filter((c) => c.kind !== 7);
-          }
-          assert.equal(result.items.length, 1);
+          assert.equal(result.items.length, 2);
           assert.deepEqual(
             result.items[0],
             createExpectedCompletion('helm', 'helm:\n    name: $1', 1, 4, 1, 6, 10, 2, {
@@ -1635,11 +1649,7 @@ describe.skip('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.lastIndexOf('he') + 2);
       completion
         .then(function (result) {
-          if (jigxBranchTest) {
-            //remove extra completion for parent object
-            result.items = result.items.filter((c) => c.kind !== 7);
-          }
-          assert.equal(result.items.length, 1);
+          assert.equal(result.items.length, 2);
           assert.deepEqual(
             result.items[0],
             createExpectedCompletion('helm', 'helm:\n               name: $1', 1, 14, 1, 16, 10, 2, {
@@ -1657,11 +1667,7 @@ describe.skip('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.lastIndexOf('he') + 2);
       completion
         .then(function (result) {
-          if (jigxBranchTest) {
-            //remove extra completion for parent object
-            result.items = result.items.filter((c) => c.kind !== 7);
-          }
-          assert.equal(result.items.length, 1);
+          assert.equal(result.items.length, 2);
           assert.deepEqual(
             result.items[0],
             createExpectedCompletion('helm', 'helm:\n \t               name: $1', 1, 16, 1, 18, 10, 2, {
@@ -2161,11 +2167,7 @@ describe.skip('Auto Completion Tests', () => {
 
       const content = 'kind: 111\n';
       const completion = await parseSetup(content, 3);
-      if (jigxBranchTest) {
-        //remove extra completion for parent object
-        completion.items = completion.items.filter((c) => c.kind !== 7);
-      }
-      expect(completion.items).lengthOf(1);
+      expect(completion.items).lengthOf(2);
       expect(completion.items[0]).eql(
         createExpectedCompletion('kind', 'kind', 0, 0, 0, 4, 10, InsertTextFormat.Snippet, { documentation: '' })
       );
@@ -2184,11 +2186,7 @@ describe.skip('Auto Completion Tests', () => {
 
       const content = 'ki: 111\n';
       const completion = await parseSetup(content, 1);
-      if (jigxBranchTest) {
-        //remove extra completion for parent object
-        completion.items = completion.items.filter((c) => c.kind !== 7);
-      }
-      expect(completion.items).lengthOf(1);
+      expect(completion.items).lengthOf(2);
       expect(completion.items[0]).eql(
         createExpectedCompletion('kind', 'kind', 0, 0, 0, 2, 10, InsertTextFormat.Snippet, { documentation: '' })
       );
@@ -2210,11 +2208,7 @@ describe.skip('Auto Completion Tests', () => {
 
       const content = 'kin';
       const completion = await parseSetup(content, 1);
-      if (jigxBranchTest) {
-        //remove extra completion for parent object
-        completion.items = completion.items.filter((c) => c.kind !== 7);
-      }
-      expect(completion.items).lengthOf(1);
+      expect(completion.items).lengthOf(2);
       expect(completion.items[0]).eql(
         createExpectedCompletion('kind', 'kind: $1', 0, 0, 0, 3, 10, InsertTextFormat.Snippet, {
           documentation: {
@@ -2407,14 +2401,151 @@ describe.skip('Auto Completion Tests', () => {
       languageService.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj';
       const completion = await parseSetup(content, content.length);
-      if (jigxBranchTest) {
-        //remove extra completion for parent object
-        completion.items = completion.items.filter((c) => c.kind !== 7);
-      }
-      expect(completion.items.length).is.equal(2);
+      expect(completion.items.length).is.equal(4);
       const obj1 = completion.items.find((it) => it.label === 'obj1');
       expect(obj1).is.not.undefined;
       expect(obj1.textEdit.newText).equal('obj1:\n    ');
+    });
+  });
+
+  describe('Parent Completion', () => {
+    const obj1 = {
+      properties: {
+        type: {
+          const: 'type obj1',
+        },
+        options: {
+          type: 'object',
+          properties: {
+            label: {
+              type: 'string',
+            },
+          },
+          required: ['label'],
+        },
+      },
+      required: ['type', 'options'],
+      type: 'object',
+    };
+    const obj2 = {
+      properties: {
+        type: {
+          const: 'type obj2',
+        },
+        options: {
+          type: 'object',
+          properties: {
+            description: {
+              type: 'string',
+            },
+          },
+          required: ['description'],
+        },
+      },
+      required: ['type', 'options'],
+      type: 'object',
+    };
+    it('Should suggest complete object skeleton', async () => {
+      const schema = {
+        definitions: {
+          obj1,
+          obj2,
+        },
+        anyOf: [
+          {
+            $ref: '#/definitions/obj1',
+          },
+          {
+            $ref: '#/definitions/obj2',
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).equal(4);
+      expect(result.items[0]).to.deep.equal(createExpectedCompletion('type', 'type', 0, 0, 0, 0, 10, 2, { documentation: '' }));
+      expect(result.items[1]).to.deep.equal(
+        createExpectedCompletion('obj1', 'type: type obj1\noptions:\n  label: $1', 0, 0, 0, 0, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\ntype: type obj1\noptions:\n  label: \n```',
+          },
+          isForParentSuggestion: true,
+          sortText: '_obj1',
+          schemaType: 'obj1',
+          indent: '',
+        })
+      );
+      expect(result.items[2]).to.deep.equal(
+        createExpectedCompletion('options', 'options:\n  label: $1', 0, 0, 0, 0, 10, 2, { documentation: '' })
+      );
+      expect(result.items[3]).to.deep.equal(
+        createExpectedCompletion('obj2', 'type: type obj2\noptions:\n  description: $1', 0, 0, 0, 0, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\ntype: type obj2\noptions:\n  description: \n```',
+          },
+          isForParentSuggestion: true,
+          sortText: '_obj2',
+          schemaType: 'obj2',
+          indent: '',
+        })
+      );
+    });
+
+    it('Should suggest complete object skeleton - array', async () => {
+      const schema = {
+        definitions: {
+          obj1,
+          obj2,
+        },
+        items: {
+          anyOf: [
+            {
+              $ref: '#/definitions/obj1',
+            },
+            {
+              $ref: '#/definitions/obj2',
+            },
+          ],
+        },
+        type: 'array',
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '- ';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).equal(4);
+      expect(result.items[0]).to.deep.equal(createExpectedCompletion('type', 'type', 0, 2, 0, 2, 10, 2, { documentation: '' }));
+      expect(result.items[1]).to.deep.equal(
+        createExpectedCompletion('obj1', 'type: type obj1\n  options:\n    label: $1', 0, 2, 0, 2, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\ntype: type obj1\n  options:\n    label: \n```',
+          },
+          isForParentSuggestion: true,
+          sortText: '_obj1',
+          schemaType: 'obj1',
+          indent: '  ',
+        })
+      );
+      expect(result.items[2]).to.deep.equal(
+        createExpectedCompletion('options', 'options:\n    label: $1', 0, 2, 0, 2, 10, 2, { documentation: '' })
+      );
+      expect(result.items[3]).to.deep.equal(
+        createExpectedCompletion('obj2', 'type: type obj2\n  options:\n    description: $1', 0, 2, 0, 2, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\ntype: type obj2\n  options:\n    description: \n```',
+          },
+          isForParentSuggestion: true,
+          sortText: '_obj2',
+          schemaType: 'obj2',
+          indent: '  ',
+        })
+      );
     });
   });
 });
