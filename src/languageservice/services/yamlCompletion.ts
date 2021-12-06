@@ -66,6 +66,7 @@ export class YamlCompletion {
   private yamlVersion: YamlVersion;
   private indentation: string;
   private supportsMarkdown: boolean | undefined;
+  private disableDefaultProperties: boolean;
 
   constructor(
     private schemaService: YAMLSchemaService,
@@ -81,6 +82,7 @@ export class YamlCompletion {
     this.customTags = languageSettings.customTags;
     this.yamlVersion = languageSettings.yamlVersion;
     this.configuredIndentation = languageSettings.indentation;
+    this.disableDefaultProperties = languageSettings.disableDefaultProperties;
   }
 
   async doComplete(document: TextDocument, position: Position, isKubernetes = false): Promise<CompletionList> {
@@ -891,10 +893,18 @@ export class YamlCompletion {
           case 'boolean':
           case 'string':
           case 'number':
-          case 'integer':
-          case 'anyOf':
-            insertText += `${indent}${key}: $${insertIndex++}\n`;
+          case 'integer': {
+            let value = propertySchema.default || propertySchema.const;
+            if (value) {
+              if (type === 'string') {
+                value = convertToStringValue(value);
+              }
+              insertText += `${indent}${key}: \${${insertIndex++}:${value}}\n`;
+            } else {
+              insertText += `${indent}${key}: $${insertIndex++}\n`;
+            }
             break;
+          }
           case 'array':
             {
               const arrayInsertResult = this.getInsertTextForArray(propertySchema.items, separatorAfter, insertIndex++);
@@ -924,7 +934,7 @@ export class YamlCompletion {
             }
             break;
         }
-      } else if (propertySchema.default !== undefined) {
+      } else if (!this.disableDefaultProperties && propertySchema.default !== undefined) {
         switch (type) {
           case 'boolean':
           case 'number':

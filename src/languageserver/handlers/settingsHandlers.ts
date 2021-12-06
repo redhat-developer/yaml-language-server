@@ -118,6 +118,7 @@ export class SettingsHandler {
         this.yamlSettings.propTableStyle = settings.yaml.propTableStyle;
       }
       this.yamlSettings.disableAdditionalProperties = settings.yaml.disableAdditionalProperties;
+      this.yamlSettings.disableDefaultProperties = settings.yaml.disableDefaultProperties;
     }
 
     this.yamlSettings.schemaConfigurationSettings = [];
@@ -238,6 +239,7 @@ export class SettingsHandler {
       indentation: this.yamlSettings.indentation,
       propTableStyle: this.yamlSettings.propTableStyle,
       disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
+      disableDefaultProperties: this.yamlSettings.disableDefaultProperties,
       yamlVersion: this.yamlSettings.yamlVersion,
     };
 

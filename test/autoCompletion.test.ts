@@ -387,6 +387,62 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
+      it('Autocomplete without default value - not required', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion();
+        languageSettingsSetup.languageSettings.disableDefaultProperties = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'string',
+                  default: 'test',
+                },
+              },
+            },
+          },
+        });
+        const content = '';
+        const result = await parseSetup(content, 0);
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0]).to.deep.equal(
+          createExpectedCompletion('scripts', 'scripts:\n  $1', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+      it('Autocomplete without default value - required', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion();
+        languageSettingsSetup.languageSettings.disableDefaultProperties = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'string',
+                  default: 'test',
+                },
+              },
+              required: ['sample'],
+            },
+          },
+        });
+        const content = '';
+        const result = await parseSetup(content, 0);
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0]).to.deep.equal(
+          createExpectedCompletion('scripts', 'scripts:\n  sample: ${1:test}', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
       it('Autocomplete second key in middle of file', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
@@ -1884,9 +1940,7 @@ describe('Auto Completion Tests', () => {
       const completion = await parseSetup(content, 36);
       expect(completion.items).lengthOf(1);
       expect(completion.items[0].textEdit.newText).to.equal(
-        jigxBranchTest
-          ? 'settings:\n  data:\n    arrayItems:\n      - id: ' // remove not required props from snippet event they are default
-          : 'settings:\n  data:\n    arrayItems:\n      - show: ${1:true}\n        id: $2'
+        'settings:\n  data:\n    arrayItems:\n      - show: ${1:true}\n        id: $2'
       );
     });
 

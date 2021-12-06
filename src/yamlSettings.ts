@@ -23,6 +23,7 @@ export interface Settings {
     };
     propTableStyle: YamlHoverDetailPropTableStyle;
     extraLanguage: string[];
+    disableDefaultProperties: boolean;
     disableAdditionalProperties: boolean;
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
@@ -68,6 +69,7 @@ export class SettingsState {
   indentation: string | undefined = undefined;
   propTableStyle: YamlHoverDetailPropTableStyle = 'table';
   disableAdditionalProperties = false;
+  disableDefaultProperties = false;
   maxItemsComputed = 5000;
 
   // File validation helpers

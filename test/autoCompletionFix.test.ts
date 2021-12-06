@@ -13,8 +13,7 @@ import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
 import * as path from 'path';
 
-// TODO Petr
-describe.skip('Auto Completion Fix Tests', () => {
+describe('Auto Completion Fix Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageService: LanguageService;
   let languageHandler: LanguageHandlers;
