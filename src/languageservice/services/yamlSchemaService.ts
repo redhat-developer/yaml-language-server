@@ -328,11 +328,23 @@ export class YAMLSchemaService extends JSONSchemaService {
       let schemaFromModeline = getSchemaFromModeline(doc);
       if (schemaFromModeline !== undefined) {
         if (!schemaFromModeline.startsWith('file:') && !schemaFromModeline.startsWith('http')) {
+          // If path contains a fragment and it is left intact, "#" will be
+          // considered part of the filename and converted to "%23" by
+          // path.resolve() -> take it out and add back after path.resolve
+          let appendix = '';
+          if (schemaFromModeline.indexOf('#') > 0) {
+            const segments = schemaFromModeline.split('#', 2);
+            schemaFromModeline = segments[0];
+            appendix = segments[1];
+          }
           if (!path.isAbsolute(schemaFromModeline)) {
             const resUri = URI.parse(resource);
             schemaFromModeline = URI.file(path.resolve(path.parse(resUri.fsPath).dir, schemaFromModeline)).toString();
           } else {
             schemaFromModeline = URI.file(schemaFromModeline).toString();
+          }
+          if (appendix.length > 0) {
+            schemaFromModeline += '#' + appendix;
           }
         }
         this.addSchemaPriority(schemaFromModeline, SchemaPriority.Modeline);
