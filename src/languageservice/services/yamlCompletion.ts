@@ -706,15 +706,18 @@ export class YamlCompletion {
                 s.schema.items.anyOf
                   .filter((i) => typeof i === 'object')
                   .forEach((i: JSONSchema, index) => {
+                    const schemaType = getSchemaTypeName(i);
                     const insertText = `- ${this.getInsertTextForObject(i, separatorAfter).insertText.trimLeft()}`;
                     //append insertText to documentation
+                    const schemaTypeTitle = schemaType ? ' type `' + schemaType + '`' : '';
+                    const schemaDescription = s.schema.description ? ' (' + s.schema.description + ')' : '';
                     const documentation = this.getDocumentationWithMarkdownText(
-                      `Create an item of an array${s.schema.description === undefined ? '' : '(' + s.schema.description + ')'}`,
+                      `Create an item of an array${schemaTypeTitle}${schemaDescription}`,
                       insertText
                     );
                     collector.add({
                       kind: this.getSuggestionKind(i.type),
-                      label: '- (array item) ' + (index + 1),
+                      label: '- (array item) ' + (schemaType || index + 1),
                       documentation: documentation,
                       insertText: insertText,
                       insertTextFormat: InsertTextFormat.Snippet,
