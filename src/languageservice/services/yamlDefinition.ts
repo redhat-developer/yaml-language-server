@@ -7,29 +7,34 @@ import { DefinitionParams, LocationLink, Range } from 'vscode-languageserver-pro
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DefinitionLink } from 'vscode-languageserver-types';
 import { isAlias } from 'yaml';
+import { Telemetry } from '../../languageserver/telemetry';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { TextBuffer } from '../utils/textBuffer';
 
-export function getDefinition(document: TextDocument, params: DefinitionParams): DefinitionLink[] | undefined {
-  try {
-    const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
-    const offset = document.offsetAt(params.position);
-    const currentDoc = matchOffsetToDocument(offset, yamlDocument);
-    if (currentDoc) {
-      const [node] = currentDoc.getNodeFromPosition(offset, new TextBuffer(document));
-      if (node && isAlias(node)) {
-        const defNode = node.resolve(currentDoc.internalDocument);
-        if (defNode && defNode.range) {
-          const targetRange = Range.create(document.positionAt(defNode.range[0]), document.positionAt(defNode.range[2]));
-          const selectionRange = Range.create(document.positionAt(defNode.range[0]), document.positionAt(defNode.range[1]));
-          return [LocationLink.create(document.uri, targetRange, selectionRange)];
+export class YamlDefinition {
+  constructor(private readonly telemetry: Telemetry) {}
+
+  getDefinition(document: TextDocument, params: DefinitionParams): DefinitionLink[] | undefined {
+    try {
+      const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
+      const offset = document.offsetAt(params.position);
+      const currentDoc = matchOffsetToDocument(offset, yamlDocument);
+      if (currentDoc) {
+        const [node] = currentDoc.getNodeFromPosition(offset, new TextBuffer(document));
+        if (node && isAlias(node)) {
+          const defNode = node.resolve(currentDoc.internalDocument);
+          if (defNode && defNode.range) {
+            const targetRange = Range.create(document.positionAt(defNode.range[0]), document.positionAt(defNode.range[2]));
+            const selectionRange = Range.create(document.positionAt(defNode.range[0]), document.positionAt(defNode.range[1]));
+            return [LocationLink.create(document.uri, targetRange, selectionRange)];
+          }
         }
       }
+    } catch (err) {
+      this.telemetry.sendError('yaml.definition.error', { error: err.toString() });
     }
-  } catch (err) {
-    this.telemetry.sendError('yaml.definition.error', { error: err });
-  }
 
-  return undefined;
+    return undefined;
+  }
 }

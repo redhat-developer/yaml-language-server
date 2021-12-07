@@ -1,3 +1,8 @@
+### 1.2.2
+- Fix: LSP triggeringregisterCapability despite dynamicRegistration set to false [#583](https://github.com/redhat-developer/yaml-language-server/issues/583)
+- Add methods which allow client get schemas info [#556](https://github.com/redhat-developer/yaml-language-server/pull/556)
+- Fix: links error reporting [#596](https://github.com/redhat-developer/yaml-language-server/pull/596)
+
 ### 1.2.1
 - Fix: Can not load schema file when the URL is redirected. [#586](https://github.com/redhat-developer/vscode-yaml/issues/586)
 - docs: fix typos [#592](https://github.com/redhat-developer/yaml-language-server/pull/592)
