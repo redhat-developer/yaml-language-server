@@ -29,7 +29,7 @@ import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
 import { DocumentSymbolsContext } from 'vscode-json-languageservice';
-import { findLinks } from './services/yamlLinks';
+import { YamlLinks } from './services/yamlLinks';
 import {
   FoldingRange,
   ClientCapabilities,
@@ -52,7 +52,9 @@ import { Telemetry } from '../languageserver/telemetry';
 import { YamlVersion } from './parser/yamlParser07';
 import { YamlCompletion } from './services/yamlCompletion';
 import { yamlDocumentsCache } from './parser/yaml-documents';
-import { getDefinition } from './services/yamlDefinition';
+import { SettingsState } from '../yamlSettings';
+import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers';
+import { YamlDefinition } from './services/yamlDefinition';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -159,6 +161,7 @@ export function getLanguageService(
   workspaceContext: WorkspaceContextService,
   connection: Connection,
   telemetry: Telemetry,
+  yamlSettings: SettingsState,
   clientCapabilities?: ClientCapabilities
 ): LanguageService {
   const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
@@ -169,6 +172,11 @@ export function getLanguageService(
   const formatter = new YAMLFormatter();
   const yamlCodeActions = new YamlCodeActions(clientCapabilities);
   const yamlCodeLens = new YamlCodeLens(schemaService, telemetry);
+  const yamlLinks = new YamlLinks(telemetry);
+  const yamlDefinition = new YamlDefinition(telemetry);
+
+  new JSONSchemaSelection(schemaService, yamlSettings, connection);
+
   // register all commands
   registerCommands(commandExecutor, connection);
   return {
@@ -197,13 +205,13 @@ export function getLanguageService(
     registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
       schemaService.registerCustomSchemaProvider(schemaProvider);
     },
-    findLinks,
+    findLinks: yamlLinks.findLinks.bind(yamlLinks),
     doComplete: completer.doComplete.bind(completer),
     doValidation: yamlValidation.doValidation.bind(yamlValidation),
     doHover: hover.doHover.bind(hover),
     findDocumentSymbols: yamlDocumentSymbols.findDocumentSymbols.bind(yamlDocumentSymbols),
     findDocumentSymbols2: yamlDocumentSymbols.findHierarchicalDocumentSymbols.bind(yamlDocumentSymbols),
-    doDefinition: getDefinition.bind(getDefinition),
+    doDefinition: yamlDefinition.getDefinition.bind(yamlDefinition),
     resetSchema: (uri: string) => {
       return schemaService.onResourceChange(uri);
     },
