@@ -8,6 +8,7 @@ import { DocumentSelector } from 'vscode-languageserver'; // jigx
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
+import { SchemaSelectionRequests } from '../../requestTypes';
 import { Settings, SettingsState } from '../../yamlSettings';
 import { Telemetry } from '../telemetry';
 import { ValidationHandler } from './validationHandlers';
@@ -66,7 +67,7 @@ export class SettingsHandler {
     this.setConfiguration(settings);
   }
 
-  setConfiguration(settings: Settings): void {
+  async setConfiguration(settings: Settings): Promise<void> {
     configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
 
     this.yamlSettings.specificValidatorPaths = [];
@@ -137,8 +138,11 @@ export class SettingsHandler {
       this.yamlSettings.schemaConfigurationSettings.push(schemaObj);
     }
 
-    this.setSchemaStoreSettingsIfNotSet();
+    await this.setSchemaStoreSettingsIfNotSet();
     this.updateConfiguration();
+    if (this.yamlSettings.useSchemaSelectionRequests) {
+      this.connection.sendNotification(SchemaSelectionRequests.schemaStoreInitialized, {});
+    }
 
     // dynamically enable & disable the formatter
     if (this.yamlSettings.clientDynamicRegisterSupport) {
