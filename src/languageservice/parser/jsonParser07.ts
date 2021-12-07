@@ -1012,12 +1012,21 @@ function validate(
     } else {
       const itemSchema = asSchema(schema.items);
       if (itemSchema) {
-        for (const item of node.items) {
-          const itemValidationResult = new ValidationResult(isKubernetes);
-          validate(item, itemSchema, schema, itemValidationResult, matchingSchemas, options);
-          validationResult.mergePropertyMatch(itemValidationResult);
-          validationResult.mergeEnumValues(itemValidationResult);
-        }
+        const itemValidationResult = new ValidationResult(isKubernetes);
+        node.items.forEach((item) => {
+          if (itemSchema.oneOf && itemSchema.oneOf.length === 1) {
+            const subSchemaRef = itemSchema.oneOf[0];
+            const subSchema = asSchema(subSchemaRef);
+            subSchema.title = schema.title;
+            validate(item, subSchema, schema, itemValidationResult, matchingSchemas, options);
+            validationResult.mergePropertyMatch(itemValidationResult);
+            validationResult.mergeEnumValues(itemValidationResult);
+          } else {
+            validate(item, itemSchema, schema, itemValidationResult, matchingSchemas, options);
+            validationResult.mergePropertyMatch(itemValidationResult);
+            validationResult.mergeEnumValues(itemValidationResult);
+          }
+        });
       }
     }
 
