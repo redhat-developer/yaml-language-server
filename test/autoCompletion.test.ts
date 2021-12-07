@@ -561,34 +561,32 @@ describe('Auto Completion Tests', () => {
           })
           .then(done, done);
       });
-      if (jigxBranchTest) {
-        it('Autocomplete does happen right after : under an object and with defaultSnippet', (done) => {
-          languageService.addSchema(SCHEMA_ID, {
-            type: 'object',
-            properties: {
-              scripts: {
-                type: 'object',
-                properties: {},
-                defaultSnippets: [
-                  {
-                    label: 'myOther2Sample snippet',
-                    body: { myOther2Sample: {} },
-                    markdownDescription: 'snippet\n```yaml\nmyOther2Sample:\n```\n',
-                  },
-                ],
-              },
+      it('Autocomplete does happen right after : under an object and with defaultSnippet', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {},
+              defaultSnippets: [
+                {
+                  label: 'myOther2Sample snippet',
+                  body: { myOther2Sample: {} },
+                  markdownDescription: 'snippet\n```yaml\nmyOther2Sample:\n```\n',
+                },
+              ],
             },
-          });
-          const content = 'scripts:';
-          const completion = parseSetup(content, content.length);
-          completion
-            .then(function (result) {
-              assert.equal(result.items.length, 1);
-              assert.equal(result.items[0].insertText, '\n  myOther2Sample: ');
-            })
-            .then(done, done);
+          },
         });
-      }
+        const content = 'scripts:';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.equal(result.items[0].insertText, '\n  myOther2Sample: ');
+          })
+          .then(done, done);
+      });
 
       it('Autocomplete does happen right after key object', (done) => {
         languageService.addSchema(SCHEMA_ID, {

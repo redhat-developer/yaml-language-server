@@ -7,6 +7,7 @@
 import * as Json from 'jsonc-parser';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isNumber, equals, isString, isDefined, isBoolean, isIterable, pushIfNotExist } from '../utils/objects';
+import { getSchemaTypeName } from '../utils/schemaUtils';
 import {
   ASTNode,
   ObjectASTNode,
@@ -22,7 +23,6 @@ import * as nls from 'vscode-nls';
 import { URI } from 'vscode-uri';
 import { DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Schema_Object } from '../utils/jigx/schema-type';
 import * as path from 'path';
 import { prepareInlineCompletion } from '../services/yamlCompletion jigx';
 import { Diagnostic } from 'vscode-languageserver';
@@ -87,10 +87,6 @@ export interface IProblem {
 
 export interface JSONSchemaWithProblems extends JSONSchema {
   problems: IProblem[];
-}
-
-interface DiagnosticExt extends Diagnostic {
-  schemaUri?: string[];
 }
 
 export abstract class ASTNodeImpl {
@@ -602,7 +598,19 @@ function validate(
   matchingSchemas.add({ node: node, schema: schema });
 
   function _validateNode(): void {
+    function isExpression(type: string): boolean {
+      if (type === 'object' && node.type === 'string' && (node.value.startsWith('=$') || node.value.startsWith('=@'))) {
+        const schemaName = getSchemaTypeName(schema);
+        return schemaName === 'Expression';
+      }
+      return false;
+    }
+
     function matchesType(type: string): boolean {
+      // expression customization
+      if (isExpression(type)) {
+        return true;
+      }
       return node.type === type || (type === 'integer' && node.type === 'number' && node.isInteger);
     }
 
@@ -621,7 +629,7 @@ function validate(
     } else if (schema.type) {
       if (!matchesType(schema.type)) {
         //get more specific name than just object
-        const schemaType = schema.type === 'object' ? Schema_Object.getSchemaType(schema) : schema.type;
+        const schemaType = schema.type === 'object' ? getSchemaTypeName(schema) : schema.type;
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
