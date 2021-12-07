@@ -11,8 +11,10 @@ import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
 import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import assert = require('assert');
+import { expect } from 'chai';
+import { createExpectedCompletion } from './utils/verifyError';
 
-describe('Auto Completion Extended Tests', () => {
+describe('Auto Completion Tests Extended', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageService: LanguageService;
   let languageHandler: LanguageHandlers;
@@ -54,6 +56,17 @@ describe('Auto Completion Extended Tests', () => {
       languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
       const content = 'value: ';
       const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].insertText, '=@ctx');
+        })
+        .then(done, done);
+    });
+    it('simple-null with next line', (done) => {
+      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+      const content = 'value: \nnextLine: 1';
+      const completion = parseSetup(content, 7);
       completion
         .then(function (result) {
           assert.equal(result.items.length, 1);
@@ -152,6 +165,138 @@ describe('Auto Completion Extended Tests', () => {
           });
         })
         .then(done, done);
+    });
+  });
+  describe.only('Complex completion', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const inlineObjectSchema = require(path.join(__dirname, './fixtures/testInlineObject.json'));
+
+    it('nested completion - no space after :', async () => {
+      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+      const content = 'nested:\n  scripts:\n    sample:\n      test:';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).to.be.equal(6);
+      expect(result.items[0]).to.deep.equal(
+        createExpectedCompletion('const1', ' const1', 3, 11, 3, 11, 12, 2, {
+          documentation: undefined,
+        })
+      );
+      expect(result.items[1]).to.deep.equal(
+        createExpectedCompletion('list', '\n  list: ', 3, 11, 3, 11, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(result.items[2]).to.deep.equal(
+        createExpectedCompletion('parent', '\n  parent: ', 3, 11, 3, 11, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(result.items[3]).to.deep.equal(
+        createExpectedCompletion('=@ctx', ' =@ctx', 3, 11, 3, 11, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(result.items[4]).to.deep.equal(
+        createExpectedCompletion('objA', '\n  objA:\n    propI: ', 3, 11, 3, 11, 10, 2, { documentation: '' })
+      );
+      expect(result.items[5]).to.deep.equal(
+        createExpectedCompletion('obj1', '\n  objA:\n    propI: ', 3, 11, 3, 11, 10, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\nobjA:\n  propI: \n```',
+          },
+          isForParentSuggestion: true,
+          sortText: '_obj1',
+          kind: 7,
+          schemaType: 'obj1',
+          indent: '',
+        })
+      );
+    });
+    it('nested completion - space after : ', async () => {
+      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+      const content = 'nested:\n  scripts:\n    sample:\n      test: ';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).to.be.equal(6);
+      expect(result.items[0]).to.deep.equal(
+        createExpectedCompletion('const1', 'const1', 3, 12, 3, 12, 12, 2, {
+          documentation: undefined,
+        })
+      );
+      expect(result.items[1]).to.deep.equal(
+        createExpectedCompletion('list', '\n  list: ', 3, 12, 3, 12, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(result.items[2]).to.deep.equal(
+        createExpectedCompletion('parent', '\n  parent: ', 3, 12, 3, 12, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(result.items[3]).to.deep.equal(
+        createExpectedCompletion('=@ctx', '=@ctx', 3, 12, 3, 12, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(result.items[4]).to.deep.equal(
+        createExpectedCompletion('objA', '\n  objA:\n    propI: ', 3, 12, 3, 12, 10, 2, { documentation: '' })
+      );
+      expect(result.items[5]).to.deep.equal(
+        createExpectedCompletion('obj1', '\n  objA:\n    propI: ', 3, 12, 3, 12, 10, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\nobjA:\n  propI: \n```',
+          },
+          isForParentSuggestion: true,
+          sortText: '_obj1',
+          kind: 7,
+          schemaType: 'obj1',
+          indent: '',
+        })
+      );
+    });
+    // todo fix after 'Autocomplete with nextLine  - nested object'
+    it.skip('nested completion - some newLine after : ', async () => {
+      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+      const content = 'nested:\n  scripts:\n    sample:\n      test:\n        ';
+      const result = await parseSetup(content + '\nnewLine: test', content.length);
+
+      expect(result.items.length).to.be.equal(5);
+      expect(result.items[0]).to.deep.equal(
+        createExpectedCompletion('list', 'list: ', 4, 8, 4, 8, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(result.items[1]).to.deep.equal(
+        createExpectedCompletion('parent', 'parent: ', 4, 8, 4, 8, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(result.items[2]).to.deep.equal(
+        createExpectedCompletion('=@ctx', '=@ctx', 4, 8, 4, 8, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(result.items[3]).to.deep.equal(
+        createExpectedCompletion('objA', 'objA:\n  propI: ', 4, 8, 4, 8, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(result.items[4]).to.deep.equal(
+        createExpectedCompletion('obj1', 'objA:\n  propI: ', 4, 8, 4, 8, 10, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\nobjA:\n  propI: \n```',
+          },
+          isForParentSuggestion: true,
+          sortText: '_obj1',
+          kind: 7,
+          schemaType: 'obj1',
+          indent: '',
+        })
+      );
     });
   });
 });

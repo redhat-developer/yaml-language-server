@@ -16,6 +16,21 @@
           }
         }
       }
+    },
+    "obj1": {
+      "properties": {
+        "objA": {
+          "type": "object",
+          "properties": {
+            "propI": {
+              "type": "string"
+            }
+          },
+          "required": ["propI"]
+        }
+      },
+      "required": ["objA"],
+      "type": "object"
     }
   },
   "properties": {
@@ -65,6 +80,49 @@
           "$ref": "#/definitions/Expression"
         }
       ]
+    },
+    "nested": {
+      "type": "object",
+      "properties": {
+        "scripts": {
+          "type": "object",
+          "properties": {
+            "sample": {
+              "type": "object",
+              "properties": {
+                "test": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "const": "const1"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "list": {
+                          "type": "string"
+                        },
+                        "parent": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/definitions/Expression"
+                    },
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/obj1"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "additionalProperties": false,

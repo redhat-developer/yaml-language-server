@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import { TextDocument, TextDocumentContentChangeEvent } from 'vscode-languageserver-textdocument';
 import {
   ClientCapabilities,
   CompletionItem,
@@ -104,13 +104,14 @@ export class YamlCompletion {
       const newPosition = Position.create(position.line, position.character + 1);
       result = await this.doCompletionWithModification(result, document, position, isKubernetes, newPosition, ' ');
     } else {
-      result = await this.doCompleteInternal(document, position, isKubernetes);
+      result = await this.doCompleteWithDisabledAdditionalProps(document, position, isKubernetes);
     }
 
     // try as a object if is on property line
-    if (lineContent.match(/:\s?$/)) {
-      const lineIndent = lineContent.match(/\s*/)[0];
+    if (lineContent.match(/:\s?\n?$/)) {
+      const lineIndent = lineContent.match(/^\s*/)[0];
       const fullIndent = lineIndent + this.indentation;
+      const modificationForInvoke = '\n' + fullIndent;
       const firstPrefix = '\n' + this.indentation;
       const newPosition = Position.create(position.line + 1, fullIndent.length);
       result = await this.doCompletionWithModification(
@@ -119,8 +120,9 @@ export class YamlCompletion {
         position,
         isKubernetes,
         newPosition,
+        modificationForInvoke,
         firstPrefix,
-        fullIndent
+        this.indentation
       );
     }
     this.processInlineInitialization(result, lineContent);
@@ -133,11 +135,12 @@ export class YamlCompletion {
     position: Position, // original position
     isKubernetes: boolean,
     newPosition: Position, // new position
-    firstPrefix: string,
+    modificationForInvoke: string,
+    firstPrefix = modificationForInvoke,
     eachLinePrefix = ''
   ): Promise<CompletionList> {
-    TextDocument.update(document, [{ range: Range.create(position, position), text: firstPrefix }], document.version + 1);
-    const resultLocal = await this.doCompleteInternal(document, newPosition, isKubernetes);
+    this.updateTextDocument(document, [{ range: Range.create(position, position), text: modificationForInvoke }]);
+    const resultLocal = await this.doCompleteWithDisabledAdditionalProps(document, newPosition, isKubernetes);
     resultLocal.items.map((item) => {
       let firstPrefixLocal = firstPrefix;
       // if there is single space (space after colon) and insert text already starts with \n (it's a object), don't add space
@@ -156,9 +159,7 @@ export class YamlCompletion {
       }
     });
     // revert document edit
-    TextDocument.update(document, [{ range: Range.create(position, newPosition), text: '' }], document.version + 1);
-    // remove from cache
-    this.yamlDocument.delete(document);
+    this.updateTextDocument(document, [{ range: Range.create(position, newPosition), text: '' }]);
 
     if (!result.items.length) {
       result = resultLocal;
@@ -191,7 +192,7 @@ export class YamlCompletion {
     const originalText = lineContent.slice(inlineSymbolPosition);
     const props = originalText.split('.');
     let newText = props.reduce((reducer, prop, index) => {
-      if (!prop) {
+      if (!prop || prop === '\n') {
         return reducer;
       }
       // support =@ctx.da
@@ -206,9 +207,12 @@ export class YamlCompletion {
     newText = `\n${lineIndent}${this.indentation}${newText}`;
     const newStartPosition = Position.create(position.line, inlineSymbolPosition);
     const removedCount = originalText.length; // position.character - newStartPosition.character;
-    TextDocument.update(document, [{ range: Range.create(newStartPosition, position), text: newText }], document.version + 1);
+    const previousContent = document.getText();
+    this.updateTextDocument(document, [{ range: Range.create(newStartPosition, position), text: newText }]);
     const newPosition = document.positionAt(offset - removedCount + newText.length);
-    const resultLocal = await this.doCompleteInternal(document, newPosition, isKubernetes);
+
+    const resultLocal = await this.doCompleteWithDisabledAdditionalProps(document, newPosition, isKubernetes);
+
     resultLocal.items.forEach((inlineItem) => {
       let inlineText = inlineItem.insertText;
       inlineText = inlineText.replace(/:\n?\s*(\$1)?/g, '.').replace(/\.$/, '');
@@ -220,25 +224,40 @@ export class YamlCompletion {
         }
       }
     });
+
     // revert document edit
-    TextDocument.update(
-      document,
-      [{ range: Range.create(newStartPosition, newPosition), text: originalText }],
-      document.version + 1
-    );
-    // remove from cache
-    this.yamlDocument.delete(document);
+    // this.updateTextDocument(document, [{ range: Range.create(newStartPosition, newPosition), text: originalText }]);
+    const fullRange = Range.create(document.positionAt(0), document.positionAt(document.getText().length + 1));
+    this.updateTextDocument(document, [{ range: fullRange, text: previousContent }]);
+
     return resultLocal; // don't merge with anything, inline should be combined with others
   }
   private processInlineInitialization(result: CompletionList, lineContent: string): void {
     // make always online - happens when general completion returns inline label
     const inlineItem = result.items.find((item) => item.label === inlineSymbol);
     if (inlineItem) {
-      inlineItem.insertText = (lineContent.endsWith(':') ? ' ' : '') + inlineSymbol;
+      inlineItem.insertText = (lineContent.match(/:\n?$/) ? ' ' : '') + inlineSymbol;
       if (inlineItem.textEdit) {
         inlineItem.textEdit.newText = inlineItem.insertText;
       }
     }
+  }
+
+  private updateTextDocument(document: TextDocument, changes: TextDocumentContentChangeEvent[]): void {
+    TextDocument.update(document, changes, document.version + 1);
+  }
+
+  private async doCompleteWithDisabledAdditionalProps(
+    document: TextDocument,
+    position: Position,
+    isKubernetes = false
+  ): Promise<CompletionList> {
+    // update yaml parser settings
+    const doc = this.yamlDocument.getYamlDocument(document, { customTags: this.customTags, yamlVersion: this.yamlVersion }, true);
+    doc.documents.forEach((doc) => {
+      doc.disableAdditionalProperties = true;
+    });
+    return this.doCompleteInternal(document, position, isKubernetes);
   }
 
   private async doCompleteInternal(document: TextDocument, position: Position, isKubernetes = false): Promise<CompletionList> {
@@ -946,6 +965,7 @@ export class YamlCompletion {
           case 'string':
           case 'number':
           case 'integer':
+          case 'anyOf':
             insertText += `${indent}${key}: $${insertIndex++}\n`;
             break;
           case 'array':

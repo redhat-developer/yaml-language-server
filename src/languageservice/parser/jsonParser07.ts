@@ -590,7 +590,19 @@ function validate(
   matchingSchemas.add({ node: node, schema: schema });
 
   function _validateNode(): void {
+    function isExpression(type: string): boolean {
+      if (type === 'object' && node.type === 'string' && (node.value.startsWith('=$') || node.value.startsWith('=@'))) {
+        const schemaName = getSchemaTypeName(schema);
+        return schemaName === 'Expression';
+      }
+      return false;
+    }
+
     function matchesType(type: string): boolean {
+      // expression customization
+      if (isExpression(type)) {
+        return true;
+      }
       return node.type === type || (type === 'integer' && node.type === 'number' && node.isInteger);
     }
 
