@@ -472,17 +472,20 @@ export class YamlCompletion {
                     if (Array.isArray(propertySchema.items)) {
                       this.addSchemaValueCompletions(propertySchema.items[0], separatorAfter, collector, {});
                     } else if (typeof propertySchema.items === 'object' && propertySchema.items.type === 'object') {
+                      const insertText = `- ${this.getInsertTextForObject(
+                        propertySchema.items,
+                        separatorAfter,
+                        '  '
+                      ).insertText.trimLeft()}`;
+                      const documentation = this.getDocumentationWithMarkdownText(
+                        `Create an item of an array${propertySchema.description ? ' (' + propertySchema.description + ')' : ''}`,
+                        insertText
+                      );
                       collector.add({
                         kind: this.getSuggestionKind(propertySchema.items.type),
                         label: '- (array item)',
-                        documentation: `Create an item of an array${
-                          propertySchema.description === undefined ? '' : '(' + propertySchema.description + ')'
-                        }`,
-                        insertText: `- ${this.getInsertTextForObject(
-                          propertySchema.items,
-                          separatorAfter,
-                          '  '
-                        ).insertText.trimLeft()}`,
+                        documentation,
+                        insertText,
                         insertTextFormat: InsertTextFormat.Snippet,
                       });
                     }
@@ -599,13 +602,16 @@ export class YamlCompletion {
                   this.addSchemaValueCompletions(s.schema.items[index], separatorAfter, collector, types);
                 }
               } else if (typeof s.schema.items === 'object' && s.schema.items.type === 'object') {
+                const insertText = `- ${this.getInsertTextForObject(s.schema.items, separatorAfter, '  ').insertText.trimLeft()}`;
+                const documentation = this.getDocumentationWithMarkdownText(
+                  `Create an item of an array${s.schema.description ? ' (' + s.schema.description + ')' : ''}`,
+                  insertText
+                );
                 collector.add({
                   kind: this.getSuggestionKind(s.schema.items.type),
                   label: '- (array item)',
-                  documentation: `Create an item of an array${
-                    s.schema.description === undefined ? '' : '(' + s.schema.description + ')'
-                  }`,
-                  insertText: `- ${this.getInsertTextForObject(s.schema.items, separatorAfter, '  ').insertText.trimLeft()}`,
+                  documentation,
+                  insertText,
                   insertTextFormat: InsertTextFormat.Snippet,
                 });
 
@@ -1302,8 +1308,7 @@ function convertToStringValue(value: string): string {
     return `"${value}"`;
   }
 
-  // eslint-disable-next-line prettier/prettier, no-useless-escape
-  if (value.indexOf('\"') !== -1) {
+  if (value.indexOf('"') !== -1) {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 
