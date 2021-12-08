@@ -427,6 +427,33 @@ storage:
       );
     });
 
+    it('Hover on null property in nested object', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          childObject: {
+            type: 'object',
+            properties: {
+              prop: {
+                type: 'string',
+                description: 'should return this description',
+              },
+            },
+          },
+        },
+      });
+      const content = 'childObject:\n  prop: \n';
+
+      const result = await parseSetup(content, content.indexOf('prop') + 1);
+      console.log((result.contents as MarkupContent).value);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
     it('should work with bad schema', async () => {
       const doc = setupSchemaIDTextDocument('foo:\n bar', 'bad-schema.yaml');
       yamlSettings.documents = new TextDocumentTestManager();

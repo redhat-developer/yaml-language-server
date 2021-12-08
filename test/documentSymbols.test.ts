@@ -127,7 +127,7 @@ describe('Document Symbols Tests', () => {
       assert.deepEqual(symbols[2], createExpectedSymbolInformation('name', 15, 'authors', TEST_URI, 4, 4, 4, 14));
       assert.deepEqual(symbols[3], createExpectedSymbolInformation('node1', 15, 'scripts', TEST_URI, 1, 2, 1, 13));
       assert.deepEqual(symbols[4], createExpectedSymbolInformation('node2', 15, 'scripts', TEST_URI, 2, 2, 2, 13));
-      assert.deepEqual(symbols[5], createExpectedSymbolInformation('scripts', 2, '', TEST_URI, 0, 0, 2, 13));
+      assert.deepEqual(symbols[5], createExpectedSymbolInformation('scripts', 2, '', TEST_URI, 0, 0, 3, 0));
     });
 
     it('Document Symbols with multi documents', () => {
@@ -223,7 +223,7 @@ describe('Document Symbols Tests', () => {
       const symbols = parseHierarchicalSetup(content);
 
       const object1 = createExpectedDocumentSymbol('name', SymbolKind.String, 1, 4, 1, 14, 1, 4, 1, 8, [], 'Josh');
-      const arrayChild1 = createExpectedDocumentSymbolNoDetail('0', SymbolKind.Module, 1, 4, 1, 14, 1, 4, 1, 14, [object1]);
+      const arrayChild1 = createExpectedDocumentSymbolNoDetail('0', SymbolKind.Module, 1, 4, 2, 0, 1, 4, 2, 0, [object1]);
 
       const object2 = createExpectedDocumentSymbol('email', SymbolKind.String, 2, 4, 2, 13, 2, 4, 2, 9, [], 'jp');
       const arrayChild2 = createExpectedDocumentSymbolNoDetail('1', SymbolKind.Module, 2, 4, 2, 13, 2, 4, 2, 13, [object2]);
@@ -239,10 +239,10 @@ describe('Document Symbols Tests', () => {
       const child1 = createExpectedDocumentSymbol('node1', SymbolKind.String, 1, 2, 1, 13, 1, 2, 1, 7, [], 'test');
       const child2 = createExpectedDocumentSymbol('node2', SymbolKind.String, 2, 2, 2, 13, 2, 2, 2, 7, [], 'test');
       const children = [child1, child2];
-      assert.deepEqual(symbols[0], createExpectedDocumentSymbol('scripts', SymbolKind.Module, 0, 0, 2, 13, 0, 0, 0, 7, children));
+      assert.deepEqual(symbols[0], createExpectedDocumentSymbol('scripts', SymbolKind.Module, 0, 0, 3, 0, 0, 0, 0, 7, children));
 
       const object1 = createExpectedDocumentSymbol('name', SymbolKind.String, 4, 4, 4, 14, 4, 4, 4, 8, [], 'Josh');
-      const arrayChild1 = createExpectedDocumentSymbolNoDetail('0', SymbolKind.Module, 4, 4, 4, 14, 4, 4, 4, 14, [object1]);
+      const arrayChild1 = createExpectedDocumentSymbolNoDetail('0', SymbolKind.Module, 4, 4, 5, 0, 4, 4, 5, 0, [object1]);
 
       const object2 = createExpectedDocumentSymbol('email', SymbolKind.String, 5, 4, 5, 13, 5, 4, 5, 9, [], 'jp');
       const arrayChild2 = createExpectedDocumentSymbolNoDetail('1', SymbolKind.Module, 5, 4, 5, 13, 5, 4, 5, 13, [object2]);
@@ -285,20 +285,20 @@ describe('Document Symbols Tests', () => {
       );
 
       const element = createExpectedDocumentSymbol('element', SymbolKind.String, 5, 16, 5, 28, 5, 16, 5, 23, [], 'div');
-      const root1 = createExpectedDocumentSymbol('root', SymbolKind.Module, 3, 22, 5, 28, 3, 22, 3, 26, [element]);
+      const root1 = createExpectedDocumentSymbol('root', SymbolKind.Module, 3, 22, 6, 0, 3, 22, 3, 26, [element]);
 
       const height = createExpectedDocumentSymbol('height', SymbolKind.Number, 10, 18, 10, 28, 10, 18, 10, 24, [], '41');
-      const style = createExpectedDocumentSymbol('style', SymbolKind.Module, 9, 16, 10, 28, 9, 16, 9, 21, [height]);
-      const root2 = createExpectedDocumentSymbol('root', SymbolKind.Module, 7, 16, 10, 28, 7, 16, 7, 21, [style]);
+      const style = createExpectedDocumentSymbol('style', SymbolKind.Module, 9, 16, 11, 0, 9, 16, 9, 21, [height]);
+      const root2 = createExpectedDocumentSymbol('root', SymbolKind.Module, 7, 16, 11, 0, 7, 16, 7, 21, [style]);
 
       assert.deepEqual(
         symbols[1],
-        createExpectedDocumentSymbol('structure', SymbolKind.Module, 2, 12, 5, 28, 2, 12, 2, 21, [root1])
+        createExpectedDocumentSymbol('structure', SymbolKind.Module, 2, 12, 6, 0, 2, 12, 2, 21, [root1])
       );
 
       assert.deepEqual(
         symbols[2],
-        createExpectedDocumentSymbol('conditions', SymbolKind.Module, 6, 12, 10, 28, 6, 12, 6, 22, [root2])
+        createExpectedDocumentSymbol('conditions', SymbolKind.Module, 6, 12, 11, 0, 6, 12, 6, 22, [root2])
       );
     });
 
