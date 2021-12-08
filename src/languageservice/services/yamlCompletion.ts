@@ -237,6 +237,7 @@ export class YamlCompletion {
         }
       }
 
+      const originalNode = node;
       if (node) {
         if (lineContent.length === 0) {
           node = currentDoc.internalDocument.contents as Node;
@@ -373,7 +374,7 @@ export class YamlCompletion {
           }
         }
 
-        this.addPropertyCompletions(schema, currentDoc, node, '', collector, textBuffer, overwriteRange);
+        this.addPropertyCompletions(schema, currentDoc, node, originalNode, '', collector, textBuffer, overwriteRange);
 
         if (!schema && currentWord.length > 0 && document.getText().charAt(offset - currentWord.length - 1) !== '"') {
           collector.add({
@@ -414,6 +415,7 @@ export class YamlCompletion {
     schema: ResolvedSchema,
     doc: SingleYAMLDocument,
     node: YAMLMap,
+    originalNode: Node,
     separatorAfter: string,
     collector: CompletionsCollector,
     textBuffer: TextBuffer,
@@ -424,8 +426,13 @@ export class YamlCompletion {
     const hasColumn = textBuffer.getLineContent(overwriteRange.start.line).indexOf(':') === -1;
 
     const nodeParent = doc.getParent(node);
+
+    const matchOriginal = matchingSchemas.find((it) => it.node.internalNode === originalNode && it.schema.properties);
     for (const schema of matchingSchemas) {
-      if (schema.node.internalNode === node && !schema.inverted) {
+      if (
+        ((schema.node.internalNode === node && !matchOriginal) || schema.node.internalNode === originalNode) &&
+        !schema.inverted
+      ) {
         this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
           newLineFirst: false,
           indentFirstObject: false,

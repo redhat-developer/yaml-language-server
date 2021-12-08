@@ -694,7 +694,7 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
-      it('Provide the 3 types when one is provided', (done) => {
+      it('Provide the 2 types when one is provided', (done) => {
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
         languageService.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  ';
