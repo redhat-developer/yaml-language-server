@@ -896,7 +896,7 @@ describe('Auto Completion Tests', () => {
             assert.deepEqual(
               result.items[0],
               createExpectedCompletion('- (array item)', '- ', 1, 2, 1, 3, 9, 2, {
-                documentation: 'Create an item of an array',
+                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- \n```' },
               })
             );
           })
@@ -931,7 +931,7 @@ describe('Auto Completion Tests', () => {
             assert.deepEqual(
               result.items[0],
               createExpectedCompletion('- (array item)', '- ', 2, 2, 2, 2, 9, 2, {
-                documentation: 'Create an item of an array',
+                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- \n```' },
               })
             );
           })
@@ -966,7 +966,7 @@ describe('Auto Completion Tests', () => {
             assert.deepEqual(
               result.items[0],
               createExpectedCompletion('- (array item)', '- ', 1, 0, 1, 0, 9, 2, {
-                documentation: 'Create an item of an array',
+                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- \n```' },
               })
             );
           })
@@ -1187,7 +1187,7 @@ describe('Auto Completion Tests', () => {
             assert.deepEqual(
               result.items[0],
               createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 4, 3, 4, 9, 2, {
-                documentation: 'Create an item of an array',
+                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- name: test\n```' },
               })
             );
           })
