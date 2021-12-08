@@ -5,23 +5,22 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { Hover, Position } from 'vscode-languageserver-types';
+import { Hover, MarkupContent, Position, Range } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
-import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
-import { JSONHover } from 'vscode-json-languageservice/lib/umd/services/jsonHover';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { ASTNode, MarkedString, MarkupContent, Range } from 'vscode-json-languageservice';
-import { Schema2Md } from '../utils/jigx/schema2md';
-import { getNodePath, getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
-import { decycle } from '../utils/jigx/cycle';
+import { SingleYAMLDocument } from '../parser/yamlParser07';
+import { getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
 import { JSONSchema } from '../jsonSchema';
-import { Telemetry } from '../../languageserver/telemetry';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
+import { Telemetry } from '../../languageserver/telemetry';
+import { ASTNode, MarkedString } from 'vscode-json-languageservice';
+import { Schema2Md } from '../utils/jigx/schema2md';
+import { decycle } from '../utils/jigx/cycle';
 
 interface YamlHoverDetailResult {
   /**
@@ -49,7 +48,6 @@ export class YamlHoverDetail {
   constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
     // this.shouldHover = true;
     this.schemaService = schemaService;
-    this.jsonHover = new JSONHover(schemaService, [], Promise);
   }
 
   public configure(languageSettings: LanguageSettings): void {
@@ -123,14 +121,8 @@ export class YamlHoverDetail {
       return result;
     };
 
-    const location = getNodePath(node);
-    for (let i = this.jsonHover.contributions.length - 1; i >= 0; i--) {
-      const contribution = this.jsonHover.contributions[i];
-      const promise = contribution.getInfoContribution(document.uri, location);
-      if (promise) {
-        return promise.then((htmlContent) => createHover(htmlContent, [], node));
-      }
-    }
+    // const location = getNodePath(node);
+    const propertyName = node.parent?.children?.[0].value?.toString();
 
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
       if (schema && node && !schema.errors.length) {
@@ -177,7 +169,7 @@ export class YamlHoverDetail {
           const decycleSchema = decycle(s.schema, 8);
           resSchemas.push(decycleSchema);
           if (this.propTableStyle !== 'none') {
-            const propMd = this.schema2Md.generateMd(s.schema, node.location);
+            const propMd = this.schema2Md.generateMd(s.schema, propertyName || 'property');
             if (propMd) {
               // propertiesMd.push(propMd);
               //take only last one
@@ -230,7 +222,8 @@ export class YamlHoverDetail {
           if (results.some((l) => l.includes(newLineWithHr))) {
             results.push('----');
           }
-          results.push(`Source: [${getSchemaName(schema.schema)}](${schema.schema.url})`);
+          const source = resSchemas.map((schema) => `Source: [${getSchemaName(schema)}](${schema.url})`);
+          results.push(source.join('\n\n'));
         }
 
         if (!results.length) {
@@ -285,6 +278,7 @@ function getSchemaName(schema: JSONSchema): string {
   return result;
 }
 
+// copied from https://github.com/microsoft/vscode-json-languageservice/blob/2ea5ad3d2ffbbe40dea11cfe764a502becf113ce/src/services/jsonHover.ts#L112
 function toMarkdown(plain: string): string;
 function toMarkdown(plain: string | undefined): string | undefined;
 function toMarkdown(plain: string | undefined): string | undefined {
@@ -295,6 +289,7 @@ function toMarkdown(plain: string | undefined): string | undefined {
   return undefined;
 }
 
+// copied from https://github.com/microsoft/vscode-json-languageservice/blob/2ea5ad3d2ffbbe40dea11cfe764a502becf113ce/src/services/jsonHover.ts#L122
 function toMarkdownCodeBlock(content: string): string {
   // see https://daringfireball.net/projects/markdown/syntax#precode
   if (content.indexOf('`') !== -1) {

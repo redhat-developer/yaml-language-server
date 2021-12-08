@@ -354,13 +354,12 @@ export class SchemaTypeFactory {
         return createInstance(Schema_ObjectTyped, schema, { propName, isPropRequired });
       }
       return createInstance(Schema_SimpleType, schema, { propName, isPropRequired }); //schema.type
+    } else if (schema.oneOf || schema.anyOf) {
+      return createInstance(Schema_AnyOf, schema, { propName, isPropRequired });
     } else if (Schema_ObjectTyped.get$ref(schema)) {
       //won't never used. Schema_Object is used instead - schema structure is little bit different
       //parser gives to some $ref types also real type automatically - so condition for schema.type is used
       return createInstance(Schema_ObjectTyped, schema, { propName, isPropRequired });
-    } else if (schema.oneOf || schema.anyOf) {
-      return createInstance(Schema_AnyOf, schema, { propName, isPropRequired });
-      // return (schema.oneOf || schema.anyOf).map((i: any) => getActualTypeStr(i, subSchemas)).join(tableColumnSeparator);
     } else {
       return createInstance(Schema_Undefined, schema, { propName, isPropRequired });
     }

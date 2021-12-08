@@ -10,6 +10,7 @@ import {
   char_lt,
   replace,
   replaceSpecialCharsInDescription,
+  simplifyNbsp,
   tableColumnSeparator,
   toCodeSingleLine,
   toTsBlock,
@@ -92,7 +93,9 @@ export class Schema2Md {
     const schemaTypeTyped = SchemaTypeFactory.CreatePropTypeInstance(schema, name, isRequired);
     let text = [schemaTypeTyped.getElementTitle(octothorpes, subSchemas, true, this.propTable.styleAsTsBlock)];
 
-    const offset = this.propTable.styleAsTsBlock ? octothorpes.replace(/#/g, ' ') : ' \\- ';
+    const offset = this.propTable.styleAsTsBlock
+      ? octothorpes.replace(/#/g, ' ')
+      : simplifyNbsp('&nbsp;'.repeat(octothorpes.length * 2 - 1)); // move description to the right
     if (schema.description && octothorpes > this.startOctothorpes) {
       //don't show description at the first level - it's added by yamlHover
       if (!this.propTable.styleAsTsBlock) {

@@ -30,7 +30,8 @@
         }
       },
       "required": ["objA"],
-      "type": "object"
+      "type": "object",
+      "description": "description of ob1"
     }
   },
   "properties": {
@@ -89,8 +90,10 @@
           "properties": {
             "sample": {
               "type": "object",
+              "description": "description of sample",
               "properties": {
                 "test": {
+                  "description": "description of test",
                   "anyOf": [
                     {
                       "type": "string",
@@ -98,6 +101,7 @@
                     },
                     {
                       "type": "object",
+                      "description": "description of object with prop list and parent",
                       "properties": {
                         "list": {
                           "type": "string"

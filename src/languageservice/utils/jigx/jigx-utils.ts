@@ -59,8 +59,7 @@ export function getFileInfo(
 export interface Instantiable {
   initialize?: () => void;
 }
-// eslint-disable-next-line prettier/prettier
-export function createInstance<T extends Instantiable>(type: { new(): T }, initObj: any, initObj2: any = {}): T {
+export function createInstance<T extends Instantiable>(type: { new (): T }, initObj: any, initObj2: any = {}): T {
   let obj: T = new type();
   obj = Object.assign(obj, initObj, initObj2) as T;
   if (obj.initialize) {
@@ -77,8 +76,7 @@ export function createInstance<T extends Instantiable>(type: { new(): T }, initO
  * @param type
  * @param initObj
  */
-// eslint-disable-next-line prettier/prettier
-export function ensureInstance<T>(type: { new(): T }, initObj: any): T {
+export function ensureInstance<T>(type: { new (): T }, initObj: any): T {
   let obj: T;
   if (initObj instanceof type) {
     return initObj;
@@ -191,4 +189,12 @@ export function stringFormat(str: string, ...params: string[]): string {
   return str.replace(/{(\d+)}/g, function (match, number) {
     return typeof args[number] != 'undefined' ? args[number] : match;
   });
+}
+
+/**
+ * &emsp; = 4 * &nbsp;
+ * &ensp; = 2 * &nbsp;
+ */
+export function simplifyNbsp(str: string): string {
+  return str.replace(/&nbsp;&nbsp;&nbsp;&nbsp;/g, '&emsp;').replace(/&nbsp;&nbsp;/g, '&ensp;');
 }
