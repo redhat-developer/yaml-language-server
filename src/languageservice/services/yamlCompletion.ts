@@ -417,7 +417,9 @@ export class YamlCompletion {
   ): void {
     const matchingSchemas = doc.getMatchingSchemas(schema.schema);
     const existingKey = textBuffer.getText(overwriteRange);
-    const hasColumn = textBuffer.getLineContent(overwriteRange.start.line).indexOf(':') === -1;
+    const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
+    const hasOnlyWhitespace = lineContent.trim().length === 0;
+    const hasColon = lineContent.indexOf(':') !== -1;
 
     const nodeParent = doc.getParent(node);
 
@@ -440,7 +442,7 @@ export class YamlCompletion {
             maxProperties === undefined ||
             node.items === undefined ||
             node.items.length < maxProperties ||
-            isMapContainsEmptyPair(node)
+            (node.items.length === maxProperties && !hasOnlyWhitespace)
           ) {
             for (const key in schemaProperties) {
               if (Object.prototype.hasOwnProperty.call(schemaProperties, key)) {
@@ -498,7 +500,7 @@ export class YamlCompletion {
                   }
 
                   let insertText = key;
-                  if (!key.startsWith(existingKey) || hasColumn) {
+                  if (!key.startsWith(existingKey) || !hasColon) {
                     insertText = this.getInsertTextForProperty(
                       key,
                       propertySchema,
