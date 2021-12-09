@@ -901,7 +901,7 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
-      it('Provide the 3 types when one is provided', (done) => {
+      it('Provide the 2 types when one is provided', (done) => {
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
         languageService.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  ';
@@ -1102,7 +1102,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- $1', 1, 2, 1, 3, 9, 2, {
+              createExpectedCompletion('- (array item)', '- ', 1, 2, 1, 3, 9, 2, {
                 documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- \n```' },
               })
             );
@@ -1137,7 +1137,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- $1', 2, 2, 2, 2, 9, 2, {
+              createExpectedCompletion('- (array item)', '- ', 2, 2, 2, 2, 9, 2, {
                 documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- \n```' },
               })
             );
@@ -1172,7 +1172,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- $1', 1, 0, 1, 0, 9, 2, {
+              createExpectedCompletion('- (array item)', '- ', 1, 0, 1, 0, 9, 2, {
                 documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- \n```' },
               })
             );

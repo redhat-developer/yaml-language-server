@@ -142,4 +142,18 @@ objB:
     const completion = await parseSetup(content, 2, 4);
     expect(completion.items).is.not.empty;
   });
+
+  it('should complete array item for "oneOf" schema', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const schema = require(path.join(__dirname, './fixtures/test-completion-oneOf.json'));
+    languageService.addSchema(SCHEMA_ID, schema);
+    const content = `metadata:
+  Selector:
+    query:
+      - 
+`;
+    const completion = await parseSetup(content, 3, 8);
+    expect(completion.items).length(5);
+    expect(completion.items.map((it) => it.label)).to.have.members(['NOT', 'attribute', 'operation', 'value', 'FUNC_item']);
+  });
 });
