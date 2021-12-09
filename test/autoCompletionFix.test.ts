@@ -21,7 +21,7 @@ describe('Auto Completion Fix Tests', () => {
 
   before(() => {
     languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
-      uri: 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.20.5-standalone-strict/all.json',
+      uri: 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json',
       fileMatch: [SCHEMA_ID],
     });
     const { languageService: langService, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(
