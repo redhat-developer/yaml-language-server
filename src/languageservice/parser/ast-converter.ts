@@ -143,7 +143,14 @@ function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
 
 function convertAlias(node: Alias, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
   refDepth++;
-  return convertAST(parent, node.resolve(doc), doc, lineCounter);
+  const resolvedNode = node.resolve(doc);
+  if (resolvedNode) {
+    return convertAST(parent, resolvedNode, doc, lineCounter);
+  } else {
+    const resultNode = new StringASTNodeImpl(parent, node, ...toOffsetLength(node.range));
+    resultNode.value = node.source;
+    return resultNode;
+  }
 }
 
 export function toOffsetLength(range: NodeRange): [number, number] {

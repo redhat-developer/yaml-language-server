@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as assert from 'assert';
+import { expect } from 'chai';
+import { ArrayASTNode, ObjectASTNode, PropertyASTNode } from '../src/languageservice/jsonASTTypes';
 import { parse } from './../src/languageservice/parser/yamlParser07';
 
 describe('YAML parser', () => {
@@ -266,6 +268,18 @@ metadata:
         1,
         `1 document should be available but there are ${parsedDocument.documents.length}`
       );
+    });
+
+    it('should not add "undefined" as array item', () => {
+      const yaml = `foo: 
+  - *`;
+      const parsedDocument = parse(yaml);
+      parsedDocument.documents[0].root;
+      expect(parsedDocument.documents).to.have.length(1);
+      expect(
+        (((parsedDocument.documents[0].root as ObjectASTNode).properties[0] as PropertyASTNode).valueNode as ArrayASTNode)
+          .items[0]
+      ).is.not.undefined;
     });
   });
 

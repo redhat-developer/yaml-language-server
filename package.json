@@ -33,7 +33,6 @@
     "prettier": "2.0.5"
   },
   "dependencies": {
-    "jsonc-parser": "^3.0.0",
     "request-light": "^0.5.5",
     "vscode-json-languageservice": "^4.1.7",
     "vscode-languageserver": "^7.0.0",
