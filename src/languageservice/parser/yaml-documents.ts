@@ -5,7 +5,7 @@
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { JSONDocument } from './jsonParser07';
-import { Document, isPair, isScalar, LineCounter, visit, YAMLError } from 'yaml';
+import { Document, isNode, isPair, isScalar, LineCounter, visit, YAMLError } from 'yaml';
 import { ASTNode } from '../jsonASTTypes';
 import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07';
 import { ErrorCode } from 'vscode-json-languageservice';
@@ -126,9 +126,9 @@ export class SingleYAMLDocument extends JSONDocument {
       if (!range) {
         return;
       }
-      const diff = Math.abs(range[2] - offset);
-      if (maxOffset <= range[0] && diff <= offsetDiff) {
-        offsetDiff = diff;
+      const diff = range[2] - offset;
+      if (maxOffset <= range[0] && diff <= 0 && Math.abs(diff) <= offsetDiff) {
+        offsetDiff = Math.abs(diff);
         maxOffset = range[0];
         closestNode = node;
       }
@@ -155,10 +155,15 @@ export class SingleYAMLDocument extends JSONDocument {
     }
     if (node.range) {
       const position = textBuffer.getPosition(node.range[0]);
-      if (position.character !== indentation && position.character > 0) {
+      if (position.character > indentation && position.character > 0) {
         const parent = this.getParent(node);
         if (parent) {
           return this.getProperParentByIndentation(indentation, parent, textBuffer);
+        }
+      } else if (position.character < indentation) {
+        const parent = this.getParent(node);
+        if (isPair(parent) && isNode(parent.value)) {
+          return parent.value;
         }
       } else {
         return node;
