@@ -156,4 +156,104 @@ objB:
     expect(completion.items).length(5);
     expect(completion.items.map((it) => it.label)).to.have.members(['NOT', 'attribute', 'operation', 'value', 'FUNC_item']);
   });
+
+  it('Autocomplete with short nextLine - nested object', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        example: {
+          type: 'object',
+          properties: {
+            sample: {
+              type: 'object',
+              properties: {
+                detail: {
+                  type: 'object',
+                },
+              },
+            },
+          },
+        },
+        a: {
+          type: 'string',
+          description: 'short prop name because of distance to the cursor',
+        },
+      },
+    });
+    const content = 'example:\n  sample:\n    ';
+    const completion = await parseSetup(content + '\na: test', 2, 4);
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0]).to.be.deep.equal(
+      createExpectedCompletion('detail', 'detail:\n  ', 2, 4, 2, 4, 10, 2, {
+        documentation: '',
+      })
+    );
+  });
+
+  it('Autocomplete with a new line inside the object', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        example: {
+          type: 'object',
+          properties: {
+            sample: {
+              type: 'object',
+              properties: {
+                prop1: {
+                  type: 'string',
+                },
+                prop2: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const content = 'example:\n  sample:\n    \n    prop2: value2';
+    const completion = await parseSetup(content, 2, 4);
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0]).to.be.deep.equal(
+      createExpectedCompletion('prop1', 'prop1: ', 2, 4, 2, 4, 10, 2, {
+        documentation: '',
+      })
+    );
+  });
+
+  it('Autocomplete on the first array item', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        examples: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              sample: {
+                type: 'object',
+                properties: {
+                  prop1: {
+                    type: 'string',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const content = 'examples:\n  \n  - sample:\n      prop1: value1';
+    const completion = await parseSetup(content, 1, 2);
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0]).to.be.deep.equal(
+      createExpectedCompletion('- (array item)', '- ', 1, 2, 1, 2, 9, 2, {
+        documentation: {
+          kind: 'markdown',
+          value: 'Create an item of an array\n ```\n- \n```',
+        },
+      })
+    );
+  });
 });
