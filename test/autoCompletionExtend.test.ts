@@ -85,8 +85,7 @@ describe('Auto Completion Tests Extended', () => {
         })
         .then(done, done);
     });
-    // need https://github.com/p-spacek/yaml-language-server/issues/18
-    it.skip('simple-context.da', (done) => {
+    it('simple-context.da', (done) => {
       languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
       const content = 'value: =@ctx.da';
       const completion = parseSetup(content, content.length);
@@ -109,7 +108,7 @@ describe('Auto Completion Tests Extended', () => {
       completion
         .then(function (result) {
           assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].insertText, '\n  prop1: $1');
+          assert.equal(result.items[0].insertText, '\n  prop1: ');
           assert.equal(result.items[1].insertText, '=@ctx');
         })
         .then(done, done);
@@ -149,8 +148,7 @@ describe('Auto Completion Tests Extended', () => {
         })
         .then(done, done);
     });
-    // need https://github.com/p-spacek/yaml-language-server/issues/18
-    it.skip('anyOf[const|ref]-context.da', (done) => {
+    it('anyOf[const|ref]-context.da', (done) => {
       languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
       const content = 'value2: =@ctx.da';
       const completion = parseSetup(content, content.length);
@@ -167,7 +165,7 @@ describe('Auto Completion Tests Extended', () => {
         .then(done, done);
     });
   });
-  describe.only('Complex completion', () => {
+  describe('Complex completion', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const inlineObjectSchema = require(path.join(__dirname, './fixtures/testInlineObject.json'));
 
