@@ -32,17 +32,17 @@ describe('YAML CodeLens', () => {
     sandbox.restore();
   });
 
-  function createCommand(title: string, arg: string): Command {
+  function createCommand(title: string, command: string, arg: string): Command {
     return {
       title,
-      command: YamlCommands.JUMP_TO_SCHEMA,
+      command,
       arguments: [arg],
     };
   }
 
-  function createCodeLens(title: string, arg: string): CodeLens {
+  function createCodeLens(title: string, command: string, arg: string): CodeLens {
     const lens = CodeLens.create(Range.create(0, 0, 0, 0));
-    lens.command = createCommand(title, arg);
+    lens.command = createCommand(title, command, arg);
     return lens;
   }
 
@@ -56,7 +56,9 @@ describe('YAML CodeLens', () => {
     const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
     expect(result).is.not.empty;
     expect(result[0].command).is.not.undefined;
-    expect(result[0].command).is.deep.equal(createCommand('schema.json', 'some://url/to/schema.json'));
+    expect(result[0].command).is.deep.equal(
+      createCommand('schema.json', YamlCommands.JUMP_TO_SCHEMA, 'some://url/to/schema.json')
+    );
   });
 
   it('should place CodeLens at beginning of the file and it has command', async () => {
@@ -68,7 +70,9 @@ describe('YAML CodeLens', () => {
     const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
     expect(result[0].range).is.deep.equal(Range.create(0, 0, 0, 0));
-    expect(result[0].command).is.deep.equal(createCommand('schema.json', 'some://url/to/schema.json'));
+    expect(result[0].command).is.deep.equal(
+      createCommand('schema.json', YamlCommands.JUMP_TO_SCHEMA, 'some://url/to/schema.json')
+    );
   });
 
   it('command name should contains schema title', async () => {
@@ -80,7 +84,9 @@ describe('YAML CodeLens', () => {
     yamlSchemaService.getSchemaForResource.resolves({ schema });
     const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
-    expect(result[0].command).is.deep.equal(createCommand('fooBar (schema.json)', 'some://url/to/schema.json'));
+    expect(result[0].command).is.deep.equal(
+      createCommand('fooBar (schema.json)', YamlCommands.JUMP_TO_SCHEMA, 'some://url/to/schema.json')
+    );
   });
 
   it('should provide lens for oneOf schemas', async () => {
@@ -100,8 +106,8 @@ describe('YAML CodeLens', () => {
     const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
     expect(result).has.length(2);
     expect(result).is.deep.equal([
-      createCodeLens('schema1.json', 'some://url/schema1.json'),
-      createCodeLens('schema2.json', 'some://url/schema2.json'),
+      createCodeLens('schema1.json', YamlCommands.JUMP_TO_SCHEMA, 'some://url/schema1.json'),
+      createCodeLens('schema2.json', YamlCommands.JUMP_TO_SCHEMA, 'some://url/schema2.json'),
     ]);
   });
 
@@ -122,8 +128,8 @@ describe('YAML CodeLens', () => {
     const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
     expect(result).has.length(2);
     expect(result).is.deep.equal([
-      createCodeLens('schema1.json', 'some://url/schema1.json'),
-      createCodeLens('schema2.json', 'some://url/schema2.json'),
+      createCodeLens('schema1.json', YamlCommands.JUMP_TO_SCHEMA, 'some://url/schema1.json'),
+      createCodeLens('schema2.json', YamlCommands.JUMP_TO_SCHEMA, 'some://url/schema2.json'),
     ]);
   });
 
@@ -144,8 +150,8 @@ describe('YAML CodeLens', () => {
     const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
     expect(result).has.length(2);
     expect(result).is.deep.equal([
-      createCodeLens('schema1.json', 'some://url/schema1.json'),
-      createCodeLens('schema2.json', 'some://url/schema2.json'),
+      createCodeLens('schema1.json', YamlCommands.JUMP_TO_SCHEMA, 'some://url/schema1.json'),
+      createCodeLens('schema2.json', YamlCommands.JUMP_TO_SCHEMA, 'some://url/schema2.json'),
     ]);
   });
 });

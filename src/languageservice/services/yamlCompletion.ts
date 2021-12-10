@@ -35,6 +35,7 @@ import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
 import { indexOf } from '../utils/astUtils';
 import { isModeline } from './modelineUtil';
+import { getSchemaTypeName } from '../utils/schemaUtils';
 
 const localize = nls.loadMessageBundle();
 
@@ -334,6 +335,10 @@ export class YamlCompletion {
               label = shortendedLabel;
             }
           }
+          // trim $1 from end of completion
+          if (completionItem.insertText.endsWith('$1')) {
+            completionItem.insertText = completionItem.insertText.substr(0, completionItem.insertText.length - 2);
+          }
           if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
             completionItem.textEdit = TextEdit.replace(overwriteRange, completionItem.insertText);
           }
@@ -416,6 +421,7 @@ export class YamlCompletion {
         }
       }
 
+      const originalNode = node;
       if (node) {
         if (lineContent.length === 0) {
           node = currentDoc.internalDocument.contents as Node;
@@ -552,7 +558,7 @@ export class YamlCompletion {
           }
         }
 
-        this.addPropertyCompletions(schema, currentDoc, node, '', collector, textBuffer, overwriteRange);
+        this.addPropertyCompletions(schema, currentDoc, node, originalNode, '', collector, textBuffer, overwriteRange);
 
         if (!schema && currentWord.length > 0 && document.getText().charAt(offset - currentWord.length - 1) !== '"') {
           collector.add({
@@ -593,6 +599,7 @@ export class YamlCompletion {
     schema: ResolvedSchema,
     doc: SingleYAMLDocument,
     node: YAMLMap,
+    originalNode: Node,
     separatorAfter: string,
     collector: CompletionsCollector,
     textBuffer: TextBuffer,
@@ -603,8 +610,13 @@ export class YamlCompletion {
     const hasColumn = textBuffer.getLineContent(overwriteRange.start.line).indexOf(':') === -1;
 
     const nodeParent = doc.getParent(node);
+
+    const matchOriginal = matchingSchemas.find((it) => it.node.internalNode === originalNode && it.schema.properties);
     for (const schema of matchingSchemas) {
-      if (schema.node.internalNode === node && !schema.inverted) {
+      if (
+        ((schema.node.internalNode === node && !matchOriginal) || schema.node.internalNode === originalNode) &&
+        !schema.inverted
+      ) {
         this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
           newLineFirst: false,
           indentFirstObject: false,
@@ -656,17 +668,20 @@ export class YamlCompletion {
                     if (Array.isArray(propertySchema.items)) {
                       this.addSchemaValueCompletions(propertySchema.items[0], separatorAfter, collector, {});
                     } else if (typeof propertySchema.items === 'object' && propertySchema.items.type === 'object') {
+                      const insertText = `- ${this.getInsertTextForObject(
+                        propertySchema.items,
+                        separatorAfter,
+                        '  '
+                      ).insertText.trimLeft()}`;
+                      const documentation = this.getDocumentationWithMarkdownText(
+                        `Create an item of an array${propertySchema.description ? ' (' + propertySchema.description + ')' : ''}`,
+                        insertText
+                      );
                       collector.add({
                         kind: this.getSuggestionKind(propertySchema.items.type),
                         label: '- (array item)',
-                        documentation: `Create an item of an array${
-                          propertySchema.description === undefined ? '' : '(' + propertySchema.description + ')'
-                        }`,
-                        insertText: `- ${this.getInsertTextForObject(
-                          propertySchema.items,
-                          separatorAfter,
-                          '  '
-                        ).insertText.trimLeft()}`,
+                        documentation,
+                        insertText,
                         insertTextFormat: InsertTextFormat.Snippet,
                       });
                     }
@@ -783,13 +798,16 @@ export class YamlCompletion {
                   this.addSchemaValueCompletions(s.schema.items[index], separatorAfter, collector, types);
                 }
               } else if (typeof s.schema.items === 'object' && s.schema.items.type === 'object') {
+                const insertText = `- ${this.getInsertTextForObject(s.schema.items, separatorAfter, '  ').insertText.trimLeft()}`;
+                const documentation = this.getDocumentationWithMarkdownText(
+                  `Create an item of an array${s.schema.description ? ' (' + s.schema.description + ')' : ''}`,
+                  insertText
+                );
                 collector.add({
                   kind: this.getSuggestionKind(s.schema.items.type),
                   label: '- (array item)',
-                  documentation: `Create an item of an array${
-                    s.schema.description === undefined ? '' : '(' + s.schema.description + ')'
-                  }`,
-                  insertText: `- ${this.getInsertTextForObject(s.schema.items, separatorAfter, '  ').insertText.trimLeft()}`,
+                  documentation,
+                  insertText,
                   insertTextFormat: InsertTextFormat.Snippet,
                 });
 
@@ -798,15 +816,18 @@ export class YamlCompletion {
                 s.schema.items.anyOf
                   .filter((i) => typeof i === 'object')
                   .forEach((i: JSONSchema, index) => {
+                    const schemaType = getSchemaTypeName(i);
                     const insertText = `- ${this.getInsertTextForObject(i, separatorAfter).insertText.trimLeft()}`;
                     //append insertText to documentation
+                    const schemaTypeTitle = schemaType ? ' type `' + schemaType + '`' : '';
+                    const schemaDescription = s.schema.description ? ' (' + s.schema.description + ')' : '';
                     const documentation = this.getDocumentationWithMarkdownText(
-                      `Create an item of an array${s.schema.description === undefined ? '' : '(' + s.schema.description + ')'}`,
+                      `Create an item of an array${schemaTypeTitle}${schemaDescription}`,
                       insertText
                     );
                     collector.add({
                       kind: this.getSuggestionKind(i.type),
-                      label: '- (array item) ' + (index + 1),
+                      label: '- (array item) ' + (schemaType || index + 1),
                       documentation: documentation,
                       insertText: insertText,
                       insertTextFormat: InsertTextFormat.Snippet,
@@ -1487,7 +1508,6 @@ function convertToStringValue(value: string): string {
     return `"${value}"`;
   }
 
-  // eslint-disable-next-line prettier/prettier, no-useless-escape
   if (value.indexOf('"') !== -1) {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }

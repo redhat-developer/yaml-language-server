@@ -21,7 +21,7 @@ describe('Auto Completion Fix Tests', () => {
 
   before(() => {
     languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
-      uri: 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.20.5-standalone-strict/all.json',
+      uri: 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json',
       fileMatch: [SCHEMA_ID],
     });
     const { languageService: langService, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(
@@ -68,7 +68,7 @@ describe('Auto Completion Fix Tests', () => {
     const completion = await parseSetup(content, 1, 3);
     expect(completion.items).lengthOf(1);
     expect(completion.items[0]).eql(
-      createExpectedCompletion('foo', 'foo: $1', 1, 3, 1, 3, 10, 2, {
+      createExpectedCompletion('foo', 'foo: ', 1, 3, 1, 3, 10, 2, {
         documentation: '',
       })
     );
@@ -95,7 +95,7 @@ describe('Auto Completion Fix Tests', () => {
     const completion = await parseSetup(content, 0, 2);
     expect(completion.items).lengthOf(1);
     expect(completion.items[0]).eql(
-      createExpectedCompletion('from', 'from:\n    $1', 0, 2, 0, 2, 10, 2, {
+      createExpectedCompletion('from', 'from:\n    ', 0, 2, 0, 2, 10, 2, {
         documentation: '',
       })
     );
@@ -141,5 +141,19 @@ objB:
 `;
     const completion = await parseSetup(content, 2, 4);
     expect(completion.items).is.not.empty;
+  });
+
+  it('should complete array item for "oneOf" schema', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const schema = require(path.join(__dirname, './fixtures/test-completion-oneOf.json'));
+    languageService.addSchema(SCHEMA_ID, schema);
+    const content = `metadata:
+  Selector:
+    query:
+      - 
+`;
+    const completion = await parseSetup(content, 3, 8);
+    expect(completion.items).length(4);
+    expect(completion.items.map((it) => it.label)).to.have.members(['NOT', 'attribute', 'operation', 'value']);
   });
 });
