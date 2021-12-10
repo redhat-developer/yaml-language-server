@@ -257,8 +257,7 @@ describe('Auto Completion Tests Extended', () => {
         })
       );
     });
-    // todo fix after 'Autocomplete with nextLine  - nested object'
-    it.skip('nested completion - some newLine after : ', async () => {
+    it('nested completion - some newLine after : ', async () => {
       languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
       const content = 'nested:\n  scripts:\n    sample:\n      test:\n        ';
       const result = await parseSetup(content + '\nnewLine: test', content.length);
