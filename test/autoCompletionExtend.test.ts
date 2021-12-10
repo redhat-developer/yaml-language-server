@@ -85,8 +85,7 @@ describe('Auto Completion Tests Extended', () => {
         })
         .then(done, done);
     });
-    // need https://github.com/p-spacek/yaml-language-server/issues/18
-    it.skip('simple-context.da', (done) => {
+    it('simple-context.da', (done) => {
       languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
       const content = 'value: =@ctx.da';
       const completion = parseSetup(content, content.length);
@@ -149,8 +148,7 @@ describe('Auto Completion Tests Extended', () => {
         })
         .then(done, done);
     });
-    // need https://github.com/p-spacek/yaml-language-server/issues/18
-    it.skip('anyOf[const|ref]-context.da', (done) => {
+    it('anyOf[const|ref]-context.da', (done) => {
       languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
       const content = 'value2: =@ctx.da';
       const completion = parseSetup(content, content.length);

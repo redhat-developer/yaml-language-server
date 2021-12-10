@@ -443,8 +443,8 @@ describe('Auto Completion Tests', () => {
         );
       });
 
-      // todo fix
-      it.skip('Autocomplete key with default value in middle of file - nested object', (done) => {
+      // not sure when this test failed, not sure which fix fixed this
+      it('Autocomplete key with default value in middle of file - nested object', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -471,7 +471,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('detail', 'detail: ${1:test}', 1, 2, 1, 5, 10, 2, {
+              createExpectedCompletion('detail', 'detail: ${1:test}', 2, 4, 2, 7, 10, 2, {
                 documentation: '',
               })
             );
@@ -514,7 +514,7 @@ describe('Auto Completion Tests', () => {
       });
 
       // replaced by on of the next test
-      it.skip('Autocomplete does not happen right after key object', (done) => {
+      it.skip('jigx: Autocomplete does not happen right after key object', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -534,7 +534,7 @@ describe('Auto Completion Tests', () => {
       });
 
       // replaced by on of the next test
-      it.skip('Autocomplete does not happen right after : under an object', (done) => {
+      it.skip('jigx: Autocomplete does not happen right after : under an object', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {

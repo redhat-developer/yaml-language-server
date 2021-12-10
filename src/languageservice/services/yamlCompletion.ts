@@ -229,7 +229,8 @@ export class YamlCompletion {
       if (inlineItem.textEdit) {
         inlineItem.textEdit.newText = inlineText;
         if (TextEdit.is(inlineItem.textEdit)) {
-          inlineItem.textEdit.range = Range.create(position, position);
+          const diff = inlineItem.textEdit.range.end.character - inlineItem.textEdit.range.start.character; // support =@ctx.da
+          inlineItem.textEdit.range = Range.create(Position.create(position.line, position.character - diff), position);
         }
       }
     });
