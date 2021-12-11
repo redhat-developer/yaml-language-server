@@ -88,6 +88,8 @@ export function isIterable(val: unknown): boolean {
  * @param err any error
  */
 export function convertErrorToTelemetryMsg(err: unknown): string {
+  if (!err) return 'null';
+
   if (err instanceof Error) {
     return err.stack ?? err.toString();
   }
