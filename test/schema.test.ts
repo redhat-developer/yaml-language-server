@@ -13,7 +13,7 @@ import { expect } from 'chai';
 import { ServiceSetup } from './utils/serviceSetup';
 import { setupLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper';
 import { LanguageService, SchemaPriority } from '../src';
-import { Position } from 'vscode-languageserver';
+import { MarkupContent, Position } from 'vscode-languageserver';
 import { LineCounter } from 'yaml';
 import { getSchemaFromModeline } from '../src/languageservice/services/modelineUtil';
 
@@ -690,7 +690,7 @@ describe('JSON Schema', () => {
       assert.strictEqual(result.items[0].label, 'schemastore');
     });
 
-    it('Default snippet with descritpion', async () => {
+    it('Default snippet with description', async () => {
       languageSettingsSetup.withSchemaFileMatch({
         fileMatch: ['test.yaml'],
         uri: TEST_URI,
@@ -702,6 +702,9 @@ describe('JSON Schema', () => {
       const result = await languageService.doComplete(testTextDocument, Position.create(0, 5), false);
       assert.strictEqual(result.items.length, 2);
       assert.notStrictEqual(result.items[0].documentation, undefined);
+      assert.notStrictEqual(result.items[1].documentation, undefined);
+      assert.strictEqual((result.items[0].documentation as MarkupContent).value, '# FooBar\n```Foo Bar```');
+      assert.strictEqual((result.items[1].documentation as MarkupContent).value, '# FooBaz\n```Foo Baz```');
     });
   });
 
