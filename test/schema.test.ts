@@ -591,6 +591,8 @@ describe('JSON Schema', () => {
     const schemaSettingsSample = require(path.join(__dirname, './fixtures/sample-settings.json'));
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const schemaModelineSample = require(path.join(__dirname, './fixtures/sample-modeline.json'));
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const schemaDefaultSnippetSample = require(path.join(__dirname, './fixtures/defaultSnippets-const-if-else.json'));
     const languageSettingsSetup = new ServiceSetup().withCompletion();
 
     it('Modeline Schema takes precendence over all other schemas', async () => {
@@ -686,6 +688,20 @@ describe('JSON Schema', () => {
       const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
       assert.strictEqual(result.items.length, 1);
       assert.strictEqual(result.items[0].label, 'schemastore');
+    });
+
+    it('Default snippet with descritpion', async () => {
+      languageSettingsSetup.withSchemaFileMatch({
+        fileMatch: ['test.yaml'],
+        uri: TEST_URI,
+        priority: SchemaPriority.SchemaStore,
+        schema: schemaDefaultSnippetSample,
+      });
+      languageService.configure(languageSettingsSetup.languageSettings);
+      const testTextDocument = setupTextDocument('foo:  ');
+      const result = await languageService.doComplete(testTextDocument, Position.create(0, 5), false);
+      assert.strictEqual(result.items.length, 2);
+      assert.notStrictEqual(result.items[0].documentation, undefined);
     });
   });
 
