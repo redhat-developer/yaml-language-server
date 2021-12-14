@@ -177,12 +177,11 @@ export class YamlCompletion {
 
     // join with previous result, but remove the duplicity (snippet for example cause the duplicity)
     resultLocal.items.forEach((item) => {
-      if (
-        !result.items.some(
-          (resultItem) =>
-            resultItem.label === item.label && resultItem.insertText === item.insertText && resultItem.kind === item.kind
-        )
-      ) {
+      const isEqual = (itemA: CompletionItemBase, itemB: CompletionItemBase): boolean =>
+        // trim insert text to join problematic array object completion https://github.com/redhat-developer/yaml-language-server/issues/620
+        itemA.label === itemB.label && itemA.insertText.trimLeft() === itemB.insertText.trimLeft() && itemA.kind === itemB.kind;
+
+      if (!result.items.some((resultItem) => isEqual(resultItem, item))) {
         result.items.push(item);
       }
     });
