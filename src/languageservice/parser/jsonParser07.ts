@@ -591,11 +591,9 @@ function validate(
 
   function _validateNode(): void {
     function isExpression(type: string): boolean {
-      if (type === 'object' && node.type === 'string' && (node.value.startsWith('=$') || node.value.startsWith('=@'))) {
-        const schemaName = getSchemaTypeName(schema);
-        return schemaName === 'Expression';
-      }
-      return false;
+      return (
+        type === 'object' && node.type === 'string' && node.value.startsWith('=') && getSchemaTypeName(schema) === 'Expression'
+      );
     }
 
     function matchesType(type: string): boolean {

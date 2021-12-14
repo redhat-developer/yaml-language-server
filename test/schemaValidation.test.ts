@@ -1550,4 +1550,41 @@ obj:
       });
     });
   });
+
+  describe('Jigx', () => {
+    it('Expression is valid inline object', async function () {
+      const schema = {
+        id: 'test://schemas/main',
+        definitions: {
+          Expression: {
+            type: 'object',
+            description: 'Expression',
+            properties: {
+              '=@ctx': {
+                type: 'object',
+              },
+            },
+          },
+        },
+        properties: {
+          expr: {
+            $ref: '#/definitions/Expression',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+
+      const result = await parseSetup('expr: =@ctx');
+      assert.strictEqual(result.length, 0);
+
+      const result2 = await parseSetup('expr: =(@ctx)');
+      assert.strictEqual(result2.length, 0);
+
+      const result3 = await parseSetup('expr: =$random()');
+      assert.strictEqual(result3.length, 0);
+
+      const result4 = await parseSetup('expr: $random()');
+      assert.strictEqual(result4.length, 1);
+    });
+  });
 });
