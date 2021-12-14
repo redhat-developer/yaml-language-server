@@ -161,6 +161,8 @@ export class YamlCompletion {
           completionItem.label = label;
           proposed[label] = completionItem;
           result.items.push(completionItem);
+        } else if (!existing.documentation && completionItem.documentation) {
+          existing.documentation = completionItem.documentation;
         }
       },
       error: (message: string) => {
