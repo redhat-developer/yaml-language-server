@@ -728,13 +728,13 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 2);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('prop2', 'prop2: $1', 1, 2, 1, 3, 10, 2, {
+              createExpectedCompletion('prop2', 'prop2: ', 1, 2, 1, 3, 10, 2, {
                 documentation: '',
               })
             );
             assert.deepEqual(
               result.items[1],
-              createExpectedCompletion('prop3', 'prop3: $1', 1, 2, 1, 3, 10, 2, {
+              createExpectedCompletion('prop3', 'prop3: ', 1, 2, 1, 3, 10, 2, {
                 documentation: '',
               })
             );
