@@ -148,7 +148,7 @@ export class YamlCompletion {
     firstPrefix = modificationForInvoke,
     eachLinePrefix = ''
   ): Promise<CompletionList> {
-    this.updateTextDocument(document, [{ range: Range.create(position, position), text: modificationForInvoke }]);
+    this.updateTextDocument(document, [{ range: Range.create(position, position), text: modificationForInvoke }], false);
     const resultLocal = await this.doCompleteWithDisabledAdditionalProps(document, newPosition, isKubernetes);
     resultLocal.items.map((item) => {
       let firstPrefixLocal = firstPrefix;
@@ -168,7 +168,7 @@ export class YamlCompletion {
       }
     });
     // revert document edit
-    this.updateTextDocument(document, [{ range: Range.create(position, newPosition), text: '' }]);
+    this.updateTextDocument(document, [{ range: Range.create(position, newPosition), text: '' }], true);
 
     if (!result.items.length) {
       result = resultLocal;
@@ -216,7 +216,7 @@ export class YamlCompletion {
     const newStartPosition = Position.create(position.line, inlineSymbolPosition);
     const removedCount = originalText.length; // position.character - newStartPosition.character;
     const previousContent = document.getText();
-    this.updateTextDocument(document, [{ range: Range.create(newStartPosition, position), text: newText }]);
+    this.updateTextDocument(document, [{ range: Range.create(newStartPosition, position), text: newText }], false);
     const newPosition = document.positionAt(offset - removedCount + newText.length);
 
     const resultLocal = await this.doCompleteWithDisabledAdditionalProps(document, newPosition, isKubernetes);
@@ -237,7 +237,7 @@ export class YamlCompletion {
     // revert document edit
     // this.updateTextDocument(document, [{ range: Range.create(newStartPosition, newPosition), text: originalText }]);
     const fullRange = Range.create(document.positionAt(0), document.positionAt(document.getText().length + 1));
-    this.updateTextDocument(document, [{ range: fullRange, text: previousContent }]);
+    this.updateTextDocument(document, [{ range: fullRange, text: previousContent }], true);
 
     return resultLocal; // don't merge with anything, inline should be combined with others
   }
@@ -252,8 +252,11 @@ export class YamlCompletion {
     }
   }
 
-  private updateTextDocument(document: TextDocument, changes: TextDocumentContentChangeEvent[]): void {
+  private updateTextDocument(document: TextDocument, changes: TextDocumentContentChangeEvent[], clearCache: boolean): void {
     TextDocument.update(document, changes, document.version + 1);
+    if (clearCache) {
+      this.yamlDocument.delete(document);
+    }
   }
 
   private async doCompleteWithDisabledAdditionalProps(
