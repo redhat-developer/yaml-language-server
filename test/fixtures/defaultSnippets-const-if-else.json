@@ -1,0 +1,72 @@
+{
+  "title": "Example",
+  "type": "object",
+  "properties": {
+      "foo": {
+          "title": "Foo",
+          "type": "string",
+          "defaultSnippets": [
+              {
+                  "label": "foobar",
+                  "markdownDescription": "# FooBar\n```Foo Bar```",
+                  "body": "foobar"
+              },
+              {
+                  "label": "foobaz",
+                  "markdownDescription": "# FooBaz\n```Foo Baz```",
+                  "body": "foobaz"
+              }
+          ]
+      },
+      "bar": {
+          "title": "Bar",
+          "type": "object",
+          "default": {}
+      }
+  },
+  "allOf": [
+      {
+          "if": {
+            "properties": {
+              "foo": {
+                "const": "foobar"
+              }
+            }
+          },
+          "then": {
+              "properties": {
+                  "bar": {
+                      "properties": {
+                          "barbar": {
+                              "title": "BarBar",
+                              "description": "Bar Bar Bar"
+                            }
+                      }
+                  }
+              }
+          }
+      },
+      {
+          "if": {
+            "properties": {
+              "foo": {
+                "const": "foobaz"
+              }
+            }
+          },
+          "then": {
+              "properties": {
+                  "bar": {
+                      "properties": {
+                          "barbaz": {
+                              "title": "BarBaz",
+                              "description": "Bar Baz Bar"
+                            }
+                      }
+                  }
+              }
+          }
+      }
+  ]
+}
+
