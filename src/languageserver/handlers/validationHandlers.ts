@@ -53,9 +53,12 @@ export class ValidationHandler {
       .doValidation(textDocument, isKubernetesAssociatedDocument(textDocument, this.yamlSettings.specificValidatorPaths))
       .then((diagnosticResults) => {
         const diagnostics = [];
-        for (const diagnosticItem in diagnosticResults) {
-          diagnosticResults[diagnosticItem].severity = 1; //Convert all warnings to errors
-          diagnostics.push(diagnosticResults[diagnosticItem]);
+        for (const diagnosticItem of diagnosticResults) {
+          // Convert all warnings to errors
+          if (diagnosticItem.severity === 2) {
+            diagnosticItem.severity = 1;
+          }
+          diagnostics.push(diagnosticItem);
         }
 
         const removeDuplicatesDiagnostics = removeDuplicatesObj(diagnostics);

@@ -75,3 +75,16 @@ export function safeCreateUnicodeRegExp(pattern: string): RegExp {
     return new RegExp(pattern);
   }
 }
+
+export function getLastWhitespaceAfterChar(str: string, offset: number): number {
+  offset++;
+  for (let i = offset; i < str.length; i++) {
+    const char = str.charAt(i);
+    if (char === ' ' || char === '\t') {
+      offset++;
+    } else {
+      return offset;
+    }
+  }
+  return offset;
+}

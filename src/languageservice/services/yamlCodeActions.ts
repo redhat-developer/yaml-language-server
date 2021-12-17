@@ -20,6 +20,8 @@ import { YamlCommands } from '../../commands';
 import * as path from 'path';
 import { TextBuffer } from '../utils/textBuffer';
 import { LanguageSettings } from '../yamlLanguageService';
+import { YAML_SOURCE } from '../parser/jsonParser07';
+import { getLastWhitespaceAfterChar } from '../utils/strings';
 
 interface YamlDiagnosticData {
   schemaUri: string[];
@@ -42,6 +44,7 @@ export class YamlCodeActions {
 
     result.push(...this.getJumpToSchemaActions(params.context.diagnostics));
     result.push(...this.getTabToSpaceConverting(params.context.diagnostics, document));
+    result.push(...this.getUnusedAnchorsDelete(params.context.diagnostics, document));
 
     return result;
   }
@@ -160,6 +163,27 @@ export class YamlCodeActions {
       }
     }
 
+    return result;
+  }
+
+  private getUnusedAnchorsDelete(diagnostics: Diagnostic[], document: TextDocument): CodeAction[] {
+    const result = [];
+    const buffer = new TextBuffer(document);
+    for (const diag of diagnostics) {
+      if (diag.message.startsWith('Unused anchor') && diag.source === YAML_SOURCE) {
+        const { range, name } = diag.data as { range: Range; name: string };
+        const lineContent = buffer.getLineContent(range.end.line);
+        const lastWhitespaceChar = getLastWhitespaceAfterChar(lineContent, range.end.character);
+        range.end.character = lastWhitespaceChar;
+        const action = CodeAction.create(
+          `Delete unused anchor: ${name}`,
+          createWorkspaceEdit(document.uri, [TextEdit.del(range)]),
+          CodeActionKind.QuickFix
+        );
+        action.diagnostics = [diag];
+        result.push(action);
+      }
+    }
     return result;
   }
 }

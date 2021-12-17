@@ -6,10 +6,11 @@
 import { Document, isDocument, isScalar, Node, visit, YAMLMap, YAMLSeq } from 'yaml';
 import { CollectionItem, SourceToken, Token } from 'yaml/dist/parse/cst';
 import { VisitPath } from 'yaml/dist/parse/cst-visit';
+import { YamlNode } from '../jsonASTTypes';
 
 type Visitor = (item: SourceToken, path: VisitPath) => number | symbol | Visitor | void;
 
-export function getParent(doc: Document, nodeToFind: Node): Node | undefined {
+export function getParent(doc: Document, nodeToFind: YamlNode): YamlNode | undefined {
   let parentNode: Node;
   visit(doc, (_, node: Node, path) => {
     if (node === nodeToFind) {
@@ -37,7 +38,7 @@ export function isMapContainsEmptyPair(map: YAMLMap): boolean {
   return false;
 }
 
-export function indexOf(seq: YAMLSeq, item: Node): number | undefined {
+export function indexOf(seq: YAMLSeq, item: YamlNode): number | undefined {
   for (const [i, obj] of seq.items.entries()) {
     if (item === obj) {
       return i;
@@ -79,7 +80,7 @@ export function isInComment(tokens: Token[], offset: number): boolean {
   return inComment;
 }
 
-function isCollectionItem(token: unknown): token is CollectionItem {
+export function isCollectionItem(token: unknown): token is CollectionItem {
   return token['start'] !== undefined;
 }
 
