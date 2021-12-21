@@ -925,6 +925,30 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
+      it('Provide the 2 types when one is provided and the second is typed', (done) => {
+        const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = '- prop1:\n  p';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 2);
+            assert.deepEqual(
+              result.items[0],
+              createExpectedCompletion('prop2', 'prop2: ', 1, 2, 1, 3, 10, 2, {
+                documentation: '',
+              })
+            );
+            assert.deepEqual(
+              result.items[1],
+              createExpectedCompletion('prop3', 'prop3: ', 1, 2, 1, 3, 10, 2, {
+                documentation: '',
+              })
+            );
+          })
+          .then(done, done);
+      });
+
       it('Provide no completion when maxProperties reached', (done) => {
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
         languageService.addSchema(SCHEMA_ID, schema);

@@ -5,6 +5,7 @@
 import { xhr, configure as configureHttpRequests } from 'request-light';
 import { DocumentFormattingRequest, Connection, DidChangeConfigurationNotification } from 'vscode-languageserver';
 import { DocumentSelector } from 'vscode-languageserver'; // jigx
+import { convertErrorToTelemetryMsg } from '../../languageservice/utils/objects';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
@@ -28,8 +29,7 @@ export class SettingsHandler {
         // Register for all configuration changes.
         await this.connection.client.register(DidChangeConfigurationNotification.type, undefined);
       } catch (err) {
-        console.warn(err);
-        this.telemetry.sendError('yaml.settings.error', { error: err });
+        this.telemetry.sendError('yaml.settings.error', { error: convertErrorToTelemetryMsg(err) });
       }
     }
     this.connection.onDidChangeConfiguration(() => this.pullConfiguration());

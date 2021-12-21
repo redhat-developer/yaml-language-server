@@ -29,7 +29,7 @@ import { YAMLSchemaService } from './yamlSchemaService';
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { stringifyObject, StringifySettings } from '../utils/json';
-import { isDefined, isString } from '../utils/objects';
+import { convertErrorToTelemetryMsg, isDefined, isString } from '../utils/objects';
 import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
@@ -421,11 +421,12 @@ export class YamlCompletion {
             proposed[label] = completionItem;
             result.items.push(completionItem);
           }
+        } else if (!existing.documentation && completionItem.documentation) {
+          existing.documentation = completionItem.documentation;
         }
       },
       error: (message: string) => {
-        console.error(message);
-        this.telemetry.sendError('yaml.completion.error', { error: message });
+        this.telemetry.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(message) });
       },
       log: (message: string) => {
         console.log(message);
@@ -650,12 +651,7 @@ export class YamlCompletion {
       const types: { [type: string]: boolean } = {};
       this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types);
     } catch (err) {
-      if (err.stack) {
-        console.error(err.stack);
-      } else {
-        console.error(err);
-      }
-      this.telemetry.sendError('yaml.completion.error', { error: err });
+      this.telemetry.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
     return result;
@@ -683,7 +679,9 @@ export class YamlCompletion {
   ): void {
     const matchingSchemas = doc.getMatchingSchemas(schema.schema);
     const existingKey = textBuffer.getText(overwriteRange);
-    const hasColumn = textBuffer.getLineContent(overwriteRange.start.line).indexOf(':') === -1;
+    const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
+    const hasOnlyWhitespace = lineContent.trim().length === 0;
+    const hasColon = lineContent.indexOf(':') !== -1;
 
     const nodeParent = doc.getParent(node);
 
@@ -706,7 +704,7 @@ export class YamlCompletion {
             maxProperties === undefined ||
             node.items === undefined ||
             node.items.length < maxProperties ||
-            isMapContainsEmptyPair(node)
+            (node.items.length === maxProperties && !hasOnlyWhitespace)
           ) {
             for (const key in schemaProperties) {
               if (Object.prototype.hasOwnProperty.call(schemaProperties, key)) {
@@ -764,7 +762,7 @@ export class YamlCompletion {
                   }
 
                   let insertText = key;
-                  if (!key.startsWith(existingKey) || hasColumn) {
+                  if (!key.startsWith(existingKey) || !hasColon) {
                     insertText = this.getInsertTextForProperty(
                       key,
                       propertySchema,

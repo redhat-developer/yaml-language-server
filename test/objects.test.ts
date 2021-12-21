@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { equals } from '../src/languageservice/utils/objects';
+import { equals, convertErrorToTelemetryMsg } from '../src/languageservice/utils/objects';
 import * as assert from 'assert';
 
 describe('Object Equals Tests', () => {
@@ -108,5 +108,24 @@ describe('Object Equals Tests', () => {
       const result = equals(one, other);
       assert.equal(result, false);
     });
+  });
+});
+
+describe('Telemetry message conversion test', () => {
+  it('null values should not cause problems', () => {
+    assert.doesNotThrow(() => convertErrorToTelemetryMsg(null));
+  });
+
+  it('should convert errors with stack correctly', () => {
+    const e: Error = new Error('Test message');
+    const msg = convertErrorToTelemetryMsg(e);
+    assert.equal(msg, e.stack);
+  });
+
+  it('should convert errors with no stack correctly', () => {
+    const e: Error = new Error('Test message');
+    e.stack = null;
+    const msg = convertErrorToTelemetryMsg(e);
+    assert.equal(msg, e.toString());
   });
 });

@@ -18,6 +18,7 @@ import { JSONSchema } from '../jsonSchema';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
 import { Telemetry } from '../../languageserver/telemetry';
+import { convertErrorToTelemetryMsg } from '../utils/objects';
 
 export class YAMLHover {
   private shouldHover: boolean;
@@ -51,7 +52,7 @@ export class YAMLHover {
       currentDoc.currentDocIndex = currentDocIndex;
       return this.getHover(document, position, currentDoc);
     } catch (error) {
-      this.telemetry.sendError('yaml.hover.error', { error: error.toString() });
+      this.telemetry.sendError('yaml.hover.error', { error: convertErrorToTelemetryMsg(error) });
     }
   }
 
