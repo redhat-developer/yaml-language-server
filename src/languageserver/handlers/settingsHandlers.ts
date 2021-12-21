@@ -4,9 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 import { xhr, configure as configureHttpRequests } from 'request-light';
 import { DocumentFormattingRequest, Connection, DidChangeConfigurationNotification } from 'vscode-languageserver';
+import { convertErrorToTelemetryMsg } from '../../languageservice/utils/objects';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
+import { SchemaSelectionRequests } from '../../requestTypes';
 import { Settings, SettingsState } from '../../yamlSettings';
 import { Telemetry } from '../telemetry';
 import { ValidationHandler } from './validationHandlers';
@@ -26,8 +28,7 @@ export class SettingsHandler {
         // Register for all configuration changes.
         await this.connection.client.register(DidChangeConfigurationNotification.type, undefined);
       } catch (err) {
-        console.warn(err);
-        this.telemetry.sendError('yaml.settings.error', { error: err });
+        this.telemetry.sendError('yaml.settings.error', { error: convertErrorToTelemetryMsg(err) });
       }
     }
     this.connection.onDidChangeConfiguration(() => this.pullConfiguration());
@@ -53,7 +54,7 @@ export class SettingsHandler {
     this.setConfiguration(settings);
   }
 
-  setConfiguration(settings: Settings): void {
+  async setConfiguration(settings: Settings): Promise<void> {
     configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
 
     this.yamlSettings.specificValidatorPaths = [];
@@ -120,8 +121,11 @@ export class SettingsHandler {
       this.yamlSettings.schemaConfigurationSettings.push(schemaObj);
     }
 
-    this.setSchemaStoreSettingsIfNotSet();
+    await this.setSchemaStoreSettingsIfNotSet();
     this.updateConfiguration();
+    if (this.yamlSettings.useSchemaSelectionRequests) {
+      this.connection.sendNotification(SchemaSelectionRequests.schemaStoreInitialized, {});
+    }
 
     // dynamically enable & disable the formatter
     if (this.yamlSettings.clientDynamicRegisterSupport) {

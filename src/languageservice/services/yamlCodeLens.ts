@@ -10,10 +10,11 @@ import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
-import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
+import { JSONSchema } from '../jsonSchema';
 import { CodeLensParams } from 'vscode-languageserver-protocol';
-import { isBoolean } from '../utils/objects';
 import { Telemetry } from '../../languageserver/telemetry';
+import { getSchemaUrls } from '../utils/schemaUrls';
+import { convertErrorToTelemetryMsg } from '../utils/objects';
 
 export class YamlCodeLens {
   constructor(private schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {}
@@ -26,7 +27,7 @@ export class YamlCodeLens {
       for (const currentYAMLDoc of yamlDocument.documents) {
         const schema = await this.schemaService.getSchemaForResource(document.uri, currentYAMLDoc);
         if (schema?.schema) {
-          const schemaUrls = getSchemaUrl(schema?.schema);
+          const schemaUrls = getSchemaUrls(schema?.schema);
           if (schemaUrls.size === 0) {
             continue;
           }
@@ -42,7 +43,7 @@ export class YamlCodeLens {
         }
       }
     } catch (err) {
-      this.telemetry.sendError('yaml.codeLens.error', { error: err, documentUri: document.uri });
+      this.telemetry.sendError('yaml.codeLens.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
     return result;
@@ -65,44 +66,4 @@ function getCommandTitle(url: string, schema: JSONSchema): string {
   }
 
   return baseName;
-}
-
-function getSchemaUrl(schema: JSONSchema): Map<string, JSONSchema> {
-  const result = new Map<string, JSONSchema>();
-  if (!schema) {
-    return result;
-  }
-  const url = schema.url;
-  if (url) {
-    if (url.startsWith('schemaservice://combinedSchema/')) {
-      addSchemasForOf(schema, result);
-    } else {
-      result.set(schema.url, schema);
-    }
-  } else {
-    addSchemasForOf(schema, result);
-  }
-  return result;
-}
-
-function addSchemasForOf(schema: JSONSchema, result: Map<string, JSONSchema>): void {
-  if (schema.allOf) {
-    addInnerSchemaUrls(schema.allOf, result);
-  }
-  if (schema.anyOf) {
-    addInnerSchemaUrls(schema.anyOf, result);
-  }
-  if (schema.oneOf) {
-    addInnerSchemaUrls(schema.oneOf, result);
-  }
-}
-
-function addInnerSchemaUrls(schemas: JSONSchemaRef[], result: Map<string, JSONSchema>): void {
-  for (const subSchema of schemas) {
-    if (!isBoolean(subSchema)) {
-      if (subSchema.url && !result.has(subSchema.url)) {
-        result.set(subSchema.url, subSchema);
-      }
-    }
-  }
 }
