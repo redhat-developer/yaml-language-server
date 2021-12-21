@@ -92,7 +92,7 @@ export class YamlCompletion {
     if (!this.completionEnabled) {
       return result;
     }
-
+    const startTime = Date.now();
     const offset = document.offsetAt(position);
     const textBuffer = new TextBuffer(document);
     const lineContent = textBuffer.getLineContent(position.line);
@@ -106,6 +106,12 @@ export class YamlCompletion {
 
     if (inlineSymbol && lineContent.match(new RegExp(`:\\s*${inlineSymbol}\\..*`))) {
       result = await this.doInlineCompletion(document, position, isKubernetes, offset, lineContent);
+      const secs = (Date.now() - startTime) / 1000;
+      console.log(
+        `[debug] inline completion: lineContent(${lineContent.replace('\n', '\\n')}), resultCount(${
+          result.items.length
+        }), time(${secs})`
+      );
       return result;
     }
     // auto add space after : if needed
@@ -135,6 +141,12 @@ export class YamlCompletion {
       );
     }
     this.processInlineInitialization(result, lineContent);
+
+    const secs = (Date.now() - startTime) / 1000;
+    console.log(
+      `[debug] completion: lineContent(${lineContent.replace('\n', '\\n')}), resultCount(${result.items.length}), time(${secs})`
+    );
+
     return result;
   }
 
@@ -148,7 +160,7 @@ export class YamlCompletion {
     firstPrefix = modificationForInvoke,
     eachLinePrefix = ''
   ): Promise<CompletionList> {
-    this.updateTextDocument(document, [{ range: Range.create(position, position), text: modificationForInvoke }], false);
+    this.updateTextDocument(document, [{ range: Range.create(position, position), text: modificationForInvoke }]);
     const resultLocal = await this.doCompleteWithDisabledAdditionalProps(document, newPosition, isKubernetes);
     resultLocal.items.map((item) => {
       let firstPrefixLocal = firstPrefix;
@@ -168,7 +180,7 @@ export class YamlCompletion {
       }
     });
     // revert document edit
-    this.updateTextDocument(document, [{ range: Range.create(position, newPosition), text: '' }], true);
+    this.updateTextDocument(document, [{ range: Range.create(position, newPosition), text: '' }]);
 
     if (!result.items.length) {
       result = resultLocal;
@@ -216,7 +228,7 @@ export class YamlCompletion {
     const newStartPosition = Position.create(position.line, inlineSymbolPosition);
     const removedCount = originalText.length; // position.character - newStartPosition.character;
     const previousContent = document.getText();
-    this.updateTextDocument(document, [{ range: Range.create(newStartPosition, position), text: newText }], false);
+    this.updateTextDocument(document, [{ range: Range.create(newStartPosition, position), text: newText }]);
     const newPosition = document.positionAt(offset - removedCount + newText.length);
 
     const resultLocal = await this.doCompleteWithDisabledAdditionalProps(document, newPosition, isKubernetes);
@@ -237,12 +249,12 @@ export class YamlCompletion {
     // revert document edit
     // this.updateTextDocument(document, [{ range: Range.create(newStartPosition, newPosition), text: originalText }]);
     const fullRange = Range.create(document.positionAt(0), document.positionAt(document.getText().length + 1));
-    this.updateTextDocument(document, [{ range: fullRange, text: previousContent }], true);
+    this.updateTextDocument(document, [{ range: fullRange, text: previousContent }]);
 
     return resultLocal; // don't merge with anything, inline should be combined with others
   }
   private processInlineInitialization(result: CompletionList, lineContent: string): void {
-    // make always online - happens when general completion returns inline label
+    // make always inline - happens when general completion returns inline label
     const inlineItem = result.items.find((item) => item.label === inlineSymbol);
     if (inlineItem) {
       inlineItem.insertText = (lineContent.match(/:\n?$/) ? ' ' : '') + inlineSymbol;
@@ -252,11 +264,9 @@ export class YamlCompletion {
     }
   }
 
-  private updateTextDocument(document: TextDocument, changes: TextDocumentContentChangeEvent[], clearCache: boolean): void {
+  private updateTextDocument(document: TextDocument, changes: TextDocumentContentChangeEvent[]): void {
     TextDocument.update(document, changes, document.version + 1);
-    if (clearCache) {
-      this.yamlDocument.delete(document);
-    }
+    this.yamlDocument.delete(document);
   }
 
   private async doCompleteWithDisabledAdditionalProps(
