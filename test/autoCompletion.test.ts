@@ -400,6 +400,9 @@ describe('Auto Completion Tests', () => {
                   type: 'string',
                   default: 'test',
                 },
+                objectSample: {
+                  type: 'object',
+                },
               },
             },
           },
@@ -427,8 +430,11 @@ describe('Auto Completion Tests', () => {
                   type: 'string',
                   default: 'test',
                 },
+                objectSample: {
+                  type: 'object',
+                },
               },
-              required: ['sample'],
+              required: ['sample', 'objectSample'],
             },
           },
         });
@@ -436,7 +442,7 @@ describe('Auto Completion Tests', () => {
         const result = await parseSetup(content, 0);
         expect(result.items.length).to.be.equal(1);
         expect(result.items[0]).to.deep.equal(
-          createExpectedCompletion('scripts', 'scripts:\n  sample: ${1:test}', 0, 0, 0, 0, 10, 2, {
+          createExpectedCompletion('scripts', 'scripts:\n  sample: ${1:test}\n  objectSample:\n    $2', 0, 0, 0, 0, 10, 2, {
             documentation: '',
           })
         );
