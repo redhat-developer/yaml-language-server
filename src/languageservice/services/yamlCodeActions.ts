@@ -21,7 +21,7 @@ import * as path from 'path';
 import { TextBuffer } from '../utils/textBuffer';
 import { LanguageSettings } from '../yamlLanguageService';
 import { YAML_SOURCE } from '../parser/jsonParser07';
-import { getLastWhitespaceAfterChar } from '../utils/strings';
+import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings';
 
 interface YamlDiagnosticData {
   schemaUri: string[];
@@ -171,9 +171,10 @@ export class YamlCodeActions {
     const buffer = new TextBuffer(document);
     for (const diag of diagnostics) {
       if (diag.message.startsWith('Unused anchor') && diag.source === YAML_SOURCE) {
-        const { range, name } = diag.data as { range: Range; name: string };
+        const { name } = diag.data as { name: string };
+        const range = Range.create(diag.range.start, diag.range.end);
         const lineContent = buffer.getLineContent(range.end.line);
-        const lastWhitespaceChar = getLastWhitespaceAfterChar(lineContent, range.end.character);
+        const lastWhitespaceChar = getFirstNonWhitespaceCharacterAfterOffset(lineContent, range.end.character);
         range.end.character = lastWhitespaceChar;
         const action = CodeAction.create(
           `Delete unused anchor: ${name}`,

@@ -53,7 +53,7 @@ export function createUnusedAnchorDiagnostic(
     'YAML'
   );
   diagnostic.tags = [DiagnosticTag.Unnecessary];
-  diagnostic.data = { range: Range.create(startLine, startCharacter, endLine, endCharacter), name };
+  diagnostic.data = { name };
   return diagnostic;
 }
 

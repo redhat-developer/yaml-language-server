@@ -76,7 +76,7 @@ export function safeCreateUnicodeRegExp(pattern: string): RegExp {
   }
 }
 
-export function getLastWhitespaceAfterChar(str: string, offset: number): number {
+export function getFirstNonWhitespaceCharacterAfterOffset(str: string, offset: number): number {
   offset++;
   for (let i = offset; i < str.length; i++) {
     const char = str.charAt(i);
