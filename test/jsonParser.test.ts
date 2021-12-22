@@ -1864,6 +1864,32 @@ describe('JSON Parser', () => {
     assert.strictEqual(semanticErrors[0].message, 'Value is not accepted. Valid values: "a", "b", "c", "d".');
   });
 
+  it('value matches more than one schema in oneOf', function () {
+    const schema: JsonSchema.JSONSchema = {
+      type: 'object',
+      properties: {
+        repository: {
+          oneOf: [
+            {
+              type: 'string',
+              format: 'uri',
+            },
+            {
+              type: 'string',
+              pattern: '^@',
+            },
+          ],
+        },
+      },
+    };
+
+    const { textDoc, jsonDoc } = toDocument('{"repository":"@bitnami"}');
+    assert.strictEqual(jsonDoc.syntaxErrors.length, 0);
+
+    const semanticErrors = jsonDoc.validate(textDoc, schema);
+    assert.strictEqual(semanticErrors.length, 0);
+  });
+
   it('validate API', async function () {
     const { textDoc, jsonDoc } = toDocument('{ "pages": [  "pages/index", "pages/log", ] }');
 

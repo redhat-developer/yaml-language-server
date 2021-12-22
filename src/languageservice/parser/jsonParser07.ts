@@ -681,9 +681,13 @@ function validate(
       }
     }
 
-    const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean): number => {
+    const testAlternatives = (alternatives: JSONSchemaRef[], oneOfMatch: boolean): number => {
       const matches = [];
-
+      let maxMatch = 1;
+      if (oneOfMatch) {
+        //there may be chances that node value matches all the schemas which provided under oneOf
+        maxMatch = alternatives.length;
+      }
       // remember the best match that is used for error messages
       let bestMatch: {
         schema: JSONSchema;
@@ -707,11 +711,11 @@ function validate(
         } else if (isKubernetes) {
           bestMatch = alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         } else {
-          bestMatch = genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
+          bestMatch = genericComparison(oneOfMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         }
       }
 
-      if (matches.length > 1 && maxOneMatch) {
+      if (matches.length > maxMatch && oneOfMatch) {
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
