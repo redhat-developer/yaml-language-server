@@ -683,6 +683,10 @@ function validate(
 
     const testAlternatives = (alternatives: JSONSchemaRef[], minOneMatch: boolean): number => {
       const matches = [];
+      let minMatch = 1;
+      if (minOneMatch) {
+        minMatch = alternatives.length;
+      }
       // remember the best match that is used for error messages
       let bestMatch: {
         schema: JSONSchema;
@@ -710,7 +714,7 @@ function validate(
         }
       }
 
-      if (matches.length < 1 && minOneMatch) {
+      if (matches.length > minMatch && minOneMatch) {
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
