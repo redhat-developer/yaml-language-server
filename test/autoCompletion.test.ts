@@ -411,7 +411,7 @@ describe('Auto Completion Tests', () => {
         const result = await parseSetup(content, 0);
         expect(result.items.length).to.be.equal(1);
         expect(result.items[0]).to.deep.equal(
-          createExpectedCompletion('scripts', 'scripts:\n  $1', 0, 0, 0, 0, 10, 2, {
+          createExpectedCompletion('scripts', 'scripts:\n  ', 0, 0, 0, 0, 10, 2, {
             documentation: '',
           })
         );
