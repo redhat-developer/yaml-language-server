@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "required": [
+    "metadata"
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "title": "Metadata",
+      "properties": {
+        "Selector": {
+          "properties": {
+            "query": {
+              "title": "Construction",
+              "type": "array",
+              "items": [
+                {
+                  "oneOf": [
+                    {
+                      "$ref": "#/definitions/FUNC_item"
+                    },
+                    {
+                      "$ref": "#/definitions/NOT_item"
+                    }
+                  ]
+                }
+              ],
+              "additionalItems": {
+                "$ref": "#/definitions/queryItem"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "FUNC_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attribute",
+        "operation",
+        "value"
+      ],
+      "properties": {
+        "attribute": {
+          "type": "string"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "NOT_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "NOT": {
+          "type": "array",
+          "items": [
+            {
+              "$ref": "#/definitions/FUNC_item"
+            }
+          ],
+          "additionalItems": {
+            "$ref": "#/definitions/queryItem"
+          }
+        }
+      }
+    },
+    "AND_Item": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "AND": {
+          "type": "array",
+          "items": [
+            {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/FUNC_item"
+                },
+                {
+                  "$ref": "#/definitions/NOT_item"
+                }
+              ]
+            }
+          ],
+          "additionalItems": {
+            "$ref": "#/definitions/queryItem"
+          }
+        }
+      }
+    },
+    "OR_Item": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "OR": {
+          "type": "array",
+          "items": [
+            {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/FUNC_item"
+                },
+                {
+                  "$ref": "#/definitions/NOT_item"
+                }
+              ]
+            }
+          ],
+          "additionalItems": {
+            "$ref": "#/definitions/queryItem"
+          }
+        }
+      }
+    },
+    "queryItem": {
+      "oneOf": [
+      
+        {"$ref": "#/definitions/AND_Item"},
+        {"$ref": "#/definitions/OR_Item"}
+      ]
+    }
+  }
+}

@@ -40,6 +40,7 @@ export class YamlCodeActions {
 
     const result = [];
 
+    result.push(...this.getConvertToBooleanActions(params.context.diagnostics, document));
     result.push(...this.getJumpToSchemaActions(params.context.diagnostics));
     result.push(...this.getTabToSpaceConverting(params.context.diagnostics, document));
 
@@ -161,6 +162,25 @@ export class YamlCodeActions {
     }
 
     return result;
+  }
+  private getConvertToBooleanActions(diagnostics: Diagnostic[], document: TextDocument): CodeAction[] {
+    const results: CodeAction[] = [];
+    for (const diagnostic of diagnostics) {
+      if (diagnostic.message === 'Incorrect type. Expected "boolean".') {
+        const value = document.getText(diagnostic.range).toLocaleLowerCase();
+        if (value === '"true"' || value === '"false"' || value === "'true'" || value === "'false'") {
+          const newValue = value.includes('true') ? 'true' : 'false';
+          results.push(
+            CodeAction.create(
+              'Convert to boolean',
+              createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, newValue)]),
+              CodeActionKind.QuickFix
+            )
+          );
+        }
+      }
+    }
+    return results;
   }
 }
 

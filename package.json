@@ -33,7 +33,6 @@
     "prettier": "2.0.5"
   },
   "dependencies": {
-    "jsonc-parser": "^3.0.0",
     "request-light": "^0.5.5",
     "vscode-json-languageservice": "^4.1.7",
     "vscode-languageserver": "^7.0.0",
@@ -53,7 +52,7 @@
     "@typescript-eslint/eslint-plugin": "^4.16.1",
     "@typescript-eslint/parser": "^4.16.1",
     "chai": "^4.2.0",
-    "coveralls": "^3.0.5",
+    "coveralls": "3.1.1",
     "eslint": "^7.2.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.4",
@@ -93,7 +92,8 @@
       "out",
       "lib",
       "coverage/",
-      ".eslintrc.js"
+      ".eslintrc.js", 
+      "scripts"
     ],
     "all": true
   }

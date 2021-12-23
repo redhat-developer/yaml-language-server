@@ -29,12 +29,13 @@ import { YAMLSchemaService } from './yamlSchemaService';
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { stringifyObject, StringifySettings } from '../utils/json';
-import { isDefined, isString } from '../utils/objects';
+import { convertErrorToTelemetryMsg, isDefined, isString } from '../utils/objects';
 import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
 import { indexOf } from '../utils/astUtils';
 import { isModeline } from './modelineUtil';
+import { getSchemaTypeName } from '../utils/schemaUtils';
 
 const localize = nls.loadMessageBundle();
 
@@ -152,17 +153,22 @@ export class YamlCompletion {
               label = shortendedLabel;
             }
           }
+          // trim $1 from end of completion
+          if (completionItem.insertText.endsWith('$1')) {
+            completionItem.insertText = completionItem.insertText.substr(0, completionItem.insertText.length - 2);
+          }
           if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
             completionItem.textEdit = TextEdit.replace(overwriteRange, completionItem.insertText);
           }
           completionItem.label = label;
           proposed[label] = completionItem;
           result.items.push(completionItem);
+        } else if (!existing.documentation && completionItem.documentation) {
+          existing.documentation = completionItem.documentation;
         }
       },
       error: (message: string) => {
-        console.error(message);
-        this.telemetry.sendError('yaml.completion.error', { error: message });
+        this.telemetry.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(message) });
       },
       log: (message: string) => {
         console.log(message);
@@ -234,6 +240,7 @@ export class YamlCompletion {
         }
       }
 
+      const originalNode = node;
       if (node) {
         if (lineContent.length === 0) {
           node = currentDoc.internalDocument.contents as Node;
@@ -370,7 +377,7 @@ export class YamlCompletion {
           }
         }
 
-        this.addPropertyCompletions(schema, currentDoc, node, '', collector, textBuffer, overwriteRange);
+        this.addPropertyCompletions(schema, currentDoc, node, originalNode, '', collector, textBuffer, overwriteRange);
 
         if (!schema && currentWord.length > 0 && document.getText().charAt(offset - currentWord.length - 1) !== '"') {
           collector.add({
@@ -386,12 +393,7 @@ export class YamlCompletion {
       const types: { [type: string]: boolean } = {};
       this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types);
     } catch (err) {
-      if (err.stack) {
-        console.error(err.stack);
-      } else {
-        console.error(err);
-      }
-      this.telemetry.sendError('yaml.completion.error', { error: err });
+      this.telemetry.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
     return result;
@@ -411,6 +413,7 @@ export class YamlCompletion {
     schema: ResolvedSchema,
     doc: SingleYAMLDocument,
     node: YAMLMap,
+    originalNode: Node,
     separatorAfter: string,
     collector: CompletionsCollector,
     textBuffer: TextBuffer,
@@ -418,11 +421,18 @@ export class YamlCompletion {
   ): void {
     const matchingSchemas = doc.getMatchingSchemas(schema.schema);
     const existingKey = textBuffer.getText(overwriteRange);
-    const hasColumn = textBuffer.getLineContent(overwriteRange.start.line).indexOf(':') === -1;
+    const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
+    const hasOnlyWhitespace = lineContent.trim().length === 0;
+    const hasColon = lineContent.indexOf(':') !== -1;
 
     const nodeParent = doc.getParent(node);
+
+    const matchOriginal = matchingSchemas.find((it) => it.node.internalNode === originalNode && it.schema.properties);
     for (const schema of matchingSchemas) {
-      if (schema.node.internalNode === node && !schema.inverted) {
+      if (
+        ((schema.node.internalNode === node && !matchOriginal) || schema.node.internalNode === originalNode) &&
+        !schema.inverted
+      ) {
         this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
           newLineFirst: false,
           indentFirstObject: false,
@@ -436,7 +446,7 @@ export class YamlCompletion {
             maxProperties === undefined ||
             node.items === undefined ||
             node.items.length < maxProperties ||
-            isMapContainsEmptyPair(node)
+            (node.items.length === maxProperties && !hasOnlyWhitespace)
           ) {
             for (const key in schemaProperties) {
               if (Object.prototype.hasOwnProperty.call(schemaProperties, key)) {
@@ -494,7 +504,7 @@ export class YamlCompletion {
                   }
 
                   let insertText = key;
-                  if (!key.startsWith(existingKey) || hasColumn) {
+                  if (!key.startsWith(existingKey) || !hasColon) {
                     insertText = this.getInsertTextForProperty(
                       key,
                       propertySchema,
@@ -622,15 +632,18 @@ export class YamlCompletion {
                 s.schema.items.anyOf
                   .filter((i) => typeof i === 'object')
                   .forEach((i: JSONSchema, index) => {
+                    const schemaType = getSchemaTypeName(i);
                     const insertText = `- ${this.getInsertTextForObject(i, separatorAfter).insertText.trimLeft()}`;
                     //append insertText to documentation
+                    const schemaTypeTitle = schemaType ? ' type `' + schemaType + '`' : '';
+                    const schemaDescription = s.schema.description ? ' (' + s.schema.description + ')' : '';
                     const documentation = this.getDocumentationWithMarkdownText(
-                      `Create an item of an array${s.schema.description === undefined ? '' : '(' + s.schema.description + ')'}`,
+                      `Create an item of an array${schemaTypeTitle}${schemaDescription}`,
                       insertText
                     );
                     collector.add({
                       kind: this.getSuggestionKind(i.type),
-                      label: '- (array item) ' + (index + 1),
+                      label: '- (array item) ' + (schemaType || index + 1),
                       documentation: documentation,
                       insertText: insertText,
                       insertTextFormat: InsertTextFormat.Snippet,
