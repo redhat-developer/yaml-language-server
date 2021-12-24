@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { Parser, Composer, Document, LineCounter, ParseOptions, DocumentOptions, SchemaOptions } from 'yaml';
+import { Parser, Composer, Document, LineCounter, ParseOptions, DocumentOptions, SchemaOptions, CST, Lexer } from 'yaml';
 import { YAMLDocument, SingleYAMLDocument } from './yaml-documents';
 import { getCustomTags } from './custom-tag-provider';
 
@@ -33,8 +33,9 @@ export function parse(text: string, parserOptions: ParserOptions = defaultOption
   };
   const composer = new Composer(options);
   const lineCounter = new LineCounter();
-  const regx = new RegExp('[\\n]+[\\s]*$', 'g');
-  const parser = regx.test(text) ? new Parser() : new Parser(lineCounter.addNewLine);
+  const lexerTokensArr = Array.from(new Lexer().lex(text));
+  const parser =
+    lexerTokensArr.length > 0 && isEndedWithEmpty(lexerTokensArr) ? new Parser() : new Parser(lineCounter.addNewLine);
   const tokens = parser.parse(text);
   const tokensArr = Array.from(tokens);
   const docs = composer.compose(tokensArr, true, text.length);
@@ -49,4 +50,23 @@ function parsedDocToSingleYAMLDocument(parsedDoc: Document, lineCounter: LineCou
   const syd = new SingleYAMLDocument(lineCounter);
   syd.internalDocument = parsedDoc;
   return syd;
+}
+
+/**
+ * check last or last before token is new line or new line with white space
+ */
+function isEndedWithEmpty(tokens: string[]): boolean {
+  let [tokenType, emptyLine] = isEmptyLine(tokens[tokens.length - 1]);
+  if (!emptyLine && tokenType === 'space') {
+    [tokenType, emptyLine] = isEmptyLine(tokens[tokens.length - 2]);
+  }
+  return emptyLine;
+}
+
+function isEmptyLine(text: string): [string, boolean] {
+  const tokenType = CST.tokenType(text);
+  if (tokenType === 'newline') {
+    return [tokenType, true];
+  }
+  return [tokenType, false];
 }
