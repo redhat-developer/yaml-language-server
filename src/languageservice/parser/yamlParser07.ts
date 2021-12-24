@@ -33,7 +33,8 @@ export function parse(text: string, parserOptions: ParserOptions = defaultOption
   };
   const composer = new Composer(options);
   const lineCounter = new LineCounter();
-  const parser = new Parser(lineCounter.addNewLine);
+  const regx = new RegExp('[\\n]+[\\s]*$', 'g');
+  const parser = regx.test(text) ? new Parser() : new Parser(lineCounter.addNewLine);
   const tokens = parser.parse(text);
   const tokensArr = Array.from(tokens);
   const docs = composer.compose(tokensArr, true, text.length);

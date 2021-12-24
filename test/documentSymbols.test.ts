@@ -273,8 +273,7 @@ describe('Document Symbols Tests', () => {
               ? *root
               :
                 style:
-                  height: 41
-            `;
+                  height: 41`;
 
       const symbols = parseHierarchicalSetup(content);
 
