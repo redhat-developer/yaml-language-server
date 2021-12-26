@@ -80,12 +80,6 @@ export class SingleYAMLDocument extends JSONDocument {
   get warnings(): YAMLDocDiagnostic[] {
     return this.internalDocument.warnings.map(YAMLErrorToYamlDocDiagnostics);
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
-  public getSchemas(schema: any, doc: any, node: any): any[] {
-    const matchingSchemas = [];
-    doc.validate(schema, matchingSchemas, node.start);
-    return matchingSchemas;
-  }
 
   getNodeFromPosition(positionOffset: number, textBuffer: TextBuffer): [Node | undefined, boolean] {
     const position = textBuffer.getPosition(positionOffset);
