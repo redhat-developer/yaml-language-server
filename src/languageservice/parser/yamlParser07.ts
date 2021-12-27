@@ -56,9 +56,10 @@ function parsedDocToSingleYAMLDocument(parsedDoc: Document, lineCounter: LineCou
  * check last or last before token is new line or new line with white space
  */
 function isEndedWithEmpty(tokens: string[]): boolean {
-  let [tokenType, emptyLine] = isEmptyLine(tokens[tokens.length - 1]);
+  const lastTwoTokens = tokens.slice(-2);
+  let [tokenType, emptyLine] = isEmptyLine(lastTwoTokens[0]);
   if (!emptyLine && tokenType === 'space') {
-    [tokenType, emptyLine] = isEmptyLine(tokens[tokens.length - 2]);
+    [tokenType, emptyLine] = isEmptyLine(lastTwoTokens[1]);
   }
   return emptyLine;
 }
