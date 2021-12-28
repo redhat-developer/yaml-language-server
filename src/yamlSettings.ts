@@ -33,6 +33,10 @@ export interface Settings {
     'editor.insertSpaces': boolean;
     'editor.formatOnType': boolean;
   };
+  vscodeEditor: {
+    tabSize: number;
+    detectIndentation: boolean;
+  };
 }
 
 export interface JSONSchemaSettings {

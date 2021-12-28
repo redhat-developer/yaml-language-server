@@ -8,7 +8,7 @@ import { convertErrorToTelemetryMsg } from '../../languageservice/utils/objects'
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
-import { SchemaSelectionRequests } from '../../requestTypes';
+import { CustomUpdateTabSizeRequest, SchemaSelectionRequests } from '../../requestTypes';
 import { Settings, SettingsState } from '../../yamlSettings';
 import { Telemetry } from '../telemetry';
 import { ValidationHandler } from './validationHandlers';
@@ -42,6 +42,7 @@ export class SettingsHandler {
       { section: 'yaml' },
       { section: 'http' },
       { section: '[yaml]' },
+      { section: 'editor' },
     ]);
     const settings: Settings = {
       yaml: config[0],
@@ -50,6 +51,7 @@ export class SettingsHandler {
         proxyStrictSSL: config[1]?.proxyStrictSSL ?? false,
       },
       yamlEditor: config[2],
+      vscodeEditor: config[3],
     };
     this.setConfiguration(settings);
   }
@@ -107,6 +109,11 @@ export class SettingsHandler {
 
     this.yamlSettings.schemaConfigurationSettings = [];
 
+    if (settings.vscodeEditor) {
+      const tabSize = !settings.vscodeEditor['detectIndentation'] ? settings.vscodeEditor['tabSize'] : 2;
+      await this.updateTabSize(tabSize);
+    }
+
     if (settings.yamlEditor && settings.yamlEditor['editor.tabSize']) {
       this.yamlSettings.indentation = ' '.repeat(settings.yamlEditor['editor.tabSize']);
     }
@@ -144,6 +151,17 @@ export class SettingsHandler {
         this.yamlSettings.formatterRegistration = null;
       }
     }
+  }
+
+  public async updateTabSize(tabSize: number): Promise<boolean> {
+    return this.connection
+      .sendRequest(CustomUpdateTabSizeRequest.type, tabSize)
+      .then(() => {
+        return Promise.resolve(true);
+      })
+      .catch(() => {
+        return Promise.reject(false);
+      });
   }
 
   /**
