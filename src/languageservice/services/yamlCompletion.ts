@@ -41,11 +41,16 @@ const localize = nls.loadMessageBundle();
 
 const doubleQuotesEscapeRegExp = /[\\]+"/g;
 
-interface CompletionItem extends CompletionItemBase {
-  schemaType?: string;
+const parentCompletionKind = CompletionItemKind.Class;
+
+interface ParentCompletionItemOptions {
+  schemaType: string;
   indent?: string;
-  isForParentSuggestion?: boolean;
-  isInlineObject?: boolean;
+  insertTexts?: string[];
+}
+
+interface CompletionItem extends CompletionItemBase {
+  parent?: ParentCompletionItemOptions;
 }
 interface CompletionsCollector {
   add(suggestion: CompletionItem): void;
@@ -141,54 +146,37 @@ export class YamlCompletion {
     const collector: CompletionsCollector = {
       add: (completionItem: CompletionItem) => {
         const addSuggestionForParent = function (completionItem: CompletionItem): void {
-          const exists = proposed[completionItem.label]?.label === existingProposeItem;
-          const schemaKey = completionItem.schemaType;
-          const completionKind = CompletionItemKind.Class;
-          let parentCompletion = result.items.find((i) => i.label === schemaKey && i.kind === completionKind);
-
-          if (!parentCompletion) {
-            //don't put to parent suggestion if already in yaml
-            if (exists) {
-              return;
-            }
-            parentCompletion = { ...completionItem };
-            parentCompletion.label = schemaKey;
-            parentCompletion.sortText = '_' + parentCompletion.label; //this extended completion goes first
-            parentCompletion.kind = completionKind;
-            result.items.push(parentCompletion);
-          } else if (!exists) {
-            //modify added props to have unique $x
-            const match = parentCompletion.insertText.match(/\$([0-9]+)|\${[0-9]+:/g);
-            let reindexedStr = completionItem.insertText;
-
-            if (match) {
-              const max$index = match
-                .map((m) => +m.replace(/\${([0-9]+)[:|]/g, '$1').replace('$', ''))
-                .reduce((p, n) => (n > p ? n : p), 0);
-              reindexedStr = completionItem.insertText
-                .replace(/\$([0-9]+)/g, (s, args) => '$' + (+args + max$index))
-                .replace(/\${([0-9]+)[:|]/g, (s, args) => '${' + (+args + max$index) + ':');
-            }
-            parentCompletion.insertText += '\n' + (completionItem.indent || '') + reindexedStr;
+          const existsInYaml = proposed[completionItem.label]?.label === existingProposeItem;
+          //don't put to parent suggestion if already in yaml
+          if (existsInYaml) {
+            return;
           }
 
-          // remove $x for documentation
-          const mdText = parentCompletion.insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
+          const schemaType = completionItem.parent.schemaType;
+          let parentCompletion: CompletionItem | undefined = result.items.find(
+            (item) => item.label === schemaType && item.kind === parentCompletionKind
+          );
 
-          parentCompletion.documentation = <MarkupContent>{
-            kind: MarkupKind.Markdown,
-            value: [
-              ...(completionItem.documentation ? [completionItem.documentation, '', '----', ''] : []),
-              '```yaml',
-              mdText,
-              '```',
-            ].join('\n'),
-          };
-
-          if (parentCompletion.textEdit) {
-            parentCompletion.textEdit.newText = parentCompletion.insertText;
+          if (parentCompletion && parentCompletion.parent.insertTexts.includes(completionItem.insertText)) {
+            // already exists in the parent
+            return;
+          } else if (!parentCompletion) {
+            // create a new parent
+            parentCompletion = {
+              ...completionItem,
+              label: schemaType,
+              sortText: '_' + schemaType, // this parent completion goes first,
+              kind: parentCompletionKind,
+            };
+            parentCompletion.parent.insertTexts = [completionItem.insertText];
+            result.items.push(parentCompletion);
+          } else {
+            // add to the existing parent
+            parentCompletion.parent.insertTexts.push(completionItem.insertText);
           }
         };
+
+        const isForParentCompletion = !!completionItem.parent;
         let label = completionItem.label;
         if (!label) {
           // we receive not valid CompletionItem as `label` is mandatory field, so just ignore it
@@ -199,7 +187,7 @@ export class YamlCompletion {
           label = String(label);
         }
         const existing = proposed[label];
-        if (!existing || completionItem.isForParentSuggestion) {
+        if (!existing || isForParentCompletion) {
           label = label.replace(/[\n]/g, '↵');
           if (label.length > 60) {
             const shortendedLabel = label.substr(0, 57).trim() + '...';
@@ -207,17 +195,21 @@ export class YamlCompletion {
               label = shortendedLabel;
             }
           }
+
           // trim $1 from end of completion
-          if (completionItem.insertText.endsWith('$1')) {
+          if (completionItem.insertText.endsWith('$1') && !isForParentCompletion) {
             completionItem.insertText = completionItem.insertText.substr(0, completionItem.insertText.length - 2);
           }
           if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
             completionItem.textEdit = TextEdit.replace(overwriteRange, completionItem.insertText);
           }
+
           completionItem.label = label;
-          if (completionItem.isForParentSuggestion && completionItem.schemaType) {
+
+          if (isForParentCompletion) {
             addSuggestionForParent(completionItem);
           }
+
           if (!existing) {
             proposed[label] = completionItem;
             result.items.push(completionItem);
@@ -455,7 +447,61 @@ export class YamlCompletion {
       this.telemetry.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
+    this.finalizeParentCompletion(result);
+
     return result;
+  }
+
+  private finalizeParentCompletion(result: CompletionList): void {
+    const reindexText = (insertTexts: string[]): string[] => {
+      //modify added props to have unique $x
+      let max$index = 0;
+      return insertTexts.map((text) => {
+        const match = text.match(/\$([0-9]+)|\${[0-9]+:/g);
+        if (!match) {
+          return text;
+        }
+        const max$indexLocal = match
+          .map((m) => +m.replace(/\${([0-9]+)[:|]/g, '$1').replace('$', '')) // get numbers form $1 or ${1:...}
+          .reduce((p, n) => (n > p ? n : p), 0); // find the max one
+        const reindexedStr = text
+          .replace(/\$([0-9]+)/g, (s, args) => '$' + (+args + max$index)) // increment each by max$index
+          .replace(/\${([0-9]+)[:|]/g, (s, args) => '${' + (+args + max$index) + ':'); // increment each by max$index
+        max$index += max$indexLocal;
+        return reindexedStr;
+      });
+    };
+
+    result.items.forEach((completionItem) => {
+      if (isParentCompletionItem(completionItem)) {
+        const indent = completionItem.parent.indent || '';
+
+        const reindexedTexts = reindexText(completionItem.parent.insertTexts);
+
+        // add indent to each object property and join completion item texts
+        // let insertText = reindexedTexts.map((text) => text.replace('\n', `${indent}\n`)).join(`\n${indent}`);
+        let insertText = reindexedTexts.join(`\n${indent}`);
+
+        // trim $1 from end of completion
+        if (insertText.endsWith('$1')) {
+          insertText = insertText.substring(0, insertText.length - 2);
+        }
+
+        completionItem.insertText = insertText;
+        if (completionItem.textEdit) {
+          completionItem.textEdit.newText = insertText;
+        }
+        // remove $x or use {$x:value} in documentation
+        const mdText = insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
+
+        const originalDocumentation = completionItem.documentation ? [completionItem.documentation, '', '----', ''] : [];
+        completionItem.documentation = {
+          kind: MarkupKind.Markdown,
+          value: [...originalDocumentation, '```yaml', indent + mdText, '```'].join('\n'),
+        };
+        delete completionItem.parent;
+      }
+    });
   }
 
   private createTempObjNode(currentWord: string, node: Node, currentDoc: SingleYAMLDocument): YAMLMap {
@@ -568,10 +614,7 @@ export class YamlCompletion {
                       key,
                       propertySchema,
                       separatorAfter,
-                      identCompensation + this.indentation,
-                      {
-                        includeConstValue: false,
-                      }
+                      identCompensation + this.indentation
                     );
                   }
 
@@ -591,16 +634,14 @@ export class YamlCompletion {
                         key,
                         propertySchema,
                         separatorAfter,
-                        identCompensation + this.indentation,
-                        {
-                          includeConstValue: true,
-                        }
+                        identCompensation + this.indentation
                       ),
                       insertTextFormat: InsertTextFormat.Snippet,
                       documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
-                      schemaType: schemaType,
-                      indent: identCompensation,
-                      isForParentSuggestion: true,
+                      parent: {
+                        schemaType,
+                        indent: identCompensation,
+                      },
                     });
                   }
                 }
@@ -761,10 +802,7 @@ export class YamlCompletion {
     key: string,
     propertySchema: JSONSchema,
     separatorAfter: string,
-    ident = this.indentation,
-    options: {
-      includeConstValue?: boolean;
-    } = {}
+    ident = this.indentation
   ): string {
     const propertyText = this.getInsertTextForValue(key, '', 'string');
     const resultText = propertyText + ':';
@@ -811,10 +849,10 @@ export class YamlCompletion {
         nValueProposals += propertySchema.enum.length;
       }
 
-      if (propertySchema.const && options.includeConstValue) {
+      if (propertySchema.const) {
         if (!value) {
           value = this.getInsertTextForGuessedValue(propertySchema.const, '', type);
-          value = removeTab1Symbol(value); // prevent const being selected after snippet insert
+          value = evaluateTab1Symbol(value); // prevent const being selected after snippet insert
           value = ' ' + value;
         }
         nValueProposals++;
@@ -1465,7 +1503,11 @@ function convertToStringValue(value: string): string {
 /**
  * simplify `{$1:value}` to `value`
  */
-function removeTab1Symbol(value: string): string {
+function evaluateTab1Symbol(value: string): string {
   const result = value.replace(/\$\{1:(.*)\}/, '$1');
   return result;
+}
+
+function isParentCompletionItem(item: CompletionItemBase): item is CompletionItem {
+  return 'parent' in item;
 }

@@ -1581,7 +1581,30 @@ describe('Auto Completion Tests', () => {
         })
         .then(done, done);
     });
-    it('should insert quotation value if there is special char', async () => {
+    it('Autocomplete should suggest prop with const value', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          fruit: {
+            const: 'Apple',
+          },
+        },
+      });
+      const content = '';
+      const completion = parseSetup(content, 0);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.deepEqual(
+            result.items[0],
+            createExpectedCompletion('fruit', 'fruit: Apple', 0, 0, 0, 0, 10, 2, {
+              documentation: '',
+            })
+          );
+        })
+        .then(done, done);
+    });
+    it('Should insert quotation value if there is special char', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -2407,7 +2430,7 @@ describe('Auto Completion Tests', () => {
     const obj1 = {
       properties: {
         type: {
-          const: 'type obj1',
+          const: 'typeObj1',
         },
         options: {
           type: 'object',
@@ -2425,7 +2448,7 @@ describe('Auto Completion Tests', () => {
     const obj2 = {
       properties: {
         type: {
-          const: 'type obj2',
+          const: 'typeObj2',
         },
         options: {
           type: 'object',
@@ -2442,10 +2465,7 @@ describe('Auto Completion Tests', () => {
     };
     it('Should suggest complete object skeleton', async () => {
       const schema = {
-        definitions: {
-          obj1,
-          obj2,
-        },
+        definitions: { obj1, obj2 },
         anyOf: [
           {
             $ref: '#/definitions/obj1',
@@ -2460,42 +2480,35 @@ describe('Auto Completion Tests', () => {
       const result = await parseSetup(content, content.length);
 
       expect(result.items.length).equal(4);
-      expect(result.items[0]).to.deep.equal(createExpectedCompletion('type', 'type', 0, 0, 0, 0, 10, 2, { documentation: '' }));
+      expect(result.items[0]).to.deep.equal(
+        createExpectedCompletion('type', 'type: typeObj1', 0, 0, 0, 0, 10, 2, { documentation: '' })
+      );
       expect(result.items[1]).to.deep.equal(
-        createExpectedCompletion('obj1', 'type: type obj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
+        createExpectedCompletion('obj1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
           documentation: {
             kind: 'markdown',
-            value: '```yaml\ntype: type obj1\noptions:\n  label: \n```',
+            value: '```yaml\ntype: typeObj1\noptions:\n  label: \n```',
           },
-          isForParentSuggestion: true,
           sortText: '_obj1',
-          schemaType: 'obj1',
-          indent: '',
         })
       );
       expect(result.items[2]).to.deep.equal(
         createExpectedCompletion('options', 'options:\n  label: ', 0, 0, 0, 0, 10, 2, { documentation: '' })
       );
       expect(result.items[3]).to.deep.equal(
-        createExpectedCompletion('obj2', 'type: type obj2\noptions:\n  description: ', 0, 0, 0, 0, 7, 2, {
+        createExpectedCompletion('obj2', 'type: typeObj2\noptions:\n  description: ', 0, 0, 0, 0, 7, 2, {
           documentation: {
             kind: 'markdown',
-            value: '```yaml\ntype: type obj2\noptions:\n  description: \n```',
+            value: '```yaml\ntype: typeObj2\noptions:\n  description: \n```',
           },
-          isForParentSuggestion: true,
           sortText: '_obj2',
-          schemaType: 'obj2',
-          indent: '',
         })
       );
     });
 
     it('Should suggest complete object skeleton - array', async () => {
       const schema = {
-        definitions: {
-          obj1,
-          obj2,
-        },
+        definitions: { obj1, obj2 },
         items: {
           anyOf: [
             {
@@ -2513,32 +2526,109 @@ describe('Auto Completion Tests', () => {
       const result = await parseSetup(content, content.length);
 
       expect(result.items.length).equal(4);
-      expect(result.items[0]).to.deep.equal(createExpectedCompletion('type', 'type', 0, 2, 0, 2, 10, 2, { documentation: '' }));
+      expect(result.items[0]).to.deep.equal(
+        createExpectedCompletion('type', 'type: typeObj1', 0, 2, 0, 2, 10, 2, { documentation: '' })
+      );
       expect(result.items[1]).to.deep.equal(
-        createExpectedCompletion('obj1', 'type: type obj1\n  options:\n    label: ', 0, 2, 0, 2, 7, 2, {
+        createExpectedCompletion('obj1', 'type: typeObj1\n  options:\n    label: ', 0, 2, 0, 2, 7, 2, {
           documentation: {
             kind: 'markdown',
-            value: '```yaml\ntype: type obj1\n  options:\n    label: \n```',
+            value: '```yaml\n  type: typeObj1\n  options:\n    label: \n```',
           },
-          isForParentSuggestion: true,
           sortText: '_obj1',
-          schemaType: 'obj1',
-          indent: '  ',
         })
       );
       expect(result.items[2]).to.deep.equal(
         createExpectedCompletion('options', 'options:\n    label: ', 0, 2, 0, 2, 10, 2, { documentation: '' })
       );
       expect(result.items[3]).to.deep.equal(
-        createExpectedCompletion('obj2', 'type: type obj2\n  options:\n    description: ', 0, 2, 0, 2, 7, 2, {
+        createExpectedCompletion('obj2', 'type: typeObj2\n  options:\n    description: ', 0, 2, 0, 2, 7, 2, {
           documentation: {
             kind: 'markdown',
-            value: '```yaml\ntype: type obj2\n  options:\n    description: \n```',
+            value: '```yaml\n  type: typeObj2\n  options:\n    description: \n```',
           },
-          isForParentSuggestion: true,
           sortText: '_obj2',
-          schemaType: 'obj2',
-          indent: '  ',
+        })
+      );
+    });
+    it('Should agregate suggested text without duplicities in insertText', async () => {
+      const schema = {
+        definitions: { obj1, obj2 },
+        anyOf: [
+          {
+            $ref: '#/definitions/obj1',
+          },
+          {
+            $ref: '#/definitions/obj1',
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).equal(3);
+      expect(result.items[1]).to.deep.equal(
+        createExpectedCompletion('obj1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\ntype: typeObj1\noptions:\n  label: \n```',
+          },
+          sortText: '_obj1',
+        })
+      );
+    });
+    it('Should suggest rest of the parent object', async () => {
+      const schema = {
+        definitions: { obj1 },
+        $ref: '#/definitions/obj1',
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'type: typeObj1\n';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).equal(2);
+      expect(result.items[1]).to.deep.equal(
+        createExpectedCompletion('obj1', 'options:\n  label: ', 1, 0, 1, 0, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\noptions:\n  label: \n```',
+          },
+          sortText: '_obj1',
+        })
+      );
+    });
+    it('Should reindex $x', async () => {
+      const schema = {
+        properties: {
+          options: {
+            type: 'object',
+            properties: {
+              label: {
+                type: 'string',
+              },
+            },
+            required: ['label'],
+          },
+          prop1: {
+            type: 'string',
+          },
+        },
+        required: ['type', 'options', 'prop1'],
+        type: 'object',
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).equal(3);
+      expect(result.items[1]).to.deep.equal(
+        createExpectedCompletion('object', 'options:\n  label: $1\nprop1: $2', 0, 0, 0, 0, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\noptions:\n  label: \nprop1: \n```',
+          },
+          sortText: '_object',
         })
       );
     });
