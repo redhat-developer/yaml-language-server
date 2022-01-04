@@ -735,7 +735,9 @@ export class YamlCompletion {
       if (propertySchema.properties) {
         return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter, indent).insertText}`;
       } else if (propertySchema.items) {
-        return `${resultText}\n${indent}- ${this.getInsertTextForArray(propertySchema.items, separatorAfter).insertText}`;
+        return `${resultText}\n${indent}- ${
+          this.getInsertTextForArray(propertySchema.items, separatorAfter, 1, indent).insertText
+        }`;
       }
       if (nValueProposals === 0) {
         switch (type) {
@@ -802,7 +804,7 @@ export class YamlCompletion {
             break;
           case 'array':
             {
-              const arrayInsertResult = this.getInsertTextForArray(propertySchema.items, separatorAfter, insertIndex++);
+              const arrayInsertResult = this.getInsertTextForArray(propertySchema.items, separatorAfter, insertIndex++, indent);
               const arrayInsertLines = arrayInsertResult.insertText.split('\n');
               let arrayTemplate = arrayInsertResult.insertText;
               if (arrayInsertLines.length > 1) {
@@ -854,7 +856,7 @@ export class YamlCompletion {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getInsertTextForArray(schema: any, separatorAfter: string, insertIndex = 1): InsertText {
+  private getInsertTextForArray(schema: any, separatorAfter: string, insertIndex = 1, indent = this.indentation): InsertText {
     let insertText = '';
     if (!schema) {
       insertText = `$${insertIndex++}`;
@@ -882,7 +884,7 @@ export class YamlCompletion {
         break;
       case 'object':
         {
-          const objectInsertResult = this.getInsertTextForObject(schema, separatorAfter, `${this.indentation}  `, insertIndex++);
+          const objectInsertResult = this.getInsertTextForObject(schema, separatorAfter, `${indent}  `, insertIndex++);
           insertText = objectInsertResult.insertText.trimLeft();
           insertIndex = objectInsertResult.insertIndex;
         }
