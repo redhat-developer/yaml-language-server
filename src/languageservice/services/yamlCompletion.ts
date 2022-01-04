@@ -676,7 +676,7 @@ export class YamlCompletion {
     key: string,
     propertySchema: JSONSchema,
     separatorAfter: string,
-    ident = this.indentation
+    indent = this.indentation
   ): string {
     const propertyText = this.getInsertTextForValue(key, '', 'string');
     const resultText = propertyText + ':';
@@ -733,11 +733,9 @@ export class YamlCompletion {
         nValueProposals += propertySchema.examples.length;
       }
       if (propertySchema.properties) {
-        return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter, ident).insertText}`;
+        return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter, indent).insertText}`;
       } else if (propertySchema.items) {
-        return `${resultText}\n${this.indentation}- ${
-          this.getInsertTextForArray(propertySchema.items, separatorAfter).insertText
-        }`;
+        return `${resultText}\n${indent}- ${this.getInsertTextForArray(propertySchema.items, separatorAfter).insertText}`;
       }
       if (nValueProposals === 0) {
         switch (type) {
@@ -748,10 +746,10 @@ export class YamlCompletion {
             value = ' $1';
             break;
           case 'object':
-            value = `\n${ident}`;
+            value = `\n${indent}`;
             break;
           case 'array':
-            value = `\n${ident}- `;
+            value = `\n${indent}- `;
             break;
           case 'number':
           case 'integer':
