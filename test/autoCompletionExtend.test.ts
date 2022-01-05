@@ -204,11 +204,8 @@ describe('Auto Completion Tests Extended', () => {
             kind: 'markdown',
             value: '```yaml\nobjA:\n  propI: \n```',
           },
-          isForParentSuggestion: true,
           sortText: '_obj1',
           kind: 7,
-          schemaType: 'obj1',
-          indent: '',
         })
       );
     });
@@ -247,11 +244,8 @@ describe('Auto Completion Tests Extended', () => {
             kind: 'markdown',
             value: '```yaml\nobjA:\n  propI: \n```',
           },
-          isForParentSuggestion: true,
           sortText: '_obj1',
           kind: 7,
-          schemaType: 'obj1',
-          indent: '',
         })
       );
     });
@@ -287,11 +281,8 @@ describe('Auto Completion Tests Extended', () => {
             kind: 'markdown',
             value: '```yaml\nobjA:\n  propI: \n```',
           },
-          isForParentSuggestion: true,
           sortText: '_obj1',
           kind: 7,
-          schemaType: 'obj1',
-          indent: '',
         })
       );
     });
