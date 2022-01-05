@@ -428,5 +428,60 @@ objB:
         documentation: '',
       })
     );
+    describe('array indent on different index position', () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          objectWithArray: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['item', 'item2'],
+              properties: {
+                item: { type: 'string' },
+                item2: {
+                  type: 'object',
+                  required: ['prop1', 'prop2'],
+                  properties: {
+                    prop1: { type: 'string' },
+                    prop2: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      it('array indent on the first item', async () => {
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'objectWithArray:\n  - ';
+        const completion = await parseSetup(content, 1, 4);
+
+        expect(completion.items.length).equal(3); // because of parent completion
+        expect(completion.items[0]).to.be.deep.equal(
+          createExpectedCompletion('item', 'item: ', 1, 4, 1, 4, 10, 2, {
+            documentation: '',
+          })
+        );
+        expect(completion.items[2]).to.be.deep.equal(
+          // because of parent completion
+          createExpectedCompletion('item2', 'item2:\n    prop1: $1\n    prop2: $2', 1, 4, 1, 4, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+      it('array indent on the second item', async () => {
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'objectWithArray:\n  - item: first line\n    ';
+        const completion = await parseSetup(content, 2, 4);
+
+        expect(completion.items.length).equal(2); // because of parent completion
+        expect(completion.items[0]).to.be.deep.equal(
+          createExpectedCompletion('item2', 'item2:\n  prop1: $1\n  prop2: $2', 2, 4, 2, 4, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+    });
   });
 });

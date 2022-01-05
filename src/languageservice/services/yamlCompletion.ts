@@ -758,7 +758,7 @@ export class YamlCompletion {
 
                 if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema['doNotSuggest']) {
                   let identCompensation = '';
-                  if (nodeParent && isSeq(nodeParent) && node.items.length <= 1) {
+                  if (nodeParent && isSeq(nodeParent) && node.items.length <= 1 && !hasOnlyWhitespace) {
                     // because there is a slash '-' to prevent the properties generated to have the correct
                     // indent
                     const sourceText = textBuffer.getText();

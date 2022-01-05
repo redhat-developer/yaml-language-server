@@ -318,8 +318,7 @@ describe('Auto Completion Tests Extended', () => {
         })
       );
       expect(result.items[1]).to.deep.equal(
-        // '\n  objA:\n      ' is not correct, todo fix
-        createExpectedCompletion('objA', '\n  objA:\n      ', 1, 15, 1, 15, 10, 2, {
+        createExpectedCompletion('objA', '\n  objA:\n    ', 1, 15, 1, 15, 10, 2, {
           documentation: '',
         })
       );
