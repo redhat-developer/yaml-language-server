@@ -32,6 +32,13 @@ describe('Auto Completion Fix Tests', () => {
     yamlSettings = settings;
   });
 
+  /**
+   *
+   * @param content
+   * @param line starts with 0 index
+   * @param character starts with 1 index
+   * @returns
+   */
   function parseSetup(content: string, line: number, character: number): Promise<CompletionList> {
     const testTextDocument = setupSchemaIDTextDocument(content);
     yamlSettings.documents = new TextDocumentTestManager();
@@ -353,6 +360,72 @@ objB:
           kind: 'markdown',
           value: 'Create an item of an array\n ```\n- \n```',
         },
+      })
+    );
+  });
+
+  it('Autocomplete indent on array when parent is array', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        examples: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              objectWithArray: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const content = 'examples:\n  - ';
+    const completion = await parseSetup(content, 1, 4);
+
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0]).to.be.deep.equal(
+      createExpectedCompletion('objectWithArray', 'objectWithArray:\n    - ${1:""}', 1, 4, 1, 4, 10, 2, {
+        documentation: '',
+      })
+    );
+  });
+  it('Autocomplete indent on array object when parent is array', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        examples: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              objectWithArray: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: ['item', 'item2'],
+                  properties: {
+                    item: { type: 'string' },
+                    item2: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const content = 'examples:\n  - ';
+    const completion = await parseSetup(content, 1, 4);
+
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0]).to.be.deep.equal(
+      createExpectedCompletion('objectWithArray', 'objectWithArray:\n    - item: $1\n      item2: $2', 1, 4, 1, 4, 10, 2, {
+        documentation: '',
       })
     );
   });
