@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "request-light": "^0.5.5",
-    "vscode-json-languageservice": "^4.1.7",
+    "vscode-json-languageservice": "4.1.8",
     "vscode-languageserver": "^7.0.0",
     "vscode-languageserver-textdocument": "^1.0.1",
     "vscode-languageserver-types": "^3.16.0",
