@@ -103,6 +103,7 @@ export class SettingsHandler {
         }
       }
       this.yamlSettings.disableAdditionalProperties = settings.yaml.disableAdditionalProperties;
+      this.yamlSettings.disableDefaultProperties = settings.yaml.disableDefaultProperties;
     }
 
     this.yamlSettings.schemaConfigurationSettings = [];
@@ -225,6 +226,7 @@ export class SettingsHandler {
       format: this.yamlSettings.yamlFormatterSettings.enable,
       indentation: this.yamlSettings.indentation,
       disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
+      disableDefaultProperties: this.yamlSettings.disableDefaultProperties,
       yamlVersion: this.yamlSettings.yamlVersion,
     };
 
