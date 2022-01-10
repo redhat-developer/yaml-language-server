@@ -2378,5 +2378,40 @@ describe('Auto Completion Tests', () => {
       expect(obj1).is.not.undefined;
       expect(obj1.textEdit.newText).equal('obj1:\n    ');
     });
+
+    it('Autocomplete key in nested object while typing', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          parent: {
+            type: 'object',
+            properties: {
+              child: {
+                type: 'object',
+                properties: {
+                  prop: {
+                    type: 'string',
+                    default: 'test',
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = 'parent:\n  child:\n    p';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.strictEqual(result.items.length, 1);
+          assert.deepEqual(
+            result.items[0],
+            createExpectedCompletion('prop', 'prop: ${1:test}', 2, 4, 2, 5, 10, 2, {
+              documentation: '',
+            })
+          );
+        })
+        .then(done, done);
+    });
   });
 });
