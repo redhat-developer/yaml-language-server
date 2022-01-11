@@ -33,7 +33,7 @@
     "prettier": "2.0.5"
   },
   "dependencies": {
-    "request-light": "^0.5.5",
+    "request-light": "^0.5.7",
     "vscode-json-languageservice": "4.1.8",
     "vscode-languageserver": "^7.0.0",
     "vscode-languageserver-textdocument": "^1.0.1",
@@ -56,6 +56,8 @@
     "eslint": "^7.2.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.4",
+    "http-proxy-agent": "^5.0.0",
+    "https-proxy-agent": "^5.0.0",
     "mocha": "9.1.2",
     "mocha-lcov-reporter": "^1.3.0",
     "nyc": "^15.1.0",
@@ -92,7 +94,7 @@
       "out",
       "lib",
       "coverage/",
-      ".eslintrc.js", 
+      ".eslintrc.js",
       "scripts"
     ],
     "all": true
