@@ -386,6 +386,68 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
+      it('Autocomplete without default value - not required', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion();
+        languageSettingsSetup.languageSettings.disableDefaultProperties = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'string',
+                  default: 'test',
+                },
+                objectSample: {
+                  type: 'object',
+                },
+              },
+            },
+          },
+        });
+        const content = '';
+        const result = await parseSetup(content, 0);
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0]).to.deep.equal(
+          createExpectedCompletion('scripts', 'scripts:\n  ', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+      it('Autocomplete without default value - required', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion();
+        languageSettingsSetup.languageSettings.disableDefaultProperties = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'string',
+                  default: 'test',
+                },
+                objectSample: {
+                  type: 'object',
+                },
+              },
+              required: ['sample', 'objectSample'],
+            },
+          },
+        });
+        const content = '';
+        const result = await parseSetup(content, 0);
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0]).to.deep.equal(
+          createExpectedCompletion('scripts', 'scripts:\n  sample: ${1:test}\n  objectSample:\n    $2', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
       it('Autocomplete second key in middle of file', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
