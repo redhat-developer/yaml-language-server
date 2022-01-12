@@ -386,6 +386,68 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
+      it('Autocomplete without default value - not required', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion();
+        languageSettingsSetup.languageSettings.disableDefaultProperties = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'string',
+                  default: 'test',
+                },
+                objectSample: {
+                  type: 'object',
+                },
+              },
+            },
+          },
+        });
+        const content = '';
+        const result = await parseSetup(content, 0);
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0]).to.deep.equal(
+          createExpectedCompletion('scripts', 'scripts:\n  ', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+      it('Autocomplete without default value - required', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion();
+        languageSettingsSetup.languageSettings.disableDefaultProperties = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'string',
+                  default: 'test',
+                },
+                objectSample: {
+                  type: 'object',
+                },
+              },
+              required: ['sample', 'objectSample'],
+            },
+          },
+        });
+        const content = '';
+        const result = await parseSetup(content, 0);
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0]).to.deep.equal(
+          createExpectedCompletion('scripts', 'scripts:\n  sample: ${1:test}\n  objectSample:\n    $2', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
       it('Autocomplete second key in middle of file', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
@@ -2423,6 +2485,41 @@ describe('Auto Completion Tests', () => {
       const obj1 = completion.items.find((it) => it.label === 'obj1');
       expect(obj1).is.not.undefined;
       expect(obj1.textEdit.newText).equal('obj1:\n    ');
+    });
+
+    it('Autocomplete key in nested object while typing', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          parent: {
+            type: 'object',
+            properties: {
+              child: {
+                type: 'object',
+                properties: {
+                  prop: {
+                    type: 'string',
+                    default: 'test',
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = 'parent:\n  child:\n    p';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.strictEqual(result.items.length, 1);
+          assert.deepEqual(
+            result.items[0],
+            createExpectedCompletion('prop', 'prop: ${1:test}', 2, 4, 2, 5, 10, 2, {
+              documentation: '',
+            })
+          );
+        })
+        .then(done, done);
     });
   });
 

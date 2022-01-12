@@ -71,6 +71,7 @@ export class YamlCompletion {
   private yamlVersion: YamlVersion;
   private indentation: string;
   private supportsMarkdown: boolean | undefined;
+  private disableDefaultProperties: boolean;
 
   constructor(
     private schemaService: YAMLSchemaService,
@@ -86,6 +87,7 @@ export class YamlCompletion {
     this.customTags = languageSettings.customTags;
     this.yamlVersion = languageSettings.yamlVersion;
     this.configuredIndentation = languageSettings.indentation;
+    this.disableDefaultProperties = languageSettings.disableDefaultProperties;
   }
 
   async doComplete(document: TextDocument, position: Position, isKubernetes = false): Promise<CompletionList> {
@@ -479,7 +481,6 @@ export class YamlCompletion {
         const reindexedTexts = reindexText(completionItem.parent.insertTexts);
 
         // add indent to each object property and join completion item texts
-        // let insertText = reindexedTexts.map((text) => text.replace('\n', `${indent}\n`)).join(`\n${indent}`);
         let insertText = reindexedTexts.join(`\n${indent}`);
 
         // trim $1 from end of completion
@@ -802,7 +803,7 @@ export class YamlCompletion {
     key: string,
     propertySchema: JSONSchema,
     separatorAfter: string,
-    ident = this.indentation
+    indent = this.indentation
   ): string {
     const propertyText = this.getInsertTextForValue(key, '', 'string');
     const resultText = propertyText + ':';
@@ -871,10 +872,10 @@ export class YamlCompletion {
         nValueProposals += propertySchema.examples.length;
       }
       if (propertySchema.properties) {
-        return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter, ident).insertText}`;
+        return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter, indent).insertText}`;
       } else if (propertySchema.items) {
-        return `${resultText}\n${this.indentation}- ${
-          this.getInsertTextForArray(propertySchema.items, separatorAfter).insertText
+        return `${resultText}\n${indent}- ${
+          this.getInsertTextForArray(propertySchema.items, separatorAfter, 1, indent).insertText
         }`;
       }
       if (nValueProposals === 0) {
@@ -886,10 +887,10 @@ export class YamlCompletion {
             value = ' $1';
             break;
           case 'object':
-            value = `\n${ident}`;
+            value = `\n${indent}`;
             break;
           case 'array':
-            value = `\n${ident}- `;
+            value = `\n${indent}- `;
             break;
           case 'number':
           case 'integer':
@@ -944,12 +945,21 @@ export class YamlCompletion {
           case 'string':
           case 'number':
           case 'integer':
-          case 'anyOf':
-            insertText += `${indent}${key}: $${insertIndex++}\n`;
+          case 'anyOf': {
+            let value = propertySchema.default || propertySchema.const;
+            if (value) {
+              if (type === 'string') {
+                value = convertToStringValue(value);
+              }
+              insertText += `${indent}${key}: \${${insertIndex++}:${value}}\n`;
+            } else {
+              insertText += `${indent}${key}: $${insertIndex++}\n`;
+            }
             break;
+          }
           case 'array':
             {
-              const arrayInsertResult = this.getInsertTextForArray(propertySchema.items, separatorAfter, insertIndex++);
+              const arrayInsertResult = this.getInsertTextForArray(propertySchema.items, separatorAfter, insertIndex++, indent);
               const arrayInsertLines = arrayInsertResult.insertText.split('\n');
               let arrayTemplate = arrayInsertResult.insertText;
               if (arrayInsertLines.length > 1) {
@@ -976,7 +986,7 @@ export class YamlCompletion {
             }
             break;
         }
-      } else if (propertySchema.default !== undefined) {
+      } else if (!this.disableDefaultProperties && propertySchema.default !== undefined) {
         switch (type) {
           case 'boolean':
           case 'number':
@@ -1001,7 +1011,7 @@ export class YamlCompletion {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getInsertTextForArray(schema: any, separatorAfter: string, insertIndex = 1): InsertText {
+  private getInsertTextForArray(schema: any, separatorAfter: string, insertIndex = 1, indent = this.indentation): InsertText {
     let insertText = '';
     if (!schema) {
       insertText = `$${insertIndex++}`;
@@ -1029,7 +1039,7 @@ export class YamlCompletion {
         break;
       case 'object':
         {
-          const objectInsertResult = this.getInsertTextForObject(schema, separatorAfter, `${this.indentation}  `, insertIndex++);
+          const objectInsertResult = this.getInsertTextForObject(schema, separatorAfter, `${indent}  `, insertIndex++);
           insertText = objectInsertResult.insertText.trimLeft();
           insertIndex = objectInsertResult.insertIndex;
         }
