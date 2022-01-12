@@ -48,6 +48,7 @@ The following settings are supported:
 - `http.proxy`: The URL of the proxy server that will be used when attempting to download a schema. If it is not set or it is undefined no proxy server will be used.
 - `http.proxyStrictSSL`: If true the proxy server certificate should be verified against the list of supplied CAs. Default is false.
 - `[yaml].editor.formatOnType`: Enable/disable on type indent and auto formatting array
+- `yaml.disableDefaultProperties`: Disable adding not required properties with default values into completion text
 
 ##### Adding custom tags
 
@@ -241,11 +242,13 @@ or absolute path:
 ```
 
 ## Containerized Language Server
+
 An image is provided for users who would like to use the YAML language server without having to install dependencies locally.
 
 The image is located at `quay.io/redhat-developer/yaml-language-server`
 
 To run the image you can use:
+
 ```
 docker run -it quay.io/redhat-developer/yaml-language-server:latest
 ```
@@ -263,14 +266,16 @@ docker run -it quay.io/redhat-developer/yaml-language-server:latest
 The support schema selection notification is sent from a client to the server to inform server that client supports JSON Schema selection.
 
 _Notification:_
+
 - method: `'yaml/supportSchemaSelection'`
-- params: `void` 
+- params: `void`
 
 #### SchemaStoreInitialized Notification
 
 The schema store initialized notification is sent from the server to a client to inform client that server has finished initializing/loading schemas from schema store, and client now can ask for schemas.
 
 _Notification:_
+
 - method: `'yaml/schema/store/initialized'`
 - params: `void`
 
@@ -279,12 +284,14 @@ _Notification:_
 The get all schemas request sent from a client to server to get all known schemas.
 
 _Request:_
+
 - method: `'yaml/get/all/jsonSchemas'`;
 - params: the document uri, server will mark used schema for document
 
 _Response:_
 
 - result: `JSONSchemaDescriptionExt[]`
+
 ```typescript
 interface JSONSchemaDescriptionExt {
   /**
@@ -315,10 +322,12 @@ interface JSONSchemaDescriptionExt {
 The request sent from a client to server to get schemas used for current document. Client can use this method to indicate in UI which schemas used for current YAML document.
 
 _Request:_
+
 - method: `'yaml/get/jsonSchema'`;
 - params: the document uri to get used schemas
 
 _Response:_
+
 - result: `JSONSchemaDescription[]`
 
 ```typescript
