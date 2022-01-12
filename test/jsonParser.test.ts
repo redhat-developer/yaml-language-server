@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as assert from 'assert';
-import { getNodePath, getNodeValue, JSONDocument } from './../src/languageservice/parser/jsonParser07';
+import { getNodeValue, JSONDocument } from './../src/languageservice/parser/jsonParser07';
 import * as JsonSchema from './../src/languageservice/jsonSchema';
 import { ASTNode, ObjectASTNode } from './../src/languageservice/jsonASTTypes';
 import { ErrorCode, getLanguageService } from 'vscode-json-languageservice';
@@ -146,7 +146,6 @@ describe('JSON Parser', () => {
       const node = jsonDoc.getNodeFromOffset(1);
 
       assert.equal(node.type, 'object');
-      assert.deepEqual(getNodePath(node), []);
 
       assert.strictEqual(jsonDoc.getNodeFromOffset(2), undefined);
     }
@@ -157,7 +156,6 @@ describe('JSON Parser', () => {
       const node = jsonDoc.getNodeFromOffset(2);
 
       assert.equal(node.type, 'null');
-      assert.deepEqual(getNodePath(node), [0]);
     }
     {
       const { jsonDoc } = toDocument('{"a":true}');
@@ -166,7 +164,6 @@ describe('JSON Parser', () => {
       let node = jsonDoc.getNodeFromOffset(3);
 
       assert.equal(node.type, 'string');
-      assert.deepEqual(getNodePath(node), ['a']);
 
       node = jsonDoc.getNodeFromOffset(4);
 
@@ -183,7 +180,6 @@ describe('JSON Parser', () => {
       node = jsonDoc.getNodeFromOffset(5);
 
       assert.equal(node.type, 'boolean');
-      assert.deepEqual(getNodePath(node), ['a']);
     }
   });
 
@@ -192,27 +188,12 @@ describe('JSON Parser', () => {
     const { jsonDoc } = toDocument(content);
 
     assert.strictEqual(jsonDoc.syntaxErrors.length, 0);
-
-    let node = jsonDoc.getNodeFromOffset(content.indexOf('key2') + 2);
-    let location = getNodePath(node);
-
-    assert.deepEqual(location, ['key', 'key2']);
-
-    node = jsonDoc.getNodeFromOffset(content.indexOf('42') + 1);
-    location = getNodePath(node);
-
-    assert.deepEqual(location, ['key', 'key2']);
   });
 
   it('Nested AST in Array', function () {
     const { jsonDoc } = toDocument('{"key":[{"key2":42}]}');
 
     assert.strictEqual(jsonDoc.syntaxErrors.length, 0);
-
-    const node = jsonDoc.getNodeFromOffset(17);
-    const location = getNodePath(node);
-
-    assert.deepEqual(location, ['key', 0, 'key2']);
   });
 
   it('Multiline', function () {
@@ -1881,6 +1862,32 @@ describe('JSON Parser', () => {
     const semanticErrors = jsonDoc.validate(textDoc, schema);
     assert.strictEqual(semanticErrors.length, 1);
     assert.strictEqual(semanticErrors[0].message, 'Value is not accepted. Valid values: "a", "b", "c", "d".');
+  });
+
+  it('value matches more than one schema in oneOf', function () {
+    const schema: JsonSchema.JSONSchema = {
+      type: 'object',
+      properties: {
+        repository: {
+          oneOf: [
+            {
+              type: 'string',
+              format: 'uri',
+            },
+            {
+              type: 'string',
+              pattern: '^@',
+            },
+          ],
+        },
+      },
+    };
+
+    const { textDoc, jsonDoc } = toDocument('{"repository":"@bitnami"}');
+    assert.strictEqual(jsonDoc.syntaxErrors.length, 0);
+
+    const semanticErrors = jsonDoc.validate(textDoc, schema);
+    assert.strictEqual(semanticErrors.length, 0);
   });
 
   it('validate API', async function () {

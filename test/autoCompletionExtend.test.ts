@@ -204,11 +204,8 @@ describe('Auto Completion Tests Extended', () => {
             kind: 'markdown',
             value: '```yaml\nobjA:\n  propI: \n```',
           },
-          isForParentSuggestion: true,
           sortText: '_obj1',
           kind: 7,
-          schemaType: 'obj1',
-          indent: '',
         })
       );
     });
@@ -247,16 +244,12 @@ describe('Auto Completion Tests Extended', () => {
             kind: 'markdown',
             value: '```yaml\nobjA:\n  propI: \n```',
           },
-          isForParentSuggestion: true,
           sortText: '_obj1',
           kind: 7,
-          schemaType: 'obj1',
-          indent: '',
         })
       );
     });
-    // todo fix after 'Autocomplete with nextLine  - nested object'
-    it.skip('nested completion - some newLine after : ', async () => {
+    it('nested completion - some newLine after : ', async () => {
       languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
       const content = 'nested:\n  scripts:\n    sample:\n      test:\n        ';
       const result = await parseSetup(content + '\nnewLine: test', content.length);
@@ -288,11 +281,8 @@ describe('Auto Completion Tests Extended', () => {
             kind: 'markdown',
             value: '```yaml\nobjA:\n  propI: \n```',
           },
-          isForParentSuggestion: true,
           sortText: '_obj1',
           kind: 7,
-          schemaType: 'obj1',
-          indent: '',
         })
       );
     });

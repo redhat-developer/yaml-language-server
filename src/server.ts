@@ -12,6 +12,7 @@ import { schemaRequestHandler, workspaceContext } from './languageservice/servic
 import { YAMLServerInit } from './yamlServerInit';
 import { SettingsState } from './yamlSettings';
 import { promises as fs } from 'fs';
+import { convertErrorToTelemetryMsg } from './languageservice/utils/objects';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
@@ -24,6 +25,11 @@ if (process.argv.indexOf('--stdio') === -1) {
 } else {
   connection = createConnection();
 }
+
+process.on('uncaughtException', (err: Error) => {
+  // send all uncaught exception to telemetry with stack traces
+  connection.console.error(convertErrorToTelemetryMsg(err));
+});
 
 console.log = connection.console.log.bind(connection.console);
 console.error = connection.console.error.bind(connection.console);

@@ -4,7 +4,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as Json from 'jsonc-parser';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isNumber, equals, isString, isDefined, isBoolean, isIterable } from '../utils/objects';
 import { getSchemaTypeName } from '../utils/schemaUtils';
@@ -18,7 +17,7 @@ import {
   NullASTNode,
   PropertyASTNode,
 } from '../jsonASTTypes';
-import { ErrorCode, JSONPath } from 'vscode-json-languageservice';
+import { ErrorCode } from 'vscode-json-languageservice';
 import * as nls from 'vscode-nls';
 import { URI } from 'vscode-uri';
 import { DiagnosticSeverity, Range } from 'vscode-languageserver-types';
@@ -457,17 +456,53 @@ export function newJSONDocument(root: ASTNode, diagnostics: Diagnostic[] = []): 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getNodeValue(node: ASTNode): any {
-  return Json.getNodeValue(node);
-}
-
-export function getNodePath(node: ASTNode): JSONPath {
-  return Json.getNodePath(node);
+  switch (node.type) {
+    case 'array':
+      return node.children.map(getNodeValue);
+    case 'object': {
+      const obj = Object.create(null);
+      for (let _i = 0, _a = node.children; _i < _a.length; _i++) {
+        const prop = _a[_i];
+        const valueNode = prop.children[1];
+        if (valueNode) {
+          obj[prop.children[0].value as string] = getNodeValue(valueNode);
+        }
+      }
+      return obj;
+    }
+    case 'null':
+    case 'string':
+    case 'number':
+    case 'boolean':
+      return node.value;
+    default:
+      return undefined;
+  }
 }
 
 export function contains(node: ASTNode, offset: number, includeRightBound = false): boolean {
   return (
     (offset >= node.offset && offset <= node.offset + node.length) || (includeRightBound && offset === node.offset + node.length)
   );
+}
+
+export function findNodeAtOffset(node: ASTNode, offset: number, includeRightBound: boolean): ASTNode {
+  if (includeRightBound === void 0) {
+    includeRightBound = false;
+  }
+  if (contains(node, offset, includeRightBound)) {
+    const children = node.children;
+    if (Array.isArray(children)) {
+      for (let i = 0; i < children.length && children[i].offset <= offset; i++) {
+        const item = findNodeAtOffset(children[i], offset, includeRightBound);
+        if (item) {
+          return item;
+        }
+      }
+    }
+    return node;
+  }
+  return undefined;
 }
 
 export class JSONDocument {
@@ -482,7 +517,7 @@ export class JSONDocument {
 
   public getNodeFromOffset(offset: number, includeRightBound = false): ASTNode | undefined {
     if (this.root) {
-      return <ASTNode>Json.findNodeAtOffset(this.root, offset, includeRightBound);
+      return findNodeAtOffset(this.root, offset, includeRightBound);
     }
     return undefined;
   }
@@ -656,9 +691,12 @@ function validate(
       }
     }
 
-    const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean): number => {
+    const testAlternatives = (alternatives: JSONSchemaRef[], minOneMatch: boolean): number => {
       const matches = [];
-
+      let minMatch = 1;
+      if (minOneMatch) {
+        minMatch = alternatives.length;
+      }
       // remember the best match that is used for error messages
       let bestMatch: {
         schema: JSONSchema;
@@ -682,15 +720,15 @@ function validate(
         } else if (isKubernetes) {
           bestMatch = alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         } else {
-          bestMatch = genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
+          bestMatch = genericComparison(minOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         }
       }
 
-      if (matches.length > 1 && maxOneMatch) {
+      if (matches.length > minMatch && minOneMatch) {
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
-          message: localize('oneOfWarning', 'Matches multiple schemas when only one must validate.'),
+          message: localize('oneOfWarning', 'Minimum one schema should validate.'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });

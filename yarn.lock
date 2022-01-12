@@ -832,7 +832,7 @@ core-util-is@1.0.2:
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
   integrity sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=
 
-coveralls@^3.0.5:
+coveralls@3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/coveralls/-/coveralls-3.1.1.tgz#f5d4431d8b5ae69c5079c8f8ca00d64ac77cf081"
   integrity sha512-+dxnG2NHncSD1NrqbSM3dn/lE57O6Qf/koe9+I7c+wzkqRmEvcp0kgJdxKInzYzkICKkFMZsX3Vct3++tsF9ww==
@@ -1399,6 +1399,15 @@ html-escaper@^2.0.0:
   resolved "https://registry.yarnpkg.com/html-escaper/-/html-escaper-2.0.2.tgz#dfd60027da36a36dfcbe236262c00a5822681453"
   integrity sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==
 
+http-proxy-agent@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/http-proxy-agent/-/http-proxy-agent-5.0.0.tgz#5129800203520d434f142bc78ff3c170800f2b43"
+  integrity sha512-n2hY8YdoRE1i7r6M0w9DIw5GgZN0G25P8zLCRQ8rjXtTU3vsNFBI/vWK/UIeE6g5MUUz6avwAPXmL6Fy9D/90w==
+  dependencies:
+    "@tootallnate/once" "2"
+    agent-base "6"
+    debug "4"
+
 http-signature@~1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/http-signature/-/http-signature-1.2.0.tgz#9aecd925114772f3d95b65a60abb8f7c18fbace1"
@@ -1408,6 +1417,14 @@ http-signature@~1.2.0:
     jsprim "^1.2.2"
     sshpk "^1.7.0"
 
+https-proxy-agent@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/https-proxy-agent/-/https-proxy-agent-5.0.0.tgz#e2a90542abb68a762e0a0850f6c9edadfd8506b2"
+  integrity sha512-EkYm5BcKUGiduxzSt3Eppko+PiNWNEpa4ySk9vTC6wDsQJW9rHSa+UhGNJoRYp7bz6Ht1eaRIa6QaJqO5rCFbA==
+  dependencies:
+    agent-base "6"
+    debug "4"
+    
 ignore@^4.0.6:
   version "4.0.6"
   resolved "https://registry.yarnpkg.com/ignore/-/ignore-4.0.6.tgz#750e3db5862087b4737ebac8207ffd1ef27b25fc"
@@ -2108,10 +2125,10 @@ release-zalgo@^1.0.0:
   dependencies:
     es6-error "^4.0.1"
 
-request-light@^0.5.5:
-  version "0.5.5"
-  resolved "https://registry.yarnpkg.com/request-light/-/request-light-0.5.5.tgz#254ab0b38a1db2192170b599b05181934e14932b"
-  integrity sha512-AvjfJuhyT6dYfhtIBF+IpTPQco+Td1QJ6PsIJ5xui110vQ5p9HxHk+m1XJqXazLQT6CxxSx9eNv6R/+fu4bZig==
+request-light@^0.5.7:
+  version "0.5.7"
+  resolved "https://registry.yarnpkg.com/request-light/-/request-light-0.5.7.tgz#1c448c22153b55d2cd278eb414df24a5ad6e6d5e"
+  integrity sha512-i/wKzvcx7Er8tZnvqSxWuNO5ZGggu2UgZAqj/RyZ0si7lBTXL7kZiI/dWxzxnQjaY7s5HEy1qK21Do4Ncr6cVw==
 
 request@^2.88.2:
   version "2.88.2"
@@ -2515,10 +2532,10 @@ verror@1.10.0:
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
 
-vscode-json-languageservice@^4.1.7:
-  version "4.1.7"
-  resolved "https://registry.yarnpkg.com/vscode-json-languageservice/-/vscode-json-languageservice-4.1.7.tgz#18244d62b115a5818c7526ef4339438b7175dfaa"
-  integrity sha512-cwG5TwZyHYthsk2aS3W1dVgVP6Vwn3o+zscwN58uMgZt/nKuyxd9vdEB1F58Ix+S5kSKAnkUCP6hvulcoImQQQ==
+vscode-json-languageservice@4.1.8:
+  version "4.1.8"
+  resolved "https://registry.yarnpkg.com/vscode-json-languageservice/-/vscode-json-languageservice-4.1.8.tgz#397a39238d496e3e08a544a8b93df2cd13347d0c"
+  integrity sha512-0vSpg6Xd9hfV+eZAaYN63xVVMOTmJ4GgHxXnkLCh+9RsQBkWKIghzLhW2B9ebfG+LQQg8uLtsQ2aUKjTgE+QOg==
   dependencies:
     jsonc-parser "^3.0.0"
     vscode-languageserver-textdocument "^1.0.1"

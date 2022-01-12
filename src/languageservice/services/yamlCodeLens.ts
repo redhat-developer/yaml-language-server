@@ -14,6 +14,7 @@ import { JSONSchema } from '../jsonSchema';
 import { CodeLensParams } from 'vscode-languageserver-protocol';
 import { Telemetry } from '../../languageserver/telemetry';
 import { getSchemaUrls } from '../utils/schemaUrls';
+import { convertErrorToTelemetryMsg } from '../utils/objects';
 
 export class YamlCodeLens {
   constructor(private schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {}
@@ -42,7 +43,7 @@ export class YamlCodeLens {
         }
       }
     } catch (err) {
-      this.telemetry.sendError('yaml.codeLens.error', { error: err.toString() });
+      this.telemetry.sendError('yaml.codeLens.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
     return result;

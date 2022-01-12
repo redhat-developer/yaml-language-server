@@ -243,7 +243,7 @@ describe('Default Snippet Tests', () => {
         .then(function (result) {
           console.log(result);
 
-          assert.equal(result.items.length, 2);
+          assert.equal(result.items.length, 1);
           // todo fix this test, there are extra spaces before \n. it should be the same as the following test.
           // because of the different results it's not possible correctly merge 2 results from doCompletionWithModification
           assert.equal(result.items[0].label, 'Array Array Snippet');

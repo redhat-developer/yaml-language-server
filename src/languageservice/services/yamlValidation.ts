@@ -16,6 +16,7 @@ import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jso
 import { YAML_SOURCE } from '../parser/jsonParser07';
 import { TextBuffer } from '../utils/textBuffer';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
+import { convertErrorToTelemetryMsg } from '../utils/objects';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -91,7 +92,7 @@ export class YAMLValidation {
         index++;
       }
     } catch (err) {
-      console.error(err.toString());
+      console.error(convertErrorToTelemetryMsg(err));
     }
 
     let previousErr: Diagnostic;
