@@ -41,6 +41,8 @@ const localize = nls.loadMessageBundle();
 
 const doubleQuotesEscapeRegExp = /[\\]+"/g;
 
+const inlineSymbol = '=@ctx';
+
 const parentCompletionKind = CompletionItemKind.Class;
 
 interface ParentCompletionItemOptions {
@@ -52,8 +54,6 @@ interface ParentCompletionItemOptions {
 interface CompletionItem extends CompletionItemBase {
   parent?: ParentCompletionItemOptions;
 }
-const inlineSymbol = '=@ctx';
-
 interface CompletionsCollector {
   add(suggestion: CompletionItem): void;
   error(message: string): void;
@@ -111,12 +111,12 @@ export class YamlCompletion {
 
     if (inlineSymbol && lineContent.match(new RegExp(`:\\s*${inlineSymbol}\\..*`))) {
       result = await this.doInlineCompletion(document, position, isKubernetes, offset, lineContent);
-      const secs = (Date.now() - startTime) / 1000;
-      console.log(
-        `[debug] inline completion: lineContent(${lineContent.replace('\n', '\\n')}), resultCount(${
-          result.items.length
-        }), time(${secs})`
-      );
+      // const secs = (Date.now() - startTime) / 1000;
+      // console.log(
+      //   `[debug] inline completion: lineContent(${lineContent.replace('\n', '\\n')}), resultCount(${
+      //     result.items.length
+      //   }), time(${secs})`
+      // );
       return result;
     }
     // auto add space after : if needed
@@ -147,10 +147,10 @@ export class YamlCompletion {
     }
     this.processInlineInitialization(result, lineContent);
 
-    const secs = (Date.now() - startTime) / 1000;
-    console.log(
-      `[debug] completion: lineContent(${lineContent.replace('\n', '\\n')}), resultCount(${result.items.length}), time(${secs})`
-    );
+    // const secs = (Date.now() - startTime) / 1000;
+    // console.log(
+    //   `[debug] completion: lineContent(${lineContent.replace('\n', '\\n')}), resultCount(${result.items.length}), time(${secs})`
+    // );
 
     return result;
   }
@@ -678,7 +678,6 @@ export class YamlCompletion {
         const reindexedTexts = reindexText(completionItem.parent.insertTexts);
 
         // add indent to each object property and join completion item texts
-        // let insertText = reindexedTexts.map((text) => text.replace('\n', `${indent}\n`)).join(`\n${indent}`);
         let insertText = reindexedTexts.join(`\n${indent}`);
 
         // trim $1 from end of completion

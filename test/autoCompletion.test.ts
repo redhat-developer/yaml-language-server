@@ -478,6 +478,67 @@ describe('Auto Completion Tests', () => {
           })
           .then(done, done);
       });
+      it('Autocomplete without default value - not required', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion();
+        languageSettingsSetup.languageSettings.disableDefaultProperties = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'string',
+                  default: 'test',
+                },
+                objectSample: {
+                  type: 'object',
+                },
+              },
+            },
+          },
+        });
+        const content = '';
+        const result = await parseSetup(content, 0);
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0]).to.deep.equal(
+          createExpectedCompletion('scripts', 'scripts:\n  ', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+      it('Autocomplete without default value - required', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion();
+        languageSettingsSetup.languageSettings.disableDefaultProperties = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'string',
+                  default: 'test',
+                },
+                objectSample: {
+                  type: 'object',
+                },
+              },
+              required: ['sample', 'objectSample'],
+            },
+          },
+        });
+        const content = '';
+        const result = await parseSetup(content, 0);
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0]).to.deep.equal(
+          createExpectedCompletion('scripts', 'scripts:\n  sample: ${1:test}\n  objectSample:\n    $2', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
 
       it('Autocomplete second key in middle of file', (done) => {
         languageService.addSchema(SCHEMA_ID, {
@@ -2631,6 +2692,249 @@ describe('Auto Completion Tests', () => {
       const obj1 = completion.items.find((it) => it.label === 'obj1');
       expect(obj1).is.not.undefined;
       expect(obj1.textEdit.newText).equal('obj1:\n    ');
+    });
+
+    it('Autocomplete key in nested object while typing', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          parent: {
+            type: 'object',
+            properties: {
+              child: {
+                type: 'object',
+                properties: {
+                  prop: {
+                    type: 'string',
+                    default: 'test',
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = 'parent:\n  child:\n    p';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.strictEqual(result.items.length, 1);
+          assert.deepEqual(
+            result.items[0],
+            createExpectedCompletion('prop', 'prop: ${1:test}', 2, 4, 2, 5, 10, 2, {
+              documentation: '',
+            })
+          );
+        })
+        .then(done, done);
+    });
+  });
+
+  describe('Parent Completion', () => {
+    const obj1 = {
+      properties: {
+        type: {
+          const: 'typeObj1',
+        },
+        options: {
+          type: 'object',
+          properties: {
+            label: {
+              type: 'string',
+            },
+          },
+          required: ['label'],
+        },
+      },
+      required: ['type', 'options'],
+      type: 'object',
+    };
+    const obj2 = {
+      properties: {
+        type: {
+          const: 'typeObj2',
+        },
+        options: {
+          type: 'object',
+          properties: {
+            description: {
+              type: 'string',
+            },
+          },
+          required: ['description'],
+        },
+      },
+      required: ['type', 'options'],
+      type: 'object',
+    };
+    it('Should suggest complete object skeleton', async () => {
+      const schema = {
+        definitions: { obj1, obj2 },
+        anyOf: [
+          {
+            $ref: '#/definitions/obj1',
+          },
+          {
+            $ref: '#/definitions/obj2',
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).equal(4);
+      expect(result.items[0]).to.deep.equal(
+        createExpectedCompletion('type', 'type: typeObj1', 0, 0, 0, 0, 10, 2, { documentation: '' })
+      );
+      expect(result.items[1]).to.deep.equal(
+        createExpectedCompletion('obj1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\ntype: typeObj1\noptions:\n  label: \n```',
+          },
+          sortText: '_obj1',
+        })
+      );
+      expect(result.items[2]).to.deep.equal(
+        createExpectedCompletion('options', 'options:\n  label: ', 0, 0, 0, 0, 10, 2, { documentation: '' })
+      );
+      expect(result.items[3]).to.deep.equal(
+        createExpectedCompletion('obj2', 'type: typeObj2\noptions:\n  description: ', 0, 0, 0, 0, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\ntype: typeObj2\noptions:\n  description: \n```',
+          },
+          sortText: '_obj2',
+        })
+      );
+    });
+
+    it('Should suggest complete object skeleton - array', async () => {
+      const schema = {
+        definitions: { obj1, obj2 },
+        items: {
+          anyOf: [
+            {
+              $ref: '#/definitions/obj1',
+            },
+            {
+              $ref: '#/definitions/obj2',
+            },
+          ],
+        },
+        type: 'array',
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '- ';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).equal(4);
+      expect(result.items[0]).to.deep.equal(
+        createExpectedCompletion('type', 'type: typeObj1', 0, 2, 0, 2, 10, 2, { documentation: '' })
+      );
+      expect(result.items[1]).to.deep.equal(
+        createExpectedCompletion('obj1', 'type: typeObj1\n  options:\n    label: ', 0, 2, 0, 2, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\n  type: typeObj1\n  options:\n    label: \n```',
+          },
+          sortText: '_obj1',
+        })
+      );
+      expect(result.items[2]).to.deep.equal(
+        createExpectedCompletion('options', 'options:\n    label: ', 0, 2, 0, 2, 10, 2, { documentation: '' })
+      );
+      expect(result.items[3]).to.deep.equal(
+        createExpectedCompletion('obj2', 'type: typeObj2\n  options:\n    description: ', 0, 2, 0, 2, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\n  type: typeObj2\n  options:\n    description: \n```',
+          },
+          sortText: '_obj2',
+        })
+      );
+    });
+    it('Should agregate suggested text without duplicities in insertText', async () => {
+      const schema = {
+        definitions: { obj1, obj2 },
+        anyOf: [
+          {
+            $ref: '#/definitions/obj1',
+          },
+          {
+            $ref: '#/definitions/obj1',
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).equal(3);
+      expect(result.items[1]).to.deep.equal(
+        createExpectedCompletion('obj1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\ntype: typeObj1\noptions:\n  label: \n```',
+          },
+          sortText: '_obj1',
+        })
+      );
+    });
+    it('Should suggest rest of the parent object', async () => {
+      const schema = {
+        definitions: { obj1 },
+        $ref: '#/definitions/obj1',
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'type: typeObj1\n';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).equal(2);
+      expect(result.items[1]).to.deep.equal(
+        createExpectedCompletion('obj1', 'options:\n  label: ', 1, 0, 1, 0, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\noptions:\n  label: \n```',
+          },
+          sortText: '_obj1',
+        })
+      );
+    });
+    it('Should reindex $x', async () => {
+      const schema = {
+        properties: {
+          options: {
+            type: 'object',
+            properties: {
+              label: {
+                type: 'string',
+              },
+            },
+            required: ['label'],
+          },
+          prop1: {
+            type: 'string',
+          },
+        },
+        required: ['type', 'options', 'prop1'],
+        type: 'object',
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).equal(3);
+      expect(result.items[1]).to.deep.equal(
+        createExpectedCompletion('object', 'options:\n  label: $1\nprop1: $2', 0, 0, 0, 0, 7, 2, {
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\noptions:\n  label: \nprop1: \n```',
+          },
+          sortText: '_object',
+        })
+      );
     });
   });
 

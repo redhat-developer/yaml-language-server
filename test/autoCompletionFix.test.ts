@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CompletionList, Position } from 'vscode-languageserver/node';
+import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver/node';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
@@ -264,106 +264,6 @@ objB:
     );
   });
 
-  it('Autocomplete with short nextLine - nested object', async () => {
-    languageService.addSchema(SCHEMA_ID, {
-      type: 'object',
-      properties: {
-        example: {
-          type: 'object',
-          properties: {
-            sample: {
-              type: 'object',
-              properties: {
-                detail: {
-                  type: 'object',
-                },
-              },
-            },
-          },
-        },
-        a: {
-          type: 'string',
-          description: 'short prop name because of distance to the cursor',
-        },
-      },
-    });
-    const content = 'example:\n  sample:\n    ';
-    const completion = await parseSetup(content + '\na: test', 2, 4);
-    expect(completion.items.length).equal(1);
-    expect(completion.items[0]).to.be.deep.equal(
-      createExpectedCompletion('detail', 'detail:\n  ', 2, 4, 2, 4, 10, 2, {
-        documentation: '',
-      })
-    );
-  });
-
-  it('Autocomplete with a new line inside the object', async () => {
-    languageService.addSchema(SCHEMA_ID, {
-      type: 'object',
-      properties: {
-        example: {
-          type: 'object',
-          properties: {
-            sample: {
-              type: 'object',
-              properties: {
-                prop1: {
-                  type: 'string',
-                },
-                prop2: {
-                  type: 'string',
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-    const content = 'example:\n  sample:\n    \n    prop2: value2';
-    const completion = await parseSetup(content, 2, 4);
-    expect(completion.items.length).equal(1);
-    expect(completion.items[0]).to.be.deep.equal(
-      createExpectedCompletion('prop1', 'prop1: ', 2, 4, 2, 4, 10, 2, {
-        documentation: '',
-      })
-    );
-  });
-
-  it('Autocomplete on the first array item', async () => {
-    languageService.addSchema(SCHEMA_ID, {
-      type: 'object',
-      properties: {
-        examples: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              sample: {
-                type: 'object',
-                properties: {
-                  prop1: {
-                    type: 'string',
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-    const content = 'examples:\n  \n  - sample:\n      prop1: value1';
-    const completion = await parseSetup(content, 1, 2);
-    expect(completion.items.length).equal(1);
-    expect(completion.items[0]).to.be.deep.equal(
-      createExpectedCompletion('- (array item)', '- ', 1, 2, 1, 2, 9, 2, {
-        documentation: {
-          kind: 'markdown',
-          value: 'Create an item of an array\n ```\n- \n```',
-        },
-      })
-    );
-  });
-
   it('Autocomplete indent on array when parent is array', async () => {
     languageService.addSchema(SCHEMA_ID, {
       type: 'object',
@@ -428,60 +328,61 @@ objB:
         documentation: '',
       })
     );
-    describe('array indent on different index position', () => {
-      const schema = {
-        type: 'object',
-        properties: {
-          objectWithArray: {
-            type: 'array',
-            items: {
-              type: 'object',
-              required: ['item', 'item2'],
-              properties: {
-                item: { type: 'string' },
-                item2: {
-                  type: 'object',
-                  required: ['prop1', 'prop2'],
-                  properties: {
-                    prop1: { type: 'string' },
-                    prop2: { type: 'string' },
-                  },
+  });
+  describe('array indent on different index position', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        objectWithArray: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['item', 'item2'],
+            properties: {
+              item: { type: 'string' },
+              item2: {
+                type: 'object',
+                required: ['prop1', 'prop2'],
+                properties: {
+                  prop1: { type: 'string' },
+                  prop2: { type: 'string' },
                 },
               },
             },
           },
         },
-      };
-      it('array indent on the first item', async () => {
-        languageService.addSchema(SCHEMA_ID, schema);
-        const content = 'objectWithArray:\n  - ';
-        const completion = await parseSetup(content, 1, 4);
+      },
+    };
+    it('array indent on the first item', async () => {
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'objectWithArray:\n  - ';
+      const completion = await parseSetup(content, 1, 4);
+      completion.items = completion.items.filter((item) => item.kind !== CompletionItemKind.Class);
 
-        expect(completion.items.length).equal(3); // because of parent completion
-        expect(completion.items[0]).to.be.deep.equal(
-          createExpectedCompletion('item', 'item: ', 1, 4, 1, 4, 10, 2, {
-            documentation: '',
-          })
-        );
-        expect(completion.items[2]).to.be.deep.equal(
-          // because of parent completion
-          createExpectedCompletion('item2', 'item2:\n    prop1: $1\n    prop2: $2', 1, 4, 1, 4, 10, 2, {
-            documentation: '',
-          })
-        );
-      });
-      it('array indent on the second item', async () => {
-        languageService.addSchema(SCHEMA_ID, schema);
-        const content = 'objectWithArray:\n  - item: first line\n    ';
-        const completion = await parseSetup(content, 2, 4);
+      expect(completion.items.length).equal(2);
+      expect(completion.items[0]).to.be.deep.equal(
+        createExpectedCompletion('item', 'item: ', 1, 4, 1, 4, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(completion.items[1]).to.be.deep.equal(
+        createExpectedCompletion('item2', 'item2:\n    prop1: $1\n    prop2: $2', 1, 4, 1, 4, 10, 2, {
+          documentation: '',
+        })
+      );
+    });
+    it('array indent on the second item', async () => {
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'objectWithArray:\n  - item: first line\n    ';
+      const completion = await parseSetup(content, 2, 4);
+      completion.items = completion.items.filter((item) => item.kind !== CompletionItemKind.Class);
 
-        expect(completion.items.length).equal(2); // because of parent completion
-        expect(completion.items[0]).to.be.deep.equal(
-          createExpectedCompletion('item2', 'item2:\n  prop1: $1\n  prop2: $2', 2, 4, 2, 4, 10, 2, {
-            documentation: '',
-          })
-        );
-      });
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0]).to.be.deep.equal(
+        createExpectedCompletion('item2', 'item2:\n  prop1: $1\n  prop2: $2', 2, 4, 2, 4, 10, 2, {
+          documentation: '',
+        })
+      );
     });
   });
 });
