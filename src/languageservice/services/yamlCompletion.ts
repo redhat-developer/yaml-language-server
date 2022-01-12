@@ -6,7 +6,7 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import {
   ClientCapabilities,
-  CompletionItem,
+  CompletionItem as CompletionItemBase,
   CompletionItemKind,
   CompletionList,
   InsertTextFormat,
@@ -41,6 +41,17 @@ const localize = nls.loadMessageBundle();
 
 const doubleQuotesEscapeRegExp = /[\\]+"/g;
 
+const parentCompletionKind = CompletionItemKind.Class;
+
+interface ParentCompletionItemOptions {
+  schemaType: string;
+  indent?: string;
+  insertTexts?: string[];
+}
+
+interface CompletionItem extends CompletionItemBase {
+  parent?: ParentCompletionItemOptions;
+}
 interface CompletionsCollector {
   add(suggestion: CompletionItem): void;
   error(message: string): void;
@@ -133,8 +144,41 @@ export class YamlCompletion {
     }
 
     const proposed: { [key: string]: CompletionItem } = {};
+    const existingProposeItem = '__';
     const collector: CompletionsCollector = {
       add: (completionItem: CompletionItem) => {
+        const addSuggestionForParent = function (completionItem: CompletionItem): void {
+          const existsInYaml = proposed[completionItem.label]?.label === existingProposeItem;
+          //don't put to parent suggestion if already in yaml
+          if (existsInYaml) {
+            return;
+          }
+
+          const schemaType = completionItem.parent.schemaType;
+          let parentCompletion: CompletionItem | undefined = result.items.find(
+            (item) => item.label === schemaType && item.kind === parentCompletionKind
+          );
+
+          if (parentCompletion && parentCompletion.parent.insertTexts.includes(completionItem.insertText)) {
+            // already exists in the parent
+            return;
+          } else if (!parentCompletion) {
+            // create a new parent
+            parentCompletion = {
+              ...completionItem,
+              label: schemaType,
+              sortText: '_' + schemaType, // this parent completion goes first,
+              kind: parentCompletionKind,
+            };
+            parentCompletion.parent.insertTexts = [completionItem.insertText];
+            result.items.push(parentCompletion);
+          } else {
+            // add to the existing parent
+            parentCompletion.parent.insertTexts.push(completionItem.insertText);
+          }
+        };
+
+        const isForParentCompletion = !!completionItem.parent;
         let label = completionItem.label;
         if (!label) {
           // we receive not valid CompletionItem as `label` is mandatory field, so just ignore it
@@ -145,7 +189,7 @@ export class YamlCompletion {
           label = String(label);
         }
         const existing = proposed[label];
-        if (!existing) {
+        if (!existing || isForParentCompletion) {
           label = label.replace(/[\n]/g, '↵');
           if (label.length > 60) {
             const shortendedLabel = label.substr(0, 57).trim() + '...';
@@ -153,16 +197,25 @@ export class YamlCompletion {
               label = shortendedLabel;
             }
           }
+
           // trim $1 from end of completion
-          if (completionItem.insertText.endsWith('$1')) {
+          if (completionItem.insertText.endsWith('$1') && !isForParentCompletion) {
             completionItem.insertText = completionItem.insertText.substr(0, completionItem.insertText.length - 2);
           }
           if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
             completionItem.textEdit = TextEdit.replace(overwriteRange, completionItem.insertText);
           }
+
           completionItem.label = label;
-          proposed[label] = completionItem;
-          result.items.push(completionItem);
+
+          if (isForParentCompletion) {
+            addSuggestionForParent(completionItem);
+          }
+
+          if (!existing) {
+            proposed[label] = completionItem;
+            result.items.push(completionItem);
+          }
         } else if (!existing.documentation && completionItem.documentation) {
           existing.documentation = completionItem.documentation;
         }
@@ -372,7 +425,7 @@ export class YamlCompletion {
         for (const p of properties) {
           if (!currentProperty || currentProperty !== p) {
             if (isScalar(p.key)) {
-              proposed[p.key.value.toString()] = CompletionItem.create('__');
+              proposed[p.key.value.toString()] = CompletionItemBase.create(existingProposeItem);
             }
           }
         }
@@ -396,7 +449,60 @@ export class YamlCompletion {
       this.telemetry.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
+    this.finalizeParentCompletion(result);
+
     return result;
+  }
+
+  private finalizeParentCompletion(result: CompletionList): void {
+    const reindexText = (insertTexts: string[]): string[] => {
+      //modify added props to have unique $x
+      let max$index = 0;
+      return insertTexts.map((text) => {
+        const match = text.match(/\$([0-9]+)|\${[0-9]+:/g);
+        if (!match) {
+          return text;
+        }
+        const max$indexLocal = match
+          .map((m) => +m.replace(/\${([0-9]+)[:|]/g, '$1').replace('$', '')) // get numbers form $1 or ${1:...}
+          .reduce((p, n) => (n > p ? n : p), 0); // find the max one
+        const reindexedStr = text
+          .replace(/\$([0-9]+)/g, (s, args) => '$' + (+args + max$index)) // increment each by max$index
+          .replace(/\${([0-9]+)[:|]/g, (s, args) => '${' + (+args + max$index) + ':'); // increment each by max$index
+        max$index += max$indexLocal;
+        return reindexedStr;
+      });
+    };
+
+    result.items.forEach((completionItem) => {
+      if (isParentCompletionItem(completionItem)) {
+        const indent = completionItem.parent.indent || '';
+
+        const reindexedTexts = reindexText(completionItem.parent.insertTexts);
+
+        // add indent to each object property and join completion item texts
+        let insertText = reindexedTexts.join(`\n${indent}`);
+
+        // trim $1 from end of completion
+        if (insertText.endsWith('$1')) {
+          insertText = insertText.substring(0, insertText.length - 2);
+        }
+
+        completionItem.insertText = insertText;
+        if (completionItem.textEdit) {
+          completionItem.textEdit.newText = insertText;
+        }
+        // remove $x or use {$x:value} in documentation
+        const mdText = insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
+
+        const originalDocumentation = completionItem.documentation ? [completionItem.documentation, '', '----', ''] : [];
+        completionItem.documentation = {
+          kind: MarkupKind.Markdown,
+          value: [...originalDocumentation, '```yaml', indent + mdText, '```'].join('\n'),
+        };
+        delete completionItem.parent;
+      }
+    });
   }
 
   private createTempObjNode(currentWord: string, node: Node, currentDoc: SingleYAMLDocument): YAMLMap {
@@ -520,6 +626,25 @@ export class YamlCompletion {
                     insertTextFormat: InsertTextFormat.Snippet,
                     documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
                   });
+                  // if the prop is required add it also to parent suggestion
+                  if (schema.schema.required?.includes(key)) {
+                    const schemaType = getSchemaTypeName(schema.schema);
+                    collector.add({
+                      label: key,
+                      insertText: this.getInsertTextForProperty(
+                        key,
+                        propertySchema,
+                        separatorAfter,
+                        identCompensation + this.indentation
+                      ),
+                      insertTextFormat: InsertTextFormat.Snippet,
+                      documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
+                      parent: {
+                        schemaType,
+                        indent: identCompensation,
+                      },
+                    });
+                  }
                 }
               }
             }
@@ -692,6 +817,8 @@ export class YamlCompletion {
           type = 'object';
         } else if (propertySchema.items) {
           type = 'array';
+        } else if (propertySchema.anyOf) {
+          type = 'anyOf';
         }
       }
       if (Array.isArray(propertySchema.defaultSnippets)) {
@@ -722,6 +849,16 @@ export class YamlCompletion {
         }
         nValueProposals += propertySchema.enum.length;
       }
+
+      if (propertySchema.const) {
+        if (!value) {
+          value = this.getInsertTextForGuessedValue(propertySchema.const, '', type);
+          value = evaluateTab1Symbol(value); // prevent const being selected after snippet insert
+          value = ' ' + value;
+        }
+        nValueProposals++;
+      }
+
       if (isDefined(propertySchema.default)) {
         if (!value) {
           value = ' ' + this.getInsertTextForGuessedValue(propertySchema.default, '', type);
@@ -762,6 +899,9 @@ export class YamlCompletion {
           case 'null':
             value = ' ${1:null}';
             break;
+          case 'anyOf':
+            value = ' $1';
+            break;
           default:
             return propertyText;
         }
@@ -789,6 +929,9 @@ export class YamlCompletion {
       const propertySchema = schema.properties[key] as JSONSchema;
       let type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
       if (!type) {
+        if (propertySchema.anyOf) {
+          type = 'anyOf';
+        }
         if (propertySchema.properties) {
           type = 'object';
         }
@@ -801,7 +944,8 @@ export class YamlCompletion {
           case 'boolean':
           case 'string':
           case 'number':
-          case 'integer': {
+          case 'integer':
+          case 'anyOf': {
             let value = propertySchema.default || propertySchema.const;
             if (value) {
               if (type === 'string') {
@@ -1085,7 +1229,7 @@ export class YamlCompletion {
       collector.add({
         kind: this.getSuggestionKind(schema.type),
         label: this.getLabelForValue(schema.const),
-        insertText: this.getInsertTextForValue(schema.const, separatorAfter, undefined),
+        insertText: this.getInsertTextForValue(schema.const, separatorAfter, schema.type),
         insertTextFormat: InsertTextFormat.Snippet,
         documentation: this.fromMarkup(schema.markdownDescription) || schema.description,
       });
@@ -1364,4 +1508,16 @@ function convertToStringValue(value: string): string {
   }
 
   return value;
+}
+
+/**
+ * simplify `{$1:value}` to `value`
+ */
+function evaluateTab1Symbol(value: string): string {
+  const result = value.replace(/\$\{1:(.*)\}/, '$1');
+  return result;
+}
+
+function isParentCompletionItem(item: CompletionItemBase): item is CompletionItem {
+  return 'parent' in item;
 }

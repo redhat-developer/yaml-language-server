@@ -160,8 +160,8 @@ objB:
       - 
 `;
     const completion = await parseSetup(content, 3, 8);
-    expect(completion.items).length(4);
-    expect(completion.items.map((it) => it.label)).to.have.members(['NOT', 'attribute', 'operation', 'value']);
+    expect(completion.items).length(5);
+    expect(completion.items.map((it) => it.label)).to.have.members(['NOT', 'attribute', 'operation', 'value', 'FUNC_item']);
   });
 
   it('Autocomplete with short nextLine - nested object', async () => {
