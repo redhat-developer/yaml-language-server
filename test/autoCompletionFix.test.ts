@@ -358,13 +358,13 @@ objB:
       const content = 'objectWithArray:\n  - ';
       const completion = await parseSetup(content, 1, 4);
 
-      expect(completion.items.length).equal(2);
+      expect(completion.items.length).equal(3);
       expect(completion.items[0]).to.be.deep.equal(
         createExpectedCompletion('item', 'item: ', 1, 4, 1, 4, 10, 2, {
           documentation: '',
         })
       );
-      expect(completion.items[1]).to.be.deep.equal(
+      expect(completion.items[2]).to.be.deep.equal(
         createExpectedCompletion('item2', 'item2:\n    prop1: $1\n    prop2: $2', 1, 4, 1, 4, 10, 2, {
           documentation: '',
         })
@@ -375,7 +375,7 @@ objB:
       const content = 'objectWithArray:\n  - item: first line\n    ';
       const completion = await parseSetup(content, 2, 4);
 
-      expect(completion.items.length).equal(1);
+      expect(completion.items.length).equal(2);
       expect(completion.items[0]).to.be.deep.equal(
         createExpectedCompletion('item2', 'item2:\n  prop1: $1\n  prop2: $2', 2, 4, 2, 4, 10, 2, {
           documentation: '',
