@@ -1,3 +1,28 @@
+### 1.3.0
+- Fix: Wrong hover information [#647](https://github.com/redhat-developer/vscode-yaml/issues/647)
+- Fix: relative file paths with fragments [#603](https://github.com/redhat-developer/yaml-language-server/pull/603)
+- Update K8S json schema version from 1.20.5 to 1.22.4 [#611](https://github.com/redhat-developer/yaml-language-server/pull/611)
+- Feat: extend array documentation on completion [#608](https://github.com/redhat-developer/yaml-language-server/pull/608)
+- Feat: add more detail into anyOf array completion [#607](https://github.com/redhat-developer/yaml-language-server/pull/607)
+- Feat: trim end $1 from completion [#609](https://github.com/redhat-developer/yaml-language-server/pull/609)
+- Fix: auto-complete is not working properly [#563](https://github.com/redhat-developer/yaml-language-server/issues/563)
+- Fix: TypeError: Cannot read property 'type' of undefined [#652](https://github.com/redhat-developer/vscode-yaml/issues/652)
+- Feat: Improve telemetry error logging [#602](https://github.com/redhat-developer/yaml-language-server/pull/602)
+- Fix: completion invoke in three different scenarios [#617](https://github.com/redhat-developer/yaml-language-server/pull/617)
+- Fix: DefaultSnippets quick suggestions don't show description if they overlap with const defined in if else [#642](https://github.com/redhat-developer/vscode-yaml/issues/642)
+- Fix: If maxProperties is set, completion does not work for the last property [#612](https://github.com/redhat-developer/yaml-language-server/issues/612)
+- Feat: Add convert to boolean code action [#622](https://github.com/redhat-developer/yaml-language-server/pull/622)
+- Remove `getSchemas` method [#626](https://github.com/redhat-developer/yaml-language-server/pull/626)
+- Lock `vscode-json-languageservice@4.1.8` [#637](https://github.com/redhat-developer/yaml-language-server/pull/637)
+- Feat: disable default props [#606](https://github.com/redhat-developer/yaml-language-server/pull/606)
+- Fix: Schema validation matches `@bitnami` as a uri-formatted string. [#586](https://github.com/redhat-developer/yaml-language-server/issues/586)
+- Fix: Array indent doesn't work properly inside another array [#634](https://github.com/redhat-developer/yaml-language-server/pull/634)
+- Fix: _PROXY environment and setting not honoured since 1.1.1 [#588](https://github.com/redhat-developer/yaml-language-server/issues/588)
+- Fix: array indent on different index position [#635](https://github.com/redhat-developer/yaml-language-server/pull/635)
+- Feat: parent completion [#628](https://github.com/redhat-developer/yaml-language-server/pull/628)
+
+Thanks to tonypai, Martti Laine, Petr Spacek, sfalmo
+
 ### 1.2.2
 - Fix: LSP triggeringregisterCapability despite dynamicRegistration set to false [#583](https://github.com/redhat-developer/yaml-language-server/issues/583)
 - Add methods which allow client get schemas info [#556](https://github.com/redhat-developer/yaml-language-server/pull/556)
