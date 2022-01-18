@@ -17,6 +17,7 @@ import { YAML_SOURCE } from '../parser/jsonParser07';
 import { TextBuffer } from '../utils/textBuffer';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
+import { Telemetry } from '../../languageserver/telemetry';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -44,7 +45,7 @@ export class YAMLValidation {
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
-  public constructor(schemaService: YAMLSchemaService) {
+  constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
     this.validationEnabled = true;
     this.jsonValidation = new JSONValidation(schemaService, Promise);
   }
@@ -92,7 +93,7 @@ export class YAMLValidation {
         index++;
       }
     } catch (err) {
-      console.error(convertErrorToTelemetryMsg(err));
+      this.telemetry.sendError('yaml.validation.error', convertErrorToTelemetryMsg(err));
     }
 
     let previousErr: Diagnostic;

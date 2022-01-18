@@ -1467,7 +1467,13 @@ export class YamlCompletion {
 }
 
 const isNumberExp = /^\d+$/;
-function convertToStringValue(value: string): string {
+function convertToStringValue(param: unknown): string {
+  let value: string;
+  if (typeof param === 'string') {
+    value = param;
+  } else {
+    value = '' + param;
+  }
   if (value.length === 0) {
     return value;
   }

@@ -25,12 +25,15 @@ import { ValidationHandler } from '../src/languageserver/handlers/validationHand
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 import { IProblem } from '../src/languageservice/parser/jsonParser07';
+import { JSONSchema } from '../src/languageservice/jsonSchema';
+import { TestTelemetry } from './utils/testsTypes';
 
 describe('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let validationHandler: ValidationHandler;
   let languageService: LanguageService;
   let yamlSettings: SettingsState;
+  let telemetry: TestTelemetry;
 
   before(() => {
     languageSettingsSetup = new ServiceSetup()
@@ -43,12 +46,16 @@ describe('Validation Tests', () => {
         uri: 'https://raw.githubusercontent.com/composer/composer/master/res/composer-schema.json',
         fileMatch: ['test.yml'],
       });
-    const { languageService: langService, validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
-      languageSettingsSetup.languageSettings
-    );
+    const {
+      languageService: langService,
+      validationHandler: valHandler,
+      yamlSettings: settings,
+      telemetry: testTelemetry,
+    } = setupLanguageService(languageSettingsSetup.languageSettings);
     languageService = langService;
     validationHandler = valHandler;
     yamlSettings = settings;
+    telemetry = testTelemetry;
   });
 
   function parseSetup(content: string, customSchemaID?: string): Promise<Diagnostic[]> {
@@ -1548,6 +1555,25 @@ obj:
         const result = await parseSetup(content);
         expect(result.length).to.eq(0);
       });
+    });
+  });
+
+  describe('Bug fixes', () => {
+    it('should handle bad schema refs', async () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          bar: {
+            oneOf: ['array', 'boolean'],
+          },
+        },
+        additionalProperties: true,
+      };
+      languageService.addSchema(SCHEMA_ID, schema as JSONSchema);
+      const content = `bar: ddd`;
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(1);
+      expect(telemetry.messages).to.be.empty;
     });
   });
 });

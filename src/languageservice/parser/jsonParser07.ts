@@ -233,6 +233,16 @@ export function asSchema(schema: JSONSchemaRef): JSONSchema {
   if (isBoolean(schema)) {
     return schema ? {} : { not: {} };
   }
+  if (schema === undefined) {
+    return schema;
+  }
+  if (typeof schema !== 'object') {
+    // we need to report this case as JSONSchemaRef MUST be an Object or Boolean
+    console.warn(`Wrong schema: ${JSON.stringify(schema)}, it MUST be an Object or Boolean`);
+    schema = {
+      type: schema,
+    };
+  }
   return schema;
 }
 

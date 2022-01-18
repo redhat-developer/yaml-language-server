@@ -60,6 +60,9 @@ export function matchOffsetToDocument(offset: number, jsonDocuments: YAMLDocumen
 export function filterInvalidCustomTags(customTags: string[]): string[] {
   const validCustomTags = ['mapping', 'scalar', 'sequence'];
 
+  if (!customTags) {
+    return [];
+  }
   return customTags.filter((tag) => {
     if (typeof tag === 'string') {
       const typeInfo = tag.split(' ');
