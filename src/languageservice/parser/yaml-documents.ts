@@ -34,6 +34,20 @@ export class SingleYAMLDocument extends JSONDocument {
     this.lineCounter = lineCounter;
   }
 
+  /**
+   * Create a deep copy of this document
+   */
+  clone(): SingleYAMLDocument {
+    const copy = new SingleYAMLDocument(this.lineCounter);
+    copy.isKubernetes = this.isKubernetes;
+    copy.disableAdditionalProperties = this.disableAdditionalProperties;
+    copy.currentDocIndex = this.currentDocIndex;
+    copy._lineComments = this.lineComments.slice();
+    // this will re-create root node
+    copy.internalDocument = this._internalDocument.clone();
+    return copy;
+  }
+
   private collectLineComments(): void {
     this._lineComments = [];
     if (this._internalDocument.commentBefore) {
