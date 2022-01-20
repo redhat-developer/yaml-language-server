@@ -18,7 +18,7 @@ import {
 } from './utils/errorMessages';
 import * as assert from 'assert';
 import * as path from 'path';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+import { Diagnostic, DiagnosticSeverity, Position } from 'vscode-languageserver';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
@@ -35,6 +35,7 @@ describe('Validation Tests', () => {
   before(() => {
     languageSettingsSetup = new ServiceSetup()
       .withValidate()
+      .withCompletion()
       .withCustomTags(['!Test', '!Ref sequence'])
       .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['.drone.yml'] })
       .withSchemaFileMatch({ uri: 'https://json.schemastore.org/drone', fileMatch: ['.drone.yml'] })
@@ -1548,6 +1549,46 @@ obj:
         const result = await parseSetup(content);
         expect(result.length).to.eq(0);
       });
+    });
+  });
+
+  describe('Bug fix', () => {
+    it('should not use same AST for completion and validation', async () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          container: {
+            type: 'object',
+            properties: {
+              image: {
+                type: 'string',
+              },
+              command: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+        additionalProperties: true,
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = `implementation:
+container:
+  image: alpine
+  command:
+  - aaa
+  - bbb
+  - dddddd
+  - ccc`;
+      const testTextDocument = setupSchemaIDTextDocument(content);
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      await languageService.doComplete(testTextDocument, Position.create(6, 10), false);
+      const result = await validationHandler.validateTextDocument(testTextDocument);
+      expect(result).to.be.empty;
     });
   });
 });
