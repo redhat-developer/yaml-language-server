@@ -143,16 +143,10 @@ function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
       return result;
     }
     default: {
-      if (node.tag === 'tag:yaml.org,2002:binary') {
-        const result = new StringASTNodeImpl(parent, node, ...toOffsetLength(node.range));
-        result.value = node.source;
-        return result;
-      } else {
-        // fail safe converting, we need to return some node anyway
-        const result = new StringASTNodeImpl(parent, node, ...toOffsetLength(node.range));
-        result.value = node.source;
-        return result;
-      }
+      // fail safe converting, we need to return some node anyway
+      const result = new StringASTNodeImpl(parent, node, ...toOffsetLength(node.range));
+      result.value = node.source;
+      return result;
     }
   }
 }
