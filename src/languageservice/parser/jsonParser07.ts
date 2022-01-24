@@ -16,6 +16,7 @@ import {
   StringASTNode,
   NullASTNode,
   PropertyASTNode,
+  YamlNode,
 } from '../jsonASTTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
 import * as nls from 'vscode-nls';
@@ -24,7 +25,7 @@ import { DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic } from 'vscode-languageserver';
 import { isArrayEqual } from '../utils/arrUtils';
-import { Node } from 'yaml';
+import { Node, Pair } from 'yaml';
 import { safeCreateUnicodeRegExp } from '../utils/strings';
 
 const localize = nls.loadMessageBundle();
@@ -89,9 +90,9 @@ export abstract class ASTNodeImpl {
   public length: number;
   public readonly parent: ASTNode;
   public location: string;
-  readonly internalNode: Node;
+  readonly internalNode: YamlNode;
 
-  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
+  constructor(parent: ASTNode, internalNode: YamlNode, offset: number, length?: number) {
     this.offset = offset;
     this.length = length;
     this.parent = parent;
@@ -204,7 +205,7 @@ export class PropertyASTNodeImpl extends ASTNodeImpl implements PropertyASTNode 
   public valueNode: ASTNode;
   public colonOffset: number;
 
-  constructor(parent: ObjectASTNode, internalNode: Node, offset: number, length?: number) {
+  constructor(parent: ObjectASTNode, internalNode: Pair, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
     this.colonOffset = -1;
   }

@@ -19,7 +19,7 @@ import {
   Document,
   LineCounter,
 } from 'yaml';
-import { ASTNode } from '../jsonASTTypes';
+import { ASTNode, YamlNode } from '../jsonASTTypes';
 import {
   NullASTNodeImpl,
   PropertyASTNodeImpl,
@@ -35,7 +35,7 @@ type NodeRange = [number, number, number];
 const maxRefCount = 1000;
 let refDepth = 0;
 
-export function convertAST(parent: ASTNode, node: Node, doc: Document, lineCounter: LineCounter): ASTNode | undefined {
+export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineCounter: LineCounter): ASTNode | undefined {
   if (!parent) {
     // first invocation
     refDepth = 0;

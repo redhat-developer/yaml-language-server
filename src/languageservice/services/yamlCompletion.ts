@@ -36,6 +36,7 @@ import { isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
 import { indexOf } from '../utils/astUtils';
 import { isModeline } from './modelineUtil';
 import { getSchemaTypeName } from '../utils/schemaUtils';
+import { YamlNode } from '../jsonASTTypes';
 
 const localize = nls.loadMessageBundle();
 
@@ -277,7 +278,7 @@ export class YamlCompletion {
         return result;
       }
 
-      let currentProperty: Node = null;
+      let currentProperty: YamlNode = null;
 
       if (!node) {
         if (!currentDoc.internalDocument.contents || isScalar(currentDoc.internalDocument.contents)) {
@@ -519,7 +520,7 @@ export class YamlCompletion {
     schema: ResolvedSchema,
     doc: SingleYAMLDocument,
     node: YAMLMap,
-    originalNode: Node,
+    originalNode: YamlNode,
     separatorAfter: string,
     collector: CompletionsCollector,
     textBuffer: TextBuffer,
@@ -695,7 +696,7 @@ export class YamlCompletion {
   private getValueCompletions(
     schema: ResolvedSchema,
     doc: SingleYAMLDocument,
-    node: Node,
+    node: YamlNode,
     offset: number,
     document: TextDocument,
     collector: CompletionsCollector,
