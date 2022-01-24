@@ -20,6 +20,7 @@ export interface Settings {
       url: string;
       enable: boolean;
     };
+    disableDefaultProperties: boolean;
     disableAdditionalProperties: boolean;
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
@@ -68,6 +69,7 @@ export class SettingsState {
   schemaStoreUrl = JSON_SCHEMASTORE_URL;
   indentation: string | undefined = undefined;
   disableAdditionalProperties = false;
+  disableDefaultProperties = false;
   maxItemsComputed = 5000;
 
   // File validation helpers
