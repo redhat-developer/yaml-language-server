@@ -15,7 +15,6 @@ import * as request from 'request-light';
 import { setupLanguageService } from './utils/testHelper';
 import { Telemetry } from '../src/languageserver/telemetry';
 import { TestWorkspace } from './utils/testsTypes';
-import { CustomUpdateTabSizeRequest } from '../src/requestTypes';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -234,7 +233,6 @@ describe('Settings Handlers Tests', () => {
         { section: '[yaml]' },
         { section: 'editor' },
       ]);
-      expect(connection.sendRequest).calledOnceWith(CustomUpdateTabSizeRequest.type);
     });
   });
 });

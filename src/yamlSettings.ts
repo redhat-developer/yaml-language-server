@@ -35,7 +35,6 @@ export interface Settings {
     'editor.formatOnType': boolean;
   };
   vscodeEditor: {
-    tabSize: number;
     detectIndentation: boolean;
   };
 }

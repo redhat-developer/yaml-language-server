@@ -8,7 +8,7 @@ import { convertErrorToTelemetryMsg } from '../../languageservice/utils/objects'
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
-import { CustomUpdateTabSizeRequest, SchemaSelectionRequests } from '../../requestTypes';
+import { SchemaSelectionRequests } from '../../requestTypes';
 import { Settings, SettingsState } from '../../yamlSettings';
 import { Telemetry } from '../telemetry';
 import { ValidationHandler } from './validationHandlers';
@@ -110,13 +110,14 @@ export class SettingsHandler {
 
     this.yamlSettings.schemaConfigurationSettings = [];
 
+    let tabSize = 2;
     if (settings.vscodeEditor) {
-      const tabSize = !settings.vscodeEditor['detectIndentation'] ? settings.vscodeEditor['tabSize'] : 2;
-      await this.updateTabSize(tabSize);
+      tabSize =
+        !settings.vscodeEditor['detectIndentation'] && settings.yamlEditor ? settings.yamlEditor['editor.tabSize'] : tabSize;
     }
 
     if (settings.yamlEditor && settings.yamlEditor['editor.tabSize']) {
-      this.yamlSettings.indentation = ' '.repeat(settings.yamlEditor['editor.tabSize']);
+      this.yamlSettings.indentation = ' '.repeat(tabSize);
     }
 
     for (const uri in this.yamlSettings.yamlConfigurationSettings) {
@@ -152,17 +153,6 @@ export class SettingsHandler {
         this.yamlSettings.formatterRegistration = null;
       }
     }
-  }
-
-  public async updateTabSize(tabSize: number): Promise<boolean> {
-    return this.connection
-      .sendRequest(CustomUpdateTabSizeRequest.type, tabSize)
-      .then(() => {
-        return Promise.resolve(true);
-      })
-      .catch(() => {
-        return Promise.reject(false);
-      });
   }
 
   /**

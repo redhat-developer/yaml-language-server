@@ -59,10 +59,6 @@ export namespace CustomSchemaContentRequest {
   export const type: RequestType<string, string, {}> = new RequestType('custom/schema/content');
 }
 
-export namespace CustomUpdateTabSizeRequest {
-  export const type: RequestType<{}, {}, {}> = new RequestType('custom/updateTabSize/request');
-}
-
 export namespace CustomSchemaRequest {
   export const type: RequestType<{}, {}, {}> = new RequestType('custom/schema/request');
 }
