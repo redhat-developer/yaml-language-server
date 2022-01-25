@@ -681,9 +681,12 @@ function validate(
       }
     }
 
-    const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean): number => {
+    const testAlternatives = (alternatives: JSONSchemaRef[], minOneMatch: boolean): number => {
       const matches = [];
-
+      let minMatch = 1;
+      if (minOneMatch) {
+        minMatch = alternatives.length;
+      }
       // remember the best match that is used for error messages
       let bestMatch: {
         schema: JSONSchema;
@@ -707,15 +710,15 @@ function validate(
         } else if (isKubernetes) {
           bestMatch = alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         } else {
-          bestMatch = genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
+          bestMatch = genericComparison(minOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         }
       }
 
-      if (matches.length > 1 && maxOneMatch) {
+      if (matches.length > minMatch && minOneMatch) {
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
-          message: localize('oneOfWarning', 'Matches multiple schemas when only one must validate.'),
+          message: localize('oneOfWarning', 'Minimum one schema should validate.'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });

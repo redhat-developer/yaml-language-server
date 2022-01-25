@@ -32,6 +32,13 @@ describe('Auto Completion Fix Tests', () => {
     yamlSettings = settings;
   });
 
+  /**
+   *
+   * @param content
+   * @param line starts with 0 index
+   * @param character starts with 1 index
+   * @returns
+   */
   function parseSetup(content: string, line: number, character: number): Promise<CompletionList> {
     const testTextDocument = setupSchemaIDTextDocument(content);
     yamlSettings.documents = new TextDocumentTestManager();
@@ -153,8 +160,8 @@ objB:
       - 
 `;
     const completion = await parseSetup(content, 3, 8);
-    expect(completion.items).length(4);
-    expect(completion.items.map((it) => it.label)).to.have.members(['NOT', 'attribute', 'operation', 'value']);
+    expect(completion.items).length(5);
+    expect(completion.items.map((it) => it.label)).to.have.members(['NOT', 'attribute', 'operation', 'value', 'FUNC_item']);
   });
 
   it('Autocomplete with short nextLine - nested object', async () => {
@@ -255,5 +262,125 @@ objB:
         },
       })
     );
+  });
+
+  it('Autocomplete indent on array when parent is array', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        examples: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              objectWithArray: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const content = 'examples:\n  - ';
+    const completion = await parseSetup(content, 1, 4);
+
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0]).to.be.deep.equal(
+      createExpectedCompletion('objectWithArray', 'objectWithArray:\n    - ${1:""}', 1, 4, 1, 4, 10, 2, {
+        documentation: '',
+      })
+    );
+  });
+  it('Autocomplete indent on array object when parent is array', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        examples: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              objectWithArray: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: ['item', 'item2'],
+                  properties: {
+                    item: { type: 'string' },
+                    item2: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const content = 'examples:\n  - ';
+    const completion = await parseSetup(content, 1, 4);
+
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0]).to.be.deep.equal(
+      createExpectedCompletion('objectWithArray', 'objectWithArray:\n    - item: $1\n      item2: $2', 1, 4, 1, 4, 10, 2, {
+        documentation: '',
+      })
+    );
+  });
+  describe('array indent on different index position', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        objectWithArray: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['item', 'item2'],
+            properties: {
+              item: { type: 'string' },
+              item2: {
+                type: 'object',
+                required: ['prop1', 'prop2'],
+                properties: {
+                  prop1: { type: 'string' },
+                  prop2: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    it('array indent on the first item', async () => {
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'objectWithArray:\n  - ';
+      const completion = await parseSetup(content, 1, 4);
+
+      expect(completion.items.length).equal(3);
+      expect(completion.items[0]).to.be.deep.equal(
+        createExpectedCompletion('item', 'item: ', 1, 4, 1, 4, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(completion.items[2]).to.be.deep.equal(
+        createExpectedCompletion('item2', 'item2:\n    prop1: $1\n    prop2: $2', 1, 4, 1, 4, 10, 2, {
+          documentation: '',
+        })
+      );
+    });
+    it('array indent on the second item', async () => {
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'objectWithArray:\n  - item: first line\n    ';
+      const completion = await parseSetup(content, 2, 4);
+
+      expect(completion.items.length).equal(2);
+      expect(completion.items[0]).to.be.deep.equal(
+        createExpectedCompletion('item2', 'item2:\n  prop1: $1\n  prop2: $2', 2, 4, 2, 4, 10, 2, {
+          documentation: '',
+        })
+      );
+    });
   });
 });
