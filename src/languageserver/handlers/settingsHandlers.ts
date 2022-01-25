@@ -42,6 +42,7 @@ export class SettingsHandler {
       { section: 'yaml' },
       { section: 'http' },
       { section: '[yaml]' },
+      { section: 'editor' },
     ]);
     const settings: Settings = {
       yaml: config[0],
@@ -50,6 +51,7 @@ export class SettingsHandler {
         proxyStrictSSL: config[1]?.proxyStrictSSL ?? false,
       },
       yamlEditor: config[2],
+      vscodeEditor: config[3],
     };
     this.setConfiguration(settings);
   }
@@ -108,8 +110,14 @@ export class SettingsHandler {
 
     this.yamlSettings.schemaConfigurationSettings = [];
 
+    let tabSize = 2;
+    if (settings.vscodeEditor) {
+      tabSize =
+        !settings.vscodeEditor['detectIndentation'] && settings.yamlEditor ? settings.yamlEditor['editor.tabSize'] : tabSize;
+    }
+
     if (settings.yamlEditor && settings.yamlEditor['editor.tabSize']) {
-      this.yamlSettings.indentation = ' '.repeat(settings.yamlEditor['editor.tabSize']);
+      this.yamlSettings.indentation = ' '.repeat(tabSize);
     }
 
     for (const uri in this.yamlSettings.yamlConfigurationSettings) {
