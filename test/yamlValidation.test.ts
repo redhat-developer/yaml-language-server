@@ -8,7 +8,7 @@ import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
 import { setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { expect } from 'chai';
-import { createExpectedError } from './utils/verifyError';
+import { createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
 
 describe('YAML Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -52,6 +52,44 @@ describe('YAML Validation Tests', () => {
       expect(result).is.not.empty;
       expect(result.length).to.be.equal(1);
       expect(result[0]).deep.equal(createExpectedError('Tabs are not allowed as indentation', 1, 1, 1, 10));
+    });
+  });
+
+  describe('Unused anchors diagnostics', () => {
+    it('should report unused anchor', async () => {
+      const yaml = 'foo: &bar bar\n';
+      const result = await parseSetup(yaml);
+      expect(result).is.not.empty;
+      expect(result.length).to.be.equal(1);
+      expect(result[0]).deep.equal(createUnusedAnchorDiagnostic('Unused anchor "&bar"', '&bar', 0, 5, 0, 9));
+    });
+
+    it('should not report used anchor', async () => {
+      const yaml = 'foo: &bar bar\nfff: *bar';
+      const result = await parseSetup(yaml);
+      expect(result).is.empty;
+    });
+
+    it('should report unused anchors in array ', async () => {
+      const yaml = `foo: &bar   doe
+aaa: some
+dd: *ba
+some: 
+  &a ss: ss
+&aa ff: 
+  - s
+  - o
+  - &e m
+  - e`;
+      const result = await parseSetup(yaml);
+      expect(result).is.not.empty;
+      expect(result.length).to.be.equal(4);
+      expect(result).to.include.deep.members([
+        createUnusedAnchorDiagnostic('Unused anchor "&bar"', '&bar', 0, 5, 0, 9),
+        createUnusedAnchorDiagnostic('Unused anchor "&a"', '&a', 4, 2, 4, 4),
+        createUnusedAnchorDiagnostic('Unused anchor "&aa"', '&aa', 5, 0, 5, 3),
+        createUnusedAnchorDiagnostic('Unused anchor "&e"', '&e', 8, 4, 8, 6),
+      ]);
     });
   });
 });
