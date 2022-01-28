@@ -38,6 +38,8 @@ describe('Settings Handlers Tests', () => {
     settingsState = new SettingsState();
     validationHandler = sandbox.mock(ValidationHandler);
     xhrStub = sandbox.stub(request, 'xhr');
+    const sendRequest = sandbox.fake();
+    connection.sendRequest = sendRequest;
   });
 
   afterEach(() => {
@@ -191,12 +193,17 @@ describe('Settings Handlers Tests', () => {
         (validationHandler as unknown) as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{}, {}, {}]);
+      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
       const setConfigurationStub = sandbox.stub(settingsHandler, 'setConfiguration');
 
       await settingsHandler.pullConfiguration();
 
-      expect(workspaceStub.getConfiguration).calledOnceWith([{ section: 'yaml' }, { section: 'http' }, { section: '[yaml]' }]);
+      expect(workspaceStub.getConfiguration).calledOnceWith([
+        { section: 'yaml' },
+        { section: 'http' },
+        { section: '[yaml]' },
+        { section: 'editor' },
+      ]);
 
       expect(setConfigurationStub).calledOnceWith({
         yaml: {},
@@ -205,7 +212,27 @@ describe('Settings Handlers Tests', () => {
           proxyStrictSSL: false,
         },
         yamlEditor: {},
+        vscodeEditor: {},
       });
+    });
+
+    it('detect indentation settings change', async () => {
+      const settingsHandler = new SettingsHandler(
+        connection,
+        (languageService as unknown) as LanguageService,
+        settingsState,
+        (validationHandler as unknown) as ValidationHandler,
+        {} as Telemetry
+      );
+      workspaceStub.getConfiguration.resolves([{}, {}, {}, { tabSize: 4, detectIndentation: false }]);
+      await settingsHandler.pullConfiguration();
+
+      expect(workspaceStub.getConfiguration).calledOnceWith([
+        { section: 'yaml' },
+        { section: 'http' },
+        { section: '[yaml]' },
+        { section: 'editor' },
+      ]);
     });
   });
 });

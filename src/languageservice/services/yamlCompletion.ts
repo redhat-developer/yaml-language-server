@@ -114,10 +114,13 @@ export class YamlCompletion {
       return Promise.resolve(result);
     }
 
-    const currentDoc = matchOffsetToDocument(offset, doc);
+    let currentDoc = matchOffsetToDocument(offset, doc);
     if (currentDoc === null) {
       return Promise.resolve(result);
     }
+
+    // as we modify AST for completion, we need to use copy of original document
+    currentDoc = currentDoc.clone();
 
     let [node, foundByClosest] = currentDoc.getNodeFromPosition(offset, textBuffer);
 
