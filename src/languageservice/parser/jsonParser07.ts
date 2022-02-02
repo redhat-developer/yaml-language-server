@@ -682,12 +682,9 @@ function validate(
       }
     }
 
-    const testAlternatives = (alternatives: JSONSchemaRef[], minOneMatch: boolean): number => {
+    const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean): number => {
       const matches = [];
-      let minMatch = 1;
-      if (minOneMatch) {
-        minMatch = alternatives.length;
-      }
+      const noPropertyMatches = [];
       // remember the best match that is used for error messages
       let bestMatch: {
         schema: JSONSchema;
@@ -701,6 +698,9 @@ function validate(
         validate(node, subSchema, schema, subValidationResult, subMatchingSchemas, options);
         if (!subValidationResult.hasProblems()) {
           matches.push(subSchema);
+          if (subValidationResult.propertiesMatches === 0) {
+            noPropertyMatches.push(subSchema);
+          }
         }
         if (!bestMatch) {
           bestMatch = {
@@ -711,11 +711,11 @@ function validate(
         } else if (isKubernetes) {
           bestMatch = alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         } else {
-          bestMatch = genericComparison(minOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
+          bestMatch = genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         }
       }
 
-      if (matches.length > minMatch && minOneMatch) {
+      if (matches.length > 1 && noPropertyMatches.length === 0 && maxOneMatch) {
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
