@@ -230,9 +230,21 @@ export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
   }
 }
 
-export function asSchema(schema: JSONSchemaRef): JSONSchema {
+export function asSchema(schema: JSONSchemaRef): JSONSchema | undefined {
+  if (schema === undefined) {
+    return undefined;
+  }
+
   if (isBoolean(schema)) {
     return schema ? {} : { not: {} };
+  }
+
+  if (typeof schema !== 'object') {
+    // we need to report this case as JSONSchemaRef MUST be an Object or Boolean
+    console.warn(`Wrong schema: ${JSON.stringify(schema)}, it MUST be an Object or Boolean`);
+    schema = {
+      type: schema,
+    };
   }
   return schema;
 }

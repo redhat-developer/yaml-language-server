@@ -16,6 +16,7 @@ import {
   DeleteFilesParams,
 } from 'vscode-languageserver-protocol';
 import { Connection, RemoteWorkspace } from 'vscode-languageserver/lib/common/server';
+import { Telemetry, TelemetryEvent } from '../../src/languageserver/telemetry';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -53,5 +54,19 @@ export class TestWorkspace implements RemoteWorkspace {
   }
   onWillDeleteFiles(handler: RequestHandler<DeleteFilesParams, WorkspaceEdit, never>): void {
     throw new Error('Method not implemented.');
+  }
+}
+
+export class TestTelemetry extends Telemetry {
+  messages: TelemetryEvent[] = [];
+  constructor(connection: Connection) {
+    super(connection);
+  }
+  send(event: TelemetryEvent): void {
+    this.messages.push(event);
+  }
+
+  clearMessages(): void {
+    this.messages = [];
   }
 }
