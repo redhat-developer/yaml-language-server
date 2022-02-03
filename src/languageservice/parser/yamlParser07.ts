@@ -5,9 +5,11 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { Parser, Composer, Document, LineCounter, ParseOptions, DocumentOptions, SchemaOptions, CST, Lexer } from 'yaml';
+import { Parser, Composer, Document, LineCounter, ParseOptions, DocumentOptions, SchemaOptions } from 'yaml';
 import { YAMLDocument, SingleYAMLDocument } from './yaml-documents';
 import { getCustomTags } from './custom-tag-provider';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { TextBuffer } from '../utils/textBuffer';
 
 export { YAMLDocument, SingleYAMLDocument };
 
@@ -25,7 +27,7 @@ export const defaultOptions: ParserOptions = {
  * returns YAML AST nodes, which are then formatted
  * for consumption via the language server.
  */
-export function parse(text: string, parserOptions: ParserOptions = defaultOptions): YAMLDocument {
+export function parse(text: string, parserOptions: ParserOptions = defaultOptions, document?: TextDocument): YAMLDocument {
   const options: ParseOptions & DocumentOptions & SchemaOptions = {
     strict: false,
     customTags: getCustomTags(parserOptions.customTags),
@@ -34,9 +36,14 @@ export function parse(text: string, parserOptions: ParserOptions = defaultOption
   };
   const composer = new Composer(options);
   const lineCounter = new LineCounter();
-  const lexerTokensArr = Array.from(new Lexer().lex(text));
-  const parser =
-    lexerTokensArr.length > 0 && isEndedWithEmpty(lexerTokensArr) ? new Parser() : new Parser(lineCounter.addNewLine);
+  let isLastLineEmpty = false;
+  if (document) {
+    const textBuffer = new TextBuffer(document);
+    const position = textBuffer.getPosition(text.length);
+    const lineContent = textBuffer.getLineContent(position.line);
+    isLastLineEmpty = lineContent.trim().length === 0;
+  }
+  const parser = isLastLineEmpty ? new Parser() : new Parser(lineCounter.addNewLine);
   const tokens = parser.parse(text);
   const tokensArr = Array.from(tokens);
   const docs = composer.compose(tokensArr, true, text.length);
@@ -51,24 +58,4 @@ function parsedDocToSingleYAMLDocument(parsedDoc: Document, lineCounter: LineCou
   const syd = new SingleYAMLDocument(lineCounter);
   syd.internalDocument = parsedDoc;
   return syd;
-}
-
-/**
- * check last or last before token is new line or new line with white space
- */
-function isEndedWithEmpty(tokens: string[]): boolean {
-  const lastTwoTokens = tokens.slice(-2);
-  let [tokenType, emptyLine] = isEmptyLine(lastTwoTokens[0]);
-  if (!emptyLine && tokenType === 'space') {
-    [tokenType, emptyLine] = isEmptyLine(lastTwoTokens[1]);
-  }
-  return emptyLine;
-}
-
-function isEmptyLine(text: string): [string, boolean] {
-  const tokenType = CST.tokenType(text);
-  if (tokenType === 'newline') {
-    return [tokenType, true];
-  }
-  return [tokenType, false];
 }

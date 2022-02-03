@@ -250,7 +250,7 @@ export class YamlDocuments {
       if (addRootObject && !/\S/.test(text)) {
         text = `{${text}}`;
       }
-      const doc = parseYAML(text, parserOptions);
+      const doc = parseYAML(text, parserOptions, document);
       cacheEntry.document = doc;
       cacheEntry.version = document.version;
       cacheEntry.parserOptions = parserOptions;
