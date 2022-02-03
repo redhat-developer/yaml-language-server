@@ -1,3 +1,13 @@
+### 1.4.0
+- Feat: Report unused anchors [#587](https://github.com/redhat-developer/yaml-language-server/issues/587)
+- Fix: Formatter does not respect `Editor: Detect Indentation = false` [#573](https://github.com/redhat-developer/vscode-yaml/issues/573)
+- Fix: Flakiness in validator: Incorrect type. Expected "string" [#671](https://github.com/redhat-developer/vscode-yaml/issues/671)
+- Fix: TypeError: Cannot read property 'filter' of undefined [#651](https://github.com/redhat-developer/vscode-yaml/issues/651)
+- Fix: TypeError: Cannot create property 'url' on string 'array' [#653](https://github.com/redhat-developer/vscode-yaml/issues/653)
+- Fix: Hover doesn't show up when a new line is behind nested prop with null value [#615](https://github.com/redhat-developer/yaml-language-server/issues/615)
+- Fix: Error "Matches multiple schemas" is recognized in v1.2.2 but not in v1.3.0 [#683](https://github.com/redhat-developer/vscode-yaml/issues/683)
+- Fix: Schema validation matches @bitnami as a uri-formatted string. [#586](https://github.com/redhat-developer/yaml-language-server/issues/586)
+
 ### 1.3.0
 - Fix: Wrong hover information [#647](https://github.com/redhat-developer/vscode-yaml/issues/647)
 - Fix: relative file paths with fragments [#603](https://github.com/redhat-developer/yaml-language-server/pull/603)
