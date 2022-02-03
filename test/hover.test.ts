@@ -426,6 +426,31 @@ storage:
       );
     });
 
+    it('Hover on property next value on null', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          childObject: {
+            type: 'object',
+            description: 'childObject description',
+            properties: {
+              prop: {
+                type: 'string',
+                description: 'should return this description',
+              },
+            },
+          },
+        },
+      });
+      const content = 'childObject:\r\n  prop:\r\n  ';
+      const result = await parseSetup(content, 16);
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
     it('should work with bad schema', async () => {
       const doc = setupSchemaIDTextDocument('foo:\n bar', 'bad-schema.yaml');
       yamlSettings.documents = new TextDocumentTestManager();
