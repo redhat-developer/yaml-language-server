@@ -429,7 +429,7 @@ export class YamlCompletion {
         for (const p of properties) {
           if (!currentProperty || currentProperty !== p) {
             if (isScalar(p.key)) {
-              proposed[p.key.value.toString()] = CompletionItemBase.create(existingProposeItem);
+              proposed[p.key.value + ''] = CompletionItemBase.create(existingProposeItem);
             }
           }
         }
@@ -721,7 +721,7 @@ export class YamlCompletion {
       if (valueNode && valueNode.range && offset > valueNode.range[0] + valueNode.range[2]) {
         return; // we are past the value node
       }
-      parentKey = isScalar(node.key) ? node.key.value.toString() : null;
+      parentKey = isScalar(node.key) ? node.key.value + '' : null;
       node = doc.getParent(node);
     }
 
@@ -1471,7 +1471,13 @@ export class YamlCompletion {
 }
 
 const isNumberExp = /^\d+$/;
-function convertToStringValue(value: string): string {
+function convertToStringValue(param: unknown): string {
+  let value: string;
+  if (typeof param === 'string') {
+    value = param;
+  } else {
+    value = '' + param;
+  }
   if (value.length === 0) {
     return value;
   }
