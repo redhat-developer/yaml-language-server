@@ -1560,6 +1560,15 @@ obj:
   });
 
   describe('Bug fixes', () => {
+    it('should handle "additionalItems" not schema or boolean', async () => {
+      const schema = 'Foo';
+      languageService.addSchema(SCHEMA_ID, schema as JSONSchema);
+      const content = `foo: bar`;
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+      expect(telemetry.messages).to.be.empty;
+    });
+
     it('should handle bad schema refs', async () => {
       const schema = {
         type: 'object',
