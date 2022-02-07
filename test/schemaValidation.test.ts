@@ -1560,7 +1560,7 @@ obj:
   });
 
   describe('Bug fixes', () => {
-    it('should handle "additionalItems" not schema or boolean', async () => {
+    it('should handle not valid schema object', async () => {
       const schema = 'Foo';
       languageService.addSchema(SCHEMA_ID, schema as JSONSchema);
       const content = `foo: bar`;
