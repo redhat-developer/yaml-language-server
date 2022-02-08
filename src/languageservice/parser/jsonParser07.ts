@@ -610,6 +610,11 @@ function validate(
     return;
   }
 
+  // schema should be an Object
+  if (typeof schema !== 'object') {
+    return;
+  }
+
   if (!schema.url) {
     schema.url = originalSchema.url;
   }
