@@ -2541,6 +2541,7 @@ describe('Auto Completion Tests', () => {
       },
       required: ['type', 'options'],
       type: 'object',
+      title: 'Object1',
     };
     const obj2 = {
       properties: {
