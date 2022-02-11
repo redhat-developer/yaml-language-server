@@ -2748,6 +2748,7 @@ describe('Auto Completion Tests', () => {
       },
       required: ['type', 'options'],
       type: 'object',
+      title: 'Object1',
     };
     const obj2 = {
       properties: {
@@ -2788,12 +2789,12 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('type', 'type: typeObj1', 0, 0, 0, 0, 10, 2, { documentation: '' })
       );
       expect(result.items[1]).to.deep.equal(
-        createExpectedCompletion('obj1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
+        createExpectedCompletion('Object1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
           documentation: {
             kind: 'markdown',
             value: '```yaml\ntype: typeObj1\noptions:\n  label: \n```',
           },
-          sortText: '_obj1',
+          sortText: '_Object1',
         })
       );
       expect(result.items[2]).to.deep.equal(
@@ -2834,12 +2835,12 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('type', 'type: typeObj1', 0, 2, 0, 2, 10, 2, { documentation: '' })
       );
       expect(result.items[1]).to.deep.equal(
-        createExpectedCompletion('obj1', 'type: typeObj1\n  options:\n    label: ', 0, 2, 0, 2, 7, 2, {
+        createExpectedCompletion('Object1', 'type: typeObj1\n  options:\n    label: ', 0, 2, 0, 2, 7, 2, {
           documentation: {
             kind: 'markdown',
             value: '```yaml\n  type: typeObj1\n  options:\n    label: \n```',
           },
-          sortText: '_obj1',
+          sortText: '_Object1',
         })
       );
       expect(result.items[2]).to.deep.equal(
@@ -2873,12 +2874,12 @@ describe('Auto Completion Tests', () => {
 
       expect(result.items.length).equal(3);
       expect(result.items[1]).to.deep.equal(
-        createExpectedCompletion('obj1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
+        createExpectedCompletion('Object1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
           documentation: {
             kind: 'markdown',
             value: '```yaml\ntype: typeObj1\noptions:\n  label: \n```',
           },
-          sortText: '_obj1',
+          sortText: '_Object1',
         })
       );
     });
@@ -2893,12 +2894,12 @@ describe('Auto Completion Tests', () => {
 
       expect(result.items.length).equal(2);
       expect(result.items[1]).to.deep.equal(
-        createExpectedCompletion('obj1', 'options:\n  label: ', 1, 0, 1, 0, 7, 2, {
+        createExpectedCompletion('Object1', 'options:\n  label: ', 1, 0, 1, 0, 7, 2, {
           documentation: {
             kind: 'markdown',
             value: '```yaml\noptions:\n  label: \n```',
           },
-          sortText: '_obj1',
+          sortText: '_Object1',
         })
       );
     });

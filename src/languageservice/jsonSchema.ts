@@ -14,6 +14,7 @@ export interface JSONSchema {
   url?: string;
   type?: string | string[];
   title?: string;
+  closestTitle?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   default?: any;
   definitions?: { [name: string]: JSONSchema };

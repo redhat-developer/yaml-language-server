@@ -626,9 +626,8 @@ function validate(
   if (!schema.url) {
     schema.url = originalSchema.url;
   }
-  if (!schema.title) {
-    schema.title = originalSchema.title;
-  }
+
+  schema.closestTitle = schema.title || originalSchema.closestTitle;
 
   switch (node.type) {
     case 'object':
@@ -1092,6 +1091,7 @@ function validate(
             const subSchemaRef = itemSchema.oneOf[0];
             const subSchema = asSchema(subSchemaRef);
             subSchema.title = schema.title;
+            subSchema.closestTitle = schema.closestTitle;
             validate(item, subSchema, schema, itemValidationResult, matchingSchemas, options);
             validationResult.mergePropertyMatch(itemValidationResult);
             validationResult.mergeEnumValues(itemValidationResult);
@@ -1505,8 +1505,10 @@ function getSchemaSource(schema: JSONSchema, originalSchema: JSONSchema): string
     let label: string;
     if (schema.title) {
       label = schema.title;
-    } else if (originalSchema.title) {
-      label = originalSchema.title;
+    } else if (schema.closestTitle) {
+      label = schema.closestTitle;
+    } else if (originalSchema.closestTitle) {
+      label = originalSchema.closestTitle;
     } else {
       const uriString = schema.url ?? originalSchema.url;
       if (uriString) {
