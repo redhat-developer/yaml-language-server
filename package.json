@@ -1,7 +1,7 @@
 {
   "name": "yaml-language-server",
   "description": "YAML language server",
-  "version": "1.3.0",
+  "version": "1.5.0",
   "author": "Gorkem Ercan (Red Hat)",
   "license": "MIT",
   "contributors": [
@@ -40,7 +40,7 @@
     "vscode-languageserver-types": "^3.16.0",
     "vscode-nls": "^5.0.0",
     "vscode-uri": "^3.0.2",
-    "yaml": "2.0.0-8"
+    "yaml": "2.0.0-10"
   },
   "devDependencies": {
     "@types/chai": "^4.2.12",
@@ -81,7 +81,8 @@
     "build:libs": "yarn compile:umd && yarn compile:esm",
     "compile:umd": "tsc -p ./tsconfig.umd.json",
     "compile:esm": "tsc -p ./tsconfig.esm.json",
-    "check-dependencies": "node ./scripts/check-dependencies.js"
+    "check-dependencies": "node ./scripts/check-dependencies.js",
+    "pull-remote": "git pull https://github.com/redhat-developer/yaml-language-server.git main"
   },
   "nyc": {
     "extension": [

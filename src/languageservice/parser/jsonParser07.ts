@@ -16,6 +16,7 @@ import {
   StringASTNode,
   NullASTNode,
   PropertyASTNode,
+  YamlNode,
 } from '../jsonASTTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
 import * as nls from 'vscode-nls';
@@ -26,7 +27,7 @@ import * as path from 'path';
 import { prepareInlineCompletion } from '../services/yamlCompletion jigx';
 import { Diagnostic } from 'vscode-languageserver';
 import { isArrayEqual } from '../utils/arrUtils';
-import { Node } from 'yaml';
+import { Node, Pair } from 'yaml';
 import { safeCreateUnicodeRegExp } from '../utils/strings';
 
 const localize = nls.loadMessageBundle();
@@ -95,9 +96,9 @@ export abstract class ASTNodeImpl {
   public length: number;
   public readonly parent: ASTNode;
   public location: string;
-  readonly internalNode: Node;
+  readonly internalNode: YamlNode;
 
-  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
+  constructor(parent: ASTNode, internalNode: YamlNode, offset: number, length?: number) {
     this.offset = offset;
     this.length = length;
     this.parent = parent;
@@ -210,7 +211,7 @@ export class PropertyASTNodeImpl extends ASTNodeImpl implements PropertyASTNode 
   public valueNode: ASTNode;
   public colonOffset: number;
 
-  constructor(parent: ObjectASTNode, internalNode: Node, offset: number, length?: number) {
+  constructor(parent: ObjectASTNode, internalNode: Pair, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
     this.colonOffset = -1;
   }
@@ -235,9 +236,21 @@ export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
   }
 }
 
-export function asSchema(schema: JSONSchemaRef): JSONSchema {
+export function asSchema(schema: JSONSchemaRef): JSONSchema | undefined {
+  if (schema === undefined) {
+    return undefined;
+  }
+
   if (isBoolean(schema)) {
     return schema ? {} : { not: {} };
+  }
+
+  if (typeof schema !== 'object') {
+    // we need to report this case as JSONSchemaRef MUST be an Object or Boolean
+    console.warn(`Wrong schema: ${JSON.stringify(schema)}, it MUST be an Object or Boolean`);
+    schema = {
+      type: schema,
+    };
   }
   return schema;
 }
@@ -603,6 +616,11 @@ function validate(
     return;
   }
 
+  // schema should be an Object
+  if (typeof schema !== 'object') {
+    return;
+  }
+
   (<JSONSchemaWithProblems>schema).problems = undefined; //clear previous problems
 
   if (!schema.url) {
@@ -699,12 +717,9 @@ function validate(
       }
     }
 
-    const testAlternatives = (alternatives: JSONSchemaRef[], minOneMatch: boolean): number => {
+    const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean): number => {
       const matches = [];
-      let minMatch = 1;
-      if (minOneMatch) {
-        minMatch = alternatives.length;
-      }
+      const noPropertyMatches = [];
       // remember the best match that is used for error messages
       let bestMatch: {
         schema: JSONSchema;
@@ -718,6 +733,9 @@ function validate(
         validate(node, subSchema, schema, subValidationResult, subMatchingSchemas, options);
         if (!subValidationResult.hasProblems()) {
           matches.push(subSchema);
+          if (subValidationResult.propertiesMatches === 0) {
+            noPropertyMatches.push(subSchema);
+          }
         }
         if (!bestMatch) {
           bestMatch = {
@@ -728,11 +746,11 @@ function validate(
         } else if (isKubernetes) {
           bestMatch = alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         } else {
-          bestMatch = genericComparison(minOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
+          bestMatch = genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         }
       }
 
-      if (matches.length > minMatch && minOneMatch) {
+      if (matches.length > 1 && noPropertyMatches.length === 0 && maxOneMatch) {
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,

@@ -17,6 +17,9 @@ import { YAML_SOURCE } from '../parser/jsonParser07';
 import { TextBuffer } from '../utils/textBuffer';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
+import { Telemetry } from '../../languageserver/telemetry';
+import { AdditionalValidator } from './validation/types';
+import { UnusedAnchorsValidator } from './validation/unused-anchors';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -41,12 +44,14 @@ export class YAMLValidation {
   private jsonValidation;
   private disableAdditionalProperties: boolean;
   private yamlVersion: YamlVersion;
+  private additionalValidation: AdditionalValidation;
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
-  public constructor(schemaService: YAMLSchemaService) {
+  constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
     this.validationEnabled = true;
     this.jsonValidation = new JSONValidation(schemaService, Promise);
+    this.additionalValidation = new AdditionalValidation();
   }
 
   public configure(settings: LanguageSettings): void {
@@ -89,10 +94,11 @@ export class YAMLValidation {
         }
 
         validationResult.push(...validation);
+        validationResult.push(...this.additionalValidation.validate(textDocument, currentYAMLDoc));
         index++;
       }
     } catch (err) {
-      console.error(convertErrorToTelemetryMsg(err));
+      this.telemetry.sendError('yaml.validation.error', convertErrorToTelemetryMsg(err));
     }
 
     let previousErr: Diagnostic;
@@ -136,5 +142,20 @@ export class YAMLValidation {
     }
 
     return duplicateMessagesRemoved;
+  }
+}
+
+class AdditionalValidation {
+  private validators: AdditionalValidator[] = [];
+  constructor() {
+    this.validators.push(new UnusedAnchorsValidator());
+  }
+  validate(document: TextDocument, yarnDoc: SingleYAMLDocument): Diagnostic[] {
+    const result = [];
+
+    for (const validator of this.validators) {
+      result.push(...validator.validate(document, yarnDoc));
+    }
+    return result;
   }
 }

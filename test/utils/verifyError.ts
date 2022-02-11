@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DocumentSymbol, SymbolKind, InsertTextFormat, Range } from 'vscode-languageserver-types';
+import { DocumentSymbol, SymbolKind, InsertTextFormat, Range, DiagnosticTag } from 'vscode-languageserver-types';
 import { CompletionItem, CompletionItemKind, SymbolInformation, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { ErrorCode } from 'vscode-json-languageservice';
 import { jigxBranchTest } from './testHelper';
@@ -36,6 +36,28 @@ export function createDiagnosticWithData(
   }
   const diagnostic: Diagnostic = createExpectedError(message, startLine, startCharacter, endLine, endCharacter, severity, source);
   diagnostic.data = { schemaUri: typeof schemaUri === 'string' ? [schemaUri] : schemaUri };
+  return diagnostic;
+}
+
+export function createUnusedAnchorDiagnostic(
+  message: string,
+  name: string,
+  startLine: number,
+  startCharacter: number,
+  endLine: number,
+  endCharacter: number
+): Diagnostic {
+  const diagnostic = createExpectedError(
+    message,
+    startLine,
+    startCharacter,
+    endLine,
+    endCharacter,
+    DiagnosticSeverity.Hint,
+    'YAML'
+  );
+  diagnostic.tags = [DiagnosticTag.Unnecessary];
+  diagnostic.data = { name };
   return diagnostic;
 }
 

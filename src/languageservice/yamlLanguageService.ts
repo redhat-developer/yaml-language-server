@@ -177,7 +177,7 @@ export function getLanguageService(
   const completer = new YamlCompletion(schemaService, clientCapabilities, yamlDocumentsCache, telemetry);
   const hover = new YAMLHover(schemaService, telemetry);
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService, telemetry);
-  const yamlValidation = new YAMLValidation(schemaService);
+  const yamlValidation = new YAMLValidation(schemaService, telemetry);
   const formatter = new YAMLFormatter();
   const hoverDetail = new YamlHoverDetail(schemaService, telemetry);
   const yamlCodeActions = new YamlCodeActions(clientCapabilities);

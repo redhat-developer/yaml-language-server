@@ -273,8 +273,7 @@ describe('Document Symbols Tests', () => {
               ? *root
               :
                 style:
-                  height: 41
-            `;
+                  height: 41`;
 
       const symbols = parseHierarchicalSetup(content);
 
@@ -288,8 +287,8 @@ describe('Document Symbols Tests', () => {
       const root1 = createExpectedDocumentSymbol('root', SymbolKind.Module, 3, 22, 6, 0, 3, 22, 3, 26, [element]);
 
       const height = createExpectedDocumentSymbol('height', SymbolKind.Number, 10, 18, 10, 28, 10, 18, 10, 24, [], '41');
-      const style = createExpectedDocumentSymbol('style', SymbolKind.Module, 9, 16, 11, 0, 9, 16, 9, 21, [height]);
-      const root2 = createExpectedDocumentSymbol('root', SymbolKind.Module, 7, 16, 11, 0, 7, 16, 7, 21, [style]);
+      const style = createExpectedDocumentSymbol('style', SymbolKind.Module, 9, 16, 10, 28, 9, 16, 9, 21, [height]);
+      const root2 = createExpectedDocumentSymbol('root', SymbolKind.Module, 7, 16, 10, 28, 7, 16, 7, 21, [style]);
 
       assert.deepEqual(
         symbols[1],
@@ -298,7 +297,7 @@ describe('Document Symbols Tests', () => {
 
       assert.deepEqual(
         symbols[2],
-        createExpectedDocumentSymbol('conditions', SymbolKind.Module, 6, 12, 11, 0, 6, 12, 6, 22, [root2])
+        createExpectedDocumentSymbol('conditions', SymbolKind.Module, 6, 12, 10, 28, 6, 12, 6, 22, [root2])
       );
     });
 

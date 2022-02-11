@@ -18,23 +18,27 @@ import {
 } from './utils/errorMessages';
 import * as assert from 'assert';
 import * as path from 'path';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+import { Diagnostic, DiagnosticSeverity, Position } from 'vscode-languageserver';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 import { IProblem } from '../src/languageservice/parser/jsonParser07';
+import { JSONSchema } from '../src/languageservice/jsonSchema';
+import { TestTelemetry } from './utils/testsTypes';
 
 describe('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let validationHandler: ValidationHandler;
   let languageService: LanguageService;
   let yamlSettings: SettingsState;
+  let telemetry: TestTelemetry;
 
   before(() => {
     languageSettingsSetup = new ServiceSetup()
       .withValidate()
+      .withCompletion()
       .withCustomTags(['!Test', '!Ref sequence'])
       .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['.drone.yml'] })
       .withSchemaFileMatch({ uri: 'https://json.schemastore.org/drone', fileMatch: ['.drone.yml'] })
@@ -43,12 +47,16 @@ describe('Validation Tests', () => {
         uri: 'https://raw.githubusercontent.com/composer/composer/master/res/composer-schema.json',
         fileMatch: ['test.yml'],
       });
-    const { languageService: langService, validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
-      languageSettingsSetup.languageSettings
-    );
+    const {
+      languageService: langService,
+      validationHandler: valHandler,
+      yamlSettings: settings,
+      telemetry: testTelemetry,
+    } = setupLanguageService(languageSettingsSetup.languageSettings);
     languageService = langService;
     validationHandler = valHandler;
     yamlSettings = settings;
+    telemetry = testTelemetry;
   });
 
   function parseSetup(content: string, customSchemaID?: string): Promise<Diagnostic[]> {
@@ -1551,6 +1559,69 @@ obj:
     });
   });
 
+  describe('Bug fixes', () => {
+    it('should handle not valid schema object', async () => {
+      const schema = 'Foo';
+      languageService.addSchema(SCHEMA_ID, schema as JSONSchema);
+      const content = `foo: bar`;
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+      expect(telemetry.messages).to.be.empty;
+    });
+
+    it('should handle bad schema refs', async () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          bar: {
+            oneOf: ['array', 'boolean'],
+          },
+        },
+        additionalProperties: true,
+      };
+      languageService.addSchema(SCHEMA_ID, schema as JSONSchema);
+      const content = `bar: ddd`;
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(1);
+      expect(telemetry.messages).to.be.empty;
+    });
+
+    it('should not use same AST for completion and validation', async () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          container: {
+            type: 'object',
+            properties: {
+              image: {
+                type: 'string',
+              },
+              command: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = `container:
+  image: alpine
+  command:
+  - aaa
+  - bbb
+  - dddddd
+  - ccc`;
+      const testTextDocument = setupSchemaIDTextDocument(content);
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      await languageService.doComplete(testTextDocument, Position.create(6, 8), false);
+      const result = await validationHandler.validateTextDocument(testTextDocument);
+      expect(result).to.be.empty;
+    });
+  });
   describe('Jigx', () => {
     it('Expression is valid inline object', async function () {
       const schema = {

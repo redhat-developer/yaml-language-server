@@ -19,7 +19,7 @@ import {
   WorkspaceEdit,
 } from 'vscode-languageserver';
 import { setupTextDocument, TEST_URI } from './utils/testHelper';
-import { createDiagnosticWithData, createExpectedError } from './utils/verifyError';
+import { createDiagnosticWithData, createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
 import { YamlCommands } from '../src/commands';
 import { LanguageSettings } from '../src';
 
@@ -152,6 +152,36 @@ describe('CodeActions Tests', () => {
         TextEdit.replace(Range.create(1, 0, 1, 3), '      '),
         TextEdit.replace(Range.create(2, 0, 2, 2), '    '),
       ]);
+    });
+  });
+
+  describe('Remove Unused Anchor', () => {
+    it('should generate proper action', () => {
+      const doc = setupTextDocument('foo: &bar bar\n');
+      const diagnostics = [createUnusedAnchorDiagnostic('Unused anchor "&bar"', '&bar', 0, 5, 0, 9)];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result[0].title).to.be.equal('Delete unused anchor: &bar');
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.del(Range.create(0, 5, 0, 10))]);
+    });
+
+    it('should delete all whitespace after unused anchor', () => {
+      const doc = setupTextDocument('foo: &bar   \tbar\n');
+      const diagnostics = [createUnusedAnchorDiagnostic('Unused anchor "&bar"', '&bar', 0, 5, 0, 9)];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result[0].title).to.be.equal('Delete unused anchor: &bar');
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.del(Range.create(0, 5, 0, 13))]);
     });
   });
 });

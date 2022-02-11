@@ -24,15 +24,14 @@ export class YAMLServerInit {
   validationHandler: ValidationHandler;
   settingsHandler: SettingsHandler;
 
-  private telemetry: Telemetry;
   constructor(
     private readonly connection: Connection,
     private yamlSettings: SettingsState,
     private workspaceContext: WorkspaceContextService,
-    private schemaRequestService: SchemaRequestService
+    private schemaRequestService: SchemaRequestService,
+    private telemetry: Telemetry
   ) {
     this.yamlSettings.documents.listen(this.connection);
-    this.telemetry = new Telemetry(this.connection);
 
     /**
      * Run when the client connects to the server after it is activated.

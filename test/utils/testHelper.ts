@@ -14,6 +14,7 @@ import { LanguageHandlers } from '../../src/languageserver/handlers/languageHand
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { ClientCapabilities } from 'vscode-json-languageservice';
 import { yamlDocumentsCache } from '../../src/languageservice/parser/yaml-documents';
+import { TestTelemetry } from './testsTypes';
 
 export function toFsPath(str: unknown): string {
   if (typeof str !== 'string') {
@@ -54,6 +55,7 @@ export interface TestLanguageServerSetup {
   validationHandler: ValidationHandler;
   languageHandler: LanguageHandlers;
   yamlSettings: SettingsState;
+  telemetry: TestTelemetry;
 }
 
 export function setupLanguageService(languageSettings: LanguageSettings): TestLanguageServerSetup {
@@ -71,7 +73,8 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
     );
   };
   const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
-  const serverInit = new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService);
+  const telemetry = new TestTelemetry(connection);
+  const serverInit = new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService, telemetry);
   serverInit.connectionInitialized({
     processId: null,
     capabilities: ClientCapabilities.LATEST as LSPClientCapabilities,
@@ -88,6 +91,7 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
     validationHandler,
     languageHandler,
     yamlSettings,
+    telemetry,
   };
 }
 

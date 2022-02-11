@@ -19,7 +19,7 @@ import {
   Document,
   LineCounter,
 } from 'yaml';
-import { ASTNode } from '../jsonASTTypes';
+import { ASTNode, YamlNode } from '../jsonASTTypes';
 import {
   NullASTNodeImpl,
   PropertyASTNodeImpl,
@@ -35,7 +35,7 @@ type NodeRange = [number, number, number];
 const maxRefCount = 1000;
 let refDepth = 0;
 
-export function convertAST(parent: ASTNode, node: Node, doc: Document, lineCounter: LineCounter): ASTNode {
+export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineCounter: LineCounter): ASTNode | undefined {
   if (!parent) {
     // first invocation
     refDepth = 0;
@@ -113,7 +113,11 @@ function convertSeq(node: YAMLSeq, parent: ASTNode, doc: Document, lineCounter: 
   const result = new ArrayASTNodeImpl(parent, node, ...toOffsetLength(node.range));
   for (const it of node.items) {
     if (isNode(it)) {
-      result.children.push(convertAST(result, it, doc, lineCounter));
+      const convertedNode = convertAST(result, it, doc, lineCounter);
+      // due to recursion protection, convertAST may return undefined
+      if (convertedNode) {
+        result.children.push(convertedNode);
+      }
     }
   }
   return result;
@@ -136,6 +140,12 @@ function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
       const result = new NumberASTNodeImpl(parent, node, ...toOffsetLength(node.range));
       result.value = node.value;
       result.isInteger = Number.isInteger(result.value);
+      return result;
+    }
+    default: {
+      // fail safe converting, we need to return some node anyway
+      const result = new StringASTNodeImpl(parent, node, ...toOffsetLength(node.range));
+      result.value = node.source;
       return result;
     }
   }

@@ -6,7 +6,7 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { JSONDocument } from './jsonParser07';
 import { Document, isNode, isPair, isScalar, LineCounter, visit, YAMLError } from 'yaml';
-import { ASTNode } from '../jsonASTTypes';
+import { ASTNode, YamlNode } from '../jsonASTTypes';
 import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07';
 import { ErrorCode } from 'vscode-json-languageservice';
 import { Node } from 'yaml';
@@ -32,6 +32,20 @@ export class SingleYAMLDocument extends JSONDocument {
   constructor(lineCounter?: LineCounter) {
     super(null, []);
     this.lineCounter = lineCounter;
+  }
+
+  /**
+   * Create a deep copy of this document
+   */
+  clone(): SingleYAMLDocument {
+    const copy = new SingleYAMLDocument(this.lineCounter);
+    copy.isKubernetes = this.isKubernetes;
+    copy.disableAdditionalProperties = this.disableAdditionalProperties;
+    copy.currentDocIndex = this.currentDocIndex;
+    copy._lineComments = this.lineComments.slice();
+    // this will re-create root node
+    copy.internalDocument = this._internalDocument.clone();
+    return copy;
   }
 
   private collectLineComments(): void {
@@ -81,7 +95,7 @@ export class SingleYAMLDocument extends JSONDocument {
     return this.internalDocument.warnings.map(YAMLErrorToYamlDocDiagnostics);
   }
 
-  getNodeFromPosition(positionOffset: number, textBuffer: TextBuffer): [Node | undefined, boolean] {
+  getNodeFromPosition(positionOffset: number, textBuffer: TextBuffer): [YamlNode | undefined, boolean] {
     const position = textBuffer.getPosition(positionOffset);
     const lineContent = textBuffer.getLineContent(position.line);
     if (lineContent.trim().length === 0) {
@@ -108,10 +122,10 @@ export class SingleYAMLDocument extends JSONDocument {
     return [closestNode, false];
   }
 
-  findClosestNode(offset: number, textBuffer: TextBuffer): Node {
+  findClosestNode(offset: number, textBuffer: TextBuffer): YamlNode {
     let offsetDiff = this.internalDocument.range[2];
     let maxOffset = this.internalDocument.range[0];
-    let closestNode: Node;
+    let closestNode: YamlNode;
     visit(this.internalDocument, (key, node: Node) => {
       if (!node) {
         return;
@@ -143,11 +157,11 @@ export class SingleYAMLDocument extends JSONDocument {
     return closestNode;
   }
 
-  private getProperParentByIndentation(indentation: number, node: Node, textBuffer: TextBuffer): Node {
+  private getProperParentByIndentation(indentation: number, node: YamlNode, textBuffer: TextBuffer): YamlNode {
     if (!node) {
       return this.internalDocument.contents as Node;
     }
-    if (node.range) {
+    if (isNode(node) && node.range) {
       const position = textBuffer.getPosition(node.range[0]);
       if (position.character > indentation && position.character > 0) {
         const parent = this.getParent(node);
@@ -169,7 +183,7 @@ export class SingleYAMLDocument extends JSONDocument {
     return node;
   }
 
-  getParent(node: Node): Node | undefined {
+  getParent(node: YamlNode): YamlNode | undefined {
     return getParent(this.internalDocument, node);
   }
 }
@@ -243,7 +257,7 @@ export class YamlDocuments {
       if (addRootObject && !/\S/.test(text)) {
         text = `{${text}}`;
       }
-      const doc = parseYAML(text, parserOptions);
+      const doc = parseYAML(text, parserOptions, document);
       cacheEntry.document = doc;
       cacheEntry.version = document.version;
       cacheEntry.parserOptions = parserOptions;

@@ -10,41 +10,47 @@ import { Hover, MarkupContent, Position } from 'vscode-languageserver';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { expect } from 'chai';
+import { TestTelemetry } from './utils/testsTypes';
 
 describe('Hover Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageHandler: LanguageHandlers;
   let languageService: LanguageService;
   let yamlSettings: SettingsState;
+  let telemetry: TestTelemetry;
 
   before(() => {
     languageSettingsSetup = new ServiceSetup().withHover().withSchemaFileMatch({
       uri: 'http://google.com',
       fileMatch: ['bad-schema.yaml'],
     });
-    const { languageService: langService, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(
-      languageSettingsSetup.languageSettings
-    );
+    const {
+      languageService: langService,
+      languageHandler: langHandler,
+      yamlSettings: settings,
+      telemetry: testTelemetry,
+    } = setupLanguageService(languageSettingsSetup.languageSettings);
     languageService = langService;
     languageHandler = langHandler;
     yamlSettings = settings;
+    telemetry = testTelemetry;
   });
 
   afterEach(() => {
     languageService.deleteSchema(SCHEMA_ID);
   });
 
-  describe('Hover', function () {
-    function parseSetup(content: string, position): Promise<Hover> {
-      const testTextDocument = setupSchemaIDTextDocument(content);
-      yamlSettings.documents = new TextDocumentTestManager();
-      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
-      return languageHandler.hoverHandler({
-        position: testTextDocument.positionAt(position),
-        textDocument: testTextDocument,
-      });
-    }
+  function parseSetup(content: string, position): Promise<Hover> {
+    const testTextDocument = setupSchemaIDTextDocument(content);
+    yamlSettings.documents = new TextDocumentTestManager();
+    (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+    return languageHandler.hoverHandler({
+      position: testTextDocument.positionAt(position),
+      textDocument: testTextDocument,
+    });
+  }
 
+  describe('Hover', function () {
     it('Hover on key on root', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
@@ -454,6 +460,31 @@ storage:
       );
     });
 
+    it('Hover on property next value on null', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          childObject: {
+            type: 'object',
+            description: 'childObject description',
+            properties: {
+              prop: {
+                type: 'string',
+                description: 'should return this description',
+              },
+            },
+          },
+        },
+      });
+      const content = 'childObject:\r\n  prop:\r\n  ';
+      const result = await parseSetup(content, 16);
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
     it('should work with bad schema', async () => {
       const doc = setupSchemaIDTextDocument('foo:\n bar', 'bad-schema.yaml');
       yamlSettings.documents = new TextDocumentTestManager();
@@ -463,6 +494,16 @@ storage:
         textDocument: doc,
       });
 
+      expect(result).to.be.null;
+    });
+  });
+
+  describe('Bug fixes', () => {
+    it('should convert binary data correctly', async () => {
+      const content =
+        'foo: [ !!binary R0lGODlhDAAMAIQAAP//9/X17unp5WZmZgAAAOfn515eXvPz7Y6OjuDg4J+fn5OTk6enp56enmleECcgggoBADs= ]\n';
+      const result = await parseSetup(content, 20);
+      expect(telemetry.messages).to.be.empty;
       expect(result).to.be.null;
     });
   });

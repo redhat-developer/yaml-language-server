@@ -37,6 +37,9 @@ export interface Settings {
     'editor.insertSpaces': boolean;
     'editor.formatOnType': boolean;
   };
+  vscodeEditor: {
+    detectIndentation: boolean;
+  };
 }
 
 export interface JSONSchemaSettings {
