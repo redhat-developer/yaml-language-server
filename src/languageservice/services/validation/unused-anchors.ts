@@ -41,7 +41,6 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
           );
           const warningDiagnostic = Diagnostic.create(range, `Unused anchor "${aToken.source}"`, DiagnosticSeverity.Hint, 0);
           warningDiagnostic.tags = [DiagnosticTag.Unnecessary];
-          warningDiagnostic.data = { name: aToken.source };
           result.push(warningDiagnostic);
         }
       }
