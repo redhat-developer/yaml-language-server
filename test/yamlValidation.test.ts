@@ -61,7 +61,7 @@ describe('YAML Validation Tests', () => {
       const result = await parseSetup(yaml);
       expect(result).is.not.empty;
       expect(result.length).to.be.equal(1);
-      expect(result[0]).deep.equal(createUnusedAnchorDiagnostic('Unused anchor "&bar"', '&bar', 0, 5, 0, 9));
+      expect(result[0]).deep.equal(createUnusedAnchorDiagnostic('Unused anchor "&bar"', 0, 5, 0, 9));
     });
 
     it('should not report used anchor', async () => {
@@ -85,10 +85,10 @@ some:
       expect(result).is.not.empty;
       expect(result.length).to.be.equal(4);
       expect(result).to.include.deep.members([
-        createUnusedAnchorDiagnostic('Unused anchor "&bar"', '&bar', 0, 5, 0, 9),
-        createUnusedAnchorDiagnostic('Unused anchor "&a"', '&a', 4, 2, 4, 4),
-        createUnusedAnchorDiagnostic('Unused anchor "&aa"', '&aa', 5, 0, 5, 3),
-        createUnusedAnchorDiagnostic('Unused anchor "&e"', '&e', 8, 4, 8, 6),
+        createUnusedAnchorDiagnostic('Unused anchor "&bar"', 0, 5, 0, 9),
+        createUnusedAnchorDiagnostic('Unused anchor "&a"', 4, 2, 4, 4),
+        createUnusedAnchorDiagnostic('Unused anchor "&aa"', 5, 0, 5, 3),
+        createUnusedAnchorDiagnostic('Unused anchor "&e"', 8, 4, 8, 6),
       ]);
     });
   });

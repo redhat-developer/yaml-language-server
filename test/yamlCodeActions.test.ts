@@ -158,7 +158,7 @@ describe('CodeActions Tests', () => {
   describe('Remove Unused Anchor', () => {
     it('should generate proper action', () => {
       const doc = setupTextDocument('foo: &bar bar\n');
-      const diagnostics = [createUnusedAnchorDiagnostic('Unused anchor "&bar"', '&bar', 0, 5, 0, 9)];
+      const diagnostics = [createUnusedAnchorDiagnostic('Unused anchor "&bar"', 0, 5, 0, 9)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
         range: undefined,
@@ -172,7 +172,7 @@ describe('CodeActions Tests', () => {
 
     it('should delete all whitespace after unused anchor', () => {
       const doc = setupTextDocument('foo: &bar   \tbar\n');
-      const diagnostics = [createUnusedAnchorDiagnostic('Unused anchor "&bar"', '&bar', 0, 5, 0, 9)];
+      const diagnostics = [createUnusedAnchorDiagnostic('Unused anchor "&bar"', 0, 5, 0, 9)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
         range: undefined,
