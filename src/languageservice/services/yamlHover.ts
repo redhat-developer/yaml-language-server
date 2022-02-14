@@ -106,7 +106,7 @@ export class YAMLHover {
           enumValue: string | undefined = undefined;
         matchingSchemas.every((s) => {
           if (s.node === node && !s.inverted && s.schema) {
-            title = title || s.schema.title;
+            title = title || s.schema.title || s.schema.closestTitle;
             markdownDescription = markdownDescription || s.schema.markdownDescription || toMarkdown(s.schema.description);
             if (s.schema.enum) {
               const idx = s.schema.enum.indexOf(getNodeValue(node));

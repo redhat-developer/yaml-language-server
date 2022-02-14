@@ -48,6 +48,7 @@ const parentCompletionKind = CompletionItemKind.Class;
 
 interface ParentCompletionItemOptions {
   schemaType: string;
+  schemaDescription?: string;
   indent?: string;
   insertTexts?: string[];
 }
@@ -368,6 +369,7 @@ export class YamlCompletion {
             parentCompletion = {
               ...completionItem,
               label: schemaType,
+              documentation: completionItem.parent.schemaDescription,
               sortText: '_' + schemaType, // this parent completion goes first,
               kind: parentCompletionKind,
             };
@@ -842,6 +844,7 @@ export class YamlCompletion {
                       documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
                       parent: {
                         schemaType,
+                        schemaDescription: schema.schema.markdownDescription || schema.schema.description,
                         indent: identCompensation,
                       },
                     });
