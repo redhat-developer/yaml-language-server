@@ -2541,6 +2541,7 @@ describe('Auto Completion Tests', () => {
       },
       required: ['type', 'options'],
       type: 'object',
+      description: 'Description1',
       title: 'Object1',
     };
     const obj2 = {
@@ -2585,7 +2586,7 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('Object1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
           documentation: {
             kind: 'markdown',
-            value: '```yaml\ntype: typeObj1\noptions:\n  label: \n```',
+            value: 'Description1\n\n----\n\n```yaml\ntype: typeObj1\noptions:\n  label: \n```',
           },
           sortText: '_Object1',
         })
@@ -2631,7 +2632,7 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('Object1', 'type: typeObj1\n  options:\n    label: ', 0, 2, 0, 2, 7, 2, {
           documentation: {
             kind: 'markdown',
-            value: '```yaml\n  type: typeObj1\n  options:\n    label: \n```',
+            value: 'Description1\n\n----\n\n```yaml\n  type: typeObj1\n  options:\n    label: \n```',
           },
           sortText: '_Object1',
         })
@@ -2670,7 +2671,7 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('Object1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
           documentation: {
             kind: 'markdown',
-            value: '```yaml\ntype: typeObj1\noptions:\n  label: \n```',
+            value: 'Description1\n\n----\n\n```yaml\ntype: typeObj1\noptions:\n  label: \n```',
           },
           sortText: '_Object1',
         })
@@ -2690,7 +2691,7 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('Object1', 'options:\n  label: ', 1, 0, 1, 0, 7, 2, {
           documentation: {
             kind: 'markdown',
-            value: '```yaml\noptions:\n  label: \n```',
+            value: 'Description1\n\n----\n\n```yaml\noptions:\n  label: \n```',
           },
           sortText: '_Object1',
         })
