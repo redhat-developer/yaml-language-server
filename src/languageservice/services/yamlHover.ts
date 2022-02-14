@@ -102,8 +102,10 @@ export class YAMLHover {
 
         let title: string | undefined = undefined;
         let markdownDescription: string | undefined = undefined;
-        let markdownEnumValueDescription: string | undefined = undefined,
-          enumValue: string | undefined = undefined;
+        let markdownEnumValueDescription: string | undefined = undefined;
+        let enumValue: string | undefined = undefined;
+        const markdownExamples: string[] = [];
+
         matchingSchemas.every((s) => {
           if (s.node === node && !s.inverted && s.schema) {
             title = title || s.schema.title;
@@ -121,6 +123,11 @@ export class YAMLHover {
                   enumValue = JSON.stringify(enumValue);
                 }
               }
+            }
+            if (s.schema.examples) {
+              s.schema.examples.forEach((example) => {
+                markdownExamples.push(JSON.stringify(example));
+              });
             }
           }
           return true;
@@ -141,7 +148,16 @@ export class YAMLHover {
           }
           result += `\`${toMarkdownCodeBlock(enumValue)}\`: ${markdownEnumValueDescription}`;
         }
-
+        if (markdownExamples.length !== 0) {
+          if (result.length > 0) {
+            result += '\n\n';
+          }
+          result += 'Examples: [\n\n';
+          markdownExamples.forEach((example) => {
+            result += `\`\`\`${example}\`\`\`\n\n`;
+          });
+          result += ']';
+        }
         if (result.length > 0 && schema.schema.url) {
           result += `\n\nSource: [${getSchemaName(schema.schema)}](${schema.schema.url})`;
         }
