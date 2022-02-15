@@ -81,7 +81,8 @@
     "build:libs": "yarn compile:umd && yarn compile:esm",
     "compile:umd": "tsc -p ./tsconfig.umd.json",
     "compile:esm": "tsc -p ./tsconfig.esm.json",
-    "check-dependencies": "node ./scripts/check-dependencies.js"
+    "check-dependencies": "node ./scripts/check-dependencies.js",
+    "pull-remote": "git pull https://github.com/redhat-developer/yaml-language-server.git main"
   },
   "nyc": {
     "extension": [
