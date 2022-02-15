@@ -360,6 +360,7 @@ This repository only contains the server implementation. Here are some known cli
 - [vim-lsp](https://github.com/prabirshrestha/vim-lsp) for Vim
 - [LSP-yaml](https://packagecontrol.io/packages/LSP-yaml) for Sublime Text
 - [monaco-yaml](https://monaco-yaml.js.org) for Monaco editor
+- [Vim-EasyComplete](https://github.com/jayli/vim-easycomplete) for Vim/NeoVim
 
 ## Developer Support
 
