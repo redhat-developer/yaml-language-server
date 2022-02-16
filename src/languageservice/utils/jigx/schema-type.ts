@@ -69,7 +69,8 @@ export class Schema_TypeBase implements Instantiable {
     // const propNameQuoted = this.propName ? `\`${this.propName}\`` : '';
     const propNameQuoted = this.propName ? toTsBlock(this.propName + ':' + extraStr, octothorpes.length) : '';
     // const mdTitle = `${octothorpes} ${propNameQuoted}${extraStr}`;
-    const mdTitle = propNameQuoted ? `${octothorpes} ${propNameQuoted}` : '';
+    // const mdTitle = propNameQuoted ? `${octothorpes} ${propNameQuoted}` : '';
+    const mdTitle = propNameQuoted;
     // if we need custom section link...
     // const htmlTitle = `\<h${octothorpes.length} id="${this.propName}" \>${this.propName ? `\<code\>${this.propName}\</code\>` : ''}${extraStr}\</h${octothorpes.length}\>`;
     return mdTitle;
@@ -148,7 +149,9 @@ export class Schema_Object extends Schema_TypeBase implements Schema_HasProperty
     //This is ok because we wont to show props from this object.
     //Only difference is that we need to show typed obj info.
 
-    //note title is title of schema, so if type is defined inside the schema, title is useless
+    if (this.title) {
+      return this.title;
+    }
     //jigx-builder custom: try to build object title instead of 'object' string
     if (this.$id) {
       // return `${this.$id.replace('.schema.json', '')}`;
@@ -168,8 +171,7 @@ export class Schema_Object extends Schema_TypeBase implements Schema_HasProperty
     if (hasRequiredConst.length) {
       return hasRequiredConst[0];
     }
-    const typeStr = this.title || this.type; //object
-    return typeStr;
+    return this.type; //object;
   }
   getTypeMD(subSchemas: [], isForElementTitle = false): string {
     const subType = this.getTypeStr(subSchemas);

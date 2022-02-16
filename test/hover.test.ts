@@ -166,7 +166,16 @@ describe('Hover Tests', () => {
       const content = 'scripts:\n  postinstall: test';
 
       const detail = jigxBranchTest
-        ? '----\nContains custom hooks used to trigger other automated tools\n\n\n| Property | Type | Required | Description |\n| -------- | ---- | -------- | ----------- |\n| postinstall | `string` |  | A script to run after install |\n\n\n----\n\n'
+        ? `----
+##
+>| Property | Type | Required | Description |
+>| -------- | ---- | -------- | ----------- |
+>| postinstall | \`string\` |  | A script to run after install |
+
+
+----
+
+`
         : '';
 
       const firstHover = await parseSetup(content, 3);
@@ -422,7 +431,7 @@ storage:
       });
       const content = 'childObject: \n';
 
-      const detail = jigxBranchTest ? '----\nshould return this description\n\n----\n\n' : '';
+      const detail = ''; //jigxBranchTest ? '----\nshould return this description\n\n----\n\n' : '';
 
       const result = await parseSetup(content, 1);
 

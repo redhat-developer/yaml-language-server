@@ -61,58 +61,51 @@ describe('Hover Tests Detail', () => {
       `description of test
 
 ----
-## 
-\`\`\`ts
- test: \`const1\` | object | Expression | string | obj1
+##
 \`\`\`
-
-
-&ensp;&nbsp;The object must be any of the following types:
-
-### 
-\`\`\`ts
-  test: \`const1\`
+test: \`const1\` | object | Expression | string | obj1
 \`\`\`
+*description of test*
 
-
-### 
-\`\`\`ts
-  test: object
 \`\`\`
-&emsp;&nbsp;description of object with prop list and parent
-
-
-
-| Property | Type | Required | Description |
-| -------- | ---- | -------- | ----------- |
-| list | \`string\` |  |  |
-| parent | \`string\` |  |  |
-
-
-### 
-\`\`\`ts
-  test: Expression
+test: object
 \`\`\`
-&emsp;&nbsp;Expression abcd
+*description of object with prop list and parent*
+
+>| Property | Type | Required | Description |
+>| -------- | ---- | -------- | ----------- |
+>| list | \`string\` |  |  |
+>| parent | \`string\` |  |  |
 
 
-
-| Property | Type | Required | Description |
-| -------- | ---- | -------- | ----------- |
-| =@ctx | \`\` |  |  |
-
-
-### 
-\`\`\`ts
-  test: obj1
 \`\`\`
-&emsp;&nbsp;description of ob1
+test: Expression
+\`\`\`
+*Expression abcd*
+
+>| Property | Type | Required | Description |
+>| -------- | ---- | -------- | ----------- |
+>| =@ctx | \`\` |  |  |
 
 
+\`\`\`
+test: obj1
+\`\`\`
+*description of obj1*
 
-| Property | Type | Required | Description |
-| -------- | ---- | -------- | ----------- |
-| objA | \`object\` | ❕ |  |
+>| Property | Type | Required | Description |
+>| -------- | ---- | -------- | ----------- |
+>| objA | \`Object A\` | ❕ | description of the parent prop |
+
+
+>\`\`\`
+>objA: Object A
+>\`\`\`
+>*description of the parent prop*
+
+>>| Property | Type | Required | Description |
+>>| -------- | ---- | -------- | ----------- |
+>>| propI | \`string\` | ❕ |  |
 
 
 ----

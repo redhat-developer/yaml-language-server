@@ -196,13 +196,15 @@ describe('Auto Completion Tests Extended', () => {
         })
       );
       expect(result.items[4]).to.deep.equal(
-        createExpectedCompletion('objA', '\n  objA:\n    propI: ', 3, 11, 3, 11, 10, 2, { documentation: '' })
+        createExpectedCompletion('objA', '\n  objA:\n    propI: ', 3, 11, 3, 11, 10, 2, {
+          documentation: 'description of the parent prop',
+        })
       );
       expect(result.items[5]).to.deep.equal(
         createExpectedCompletion('obj1', '\n  objA:\n    propI: ', 3, 11, 3, 11, 10, 2, {
           documentation: {
             kind: 'markdown',
-            value: '```yaml\nobjA:\n  propI: \n```',
+            value: 'description of obj1\n\n----\n\n```yaml\nobjA:\n  propI: \n```',
           },
           sortText: '_obj1',
           kind: 7,
@@ -236,13 +238,15 @@ describe('Auto Completion Tests Extended', () => {
         })
       );
       expect(result.items[4]).to.deep.equal(
-        createExpectedCompletion('objA', '\n  objA:\n    propI: ', 3, 12, 3, 12, 10, 2, { documentation: '' })
+        createExpectedCompletion('objA', '\n  objA:\n    propI: ', 3, 12, 3, 12, 10, 2, {
+          documentation: 'description of the parent prop',
+        })
       );
       expect(result.items[5]).to.deep.equal(
         createExpectedCompletion('obj1', '\n  objA:\n    propI: ', 3, 12, 3, 12, 10, 2, {
           documentation: {
             kind: 'markdown',
-            value: '```yaml\nobjA:\n  propI: \n```',
+            value: 'description of obj1\n\n----\n\n```yaml\nobjA:\n  propI: \n```',
           },
           sortText: '_obj1',
           kind: 7,
@@ -272,14 +276,14 @@ describe('Auto Completion Tests Extended', () => {
       );
       expect(result.items[3]).to.deep.equal(
         createExpectedCompletion('objA', 'objA:\n  propI: ', 4, 8, 4, 8, 10, 2, {
-          documentation: '',
+          documentation: 'description of the parent prop',
         })
       );
       expect(result.items[4]).to.deep.equal(
         createExpectedCompletion('obj1', 'objA:\n  propI: ', 4, 8, 4, 8, 10, 2, {
           documentation: {
             kind: 'markdown',
-            value: '```yaml\nobjA:\n  propI: \n```',
+            value: 'description of obj1\n\n----\n\n```yaml\nobjA:\n  propI: \n```',
           },
           sortText: '_obj1',
           kind: 7,

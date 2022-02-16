@@ -170,8 +170,10 @@ export function replaceSpecialToCodeBlock(strWithSpecials: string): string {
 }
 
 export function toTsBlock(code: string, offset = 0): string {
-  const offsetStr = '\n' + new Array(offset).join(' ');
-  return '\n```ts' + offsetStr + replaceSpecialToCodeBlock(code).replace(/\n/g, offsetStr) + '\n```\n';
+  // don't put offset to ts, the tab '>' is added later
+  const offsetStr = '\n' + ' '.repeat(offset);
+  // ```ts doesn't look very well with custom titles
+  return '```' + offsetStr + replaceSpecialToCodeBlock(code).replace(/\n/g, offsetStr) + '\n```';
 }
 
 export function toCodeSingleLine(code: string): string {
@@ -197,4 +199,16 @@ export function stringFormat(str: string, ...params: string[]): string {
  */
 export function simplifyNbsp(str: string): string {
   return str.replace(/&nbsp;&nbsp;&nbsp;&nbsp;/g, '&emsp;').replace(/&nbsp;&nbsp;/g, '&ensp;');
+}
+
+/**
+ *
+ * @param indent 2 is root
+ * @returns
+ */
+export function getIndent(indent: number, useSpace = false): string {
+  if (useSpace) {
+    return simplifyNbsp('&nbsp;'.repeat(indent - 1));
+  }
+  return '>'.repeat(indent - 2);
 }

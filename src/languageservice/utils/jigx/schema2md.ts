@@ -8,9 +8,9 @@ import { Globals } from './globals';
 import {
   char_gt,
   char_lt,
+  getIndent,
   replace,
   replaceSpecialCharsInDescription,
-  simplifyNbsp,
   tableColumnSeparator,
   toCodeSingleLine,
   toTsBlock,
@@ -26,6 +26,7 @@ export class Schema2Md {
   hideText = {
     enum: true,
     objectPropTitle: true,
+    union: true,
   };
   propTable = {
     linePrefix: '',
@@ -54,9 +55,10 @@ export class Schema2Md {
     // octothorpes += '#';
 
     if (schema.type === 'object') {
-      if (schema.description) {
-        text.push(schema.description);
-      }
+      // don't add description at the first level - it's added by yamlHover
+      // if (schema.description) {
+      //   text.push(schema.description);
+      // }
       // if (!this.propTable.linePrefix) {
       //   text.push('Object properties:');
       // }
@@ -91,20 +93,19 @@ export class Schema2Md {
     // const sectionTitle = generateElementTitle(octothorpes, name, schemaType, isRequired, schema);
 
     const schemaTypeTyped = SchemaTypeFactory.CreatePropTypeInstance(schema, name, isRequired);
-    let text = [schemaTypeTyped.getElementTitle(octothorpes, subSchemas, true, this.propTable.styleAsTsBlock)];
+    let text = [schemaTypeTyped.getElementTitle('', subSchemas, true, this.propTable.styleAsTsBlock)];
 
-    const offset = this.propTable.styleAsTsBlock
-      ? octothorpes.replace(/#/g, ' ')
-      : simplifyNbsp('&nbsp;'.repeat(octothorpes.length * 2 - 1)); // move description to the right
-    if (schema.description && octothorpes > this.startOctothorpes) {
-      //don't show description at the first level - it's added by yamlHover
-      if (!this.propTable.styleAsTsBlock) {
-        // text.push(schema.description);
-        const title = text[0].replace('```\n', '```\n' + offset + schema.description.replace(/\n\n/g, '\n\n' + offset) + '\n');
-        text = [title];
+    const offset = getIndent(octothorpes.length, this.propTable.styleAsTsBlock);
+    text[0] = text[0].replace(/^(.*)$/gm, offset + '$1');
+    if (schema.description) {
+      if (this.propTable.styleAsTsBlock) {
+        const description = offset + '//' + schema.description;
+        // put description into block before title
+        text[0] = text[0].replace(/^(```.*)&/m, '$1\n' + description + '\n');
       } else {
-        const title = text[0].replace('```ts\n', '```ts\n' + offset + '//' + schema.description + '\n');
-        text = [title];
+        const description = offset + '*' + schema.description.replace(/\n\n/g, '\n\n' + offset) + '*';
+        // put description to the end of the title after the block
+        text[0] = text[0].replace(/```$/, '```\n' + description);
       }
     }
 
@@ -135,23 +136,25 @@ export class Schema2Md {
       }
 
       if (itemsType && name) {
-        text.push(offset + 'The object is an array with all elements of the type `' + itemsType + '`.');
+        !this.hideText.union && text.push(offset + 'Array with all elements of the type `' + itemsType + '`.');
       } else if (itemsType) {
-        text.push(offset + 'The schema defines an array with all elements of the type `' + itemsType + '`.');
+        !this.hideText.union && text.push(offset + 'Array with all elements of the type `' + itemsType + '`.');
       } else {
         let validationItems = [];
 
         if (schema.items.allOf) {
-          text.push(offset + 'The elements of the array must match *all* of the following properties:');
+          !this.hideText.union && text.push(offset + 'The elements of the array must match *all* of the following properties:');
           validationItems = schema.items.allOf;
         } else if (schema.items.anyOf) {
-          text.push(offset + 'The elements of the array must match *at least one* of the following properties:');
+          !this.hideText.union &&
+            text.push(offset + 'The elements of the array must match *at least one* of the following properties:');
           validationItems = schema.items.anyOf;
         } else if (schema.items.oneOf) {
-          text.push(offset + 'The elements of the array must match *exactly one* of the following properties:');
+          !this.hideText.union &&
+            text.push(offset + 'The elements of the array must match *exactly one* of the following properties:');
           validationItems = schema.items.oneOf;
         } else if (schema.items.not) {
-          text.push(offset + 'The elements of the array must *not* match the following properties:');
+          !this.hideText.union && text.push(offset + 'The elements of the array must *not* match the following properties:');
           validationItems = schema.items.not;
         }
 
@@ -163,7 +166,7 @@ export class Schema2Md {
       }
 
       if (itemsType === 'object') {
-        text.push(offset + 'The array object has the following properties:');
+        !this.hideText.union && text.push(offset + 'The array object has the following properties:');
         let textTmp: string[] = [];
         this.generatePropertySection(octothorpes, schema.items, subSchemas).forEach((section) => {
           textTmp = textTmp.concat(section);
@@ -174,9 +177,9 @@ export class Schema2Md {
       }
     } else if (schema.oneOf) {
       if (octothorpes.length < this.maxLevel) {
-        text.push(offset + 'The object must be one of the following types:');
+        !this.hideText.union && text.push(offset + 'The object must be one of the following types:');
         const oneOfArr = schema.oneOf.map((oneOf: any) => {
-          return this.generateSchemaSectionText(octothorpes + '#', name, false, oneOf, subSchemas);
+          return this.generateSchemaSectionText(octothorpes, name, false, oneOf, subSchemas);
         });
         oneOfArr.forEach((type: string) => {
           text = text.concat(type);
@@ -184,9 +187,9 @@ export class Schema2Md {
       }
     } else if (schema.anyOf) {
       if (octothorpes.length < this.maxLevel) {
-        text.push(offset + 'The object must be any of the following types:');
+        !this.hideText.union && text.push(offset + 'The object must be any of the following types:');
         const anyOfArr = schema.anyOf.map((anyOf: any) => {
-          return this.generateSchemaSectionText(octothorpes + '#', name, false, anyOf, subSchemas);
+          return this.generateSchemaSectionText(octothorpes, name, false, anyOf, subSchemas);
         });
         anyOfArr.forEach((type: string) => {
           text = text.concat(type);
@@ -196,15 +199,12 @@ export class Schema2Md {
       if (!this.hideText.enum) {
         text.push(offset + 'This element must be one of the following enum values:');
       }
-      text.push(
-        schema.enum
-          .map((enumItem: string) => {
-            return '* `' + enumItem + '`';
-          })
-          .join('\n')
-      );
+      text.push(offset + '`' + schema.enum.join(' | ') + '`');
     } else if (schema.const) {
       // const is already in text from the beginning
+      if (this.dontPrintSimpleTypes) {
+        return [];
+      }
     } else {
       if (this.dontPrintSimpleTypes) {
         return [];
@@ -308,6 +308,8 @@ export class Schema2Md {
     schema: JSONSchemaWithProblems,
     subSchemas: []
   ): string {
+    // auto indent property table by 1 level
+    octothorpes = octothorpes + '#';
     const type = SchemaTypeFactory.CreatePropTypeInstance(schema, name, isRequired);
     // if (hasTypePropertyTable(type)) {
     if (type instanceof Schema_Object) {
@@ -347,7 +349,9 @@ export class Schema2Md {
       if (this.propTable.styleAsTsBlock) {
         return toTsBlock(replace(this.tsBlockTmp, { rows: propTableTmp.join('\n') }), octothorpes.length);
       } else {
-        const ret = propTableTmp.reduce((p, n) => `${p}${this.propTable.linePrefix}${n}\n`, '\n'); // '\n' + propTableTmp.join('\n');
+        const indent = getIndent(octothorpes.length);
+
+        const ret = propTableTmp.reduce((p, n) => `${p}${indent}${this.propTable.linePrefix}${n}\n`, ''); // '\n' + propTableTmp.join('\n');
         return ret;
       }
     }

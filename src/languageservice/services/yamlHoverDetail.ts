@@ -146,7 +146,7 @@ export class YamlHoverDetail {
         const matchingSchemasDistinct = distinctSchemas(matchingSchemas);
         matchingSchemasDistinct.every((s) => {
           const hover = {
-            title: s.schema.title,
+            title: s.schema.title || s.schema.closestTitle,
             markdownDescription: s.schema.markdownDescription || toMarkdown(s.schema.description),
             markdownEnumValueDescription: undefined,
             enumValue: undefined,
@@ -187,7 +187,7 @@ export class YamlHoverDetail {
             .map((h) => toMarkdown(h.title))
             .join(' | ');
           if (titleAll) {
-            results.push('one of: ' + titleAll);
+            results.push('one of: `' + titleAll + '`');
           }
         }
         for (const hover of hoverRes) {
@@ -209,7 +209,10 @@ export class YamlHoverDetail {
           }
 
           if (this.appendTypes && hover.propertyMd) {
-            result += newLineWithHr + hover.propertyMd;
+            result +=
+              newLineWithHr +
+              '##\n' + // to put some space between horizontal line and first block
+              hover.propertyMd;
           }
           if (result) {
             results.push(result);

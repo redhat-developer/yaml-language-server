@@ -21,6 +21,8 @@
       "properties": {
         "objA": {
           "type": "object",
+          "title": "Object A",
+          "description": "description of the parent prop",
           "properties": {
             "propI": {
               "type": "string"
@@ -31,7 +33,7 @@
       },
       "required": ["objA"],
       "type": "object",
-      "description": "description of ob1"
+      "description": "description of obj1"
     }
   },
   "properties": {
