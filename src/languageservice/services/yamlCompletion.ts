@@ -167,8 +167,10 @@ export class YamlCompletion {
     firstPrefix = modificationForInvoke,
     eachLinePrefix = ''
   ): Promise<CompletionList> {
-    this.updateTextDocument(document, [{ range: Range.create(position, position), text: modificationForInvoke }]);
-    const resultLocal = await this.doCompleteWithDisabledAdditionalProps(document, newPosition, isKubernetes);
+    const newDocument = this.updateTextDocument(document, [
+      { range: Range.create(position, position), text: modificationForInvoke },
+    ]);
+    const resultLocal = await this.doCompleteWithDisabledAdditionalProps(newDocument, newPosition, isKubernetes);
     resultLocal.items.map((item) => {
       let firstPrefixLocal = firstPrefix;
       // if there is single space (space after colon) and insert text already starts with \n (it's a object), don't add space
@@ -186,8 +188,8 @@ export class YamlCompletion {
         }
       }
     });
-    // revert document edit
-    this.updateTextDocument(document, [{ range: Range.create(position, newPosition), text: '' }]);
+    // remove tmp document
+    this.yamlDocument.delete(newDocument);
 
     if (!result.items.length) {
       result = resultLocal;
@@ -234,11 +236,9 @@ export class YamlCompletion {
     newText = `\n${lineIndent}${this.indentation}${newText}`;
     const newStartPosition = Position.create(position.line, inlineSymbolPosition);
     const removedCount = originalText.length; // position.character - newStartPosition.character;
-    const previousContent = document.getText();
-    this.updateTextDocument(document, [{ range: Range.create(newStartPosition, position), text: newText }]);
-    const newPosition = document.positionAt(offset - removedCount + newText.length);
-
-    const resultLocal = await this.doCompleteWithDisabledAdditionalProps(document, newPosition, isKubernetes);
+    const newDocument = this.updateTextDocument(document, [{ range: Range.create(newStartPosition, position), text: newText }]);
+    const newPosition = newDocument.positionAt(offset - removedCount + newText.length);
+    const resultLocal = await this.doCompleteWithDisabledAdditionalProps(newDocument, newPosition, isKubernetes);
 
     resultLocal.items.forEach((inlineItem) => {
       let inlineText = inlineItem.insertText;
@@ -253,10 +253,8 @@ export class YamlCompletion {
       }
     });
 
-    // revert document edit
-    // this.updateTextDocument(document, [{ range: Range.create(newStartPosition, newPosition), text: originalText }]);
-    const fullRange = Range.create(document.positionAt(0), document.positionAt(document.getText().length + 1));
-    this.updateTextDocument(document, [{ range: fullRange, text: previousContent }]);
+    // remove tmp document
+    this.yamlDocument.delete(newDocument);
 
     return resultLocal; // don't merge with anything, inline should be combined with others
   }
@@ -271,9 +269,18 @@ export class YamlCompletion {
     }
   }
 
-  private updateTextDocument(document: TextDocument, changes: TextDocumentContentChangeEvent[]): void {
-    TextDocument.update(document, changes, document.version + 1);
-    this.yamlDocument.delete(document);
+  private addUniquePostfix(uri: string): string {
+    return uri.replace(/\.([^.]+)$/, `_tmp_${Math.random().toString(36).substring(2)}.$1`);
+  }
+  private removeUniquePostfix(uri: string): string {
+    return uri.replace(/_tmp_[0-9a-z]+\.([^.]+)$/, '.$1');
+  }
+  private updateTextDocument(document: TextDocument, changes: TextDocumentContentChangeEvent[]): TextDocument {
+    // generates unique name for the file. Note that this has impact to config
+    const tmpUri = this.addUniquePostfix(document.uri);
+    const newDoc = TextDocument.create(tmpUri, document.languageId, -1, document.getText());
+    TextDocument.update(newDoc, changes, 0);
+    return newDoc;
   }
 
   private async doCompleteWithDisabledAdditionalProps(
@@ -444,7 +451,8 @@ export class YamlCompletion {
     }
 
     try {
-      const schema = await this.schemaService.getSchemaForResource(document.uri, currentDoc);
+      const documentUri = this.removeUniquePostfix(document.uri); // return back the original name to find schema
+      const schema = await this.schemaService.getSchemaForResource(documentUri, currentDoc);
 
       if (!schema || schema.errors.length) {
         if (position.line === 0 && position.character === 0 && !isModeline(lineContent)) {
