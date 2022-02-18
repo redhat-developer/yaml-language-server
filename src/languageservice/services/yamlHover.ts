@@ -152,11 +152,10 @@ export class YAMLHover {
           if (result.length > 0) {
             result += '\n\n';
           }
-          result += 'Examples: [\n\n';
+          result += 'Examples:';
           markdownExamples.forEach((example) => {
-            result += `\`\`\`${example}\`\`\`\n\n`;
+            result += `\n\n\`\`\`${example}\`\`\``;
           });
-          result += ']';
         }
         if (result.length > 0 && schema.schema.url) {
           result += `\n\nSource: [${getSchemaName(schema.schema)}](${schema.schema.url})`;

@@ -447,13 +447,11 @@ storage:
         (result.contents as MarkupContent).value,
         `should return this description
 
-Examples: [
+Examples:
 
 \`\`\`"cat"\`\`\`
 
 \`\`\`"dog"\`\`\`
-
-]
 
 Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
