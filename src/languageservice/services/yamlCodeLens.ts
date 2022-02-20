@@ -24,23 +24,22 @@ export class YamlCodeLens {
     const result = [];
     try {
       const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
+      let schemaUrls = new Map<string, JSONSchema>();
       for (const currentYAMLDoc of yamlDocument.documents) {
         const schema = await this.schemaService.getSchemaForResource(document.uri, currentYAMLDoc);
         if (schema?.schema) {
-          const schemaUrls = getSchemaUrls(schema?.schema);
-          if (schemaUrls.size === 0) {
-            continue;
-          }
-          for (const urlToSchema of schemaUrls) {
-            const lens = CodeLens.create(Range.create(0, 0, 0, 0));
-            lens.command = {
-              title: getCommandTitle(urlToSchema[0], urlToSchema[1]),
-              command: YamlCommands.JUMP_TO_SCHEMA,
-              arguments: [urlToSchema[0]],
-            };
-            result.push(lens);
-          }
+          // merge schemas from all docs to avoid duplicates
+          schemaUrls = new Map([...getSchemaUrls(schema?.schema), ...schemaUrls]);
         }
+      }
+      for (const urlToSchema of schemaUrls) {
+        const lens = CodeLens.create(Range.create(0, 0, 0, 0));
+        lens.command = {
+          title: getCommandTitle(urlToSchema[0], urlToSchema[1]),
+          command: YamlCommands.JUMP_TO_SCHEMA,
+          arguments: [urlToSchema[0]],
+        };
+        result.push(lens);
       }
     } catch (err) {
       this.telemetry.sendError('yaml.codeLens.error', { error: convertErrorToTelemetryMsg(err) });
