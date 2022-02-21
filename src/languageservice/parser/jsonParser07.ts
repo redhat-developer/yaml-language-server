@@ -651,10 +651,12 @@ function validate(
       /* when schema type is object and it contains oneOf then needs to validate that particular types
         reference issue 692
       */
-      if (schema.type === 'object' && typeof schema.additionalProperties === 'object' && schema.additionalProperties.oneOf) {
+      const type = Array.isArray(schema.type) ? undefined : schema.type;
+      if (type === 'object' && typeof schema.additionalProperties === 'object' && schema.additionalProperties.oneOf) {
         return true;
+      } else if (type) {
+        return matchesType(type);
       }
-      return node.type === schema.type || (schema.type === 'integer' && node.type === 'number' && node.isInteger);
     }
 
     if (Array.isArray(schema.type)) {
