@@ -123,7 +123,7 @@ export class YamlCompletion {
     // as we modify AST for completion, we need to use copy of original document
     currentDoc = currentDoc.clone();
 
-    let [node, foundByClosest] = currentDoc.getNodeFromPosition(offset, textBuffer);
+    let [node, foundByClosest] = currentDoc.getNodeFromPosition(offset, textBuffer, this.indentation.length);
 
     const currentWord = this.getCurrentWord(document, offset);
 

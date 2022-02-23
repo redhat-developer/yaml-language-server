@@ -2066,6 +2066,40 @@ describe('Auto Completion Tests', () => {
       expect(completion.items[0].insertText).eq('fooBar:\n    name: $1\n    aaa:\n      - $2');
     });
 
+    it('auto completion based on the list indentation', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            prop1: {
+              type: 'string',
+            },
+            prop2: {
+              type: 'string',
+            },
+            Object: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  env_prop1: {
+                    type: 'string',
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const content = '- prop1: value\n  object:\n  - env_prop1: value\n  ';
+      const completion = await parseSetup(content, 49);
+      expect(completion.items).lengthOf(2);
+      expect(completion.items[0].label).eq('prop2');
+      expect(completion.items[0].insertText).eq('prop2: ');
+    });
+
     it('should complete string which contains number in default value', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
