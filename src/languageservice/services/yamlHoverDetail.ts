@@ -21,6 +21,7 @@ import { Telemetry } from '../../languageserver/telemetry';
 import { ASTNode, MarkedString } from 'vscode-json-languageservice';
 import { Schema2Md } from '../utils/jigx/schema2md';
 import { decycle } from '../utils/jigx/cycle';
+import { YamlCommands } from '../../commands';
 
 interface YamlHoverDetailResult {
   /**
@@ -225,7 +226,12 @@ export class YamlHoverDetail {
           if (results.some((l) => l.includes(newLineWithHr))) {
             results.push('----');
           }
-          const source = resSchemas.map((schema) => `Source: [${getSchemaName(schema)}](${schema.url})`);
+
+          const source = resSchemas.map((schema) => {
+            const commandUri = `command:${YamlCommands.JUMP_TO_SCHEMA}?${encodeURIComponent(JSON.stringify(schema.url))}`;
+            const content = `Source: [${schema.closestTitle}](${commandUri})`;
+            return content;
+          });
           results.push(source.join('\n\n'));
         }
 

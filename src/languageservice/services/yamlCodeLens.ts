@@ -15,6 +15,8 @@ import { CodeLensParams } from 'vscode-languageserver-protocol';
 import { Telemetry } from '../../languageserver/telemetry';
 import { getSchemaUrls } from '../utils/schemaUrls';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
+import { getSchemaTypeName } from '../utils/schemaUtils';
+import { Globals } from '../utils/jigx/globals';
 
 export class YamlCodeLens {
   constructor(private schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {}
@@ -54,6 +56,13 @@ export class YamlCodeLens {
 }
 
 function getCommandTitle(url: string, schema: JSONSchema): string {
+  // jigx custom
+  if (url.startsWith(Globals.dynamicSchema)) {
+    const name = getSchemaTypeName(schema);
+    return name;
+  }
+  // end
+
   const uri = URI.parse(url);
   let baseName = path.basename(uri.fsPath);
   if (!path.extname(uri.fsPath)) {

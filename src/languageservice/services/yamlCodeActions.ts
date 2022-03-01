@@ -20,7 +20,6 @@ import { YamlCommands } from '../../commands';
 import * as path from 'path';
 import { TextBuffer } from '../utils/textBuffer';
 import { LanguageSettings } from '../yamlLanguageService';
-import { Globals } from '../utils/jigx/globals';
 import { YAML_SOURCE } from '../parser/jsonParser07';
 import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings';
 
@@ -60,10 +59,7 @@ export class YamlCodeActions {
     for (const diagnostic of diagnostics) {
       const schemaUri = (diagnostic.data as YamlDiagnosticData)?.schemaUri || [];
       for (const schemaUriStr of schemaUri) {
-        if (
-          schemaUriStr &&
-          (schemaUriStr.startsWith('file') || schemaUriStr.startsWith('https') || schemaUriStr.startsWith(Globals.dynamicSchema))
-        ) {
+        if (schemaUriStr) {
           if (!schemaUriToDiagnostic.has(schemaUriStr)) {
             schemaUriToDiagnostic.set(schemaUriStr, []);
           }

@@ -14,8 +14,16 @@ export function registerCommands(commandExecutor: CommandExecutor, connection: C
     if (!uri) {
       return;
     }
-    // TODO Petr check
-    // if (!uri.startsWith('file') && !uri.startsWith(Globals.dynamicSchema)) {
+    // jigx custom
+    if (uri.startsWith(Globals.dynamicSchema)) {
+      const result = await connection.window.showDocument({ uri, external: false, takeFocus: true });
+      if (!result) {
+        connection.window.showErrorMessage(`Cannot open ${uri}`);
+      }
+      return;
+    }
+    // end
+
     // if uri points to local file of its a windows path
     if (!uri.startsWith('file') && !/^[a-z]:[\\/]/i.test(uri)) {
       const origUri = URI.parse(uri);
