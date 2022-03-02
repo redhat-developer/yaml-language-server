@@ -138,7 +138,7 @@ Source: [default_schema_id.yaml](file:///default_schema_id.yaml)`
     assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
     assert.strictEqual(
       (result.contents as MarkupContent).value,
-      `A script to run after install\n\nSource: [schema.json](command:jumpToSchema?%22dynamic-schema%3A%2F%2Fschema.json%22)`
+      `A script to run after install\n\nSource: [schema.json](dynamic-schema://schema.json)`
     );
   });
 });

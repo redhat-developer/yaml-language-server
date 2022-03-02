@@ -229,12 +229,7 @@ export class YamlHoverDetail {
           }
 
           const source = resSchemas.map((schema) => {
-            if (schema.url.startsWith(Globals.dynamicSchema)) {
-              const commandUri = `command:${YamlCommands.JUMP_TO_SCHEMA}?${encodeURIComponent(JSON.stringify(schema.url))}`;
-              const content = `Source: [${schema.closestTitle || getSchemaName(schema)}](${commandUri})`;
-              return content;
-            }
-            return `Source: [${getSchemaName(schema)}](${schema.url})`;
+            return `Source: [${getSchemaName(schema) || schema.closestTitle}](${schema.url})`;
           });
           results.push(source.join('\n\n'));
         }
