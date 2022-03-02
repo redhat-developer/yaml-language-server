@@ -22,6 +22,7 @@ import { ASTNode, MarkedString } from 'vscode-json-languageservice';
 import { Schema2Md } from '../utils/jigx/schema2md';
 import { decycle } from '../utils/jigx/cycle';
 import { YamlCommands } from '../../commands';
+import { Globals } from '../utils/jigx/globals';
 
 interface YamlHoverDetailResult {
   /**
@@ -228,9 +229,12 @@ export class YamlHoverDetail {
           }
 
           const source = resSchemas.map((schema) => {
-            const commandUri = `command:${YamlCommands.JUMP_TO_SCHEMA}?${encodeURIComponent(JSON.stringify(schema.url))}`;
-            const content = `Source: [${schema.closestTitle}](${commandUri})`;
-            return content;
+            if (schema.url.startsWith(Globals.dynamicSchema)) {
+              const commandUri = `command:${YamlCommands.JUMP_TO_SCHEMA}?${encodeURIComponent(JSON.stringify(schema.url))}`;
+              const content = `Source: [${schema.closestTitle || getSchemaName(schema)}](${commandUri})`;
+              return content;
+            }
+            return `Source: [${getSchemaName(schema)}](${schema.url})`;
           });
           results.push(source.join('\n\n'));
         }
@@ -280,7 +284,7 @@ function getSchemaName(schema: JSONSchema): string {
   const urlString = schema.url;
   if (urlString) {
     const url = URI.parse(urlString);
-    result = path.basename(url.fsPath);
+    result = path.basename(url.fsPath || url.authority);
   } else if (schema.title) {
     result = schema.title;
   }

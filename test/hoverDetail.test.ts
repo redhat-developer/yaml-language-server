@@ -34,8 +34,8 @@ describe('Hover Tests Detail', () => {
     languageService.deleteSchema(SCHEMA_ID);
   });
 
-  function parseSetup(content: string, position): Promise<Hover> {
-    const testTextDocument = setupSchemaIDTextDocument(content);
+  function parseSetup(content: string, position, customSchema?: string): Promise<Hover> {
+    const testTextDocument = setupSchemaIDTextDocument(content, customSchema);
     yamlSettings.documents = new TextDocumentTestManager();
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
     return languageHandler.hoverHandler({
@@ -115,5 +115,30 @@ Source: [default_schema_id.yaml](file:///default_schema_id.yaml)`
     // related to test 'Hover on null property in nested object'
     assert.notStrictEqual((hover2.contents as MarkupContent).value, '', 'hover does not work with new line');
     assert.strictEqual((hover.contents as MarkupContent).value, (hover2.contents as MarkupContent).value);
+  });
+  it('Source command', async () => {
+    languageService.addSchema('dynamic-schema://schema.json', {
+      type: 'object',
+      properties: {
+        scripts: {
+          type: 'object',
+          properties: {
+            postinstall: {
+              type: 'string',
+              description: 'A script to run after install',
+            },
+          },
+        },
+      },
+    });
+    const content = 'scripts:\n  postinstall: test';
+    const result = await parseSetup(content, 26, 'dynamic-schema://schema.json');
+
+    assert.strictEqual(MarkupContent.is(result.contents), true);
+    assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+    assert.strictEqual(
+      (result.contents as MarkupContent).value,
+      `A script to run after install\n\nSource: [schema.json](command:jumpToSchema?%22dynamic-schema%3A%2F%2Fschema.json%22)`
+    );
   });
 });
