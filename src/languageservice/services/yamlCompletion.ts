@@ -538,7 +538,7 @@ export class YamlCompletion {
     const hasColon = lineContent.indexOf(':') !== -1;
 
     const nodeParent = doc.getParent(node);
-
+    const isArray = nodeParent && isSeq(nodeParent) && nodeParent.items.length > 0 ? true : false;
     const matchOriginal = matchingSchemas.find((it) => it.node.internalNode === originalNode && it.schema.properties);
     for (const schema of matchingSchemas) {
       if (
@@ -663,7 +663,7 @@ export class YamlCompletion {
         //    - item1
         // it will treated as a property key since `:` has been appended
         if (nodeParent && isSeq(nodeParent) && schema.schema.type !== 'object') {
-          this.addSchemaValueCompletions(schema.schema, separatorAfter, collector, {});
+          this.addSchemaValueCompletions(schema.schema, separatorAfter, collector, {}, isArray);
         }
       }
 
@@ -1137,10 +1137,11 @@ export class YamlCompletion {
     schema: JSONSchemaRef,
     separatorAfter: string,
     collector: CompletionsCollector,
-    types: unknown
+    types: unknown,
+    isArray?: boolean
   ): void {
     if (typeof schema === 'object') {
-      this.addEnumValueCompletions(schema, separatorAfter, collector);
+      this.addEnumValueCompletions(schema, separatorAfter, collector, isArray);
       this.addDefaultValueCompletions(schema, separatorAfter, collector);
       this.collectTypes(schema, types);
       if (Array.isArray(schema.allOf)) {
@@ -1231,8 +1232,13 @@ export class YamlCompletion {
     }
   }
 
-  private addEnumValueCompletions(schema: JSONSchema, separatorAfter: string, collector: CompletionsCollector): void {
-    if (isDefined(schema.const)) {
+  private addEnumValueCompletions(
+    schema: JSONSchema,
+    separatorAfter: string,
+    collector: CompletionsCollector,
+    isArray: boolean
+  ): void {
+    if (isDefined(schema.const) && !isArray) {
       collector.add({
         kind: this.getSuggestionKind(schema.type),
         label: this.getLabelForValue(schema.const),

@@ -1518,6 +1518,29 @@ describe('Auto Completion Tests', () => {
       );
     });
 
+    it('Array completion - should not suggest const', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                constProp: {
+                  type: 'string',
+                  const: 'const1',
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = 'test:\n  - constProp:\n    ';
+      const result = await parseSetup(content, content.length);
+      expect(result.items.length).to.be.equal(0);
+    });
+
     it('Object in array with 4 space indentation check', async () => {
       const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('    ');
       languageService.configure(languageSettingsSetup.languageSettings);
