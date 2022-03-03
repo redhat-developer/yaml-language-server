@@ -1,6 +1,9 @@
 import { JSONSchema } from '../jsonSchema';
 
 export function getSchemaTypeName(schema: JSONSchema): string {
+  if (schema.title) {
+    return schema.title;
+  }
   if (schema.$id) {
     const type = getSchemaRefTypeTitle(schema.$id);
     return type;
@@ -9,7 +12,7 @@ export function getSchemaTypeName(schema: JSONSchema): string {
     const type = getSchemaRefTypeTitle(schema.$ref || schema._$ref);
     return type;
   }
-  const typeStr = schema.title || (Array.isArray(schema.type) ? schema.type.join(' | ') : schema.type); //object
+  const typeStr = schema.closestTitle || (Array.isArray(schema.type) ? schema.type.join(' | ') : schema.type); //object
   return typeStr;
 }
 

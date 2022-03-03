@@ -172,13 +172,13 @@ export class YamlCodeActions {
     const buffer = new TextBuffer(document);
     for (const diag of diagnostics) {
       if (diag.message.startsWith('Unused anchor') && diag.source === YAML_SOURCE) {
-        const { name } = diag.data as { name: string };
         const range = Range.create(diag.range.start, diag.range.end);
+        const actual = buffer.getText(range);
         const lineContent = buffer.getLineContent(range.end.line);
         const lastWhitespaceChar = getFirstNonWhitespaceCharacterAfterOffset(lineContent, range.end.character);
         range.end.character = lastWhitespaceChar;
         const action = CodeAction.create(
-          `Delete unused anchor: ${name}`,
+          `Delete unused anchor: ${actual}`,
           createWorkspaceEdit(document.uri, [TextEdit.del(range)]),
           CodeActionKind.QuickFix
         );
