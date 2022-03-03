@@ -75,6 +75,21 @@ describe('YAML CodeLens', () => {
     );
   });
 
+  it('should place one CodeLens at beginning of the file for multiple documents', async () => {
+    const doc = setupTextDocument('foo: bar\n---\nfoo: bar');
+    const schema: JSONSchema = {
+      url: 'some://url/to/schema.json',
+    };
+    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
+    const result = await codeLens.getCodeLens(doc, { textDocument: { uri: doc.uri } });
+    expect(result.length).to.eq(1);
+    expect(result[0].range).is.deep.equal(Range.create(0, 0, 0, 0));
+    expect(result[0].command).is.deep.equal(
+      createCommand('schema.json', YamlCommands.JUMP_TO_SCHEMA, 'some://url/to/schema.json')
+    );
+  });
+
   it('command name should contains schema title', async () => {
     const doc = setupTextDocument('foo: bar');
     const schema = {

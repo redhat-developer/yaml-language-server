@@ -469,6 +469,37 @@ storage:
       );
     });
 
+    it.skip('Hover works on examples', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            type: 'string',
+            description: 'should return this description',
+            enum: ['cat', 'dog'],
+            examples: ['cat', 'dog'],
+          },
+        },
+      });
+      const content = 'animal:\n  cat';
+      const result = await parseSetup(content, 12);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+Examples:
+
+\`\`\`"cat"\`\`\`
+
+\`\`\`"dog"\`\`\`
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
     it('Hover on property next value on null', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',

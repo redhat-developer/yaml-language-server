@@ -41,7 +41,6 @@ export function createDiagnosticWithData(
 
 export function createUnusedAnchorDiagnostic(
   message: string,
-  name: string,
   startLine: number,
   startCharacter: number,
   endLine: number,
@@ -57,7 +56,6 @@ export function createUnusedAnchorDiagnostic(
     'YAML'
   );
   diagnostic.tags = [DiagnosticTag.Unnecessary];
-  diagnostic.data = { name };
   return diagnostic;
 }
 
