@@ -551,7 +551,7 @@ describe('Auto Completion Tests', () => {
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
-            assert.equal(result.items[0].insertText, '\n  myOtherSample: ');
+            assert.equal(result.items[0].insertText, '\n  myOtherSample:');
             assert.equal((result.items[0].documentation as MarkupContent).value, 'snippet\n```yaml\nmyOtherSample:\n```\n');
           })
           .then(done, done);

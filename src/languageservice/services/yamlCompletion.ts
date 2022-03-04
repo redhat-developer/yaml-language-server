@@ -1318,6 +1318,7 @@ export class YamlCompletion {
         collector.add({
           kind: s.suggestionKind || this.getSuggestionKind(type),
           label,
+          sortText: s.sortText || s.label,
           documentation: this.fromMarkup(s.markdownDescription) || s.description,
           insertText,
           insertTextFormat: InsertTextFormat.Snippet,
