@@ -99,6 +99,56 @@
         }
       ]
     },
+    "arrayStringSnippet": {
+      "type": "object",
+      "defaultSnippets": [
+        {
+          "label": "Array",
+          "body": {
+            "fruits": ["banana", "orange"]
+          }
+        }
+      ]
+    },
+    "arrayObjectSnippet": {
+      "type": "object",
+      "defaultSnippets": [
+        {
+          "label": "Array",
+          "body": {
+            "apple": [
+              {
+                "name": "source"
+              },
+              {
+                "name": "source2"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "arrayNestedObjectSnippet": {
+      "type": "object",
+      "defaultSnippets": [
+        {
+          "label": "Array Object Snippet",
+          "description": "Task",
+          "sortText": "custom",
+          "body": {
+            "apple": [
+              {
+                "name": "source",
+                "resource": {
+                  "prop1": "value1",
+                  "prop2": "value2"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
     "simpleBooleanString": {
       "type": "object",
       "defaultSnippets": [

@@ -72,6 +72,7 @@ export interface JSONSchema {
     markdownDescription?: string;
     type?: string;
     suggestionKind?: CompletionItemKind;
+    sortText?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     body?: any;
     bodyText?: string;
