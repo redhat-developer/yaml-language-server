@@ -644,7 +644,7 @@ describe('Auto Completion Tests', () => {
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
-            assert.equal(result.items[0].insertText, '\n  myOther2Sample: ');
+            assert.equal(result.items[0].insertText, '\n  myOther2Sample:');
           })
           .then(done, done);
       });
@@ -730,7 +730,7 @@ describe('Auto Completion Tests', () => {
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
-            assert.equal(result.items[0].insertText, '\n  myOther2Sample: ');
+            assert.equal(result.items[0].insertText, '\n  myOther2Sample:');
           })
           .then(done, done);
       });
