@@ -6,6 +6,8 @@
 - Remove duplicate codelens entries [#667](https://github.com/redhat-developer/yaml-language-server/pull/667)
 - Add: show examples on hover. [#660](https://github.com/redhat-developer/yaml-language-server/pull/660)
 - Fix: oneOf: misleading validation failures with Incorrect type. Expected "object" [#692](https://github.com/redhat-developer/vscode-yaml/issues/692)
+- Fix: typos in doc [#700](https://github.com/redhat-developer/vscode-yaml/pull/700)
+- Fix: using inline schema reference (# yaml-language-server: $schema) seems to not support relative paths [#587](https://github.com/redhat-developer/vscode-yaml/issues/587)
 
 Thanks to lijing00333, Remco Haszing, Petr Spacek and yassun4dev
 
