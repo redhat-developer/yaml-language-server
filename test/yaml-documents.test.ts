@@ -232,7 +232,7 @@ objB:
 
       expect(result).is.not.undefined;
       expect(isMap(result)).is.true;
-      expect(((result as YAMLMap).items[0].key as Scalar).value).eqls('foo');
+      expect(((result as YAMLMap).items[0].key as Scalar).value).eqls('bar');
     });
   });
 });
