@@ -538,7 +538,6 @@ export class YamlCompletion {
     const hasColon = lineContent.indexOf(':') !== -1;
 
     const nodeParent = doc.getParent(node);
-    const isArray = nodeParent && isSeq(nodeParent) && nodeParent.items.length > 0 ? true : false;
     const matchOriginal = matchingSchemas.find((it) => it.node.internalNode === originalNode && it.schema.properties);
     for (const schema of matchingSchemas) {
       if (
@@ -663,6 +662,7 @@ export class YamlCompletion {
         //    - item1
         // it will treated as a property key since `:` has been appended
         if (nodeParent && isSeq(nodeParent) && schema.schema.type !== 'object') {
+          const isArray = nodeParent && isSeq(nodeParent) && nodeParent.items.length > 0;
           this.addSchemaValueCompletions(schema.schema, separatorAfter, collector, {}, isArray);
         }
       }
