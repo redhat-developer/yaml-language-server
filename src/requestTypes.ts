@@ -3,6 +3,7 @@
 import { NotificationType, RequestType } from 'vscode-languageserver';
 import { SchemaAdditions, SchemaDeletions } from './languageservice/services/yamlSchemaService';
 import { SchemaConfiguration } from './languageservice/yamlLanguageService';
+import { SchemaVersions } from './languageservice/yamlTypes';
 
 export type ISchemaAssociations = Record<string, string[]>;
 
@@ -30,6 +31,8 @@ export interface JSONSchemaDescriptionExt extends JSONSchemaDescription {
    * Is schema from schema store
    */
   fromStore: boolean;
+
+  versions?: SchemaVersions;
 }
 
 export namespace SchemaAssociationNotification {

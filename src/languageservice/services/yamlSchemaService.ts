@@ -26,6 +26,7 @@ import { parse } from 'yaml';
 import * as path from 'path';
 import { getSchemaFromModeline } from './modelineUtil';
 import { JSONSchemaDescriptionExt } from '../../requestTypes';
+import { SchemaVersions } from '../yamlTypes';
 
 const localize = nls.loadMessageBundle();
 
@@ -84,7 +85,11 @@ export class FilePatternAssociation {
     return this.schemas;
   }
 }
-
+interface SchemaStoreSchema {
+  name: string;
+  description: string;
+  versions?: SchemaVersions;
+}
 export class YAMLSchemaService extends JSONSchemaService {
   // To allow to use schemasById from super.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -96,7 +101,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   private requestService: SchemaRequestService;
   public schemaPriorityMapping: Map<string, Set<SchemaPriority>>;
 
-  private schemaUriToNameAndDescription = new Map<string, [string, string]>();
+  private schemaUriToNameAndDescription = new Map<string, SchemaStoreSchema>();
 
   constructor(
     requestService: SchemaRequestService,
@@ -129,10 +134,11 @@ export class YAMLSchemaService extends JSONSchemaService {
       };
 
       if (this.schemaUriToNameAndDescription.has(schemaUri)) {
-        const [name, description] = this.schemaUriToNameAndDescription.get(schemaUri);
+        const { name, description, versions } = this.schemaUriToNameAndDescription.get(schemaUri);
         schemaHandle.name = name;
         schemaHandle.description = description;
         schemaHandle.fromStore = true;
+        schemaHandle.versions = versions;
       }
       result.push(schemaHandle);
     }
@@ -653,9 +659,10 @@ export class YAMLSchemaService extends JSONSchemaService {
       }
       unresolvedJsonSchema.uri = schemaUri;
       if (this.schemaUriToNameAndDescription.has(schemaUri)) {
-        const [name, description] = this.schemaUriToNameAndDescription.get(schemaUri);
+        const { name, description, versions } = this.schemaUriToNameAndDescription.get(schemaUri);
         unresolvedJsonSchema.schema.title = name ?? unresolvedJsonSchema.schema.title;
         unresolvedJsonSchema.schema.description = description ?? unresolvedJsonSchema.schema.description;
+        unresolvedJsonSchema.schema.versions = versions ?? unresolvedJsonSchema.schema.versions;
       }
       return unresolvedJsonSchema;
     });
@@ -666,10 +673,11 @@ export class YAMLSchemaService extends JSONSchemaService {
     filePatterns?: string[],
     unresolvedSchema?: JSONSchema,
     name?: string,
-    description?: string
+    description?: string,
+    versions?: SchemaVersions
   ): SchemaHandle {
     if (name || description) {
-      this.schemaUriToNameAndDescription.set(uri, [name, description]);
+      this.schemaUriToNameAndDescription.set(uri, { name, description, versions });
     }
     return super.registerExternalSchema(uri, filePatterns, unresolvedSchema);
   }
