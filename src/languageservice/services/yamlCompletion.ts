@@ -662,7 +662,7 @@ export class YamlCompletion {
         //    - item1
         // it will treated as a property key since `:` has been appended
         if (nodeParent && isSeq(nodeParent) && schema.schema.type !== 'object') {
-          const isArray = nodeParent && isSeq(nodeParent) && nodeParent.items.length > 0;
+          const isArray = nodeParent.items.length > 0;
           this.addSchemaValueCompletions(schema.schema, separatorAfter, collector, {}, isArray);
         }
       }
