@@ -15,15 +15,18 @@ export function getFoldingRanges(document: TextDocument, context: FoldingRangesC
   const result: FoldingRange[] = [];
   const doc = yamlDocumentsCache.getYamlDocument(document);
   for (const ymlDoc of doc.documents) {
+    if (doc.documents.length > 1) {
+      result.push(createNormalizedFolding(document, ymlDoc.root));
+    }
     ymlDoc.visit((node) => {
       if (
         (node.type === 'property' && node.valueNode.type === 'array') ||
         (node.type === 'object' && node.parent?.type === 'array')
       ) {
-        result.push(creteNormalizedFolding(document, node));
+        result.push(createNormalizedFolding(document, node));
       }
       if (node.type === 'property' && node.valueNode.type === 'object') {
-        result.push(creteNormalizedFolding(document, node));
+        result.push(createNormalizedFolding(document, node));
       }
 
       return true;
@@ -41,7 +44,7 @@ export function getFoldingRanges(document: TextDocument, context: FoldingRangesC
   return result.slice(0, context.rangeLimit);
 }
 
-function creteNormalizedFolding(document: TextDocument, node: ASTNode): FoldingRange {
+function createNormalizedFolding(document: TextDocument, node: ASTNode): FoldingRange {
   const startPos = document.positionAt(node.offset);
   let endPos = document.positionAt(node.offset + node.length);
   const textFragment = document.getText(Range.create(startPos, endPos));
