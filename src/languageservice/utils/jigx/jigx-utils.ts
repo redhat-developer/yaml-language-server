@@ -110,25 +110,26 @@ export function isEmptyObject(obj: any): boolean {
 export function replaceSpecialCharsInDescription(text: string): string {
   //copied from https://github.com/severinkaderli/markdown-escape/blob/master/index.js
   const map: any = {
-    '*': '\\*',
+    // '*': '\\*',
     '#': '\\#',
-    '(': '\\(',
-    ')': '\\)',
-    '[': '\\[',
-    ']': '\\]',
+    // '(': '\\(',
+    // ')': '\\)',
+    // '[': '\\[',
+    // ']': '\\]',
     _: '\\_',
     '\\': '\\\\',
-    '+': '\\+',
-    '-': '\\-',
-    '`': '\\`',
-    '<': '&lt;',
-    '>': '&gt;',
+    // '+': '\\+',
+    // '-': '\\-',
+    // '`': '\\`',
+    // '<': '&lt;',
+    // '>': '&gt;',
     '&': '&amp;',
     '|': '&#124;',
     '\n': '<br />',
   };
-  const ret = text.replace(/[\|\*\(\)\[\]\+\-\\_`#<>\n]/g, (m) => map[m]);
-  //text.replace(/\n/g, '<br />');
+  // I want to support MD syntax in description
+  // const ret = text.replace(/[\|\*\(\)\[\]\+\-\\_`#<>\n]/g, (m) => map[m]);
+  const ret = text.replace(/[\|\\_#\n]/g, (m) => map[m]);
   return ret;
 }
 

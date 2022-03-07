@@ -21,7 +21,6 @@ import { Telemetry } from '../../languageserver/telemetry';
 import { ASTNode, MarkedString } from 'vscode-json-languageservice';
 import { Schema2Md } from '../utils/jigx/schema2md';
 import { decycle } from '../utils/jigx/cycle';
-import { YamlCommands } from '../../commands';
 import { Globals } from '../utils/jigx/globals';
 
 interface YamlHoverDetailResult {
@@ -149,7 +148,9 @@ export class YamlHoverDetail {
         matchingSchemasDistinct.every((s) => {
           const hover = {
             title: s.schema.title || s.schema.closestTitle,
-            markdownDescription: s.schema.markdownDescription || toMarkdown(s.schema.description),
+            markdownDescription:
+              s.schema.markdownDescription ||
+              (s.schema.url?.startsWith(Globals.dynamicSchema) ? s.schema.description : toMarkdown(s.schema.description)),
             markdownEnumValueDescription: undefined,
             enumValue: undefined,
             propertyMd: undefined,
