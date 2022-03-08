@@ -10,7 +10,7 @@ import {
   SchemaDeletionsAll,
 } from '../../languageservice/services/yamlSchemaService';
 import { LanguageService } from '../../languageservice/yamlLanguageService';
-import { HoverDetailRequest, SchemaModificationNotification } from '../../requestTypes';
+import { HoverDetailRequest, RevalidateRequest, SchemaModificationNotification } from '../../requestTypes';
 import { SettingsState } from '../../yamlSettings';
 
 export class RequestHandlers {
@@ -31,6 +31,15 @@ export class RequestHandlers {
       const document = this.yamlSettings.documents.get(params.textDocument.uri);
       // return this.languageService.doHover(document, params.position);
       return this.languageService.doHoverDetail(document, params.position);
+    });
+
+    /**
+     * Received request from the client that revalidation is needed.
+     */
+    this.connection.onRequest(RevalidateRequest.type, async (uri: string) => {
+      const document = this.yamlSettings.documents.get(uri);
+      const diagnostics = await this.languageService.doValidation(document, false);
+      this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
     });
   }
 

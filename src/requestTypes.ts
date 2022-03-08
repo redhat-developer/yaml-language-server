@@ -74,6 +74,11 @@ export namespace SchemaModificationNotification {
 export namespace HoverDetailRequest {
   export const type: RequestType<TextDocumentPositionParams, {}, {}> = new RequestType('custom/hoverDetailRequest');
 }
+
+export namespace RevalidateRequest {
+  export const type: RequestType<string, {}, {}> = new RequestType('custom/revalidate');
+}
+
 export namespace SchemaSelectionRequests {
   export const type: NotificationType<void> = new NotificationType('yaml/supportSchemaSelection');
   export const getSchema: RequestType<string, JSONSchemaDescription[], {}> = new RequestType('yaml/get/jsonSchema');
