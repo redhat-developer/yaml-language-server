@@ -602,8 +602,7 @@ function validate(
   originalSchema: JSONSchema,
   validationResult: ValidationResult,
   matchingSchemas: ISchemaCollector,
-  options: Options,
-  isAdditionalPropertiesCheck?: boolean
+  options: Options
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
   const { isKubernetes } = options;
@@ -647,18 +646,6 @@ function validate(
       return node.type === type || (type === 'integer' && node.type === 'number' && node.isInteger);
     }
 
-    function matchesSchemaType(schema: JSONSchema): boolean {
-      /* when schema type is object and it contains oneOf then needs to validate that particular types
-        reference issue 692
-      */
-      const type = Array.isArray(schema.type) ? undefined : schema.type;
-      if (type === 'object' && typeof schema.additionalProperties === 'object' && schema.additionalProperties.oneOf) {
-        return true;
-      } else if (type) {
-        return matchesType(type);
-      }
-    }
-
     if (Array.isArray(schema.type)) {
       if (!schema.type.some(matchesType)) {
         validationResult.problems.push({
@@ -672,7 +659,7 @@ function validate(
         });
       }
     } else if (schema.type) {
-      if (!matchesSchemaType(schema)) {
+      if (!matchesType(schema.type)) {
         //get more specific name than just object
         const schemaType = schema.type === 'object' ? getSchemaTypeName(schema) : schema.type;
         validationResult.problems.push({
@@ -690,13 +677,6 @@ function validate(
       for (const subSchemaRef of schema.allOf) {
         validate(node, asSchema(subSchemaRef), schema, validationResult, matchingSchemas, options);
       }
-    }
-    if (schema.additionalProperties && typeof schema.additionalProperties === 'object' && schema.additionalProperties.oneOf) {
-      const propertyValidationResult = new ValidationResult(isKubernetes);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      validate(node, <any>schema.additionalProperties, schema, propertyValidationResult, matchingSchemas, options, true);
-      validationResult.mergePropertyMatch(propertyValidationResult);
-      validationResult.mergeEnumValues(propertyValidationResult);
     }
     const notSchema = asSchema(schema.not);
     if (notSchema) {
@@ -747,14 +727,7 @@ function validate(
         } else if (isKubernetes) {
           bestMatch = alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         } else {
-          bestMatch = genericComparison(
-            maxOneMatch,
-            subValidationResult,
-            bestMatch,
-            subSchema,
-            subMatchingSchemas,
-            isAdditionalPropertiesCheck
-          );
+          bestMatch = genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         }
       }
 
@@ -1456,8 +1429,7 @@ function validate(
       matchingSchemas: ISchemaCollector;
     },
     subSchema,
-    subMatchingSchemas,
-    isAdditionalPropertiesCheck?: boolean
+    subMatchingSchemas
   ): {
     schema: JSONSchema;
     validationResult: ValidationResult;
@@ -1470,7 +1442,7 @@ function validate(
       bestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
     } else {
       const compareResult = subValidationResult.compareGeneric(bestMatch.validationResult);
-      if (compareResult > 0 || isAdditionalPropertiesCheck) {
+      if (compareResult > 0) {
         // our node is the best matching so far
         bestMatch = {
           schema: subSchema,
