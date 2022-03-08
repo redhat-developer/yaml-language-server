@@ -56,6 +56,7 @@ describe('Schema Selection Handlers', () => {
       usedForCurrentFile: false,
       name: 'Schema name',
       description: 'Schema description',
+      versions: undefined,
     });
   });
 
@@ -76,6 +77,7 @@ describe('Schema Selection Handlers', () => {
       usedForCurrentFile: true,
       name: 'Schema name',
       description: 'Schema description',
+      versions: undefined,
     });
   });
 
@@ -94,6 +96,7 @@ describe('Schema Selection Handlers', () => {
       uri: 'https://some.com/some.json',
       name: 'Schema name',
       description: 'Schema description',
+      versions: undefined,
     });
   });
 
