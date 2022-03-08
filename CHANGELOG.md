@@ -1,3 +1,6 @@
+### 1.5.1
+- Fix: Yaml errors after updating to v1.5.0 [#708](https://github.com/redhat-developer/vscode-yaml/issues/708)
+
 ### 1.5.0
 - Fix: TypeError: Cannot create property 'url' on string [#652](https://github.com/redhat-developer/yaml-language-server/issues/652)
 - Fix: suggestion item title [#659](https://github.com/redhat-developer/yaml-language-server/pull/659)
