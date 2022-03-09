@@ -199,7 +199,11 @@ export class Schema2Md {
       if (!this.hideText.enum) {
         text.push(offset + 'This element must be one of the following enum values:');
       }
-      text.push(offset + '`' + schema.enum.join(' | ') + '`');
+      if (schema.enum.length > 50) {
+        text.push(offset + '`' + schema.enum.join(' | ') + '`');
+      } else {
+        text.push(schema.enum.map((enumItem) => '* `' + enumItem + '`').join('\n'));
+      }
     } else if (schema.const) {
       // const is already in text from the beginning
       if (this.dontPrintSimpleTypes) {
