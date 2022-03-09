@@ -73,10 +73,10 @@ describe('Schema Selection Handlers', () => {
     expect(result).length(1);
     expect(result[0]).to.be.eqls({
       uri: 'https://some.com/some.json',
-      fromStore: false,
-      usedForCurrentFile: true,
       name: 'Schema name',
       description: 'Schema description',
+      fromStore: false,
+      usedForCurrentFile: true,
       versions: undefined,
     });
   });
