@@ -453,6 +453,54 @@ describe('Validation Tests', () => {
     });
   });
 
+  describe('Null tests', () => {
+    it('Basic test on nodes with null', (done) => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          columns: {
+            type: 'object',
+            patternProperties: {
+              '^[a-zA-Z]+$': {
+                type: 'object',
+                properties: {
+                  int: {
+                    type: null,
+                  },
+                  long: {
+                    type: null,
+                  },
+                  id: {
+                    type: null,
+                  },
+                  unique: {
+                    type: null,
+                  },
+                },
+                oneOf: [
+                  {
+                    required: ['int'],
+                  },
+                  {
+                    required: ['long'],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      });
+      const content = 'columns:\n  ColumnA: { int, id }\n  ColumnB: { long, unique }\n  ColumnC: { long, unique }';
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.equal(result.length, 0);
+        })
+        .then(done, done);
+    });
+  });
+
   describe('Object tests', () => {
     it('Basic test on nodes with children', (done) => {
       languageService.addSchema(SCHEMA_ID, {

@@ -42,7 +42,7 @@ export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineC
   }
 
   if (!node) {
-    return;
+    return null;
   }
   if (isMap(node)) {
     return convertMap(node, parent, doc, lineCounter);
