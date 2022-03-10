@@ -1318,6 +1318,7 @@ export class YamlCompletion {
         collector.add({
           kind: s.suggestionKind || this.getSuggestionKind(type),
           label,
+          sortText: s.sortText || s.label,
           documentation: this.fromMarkup(s.markdownDescription) || s.description,
           insertText,
           insertTextFormat: InsertTextFormat.Snippet,
@@ -1341,7 +1342,7 @@ export class YamlCompletion {
       }
       return value;
     };
-    return stringifyObject(value, '', replacer, settings, depth) + separatorAfter;
+    return stringifyObject(value, '', replacer, { ...settings, indentation: this.indentation }, depth) + separatorAfter;
   }
 
   private addBooleanValueCompletion(value: boolean, separatorAfter: string, collector: CompletionsCollector): void {
