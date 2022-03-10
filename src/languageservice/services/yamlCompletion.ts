@@ -1342,7 +1342,7 @@ export class YamlCompletion {
       }
       return value;
     };
-    return stringifyObject(value, '', replacer, settings, depth) + separatorAfter;
+    return stringifyObject(value, '', replacer, { ...settings, indentation: this.indentation }, depth) + separatorAfter;
   }
 
   private addBooleanValueCompletion(value: boolean, separatorAfter: string, collector: CompletionsCollector): void {

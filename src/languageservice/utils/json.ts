@@ -9,11 +9,15 @@ export interface StringifySettings {
   shouldIndentWithTab: boolean;
 }
 
+interface StringifySettingsInternal extends StringifySettings {
+  indentation: string;
+}
+
 export function stringifyObject(
   obj: unknown,
   indent: string,
   stringifyLiteral: (val: unknown) => string,
-  settings: StringifySettings,
+  settings: StringifySettingsInternal,
   depth = 0,
   consecutiveArrays = 0
 ): string {
@@ -23,7 +27,7 @@ export function stringifyObject(
      * is propertly indented. When we are auto completion from a value we don't want the indent because the cursor
      * is already in the correct place
      */
-    const newIndent = (depth === 0 && settings.shouldIndentWithTab) || depth > 0 ? indent + '  ' : '';
+    const newIndent = (depth === 0 && settings.shouldIndentWithTab) || depth > 0 ? indent + settings.indentation : '';
     if (Array.isArray(obj)) {
       consecutiveArrays += 1;
       if (obj.length === 0) {
@@ -37,7 +41,7 @@ export function stringifyObject(
           continue;
         }
         if (!Array.isArray(obj[i])) {
-          pseudoObj = preprendToObject(obj[i], consecutiveArrays);
+          pseudoObj = prependToObject(obj[i], consecutiveArrays);
         }
         result += stringifyObject(pseudoObj, indent, stringifyLiteral, settings, (depth += 1), consecutiveArrays);
       }
@@ -52,7 +56,7 @@ export function stringifyObject(
         const key = keys[i];
         const isObject = typeof obj[key] === 'object';
         const colonDelimiter = isObject ? ':' : ': '; // add space only when value is primitive
-        const parentArrayCompensation = isObject && /^\s|-/.test(key) ? '  ' : ''; // add extra space if parent is an array
+        const parentArrayCompensation = isObject && /^\s|-/.test(key) ? settings.indentation : ''; // add extra space if parent is an array
         const objectIndent = newIndent + parentArrayCompensation;
 
         // The first child of an array needs to be treated specially, otherwise identations will be off
@@ -73,7 +77,7 @@ export function stringifyObject(
   return stringifyLiteral(obj);
 }
 
-function preprendToObject(obj: Record<string, unknown>, consecutiveArrays: number): Record<string, unknown> {
+function prependToObject(obj: Record<string, unknown>, consecutiveArrays: number): Record<string, unknown> {
   const newObj = {};
   for (let i = 0; i < Object.keys(obj).length; i++) {
     const key = Object.keys(obj)[i];
