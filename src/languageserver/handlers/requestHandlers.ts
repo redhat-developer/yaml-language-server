@@ -12,10 +12,16 @@ import {
 import { LanguageService } from '../../languageservice/yamlLanguageService';
 import { HoverDetailRequest, RevalidateRequest, SchemaModificationNotification } from '../../requestTypes';
 import { SettingsState } from '../../yamlSettings';
+import { ValidationHandler } from './validationHandlers';
 
 export class RequestHandlers {
   private languageService: LanguageService;
-  constructor(private readonly connection: Connection, languageService: LanguageService, private yamlSettings: SettingsState) {
+  constructor(
+    private readonly connection: Connection,
+    languageService: LanguageService,
+    private yamlSettings: SettingsState,
+    private validationHandler: ValidationHandler
+  ) {
     this.languageService = languageService;
   }
 
@@ -38,8 +44,7 @@ export class RequestHandlers {
      */
     this.connection.onRequest(RevalidateRequest.type, async (uri: string) => {
       const document = this.yamlSettings.documents.get(uri);
-      const diagnostics = await this.languageService.doValidation(document, false);
-      this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
+      await this.validationHandler.validateTextDocument(document);
     });
   }
 

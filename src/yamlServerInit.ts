@@ -142,7 +142,7 @@ export class YAMLServerInit {
     this.languageHandler = new LanguageHandlers(this.connection, this.languageService, this.yamlSettings, this.validationHandler);
     this.languageHandler.registerHandlers();
     new NotificationHandlers(this.connection, this.languageService, this.yamlSettings, this.settingsHandler).registerHandlers();
-    new RequestHandlers(this.connection, this.languageService, this.yamlSettings).registerHandlers();
+    new RequestHandlers(this.connection, this.languageService, this.yamlSettings, this.validationHandler).registerHandlers();
     new WorkspaceHandlers(this.connection, commandExecutor).registerHandlers();
   }
 
