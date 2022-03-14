@@ -354,4 +354,24 @@ describe('Auto Completion Tests Extended', () => {
     //   expect(result.items.length).to.be.equal(0);
     // });
   });
+
+  describe('if/then/else completion', () => {
+    it('should not suggest prop from if statement', async () => {
+      const schema = {
+        id: 'test://schemas/main',
+        if: {
+          properties: {
+            foo: {
+              const: 'bar',
+            },
+          },
+        },
+        then: {},
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const completion = await parseSetup(content, content.length);
+      assert.equal(completion.items.length, 0);
+    });
+  });
 });
