@@ -823,8 +823,9 @@ function validate(
       const subMatchingSchemas = matchingSchemas.newSub();
 
       validate(node, subSchema, originalSchema, subValidationResult, subMatchingSchemas, options);
-      matchingSchemas.merge(subMatchingSchemas);
-
+      // jigx custom: don't want to put `if schema` into regular valid schemas
+      // matchingSchemas.merge(subMatchingSchemas);
+      // end
       if (!subValidationResult.hasProblems()) {
         if (thenSchema) {
           testBranch(thenSchema, originalSchema);
