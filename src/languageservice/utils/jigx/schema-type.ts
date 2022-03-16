@@ -250,6 +250,7 @@ export class Schema_AnyOf extends Schema_TypeBase {
         const subSubType = item.getTypeStr(subSchemas);
         return subSubType;
       })
+      .filter((type) => !!type.trim())
       .join(tableColumnSeparator);
     return `${subType}`;
   }
@@ -261,6 +262,7 @@ export class Schema_AnyOf extends Schema_TypeBase {
         subSubType = subSubType.replace('-required', ''); //if anyOf type, section title don't have required parameter
         return subSubType;
       })
+      .filter((type) => !!type.trim())
       .join(tableColumnSeparator);
     return `${subType}`;
   }
