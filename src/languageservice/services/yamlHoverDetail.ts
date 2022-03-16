@@ -268,6 +268,12 @@ function distinctSchemas(matchingSchemas: IApplicableSchema[]): IApplicableSchem
       s.schema.oneOf ||
       !seenSchemaFromAnyOf.includes(s.schema.$id || s.schema._$ref || s.schema.url)
   );
+
+  // see jsonParser07.testBranch need to solve better
+  if (matchingSchemasDistinct.some((s) => s.schema.$comment === 'then/else')) {
+    matchingSchemasDistinct = matchingSchemasDistinct.filter((s) => s.schema.$comment === 'then/else');
+  }
+
   if (matchingSchemas.length != matchingSchemasDistinct.length) {
     const removedCount = matchingSchemas.length - matchingSchemasDistinct.length;
     console.log('removing some schemas: ' + seenSchemaFromAnyOf.join(', ') + '. removed count:' + removedCount);

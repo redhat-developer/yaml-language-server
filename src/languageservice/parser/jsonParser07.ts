@@ -805,7 +805,9 @@ function validate(
       const subMatchingSchemas = matchingSchemas.newSub();
 
       validate(node, asSchema(schema), originalSchema, subValidationResult, subMatchingSchemas, options);
-
+      // jigx custom: mark schema as condition
+      subMatchingSchemas.schemas.forEach((s) => (s.schema.$comment = 'then/else'));
+      // end
       validationResult.merge(subValidationResult);
       validationResult.propertiesMatches += subValidationResult.propertiesMatches;
       validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
