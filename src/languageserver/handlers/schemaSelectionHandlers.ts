@@ -32,6 +32,7 @@ export class JSONSchemaSelection {
         name: val[1].title,
         uri: val[0],
         description: val[1].description,
+        versions: val[1].versions,
       };
     });
 
@@ -71,6 +72,7 @@ export class JSONSchemaSelection {
         usedForCurrentFile: true,
         name: val[1].title,
         description: val[1].description,
+        versions: val[1].versions,
       };
     });
     const result = [];

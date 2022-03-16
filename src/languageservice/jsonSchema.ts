@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { CompletionItemKind } from 'vscode-json-languageservice';
+import { SchemaVersions } from './yamlTypes';
 
 export type JSONSchemaRef = JSONSchema | boolean;
 
@@ -15,6 +16,7 @@ export interface JSONSchema {
   type?: string | string[];
   title?: string;
   closestTitle?: string;
+  versions?: SchemaVersions;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   default?: any;
   definitions?: { [name: string]: JSONSchema };
@@ -71,6 +73,7 @@ export interface JSONSchema {
     markdownDescription?: string;
     type?: string;
     suggestionKind?: CompletionItemKind;
+    sortText?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     body?: any;
     bodyText?: string;

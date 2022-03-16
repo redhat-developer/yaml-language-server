@@ -116,6 +116,16 @@ describe('Default Snippet Tests', () => {
         })
         .then(done, done);
     });
+    it('Snippet custom sort', (done) => {
+      const content = 'arrayNestedObjectSnippet:\n  ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.strictEqual(result.items.length, 1);
+          assert.strictEqual(result.items[0].sortText, 'custom');
+        })
+        .then(done, done);
+    });
 
     it('Snippet in object schema should autocomplete on next line ', (done) => {
       const content = 'object:\n  ';
@@ -199,7 +209,7 @@ describe('Default Snippet Tests', () => {
           // eslint-disable-next-line
           assert.equal(
             result.items[0].insertText,
-            '\n  name: $1\n  taskRef: \n    name: apply-manifests  \n  resources: \n    inputs:       \n      - name: source\n        resource: $3          \n  params:     \n    - name: manifest_dir\n      value: $2    '
+            '\n  name: $1\n  taskRef:\n    name: apply-manifests\n  resources:\n    inputs:\n      - name: source\n        resource: $3\n  params:\n    - name: manifest_dir\n      value: $2'
           );
         })
         .then(done, done);
@@ -210,12 +220,12 @@ describe('Default Snippet Tests', () => {
       const completion = parseSetup(content, 3);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 11); // This is just checking the total number of snippets in the defaultSnippets.json
+          assert.equal(result.items.length, 14); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[4].label, 'longSnippet');
           // eslint-disable-next-line
           assert.equal(
             result.items[4].insertText,
-            'longSnippet:\n  name: $1\n  taskRef: \n    name: apply-manifests  \n  resources: \n    inputs:       \n      - name: source\n        resource: $3          \n  params:     \n    - name: manifest_dir\n      value: $2    '
+            'longSnippet:\n  name: $1\n  taskRef:\n    name: apply-manifests\n  resources:\n    inputs:\n      - name: source\n        resource: $3\n  params:\n    - name: manifest_dir\n      value: $2'
           );
         })
         .then(done, done);
@@ -226,12 +236,8 @@ describe('Default Snippet Tests', () => {
       const completion = parseSetup(content, 11);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 11); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[5].label, 'arrayArraySnippet');
-          assert.equal(
-            result.items[5].insertText,
-            'arrayArraySnippet:\n  apple:         \n    - - name: source\n        resource: $3      '
-          );
+          assert.equal(result.items[5].insertText, 'arrayArraySnippet:\n  apple:\n    - - name: source\n        resource: $3');
         })
         .then(done, done);
     });
@@ -243,7 +249,7 @@ describe('Default Snippet Tests', () => {
         .then(function (result) {
           assert.equal(result.items.length, 1);
           assert.equal(result.items[0].label, 'Array Array Snippet');
-          assert.equal(result.items[0].insertText, '\n  apple:         \n    - - name: source\n        resource: $3      ');
+          assert.equal(result.items[0].insertText, '\n  apple:\n    - - name: source\n        resource: $3');
         })
         .then(done, done);
     });
@@ -255,7 +261,43 @@ describe('Default Snippet Tests', () => {
         .then(function (result) {
           assert.equal(result.items.length, 1);
           assert.equal(result.items[0].label, 'Array Array Snippet');
-          assert.equal(result.items[0].insertText, 'apple:     \n  - - name: source\n      resource: $3');
+          assert.equal(result.items[0].insertText, 'apple:\n  - - name: source\n      resource: $3');
+        })
+        .then(done, done);
+    });
+
+    it('Test array of strings', (done) => {
+      const content = 'arrayStringSnippet:\n  ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].insertText, 'fruits:\n  - banana\n  - orange');
+        })
+        .then(done, done);
+    });
+
+    it('Test array nested object indented completion', (done) => {
+      const content = 'arrayNestedObjectSnippet:\n  ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(
+            result.items[0].insertText,
+            'apple:\n  - name: source\n    resource:\n      prop1: value1\n      prop2: value2'
+          );
+        })
+        .then(done, done);
+    });
+
+    it('Test array of objects extra new line', (done) => {
+      const content = 'arrayObjectSnippet:\n  ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].insertText, 'apple:\n  - name: source\n  - name: source2');
         })
         .then(done, done);
     });

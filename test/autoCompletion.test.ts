@@ -551,7 +551,7 @@ describe('Auto Completion Tests', () => {
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
-            assert.equal(result.items[0].insertText, '\n  myOtherSample: ');
+            assert.equal(result.items[0].insertText, '\n  myOtherSample:');
             assert.equal((result.items[0].documentation as MarkupContent).value, 'snippet\n```yaml\nmyOtherSample:\n```\n');
           })
           .then(done, done);
@@ -1516,6 +1516,29 @@ describe('Auto Completion Tests', () => {
           { documentation: '' }
         )
       );
+    });
+
+    it('Array completion - should not suggest const', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                constProp: {
+                  type: 'string',
+                  const: 'const1',
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = 'test:\n  - constProp:\n    ';
+      const result = await parseSetup(content, content.length);
+      expect(result.items.length).to.be.equal(0);
     });
 
     it('Object in array with 4 space indentation check', async () => {
