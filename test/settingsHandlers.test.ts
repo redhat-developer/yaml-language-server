@@ -106,6 +106,7 @@ describe('Settings Handlers Tests', () => {
       priority: SchemaPriority.SchemaStore,
       name: '.adonisrc.json',
       description: 'AdonisJS configuration file',
+      versions: undefined,
     });
   });
 
