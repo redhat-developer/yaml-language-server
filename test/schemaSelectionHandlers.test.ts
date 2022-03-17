@@ -56,6 +56,7 @@ describe('Schema Selection Handlers', () => {
       usedForCurrentFile: false,
       name: 'Schema name',
       description: 'Schema description',
+      versions: undefined,
     });
   });
 
@@ -72,10 +73,11 @@ describe('Schema Selection Handlers', () => {
     expect(result).length(1);
     expect(result[0]).to.be.eqls({
       uri: 'https://some.com/some.json',
-      fromStore: false,
-      usedForCurrentFile: true,
       name: 'Schema name',
       description: 'Schema description',
+      fromStore: false,
+      usedForCurrentFile: true,
+      versions: undefined,
     });
   });
 
@@ -94,6 +96,7 @@ describe('Schema Selection Handlers', () => {
       uri: 'https://some.com/some.json',
       name: 'Schema name',
       description: 'Schema description',
+      versions: undefined,
     });
   });
 

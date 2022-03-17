@@ -18,3 +18,5 @@ export interface FoldingRangesContext {
    */
   lineFoldingOnly?: boolean;
 }
+
+export type SchemaVersions = { [version: string]: string };

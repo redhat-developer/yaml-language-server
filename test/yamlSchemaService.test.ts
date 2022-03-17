@@ -5,6 +5,7 @@
 import * as sinon from 'sinon';
 import * as chai from 'chai';
 import * as sinonChai from 'sinon-chai';
+import * as path from 'path';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import { parse } from '../src/languageservice/parser/yamlParser07';
 
@@ -107,8 +108,9 @@ describe('YAML Schema Service', () => {
 
       expect(requestServiceMock).calledTwice;
       if (process.platform === 'win32') {
-        expect(requestServiceMock).calledWithExactly('file:///d%3A/schema.json');
-        expect(requestServiceMock).calledWithExactly('file:///d%3A/schema.json#/definitions/schemaArray');
+        const driveLetter = path.parse(__dirname).root.split(':')[0].toLowerCase();
+        expect(requestServiceMock).calledWithExactly(`file:///${driveLetter}%3A/schema.json`);
+        expect(requestServiceMock).calledWithExactly(`file:///${driveLetter}%3A/schema.json#/definitions/schemaArray`);
       } else {
         expect(requestServiceMock).calledWithExactly('file:///schema.json');
         expect(requestServiceMock).calledWithExactly('file:///schema.json#/definitions/schemaArray');

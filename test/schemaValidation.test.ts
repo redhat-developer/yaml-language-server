@@ -1557,58 +1557,18 @@ obj:
         expect(result.length).to.eq(0);
       });
     });
-
-    it('schema should validate additionalProp oneOf', async () => {
-      const schema = {
-        type: 'object',
-        definitions: {
-          expressionSyntax: {
-            type: 'string',
-            pattern: '^\\$\\{\\{\\s*fromJSON\\(.*\\)\\s*\\}\\}$',
-          },
-        },
-        properties: {
-          env: {
-            type: 'object',
-            additionalProperties: {
-              oneOf: [
-                {
-                  type: 'object',
-                  additionalProperties: {
-                    oneOf: [
-                      {
-                        type: 'string',
-                      },
-                      {
-                        type: 'number',
-                      },
-                      {
-                        type: 'boolean',
-                      },
-                    ],
-                  },
-                  minProperties: 1,
-                },
-                {
-                  $ref: '#/definitions/expressionSyntax',
-                },
-              ],
-            },
-          },
-        },
-      };
-      languageService.addSchema(SCHEMA_ID, schema);
-      const content = `env: matrix.env`;
-      const result = await parseSetup(content);
-      expect(result.length).to.eq(1);
-      assert.deepStrictEqual(
-        result[0].message,
-        'String does not match the pattern of "^\\$\\{\\{\\s*fromJSON\\(.*\\)\\s*\\}\\}$".'
-      );
-    });
   });
 
   describe('Bug fixes', () => {
+    it('should handle not valid schema object', async () => {
+      const schema = 'Foo';
+      languageService.addSchema(SCHEMA_ID, schema as JSONSchema);
+      const content = `foo: bar`;
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+      expect(telemetry.messages).to.be.empty;
+    });
+
     it('should handle bad schema refs', async () => {
       const schema = {
         type: 'object',

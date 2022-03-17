@@ -48,6 +48,23 @@ describe('YAML Folding', () => {
     expect(ranges[0]).to.be.eql(FoldingRange.create(2, 3, 4, 11));
   });
 
+  it('should provide folding ranges for multiple documents', () => {
+    const yaml = `---\nname: jack\nage: 22\n---\ncwd: test\n`;
+    const doc = setupTextDocument(yaml);
+    const ranges = getFoldingRanges(doc, context);
+    expect(ranges.length).to.equal(2);
+    expect(ranges[0]).to.be.eql(FoldingRange.create(1, 2, 0, 7));
+    expect(ranges[1]).to.be.eql(FoldingRange.create(4, 4, 0, 9));
+  });
+
+  it('should not include comments on folding ranges', () => {
+    const yaml = `# a comment\nname: jack\n# age comment\nage: 22\n  - date: october`;
+    const doc = setupTextDocument(yaml);
+    const ranges = getFoldingRanges(doc, context);
+    expect(ranges.length).to.equal(1);
+    expect(ranges[0]).to.be.eql(FoldingRange.create(3, 4, 0, 17));
+  });
+
   it('should provide folding ranges for mapping in array', () => {
     const yaml = `
     foo: bar

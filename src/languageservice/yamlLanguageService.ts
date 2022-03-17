@@ -43,7 +43,7 @@ import {
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getFoldingRanges } from './services/yamlFolding';
-import { FoldingRangesContext } from './yamlTypes';
+import { FoldingRangesContext, SchemaVersions } from './yamlTypes';
 import { YamlCodeActions } from './services/yamlCodeActions';
 import { commandExecutor } from '../languageserver/commandExecutor';
 import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
@@ -71,6 +71,7 @@ export interface SchemasSettings {
   uri: string;
   name?: string;
   description?: string;
+  versions?: SchemaVersions;
 }
 
 export interface LanguageSettings {
@@ -202,7 +203,8 @@ export function getLanguageService(
             settings.fileMatch,
             settings.schema,
             settings.name,
-            settings.description
+            settings.description,
+            settings.versions
           );
         });
       }

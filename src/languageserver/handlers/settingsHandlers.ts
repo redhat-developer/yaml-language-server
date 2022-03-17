@@ -226,6 +226,7 @@ export class SettingsHandler {
                 priority: SchemaPriority.SchemaStore,
                 name: schema.name,
                 description: schema.description,
+                versions: schema.versions,
               });
             }
           }

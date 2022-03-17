@@ -95,11 +95,15 @@ export class SingleYAMLDocument extends JSONDocument {
     return this.internalDocument.warnings.map(YAMLErrorToYamlDocDiagnostics);
   }
 
-  getNodeFromPosition(positionOffset: number, textBuffer: TextBuffer): [YamlNode | undefined, boolean] {
+  getNodeFromPosition(
+    positionOffset: number,
+    textBuffer: TextBuffer,
+    configuredIndentation?: number
+  ): [YamlNode | undefined, boolean] {
     const position = textBuffer.getPosition(positionOffset);
     const lineContent = textBuffer.getLineContent(position.line);
     if (lineContent.trim().length === 0) {
-      return [this.findClosestNode(positionOffset, textBuffer), true];
+      return [this.findClosestNode(positionOffset, textBuffer, configuredIndentation), true];
     }
 
     let closestNode: Node;
@@ -122,7 +126,7 @@ export class SingleYAMLDocument extends JSONDocument {
     return [closestNode, false];
   }
 
-  findClosestNode(offset: number, textBuffer: TextBuffer): YamlNode {
+  findClosestNode(offset: number, textBuffer: TextBuffer, configuredIndentation?: number): YamlNode {
     let offsetDiff = this.internalDocument.range[2];
     let maxOffset = this.internalDocument.range[0];
     let closestNode: YamlNode;
@@ -151,34 +155,57 @@ export class SingleYAMLDocument extends JSONDocument {
     }
 
     if (indentation === position.character) {
-      closestNode = this.getProperParentByIndentation(indentation, closestNode, textBuffer);
+      closestNode = this.getProperParentByIndentation(indentation, closestNode, textBuffer, '', configuredIndentation);
     }
 
     return closestNode;
   }
 
-  private getProperParentByIndentation(indentation: number, node: YamlNode, textBuffer: TextBuffer): YamlNode {
+  private getProperParentByIndentation(
+    indentation: number,
+    node: YamlNode,
+    textBuffer: TextBuffer,
+    currentLine: string,
+    configuredIndentation: number,
+    rootParent?: YamlNode
+  ): YamlNode {
     if (!node) {
       return this.internalDocument.contents as Node;
     }
+    configuredIndentation = !configuredIndentation ? 2 : configuredIndentation;
     if (isNode(node) && node.range) {
       const position = textBuffer.getPosition(node.range[0]);
+      const lineContent = textBuffer.getLineContent(position.line);
+      currentLine = currentLine === '' ? lineContent.trim() : currentLine;
+      if (currentLine.startsWith('-') && indentation === configuredIndentation && currentLine === lineContent.trim()) {
+        position.character += indentation;
+      }
       if (position.character > indentation && position.character > 0) {
         const parent = this.getParent(node);
         if (parent) {
-          return this.getProperParentByIndentation(indentation, parent, textBuffer);
+          return this.getProperParentByIndentation(
+            indentation,
+            parent,
+            textBuffer,
+            currentLine,
+            configuredIndentation,
+            rootParent
+          );
         }
       } else if (position.character < indentation) {
         const parent = this.getParent(node);
         if (isPair(parent) && isNode(parent.value)) {
           return parent.value;
+        } else if (isPair(rootParent) && isNode(rootParent.value)) {
+          return rootParent.value;
         }
       } else {
         return node;
       }
     } else if (isPair(node)) {
+      rootParent = node;
       const parent = this.getParent(node);
-      return this.getProperParentByIndentation(indentation, parent, textBuffer);
+      return this.getProperParentByIndentation(indentation, parent, textBuffer, currentLine, configuredIndentation, rootParent);
     }
     return node;
   }
