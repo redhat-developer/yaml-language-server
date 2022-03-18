@@ -102,6 +102,11 @@ export interface LanguageSettings {
    * Default yaml lang version
    */
   yamlVersion?: YamlVersion;
+
+  /**
+   * list of files should not validate
+   */
+  yamlFilesShoudNotValidate?: string[];
 }
 
 export interface WorkspaceContextService {

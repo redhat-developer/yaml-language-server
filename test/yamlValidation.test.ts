@@ -23,9 +23,10 @@ describe('YAML Validation Tests', () => {
     yamlSettings = settings;
   });
 
-  function parseSetup(content: string, customSchemaID?: string): Promise<Diagnostic[]> {
-    const testTextDocument = setupSchemaIDTextDocument(content, customSchemaID);
+  function parseSetup(content: string, customSchemaID?: string, enableDisableOption?: boolean): Promise<Diagnostic[]> {
+    const testTextDocument = setupSchemaIDTextDocument(content, customSchemaID, enableDisableOption);
     yamlSettings.documents = new TextDocumentTestManager();
+    (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
     return validationHandler.validateTextDocument(testTextDocument);
   }
@@ -90,6 +91,15 @@ some:
         createUnusedAnchorDiagnostic('Unused anchor "&aa"', 5, 0, 5, 3),
         createUnusedAnchorDiagnostic('Unused anchor "&e"', 8, 4, 8, 6),
       ]);
+    });
+  });
+
+  describe('Enable/Disable schema validation on Yaml File', () => {
+    it('Disable File', async () => {
+      const yaml = 'foo:\n\t- bar';
+      const result = await parseSetup(yaml, undefined, true);
+      expect(result).is.empty;
+      expect(result.length).to.be.equal(0);
     });
   });
 });

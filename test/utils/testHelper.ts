@@ -32,6 +32,7 @@ export function toFsPath(str: unknown): string {
 }
 
 export const TEST_URI = 'file://~/Desktop/vscode-k8s/test.yaml';
+export const DISABLE_TEST_URI = 'file://~/Desktop/vscode-k8s/testDisable.yaml';
 export const SCHEMA_ID = 'default_schema_id.yaml';
 
 export function setupTextDocument(content: string): TextDocument {
@@ -39,12 +40,14 @@ export function setupTextDocument(content: string): TextDocument {
   return TextDocument.create(TEST_URI, 'yaml', 0, content);
 }
 
-export function setupSchemaIDTextDocument(content: string, customSchemaID?: string): TextDocument {
+export function setupSchemaIDTextDocument(content: string, customSchemaID?: string, enableDisableOption?: boolean): TextDocument {
   yamlDocumentsCache.clear(); // clear cache
   if (customSchemaID) {
     return TextDocument.create(customSchemaID, 'yaml', 0, content);
   } else {
-    return TextDocument.create(SCHEMA_ID, 'yaml', 0, content);
+    return enableDisableOption
+      ? TextDocument.create(DISABLE_TEST_URI, 'yaml', 0, content)
+      : TextDocument.create(SCHEMA_ID, 'yaml', 0, content);
   }
 }
 
@@ -60,6 +63,7 @@ export interface TestLanguageServerSetup {
 
 export function setupLanguageService(languageSettings: LanguageSettings): TestLanguageServerSetup {
   const yamlSettings = new SettingsState();
+  languageSettings.yamlFilesShoudNotValidate = ['testDisable.yaml'];
   process.argv.push('--node-ipc');
   const connection = createConnection();
   const schemaRequestHandlerWrapper = (connection: Connection, uri: string): Promise<string> => {

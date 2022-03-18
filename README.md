@@ -39,6 +39,8 @@ The following settings are supported:
 - `yaml.hover`: Enable/disable hover
 - `yaml.completion`: Enable/disable autocompletion
 - `yaml.schemas`: Helps you associate schemas with files in a glob pattern
+    `patterns`: Array of file paths/patterns
+    `enabled`: true/false the schemavvalidation on the provided file paths/patterns. Default is true
 - `yaml.schemaStore.enable`: When set to true the YAML language server will pull in all available schemas from [JSON Schema Store](https://www.schemastore.org/json/)
 - `yaml.schemaStore.url`: URL of a schema store catalog to use when downloading schemas.
 - `yaml.customTags`: Array of custom tags that the parser will validate against. It has two ways to be used. Either an item in the array is a custom tag such as "!Ref" and it will automatically map !Ref to scalar or you can specify the type of the object !Ref should be e.g. "!Ref sequence". The type of object can be either scalar (for strings and booleans), sequence (for arrays), map (for objects).
@@ -91,7 +93,9 @@ you can do
 
 ```
 yaml.schemas: {
-    "https://json.schemastore.org/composer": "/myYamlFile.yaml"
+    "https://json.schemastore.org/composer": {
+      "patterns": ["/myYamlFile.yaml"]
+    }
 }
 ```
 
@@ -116,8 +120,23 @@ e.g.
 
 ```json
 yaml.schemas: {
-    "https://json.schemastore.org/composer": "/*"
-}
+    "https://json.schemastore.org/composer": {
+      "patterns":["/*"]
+    }
+
+```
+
+### Disable the schema validation:
+
+e.g.
+
+```json
+yaml.schemas: {
+    "https://json.schemastore.org/composer": {
+      "patterns": ["/*"],
+      "enabled": false
+    }
+
 ```
 
 e.g.
@@ -132,7 +151,9 @@ e.g.
 
 ```json
 yaml.schemas: {
-    "https://json.schemastore.org/composer": "/*",
+    "https://json.schemastore.org/composer": {
+      "patterns": ["/*"]
+    },
     "kubernetes": "/myYamlFile.yaml"
 }
 ```
@@ -141,7 +162,10 @@ On Windows with full path:
 
 ```json
 yaml.schemas: {
-    "C:\\Users\\user\\Documents\\custom_schema.json": "someFilePattern.yaml",
+    "C:\\Users\\user\\Documents\\custom_schema.json": {
+      "patterns": ["someFilePattern.yaml"],
+      "enabled": false
+    },
 }
 ```
 
@@ -149,14 +173,19 @@ On Mac/Linux with full path:
 
 ```json
 yaml.schemas: {
-    "/home/user/custom_schema.json": "someFilePattern.yaml",
+    "/home/user/custom_schema.json": {
+      "patterns": ["someFilePattern.yaml"],
+      "enabled": false
+    },
 }
 ```
 
 Since `0.11.0` YAML Schemas can be used for validation:
 
 ```json
- "/home/user/custom_schema.yaml": "someFilePattern.yaml"
+ "/home/user/custom_schema.yaml": {
+   "patterns": ["someFilePattern.yaml"]
+ }
 ```
 
 A schema can be associated with multiple globs using a json array, e.g.
@@ -171,10 +200,18 @@ e.g.
 
 ```json
 "yaml.schemas": {
-    "http://json.schemastore.org/composer": ["/*"],
-    "file:///home/johnd/some-schema.json": ["some.yaml"],
-    "../relative/path/schema.json": ["/config*.yaml"],
-    "/Users/johnd/some-schema.json": ["some.yaml"],
+    "http://json.schemastore.org/composer": {
+      "patterns": ["/*"]
+    },
+    "file:///home/johnd/some-schema.json": {
+      "patterns": ["some.yaml"]
+    },
+    "../relative/path/schema.json": {
+      "patterns": ["/config*.yaml"]
+    },
+    "/Users/johnd/some-schema.json": {
+      "patterns": ["some.yaml"]
+    },
 }
 ```
 
@@ -190,7 +227,9 @@ e.g.
 
 ```json
 "yaml.schemas": {
-    "http://json.schemastore.org/composer": ["/*"],
+    "http://json.schemastore.org/composer": {
+      "patterns": ["/*"],
+    },
     "kubernetes": ["/myYamlFile.yaml"]
 }
 ```

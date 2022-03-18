@@ -109,6 +109,7 @@ export class SettingsHandler {
     }
 
     this.yamlSettings.schemaConfigurationSettings = [];
+    this.yamlSettings.yamlFilesShoudNotValidate = [];
 
     let tabSize = 2;
     if (settings.vscodeEditor) {
@@ -119,12 +120,20 @@ export class SettingsHandler {
     if (settings.yamlEditor && settings.yamlEditor['editor.tabSize']) {
       this.yamlSettings.indentation = ' '.repeat(tabSize);
     }
-
     for (const uri in this.yamlSettings.yamlConfigurationSettings) {
       const globPattern = this.yamlSettings.yamlConfigurationSettings[uri];
-
+      const files = globPattern.patterns
+        ? Array.isArray(globPattern.patterns)
+          ? globPattern.patterns
+          : [globPattern.patterns]
+        : Array.isArray(globPattern)
+        ? globPattern
+        : [globPattern];
+      if (globPattern.enabled !== undefined && globPattern.enabled === false) {
+        this.yamlSettings.yamlFilesShoudNotValidate.push(...files);
+      }
       const schemaObj = {
-        fileMatch: Array.isArray(globPattern) ? globPattern : [globPattern],
+        fileMatch: files,
         uri: checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri, this.telemetry),
       };
       this.yamlSettings.schemaConfigurationSettings.push(schemaObj);
@@ -237,6 +246,7 @@ export class SettingsHandler {
       disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
       disableDefaultProperties: this.yamlSettings.disableDefaultProperties,
       yamlVersion: this.yamlSettings.yamlVersion,
+      yamlFilesShoudNotValidate: this.yamlSettings.yamlFilesShoudNotValidate,
     };
 
     if (this.yamlSettings.schemaAssociations) {

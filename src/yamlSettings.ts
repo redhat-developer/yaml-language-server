@@ -41,6 +41,8 @@ export interface Settings {
 
 export interface JSONSchemaSettings {
   fileMatch?: string[];
+  patterns?: string;
+  enabled?: boolean;
   url?: string;
   schema?: JSONSchema;
 }
@@ -60,6 +62,7 @@ export class SettingsState {
     printWidth: 80,
     enable: true,
   } as CustomFormatterOptions;
+  yamlFilesShoudNotValidate: string[] = [];
   yamlShouldHover = true;
   yamlShouldCompletion = true;
   schemaStoreSettings = [];

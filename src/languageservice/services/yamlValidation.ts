@@ -9,7 +9,7 @@ import { Diagnostic, Position } from 'vscode-languageserver';
 import { LanguageSettings } from '../yamlLanguageService';
 import { YAMLDocument, YamlVersion } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { YAMLSchemaService } from './yamlSchemaService';
+import { FilePatternAssociation, YAMLSchemaService } from './yamlSchemaService';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
@@ -45,6 +45,7 @@ export class YAMLValidation {
   private disableAdditionalProperties: boolean;
   private yamlVersion: YamlVersion;
   private additionalValidation: AdditionalValidation;
+  private yamlFilesShouldNotValidate: string[];
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
@@ -60,11 +61,25 @@ export class YAMLValidation {
       this.customTags = settings.customTags;
       this.disableAdditionalProperties = settings.disableAdditionalProperties;
       this.yamlVersion = settings.yamlVersion;
+      this.yamlFilesShouldNotValidate = settings.yamlFilesShoudNotValidate;
     }
   }
 
   public async doValidation(textDocument: TextDocument, isKubernetes = false): Promise<Diagnostic[]> {
     if (!this.validationEnabled) {
+      return Promise.resolve([]);
+    }
+    if (this.yamlFilesShouldNotValidate) {
+      for (const patternString of this.yamlFilesShouldNotValidate) {
+        const fileAssociation = new FilePatternAssociation(patternString);
+        if (fileAssociation.matchesPattern(textDocument.uri)) {
+          return Promise.resolve([]);
+        }
+      }
+    }
+    const encodedURI = encodeURI(textDocument.uri);
+    const fileName = encodedURI.substring(encodedURI.lastIndexOf('/') + 1);
+    if (this.yamlFilesShouldNotValidate?.includes(fileName)) {
       return Promise.resolve([]);
     }
 
