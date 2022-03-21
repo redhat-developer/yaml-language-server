@@ -1204,7 +1204,7 @@ function validate(
 
     if (Array.isArray(schema.required)) {
       for (const propertyName of schema.required) {
-        if (!seenKeys[propertyName]) {
+        if (seenKeys[propertyName] === undefined) {
           const keyNode = node.parent && node.parent.type === 'property' && node.parent.keyNode;
           const location = keyNode ? { offset: keyNode.offset, length: keyNode.length } : { offset: node.offset, length: 1 };
           const problem = {

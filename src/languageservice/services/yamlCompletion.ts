@@ -47,8 +47,7 @@ const inlineSymbol = '=@ctx';
 const parentCompletionKind = CompletionItemKind.Class;
 
 interface ParentCompletionItemOptions {
-  schemaType: string;
-  schemaDescription?: string;
+  schema: JSONSchema;
   indent?: string;
   insertTexts?: string[];
 }
@@ -362,10 +361,12 @@ export class YamlCompletion {
           if (existsInYaml) {
             return;
           }
+          const schema = completionItem.parent.schema;
+          const schemaType = getSchemaTypeName(schema);
+          const schemaDescription = schema.markdownDescription || schema.description;
 
-          const schemaType = completionItem.parent.schemaType;
           let parentCompletion: CompletionItem | undefined = result.items.find(
-            (item) => item.label === schemaType && item.kind === parentCompletionKind
+            (item: CompletionItem) => item.parent?.schema === schema && item.kind === parentCompletionKind
           );
 
           if (parentCompletion && parentCompletion.parent.insertTexts.includes(completionItem.insertText)) {
@@ -376,7 +377,7 @@ export class YamlCompletion {
             parentCompletion = {
               ...completionItem,
               label: schemaType,
-              documentation: completionItem.parent.schemaDescription,
+              documentation: schemaDescription,
               sortText: '_' + schemaType, // this parent completion goes first,
               kind: parentCompletionKind,
             };
@@ -838,7 +839,6 @@ export class YamlCompletion {
                   });
                   // if the prop is required add it also to parent suggestion
                   if (schema.schema.required?.includes(key)) {
-                    const schemaType = getSchemaTypeName(schema.schema);
                     collector.add({
                       label: key,
                       insertText: this.getInsertTextForProperty(
@@ -850,8 +850,7 @@ export class YamlCompletion {
                       insertTextFormat: InsertTextFormat.Snippet,
                       documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
                       parent: {
-                        schemaType,
-                        schemaDescription: schema.schema.markdownDescription || schema.schema.description,
+                        schema: schema.schema,
                         indent: identCompensation,
                       },
                     });
