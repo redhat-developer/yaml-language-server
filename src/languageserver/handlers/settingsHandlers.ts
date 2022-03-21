@@ -106,6 +106,7 @@ export class SettingsHandler {
       }
       this.yamlSettings.disableAdditionalProperties = settings.yaml.disableAdditionalProperties;
       this.yamlSettings.disableDefaultProperties = settings.yaml.disableDefaultProperties;
+      this.yamlSettings.selectParentSkeletonFirst = settings.yaml.selectParentSkeletonFirst;
     }
 
     this.yamlSettings.schemaConfigurationSettings = [];
@@ -236,6 +237,7 @@ export class SettingsHandler {
       indentation: this.yamlSettings.indentation,
       disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
       disableDefaultProperties: this.yamlSettings.disableDefaultProperties,
+      selectParentSkeletonFirst: this.yamlSettings.selectParentSkeletonFirst,
       yamlVersion: this.yamlSettings.yamlVersion,
     };
 
