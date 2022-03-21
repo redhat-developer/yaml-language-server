@@ -75,6 +75,7 @@ export class YamlCompletion {
   private indentation: string;
   private supportsMarkdown: boolean | undefined;
   private disableDefaultProperties: boolean;
+  private selectParentSkeletonFirst: boolean;
 
   constructor(
     private schemaService: YAMLSchemaService,
@@ -91,6 +92,7 @@ export class YamlCompletion {
     this.yamlVersion = languageSettings.yamlVersion;
     this.configuredIndentation = languageSettings.indentation;
     this.disableDefaultProperties = languageSettings.disableDefaultProperties;
+    this.selectParentSkeletonFirst = languageSettings.selectParentSkeletonFirst;
   }
 
   async doComplete(document: TextDocument, position: Position, isKubernetes = false): Promise<CompletionList> {
@@ -421,9 +423,7 @@ export class YamlCompletion {
 
           if (isForParentCompletion) {
             addSuggestionForParent(completionItem);
-          }
-
-          if (!existing) {
+          } else if (!existing) {
             proposed[label] = completionItem;
             result.items.push(completionItem);
           }
@@ -742,7 +742,8 @@ export class YamlCompletion {
     const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
     const hasOnlyWhitespace = lineContent.trim().length === 0;
     const hasColon = lineContent.indexOf(':') !== -1;
-
+    const isNodeNull =
+      (isScalar(originalNode) && originalNode.value === null) || (isMap(originalNode) && originalNode.items.length === 0);
     const nodeParent = doc.getParent(node);
     const matchOriginal = matchingSchemas.find((it) => it.node.internalNode === originalNode && it.schema.properties);
     for (const schema of matchingSchemas) {
@@ -829,14 +830,16 @@ export class YamlCompletion {
                       identCompensation + this.indentation
                     );
                   }
-
-                  collector.add({
-                    kind: CompletionItemKind.Property,
-                    label: key,
-                    insertText,
-                    insertTextFormat: InsertTextFormat.Snippet,
-                    documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
-                  });
+                  const existsParentCompletion = schema.schema.required?.length > 0;
+                  if (!this.selectParentSkeletonFirst || !isNodeNull || !existsParentCompletion) {
+                    collector.add({
+                      kind: CompletionItemKind.Property,
+                      label: key,
+                      insertText,
+                      insertTextFormat: InsertTextFormat.Snippet,
+                      documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
+                    });
+                  }
                   // if the prop is required add it also to parent suggestion
                   if (schema.schema.required?.includes(key)) {
                     collector.add({

@@ -2996,5 +2996,108 @@ describe('Auto Completion Tests', () => {
         })
       );
     });
+    describe('Select parent skeleton first', () => {
+      beforeEach(() => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion();
+        languageSettingsSetup.languageSettings.selectParentSkeletonFirst = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+      });
+      it('Should suggest complete object skeleton', async () => {
+        const schema = {
+          definitions: { obj1, obj2 },
+          anyOf: [
+            {
+              $ref: '#/definitions/obj1',
+            },
+            {
+              $ref: '#/definitions/obj2',
+            },
+          ],
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = '';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.map((i) => i.label)).to.have.members(['Object1', 'obj2']);
+      });
+      it('Should suggest complete object skeleton - nested', async () => {
+        const schema = {
+          definitions: { obj1, obj2 },
+          properties: {
+            name: {
+              anyOf: [
+                {
+                  $ref: '#/definitions/obj1',
+                },
+                {
+                  $ref: '#/definitions/obj2',
+                },
+              ],
+            },
+          },
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'name:\n  ';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.map((i) => i.label)).to.have.members(['Object1', 'obj2']);
+      });
+      it('Should suggest complete object skeleton - array', async () => {
+        const schema = {
+          definitions: { obj1, obj2 },
+          items: {
+            anyOf: [
+              {
+                $ref: '#/definitions/obj1',
+              },
+              {
+                $ref: '#/definitions/obj2',
+              },
+            ],
+          },
+          type: 'array',
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = '- ';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.map((i) => i.label)).to.have.members(['Object1', 'obj2']);
+      });
+      it('Should suggest rest of the parent object', async () => {
+        const schema = {
+          definitions: { obj1 },
+          $ref: '#/definitions/obj1',
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'type: typeObj1\n';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.map((i) => i.label)).to.have.members(['options', 'Object1']);
+      });
+      it('Should suggest all feature when user is typing', async () => {
+        const schema = {
+          definitions: { obj1 },
+          $ref: '#/definitions/obj1',
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'ty';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.map((i) => i.label)).to.have.members(['type', 'options', 'Object1']);
+      });
+      it('Should suggest all properties in empty yaml with now required props', async () => {
+        const schema = {
+          properties: {
+            fruit: {},
+            vegetable: {},
+          },
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = '';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.map((i) => i.label)).to.have.members(['fruit', 'vegetable']);
+      });
+    });
   });
 });
