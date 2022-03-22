@@ -727,7 +727,7 @@ function validate(
         } else if (isKubernetes) {
           bestMatch = alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         } else {
-          bestMatch = genericComparison(maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
+          bestMatch = genericComparison(node, maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         }
       }
 
@@ -1421,6 +1421,7 @@ function validate(
 
   //genericComparison tries to find the best matching schema using a generic comparison
   function genericComparison(
+    node: ASTNode,
     maxOneMatch,
     subValidationResult: ValidationResult,
     bestMatch: {
@@ -1442,7 +1443,14 @@ function validate(
       bestMatch.validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
     } else {
       const compareResult = subValidationResult.compareGeneric(bestMatch.validationResult);
-      if (compareResult > 0) {
+      if (
+        compareResult > 0 ||
+        (compareResult === 0 &&
+          maxOneMatch &&
+          bestMatch.schema.type === 'object' &&
+          node.type !== 'null' &&
+          node.type !== bestMatch.schema.type)
+      ) {
         // our node is the best matching so far
         bestMatch = {
           schema: subSchema,
