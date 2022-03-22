@@ -12,6 +12,7 @@ import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './ut
 import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
 import * as path from 'path';
+import { JSONSchema } from './../src/languageservice/jsonSchema';
 
 describe('Auto Completion Fix Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -381,6 +382,93 @@ objB:
           documentation: '',
         })
       );
+    });
+  });
+
+  describe('merge properties from anyOf objects', () => {
+    it('should merge different simple values', async () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              simplePropWithSimpleValue: { type: 'string', const: 'const value' },
+            },
+          },
+          {
+            properties: {
+              simplePropWithSimpleValue: { type: 'boolean', default: false },
+            },
+          },
+          {
+            properties: {
+              simplePropWithSimpleValue: { type: 'null', default: null },
+            },
+          },
+          {
+            properties: {
+              simplePropWithSimpleValue: { type: 'string' },
+            },
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const completion = await parseSetup(content, 0, 1);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0].insertText).to.be.equal('simplePropWithSimpleValue: ${1|const value,false,null|}');
+    });
+
+    it('should autocomplete as single item with same value', async () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              simplePropWithSameValue: { type: 'string', const: 'const value 1' },
+              obj1: { properties: { prop1: { type: 'string' } } },
+            },
+          },
+          {
+            properties: {
+              simplePropWithSameValue: { type: 'string', const: 'const value 1' },
+              obj1: { properties: { prop1: { type: 'string' } } },
+            },
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const completion = await parseSetup(content, 0, 1);
+
+      expect(completion.items.length).equal(2);
+      expect(completion.items[0].insertText).to.be.equal('simplePropWithSameValue: const value 1');
+      expect(completion.items[1].insertText).to.be.equal('obj1:\n  ');
+    });
+
+    it('should not merge objects', async () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              obj1: { properties: { prop1: { type: 'string' } }, required: ['prop1'] },
+            },
+          },
+          {
+            properties: {
+              obj1: { properties: { prop2: { type: 'string', const: 'value' } }, required: ['prop2'] },
+            },
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const completion = await parseSetup(content, 0, 1);
+
+      expect(completion.items.length).equal(2);
+      expect(completion.items[0].label).to.be.equal('obj1');
+      expect(completion.items[0].insertText).to.be.equal('obj1:\n  prop1: ');
+      expect(completion.items[1].label).to.be.equal('obj1');
+      expect(completion.items[1].insertText).to.be.equal('obj1:\n  prop2: ${1:value}');
     });
   });
 });
