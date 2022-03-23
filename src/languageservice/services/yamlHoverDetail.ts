@@ -274,10 +274,10 @@ function distinctSchemas(matchingSchemas: IApplicableSchema[]): IApplicableSchem
     matchingSchemasDistinct = matchingSchemasDistinct.filter((s) => s.schema.$comment === 'then/else');
   }
 
-  if (matchingSchemas.length != matchingSchemasDistinct.length) {
-    const removedCount = matchingSchemas.length - matchingSchemasDistinct.length;
-    console.log('removing some schemas: ' + seenSchemaFromAnyOf.join(', ') + '. removed count:' + removedCount);
-  }
+  // if (matchingSchemas.length != matchingSchemasDistinct.length) {
+  //   const removedCount = matchingSchemas.length - matchingSchemasDistinct.length;
+  //   console.log('removing some schemas: ' + seenSchemaFromAnyOf.join(', ') + '. removed count:' + removedCount);
+  // }
   return matchingSchemasDistinct;
 }
 
