@@ -2,8 +2,8 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { xhr, configure as configureHttpRequests } from 'request-light';
-import { DocumentFormattingRequest, Connection, DidChangeConfigurationNotification } from 'vscode-languageserver';
+import { configure as configureHttpRequests, xhr } from 'request-light';
+import { Connection, DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
 import { convertErrorToTelemetryMsg } from '../../languageservice/utils/objects';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
@@ -26,7 +26,7 @@ export class SettingsHandler {
     if (this.yamlSettings.hasConfigurationCapability && this.yamlSettings.clientDynamicRegisterSupport) {
       try {
         // Register for all configuration changes.
-        await this.connection.client.register(DidChangeConfigurationNotification.type, undefined);
+        await this.connection.client.register(DidChangeConfigurationNotification.type);
       } catch (err) {
         this.telemetry.sendError('yaml.settings.error', { error: convertErrorToTelemetryMsg(err) });
       }
@@ -53,10 +53,10 @@ export class SettingsHandler {
       yamlEditor: config[2],
       vscodeEditor: config[3],
     };
-    this.setConfiguration(settings);
+    await this.setConfiguration(settings);
   }
 
-  async setConfiguration(settings: Settings): Promise<void> {
+  private async setConfiguration(settings: Settings): Promise<void> {
     configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
 
     this.yamlSettings.specificValidatorPaths = [];
@@ -83,7 +83,6 @@ export class SettingsHandler {
           this.yamlSettings.schemaStoreUrl = settings.yaml.schemaStore.url;
         }
       }
-
       this.yamlSettings.yamlVersion = settings.yaml.yamlVersion ?? '1.2';
 
       if (settings.yaml.format) {
@@ -160,7 +159,7 @@ export class SettingsHandler {
    * AND the schema store setting is enabled. If the schema store setting
    * is not enabled we need to clear the schemas.
    */
-  public async setSchemaStoreSettingsIfNotSet(): Promise<void> {
+  private async setSchemaStoreSettingsIfNotSet(): Promise<void> {
     const schemaStoreIsSet = this.yamlSettings.schemaStoreSettings.length !== 0;
     let schemaStoreUrl = '';
     if (this.yamlSettings.schemaStoreUrl.length !== 0) {
@@ -173,13 +172,11 @@ export class SettingsHandler {
       try {
         const schemaStore = await this.getSchemaStoreMatchingSchemas(schemaStoreUrl);
         this.yamlSettings.schemaStoreSettings = schemaStore.schemas;
-        this.updateConfiguration();
       } catch (err) {
         // ignore
       }
     } else if (!this.yamlSettings.schemaStoreEnabled) {
       this.yamlSettings.schemaStoreSettings = [];
-      this.updateConfiguration();
     }
   }
 
@@ -187,45 +184,44 @@ export class SettingsHandler {
    * When the schema store is enabled, download and store YAML schema associations
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getSchemaStoreMatchingSchemas(schemaStoreUrl: string): Promise<{ schemas: any[] }> {
-    return xhr({ url: schemaStoreUrl }).then((response) => {
-      const languageSettings = {
-        schemas: [],
-      };
+  private async getSchemaStoreMatchingSchemas(schemaStoreUrl: string): Promise<{ schemas: any[] }> {
+    const response = await xhr({ url: schemaStoreUrl });
 
-      // Parse the schema store catalog as JSON
-      const schemas = JSON.parse(response.responseText);
+    const languageSettings = {
+      schemas: [],
+    };
 
-      for (const schemaIndex in schemas.schemas) {
-        const schema = schemas.schemas[schemaIndex];
+    // Parse the schema store catalog as JSON
+    const schemas = JSON.parse(response.responseText);
 
-        if (schema && schema.fileMatch) {
-          for (const fileMatch in schema.fileMatch) {
-            const currFileMatch: string = schema.fileMatch[fileMatch];
-            // If the schema is for files with a YAML extension, save the schema association
-            if (currFileMatch.indexOf('.yml') !== -1 || currFileMatch.indexOf('.yaml') !== -1) {
-              languageSettings.schemas.push({
-                uri: schema.url,
-                fileMatch: [currFileMatch],
-                priority: SchemaPriority.SchemaStore,
-                name: schema.name,
-                description: schema.description,
-                versions: schema.versions,
-              });
-            }
+    for (const schemaIndex in schemas.schemas) {
+      const schema = schemas.schemas[schemaIndex];
+
+      if (schema && schema.fileMatch) {
+        for (const fileMatch in schema.fileMatch) {
+          const currFileMatch: string = schema.fileMatch[fileMatch];
+          // If the schema is for files with a YAML extension, save the schema association
+          if (currFileMatch.indexOf('.yml') !== -1 || currFileMatch.indexOf('.yaml') !== -1) {
+            languageSettings.schemas.push({
+              uri: schema.url,
+              fileMatch: [currFileMatch],
+              priority: SchemaPriority.SchemaStore,
+              name: schema.name,
+              description: schema.description,
+              versions: schema.versions,
+            });
           }
         }
       }
-
-      return languageSettings;
-    });
+    }
+    return languageSettings;
   }
 
   /**
    * Called when server settings or schema associations are changed
    * Re-creates schema associations and re-validates any open YAML files
    */
-  public updateConfiguration(): void {
+  private updateConfiguration(): void {
     let languageSettings: LanguageSettings = {
       validate: this.yamlSettings.yamlShouldValidate,
       hover: this.yamlSettings.yamlShouldHover,

@@ -45,10 +45,10 @@ export class NotificationHandlers {
    * Update the associations in the server
    */
   private schemaAssociationNotificationHandler(associations: Record<string, string[]> | SchemaConfiguration[]): void {
+    console.trace('schemaAssociationsHandler : ' + JSON.stringify(associations));
     this.yamlSettings.schemaAssociations = associations;
     this.yamlSettings.specificValidatorPaths = [];
-    this.settingsHandler.setSchemaStoreSettingsIfNotSet();
-    this.settingsHandler.updateConfiguration();
+    this.settingsHandler.pullConfiguration().catch((error) => console.log(error));
   }
 
   /**

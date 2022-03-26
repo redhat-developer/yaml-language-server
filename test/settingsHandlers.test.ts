@@ -3,17 +3,17 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers';
-import * as sinon from 'sinon';
 import * as chai from 'chai';
+import * as request from 'request-light';
+import * as sinon from 'sinon';
 import * as sinonChai from 'sinon-chai';
 import { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver';
-import { SettingsState } from '../src/yamlSettings';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 import { LanguageService, LanguageSettings, SchemaConfiguration, SchemaPriority } from '../src';
-import * as request from 'request-light';
-import { setupLanguageService } from './utils/testHelper';
+import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 import { Telemetry } from '../src/languageserver/telemetry';
+import { SettingsState } from '../src/yamlSettings';
+import { setupLanguageService } from './utils/testHelper';
 import { TestWorkspace } from './utils/testsTypes';
 
 const expect = chai.expect;
@@ -23,7 +23,7 @@ describe('Settings Handlers Tests', () => {
   const sandbox = sinon.createSandbox();
   const connection: Connection = {} as Connection;
   let workspaceStub: sinon.SinonStubbedInstance<RemoteWorkspace>;
-  let languageService: sinon.SinonMockStatic;
+  let languageService: LanguageService;
   let settingsState: SettingsState;
   let validationHandler: sinon.SinonMock;
   let xhrStub: sinon.SinonStub;
@@ -34,7 +34,8 @@ describe('Settings Handlers Tests', () => {
     connection.onDidChangeConfiguration = sandbox.mock();
     connection.client = {} as RemoteClient;
     connection.client.register = sandbox.mock();
-    languageService = sandbox.mock();
+    const languageServerSetup = setupLanguageService({});
+    languageService = languageServerSetup.languageService;
     settingsState = new SettingsState();
     validationHandler = sandbox.mock(ValidationHandler);
     xhrStub = sandbox.stub(request, 'xhr');
@@ -77,6 +78,10 @@ describe('Settings Handlers Tests', () => {
   });
 
   it('SettingsHandler should not modify file match patterns', async () => {
+    const languageServerSetup = setupLanguageService({});
+
+    const languageService = languageServerSetup.languageService;
+
     xhrStub.resolves({
       responseText: `{"schemas": [
       {
@@ -95,11 +100,10 @@ describe('Settings Handlers Tests', () => {
       (validationHandler as unknown) as ValidationHandler,
       {} as Telemetry
     );
-
-    sandbox.stub(settingsHandler, 'updateConfiguration').returns();
-
-    await settingsHandler.setSchemaStoreSettingsIfNotSet();
-
+    workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+    const configureSpy = sinon.stub(languageService, 'configure');
+    await settingsHandler.pullConfiguration();
+    configureSpy.restore();
     expect(settingsState.schemaStoreSettings).deep.include({
       uri: 'https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json',
       fileMatch: ['.adonisrc.yaml'],
@@ -110,14 +114,11 @@ describe('Settings Handlers Tests', () => {
     });
   });
 
-  describe('Test that schema priorities are available', () => {
+  describe('Test that schema priorities are available', async () => {
     const testSchemaFileMatch = ['foo/*.yml'];
     const testSchemaURI = 'file://foo.json';
 
-    function configureSchemaPriorityTest(): LanguageSettings {
-      const languageServerSetup = setupLanguageService({});
-
-      const languageService = languageServerSetup.languageService;
+    async function configureSchemaPriorityTest(): Promise<LanguageSettings> {
       const settingsHandler = new SettingsHandler(
         connection,
         languageService,
@@ -125,24 +126,28 @@ describe('Settings Handlers Tests', () => {
         (validationHandler as unknown) as ValidationHandler,
         {} as Telemetry
       );
-
       const configureSpy = sinon.spy(languageService, 'configure');
-      settingsHandler.updateConfiguration();
-
-      // Check things here
+      await settingsHandler.pullConfiguration();
       configureSpy.restore();
       return configureSpy.args[0][0];
     }
 
     it('Schema Settings should have a priority', async () => {
-      settingsState.schemaConfigurationSettings = [
-        {
-          fileMatch: testSchemaFileMatch,
-          uri: testSchemaURI,
-        },
-      ];
-
-      const configureSpy = configureSchemaPriorityTest();
+      xhrStub.resolves({
+        responseText: `{"schemas": [
+      {
+        "name": ".adonisrc.json",
+        "description": "AdonisJS configuration file",
+        "fileMatch": [
+          ".adonisrc.yaml"
+        ],
+        "url": "https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json"
+      }]}`,
+      });
+      const schemas = {};
+      schemas[testSchemaURI] = testSchemaFileMatch;
+      workspaceStub.getConfiguration.resolves([{ schemas: schemas }, {}, {}, {}]);
+      const configureSpy = await configureSchemaPriorityTest();
 
       expect(configureSpy.schemas).deep.include({
         uri: testSchemaURI,
@@ -153,6 +158,17 @@ describe('Settings Handlers Tests', () => {
     });
 
     it('Schema Associations should have a priority when schema association is an array', async () => {
+      xhrStub.resolves({
+        responseText: `{"schemas": [
+      {
+        "name": ".adonisrc.json",
+        "description": "AdonisJS configuration file",
+        "fileMatch": [
+          ".adonisrc.yaml"
+        ],
+        "url": "https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json"
+      }]}`,
+      });
       settingsState.schemaAssociations = [
         {
           fileMatch: testSchemaFileMatch,
@@ -160,7 +176,8 @@ describe('Settings Handlers Tests', () => {
         },
       ] as SchemaConfiguration[];
 
-      const configureSpy = configureSchemaPriorityTest();
+      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      const configureSpy = await configureSchemaPriorityTest();
 
       expect(configureSpy.schemas).deep.include({
         uri: testSchemaURI,
@@ -174,8 +191,8 @@ describe('Settings Handlers Tests', () => {
       settingsState.schemaAssociations = {
         [testSchemaURI]: testSchemaFileMatch,
       } as Record<string, string[]>;
-
-      const configureSpy = configureSchemaPriorityTest();
+      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      const configureSpy = await configureSchemaPriorityTest();
 
       expect(configureSpy.schemas).deep.include({
         uri: testSchemaURI,
@@ -195,7 +212,6 @@ describe('Settings Handlers Tests', () => {
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
-      const setConfigurationStub = sandbox.stub(settingsHandler, 'setConfiguration');
 
       await settingsHandler.pullConfiguration();
 
@@ -205,18 +221,28 @@ describe('Settings Handlers Tests', () => {
         { section: '[yaml]' },
         { section: 'editor' },
       ]);
-
-      expect(setConfigurationStub).calledOnceWith({
-        yaml: {},
-        http: {
-          proxy: '',
-          proxyStrictSSL: false,
-        },
-        yamlEditor: {},
-        vscodeEditor: {},
-      });
     });
+    it('should set schemaStoreSettings to empty when schemaStore is disabled', async () => {
+      const languageServerSetup = setupLanguageService({});
 
+      const languageService = languageServerSetup.languageService;
+      settingsState.schemaStoreEnabled = true;
+      const settingsHandler = new SettingsHandler(
+        connection,
+        (languageService as unknown) as LanguageService,
+        settingsState,
+        (validationHandler as unknown) as ValidationHandler,
+        {} as Telemetry
+      );
+
+      workspaceStub.getConfiguration.resolves([{ schemaStore: { enable: false, url: 'http://shouldnot.activate' } }, {}, {}, {}]);
+
+      // const configureSpy = sinon.spy(languageService, 'configure');
+      await settingsHandler.pullConfiguration();
+      // configureSpy.restore();
+      expect(settingsState.schemaStoreEnabled).to.be.false;
+      expect(settingsState.schemaStoreSettings).to.be.empty;
+    });
     it('detect indentation settings change', async () => {
       const settingsHandler = new SettingsHandler(
         connection,
