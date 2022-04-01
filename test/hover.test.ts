@@ -338,6 +338,22 @@ describe('Hover Tests', () => {
     it('Hover works on oneOf reference array nodes', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
+        definitions: {
+          stringoptions: {
+            $id: '#/definitions/stringoptions',
+            type: 'array',
+            additionalItems: false,
+            uniqueItems: true,
+            minItems: 1,
+            items: {
+              oneOf: [
+                {
+                  type: 'string',
+                },
+              ],
+            },
+          },
+        },
         properties: {
           ignition: {
             type: 'object',
@@ -346,8 +362,7 @@ describe('Hover Tests', () => {
                 type: 'object',
                 properties: {
                   no_proxy: {
-                    $ref:
-                      'https://github.com/Nemric/Butane-Schemas/releases/latest/download/butane-v1_4_0.json#/definitions/stringoptions',
+                    $ref: '#/definitions/stringoptions',
                     title: 'no_proxy (list of strings):',
                     description:
                       'Specifies a list of strings to hosts that should be excluded from proxying. Each value is represented by an IP address prefix (1.2.3.4), an IP address prefix in CIDR notation (1.2.3.4/8), a domain name, or a special DNS label (*). An IP address prefix and domain name can also include a literal port number (1.2.3.4:80). A domain name matches that name and all subdomains. A domain name with a leading . matches subdomains only. For example foo.com matches foo.com and bar.foo.com; .y.com matches x.y.com but not y.com. A single asterisk (*) indicates that no proxying should be done.',
@@ -371,14 +386,12 @@ describe('Hover Tests', () => {
                           description: 'The name to use for the resulting md device.',
                         },
                         devices: {
-                          $ref:
-                            'https://github.com/Nemric/Butane-Schemas/releases/latest/download/butane-v1_4_0.json#/definitions/stringoptions',
+                          $ref: '#/definitions/stringoptions',
                           title: 'devices (list of strings):',
                           description: 'The list of devices (referenced by their absolute path) in the array.',
                         },
                         options: {
-                          $ref:
-                            'https://github.com/Nemric/Butane-Schemas/releases/latest/download/butane-v1_4_0.json#/definitions/stringoptions',
+                          $ref: '#/definitions/stringoptions',
                           title: 'options (list of strings):',
                           description: 'Any additional options to be passed to mdadm.',
                         },

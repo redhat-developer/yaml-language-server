@@ -2842,9 +2842,9 @@ describe('Auto Completion Tests', () => {
       const content = '';
       const result = await parseSetup(content, content.length);
 
-      expect(result.items.length).equal(4);
+      expect(result.items.length).equal(5);
       expect(result.items[0]).to.deep.equal(
-        createExpectedCompletion('type', 'type: typeObj1', 0, 0, 0, 0, 10, 2, { documentation: '' })
+        createExpectedCompletion('type', 'type: ${1|typeObj1,typeObj2|}', 0, 0, 0, 0, 10, 2, { documentation: '' })
       );
       expect(result.items[1]).to.deep.equal(
         createExpectedCompletion('Object1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
@@ -2867,6 +2867,9 @@ describe('Auto Completion Tests', () => {
           sortText: '_obj2',
         })
       );
+      expect(result.items[4]).to.deep.equal(
+        createExpectedCompletion('options', 'options:\n  description: ', 0, 0, 0, 0, 10, 2, { documentation: '' })
+      );
     });
 
     it('Should suggest complete object skeleton - array', async () => {
@@ -2888,9 +2891,9 @@ describe('Auto Completion Tests', () => {
       const content = '- ';
       const result = await parseSetup(content, content.length);
 
-      expect(result.items.length).equal(4);
+      expect(result.items.length).equal(5);
       expect(result.items[0]).to.deep.equal(
-        createExpectedCompletion('type', 'type: typeObj1', 0, 2, 0, 2, 10, 2, { documentation: '' })
+        createExpectedCompletion('type', 'type: ${1|typeObj1,typeObj2|}', 0, 2, 0, 2, 10, 2, { documentation: '' })
       );
       expect(result.items[1]).to.deep.equal(
         createExpectedCompletion('Object1', 'type: typeObj1\n  options:\n    label: ', 0, 2, 0, 2, 7, 2, {
@@ -2912,6 +2915,9 @@ describe('Auto Completion Tests', () => {
           },
           sortText: '_obj2',
         })
+      );
+      expect(result.items[4]).to.deep.equal(
+        createExpectedCompletion('options', 'options:\n    description: ', 0, 2, 0, 2, 10, 2, { documentation: '' })
       );
     });
     it('Should not agregate suggested text from different schemas', async () => {

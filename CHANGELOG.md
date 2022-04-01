@@ -1,3 +1,10 @@
+### 1.6.0
+- Add: differentiate similar schemas on completion [#681](https://github.com/redhat-developer/yaml-language-server/pull/681)
+- Fix: changed on specific to undefined check instead of null and undefined check [#678](https://github.com/redhat-developer/yaml-language-server/issues/665)
+- Fix: array object completion - should not suggest const [#620](https://github.com/redhat-developer/yaml-language-server/pull/670)
+
+Thanks to Petr Spacek
+
 ### 1.5.1
 - Fix: Yaml errors after updating to v1.5.0 [#708](https://github.com/redhat-developer/vscode-yaml/issues/708)
 

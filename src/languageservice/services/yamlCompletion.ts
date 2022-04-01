@@ -100,7 +100,7 @@ export class YamlCompletion {
     if (!this.completionEnabled) {
       return result;
     }
-    const startTime = Date.now();
+    // const startTime = Date.now();
     const offset = document.offsetAt(position);
     const textBuffer = new TextBuffer(document);
     const lineContent = textBuffer.getLineContent(position.line);
@@ -401,33 +401,48 @@ export class YamlCompletion {
         if (!isString(label)) {
           label = String(label);
         }
+
+        label = label.replace(/[\n]/g, '↵');
+        if (label.length > 60) {
+          const shortendedLabel = label.substr(0, 57).trim() + '...';
+          if (!proposed[shortendedLabel]) {
+            label = shortendedLabel;
+          }
+        }
+
+        // trim $1 from end of completion
+        if (completionItem.insertText.endsWith('$1') && !isForParentCompletion) {
+          completionItem.insertText = completionItem.insertText.substr(0, completionItem.insertText.length - 2);
+        }
+        if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
+          completionItem.textEdit = TextEdit.replace(overwriteRange, completionItem.insertText);
+        }
+
+        completionItem.label = label;
+
+        if (isForParentCompletion) {
+          addSuggestionForParent(completionItem);
+          return;
+        }
+
         const existing = proposed[label];
-        if (!existing || isForParentCompletion) {
-          label = label.replace(/[\n]/g, '↵');
-          if (label.length > 60) {
-            const shortendedLabel = label.substr(0, 57).trim() + '...';
-            if (!proposed[shortendedLabel]) {
-              label = shortendedLabel;
-            }
-          }
-
-          // trim $1 from end of completion
-          if (completionItem.insertText.endsWith('$1') && !isForParentCompletion) {
-            completionItem.insertText = completionItem.insertText.substr(0, completionItem.insertText.length - 2);
-          }
-          if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
-            completionItem.textEdit = TextEdit.replace(overwriteRange, completionItem.insertText);
-          }
-
-          completionItem.label = label;
-
-          if (isForParentCompletion) {
-            addSuggestionForParent(completionItem);
-          } else if (!existing) {
+        const isInsertTextDifferent =
+          existing?.label !== existingProposeItem && existing?.insertText !== completionItem.insertText;
+        if (!existing) {
+          proposed[label] = completionItem;
+          result.items.push(completionItem);
+        } else if (isInsertTextDifferent) {
+          // try to merge simple insert values
+          const mergedText = this.mergeSimpleInsertTexts(label, existing.insertText, completionItem.insertText);
+          if (mergedText) {
+            this.updateCompletionText(existing, mergedText);
+          } else {
+            // add to result when it wasn't able to merge (even if the item is already there but with a different value)
             proposed[label] = completionItem;
             result.items.push(completionItem);
           }
-        } else if (!existing.documentation && completionItem.documentation) {
+        }
+        if (existing && !existing.documentation && completionItem.documentation) {
           existing.documentation = completionItem.documentation;
         }
       },
@@ -664,6 +679,45 @@ export class YamlCompletion {
     this.finalizeParentCompletion(result);
 
     return result;
+  }
+
+  updateCompletionText(completionItem: CompletionItem, text: string): void {
+    completionItem.insertText = text;
+    if (completionItem.textEdit) {
+      completionItem.textEdit.newText = text;
+    }
+  }
+
+  mergeSimpleInsertTexts(label: string, existingText: string, addingText: string): string | undefined {
+    const containsNewLineAfterColon = (value: string): boolean => {
+      return value.includes('\n');
+    };
+    if (containsNewLineAfterColon(existingText) || containsNewLineAfterColon(addingText)) {
+      return undefined;
+    }
+    const existingValues = this.getValuesFromInsertText(existingText);
+    const addingValues = this.getValuesFromInsertText(addingText);
+
+    const newValues = Array.prototype.concat(existingValues, addingValues);
+    if (!newValues.length) {
+      return undefined;
+    } else if (newValues.length === 1) {
+      return `${label}: \${1:${newValues[0]}}`;
+    } else {
+      return `${label}: \${1|${newValues.join(',')}|}`;
+    }
+  }
+
+  getValuesFromInsertText(insertText: string): string[] {
+    const value = insertText.substring(insertText.indexOf(':') + 1).trim();
+    if (!value) {
+      return [];
+    }
+    const valueMath = value.match(/^\${1[|:]([^|]*)+\|?}$/); // ${1|one,two,three|}  or  ${1:one}
+    if (valueMath) {
+      return valueMath[1].split(',');
+    }
+    return [value];
   }
 
   private finalizeParentCompletion(result: CompletionList): void {
