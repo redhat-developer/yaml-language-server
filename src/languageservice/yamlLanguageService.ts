@@ -22,6 +22,7 @@ import {
   DocumentLink,
   CodeLens,
   DefinitionLink,
+  DiagnosticSeverity,
 } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
@@ -75,6 +76,7 @@ export interface SchemasSettings {
 
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
+  validationFailureSeverity?: DiagnosticSeverity; //Setting for the severity level of a schema validation failure
   hover?: boolean; //Setting for whether we want to have hover results
   completion?: boolean; //Setting for whether we want to have completion results
   format?: boolean; //Setting for whether we want to have the formatter or not

@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { Diagnostic, Position } from 'vscode-languageserver';
+import { Diagnostic, DiagnosticSeverity, Position } from 'vscode-languageserver';
 import { LanguageSettings } from '../yamlLanguageService';
 import { YAMLDocument, YamlVersion } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
@@ -43,6 +43,7 @@ export class YAMLValidation {
   private customTags: string[];
   private jsonValidation;
   private disableAdditionalProperties: boolean;
+  private validationFailureSeverity: DiagnosticSeverity;
   private yamlVersion: YamlVersion;
   private additionalValidation: AdditionalValidation;
 
@@ -57,6 +58,7 @@ export class YAMLValidation {
   public configure(settings: LanguageSettings): void {
     if (settings) {
       this.validationEnabled = settings.validate;
+      this.validationFailureSeverity = settings.validationFailureSeverity;
       this.customTags = settings.customTags;
       this.disableAdditionalProperties = settings.disableAdditionalProperties;
       this.yamlVersion = settings.yamlVersion;
@@ -81,6 +83,7 @@ export class YAMLValidation {
         currentYAMLDoc.isKubernetes = isKubernetes;
         currentYAMLDoc.currentDocIndex = index;
         currentYAMLDoc.disableAdditionalProperties = this.disableAdditionalProperties;
+        currentYAMLDoc.validationFailureSeverity = this.validationFailureSeverity;
 
         const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
 

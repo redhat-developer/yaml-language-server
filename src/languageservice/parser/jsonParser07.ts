@@ -521,6 +521,7 @@ export function findNodeAtOffset(node: ASTNode, offset: number, includeRightBoun
 export class JSONDocument {
   public isKubernetes: boolean;
   public disableAdditionalProperties: boolean;
+  public validationFailureSeverity: DiagnosticSeverity;
 
   constructor(
     public readonly root: ASTNode,
@@ -561,6 +562,7 @@ export class JSONDocument {
       validate(this.root, schema, schema, validationResult, NoOpSchemaCollector.instance, {
         isKubernetes: this.isKubernetes,
         disableAdditionalProperties: this.disableAdditionalProperties,
+        validationFailureSeverity: this.validationFailureSeverity,
       });
       return validationResult.problems.map((p) => {
         const range = Range.create(
@@ -587,6 +589,7 @@ export class JSONDocument {
       validate(this.root, schema, schema, new ValidationResult(this.isKubernetes), matchingSchemas, {
         isKubernetes: this.isKubernetes,
         disableAdditionalProperties: this.disableAdditionalProperties,
+        validationFailureSeverity: this.validationFailureSeverity,
       });
     }
     return matchingSchemas.schemas;
@@ -595,6 +598,7 @@ export class JSONDocument {
 interface Options {
   isKubernetes: boolean;
   disableAdditionalProperties: boolean;
+  validationFailureSeverity: DiagnosticSeverity;
 }
 function validate(
   node: ASTNode,
@@ -620,6 +624,7 @@ function validate(
   }
 
   schema.closestTitle = schema.title || originalSchema.closestTitle;
+  const severity = options.validationFailureSeverity || DiagnosticSeverity.Warning;
 
   switch (node.type) {
     case 'object':
@@ -650,7 +655,7 @@ function validate(
       if (!schema.type.some(matchesType)) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
-          severity: DiagnosticSeverity.Warning,
+          severity,
           message:
             schema.errorMessage ||
             localize('typeArrayMismatchWarning', 'Incorrect type. Expected one of {0}.', (<string[]>schema.type).join(', ')),
@@ -664,7 +669,7 @@ function validate(
         const schemaType = schema.type === 'object' ? getSchemaTypeName(schema) : schema.type;
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
-          severity: DiagnosticSeverity.Warning,
+          severity,
           message: schema.errorMessage || getWarningMessage(ProblemType.typeMismatchWarning, [schemaType]),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
@@ -686,7 +691,7 @@ function validate(
       if (!subValidationResult.hasProblems()) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
-          severity: DiagnosticSeverity.Warning,
+          severity,
           message: localize('notSchemaWarning', 'Matches a schema that is not allowed.'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
@@ -734,7 +739,7 @@ function validate(
       if (matches.length > 1 && noPropertyMatches.length === 0 && maxOneMatch) {
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
-          severity: DiagnosticSeverity.Warning,
+          severity,
           message: localize('oneOfWarning', 'Minimum one schema should validate.'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
@@ -808,7 +813,7 @@ function validate(
       if (!enumValueMatch) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
-          severity: DiagnosticSeverity.Warning,
+          severity,
           code: ErrorCode.EnumValueMismatch,
           message:
             schema.errorMessage ||
@@ -832,7 +837,7 @@ function validate(
       if (!equals(val, schema.const)) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
-          severity: DiagnosticSeverity.Warning,
+          severity,
           code: ErrorCode.EnumValueMismatch,
           problemType: ProblemType.constWarning,
           message: schema.errorMessage || getWarningMessage(ProblemType.constWarning, [JSON.stringify(schema.const)]),
@@ -850,7 +855,7 @@ function validate(
     if (schema.deprecationMessage && node.parent) {
       validationResult.problems.push({
         location: { offset: node.parent.offset, length: node.parent.length },
-        severity: DiagnosticSeverity.Warning,
+        severity,
         message: schema.deprecationMessage,
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
@@ -865,7 +870,7 @@ function validate(
       if (val % schema.multipleOf !== 0) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
-          severity: DiagnosticSeverity.Warning,
+          severity,
           message: localize('multipleOfWarning', 'Value is not divisible by {0}.', schema.multipleOf),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
@@ -891,7 +896,7 @@ function validate(
     if (isNumber(exclusiveMinimum) && val <= exclusiveMinimum) {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
-        severity: DiagnosticSeverity.Warning,
+        severity,
         message: localize('exclusiveMinimumWarning', 'Value is below the exclusive minimum of {0}.', exclusiveMinimum),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
@@ -901,7 +906,7 @@ function validate(
     if (isNumber(exclusiveMaximum) && val >= exclusiveMaximum) {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
-        severity: DiagnosticSeverity.Warning,
+        severity,
         message: localize('exclusiveMaximumWarning', 'Value is above the exclusive maximum of {0}.', exclusiveMaximum),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
@@ -911,7 +916,7 @@ function validate(
     if (isNumber(minimum) && val < minimum) {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
-        severity: DiagnosticSeverity.Warning,
+        severity,
         message: localize('minimumWarning', 'Value is below the minimum of {0}.', minimum),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
@@ -921,7 +926,7 @@ function validate(
     if (isNumber(maximum) && val > maximum) {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
-        severity: DiagnosticSeverity.Warning,
+        severity,
         message: localize('maximumWarning', 'Value is above the maximum of {0}.', maximum),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
@@ -933,7 +938,7 @@ function validate(
     if (isNumber(schema.minLength) && node.value.length < schema.minLength) {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
-        severity: DiagnosticSeverity.Warning,
+        severity,
         message: localize('minLengthWarning', 'String is shorter than the minimum length of {0}.', schema.minLength),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
@@ -943,7 +948,7 @@ function validate(
     if (isNumber(schema.maxLength) && node.value.length > schema.maxLength) {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
-        severity: DiagnosticSeverity.Warning,
+        severity,
         message: localize('maxLengthWarning', 'String is longer than the maximum length of {0}.', schema.maxLength),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
@@ -955,7 +960,7 @@ function validate(
       if (!regex.test(node.value)) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
-          severity: DiagnosticSeverity.Warning,
+          severity,
           message:
             schema.patternErrorMessage ||
             schema.errorMessage ||
@@ -987,7 +992,7 @@ function validate(
             if (errorMessage) {
               validationResult.problems.push({
                 location: { offset: node.offset, length: node.length },
-                severity: DiagnosticSeverity.Warning,
+                severity,
                 message:
                   schema.patternErrorMessage ||
                   schema.errorMessage ||
@@ -1008,7 +1013,7 @@ function validate(
             if (!node.value || !format.pattern.exec(node.value)) {
               validationResult.problems.push({
                 location: { offset: node.offset, length: node.length },
-                severity: DiagnosticSeverity.Warning,
+                severity,
                 message: schema.patternErrorMessage || schema.errorMessage || format.errorMessage,
                 source: getSchemaSource(schema, originalSchema),
                 schemaUri: getSchemaUri(schema, originalSchema),
@@ -1053,7 +1058,7 @@ function validate(
         } else if (schema.additionalItems === false) {
           validationResult.problems.push({
             location: { offset: node.offset, length: node.length },
-            severity: DiagnosticSeverity.Warning,
+            severity,
             message: localize(
               'additionalItemsWarning',
               'Array has too many items according to schema. Expected {0} or fewer.',
@@ -1097,7 +1102,7 @@ function validate(
       if (!doesContain) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
-          severity: DiagnosticSeverity.Warning,
+          severity,
           message: schema.errorMessage || localize('requiredItemMissingWarning', 'Array does not contain required item.'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
@@ -1108,7 +1113,7 @@ function validate(
     if (isNumber(schema.minItems) && node.items.length < schema.minItems) {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
-        severity: DiagnosticSeverity.Warning,
+        severity,
         message: localize('minItemsWarning', 'Array has too few items. Expected {0} or more.', schema.minItems),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
@@ -1118,7 +1123,7 @@ function validate(
     if (isNumber(schema.maxItems) && node.items.length > schema.maxItems) {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
-        severity: DiagnosticSeverity.Warning,
+        severity,
         message: localize('maxItemsWarning', 'Array has too many items. Expected {0} or fewer.', schema.maxItems),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
@@ -1133,7 +1138,7 @@ function validate(
       if (duplicates) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
-          severity: DiagnosticSeverity.Warning,
+          severity,
           message: localize('uniqueItemsWarning', 'Array has duplicate items.'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
@@ -1188,7 +1193,7 @@ function validate(
           const location = keyNode ? { offset: keyNode.offset, length: keyNode.length } : { offset: node.offset, length: 1 };
           validationResult.problems.push({
             location: location,
-            severity: DiagnosticSeverity.Warning,
+            severity,
             message: getWarningMessage(ProblemType.missingRequiredPropWarning, [propertyName]),
             source: getSchemaSource(schema, originalSchema),
             schemaUri: getSchemaUri(schema, originalSchema),
@@ -1221,7 +1226,7 @@ function validate(
                   offset: propertyNode.keyNode.offset,
                   length: propertyNode.keyNode.length,
                 },
-                severity: DiagnosticSeverity.Warning,
+                severity,
                 message:
                   schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
                 source: getSchemaSource(schema, originalSchema),
@@ -1259,7 +1264,7 @@ function validate(
                       offset: propertyNode.keyNode.offset,
                       length: propertyNode.keyNode.length,
                     },
-                    severity: DiagnosticSeverity.Warning,
+                    severity,
                     message:
                       schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
                     source: getSchemaSource(schema, originalSchema),
@@ -1313,7 +1318,7 @@ function validate(
                 offset: propertyNode.keyNode.offset,
                 length: propertyNode.keyNode.length,
               },
-              severity: DiagnosticSeverity.Warning,
+              severity,
               message:
                 schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
               source: getSchemaSource(schema, originalSchema),
@@ -1328,7 +1333,7 @@ function validate(
       if (node.properties.length > schema.maxProperties) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
-          severity: DiagnosticSeverity.Warning,
+          severity,
           message: localize('MaxPropWarning', 'Object has more properties than limit of {0}.', schema.maxProperties),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
@@ -1340,7 +1345,7 @@ function validate(
       if (node.properties.length < schema.minProperties) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
-          severity: DiagnosticSeverity.Warning,
+          severity,
           message: localize(
             'MinPropWarning',
             'Object has fewer properties than the required number of {0}',
@@ -1362,7 +1367,7 @@ function validate(
               if (!seenKeys[requiredProp]) {
                 validationResult.problems.push({
                   location: { offset: node.offset, length: node.length },
-                  severity: DiagnosticSeverity.Warning,
+                  severity,
                   message: localize(
                     'RequiredDependentPropWarning',
                     'Object is missing property {0} required by property {1}.',

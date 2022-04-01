@@ -41,6 +41,7 @@ export class SingleYAMLDocument extends JSONDocument {
     const copy = new SingleYAMLDocument(this.lineCounter);
     copy.isKubernetes = this.isKubernetes;
     copy.disableAdditionalProperties = this.disableAdditionalProperties;
+    copy.validationFailureSeverity = this.validationFailureSeverity;
     copy.currentDocIndex = this.currentDocIndex;
     copy._lineComments = this.lineComments.slice();
     // this will re-create root node
