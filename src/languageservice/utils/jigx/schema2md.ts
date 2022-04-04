@@ -8,6 +8,7 @@ import { Globals } from './globals';
 import {
   char_gt,
   char_lt,
+  getDescription,
   getIndent,
   replace,
   replaceSpecialCharsInDescription,
@@ -97,13 +98,14 @@ export class Schema2Md {
 
     const offset = getIndent(octothorpes.length, this.propTable.styleAsTsBlock);
     text[0] = text[0].replace(/^(.*)$/gm, offset + '$1');
-    if (schema.description) {
+    const schemaDescription = schema.markdownDescription || schema.description;
+    if (schemaDescription) {
       if (this.propTable.styleAsTsBlock) {
-        const description = offset + '//' + schema.description;
+        const description = offset + '//' + schemaDescription;
         // put description into block before title
         text[0] = text[0].replace(/^(```.*)&/m, '$1\n' + description + '\n');
       } else {
-        const description = offset + '*' + schema.description.replace(/\n\n/g, '\n\n' + offset) + '*';
+        const description = offset + '*' + schemaDescription.replace(/\n\n/g, '\n\n' + offset) + '*';
         // put description to the end of the title after the block
         text[0] = text[0].replace(/```$/, '```\n' + description);
       }
@@ -292,7 +294,6 @@ export class Schema2Md {
   }
 
   readonly tsBlockTmp = '{\n{rows}\n}';
-  readonly tsBlockDescriptionTs = '//{description}';
   readonly requiredTmp = (r: boolean, problem: IProblem): string => (problem ? '❗' : r ? '❕' : '');
   // readonly tsBlockTmp = '\n```ts\n{prop}{required}: {type} {description}\n```\n';
   readonly tsBlockRowTmp = '  {prop}{required}: {type} {description}';
@@ -336,7 +337,7 @@ export class Schema2Md {
         const requiredStr = this.requiredTmp(propType.isPropRequired, prop.problem);
         if (this.propTable.styleAsTsBlock) {
           const replaceObj = {
-            description: prop.description ? replace(this.tsBlockDescriptionTs, prop) : '',
+            description: '//' + getDescription(prop) || '',
             required: requiredStr,
             prop: key,
             type: propTypeMD,
@@ -344,7 +345,7 @@ export class Schema2Md {
           const propBlock = replace(this.tsBlockRowTmp, replaceObj);
           return propBlock;
         } else {
-          const description = prop.description ? replaceSpecialCharsInDescription(prop.description) : '';
+          const description = getDescription(prop);
           const row = [key, toCodeSingleLine(propTypeMD), requiredStr, description];
           return (this.isDebug ? '' : '') + '| ' + row.join(' | ') + ' |';
         }

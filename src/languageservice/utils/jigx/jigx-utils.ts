@@ -129,7 +129,7 @@ export function replaceSpecialCharsInDescription(text: string): string {
   };
   // I want to support MD syntax in description
   // const ret = text.replace(/[\|\*\(\)\[\]\+\-\\_`#<>\n]/g, (m) => map[m]);
-  const ret = text.replace(/[\|\\_#\n]/g, (m) => map[m]);
+  const ret = text.replace(/<br \/>\n/g, '<br />').replace(/[\|\\_#\n]/g, (m) => map[m]);
   return ret;
 }
 
@@ -212,4 +212,14 @@ export function getIndent(indent: number, useSpace = false): string {
     return simplifyNbsp('&nbsp;'.repeat(indent - 1));
   }
   return '>'.repeat(indent - 2);
+}
+
+export function getDescription(schema: { description?: string; markdownDescription?: string }): string {
+  if (schema.markdownDescription) {
+    return replaceSpecialCharsInDescription(schema.markdownDescription);
+  }
+  if (schema.description) {
+    return replaceSpecialCharsInDescription(schema.description);
+  }
+  return '';
 }
