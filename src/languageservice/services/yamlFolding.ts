@@ -20,12 +20,12 @@ export function getFoldingRanges(document: TextDocument, context: FoldingRangesC
     }
     ymlDoc.visit((node) => {
       if (
-        (node.type === 'property' && node.valueNode.type === 'array') ||
+        (node.type === 'property' && node.valueNode?.type === 'array') ||
         (node.type === 'object' && node.parent?.type === 'array')
       ) {
         result.push(createNormalizedFolding(document, node));
       }
-      if (node.type === 'property' && node.valueNode.type === 'object') {
+      if (node.type === 'property' && node.valueNode?.type === 'object') {
         result.push(createNormalizedFolding(document, node));
       }
 
