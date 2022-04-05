@@ -126,7 +126,7 @@ export class YamlCompletion {
 
     const currentWord = this.getCurrentWord(document, offset);
 
-    let overwriteRange = null;
+    let overwriteRange: Range = null;
     if (node && isScalar(node) && node.value === 'null') {
       const nodeStartPos = document.positionAt(node.range[0]);
       nodeStartPos.character += 1;
@@ -315,6 +315,20 @@ export class YamlCompletion {
 
       const originalNode = node;
       if (node) {
+        // when the value is null but the cursor is between prop name and null value (cursor is not at the end of the line)
+        if (isMap(node) && node.items.length && isPair(node.items[0])) {
+          const pairNode = node.items[0];
+          if (
+            isScalar(pairNode.value) &&
+            isScalar(pairNode.key) &&
+            pairNode.value.value === null && // value is null
+            pairNode.key.range[2] < offset && // cursor is after colon
+            pairNode.value.range[0] > offset // cursor is before null
+          ) {
+            node = pairNode.value;
+            overwriteRange.end.character += pairNode.value.range[2] - offset; // extend range to the end of the null element
+          }
+        }
         if (lineContent.length === 0) {
           node = currentDoc.internalDocument.contents as Node;
         } else {
