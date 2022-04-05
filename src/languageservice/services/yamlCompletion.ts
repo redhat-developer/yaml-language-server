@@ -313,8 +313,20 @@ export class YamlCompletion {
         }
       }
 
-      const originalNode = node;
+      let originalNode = node;
       if (node) {
+        // when the array item value is null but the cursor is between '-' and null value (cursor is not at the end of the line)
+        if (isSeq(node) && node.items.length && isScalar(node.items[0])) {
+          const nullNode = node.items[0];
+          if (
+            nullNode.value === null && // value is null
+            nullNode.range[0] > offset // cursor is before null
+          ) {
+            node = nullNode;
+            originalNode = node;
+            overwriteRange.end.character += nullNode.range[2] - offset; // extend range to the end of the null element
+          }
+        }
         if (lineContent.length === 0) {
           node = currentDoc.internalDocument.contents as Node;
         } else {
@@ -625,7 +637,8 @@ export class YamlCompletion {
                     const indexOfSlash = sourceText.lastIndexOf('-', node.range[0] - 1);
                     if (indexOfSlash >= 0) {
                       // add one space to compensate the '-'
-                      identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.range[0]);
+                      const overwriteChars = overwriteRange.end.character - overwriteRange.start.character;
+                      identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.range[1] - overwriteChars);
                     }
                   }
 

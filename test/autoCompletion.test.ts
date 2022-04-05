@@ -2364,10 +2364,44 @@ describe('Auto Completion Tests', () => {
       });
 
       const content = 'test:\n  - and\n  - - ';
-      const completion = await parseSetup(content, 19);
+
+      const completion = await parseSetup(content, 20);
       expect(completion.items).lengthOf(1);
       expect(completion.items[0]).eql(
-        createExpectedCompletion('and', 'and', 2, 4, 2, 5, 12, InsertTextFormat.Snippet, { documentation: undefined })
+        createExpectedCompletion('and', 'and', 2, 6, 2, 6, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
+    });
+
+    it('should follow $ref in additionalItems: extra space after cursor', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            $ref: '#/definitions/Recur',
+          },
+        },
+        definitions: {
+          Recur: {
+            type: 'array',
+            items: [
+              {
+                type: 'string',
+                enum: ['and'],
+              },
+            ],
+            additionalItems: {
+              $ref: '#/definitions/Recur',
+            },
+          },
+        },
+      });
+
+      const content = 'test:\n  - and\n  - -   ';
+
+      const completion = await parseSetup(content, 20);
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('and', 'and', 2, 6, 2, 8, 12, InsertTextFormat.Snippet, { documentation: undefined })
       );
     });
 
