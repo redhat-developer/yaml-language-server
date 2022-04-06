@@ -316,7 +316,7 @@ export class YamlCompletion {
       let originalNode = node;
       if (node) {
         // when the array item value is null but the cursor is between '-' and null value (cursor is not at the end of the line)
-        if (isSeq(node) && node.items.length && isScalar(node.items[0])) {
+        if (isSeq(node) && node.items.length && isScalar(node.items[0]) && lineContent.includes('-')) {
           const nullNode = node.items[0];
           if (
             nullNode.value === null && // value is null

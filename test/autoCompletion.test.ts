@@ -2541,6 +2541,19 @@ describe('Auto Completion Tests', () => {
         .then(done, done);
     });
 
+    it('Simple array object completion without "-" befor array empty item', (done) => {
+      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'test_simpleArrayObject:\n  \n  -';
+      const completion = parseSetup(content, 'test_simpleArrayObject:\n  '.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].label, '- (array item)');
+        })
+        .then(done, done);
+    });
+
     it('Array anyOf two objects completion without "-" after array item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       languageService.addSchema(SCHEMA_ID, schema);
