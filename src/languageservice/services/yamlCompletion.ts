@@ -71,6 +71,7 @@ export class YamlCompletion {
   private configuredIndentation: string | undefined;
   private yamlVersion: YamlVersion;
   private indentation: string;
+  private prefixIndentation = '';
   private supportsMarkdown: boolean | undefined;
   private disableDefaultProperties: boolean;
 
@@ -126,7 +127,8 @@ export class YamlCompletion {
 
     const currentWord = this.getCurrentWord(document, offset);
 
-    let overwriteRange = null;
+    this.prefixIndentation = '';
+    let overwriteRange: Range = null;
     if (node && isScalar(node) && node.value === 'null') {
       const nodeStartPos = document.positionAt(node.range[0]);
       nodeStartPos.character += 1;
@@ -139,6 +141,9 @@ export class YamlCompletion {
         start.character -= 1;
       }
       overwriteRange = Range.create(start, document.positionAt(node.range[1]));
+    } else if (node && isScalar(node) && node.value === null && currentWord === '-') {
+      overwriteRange = Range.create(position, position);
+      this.prefixIndentation = ' ';
     } else {
       let overwriteStart = document.offsetAt(position) - currentWord.length;
       if (overwriteStart > 0 && document.getText()[overwriteStart - 1] === '"') {
@@ -217,6 +222,10 @@ export class YamlCompletion {
         if (isForParentCompletion) {
           addSuggestionForParent(completionItem);
           return;
+        }
+
+        if (this.prefixIndentation) {
+          this.updateCompletionText(completionItem, this.prefixIndentation + completionItem.insertText);
         }
 
         const existing = proposed[label];
@@ -408,6 +417,13 @@ export class YamlCompletion {
                     // eslint-disable-next-line no-self-assign
                     currentDoc.internalDocument = currentDoc.internalDocument;
                     node = map;
+                  } else if (lineContent.charAt(position.character - 1) === '-') {
+                    const map = this.createTempObjNode('', node, currentDoc);
+                    parent.delete(node);
+                    parent.add(map);
+                    // eslint-disable-next-line no-self-assign
+                    currentDoc.internalDocument = currentDoc.internalDocument;
+                    node = map;
                   } else {
                     node = parent;
                   }
@@ -547,9 +563,9 @@ export class YamlCompletion {
           insertText = insertText.substring(0, insertText.length - 2);
         }
 
-        completionItem.insertText = insertText;
+        completionItem.insertText = this.prefixIndentation + insertText;
         if (completionItem.textEdit) {
-          completionItem.textEdit.newText = insertText;
+          completionItem.textEdit.newText = completionItem.insertText;
         }
         // remove $x or use {$x:value} in documentation
         const mdText = insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
@@ -628,6 +644,7 @@ export class YamlCompletion {
                       identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.range[0]);
                     }
                   }
+                  identCompensation += this.prefixIndentation;
 
                   // if check that current node has last pair with "null" value and key witch match key from schema,
                   // and if schema has array definition it add completion item for array item creation

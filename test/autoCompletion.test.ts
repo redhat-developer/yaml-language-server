@@ -981,8 +981,8 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- ', 1, 2, 1, 3, 9, 2, {
-                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- \n```' },
+              createExpectedCompletion('name', ' name: ', 1, 3, 1, 3, 10, 2, {
+                documentation: '',
               })
             );
           })
@@ -1299,7 +1299,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('Test', 'Test', 1, 2, 1, 3, 12, 2, {
+              createExpectedCompletion('Test', ' Test', 1, 3, 1, 3, 12, 2, {
                 documentation: undefined,
               })
             );
@@ -2446,8 +2446,9 @@ describe('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].label, '- (array item)');
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, 'obj1');
+          assert.equal(result.items[0].insertText, ' obj1:\n    ');
         })
         .then(done, done);
     });
@@ -2472,8 +2473,9 @@ describe('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].label, '- (array item)');
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, 'obj1');
+          assert.equal(result.items[0].insertText, ' obj1:\n    ');
         })
         .then(done, done);
     });
@@ -2501,8 +2503,9 @@ describe('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].label, '- (array item) obj1');
+          assert.equal(result.items.length, 4);
+          assert.equal(result.items[0].label, 'obj1');
+          assert.equal(result.items[0].insertText, ' obj1:\n    ');
         })
         .then(done, done);
     });
@@ -2527,8 +2530,9 @@ describe('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].label, '- (array item) obj1');
+          assert.equal(result.items.length, 4);
+          assert.equal(result.items[0].label, 'obj1');
+          assert.equal(result.items[0].insertText, ' obj1:\n    ');
         })
         .then(done, done);
     });
