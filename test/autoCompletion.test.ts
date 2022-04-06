@@ -1550,6 +1550,7 @@ describe('Auto Completion Tests', () => {
           rules: {
             type: 'array',
             items: {
+              title: 'rules item',
               type: 'object',
               properties: {
                 id: {
@@ -1607,9 +1608,10 @@ describe('Auto Completion Tests', () => {
       });
 
       const content = 'rules:\n    -\n';
-      const completion = await parseSetup(content, 11);
-      expect(completion.items[0].textEdit.newText).equal(
-        '- id: $1\n  nomination: $2\n  weight: $3\n  criteria:\n      - field: $4\n        operator: $5\n        operand: $6'
+      const completion = await parseSetup(content, 12);
+
+      expect(completion.items.find((i) => i.label === 'rules item').textEdit.newText).equal(
+        ' id: $1\n  nomination: $2\n  weight: ${3:0}\n  criteria:\n      - field: $4\n        operator: $5\n        operand: $6'
       );
     });
   });
