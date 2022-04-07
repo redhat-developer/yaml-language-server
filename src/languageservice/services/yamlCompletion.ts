@@ -132,7 +132,9 @@ export class YamlCompletion {
 
     // try as a object if is on property line
     if (lineContent.match(/:\s?\n?$/)) {
-      const lineIndent = lineContent.match(/^\s*/)[0];
+      const lineIndentMatch = lineContent.match(/^\s*(- )?/);
+      const lineIndent = lineIndentMatch[0].replace('-', ' ');
+      const arrayIndentCompensation = lineIndentMatch[1]?.replace('-', ' ') || '';
       const fullIndent = lineIndent + this.indentation;
       const modificationForInvoke = '\n' + fullIndent;
       const firstPrefix = '\n' + this.indentation;
@@ -144,8 +146,8 @@ export class YamlCompletion {
         isKubernetes,
         newPosition,
         modificationForInvoke,
-        firstPrefix,
-        this.indentation
+        firstPrefix + arrayIndentCompensation,
+        this.indentation + arrayIndentCompensation
       );
     }
     this.processInlineInitialization(result, lineContent);

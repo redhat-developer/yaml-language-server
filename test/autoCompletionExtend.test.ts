@@ -13,6 +13,7 @@ import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './ut
 import assert = require('assert');
 import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
+import { JSONSchema } from 'vscode-json-languageservice';
 
 describe('Auto Completion Tests Extended', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -290,69 +291,97 @@ describe('Auto Completion Tests Extended', () => {
         })
       );
     });
-
-    it('array completion - should suggest only one const', async () => {
-      languageService.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: {
-          test: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                objA: {
-                  type: 'object',
-                },
-                constProp: {
-                  type: 'string',
-                  const: 'const1',
+    describe('array completion', () => {
+      it('array completion - should suggest only one const', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            test: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  objA: {
+                    type: 'object',
+                  },
+                  constProp: {
+                    type: 'string',
+                    const: 'const1',
+                  },
                 },
               },
             },
           },
-        },
+        });
+        const content = 'test:\n  - constProp: ';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0]).to.deep.equal(
+          createExpectedCompletion('const1', 'const1', 1, 15, 1, 15, 12, 2, {
+            documentation: undefined,
+          })
+        );
       });
-      const content = 'test:\n  - constProp: ';
-      const result = await parseSetup(content, content.length);
+      it('array completion - should suggest correct indent', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            test: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  objA: {
+                    type: 'object',
+                    properties: {
+                      objAA: {
+                        type: 'object',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+        const content = 'test:\n  - objA: ';
+        const result = await parseSetup(content, content.length);
+        console.log(result);
 
-      expect(result.items.length).to.be.equal(2);
-      expect(result.items[0]).to.deep.equal(
-        createExpectedCompletion('const1', 'const1', 1, 15, 1, 15, 12, 2, {
-          documentation: undefined,
-        })
-      );
-      expect(result.items[1]).to.deep.equal(
-        createExpectedCompletion('objA', '\n  objA:\n    ', 1, 15, 1, 15, 10, 2, {
-          documentation: '',
-        })
-      );
+        expect(result.items.length).to.be.equal(1);
+
+        expect(result.items[0]).to.deep.equal(
+          createExpectedCompletion('objAA', '\n    objAA:\n      ', 1, 10, 1, 10, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
+      it('array completion - should not suggest const', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            test: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  constProp: {
+                    type: 'string',
+                    const: 'const1',
+                  },
+                },
+              },
+            },
+          },
+        });
+        const content = 'test:\n  - constProp:\n    ';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.length).to.be.equal(0);
+      });
     });
-
-    // https://github.com/redhat-developer/yaml-language-server/issues/620
-    // todo, than previous fix does not have to be there
-    // it('array completion - should not suggest const', async () => {
-    //   languageService.addSchema(SCHEMA_ID, {
-    //     type: 'object',
-    //     properties: {
-    //       test: {
-    //         type: 'array',
-    //         items: {
-    //           type: 'object',
-    //           properties: {
-    //             constProp: {
-    //               type: 'string',
-    //               const: 'const1',
-    //             },
-    //           },
-    //         },
-    //       },
-    //     },
-    //   });
-    //   const content = 'test:\n  - constProp:\n    ';
-    //   const result = await parseSetup(content, content.length);
-
-    //   expect(result.items.length).to.be.equal(0);
-    // });
   });
 
   describe('if/then/else completion', () => {
