@@ -347,7 +347,6 @@ describe('Auto Completion Tests Extended', () => {
         });
         const content = 'test:\n  - objA: ';
         const result = await parseSetup(content, content.length);
-        console.log(result);
 
         expect(result.items.length).to.be.equal(1);
 
