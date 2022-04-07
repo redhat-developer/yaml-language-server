@@ -1187,8 +1187,8 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- ', 1, 2, 1, 3, 9, 2, {
-                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- \n```' },
+              createExpectedCompletion('name', ' name: ', 1, 3, 1, 3, 10, 2, {
+                documentation: '',
               })
             );
           })
@@ -1506,7 +1506,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('Test', 'Test', 1, 2, 1, 3, 12, 2, {
+              createExpectedCompletion('Test', ' Test', 1, 3, 1, 3, 12, 2, {
                 documentation: undefined,
               })
             );
@@ -1757,6 +1757,7 @@ describe('Auto Completion Tests', () => {
           rules: {
             type: 'array',
             items: {
+              title: 'rules item',
               type: 'object',
               properties: {
                 id: {
@@ -1814,9 +1815,10 @@ describe('Auto Completion Tests', () => {
       });
 
       const content = 'rules:\n    -\n';
-      const completion = await parseSetup(content, 11);
-      expect(completion.items[0].textEdit.newText).equal(
-        '- id: $1\n  nomination: $2\n  weight: $3\n  criteria:\n      - field: $4\n        operator: $5\n        operand: $6'
+      const completion = await parseSetup(content, 12);
+
+      expect(completion.items.find((i) => i.label === 'rules item').textEdit.newText).equal(
+        ' id: $1\n  nomination: $2\n  weight: ${3:0}\n  criteria:\n      - field: $4\n        operator: $5\n        operand: $6'
       );
     });
   });
@@ -2687,8 +2689,9 @@ describe('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].label, '- (array item)');
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, 'obj1');
+          assert.equal(result.items[0].insertText, ' obj1:\n    ');
         })
         .then(done, done);
     });
@@ -2713,8 +2716,9 @@ describe('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].label, '- (array item)');
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, 'obj1');
+          assert.equal(result.items[0].insertText, ' obj1:\n    ');
         })
         .then(done, done);
     });
@@ -2742,8 +2746,9 @@ describe('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].label, '- (array item) obj1');
+          assert.equal(result.items.length, 4);
+          assert.equal(result.items[0].label, 'obj1');
+          assert.equal(result.items[0].insertText, ' obj1:\n    ');
         })
         .then(done, done);
     });
@@ -2781,8 +2786,9 @@ describe('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].label, '- (array item) obj1');
+          assert.equal(result.items.length, 4);
+          assert.equal(result.items[0].label, 'obj1');
+          assert.equal(result.items[0].insertText, ' obj1:\n    ');
         })
         .then(done, done);
     });
