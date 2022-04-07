@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { toFsPath, setupSchemaIDTextDocument, setupLanguageService } from './utils/testHelper';
+import { toFsPath, setupSchemaIDTextDocument, setupLanguageService, jigxBranchTest } from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
 import { ServiceSetup } from './utils/serviceSetup';
@@ -160,7 +160,8 @@ describe('Default Snippet Tests', () => {
       const completion = parseSetup(content, 8);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 1);
+          // jigx custom: 2nd extra item is for the key that is suggested as a property of the object
+          assert.equal(result.items.length, jigxBranchTest ? 2 : 1);
         })
         .then(done, done);
     });

@@ -132,7 +132,7 @@ export class YamlCompletion {
     }
 
     // try as a object if is on property line
-    if (lineContent.match(/:\s?\n?$/)) {
+    if (lineContent.match(/:\s*$/)) {
       const lineIndentMatch = lineContent.match(/^\s*(- )?/);
       const lineIndent = lineIndentMatch[0].replace('-', ' ');
       const arrayIndentCompensation = lineIndentMatch[1]?.replace('-', ' ') || '';

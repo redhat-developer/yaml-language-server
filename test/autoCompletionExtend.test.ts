@@ -13,7 +13,6 @@ import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './ut
 import assert = require('assert');
 import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
-import { JSONSchema } from 'vscode-json-languageservice';
 
 describe('Auto Completion Tests Extended', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -253,7 +252,12 @@ describe('Auto Completion Tests Extended', () => {
           kind: 7,
         })
       );
+
+      const content2 = 'nested:\n  scripts:\n    sample:\n      test:   ';
+      const result2 = await parseSetup(content, content2.length - 2);
+      expect(result).to.deep.equal(result2);
     });
+
     it('nested completion - some newLine after : ', async () => {
       languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
       const content = 'nested:\n  scripts:\n    sample:\n      test:\n        ';
