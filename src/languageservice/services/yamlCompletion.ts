@@ -71,7 +71,7 @@ export class YamlCompletion {
   private configuredIndentation: string | undefined;
   private yamlVersion: YamlVersion;
   private indentation: string;
-  private prefixIndentation = '';
+  private arrayPrefixIndentation = '';
   private supportsMarkdown: boolean | undefined;
   private disableDefaultProperties: boolean;
 
@@ -127,7 +127,7 @@ export class YamlCompletion {
 
     const currentWord = this.getCurrentWord(document, offset);
 
-    this.prefixIndentation = '';
+    this.arrayPrefixIndentation = '';
     let overwriteRange: Range = null;
     if (node && isScalar(node) && node.value === 'null') {
       const nodeStartPos = document.positionAt(node.range[0]);
@@ -143,7 +143,7 @@ export class YamlCompletion {
       overwriteRange = Range.create(start, document.positionAt(node.range[1]));
     } else if (node && isScalar(node) && node.value === null && currentWord === '-') {
       overwriteRange = Range.create(position, position);
-      this.prefixIndentation = ' ';
+      this.arrayPrefixIndentation = ' ';
     } else {
       let overwriteStart = document.offsetAt(position) - currentWord.length;
       if (overwriteStart > 0 && document.getText()[overwriteStart - 1] === '"') {
@@ -224,8 +224,8 @@ export class YamlCompletion {
           return;
         }
 
-        if (this.prefixIndentation) {
-          this.updateCompletionText(completionItem, this.prefixIndentation + completionItem.insertText);
+        if (this.arrayPrefixIndentation) {
+          this.updateCompletionText(completionItem, this.arrayPrefixIndentation + completionItem.insertText);
         }
 
         const existing = proposed[label];
@@ -563,7 +563,7 @@ export class YamlCompletion {
           insertText = insertText.substring(0, insertText.length - 2);
         }
 
-        completionItem.insertText = this.prefixIndentation + insertText;
+        completionItem.insertText = this.arrayPrefixIndentation + insertText;
         if (completionItem.textEdit) {
           completionItem.textEdit.newText = completionItem.insertText;
         }
@@ -644,7 +644,7 @@ export class YamlCompletion {
                       identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.range[0]);
                     }
                   }
-                  identCompensation += this.prefixIndentation;
+                  identCompensation += this.arrayPrefixIndentation;
 
                   // if check that current node has last pair with "null" value and key witch match key from schema,
                   // and if schema has array definition it add completion item for array item creation
