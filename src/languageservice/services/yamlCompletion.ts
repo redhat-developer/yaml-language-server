@@ -76,7 +76,7 @@ export class YamlCompletion {
   private prefixIndentation = '';
   private supportsMarkdown: boolean | undefined;
   private disableDefaultProperties: boolean;
-  private selectParentSkeletonFirst: boolean;
+  private parentSkeletonSelectedFirst: boolean;
 
   constructor(
     private schemaService: YAMLSchemaService,
@@ -93,7 +93,7 @@ export class YamlCompletion {
     this.yamlVersion = languageSettings.yamlVersion;
     this.configuredIndentation = languageSettings.indentation;
     this.disableDefaultProperties = languageSettings.disableDefaultProperties;
-    this.selectParentSkeletonFirst = languageSettings.selectParentSkeletonFirst;
+    this.parentSkeletonSelectedFirst = languageSettings.parentSkeletonSelectedFirst;
   }
 
   async doComplete(document: TextDocument, position: Position, isKubernetes = false): Promise<CompletionList> {
@@ -840,8 +840,6 @@ export class YamlCompletion {
     const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
     const hasOnlyWhitespace = lineContent.trim().length === 0;
     const hasColon = lineContent.indexOf(':') !== -1;
-    const isNodeNull =
-      (isScalar(originalNode) && originalNode.value === null) || (isMap(originalNode) && originalNode.items.length === 0);
     const nodeParent = doc.getParent(node);
     const matchOriginal = matchingSchemas.find((it) => it.node.internalNode === originalNode && it.schema.properties);
     for (const schema of matchingSchemas) {
@@ -930,8 +928,11 @@ export class YamlCompletion {
                       identCompensation + this.indentation
                     );
                   }
+                  const isNodeNull =
+                    (isScalar(originalNode) && originalNode.value === null) ||
+                    (isMap(originalNode) && originalNode.items.length === 0);
                   const existsParentCompletion = schema.schema.required?.length > 0;
-                  if (!this.selectParentSkeletonFirst || !isNodeNull || !existsParentCompletion) {
+                  if (!this.parentSkeletonSelectedFirst || !isNodeNull || !existsParentCompletion) {
                     collector.add({
                       kind: CompletionItemKind.Property,
                       label: key,

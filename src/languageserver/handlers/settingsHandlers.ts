@@ -121,7 +121,10 @@ export class SettingsHandler {
       }
       this.yamlSettings.disableAdditionalProperties = settings.yaml.disableAdditionalProperties;
       this.yamlSettings.disableDefaultProperties = settings.yaml.disableDefaultProperties;
-      this.yamlSettings.selectParentSkeletonFirst = settings.yaml.selectParentSkeletonFirst;
+
+      if (settings.yaml.suggest) {
+        this.yamlSettings.suggest.parentSkeletonSelectedFirst = settings.yaml.suggest.parentSkeletonSelectedFirst;
+      }
     }
 
     this.yamlSettings.schemaConfigurationSettings = [];
@@ -250,7 +253,7 @@ export class SettingsHandler {
       propTableStyle: this.yamlSettings.propTableStyle,
       disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
       disableDefaultProperties: this.yamlSettings.disableDefaultProperties,
-      selectParentSkeletonFirst: this.yamlSettings.selectParentSkeletonFirst,
+      parentSkeletonSelectedFirst: this.yamlSettings.suggest.parentSkeletonSelectedFirst,
       yamlVersion: this.yamlSettings.yamlVersion,
     };
 

@@ -3058,7 +3058,7 @@ describe('Auto Completion Tests', () => {
     describe('Select parent skeleton first', () => {
       beforeEach(() => {
         const languageSettingsSetup = new ServiceSetup().withCompletion();
-        languageSettingsSetup.languageSettings.selectParentSkeletonFirst = true;
+        languageSettingsSetup.languageSettings.parentSkeletonSelectedFirst = true;
         languageService.configure(languageSettingsSetup.languageSettings);
       });
       it('Should suggest complete object skeleton', async () => {

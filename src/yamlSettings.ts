@@ -25,7 +25,9 @@ export interface Settings {
     extraLanguage: string[];
     disableDefaultProperties: boolean;
     disableAdditionalProperties: boolean;
-    selectParentSkeletonFirst: boolean;
+    suggest: {
+      parentSkeletonSelectedFirst: boolean;
+    };
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
   };
@@ -74,7 +76,9 @@ export class SettingsState {
   propTableStyle: YamlHoverDetailPropTableStyle = 'table';
   disableAdditionalProperties = false;
   disableDefaultProperties = false;
-  selectParentSkeletonFirst = false;
+  suggest = {
+    parentSkeletonSelectedFirst: false,
+  };
   maxItemsComputed = 5000;
 
   // File validation helpers
