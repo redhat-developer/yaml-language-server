@@ -2366,10 +2366,44 @@ describe('Auto Completion Tests', () => {
       });
 
       const content = 'test:\n  - and\n  - - ';
-      const completion = await parseSetup(content, 19);
+
+      const completion = await parseSetup(content, 20);
       expect(completion.items).lengthOf(1);
       expect(completion.items[0]).eql(
-        createExpectedCompletion('and', 'and', 2, 4, 2, 5, 12, InsertTextFormat.Snippet, { documentation: undefined })
+        createExpectedCompletion('and', 'and', 2, 6, 2, 6, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
+    });
+
+    it('should follow $ref in additionalItems: extra space after cursor', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            $ref: '#/definitions/Recur',
+          },
+        },
+        definitions: {
+          Recur: {
+            type: 'array',
+            items: [
+              {
+                type: 'string',
+                enum: ['and'],
+              },
+            ],
+            additionalItems: {
+              $ref: '#/definitions/Recur',
+            },
+          },
+        },
+      });
+
+      const content = 'test:\n  - and\n  - -   ';
+
+      const completion = await parseSetup(content, 20);
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('and', 'and', 2, 6, 2, 8, 12, InsertTextFormat.Snippet, { documentation: undefined })
       );
     });
 
@@ -2508,6 +2542,19 @@ describe('Auto Completion Tests', () => {
           assert.equal(result.items.length, 4);
           assert.equal(result.items[0].label, 'obj1');
           assert.equal(result.items[0].insertText, ' obj1:\n    ');
+        })
+        .then(done, done);
+    });
+
+    it('Simple array object completion without "-" befor array empty item', (done) => {
+      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'test_simpleArrayObject:\n  \n  -';
+      const completion = parseSetup(content, 'test_simpleArrayObject:\n  '.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].label, '- (array item)');
         })
         .then(done, done);
     });
