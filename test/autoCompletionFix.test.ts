@@ -471,6 +471,23 @@ objB:
       expect(completion.items[1].insertText).to.be.equal('obj1:\n  prop2: ${1:value}');
     });
 
+    it('should suggest when cursor is not on the end of the line', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          prop: {
+            const: 'const',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'prop:   ';
+      const completion = await parseSetup(content, 0, 6);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0].label).to.be.equal('const');
+      expect(completion.items[0].textEdit).to.be.deep.equal({ newText: 'const', range: Range.create(0, 6, 0, content.length) });
+    });
+
     it('should suggest object array when extra space is after cursor', async () => {
       const schema: JSONSchema = {
         properties: {

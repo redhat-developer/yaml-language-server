@@ -326,6 +326,20 @@ export class YamlCompletion {
 
       let originalNode = node;
       if (node) {
+        // when the value is null but the cursor is between prop name and null value (cursor is not at the end of the line)
+        if (isMap(node) && node.items.length && isPair(node.items[0])) {
+          const pairNode = node.items[0];
+          if (
+            isScalar(pairNode.value) &&
+            isScalar(pairNode.key) &&
+            pairNode.value.value === null && // value is null
+            pairNode.key.range[2] < offset && // cursor is after colon
+            pairNode.value.range[0] > offset // cursor is before null
+          ) {
+            node = pairNode.value;
+            overwriteRange.end.character += pairNode.value.range[2] - offset; // extend range to the end of the null element
+          }
+        }
         // when the array item value is null but the cursor is between '-' and null value (cursor is not at the end of the line)
         if (isSeq(node) && node.items.length && isScalar(node.items[0]) && lineContent.includes('-')) {
           const nullNode = node.items[0];
