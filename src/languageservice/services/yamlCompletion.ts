@@ -71,8 +71,10 @@ export class YamlCompletion {
   private configuredIndentation: string | undefined;
   private yamlVersion: YamlVersion;
   private indentation: string;
+  private arrayPrefixIndentation = '';
   private supportsMarkdown: boolean | undefined;
   private disableDefaultProperties: boolean;
+  private parentSkeletonSelectedFirst: boolean;
 
   constructor(
     private schemaService: YAMLSchemaService,
@@ -89,6 +91,7 @@ export class YamlCompletion {
     this.yamlVersion = languageSettings.yamlVersion;
     this.configuredIndentation = languageSettings.indentation;
     this.disableDefaultProperties = languageSettings.disableDefaultProperties;
+    this.parentSkeletonSelectedFirst = languageSettings.parentSkeletonSelectedFirst;
   }
 
   async doComplete(document: TextDocument, position: Position, isKubernetes = false): Promise<CompletionList> {
@@ -126,6 +129,7 @@ export class YamlCompletion {
 
     const currentWord = this.getCurrentWord(document, offset);
 
+    this.arrayPrefixIndentation = '';
     let overwriteRange: Range = null;
     if (node && isScalar(node) && node.value === 'null') {
       const nodeStartPos = document.positionAt(node.range[0]);
@@ -139,6 +143,9 @@ export class YamlCompletion {
         start.character -= 1;
       }
       overwriteRange = Range.create(start, document.positionAt(node.range[1]));
+    } else if (node && isScalar(node) && node.value === null && currentWord === '-') {
+      overwriteRange = Range.create(position, position);
+      this.arrayPrefixIndentation = ' ';
     } else {
       let overwriteStart = document.offsetAt(position) - currentWord.length;
       if (overwriteStart > 0 && document.getText()[overwriteStart - 1] === '"') {
@@ -217,6 +224,10 @@ export class YamlCompletion {
         if (isForParentCompletion) {
           addSuggestionForParent(completionItem);
           return;
+        }
+
+        if (this.arrayPrefixIndentation) {
+          this.updateCompletionText(completionItem, this.arrayPrefixIndentation + completionItem.insertText);
         }
 
         const existing = proposed[label];
@@ -313,7 +324,7 @@ export class YamlCompletion {
         }
       }
 
-      const originalNode = node;
+      let originalNode = node;
       if (node) {
         // when the value is null but the cursor is between prop name and null value (cursor is not at the end of the line)
         if (isMap(node) && node.items.length && isPair(node.items[0])) {
@@ -327,6 +338,18 @@ export class YamlCompletion {
           ) {
             node = pairNode.value;
             overwriteRange.end.character += pairNode.value.range[2] - offset; // extend range to the end of the null element
+          }
+        }
+        // when the array item value is null but the cursor is between '-' and null value (cursor is not at the end of the line)
+        if (isSeq(node) && node.items.length && isScalar(node.items[0]) && lineContent.includes('-')) {
+          const nullNode = node.items[0];
+          if (
+            nullNode.value === null && // value is null
+            nullNode.range[0] > offset // cursor is before null
+          ) {
+            node = nullNode;
+            originalNode = node;
+            overwriteRange.end.character += nullNode.range[2] - offset; // extend range to the end of the null element
           }
         }
         if (lineContent.length === 0) {
@@ -417,6 +440,13 @@ export class YamlCompletion {
                 } else if (isSeq(parent)) {
                   if (lineContent.charAt(position.character - 1) !== '-') {
                     const map = this.createTempObjNode(currentWord, node, currentDoc);
+                    parent.delete(node);
+                    parent.add(map);
+                    // eslint-disable-next-line no-self-assign
+                    currentDoc.internalDocument = currentDoc.internalDocument;
+                    node = map;
+                  } else if (lineContent.charAt(position.character - 1) === '-') {
+                    const map = this.createTempObjNode('', node, currentDoc);
                     parent.delete(node);
                     parent.add(map);
                     // eslint-disable-next-line no-self-assign
@@ -561,9 +591,9 @@ export class YamlCompletion {
           insertText = insertText.substring(0, insertText.length - 2);
         }
 
-        completionItem.insertText = insertText;
+        completionItem.insertText = this.arrayPrefixIndentation + insertText;
         if (completionItem.textEdit) {
-          completionItem.textEdit.newText = insertText;
+          completionItem.textEdit.newText = completionItem.insertText;
         }
         // remove $x or use {$x:value} in documentation
         const mdText = insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
@@ -603,7 +633,6 @@ export class YamlCompletion {
     const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
     const hasOnlyWhitespace = lineContent.trim().length === 0;
     const hasColon = lineContent.indexOf(':') !== -1;
-
     const nodeParent = doc.getParent(node);
     const matchOriginal = matchingSchemas.find((it) => it.node.internalNode === originalNode && it.schema.properties);
     for (const schema of matchingSchemas) {
@@ -639,9 +668,11 @@ export class YamlCompletion {
                     const indexOfSlash = sourceText.lastIndexOf('-', node.range[0] - 1);
                     if (indexOfSlash >= 0) {
                       // add one space to compensate the '-'
-                      identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.range[0]);
+                      const overwriteChars = overwriteRange.end.character - overwriteRange.start.character;
+                      identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.range[1] - overwriteChars);
                     }
                   }
+                  identCompensation += this.arrayPrefixIndentation;
 
                   // if check that current node has last pair with "null" value and key witch match key from schema,
                   // and if schema has array definition it add completion item for array item creation
@@ -690,14 +721,19 @@ export class YamlCompletion {
                       identCompensation + this.indentation
                     );
                   }
-
-                  collector.add({
-                    kind: CompletionItemKind.Property,
-                    label: key,
-                    insertText,
-                    insertTextFormat: InsertTextFormat.Snippet,
-                    documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
-                  });
+                  const isNodeNull =
+                    (isScalar(originalNode) && originalNode.value === null) ||
+                    (isMap(originalNode) && originalNode.items.length === 0);
+                  const existsParentCompletion = schema.schema.required?.length > 0;
+                  if (!this.parentSkeletonSelectedFirst || !isNodeNull || !existsParentCompletion) {
+                    collector.add({
+                      kind: CompletionItemKind.Property,
+                      label: key,
+                      insertText,
+                      insertTextFormat: InsertTextFormat.Snippet,
+                      documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
+                    });
+                  }
                   // if the prop is required add it also to parent suggestion
                   if (schema.schema.required?.includes(key)) {
                     collector.add({

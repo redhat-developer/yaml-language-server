@@ -22,6 +22,9 @@ export interface Settings {
     };
     disableDefaultProperties: boolean;
     disableAdditionalProperties: boolean;
+    suggest: {
+      parentSkeletonSelectedFirst: boolean;
+    };
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
   };
@@ -69,6 +72,9 @@ export class SettingsState {
   indentation: string | undefined = undefined;
   disableAdditionalProperties = false;
   disableDefaultProperties = false;
+  suggest = {
+    parentSkeletonSelectedFirst: false,
+  };
   maxItemsComputed = 5000;
 
   // File validation helpers

@@ -981,8 +981,8 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- ', 1, 2, 1, 3, 9, 2, {
-                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- \n```' },
+              createExpectedCompletion('name', ' name: ', 1, 3, 1, 3, 10, 2, {
+                documentation: '',
               })
             );
           })
@@ -1299,7 +1299,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('Test', 'Test', 1, 2, 1, 3, 12, 2, {
+              createExpectedCompletion('Test', ' Test', 1, 3, 1, 3, 12, 2, {
                 documentation: undefined,
               })
             );
@@ -1550,6 +1550,7 @@ describe('Auto Completion Tests', () => {
           rules: {
             type: 'array',
             items: {
+              title: 'rules item',
               type: 'object',
               properties: {
                 id: {
@@ -1607,9 +1608,10 @@ describe('Auto Completion Tests', () => {
       });
 
       const content = 'rules:\n    -\n';
-      const completion = await parseSetup(content, 11);
-      expect(completion.items[0].textEdit.newText).equal(
-        '- id: $1\n  nomination: $2\n  weight: $3\n  criteria:\n      - field: $4\n        operator: $5\n        operand: $6'
+      const completion = await parseSetup(content, 12);
+
+      expect(completion.items.find((i) => i.label === 'rules item').textEdit.newText).equal(
+        ' id: $1\n  nomination: $2\n  weight: ${3:0}\n  criteria:\n      - field: $4\n        operator: $5\n        operand: $6'
       );
     });
   });
@@ -2364,10 +2366,44 @@ describe('Auto Completion Tests', () => {
       });
 
       const content = 'test:\n  - and\n  - - ';
-      const completion = await parseSetup(content, 19);
+
+      const completion = await parseSetup(content, 20);
       expect(completion.items).lengthOf(1);
       expect(completion.items[0]).eql(
-        createExpectedCompletion('and', 'and', 2, 4, 2, 5, 12, InsertTextFormat.Snippet, { documentation: undefined })
+        createExpectedCompletion('and', 'and', 2, 6, 2, 6, 12, InsertTextFormat.Snippet, { documentation: undefined })
+      );
+    });
+
+    it('should follow $ref in additionalItems: extra space after cursor', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            $ref: '#/definitions/Recur',
+          },
+        },
+        definitions: {
+          Recur: {
+            type: 'array',
+            items: [
+              {
+                type: 'string',
+                enum: ['and'],
+              },
+            ],
+            additionalItems: {
+              $ref: '#/definitions/Recur',
+            },
+          },
+        },
+      });
+
+      const content = 'test:\n  - and\n  - -   ';
+
+      const completion = await parseSetup(content, 20);
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('and', 'and', 2, 6, 2, 8, 12, InsertTextFormat.Snippet, { documentation: undefined })
       );
     });
 
@@ -2446,8 +2482,9 @@ describe('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].label, '- (array item)');
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, 'obj1');
+          assert.equal(result.items[0].insertText, ' obj1:\n    ');
         })
         .then(done, done);
     });
@@ -2472,8 +2509,9 @@ describe('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].label, '- (array item)');
+          assert.equal(result.items.length, 2);
+          assert.equal(result.items[0].label, 'obj1');
+          assert.equal(result.items[0].insertText, ' obj1:\n    ');
         })
         .then(done, done);
     });
@@ -2501,8 +2539,22 @@ describe('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].label, '- (array item) obj1');
+          assert.equal(result.items.length, 4);
+          assert.equal(result.items[0].label, 'obj1');
+          assert.equal(result.items[0].insertText, ' obj1:\n    ');
+        })
+        .then(done, done);
+    });
+
+    it('Simple array object completion without "-" befor array empty item', (done) => {
+      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'test_simpleArrayObject:\n  \n  -';
+      const completion = parseSetup(content, 'test_simpleArrayObject:\n  '.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].label, '- (array item)');
         })
         .then(done, done);
     });
@@ -2527,8 +2579,9 @@ describe('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].label, '- (array item) obj1');
+          assert.equal(result.items.length, 4);
+          assert.equal(result.items[0].label, 'obj1');
+          assert.equal(result.items[0].insertText, ' obj1:\n    ');
         })
         .then(done, done);
     });
@@ -2794,6 +2847,109 @@ describe('Auto Completion Tests', () => {
           sortText: '_object',
         })
       );
+    });
+    describe('Select parent skeleton first', () => {
+      beforeEach(() => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion();
+        languageSettingsSetup.languageSettings.parentSkeletonSelectedFirst = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+      });
+      it('Should suggest complete object skeleton', async () => {
+        const schema = {
+          definitions: { obj1, obj2 },
+          anyOf: [
+            {
+              $ref: '#/definitions/obj1',
+            },
+            {
+              $ref: '#/definitions/obj2',
+            },
+          ],
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = '';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.map((i) => i.label)).to.have.members(['Object1', 'obj2']);
+      });
+      it('Should suggest complete object skeleton - nested', async () => {
+        const schema = {
+          definitions: { obj1, obj2 },
+          properties: {
+            name: {
+              anyOf: [
+                {
+                  $ref: '#/definitions/obj1',
+                },
+                {
+                  $ref: '#/definitions/obj2',
+                },
+              ],
+            },
+          },
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'name:\n  ';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.map((i) => i.label)).to.have.members(['Object1', 'obj2']);
+      });
+      it('Should suggest complete object skeleton - array', async () => {
+        const schema = {
+          definitions: { obj1, obj2 },
+          items: {
+            anyOf: [
+              {
+                $ref: '#/definitions/obj1',
+              },
+              {
+                $ref: '#/definitions/obj2',
+              },
+            ],
+          },
+          type: 'array',
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = '- ';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.map((i) => i.label)).to.have.members(['Object1', 'obj2']);
+      });
+      it('Should suggest rest of the parent object', async () => {
+        const schema = {
+          definitions: { obj1 },
+          $ref: '#/definitions/obj1',
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'type: typeObj1\n';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.map((i) => i.label)).to.have.members(['options', 'Object1']);
+      });
+      it('Should suggest all feature when user is typing', async () => {
+        const schema = {
+          definitions: { obj1 },
+          $ref: '#/definitions/obj1',
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'ty';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.map((i) => i.label)).to.have.members(['type', 'options', 'Object1']);
+      });
+      it('Should suggest all properties in empty yaml with now required props', async () => {
+        const schema = {
+          properties: {
+            fruit: {},
+            vegetable: {},
+          },
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = '';
+        const result = await parseSetup(content, content.length);
+
+        expect(result.items.map((i) => i.label)).to.have.members(['fruit', 'vegetable']);
+      });
     });
   });
 });

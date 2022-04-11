@@ -99,6 +99,12 @@ export interface LanguageSettings {
   disableDefaultProperties?: boolean;
 
   /**
+   * If true, the user must select some parent skeleton first before autocompletion starts to suggest the rest of the properties.
+   * When yaml object is not empty, autocompletion ignores this setting and returns all properties and skeletons.
+   */
+  parentSkeletonSelectedFirst?: boolean;
+
+  /**
    * Default yaml lang version
    */
   yamlVersion?: YamlVersion;
