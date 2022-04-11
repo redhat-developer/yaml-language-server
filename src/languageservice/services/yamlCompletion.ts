@@ -533,18 +533,6 @@ export class YamlCompletion {
 
       let originalNode = node;
       if (node) {
-        // when the array item value is null but the cursor is between '-' and null value (cursor is not at the end of the line)
-        if (isSeq(node) && node.items.length && isScalar(node.items[0]) && lineContent.includes('-')) {
-          const nullNode = node.items[0];
-          if (
-            nullNode.value === null && // value is null
-            nullNode.range[0] > offset // cursor is before null
-          ) {
-            node = nullNode;
-            originalNode = node;
-            overwriteRange.end.character += nullNode.range[2] - offset; // extend range to the end of the null element
-          }
-        }
         // when the value is null but the cursor is between prop name and null value (cursor is not at the end of the line)
         if (isMap(node) && node.items.length && isPair(node.items[0])) {
           const pairNode = node.items[0];
@@ -557,6 +545,18 @@ export class YamlCompletion {
           ) {
             node = pairNode.value;
             overwriteRange.end.character += pairNode.value.range[2] - offset; // extend range to the end of the null element
+          }
+        }
+        // when the array item value is null but the cursor is between '-' and null value (cursor is not at the end of the line)
+        if (isSeq(node) && node.items.length && isScalar(node.items[0]) && lineContent.includes('-')) {
+          const nullNode = node.items[0];
+          if (
+            nullNode.value === null && // value is null
+            nullNode.range[0] > offset // cursor is before null
+          ) {
+            node = nullNode;
+            originalNode = node;
+            overwriteRange.end.character += nullNode.range[2] - offset; // extend range to the end of the null element
           }
         }
         if (lineContent.length === 0) {
