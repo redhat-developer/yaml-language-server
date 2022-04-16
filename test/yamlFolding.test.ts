@@ -58,11 +58,24 @@ describe('YAML Folding', () => {
   });
 
   it('should not include comments on folding ranges', () => {
-    const yaml = `# a comment\nname: jack\n# age comment\nage: 22\n  - date: october`;
+    const yaml = `# a comment\nname: jack\n# age comment\nage:\n  - october`;
     const doc = setupTextDocument(yaml);
     const ranges = getFoldingRanges(doc, context);
     expect(ranges.length).to.equal(1);
-    expect(ranges[0]).to.be.eql(FoldingRange.create(3, 4, 0, 17));
+    expect(ranges[0]).to.be.eql(FoldingRange.create(3, 4, 0, 11));
+  });
+
+  it('should provide folding ranges for multiline string', () => {
+    const yaml = `
+    foo: 
+          bar:
+    aaa:
+          bbb
+          zzz
+    `;
+    const doc = setupTextDocument(yaml);
+    const ranges = getFoldingRanges(doc, context);
+    expect(ranges).to.deep.include.members([FoldingRange.create(1, 2, 4, 14), FoldingRange.create(3, 5, 4, 13)]);
   });
 
   it('should provide folding ranges for mapping in array', () => {
