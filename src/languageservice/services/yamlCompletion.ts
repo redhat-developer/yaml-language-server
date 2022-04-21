@@ -194,7 +194,7 @@ export class YamlCompletion {
 
         const isForParentCompletion = !!completionItem.parent;
         let label = completionItem.label;
-        if (!label) {
+        if (label === null || label === undefined) {
           // we receive not valid CompletionItem as `label` is mandatory field, so just ignore it
           console.warn(`Ignoring CompletionItem without label: ${JSON.stringify(completionItem)}`);
           return;
