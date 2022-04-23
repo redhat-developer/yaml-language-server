@@ -1374,7 +1374,7 @@ export class YamlCompletion {
     if (Array.isArray(value)) {
       return JSON.stringify(value);
     }
-    return value as string;
+    return '' + value;
   }
 
   private collectDefaultSnippets(
