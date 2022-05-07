@@ -625,6 +625,28 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
+      it('Test that properties that have multiple types get auto completed properly', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: ['string', 'boolean'],
+              enum: ['test', false, true],
+            },
+          },
+        });
+        const content = 'scripts: ';
+        const completion = parseSetup(content, 9);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 3);
+            assert.equal(result.items[0].label, 'test');
+            assert.equal(result.items[1].label, 'false');
+            assert.equal(result.items[2].label, 'true');
+          })
+          .then(done, done);
+      });
+
       it('Test that properties that have multiple enums get auto completed properly', (done) => {
         const schema = {
           definitions: {
