@@ -164,6 +164,53 @@ describe('Auto Completion Tests Extended', () => {
         })
         .then(done, done);
     });
+
+    describe('Array', () => {
+      it('array of object null', (done) => {
+        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+        const content = 'arrayObjExpr:\n  - data: ';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.equal(result.items[0].insertText, '=@ctx');
+          })
+          .then(done, done);
+      });
+      it('array of expr null', (done) => {
+        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+        const content = 'arraySimpleExpr:\n  - ';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.equal(result.items[0].insertText, '=@ctx');
+          })
+          .then(done, done);
+      });
+      it('array of object ctx.', (done) => {
+        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+        const content = 'arrayObjExpr:\n  - data: =@ctx.';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 2);
+            assert.equal(result.items[0].insertText, 'user');
+          })
+          .then(done, done);
+      });
+      it('array of expr ctx.', (done) => {
+        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+        const content = 'arraySimpleExpr:\n  - =@ctx.';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 2);
+            assert.equal(result.items[0].insertText, 'user');
+          })
+          .then(done, done);
+      });
+    });
   });
   describe('Complex completion', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires

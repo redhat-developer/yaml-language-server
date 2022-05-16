@@ -113,7 +113,10 @@ export class YamlCompletion {
       this.indentation = this.configuredIndentation;
     }
 
-    if (inlineSymbol && lineContent.match(new RegExp(`:\\s*${inlineSymbol}\\..*`))) {
+    // lines examples:
+    // someProp: =@ctx
+    //   - =@ctx
+    if (inlineSymbol && lineContent.match(new RegExp(`[:-]\\s*${inlineSymbol}\\..*`))) {
       result = await this.doInlineCompletion(document, position, isKubernetes, offset, lineContent);
       // const secs = (Date.now() - startTime) / 1000;
       // console.log(
@@ -221,7 +224,11 @@ export class YamlCompletion {
     lineContent: string
   ): Promise<CompletionList> {
     const inlineSymbolPosition = lineContent.indexOf(inlineSymbol);
-    const lineIndent = lineContent.match(/\s*/)[0];
+    let lineIndent = lineContent.match(/\s*/)[0];
+    const isArray = lineContent[lineIndent.length];
+    if (isArray) {
+      lineIndent += this.indentation;
+    }
     const originalText = lineContent.slice(inlineSymbolPosition);
     const props = originalText.split('.');
     let newText = props.reduce((reducer, prop, index) => {

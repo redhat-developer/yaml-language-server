@@ -11,7 +11,6 @@ import {
   getDescription,
   getIndent,
   replace,
-  replaceSpecialCharsInDescription,
   tableColumnSeparator,
   toCodeSingleLine,
   toTsBlock,
