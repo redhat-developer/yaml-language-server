@@ -28,10 +28,14 @@
               "type": "string"
             }
           },
-          "required": ["propI"]
+          "required": [
+            "propI"
+          ]
         }
       },
-      "required": ["objA"],
+      "required": [
+        "objA"
+      ],
       "type": "object",
       "description": "description of obj1"
     }
@@ -129,6 +133,48 @@
           }
         }
       }
+    },
+    "arraySimpleExpr": {
+      "type": "array",
+      "items": [
+        {
+          "properties": {
+            "=@ctx": {
+              "properties": {
+                "user": {
+                  "properties": {}
+                },
+                "data": {
+                  "properties": {}
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "arrayObjExpr": {
+      "type": "array",
+      "items": [
+        {
+          "properties": {
+            "data": {
+              "properties": {
+                "=@ctx": {
+                  "properties": {
+                    "user": {
+                      "properties": {}
+                    },
+                    "data": {
+                      "properties": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "additionalProperties": false,
