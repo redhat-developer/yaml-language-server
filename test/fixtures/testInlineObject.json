@@ -42,18 +42,7 @@
   },
   "properties": {
     "value": {
-      "properties": {
-        "=@ctx": {
-          "properties": {
-            "user": {
-              "properties": {}
-            },
-            "data": {
-              "properties": {}
-            }
-          }
-        }
-      }
+      "$ref": "#/definitions/Expression"
     },
     "value1": {
       "anyOf": [
@@ -138,18 +127,7 @@
       "type": "array",
       "items": [
         {
-          "properties": {
-            "=@ctx": {
-              "properties": {
-                "user": {
-                  "properties": {}
-                },
-                "data": {
-                  "properties": {}
-                }
-              }
-            }
-          }
+          "$ref": "#/definitions/Expression"
         }
       ]
     },
@@ -159,18 +137,7 @@
         {
           "properties": {
             "data": {
-              "properties": {
-                "=@ctx": {
-                  "properties": {
-                    "user": {
-                      "properties": {}
-                    },
-                    "data": {
-                      "properties": {}
-                    }
-                  }
-                }
-              }
+              "$ref": "#/definitions/Expression"
             }
           }
         }

@@ -20,6 +20,9 @@ describe('Auto Completion Tests Extended', () => {
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
 
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const inlineObjectSchema = require(path.join(__dirname, './fixtures/testInlineObject.json'));
+
   before(() => {
     languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
       uri: 'http://google.com',
@@ -31,6 +34,7 @@ describe('Auto Completion Tests Extended', () => {
     languageService = langService;
     languageHandler = langHandler;
     yamlSettings = settings;
+    ensureExpressionSchema();
   });
 
   function parseSetup(content: string, position: number): Promise<CompletionList> {
@@ -43,15 +47,23 @@ describe('Auto Completion Tests Extended', () => {
     });
   }
 
+  function ensureExpressionSchema(): void {
+    languageService.addSchema('expression', {
+      properties: {
+        expression: {
+          ...inlineObjectSchema.definitions.Expression,
+        },
+      },
+    });
+  }
+
   afterEach(() => {
     languageService.deleteSchema(SCHEMA_ID);
     languageService.configure(languageSettingsSetup.languageSettings);
+    ensureExpressionSchema();
   });
 
   describe('Inline object completion', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const inlineObjectSchema = require(path.join(__dirname, './fixtures/testInlineObject.json'));
-
     it('simple-null', (done) => {
       languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
       const content = 'value: ';
@@ -211,7 +223,39 @@ describe('Auto Completion Tests Extended', () => {
           .then(done, done);
       });
     });
+
+    describe('Inner ctx inside expression', () => {
+      it('ctx inside apostrophes', async () => {
+        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+        const content = 'value: "=@ctx."';
+        const result = await parseSetup(content, content.length - 1);
+        assert.strictEqual(result.items.length, 2);
+        assert.strictEqual(result.items[0].insertText, 'user');
+      });
+      it('ctx with comment', async () => {
+        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+        const content = 'value: =@ctx. #comment';
+        const result = await parseSetup(content, 'value: =@ctx.'.length);
+        assert.strictEqual(result.items.length, 2);
+        assert.strictEqual(result.items[0].insertText, 'user');
+      });
+      it('ctx with jsonata expression', async () => {
+        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+        const content = 'value: =@ctx.test1+@ctx.da';
+        const result = await parseSetup(content, content.length);
+        assert.strictEqual(result.items.length, 2);
+        assert.strictEqual(result.items[1].insertText, 'data');
+      });
+      it('ctx with predicate', async () => {
+        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+        const content = 'value: =@ctx.test1+@ctx[type=3].';
+        const result = await parseSetup(content, content.length);
+        assert.strictEqual(result.items.length, 2);
+        assert.strictEqual(result.items[1].insertText, 'data');
+      });
+    });
   });
+
   describe('Complex completion', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const inlineObjectSchema = require(path.join(__dirname, './fixtures/testInlineObject.json'));

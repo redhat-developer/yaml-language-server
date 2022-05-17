@@ -42,7 +42,8 @@ const localize = nls.loadMessageBundle();
 
 const doubleQuotesEscapeRegExp = /[\\]+"/g;
 
-const inlineSymbol = '=@ctx';
+const ctxSymbolLabel = '=@ctx';
+const ctxSymbol = '@ctx';
 
 const parentCompletionKind = CompletionItemKind.Class;
 
@@ -113,17 +114,13 @@ export class YamlCompletion {
       this.indentation = this.configuredIndentation;
     }
 
-    // lines examples:
-    // someProp: =@ctx
-    //   - =@ctx
-    if (inlineSymbol && lineContent.match(new RegExp(`[:-]\\s*${inlineSymbol}\\..*`))) {
-      result = await this.doInlineCompletion(document, position, isKubernetes, offset, lineContent);
-      // const secs = (Date.now() - startTime) / 1000;
-      // console.log(
-      //   `[debug] inline completion: lineContent(${lineContent.replace('\n', '\\n')}), resultCount(${
-      //     result.items.length
-      //   }), time(${secs})`
-      // );
+    const lineCtx =
+      ctxSymbol &&
+      lineContent
+        .substring(0, position.character) // take lineContent only to cursor position
+        .match(new RegExp(`(${ctxSymbol})(?!.*\\1).*$`)); // https://regex101.com/r/2ewq5g/2 takes last occurrence of the ctx to the end
+    if (lineCtx) {
+      result = await this.doInlineCompletion(document, position, '=' + lineCtx[0]);
       return result;
     }
     // auto add space after : if needed
@@ -216,40 +213,31 @@ export class YamlCompletion {
     return result;
   }
 
-  private async doInlineCompletion(
-    document: TextDocument,
-    position: Position,
-    isKubernetes: boolean,
-    offset: number,
-    lineContent: string
-  ): Promise<CompletionList> {
-    const inlineSymbolPosition = lineContent.indexOf(inlineSymbol);
-    let lineIndent = lineContent.match(/\s*/)[0];
-    const isArray = lineContent[lineIndent.length];
-    if (isArray) {
-      lineIndent += this.indentation;
-    }
-    const originalText = lineContent.slice(inlineSymbolPosition);
-    const props = originalText.split('.');
+  private async doInlineCompletion(document: TextDocument, position: Position, lineCtx: string): Promise<CompletionList> {
+    const props = lineCtx.split('.');
     let newText = props.reduce((reducer, prop, index) => {
       if (!prop || prop === '\n') {
         return reducer;
       }
       // support =@ctx.da
-      if (index === props.length - 1 && !originalText.endsWith('.')) {
+      if (index === props.length - 1 && !lineCtx.endsWith('.')) {
         reducer += prop;
         return reducer;
       }
 
-      reducer += `${prop}:\n${lineIndent}${this.indentation.repeat(index + 2)}`;
+      const indexer = prop.match(/\[[^[]+\]$/);
+      if (indexer) {
+        prop = prop.substring(0, indexer.index);
+      }
+
+      reducer += `${prop}:\n${this.indentation}${this.indentation.repeat(index + 1)}`;
       return reducer;
     }, '');
-    newText = `\n${lineIndent}${this.indentation}${newText}`;
-    const newStartPosition = Position.create(position.line, inlineSymbolPosition);
-    const removedCount = originalText.length; // position.character - newStartPosition.character;
-    const newDocument = this.updateTextDocument(document, [{ range: Range.create(newStartPosition, position), text: newText }]);
-    const newPosition = newDocument.positionAt(offset - removedCount + newText.length);
-    const resultLocal = await this.doCompleteWithDisabledAdditionalProps(newDocument, newPosition, isKubernetes);
+    newText = `expression:\n${this.indentation}${newText}`;
+    const tmpUri = 'expression'; // this file name has association and schema defined in builder
+    const newDocument = TextDocument.create(tmpUri, document.languageId, 0, newText);
+    const newPosition = newDocument.positionAt(newText.length);
+    const resultLocal = await this.doCompleteWithDisabledAdditionalProps(newDocument, newPosition, false);
 
     resultLocal.items.forEach((inlineItem) => {
       let inlineText = inlineItem.insertText;
@@ -271,9 +259,9 @@ export class YamlCompletion {
   }
   private processInlineInitialization(result: CompletionList, lineContent: string): void {
     // make always inline - happens when general completion returns inline label
-    const inlineItem = result.items.find((item) => item.label === inlineSymbol);
+    const inlineItem = result.items.find((item) => item.label === ctxSymbolLabel);
     if (inlineItem) {
-      inlineItem.insertText = (lineContent.match(/:\n?$/) ? ' ' : '') + inlineSymbol;
+      inlineItem.insertText = (lineContent.match(/:\n?$/) ? ' ' : '') + ctxSymbolLabel;
       if (inlineItem.textEdit) {
         inlineItem.textEdit.newText = inlineItem.insertText;
       }
