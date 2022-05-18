@@ -15,7 +15,7 @@ import {
   RenameFilesParams,
   DeleteFilesParams,
 } from 'vscode-languageserver-protocol';
-import { Connection, RemoteWorkspace } from 'vscode-languageserver/lib/common/server';
+import { Connection, RemoteWorkspace } from 'vscode-languageserver';
 import { Telemetry, TelemetryEvent } from '../../src/languageserver/telemetry';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

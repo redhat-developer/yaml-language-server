@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { Diagnostic, Position } from 'vscode-languageserver';
+import { Diagnostic, Position } from 'vscode-languageserver-types';
 import { LanguageSettings } from '../yamlLanguageService';
 import { YAMLDocument, YamlVersion } from '../parser/yamlParser07';
 import { SingleYAMLDocument } from '../parser/yamlParser07';

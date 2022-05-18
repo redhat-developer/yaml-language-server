@@ -9,8 +9,7 @@ import { getNodeValue, JSONDocument } from './../src/languageservice/parser/json
 import * as JsonSchema from './../src/languageservice/jsonSchema';
 import { ASTNode, ObjectASTNode } from './../src/languageservice/jsonASTTypes';
 import { ErrorCode, getLanguageService } from 'vscode-json-languageservice';
-import { TextDocument, Range } from 'vscode-languageserver-types';
-import { Diagnostic } from 'vscode-languageserver';
+import { Diagnostic, TextDocument, Range } from 'vscode-languageserver-types';
 
 describe('JSON Parser', () => {
   function isValid(json: string): void {

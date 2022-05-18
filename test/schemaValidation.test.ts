@@ -18,7 +18,7 @@ import {
 } from './utils/errorMessages';
 import * as assert from 'assert';
 import * as path from 'path';
-import { Diagnostic, DiagnosticSeverity, Position } from 'vscode-languageserver';
+import { Diagnostic, DiagnosticSeverity, Position } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';

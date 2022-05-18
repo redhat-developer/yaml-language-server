@@ -13,7 +13,7 @@ import { expect } from 'chai';
 import { ServiceSetup } from './utils/serviceSetup';
 import { setupLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper';
 import { LanguageService, SchemaPriority } from '../src';
-import { MarkupContent, Position } from 'vscode-languageserver';
+import { MarkupContent, Position } from 'vscode-languageserver-types';
 import { LineCounter } from 'yaml';
 import { getSchemaFromModeline } from '../src/languageservice/services/modelineUtil';
 

@@ -6,7 +6,7 @@ import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 import { ServiceSetup } from './utils/serviceSetup';
 import { createExpectedError } from './utils/verifyError';
 import * as assert from 'assert';
-import { Diagnostic } from 'vscode-languageserver';
+import { Diagnostic } from 'vscode-languageserver-types';
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 
