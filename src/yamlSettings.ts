@@ -40,6 +40,9 @@ export interface Settings {
   vscodeEditor: {
     detectIndentation: boolean;
   };
+  files: {
+    associations: Map<string, string>;
+  };
 }
 
 export interface JSONSchemaSettings {
@@ -97,6 +100,7 @@ export class SettingsState {
   yamlVersion: YamlVersion = '1.2';
   useSchemaSelectionRequests = false;
   hasWsChangeWatchedFileDynamicRegistration = false;
+  fileExtensions: string[] = ['.yml', '.yaml'];
 }
 
 export class TextDocumentTestManager extends TextDocuments<TextDocument> {
