@@ -519,4 +519,23 @@ objB:
       });
     });
   });
+  it('should suggest from additionalProperties', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: {
+        anyOf: [
+          {
+            type: 'string',
+            const: 'test1',
+          },
+        ],
+      },
+    };
+    languageService.addSchema(SCHEMA_ID, schema);
+    const content = 'value: ';
+    const completion = await parseSetup(content, 0, content.length);
+
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0].insertText).to.be.equal('test1');
+  });
 });
