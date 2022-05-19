@@ -3,7 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DocumentOnTypeFormattingParams, Position, Range, TextEdit } from 'vscode-languageserver';
+import { DocumentOnTypeFormattingParams } from 'vscode-languageserver';
+import { Position, Range, TextEdit } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { TextBuffer } from '../utils/textBuffer';
 

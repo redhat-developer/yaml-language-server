@@ -9,7 +9,7 @@ import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList, InsertTextFormat, MarkupContent, MarkupKind, Position } from 'vscode-languageserver';
+import { CompletionList, InsertTextFormat, MarkupContent, MarkupKind, Position } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageService } from '../src';
@@ -827,6 +827,28 @@ describe('Auto Completion Tests', () => {
         completion
           .then(function (result) {
             assert.equal(result.items.length, 0);
+          })
+          .then(done, done);
+      });
+
+      it('Test that properties that have multiple types get auto completed properly', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: ['string', 'boolean'],
+              enum: ['test', false, true],
+            },
+          },
+        });
+        const content = 'scripts: ';
+        const completion = parseSetup(content, 9);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 3);
+            assert.equal(result.items[0].label, 'test');
+            assert.equal(result.items[1].label, 'false');
+            assert.equal(result.items[2].label, 'true');
           })
           .then(done, done);
       });

@@ -77,6 +77,93 @@ describe('Settings Handlers Tests', () => {
     expect(connection.client.register).calledOnce;
   });
 
+  describe('Settings for file associations should ', () => {
+    it('reflect to settings state', async () => {
+      const settingsHandler = new SettingsHandler(
+        connection,
+        (languageService as unknown) as LanguageService,
+        settingsState,
+        (validationHandler as unknown) as ValidationHandler,
+        {} as Telemetry
+      );
+      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}, { associations: { '*.bu': 'yaml' } }]);
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.fileExtensions).to.include('*.bu');
+      expect(settingsState.fileExtensions).to.include('.yml');
+      expect(settingsState.fileExtensions).to.include('.yaml');
+    });
+    it('SettingsHandler should match patterns from file associations', async () => {
+      const languageServerSetup = setupLanguageService({});
+      const languageService = languageServerSetup.languageService;
+      xhrStub.resolves({
+        responseText: `{"schemas": [
+        {
+          "name": "Butane config schema",
+          "description": "Schema to validate butane files for Fedora CoreOS",
+          "fileMatch": [
+            "*.bu"
+          ],
+          "url": "https://raw.githubusercontent.com/Relativ-IT/Butane-Schemas/Release/Butane-Schema.json"
+        }]}`,
+      });
+      settingsState.fileExtensions.push('*.bu');
+      const settingsHandler = new SettingsHandler(
+        connection,
+        (languageService as unknown) as LanguageService,
+        settingsState,
+        (validationHandler as unknown) as ValidationHandler,
+        {} as Telemetry
+      );
+      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      const configureSpy = sinon.stub(languageService, 'configure');
+      await settingsHandler.pullConfiguration();
+      configureSpy.restore();
+      expect(settingsState.schemaStoreSettings).deep.include({
+        uri: 'https://raw.githubusercontent.com/Relativ-IT/Butane-Schemas/Release/Butane-Schema.json',
+        fileMatch: ['*.bu'],
+        priority: SchemaPriority.SchemaStore,
+        name: 'Butane config schema',
+        description: 'Schema to validate butane files for Fedora CoreOS',
+        versions: undefined,
+      });
+    });
+    it('SettingsHandler should not match non-yaml files if there is no file assosication', async () => {
+      const languageServerSetup = setupLanguageService({});
+      const languageService = languageServerSetup.languageService;
+      xhrStub.resolves({
+        responseText: `{"schemas": [
+        {
+          "name": "Butane config schema",
+          "description": "Schema to validate butane files for Fedora CoreOS",
+          "fileMatch": [
+            "*.bu"
+          ],
+          "url": "https://raw.githubusercontent.com/Relativ-IT/Butane-Schemas/Release/Butane-Schema.json"
+        }]}`,
+      });
+      const settingsHandler = new SettingsHandler(
+        connection,
+        (languageService as unknown) as LanguageService,
+        settingsState,
+        (validationHandler as unknown) as ValidationHandler,
+        {} as Telemetry
+      );
+      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      const configureSpy = sinon.stub(languageService, 'configure');
+      await settingsHandler.pullConfiguration();
+      configureSpy.restore();
+      expect(settingsState.schemaStoreSettings).not.deep.include({
+        uri: 'https://raw.githubusercontent.com/Relativ-IT/Butane-Schemas/Release/Butane-Schema.json',
+        fileMatch: ['*.bu'],
+        priority: SchemaPriority.SchemaStore,
+        name: 'Butane config schema',
+        description: 'Schema to validate butane files for Fedora CoreOS',
+        versions: undefined,
+      });
+    });
+  });
+
   it('SettingsHandler should not modify file match patterns', async () => {
     const languageServerSetup = setupLanguageService({});
 
@@ -211,7 +298,7 @@ describe('Settings Handlers Tests', () => {
         (validationHandler as unknown) as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}, {}]);
 
       await settingsHandler.pullConfiguration();
 
@@ -220,6 +307,7 @@ describe('Settings Handlers Tests', () => {
         { section: 'http' },
         { section: '[yaml]' },
         { section: 'editor' },
+        { section: 'files' },
       ]);
     });
     it('should set schemaStoreSettings to empty when schemaStore is disabled', async () => {
@@ -259,6 +347,7 @@ describe('Settings Handlers Tests', () => {
         { section: 'http' },
         { section: '[yaml]' },
         { section: 'editor' },
+        { section: 'files' },
       ]);
     });
   });

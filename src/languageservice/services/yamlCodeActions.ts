@@ -5,17 +5,16 @@
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import {
-  ClientCapabilities,
   CodeAction,
   CodeActionKind,
-  CodeActionParams,
   Command,
   Diagnostic,
   Position,
   Range,
   TextEdit,
   WorkspaceEdit,
-} from 'vscode-languageserver';
+} from 'vscode-languageserver-types';
+import { ClientCapabilities, CodeActionParams } from 'vscode-languageserver-protocol';
 import { YamlCommands } from '../../commands';
 import * as path from 'path';
 import { TextBuffer } from '../utils/textBuffer';

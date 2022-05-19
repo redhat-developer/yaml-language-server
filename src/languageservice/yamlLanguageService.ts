@@ -13,11 +13,13 @@ import {
 } from './services/yamlSchemaService';
 import {
   Position,
+  CodeAction,
   CompletionList,
   Diagnostic,
   Hover,
   SymbolInformation,
   DocumentSymbol,
+  FoldingRange,
   TextEdit,
   DocumentLink,
   CodeLens,
@@ -32,15 +34,12 @@ import { DocumentSymbolsContext } from 'vscode-json-languageservice';
 import { YamlLinks } from './services/yamlLinks';
 import { YamlHoverDetail, YamlHoverDetailPropTableStyle } from './services/yamlHoverDetail';
 import {
-  FoldingRange,
   ClientCapabilities,
   CodeActionParams,
-  CodeAction,
   Connection,
   DocumentOnTypeFormattingParams,
-  CodeLensParams,
   DefinitionParams,
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getFoldingRanges } from './services/yamlFolding';
 import { FoldingRangesContext, SchemaVersions } from './yamlTypes';
@@ -168,7 +167,7 @@ export interface LanguageService {
   deleteSchemasWhole(schemaDeletions: SchemaDeletionsAll): void;
   getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | null;
   getCodeAction(document: TextDocument, params: CodeActionParams): CodeAction[] | undefined;
-  getCodeLens(document: TextDocument, params: CodeLensParams): Thenable<CodeLens[] | undefined> | CodeLens[] | undefined;
+  getCodeLens(document: TextDocument): Thenable<CodeLens[] | undefined> | CodeLens[] | undefined;
   resolveCodeLens(param: CodeLens): Thenable<CodeLens> | CodeLens;
 }
 
@@ -256,8 +255,8 @@ export function getLanguageService(
     getCodeAction: (document, params) => {
       return yamlCodeActions.getCodeAction(document, params);
     },
-    getCodeLens: (document, params) => {
-      return yamlCodeLens.getCodeLens(document, params);
+    getCodeLens: (document) => {
+      return yamlCodeLens.getCodeLens(document);
     },
     resolveCodeLens: (param) => yamlCodeLens.resolveCodeLens(param),
   };

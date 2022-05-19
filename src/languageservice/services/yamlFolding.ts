@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { FoldingRange, Range } from 'vscode-languageserver';
+import { FoldingRange, Range } from 'vscode-languageserver-types';
 import { FoldingRangesContext } from '../yamlTypes';
 import { ASTNode } from '../jsonASTTypes';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
@@ -19,20 +19,31 @@ export function getFoldingRanges(document: TextDocument, context: FoldingRangesC
       result.push(createNormalizedFolding(document, ymlDoc.root));
     }
     ymlDoc.visit((node) => {
-      if (
-        (node.type === 'property' && node.valueNode?.type === 'array') ||
-        (node.type === 'object' && node.parent?.type === 'array')
-      ) {
+      if (node.type === 'object' && node.parent?.type === 'array') {
         result.push(createNormalizedFolding(document, node));
       }
-      if (node.type === 'property' && node.valueNode?.type === 'object') {
-        result.push(createNormalizedFolding(document, node));
+      if (node.type === 'property' && node.valueNode) {
+        switch (node.valueNode.type) {
+          case 'array':
+          case 'object':
+            result.push(createNormalizedFolding(document, node));
+            break;
+          case 'string': {
+            // check if it is a multi-line string
+            const nodePosn = document.positionAt(node.offset);
+            const valuePosn = document.positionAt(node.valueNode.offset + node.valueNode.length);
+            if (nodePosn.line !== valuePosn.line) {
+              result.push(createNormalizedFolding(document, node));
+            }
+            break;
+          }
+          default:
+            return true;
+        }
       }
-
       return true;
     });
   }
-
   const rangeLimit = context && context.rangeLimit;
   if (typeof rangeLimit !== 'number' || result.length <= rangeLimit) {
     return result;

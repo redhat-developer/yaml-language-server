@@ -31,7 +31,7 @@ export function parse(text: string, parserOptions: ParserOptions = defaultOption
   const options: ParseOptions & DocumentOptions & SchemaOptions = {
     strict: false,
     customTags: getCustomTags(parserOptions.customTags),
-    version: parserOptions.yamlVersion,
+    version: parserOptions.yamlVersion ?? defaultOptions.yamlVersion,
     keepSourceTokens: true,
   };
   const composer = new Composer(options);

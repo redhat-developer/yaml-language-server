@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument, TextDocumentContentChangeEvent } from 'vscode-languageserver-textdocument';
+import { ClientCapabilities } from 'vscode-languageserver';
 import {
-  ClientCapabilities,
   CompletionItem as CompletionItemBase,
   CompletionItemKind,
   CompletionList,
@@ -16,7 +16,7 @@ import {
   Position,
   Range,
   TextEdit,
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver-types';
 import { Node, isPair, isScalar, isMap, YAMLMap, isSeq, YAMLSeq, isNode, Pair } from 'yaml';
 import { Telemetry } from '../../languageserver/telemetry';
 import { SingleYAMLDocument, YamlDocuments } from '../parser/yaml-documents';
@@ -1576,7 +1576,7 @@ export class YamlCompletion {
     if (Array.isArray(value)) {
       return JSON.stringify(value);
     }
-    return value as string;
+    return '' + value;
   }
 
   private collectDefaultSnippets(

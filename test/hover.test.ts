@@ -6,7 +6,7 @@ import { ServiceSetup } from './utils/serviceSetup';
 import { jigxBranchTest, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { LanguageService } from '../src';
 import * as assert from 'assert';
-import { Hover, MarkupContent, Position } from 'vscode-languageserver';
+import { Hover, MarkupContent, Position } from 'vscode-languageserver-types';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { expect } from 'chai';

@@ -6,7 +6,7 @@
 import { setupTextDocument, TEST_URI } from './utils/testHelper';
 import { expect } from 'chai';
 import { YamlDefinition } from '../src/languageservice/services/yamlDefinition';
-import { LocationLink, Position, Range } from 'vscode-languageserver-protocol';
+import { LocationLink, Position, Range } from 'vscode-languageserver-types';
 import { Telemetry } from '../src/languageserver/telemetry';
 
 describe('YAML Definition', () => {

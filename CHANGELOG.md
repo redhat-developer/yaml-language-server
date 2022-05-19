@@ -1,3 +1,19 @@
+### 1.7.0
+- Fix: merge simple property completion [#685](https://github.com/redhat-developer/yaml-language-server/pull/685)
+- Fix: schemaStore.enable setting does not work as expected [#721](https://github.com/redhat-developer/vscode-yaml/issues/721)
+- Fix: oneOf: misleading validation failures with Incorrect type. Expected "object" [#692](https://github.com/redhat-developer/vscode-yaml/issues/692)
+- Fix: Yaml errors after updating to v1.5.0 [#708](https://github.com/redhat-developer/vscode-yaml/issues/708)
+- Fix: Complex YAML generates many linting errors [#712](https://github.com/redhat-developer/vscode-yaml/issues/712)
+- Chore: Upgrade `yaml` parser to `2.0.0-11` [#693](https://github.com/redhat-developer/yaml-language-server/pull/693)
+- Fix: Subschema mappings wrongly assign the parent schema file [#694](https://github.com/redhat-developer/yaml-language-server/issues/694)
+- Feat: Select parent skeleton first before other properties are suggested [#691](https://github.com/redhat-developer/yaml-language-server/pull/691)
+- Fix: change completion that is invoked just after array symbol [#698](https://github.com/redhat-developer/yaml-language-server/pull/698)
+- Fix: fix array completion in the middle of the empty text [#697](https://github.com/redhat-developer/yaml-language-server/pull/697)
+- Fix: completion in the middle of the empty text [#696](https://github.com/redhat-developer/yaml-language-server/pull/696)
+- Chore: Update mocha to 9.2.2 [#706](https://github.com/redhat-developer/yaml-language-server/pull/706)
+
+Thanks to Petr Spacek
+
 ### 1.6.0
 - Add: differentiate similar schemas on completion [#681](https://github.com/redhat-developer/yaml-language-server/pull/681)
 - Fix: changed on specific to undefined check instead of null and undefined check [#678](https://github.com/redhat-developer/yaml-language-server/issues/665)

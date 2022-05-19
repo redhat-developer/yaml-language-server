@@ -246,7 +246,7 @@ export class YamlDocuments {
   /**
    * Get cached YAMLDocument
    * @param document TextDocument to parse
-   * @param customTags YAML custom tags
+   * @param parserOptions YAML parserOptions
    * @param addRootObject if true and document is empty add empty object {} to force schema usage
    * @returns the YAMLDocument
    */

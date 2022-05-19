@@ -8,7 +8,7 @@ import path = require('path');
 import { ServiceSetup } from './utils/serviceSetup';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { CompletionList, TextEdit } from 'vscode-languageserver';
+import { CompletionList, TextEdit } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 
 describe('Default Snippet Tests', () => {

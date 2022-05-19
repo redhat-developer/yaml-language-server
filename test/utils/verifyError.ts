@@ -3,8 +3,18 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DocumentSymbol, SymbolKind, InsertTextFormat, Range, DiagnosticTag } from 'vscode-languageserver-types';
-import { CompletionItem, CompletionItemKind, SymbolInformation, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+import {
+  CompletionItem,
+  CompletionItemKind,
+  Diagnostic,
+  DiagnosticSeverity,
+  DiagnosticTag,
+  DocumentSymbol,
+  InsertTextFormat,
+  Range,
+  SymbolKind,
+  SymbolInformation,
+} from 'vscode-languageserver-types';
 import { ErrorCode } from 'vscode-json-languageservice';
 import { jigxBranchTest } from './testHelper';
 
