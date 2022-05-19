@@ -1094,6 +1094,8 @@ export class YamlCompletion {
             if (propertySchema) {
               this.addSchemaValueCompletions(propertySchema, separatorAfter, collector, types);
             }
+          } else if (s.schema.additionalProperties) {
+            this.addSchemaValueCompletions(s.schema.additionalProperties, separatorAfter, collector, types);
           }
         }
       }
