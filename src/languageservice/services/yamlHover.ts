@@ -22,6 +22,7 @@ import { convertErrorToTelemetryMsg } from '../utils/objects';
 
 export class YAMLHover {
   private shouldHover: boolean;
+  private hoverSettings: LanguageSettings['hoverSettings'];
   private schemaService: YAMLSchemaService;
 
   constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
@@ -32,6 +33,7 @@ export class YAMLHover {
   configure(languageSettings: LanguageSettings): void {
     if (languageSettings) {
       this.shouldHover = languageSettings.hover;
+      this.hoverSettings = languageSettings.hoverSettings;
     }
   }
 
@@ -96,6 +98,10 @@ export class YAMLHover {
       return result;
     };
 
+    const hoverSettings = this.hoverSettings || {};
+    const showSource = hoverSettings.hasOwnProperty('showSource') ? hoverSettings.showSource : true;
+    const showTitle = hoverSettings.hasOwnProperty('showTitle') ? hoverSettings.showTitle : true;
+    
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
       if (schema && node && !schema.errors.length) {
         const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
@@ -133,7 +139,7 @@ export class YAMLHover {
           return true;
         });
         let result = '';
-        if (title) {
+        if (showTitle && title) {
           result = '#### ' + toMarkdown(title);
         }
         if (markdownDescription) {
@@ -157,7 +163,7 @@ export class YAMLHover {
             result += `\n\n\`\`\`${example}\`\`\``;
           });
         }
-        if (result.length > 0 && schema.schema.url) {
+        if (showSource && result.length > 0 && schema.schema.url) {
           result += `\n\nSource: [${getSchemaName(schema.schema)}](${schema.schema.url})`;
         }
         return createHover(result);
