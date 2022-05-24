@@ -7,8 +7,7 @@
 
 import { Diagnostic, Position } from 'vscode-languageserver-types';
 import { LanguageSettings } from '../yamlLanguageService';
-import { YAMLDocument, YamlVersion } from '../parser/yamlParser07';
-import { SingleYAMLDocument } from '../parser/yamlParser07';
+import { YAMLDocument, YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { TextDocument } from 'vscode-languageserver-textdocument';

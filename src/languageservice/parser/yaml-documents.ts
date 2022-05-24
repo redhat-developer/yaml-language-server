@@ -5,11 +5,10 @@
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { JSONDocument } from './jsonParser07';
-import { Document, isNode, isPair, isScalar, LineCounter, visit, YAMLError } from 'yaml';
+import { Document, isNode, isPair, isScalar, LineCounter, Node, visit, YAMLError } from 'yaml';
 import { ASTNode, YamlNode } from '../jsonASTTypes';
 import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07';
 import { ErrorCode } from 'vscode-json-languageservice';
-import { Node } from 'yaml';
 import { convertAST } from './ast-converter';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { isArrayEqual } from '../utils/arrUtils';
