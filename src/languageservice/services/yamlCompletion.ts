@@ -32,8 +32,8 @@ import { stringifyObject, StringifySettings } from '../utils/json';
 import { convertErrorToTelemetryMsg, isDefined, isString } from '../utils/objects';
 import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
-import { isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
-import { indexOf } from '../utils/astUtils';
+import { asSchema } from '../parser/jsonParser07';
+import { indexOf, isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
 import { isModeline } from './modelineUtil';
 import { getSchemaTypeName } from '../utils/schemaUtils';
 import { YamlNode } from '../jsonASTTypes';
@@ -966,6 +966,18 @@ export class YamlCompletion {
         // it will treated as a property key since `:` has been appended
         if (nodeParent && isSeq(nodeParent) && schema.schema.type !== 'object') {
           this.addSchemaValueCompletions(schema.schema, separatorAfter, collector, {}, Array.isArray(nodeParent.items));
+        }
+
+        if (schema.schema.propertyNames && schema.schema.additionalProperties && schema.schema.type === 'object') {
+          const propertyNameSchema = asSchema(schema.schema.propertyNames);
+          const label = propertyNameSchema.title || 'property';
+          collector.add({
+            kind: CompletionItemKind.Property,
+            label,
+            insertText: '$' + `{1:${label}}: `,
+            insertTextFormat: InsertTextFormat.Snippet,
+            documentation: this.fromMarkup(propertyNameSchema.markdownDescription) || propertyNameSchema.description || '',
+          });
         }
       }
 

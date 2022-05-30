@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, TEST_URI } from './utils/testHelper';
 import { ServiceSetup } from './utils/serviceSetup';
 import { TextDocumentIdentifier, CodeActionParams, CodeActionContext, TextEdit, Range } from 'vscode-languageserver';
 import { expect } from 'chai';
@@ -11,7 +11,6 @@ import { ValidationHandler } from '../src/languageserver/handlers/validationHand
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { TEST_URI } from './utils/testHelper';
 
 describe('Schema Errors Code Action Tests', () => {
   let languageSettingsSetup: ServiceSetup;
