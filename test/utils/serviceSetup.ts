@@ -19,6 +19,8 @@ export class ServiceSetup {
     customTags: [],
     indentation: undefined,
     yamlVersion: '1.2',
+    flowMapping: 'allow',
+    flowSequence: 'allow',
   };
 
   withValidate(): ServiceSetup {
@@ -58,6 +60,15 @@ export class ServiceSetup {
 
   withIndentation(indentation: string): ServiceSetup {
     this.languageSettings.indentation = indentation;
+    return this;
+  }
+  withFlowMapping(mapping: 'allow' | 'forbid'): ServiceSetup {
+    this.languageSettings.flowMapping = mapping;
+    return this;
+  }
+
+  withFlowSequence(sequence: 'allow' | 'forbid'): ServiceSetup {
+    this.languageSettings.flowSequence = sequence;
     return this;
   }
 }
