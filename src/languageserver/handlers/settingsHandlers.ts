@@ -3,8 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { xhr, configure as configureHttpRequests } from 'request-light';
-import { DocumentFormattingRequest, Connection, DidChangeConfigurationNotification } from 'vscode-languageserver';
-import { DocumentSelector } from 'vscode-languageserver'; // jigx
+import {
+  DocumentFormattingRequest,
+  Connection,
+  DidChangeConfigurationNotification,
+  DocumentSelector, // jigx
+} from 'vscode-languageserver';
 import { convertErrorToTelemetryMsg } from '../../languageservice/utils/objects';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
