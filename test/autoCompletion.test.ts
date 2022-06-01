@@ -35,7 +35,14 @@ describe('Auto Completion Tests', () => {
     yamlSettings = settings;
   });
 
-  function parseSetup(content: string, position: number): Promise<CompletionList> {
+  /**
+   * @param position If position is not passed, then the index of the `||` token will be used.
+   */
+  function parseSetup(content: string, position?: number): Promise<CompletionList> {
+    if (typeof position === 'undefined') {
+      position = content.indexOf('||');
+      content = content.replace('||', '');
+    }
     const testTextDocument = setupSchemaIDTextDocument(content);
     yamlSettings.documents = new TextDocumentTestManager();
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
@@ -2783,6 +2790,36 @@ describe('Auto Completion Tests', () => {
       completion
         .then(function (result) {
           assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].label, '- (array item)');
+        })
+        .then(done, done);
+    });
+
+    // #comment
+    it('Simple array object completion with comment but without "-" before array empty item', (done) => {
+      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'test_simpleArrayObject:\n||  \n#comment';
+      const completion = parseSetup(content);
+      completion
+        .then(function (result) {
+          console.log(result.items.map((n) => n.label));
+          assert.equal(result.items.length, 5);
+          assert.equal(result.items[0].label, '- (array item)');
+        })
+        .then(done, done);
+    });
+
+    // indent with #comment
+    it('Simple array object completion with comment & indent but without "-" before array empty item', (done) => {
+      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'test_simpleArrayObject:\n  ||\n#comment';
+      const completion = parseSetup(content);
+      completion
+        .then(function (result) {
+          console.log(result.items.map((n) => n.label));
+          assert.equal(result.items.length, 5);
           assert.equal(result.items[0].label, '- (array item)');
         })
         .then(done, done);
