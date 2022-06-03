@@ -370,7 +370,7 @@ export class YamlCompletion {
                           currentDoc.internalDocument = currentDoc.internalDocument;
                         }
                       } else {
-                        currentDoc.internalDocument.set(parent.key, map);
+                        parent.value = map;
                         // eslint-disable-next-line no-self-assign
                         currentDoc.internalDocument = currentDoc.internalDocument;
                       }
