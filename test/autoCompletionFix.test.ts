@@ -583,7 +583,7 @@ objB:
     expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
     expect(completion.items[0].documentation).to.be.equal('Property Description');
   });
-  
+
   describe('should suggest property before indented comment', () => {
     const schema: JSONSchema = {
       type: 'object',
@@ -599,7 +599,7 @@ objB:
             },
           },
         },
-      }
+      },
     };
 
     it('completion should handle indented comment on new line', async () => {
@@ -609,7 +609,7 @@ objB:
       expect(completion.items.length).equal(1);
       expect(completion.items[0]).to.be.deep.equal(
         createExpectedCompletion('prop2', 'prop2: ', 2, 2, 2, 2, CompletionItemKind.Property, InsertTextFormat.Snippet, {
-          documentation: ''
+          documentation: '',
         })
       );
     });
@@ -621,9 +621,57 @@ objB:
       expect(completion.items.length).equal(1);
       expect(completion.items[0]).to.be.deep.equal(
         createExpectedCompletion('prop2', 'prop2: ', 2, 2, 2, 2, CompletionItemKind.Property, InsertTextFormat.Snippet, {
-          documentation: ''
+          documentation: '',
         })
       );
+    });
+  });
+
+  describe('should suggest prop of the object (based on not completed prop name)', () => {
+    const schema: JSONSchema = {
+      definitions: {
+        Obj: {
+          anyOf: [
+            { type: 'string' },
+            {
+              type: 'object',
+              properties: {
+                prop1: { type: 'string' },
+              },
+              required: ['prop1'],
+            },
+          ],
+        },
+      },
+      properties: {
+        test1: {
+          properties: {
+            nested: { $ref: '#/definitions/Obj' },
+          },
+        },
+        test2: { $ref: '#/definitions/Obj' },
+      },
+    };
+    const content = `
+test2: 
+  pr
+test1:
+  nested: 
+    pr
+`;
+    it('nested object', async () => {
+      languageService.addSchema(SCHEMA_ID, schema);
+      const completion = await parseSetup(content, 5, 6);
+
+      expect(completion.items.length).equal(2);
+      expect(completion.items[0].label).to.be.equal('prop1');
+    });
+    it('root object', async () => {
+      languageService.addSchema(SCHEMA_ID, schema);
+      const completion = await parseSetup(content, 2, 4);
+
+      expect(completion.items.length).equal(2);
+      expect(completion.items[0].label).to.be.equal('prop1');
     });
   });
 });
