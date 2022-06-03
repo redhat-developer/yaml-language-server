@@ -538,7 +538,6 @@ objB:
     expect(completion.items.length).equal(1);
     expect(completion.items[0].insertText).to.be.equal('test1');
   });
-  
   describe('should suggest property before indented comment', () => {
     const schema: JSONSchema = {
       type: 'object',
@@ -564,7 +563,7 @@ objB:
       expect(completion.items.length).equal(1);
       expect(completion.items[0]).to.be.deep.equal(
         createExpectedCompletion('prop2', 'prop2: ', 2, 2, 2, 2, CompletionItemKind.Property, InsertTextFormat.Snippet, {
-          documentation: ''
+          documentation: '',
         })
       );
     });
@@ -576,7 +575,7 @@ objB:
       expect(completion.items.length).equal(1);
       expect(completion.items[0]).to.be.deep.equal(
         createExpectedCompletion('prop2', 'prop2: ', 2, 2, 2, 2, CompletionItemKind.Property, InsertTextFormat.Snippet, {
-          documentation: ''
+          documentation: '',
         })
       );
     });
