@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CompletionList, Position, Range } from 'vscode-languageserver-types';
+import { CompletionItemKind, CompletionList, InsertTextFormat, Position, Range } from 'vscode-languageserver-types';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
@@ -263,6 +263,34 @@ objB:
         },
       })
     );
+  });
+
+  it('Array of enum autocomplete of irregular order', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        apiVersion: {
+          type: 'string',
+        },
+        metadata: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+            },
+          },
+        },
+        kind: {
+          type: 'string',
+          enum: ['Pod', 'PodTemplate'],
+        },
+      },
+    });
+    const content = 'kind: Po';
+    const completion = await parseSetup(content, 1, 9);
+    expect(completion.items.length).equal(2);
+    expect(completion.items[0].insertText).equal('Pod');
+    expect(completion.items[1].insertText).equal('PodTemplate');
   });
 
   it('Autocomplete indent on array when parent is array', async () => {
@@ -554,5 +582,48 @@ objB:
     expect(completion.items.length).equal(1);
     expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
     expect(completion.items[0].documentation).to.be.equal('Property Description');
+  });
+  
+  describe('should suggest property before indented comment', () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        example: {
+          type: 'object',
+          properties: {
+            prop1: {
+              type: 'string',
+            },
+            prop2: {
+              type: 'string',
+            },
+          },
+        },
+      }
+    };
+
+    it('completion should handle indented comment on new line', async () => {
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'example:\n  prop1: "test"\n  \n    #comment';
+      const completion = await parseSetup(content, 2, 2);
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0]).to.be.deep.equal(
+        createExpectedCompletion('prop2', 'prop2: ', 2, 2, 2, 2, CompletionItemKind.Property, InsertTextFormat.Snippet, {
+          documentation: ''
+        })
+      );
+    });
+
+    it('completion should handle comment at same indent level on new line', async () => {
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'example:\n  prop1: "test"\n  \n  #comment';
+      const completion = await parseSetup(content, 2, 2);
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0]).to.be.deep.equal(
+        createExpectedCompletion('prop2', 'prop2: ', 2, 2, 2, 2, CompletionItemKind.Property, InsertTextFormat.Snippet, {
+          documentation: ''
+        })
+      );
+    });
   });
 });

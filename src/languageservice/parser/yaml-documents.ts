@@ -137,7 +137,7 @@ export class SingleYAMLDocument extends JSONDocument {
       if (!range) {
         return;
       }
-      const diff = range[2] - offset;
+      const diff = range[1] - offset;
       if (maxOffset <= range[0] && diff <= 0 && Math.abs(diff) <= offsetDiff) {
         offsetDiff = Math.abs(diff);
         maxOffset = range[0];
