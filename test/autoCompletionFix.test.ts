@@ -554,7 +554,7 @@ objB:
             },
           },
         },
-      }
+      },
     };
 
     it('completion should handle indented comment on new line', async () => {
