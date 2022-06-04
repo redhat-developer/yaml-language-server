@@ -111,8 +111,9 @@ export class YamlCompletion {
     setKubernetesParserOption(doc.documents, isKubernetes);
 
     const offset = document.offsetAt(position);
+    const text = document.getText();
 
-    if (document.getText().charAt(offset - 1) === ':') {
+    if (text.charAt(offset - 1) === ':') {
       return Promise.resolve(result);
     }
 
@@ -138,7 +139,7 @@ export class YamlCompletion {
       overwriteRange = Range.create(nodeStartPos, nodeEndPos);
     } else if (node && isScalar(node) && node.value) {
       const start = document.positionAt(node.range[0]);
-      if (offset > 0 && start.character > 0 && document.getText().charAt(offset - 1) === '-') {
+      if (offset > 0 && start.character > 0 && text.charAt(offset - 1) === '-') {
         start.character -= 1;
       }
       overwriteRange = Range.create(start, document.positionAt(node.range[1]));
@@ -147,7 +148,7 @@ export class YamlCompletion {
       this.arrayPrefixIndentation = ' ';
     } else {
       let overwriteStart = document.offsetAt(position) - currentWord.length;
-      if (overwriteStart > 0 && document.getText()[overwriteStart - 1] === '"') {
+      if (overwriteStart > 0 && text[overwriteStart - 1] === '"') {
         overwriteStart--;
       }
       overwriteRange = Range.create(document.positionAt(overwriteStart), position);
@@ -495,7 +496,7 @@ export class YamlCompletion {
 
         this.addPropertyCompletions(schema, currentDoc, node, originalNode, '', collector, textBuffer, overwriteRange);
 
-        if (!schema && currentWord.length > 0 && document.getText().charAt(offset - currentWord.length - 1) !== '"') {
+        if (!schema && currentWord.length > 0 && text.charAt(offset - currentWord.length - 1) !== '"') {
           collector.add({
             kind: CompletionItemKind.Property,
             label: currentWord,
