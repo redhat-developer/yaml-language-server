@@ -35,7 +35,19 @@ describe('Auto Completion Tests', () => {
     yamlSettings = settings;
   });
 
-  function parseSetup(content: string, position: number): Promise<CompletionList> {
+  /**
+   * Generates a completion list for the given document and caret (cursor) position.
+   * @param content The content of the document.
+   * @param position The position of the caret in the document.
+   * Alternatively, can be omitted if the caret is located in the content using the symbol `|:|`.
+   * @returns A list of valid completions.
+   */
+  function parseSetup(content: string, position?: number): Promise<CompletionList> {
+    if (typeof position === 'undefined') {
+      position = content.indexOf('|:|');
+      content = content.replace('|:|', '');
+    }
+
     const testTextDocument = setupSchemaIDTextDocument(content);
     yamlSettings.documents = new TextDocumentTestManager();
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
@@ -61,8 +73,8 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = '';
-        const completion = parseSetup(content, 0);
+        const content = '|:|';
+        const completion = parseSetup(content);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
@@ -85,8 +97,8 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'na';
-        const completion = parseSetup(content, 2);
+        const content = 'na|:|';
+        const completion = parseSetup(content);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
@@ -181,8 +193,8 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'name';
-        const completion = await parseSetup(content, 3);
+        const content = 'nam|:|e';
+        const completion = await parseSetup(content);
         assert.strictEqual(completion.items.length, 1);
         assert.deepStrictEqual(
           completion.items[0],
@@ -752,8 +764,8 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'scripts: ';
-        const completion = parseSetup(content, content.length);
+        const content = 'scripts: |:|';
+        const completion = parseSetup(content);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
