@@ -210,7 +210,14 @@ describe('Kubernetes Integration Tests', () => {
 
   describe('yamlCompletion with kubernetes', function () {
     describe('doComplete', function () {
-      function parseSetup(content: string, position): Promise<CompletionList> {
+      function parseSetup(content: string, position?: number): Promise<CompletionList> {
+        if (typeof position === 'undefined') {
+          position = content.indexOf('|:|');
+          content = content.replace('|:|', '');
+          if (content.length) position--;
+        }
+        console.log('position:', position, '>' + content.substring(position) + '<');
+
         const testTextDocument = setupTextDocument(content);
         yamlSettings.documents = new TextDocumentTestManager();
         (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
@@ -253,8 +260,8 @@ describe('Kubernetes Integration Tests', () => {
       // });
 
       it('Autocomplete on default value (with value content)', (done) => {
-        const content = 'apiVersion: v1\nkind: Depl';
-        const completion = parseSetup(content, 19);
+        const content = 'apiVersion: v1\nkind:|:| Depl';
+        const completion = parseSetup(content);
         completion
           .then(function (result) {
             assert.notEqual(result.items.length, 0);
@@ -305,19 +312,27 @@ describe('Kubernetes Integration Tests', () => {
   });
 
   describe('yamlHover with kubernetes', function () {
-    function parseSetup(content: string, offset: number): Promise<Hover> {
+    function parseSetup(content: string, position?: number): Promise<Hover> {
+      if (typeof position === 'undefined') {
+        position = content.indexOf('|:|');
+        content = content.replace('|:|', '');
+        if (content.length) position--;
+      }
+      // console.log('position:', position, '>' + content.substring(position) + '<');
+
       const testTextDocument = setupTextDocument(content);
       yamlSettings.documents = new TextDocumentTestManager();
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
       return languageHandler.hoverHandler({
-        position: testTextDocument.positionAt(offset),
+        position: testTextDocument.positionAt(position),
         textDocument: testTextDocument,
       });
     }
 
     it('Hover on incomplete kubernetes document', async () => {
-      const content = 'apiVersion: v1\nmetadata:\n  name: test\nkind: Deployment\nspec:\n   ';
-      const hover = await parseSetup(content, 58);
+      const content = 'apiVersion: v1\nmetadata:\n  name: test\nkind: Deployment\nspec|:|:\n   ';
+      const hover = await parseSetup(content);
+
       assert.strictEqual(MarkupContent.is(hover.contents), true);
       assert.strictEqual((hover.contents as MarkupContent).value, '');
     });

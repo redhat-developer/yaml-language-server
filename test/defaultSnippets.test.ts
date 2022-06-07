@@ -28,7 +28,14 @@ describe('Default Snippet Tests', () => {
   });
 
   describe('Snippet Tests', function () {
-    function parseSetup(content: string, position: number): Promise<CompletionList> {
+    function parseSetup(content: string, position?: number): Promise<CompletionList> {
+      if (typeof position === 'undefined') {
+        position = content.indexOf('|:|');
+        content = content.replace('|:|', '');
+        if (content.length) position--;
+      }
+      // console.log('position:', position, '>' + content.substring(position) + '<');
+
       const testTextDocument = setupSchemaIDTextDocument(content);
       yamlSettings.documents = new TextDocumentTestManager();
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
@@ -63,8 +70,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in array schema should autocomplete on same line as array', (done) => {
-      const content = 'array:  ';
-      const completion = parseSetup(content, 7);
+      const content = 'array:  |:|';
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.equal(result.items.length, 1);
@@ -156,8 +163,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in object schema should autocomplete on same line', (done) => {
-      const content = 'object:  ';
-      const completion = parseSetup(content, 8);
+      const content = 'object:  |:|';
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.equal(result.items.length, 1);
@@ -176,8 +183,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in string schema should autocomplete on same line', (done) => {
-      const content = 'string:  ';
-      const completion = parseSetup(content, 8);
+      const content = 'string:  |:|';
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.notEqual(result.items.length, 0);
@@ -188,8 +195,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in boolean schema should autocomplete on same line', (done) => {
-      const content = 'boolean:  ';
-      const completion = parseSetup(content, 9);
+      const content = 'boolean:  |:|';
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.notEqual(result.items.length, 0);
@@ -199,9 +206,9 @@ describe('Default Snippet Tests', () => {
         .then(done, done);
     });
 
-    it('Snippet in longSnipet schema should autocomplete on same line', (done) => {
-      const content = 'longSnippet:  ';
-      const completion = parseSetup(content, 13);
+    it('Snippet in longSnippet schema should autocomplete on same line', (done) => {
+      const content = 'longSnippet:  |:|';
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.equal(result.items.length, 1);
@@ -216,8 +223,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in short snippet schema should autocomplete on same line', (done) => {
-      const content = 'lon  ';
-      const completion = parseSetup(content, 3);
+      const content = 'lon |:| ';
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.equal(result.items.length, 14); // This is just checking the total number of snippets in the defaultSnippets.json
@@ -232,8 +239,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Test array of arrays on properties completion', (done) => {
-      const content = 'arrayArrayS  ';
-      const completion = parseSetup(content, 11);
+      const content = 'arrayArrayS |:| ';
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.equal(result.items[5].label, 'arrayArraySnippet');
@@ -327,8 +334,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('should preserve space after ":" with prefix', async () => {
-      const content = 'boolean: tr\n';
-      const result = await parseSetup(content, 9);
+      const content = 'boolean: t|:|r\n';
+      const result = await parseSetup(content);
 
       assert.notEqual(result.items.length, 0);
       assert.equal(result.items[0].label, 'My boolean item');

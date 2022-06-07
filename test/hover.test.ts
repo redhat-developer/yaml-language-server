@@ -40,7 +40,14 @@ describe('Hover Tests', () => {
     languageService.deleteSchema(SCHEMA_ID);
   });
 
-  function parseSetup(content: string, position): Promise<Hover> {
+  function parseSetup(content: string, position?: number): Promise<Hover> {
+    if (typeof position === 'undefined') {
+      position = content.indexOf('|:|');
+      content = content.replace('|:|', '');
+      if (content.length) position--;
+    }
+    // console.log('position:', position, '>' + content.substring(position) + '<');
+
     const testTextDocument = setupSchemaIDTextDocument(content);
     yamlSettings.documents = new TextDocumentTestManager();
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
@@ -62,8 +69,8 @@ describe('Hover Tests', () => {
           },
         },
       });
-      const content = 'cwd: test';
-      const hover = await parseSetup(content, 1);
+      const content = 'cw|:|d: test';
+      const hover = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(hover.contents), true);
       assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
@@ -84,8 +91,8 @@ describe('Hover Tests', () => {
           },
         },
       });
-      const content = 'cwd: test';
-      const result = await parseSetup(content, 6);
+      const content = 'cwd: te|:|st';
+      const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
@@ -110,8 +117,8 @@ describe('Hover Tests', () => {
           },
         },
       });
-      const content = 'scripts:\n  postinstall: test';
-      const result = await parseSetup(content, 15);
+      const content = 'scripts:\n  posti|:|nstall: test';
+      const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
@@ -136,8 +143,8 @@ describe('Hover Tests', () => {
           },
         },
       });
-      const content = 'scripts:\n  postinstall: test';
-      const result = await parseSetup(content, 26);
+      const content = 'scripts:\n  postinstall: tes|:|t';
+      const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
@@ -163,9 +170,8 @@ describe('Hover Tests', () => {
           },
         },
       });
-      const content = 'scripts:\n  postinstall: test';
-
-      const firstHover = await parseSetup(content, 3);
+      const content1 = 'scri|:|pts:\n  postinstall: test';
+      const firstHover = await parseSetup(content1);
 
       assert.strictEqual(MarkupContent.is(firstHover.contents), true);
       assert.strictEqual((firstHover.contents as MarkupContent).kind, 'markdown');
@@ -174,7 +180,8 @@ describe('Hover Tests', () => {
         `Contains custom hooks used to trigger other automated tools\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
 
-      const secondHover = await parseSetup(content, 15);
+      const content2 = 'scripts:\n  posti|:|nstall: test';
+      const secondHover = await parseSetup(content2);
 
       assert.strictEqual(MarkupContent.is(secondHover.contents), true);
       assert.strictEqual(
@@ -192,8 +199,8 @@ describe('Hover Tests', () => {
           },
         },
       });
-      const content = 'analytics: true';
-      const result = await parseSetup(content, 3);
+      const content = 'anal|:|ytics: true';
+      const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual((result.contents as MarkupContent).value, '');
@@ -208,8 +215,8 @@ describe('Hover Tests', () => {
           },
         },
       });
-      const content = '---\nanalytics: true\n...\n---\njson: test\n...';
-      const result = await parseSetup(content, 10);
+      const content = '---\nanalyti|:|cs: true\n...\n---\njson: test\n...';
+      const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual((result.contents as MarkupContent).value, '');
@@ -228,8 +235,8 @@ describe('Hover Tests', () => {
           },
         },
       });
-      const content = '---\nanalytics: true\n...\n---\njson: test\n...';
-      const result = await parseSetup(content, 30);
+      const content = '---\nanalytics: true\n...\n---\njso|:|n: test\n...';
+      const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
@@ -243,8 +250,8 @@ describe('Hover Tests', () => {
         type: 'object',
         properties: {},
       });
-      const content = 'my_unknown_hover: test';
-      const result = await parseSetup(content, 1);
+      const content = 'my|:|_unknown_hover: test';
+      const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual((result.contents as MarkupContent).value, '');
@@ -255,8 +262,8 @@ describe('Hover Tests', () => {
         type: 'object',
         properties: {},
       });
-      const content = 'my_unknown_hover: test';
-      const result = await parseSetup(content, 21);
+      const content = 'my_unknown_hover: test|:|';
+      const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual((result.contents as MarkupContent).value, '');
@@ -280,8 +287,8 @@ describe('Hover Tests', () => {
           },
         },
       });
-      const content = 'authors:\n  - name: Josh';
-      const result = await parseSetup(content, 14);
+      const content = 'authors:\n  - na|:|me: Josh';
+      const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
@@ -312,8 +319,8 @@ describe('Hover Tests', () => {
           },
         },
       });
-      const content = 'authors:\n  - name: Josh\n  - email: jp';
-      const result = await parseSetup(content, 28);
+      const content = 'authors:\n  - name: Josh\n  - e|:|mail: jp';
+      const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
@@ -392,10 +399,10 @@ describe('Hover Tests', () => {
         },
       });
 
-      const content = `ignition:
+      const content1 = `ignition:
   proxy:
     no_proxy:
-      - 10.10.10.10
+      - 10.|:|10.10.10
       - service.local
 storage:
   raid:
@@ -404,14 +411,26 @@ storage:
         - /dev/disk/by-id/ata-WDC_WD10SPZX-80Z10T2_WD-WX41A49H9FT4
         - /dev/disk/by-id/ata-WDC_WD10SPZX-80Z10T2_WD-WXL1A49KPYFD`;
 
-      let result = await parseSetup(content, 43);
+      let result = await parseSetup(content1);
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
         `#### no\\_proxy \\(list of strings\\):\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
 
-      result = await parseSetup(content, 160);
+      const content2 = `ignition:
+  proxy:
+    no_proxy:
+      - 10.10.10.10
+      - service.local
+storage:
+  raid:
+    - name: Raid
+      devices:
+        - /dev/disk/by-id/ata-WDC_WD1|:|0SPZX-80Z10T2_WD-WX41A49H9FT4
+        - /dev/disk/by-id/ata-WDC_WD10SPZX-80Z10T2_WD-WXL1A49KPYFD`;
+
+      result = await parseSetup(content2);
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
@@ -429,8 +448,8 @@ storage:
           },
         },
       });
-      const content = 'childObject: \n';
-      const result = await parseSetup(content, 1);
+      const content = 'ch|:|ildObject: \n';
+      const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
@@ -451,8 +470,8 @@ storage:
           },
         },
       });
-      const content = 'animal:\n  cat';
-      const result = await parseSetup(content, 12);
+      const content = 'animal:\n  cat|:|';
+      const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
@@ -486,8 +505,8 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
           },
         },
       });
-      const content = 'childObject:\r\n  prop:\r\n  ';
-      const result = await parseSetup(content, 16);
+      const content = 'childObject:\r\n  p|:|rop:\r\n  ';
+      const result = await parseSetup(content);
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
@@ -511,8 +530,8 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
   describe('Bug fixes', () => {
     it('should convert binary data correctly', async () => {
       const content =
-        'foo: [ !!binary R0lGODlhDAAMAIQAAP//9/X17unp5WZmZgAAAOfn515eXvPz7Y6OjuDg4J+fn5OTk6enp56enmleECcgggoBADs= ]\n';
-      const result = await parseSetup(content, 20);
+        'foo: [ !!binary R0lGO|:|DlhDAAMAIQAAP//9/X17unp5WZmZgAAAOfn515eXvPz7Y6OjuDg4J+fn5OTk6enp56enmleECcgggoBADs= ]\n';
+      const result = await parseSetup(content);
       expect(telemetry.messages).to.be.empty;
       expect(result).to.be.null;
     });

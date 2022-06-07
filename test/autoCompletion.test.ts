@@ -45,7 +45,9 @@ describe('Auto Completion Tests', () => {
     if (typeof position === 'undefined') {
       position = content.indexOf('|:|');
       content = content.replace('|:|', '');
+      if (content.length) position--;
     }
+    // console.log('position:', position, '>' + content.substring(position) + '<');
 
     const testTextDocument = setupSchemaIDTextDocument(content);
     yamlSettings.documents = new TextDocumentTestManager();
@@ -192,7 +194,7 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'nam|:|e';
+        const content = 'name|:|';
         const completion = await parseSetup(content);
         assert.strictEqual(completion.items.length, 1);
         assert.deepStrictEqual(
@@ -353,8 +355,8 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'scripts:\n  sample';
-        const completion = parseSetup(content, 11);
+        const content = 'scripts:\n  s|:|ample';
+        const completion = parseSetup(content);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
@@ -383,8 +385,8 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'scripts:\n  sam';
-        const completion = parseSetup(content, 11);
+        const content = 'scripts:\n  s|:|am';
+        const completion = parseSetup(content);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
@@ -479,8 +481,8 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'scripts:\n  sample: test\n  myOther';
-        const completion = parseSetup(content, 31);
+        const content = 'scripts:\n  sample: test\n  myOthe|:|r';
+        const completion = parseSetup(content);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
@@ -558,8 +560,8 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'scripts: |:|';
-        const completion = parseSetup(content);
+        const content = 'scripts: ';
+        const completion = parseSetup(content, content.length);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
@@ -1180,8 +1182,8 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'authors:\n  - name: test\n    e';
-        const completion = parseSetup(content, 27);
+        const content = 'authors:\n  - name: test\n    |:|e';
+        const completion = parseSetup(content);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 1);
@@ -1688,8 +1690,8 @@ describe('Auto Completion Tests', () => {
           },
         },
       });
-      const content = 'fruit: App';
-      const completion = parseSetup(content, 9);
+      const content = 'fruit: App|:|';
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.equal(result.items.length, 1);
@@ -1955,8 +1957,8 @@ describe('Auto Completion Tests', () => {
           },
         },
       });
-      const content = 'scripts:\n    sample: test\n    myOther';
-      const completion = await parseSetup(content, 34);
+      const content = 'scripts:\n    sample: test\n    myOth|:|er';
+      const completion = await parseSetup(content);
       assert.strictEqual(completion.items.length, 1);
       assert.deepStrictEqual(
         completion.items[0],
@@ -2118,8 +2120,8 @@ describe('Auto Completion Tests', () => {
         },
       });
 
-      const content = '---\n- \n';
-      const completion = await parseSetup(content, 6);
+      const content = '---\n- \n|:|';
+      const completion = await parseSetup(content);
       expect(completion.items).lengthOf(1);
       expect(completion.items[0].label).eq('fooBar');
       expect(completion.items[0].insertText).eq('fooBar:\n    name: $1\n    aaa:\n      - $2');
@@ -2174,8 +2176,8 @@ describe('Auto Completion Tests', () => {
         },
       });
 
-      const content = 'enum';
-      const completion = await parseSetup(content, 3);
+      const content = 'enum|:|';
+      const completion = await parseSetup(content);
 
       const enumItem = completion.items.find((i) => i.label === 'enum');
       expect(enumItem).to.not.undefined;
@@ -2197,7 +2199,7 @@ describe('Auto Completion Tests', () => {
         },
       });
 
-      const content = 'fooBar: \n';
+      const content = 'fooBar: \n|:|';
       const completion = await parseSetup(content, 8);
 
       const testItem = completion.items.find((i) => i.label === 'test');
