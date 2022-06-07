@@ -41,7 +41,7 @@ describe('Hover Tests', () => {
   });
 
   /**
-   * Generates a completion list for the given document and caret (cursor) position.
+   * Generates hover information for the given document and caret (cursor) position.
    * @param content The content of the document.
    * @param position The position of the caret in the document.
    * Alternatively, `position` can be omitted if the caret is located in the content using `|` bookends.
