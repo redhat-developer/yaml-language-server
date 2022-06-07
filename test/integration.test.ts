@@ -210,7 +210,15 @@ describe('Kubernetes Integration Tests', () => {
 
   describe('yamlCompletion with kubernetes', function () {
     describe('doComplete', function () {
-      function parseSetup(content: string, position): Promise<CompletionList> {
+      function parseSetup(content: string, position?: number): Promise<CompletionList> {
+        // console.log('original:', content.length, content, '>' + content.substring(position) + '<');
+        if (typeof position === 'undefined') {
+          position = content.search(/\|[^]\|/); // | -> any char including newline -> |
+          content =
+            content.substring(0, position) + content.substring(position + 1, position + 2) + content.substring(position + 3);
+        }
+        // console.log('position:', position, content, '>' + content.substring(position) + '<');
+
         const testTextDocument = setupTextDocument(content);
         yamlSettings.documents = new TextDocumentTestManager();
         (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);

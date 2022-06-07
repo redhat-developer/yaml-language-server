@@ -28,7 +28,15 @@ describe('Default Snippet Tests', () => {
   });
 
   describe('Snippet Tests', function () {
-    function parseSetup(content: string, position: number): Promise<CompletionList> {
+    function parseSetup(content: string, position?: number): Promise<CompletionList> {
+      // console.log('original:', content.length, content, '>' + content.substring(position) + '<');
+      if (typeof position === 'undefined') {
+        position = content.search(/\|[^]\|/); // | -> any char including newline -> |
+        content =
+          content.substring(0, position) + content.substring(position + 1, position + 2) + content.substring(position + 3);
+      }
+      // console.log('position:', position, content, '>' + content.substring(position) + '<');
+
       const testTextDocument = setupSchemaIDTextDocument(content);
       yamlSettings.documents = new TextDocumentTestManager();
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
@@ -39,7 +47,7 @@ describe('Default Snippet Tests', () => {
     }
 
     it('Snippet in array schema should autocomplete with -', (done) => {
-      const content = 'array:\n  - ';
+      const content = 'array:\n  - '; // len: 11
       const completion = parseSetup(content, 11);
       completion
         .then(function (result) {
@@ -51,7 +59,7 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in array schema should autocomplete with - if none is present', (done) => {
-      const content = 'array:\n  ';
+      const content = 'array:\n  '; // len: 9
       const completion = parseSetup(content, 9);
       completion
         .then(function (result) {
@@ -63,8 +71,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in array schema should autocomplete on same line as array', (done) => {
-      const content = 'array:  ';
-      const completion = parseSetup(content, 7);
+      const content = 'array: | |'; // len: 8, pos: 7
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.equal(result.items.length, 1);
@@ -128,7 +136,7 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in object schema should autocomplete on next line ', (done) => {
-      const content = 'object:\n  ';
+      const content = 'object:\n  '; // len: 10
       const completion = parseSetup(content, 11);
       completion
         .then(function (result) {
@@ -142,7 +150,7 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in object schema should autocomplete on next line with depth', (done) => {
-      const content = 'object:\n  key:\n    ';
+      const content = 'object:\n  key:\n    '; // len: 19
       const completion = parseSetup(content, 20);
       completion
         .then(function (result) {
@@ -156,7 +164,7 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in object schema should autocomplete on same line', (done) => {
-      const content = 'object:  ';
+      const content = 'object:  '; // len: 9
       const completion = parseSetup(content, 8);
       completion
         .then(function (result) {
@@ -176,8 +184,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in string schema should autocomplete on same line', (done) => {
-      const content = 'string:  ';
-      const completion = parseSetup(content, 8);
+      const content = 'string: | |'; // len: 9, pos: 8
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.notEqual(result.items.length, 0);
@@ -188,8 +196,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in boolean schema should autocomplete on same line', (done) => {
-      const content = 'boolean:  ';
-      const completion = parseSetup(content, 9);
+      const content = 'boolean: | |'; // len: 10, pos: 9
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.notEqual(result.items.length, 0);
@@ -200,8 +208,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in longSnipet schema should autocomplete on same line', (done) => {
-      const content = 'longSnippet:  ';
-      const completion = parseSetup(content, 13);
+      const content = 'longSnippet: | |'; // len: 14, pos: 13
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.equal(result.items.length, 1);
@@ -216,8 +224,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in short snippet schema should autocomplete on same line', (done) => {
-      const content = 'lon  ';
-      const completion = parseSetup(content, 3);
+      const content = 'lon| | '; // len: 5, pos: 3
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.equal(result.items.length, 14); // This is just checking the total number of snippets in the defaultSnippets.json
@@ -232,8 +240,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Test array of arrays on properties completion', (done) => {
-      const content = 'arrayArrayS  ';
-      const completion = parseSetup(content, 11);
+      const content = 'arrayArrayS| | '; // len: 13, pos: 11
+      const completion = parseSetup(content);
       completion
         .then(function (result) {
           assert.equal(result.items[5].label, 'arrayArraySnippet');
@@ -243,7 +251,7 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Test array of arrays on value completion', (done) => {
-      const content = 'arrayArraySnippet: ';
+      const content = 'arrayArraySnippet: '; // len: 19
       const completion = parseSetup(content, 20);
       completion
         .then(function (result) {
@@ -255,7 +263,7 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Test array of arrays on indented completion', (done) => {
-      const content = 'arrayArraySnippet:\n  ';
+      const content = 'arrayArraySnippet:\n  '; // len: 21
       const completion = parseSetup(content, 21);
       completion
         .then(function (result) {
@@ -303,7 +311,7 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Test string with boolean in string should insert string', (done) => {
-      const content = 'simpleBooleanString: ';
+      const content = 'simpleBooleanString: '; // len: 21
       const completion = parseSetup(content, 21);
       completion
         .then(function (result) {
@@ -315,7 +323,7 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Test string with boolean NOT in string should insert boolean', (done) => {
-      const content = 'simpleBoolean: ';
+      const content = 'simpleBoolean: '; // len: 15
       const completion = parseSetup(content, 15);
       completion
         .then(function (result) {
@@ -327,8 +335,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('should preserve space after ":" with prefix', async () => {
-      const content = 'boolean: tr\n';
-      const result = await parseSetup(content, 9);
+      const content = 'boolean: |t|r\n'; // len: 12, pos: 9
+      const result = await parseSetup(content);
 
       assert.notEqual(result.items.length, 0);
       assert.equal(result.items[0].label, 'My boolean item');
@@ -341,7 +349,7 @@ describe('Default Snippet Tests', () => {
     });
 
     it('should preserve space after ":"', async () => {
-      const content = 'boolean: ';
+      const content = 'boolean: '; // len: 9
       const result = await parseSetup(content, 9);
 
       assert.notEqual(result.items.length, 0);
@@ -355,8 +363,8 @@ describe('Default Snippet Tests', () => {
     });
 
     it('should add space before value on root node', async () => {
-      const content = 'name\n';
-      const result = await parseSetup(content, 4);
+      const content = 'name|\n|'; // len: 5, pos: 4
+      const result = await parseSetup(content);
       const item = result.items.find((i) => i.label === 'name');
       expect(item).is.not.undefined;
       expect(item.textEdit.newText).to.be.equal('name: some');
