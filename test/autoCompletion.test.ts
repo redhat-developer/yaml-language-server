@@ -194,8 +194,8 @@ describe('Auto Completion Tests', () => {
             },
           },
         });
-        const content = 'nam|e|'; // len: 4
-        const completion = await parseSetup(content); // 3
+        const content = 'nam|e|'; // len: 4, pos: 3
+        const completion = await parseSetup(content);
         assert.strictEqual(completion.items.length, 1);
         assert.deepStrictEqual(
           completion.items[0],
