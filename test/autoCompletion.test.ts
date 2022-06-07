@@ -38,7 +38,8 @@ describe('Auto Completion Tests', () => {
    * Generates a completion list for the given document and caret (cursor) position.
    * @param content The content of the document.
    * @param position The position of the caret in the document.
-   * Alternatively, can be omitted if the caret is located in the content using the symbol `|:|`.
+   * Alternatively, `position` can be omitted if the caret is located in the content using `|` bookends.
+   * For example, `content = 'ab|c|d'` places the caret over the `'c'`, at `position = 2`
    * @returns A list of valid completions.
    */
   function parseSetup(content: string, position?: number): Promise<CompletionList> {
