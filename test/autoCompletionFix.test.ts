@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CompletionList, Position } from 'vscode-languageserver/node';
+import { CompletionList, Position, Range } from 'vscode-languageserver-types';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
@@ -518,5 +518,89 @@ objB:
       expect(completion.items[1].label).to.be.equal('obj1');
       expect(completion.items[1].insertText).to.be.equal('obj1:\n  prop2: ${1:value}');
     });
+
+    it('should suggest when cursor is not on the end of the line', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          prop: {
+            const: 'const',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'prop:   ';
+      const completion = await parseSetup(content, 0, 6);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0].label).to.be.equal('const');
+      expect(completion.items[0].textEdit).to.be.deep.equal({ newText: 'const', range: Range.create(0, 6, 0, content.length) });
+    });
+
+    it('should suggest object array when extra space is after cursor', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          arrayObj: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                item1: {
+                  type: 'string',
+                },
+                item2: {
+                  type: 'string',
+                },
+              },
+              required: ['item1', 'item2'],
+            },
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'arrayObj:\n  -   ';
+      const completion = await parseSetup(content, 1, 4);
+
+      expect(completion.items.length).equal(3);
+      expect(completion.items[1].textEdit).to.be.deep.equal({
+        newText: 'item1: $1\n  item2: $2',
+        range: Range.create(1, 4, 1, 6), // removes extra spaces after cursor
+      });
+    });
+  });
+  it('should suggest from additionalProperties', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: {
+        anyOf: [
+          {
+            type: 'string',
+            const: 'test1',
+          },
+        ],
+      },
+    };
+    languageService.addSchema(SCHEMA_ID, schema);
+    const content = 'value: ';
+    const completion = await parseSetup(content, 0, content.length);
+
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0].insertText).to.be.equal('test1');
+  });
+  it('should suggest property of unknown object', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: true,
+      propertyNames: {
+        title: 'property',
+        description: 'Property Description',
+      },
+    };
+    languageService.addSchema(SCHEMA_ID, schema);
+    const content = '';
+    const completion = await parseSetup(content, 0, content.length);
+
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
+    expect(completion.items[0].documentation).to.be.equal('Property Description');
   });
 });

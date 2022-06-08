@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Connection } from 'vscode-languageserver/lib/common/server';
+import { Connection } from 'vscode-languageserver';
 
 /**
  * Due to LSP limitation this object must be JSON serializable

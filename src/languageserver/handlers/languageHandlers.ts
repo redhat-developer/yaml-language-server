@@ -3,23 +3,30 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { FoldingRange } from 'vscode-json-languageservice';
+import { Connection } from 'vscode-languageserver';
 import {
-  CodeAction,
   CodeActionParams,
-  CompletionList,
   DidChangeWatchedFilesParams,
   DocumentFormattingParams,
-  DocumentLink,
   DocumentLinkParams,
   DocumentOnTypeFormattingParams,
   DocumentSymbolParams,
   FoldingRangeParams,
-  Connection,
   TextDocumentPositionParams,
   CodeLensParams,
   DefinitionParams,
-} from 'vscode-languageserver';
-import { CodeLens, DefinitionLink, DocumentSymbol, Hover, SymbolInformation, TextEdit } from 'vscode-languageserver-types';
+} from 'vscode-languageserver-protocol';
+import {
+  CodeAction,
+  CodeLens,
+  CompletionList,
+  DefinitionLink,
+  DocumentLink,
+  DocumentSymbol,
+  Hover,
+  SymbolInformation,
+  TextEdit,
+} from 'vscode-languageserver-types';
 import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
 import { LanguageService } from '../../languageservice/yamlLanguageService';
 import { SettingsState } from '../../yamlSettings';
@@ -214,7 +221,7 @@ export class LanguageHandlers {
     if (!textDocument) {
       return;
     }
-    return this.languageService.getCodeLens(textDocument, params);
+    return this.languageService.getCodeLens(textDocument);
   }
 
   codeLensResolveHandler(param: CodeLens): Thenable<CodeLens> | CodeLens {

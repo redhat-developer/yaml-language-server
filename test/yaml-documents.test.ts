@@ -234,6 +234,17 @@ objB:
       expect(isMap(result)).is.true;
       expect(((result as YAMLMap).items[0].key as Scalar).value).eqls('bar');
     });
+
+    it('should parse document when no yamlVersion is provided', () => {
+      const doc = setupTextDocument('foo: bar');
+
+      const opts = {
+        customTags: ['some'],
+        yamlVersion: undefined,
+      };
+      const yamlDoc = documents.getYamlDocument(doc, opts);
+      expect(yamlDoc).is.not.undefined;
+    });
   });
 });
 

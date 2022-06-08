@@ -8,7 +8,7 @@ import * as sinonChai from 'sinon-chai';
 import * as chai from 'chai';
 import { registerCommands } from '../src/languageservice/services/yamlCommands';
 import { commandExecutor } from '../src/languageserver/commandExecutor';
-import { Connection } from 'vscode-languageserver/node';
+import { Connection } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 
 const expect = chai.expect;

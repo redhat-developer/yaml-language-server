@@ -1,4 +1,4 @@
-import { WorkspaceFolder, WorkspaceFoldersChangeEvent } from 'vscode-languageserver';
+import { WorkspaceFolder, WorkspaceFoldersChangeEvent } from 'vscode-languageserver-protocol';
 import { join, normalize, sep } from 'path';
 import { URI } from 'vscode-uri';
 

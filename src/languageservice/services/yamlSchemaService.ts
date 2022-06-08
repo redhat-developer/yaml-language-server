@@ -626,8 +626,9 @@ export class YAMLSchemaService extends JSONSchemaService {
             if (!content) {
               const errorMessage = localize(
                 'json.schema.nocontent',
-                "Unable to load schema from '{0}': No content.",
-                toDisplayString(schemaUri)
+                "Unable to load schema from '{0}': No content. {1}",
+                toDisplayString(schemaUri),
+                unresolvedJsonSchema.errors
               );
               return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
             }

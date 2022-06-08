@@ -8,16 +8,15 @@ import * as sinonChai from 'sinon-chai';
 import * as chai from 'chai';
 import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions';
 import {
-  ClientCapabilities,
   CodeAction,
   CodeActionContext,
-  CodeActionParams,
   Command,
   Range,
   TextDocumentIdentifier,
   TextEdit,
   WorkspaceEdit,
-} from 'vscode-languageserver';
+} from 'vscode-languageserver-types';
+import { ClientCapabilities, CodeActionParams } from 'vscode-languageserver';
 import { setupTextDocument, TEST_URI } from './utils/testHelper';
 import { createDiagnosticWithData, createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
 import { YamlCommands } from '../src/commands';

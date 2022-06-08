@@ -1,4 +1,4 @@
-import { WorkspaceFolder } from 'vscode-languageserver';
+import { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
 import { Telemetry } from '../../languageserver/telemetry';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';

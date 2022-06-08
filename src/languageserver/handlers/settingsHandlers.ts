@@ -43,6 +43,7 @@ export class SettingsHandler {
       { section: 'http' },
       { section: '[yaml]' },
       { section: 'editor' },
+      { section: 'files' },
     ]);
     const settings: Settings = {
       yaml: config[0],
@@ -52,6 +53,7 @@ export class SettingsHandler {
       },
       yamlEditor: config[2],
       vscodeEditor: config[3],
+      files: config[4],
     };
     await this.setConfiguration(settings);
   }
@@ -83,6 +85,13 @@ export class SettingsHandler {
           this.yamlSettings.schemaStoreUrl = settings.yaml.schemaStore.url;
         }
       }
+      if (settings.files?.associations) {
+        for (const [ext, languageId] of Object.entries(settings.files.associations)) {
+          if (languageId === 'yaml') {
+            this.yamlSettings.fileExtensions.push(ext);
+          }
+        }
+      }
       this.yamlSettings.yamlVersion = settings.yaml.yamlVersion ?? '1.2';
 
       if (settings.yaml.format) {
@@ -105,6 +114,10 @@ export class SettingsHandler {
       }
       this.yamlSettings.disableAdditionalProperties = settings.yaml.disableAdditionalProperties;
       this.yamlSettings.disableDefaultProperties = settings.yaml.disableDefaultProperties;
+
+      if (settings.yaml.suggest) {
+        this.yamlSettings.suggest.parentSkeletonSelectedFirst = settings.yaml.suggest.parentSkeletonSelectedFirst;
+      }
     }
 
     this.yamlSettings.schemaConfigurationSettings = [];
@@ -201,7 +214,11 @@ export class SettingsHandler {
         for (const fileMatch in schema.fileMatch) {
           const currFileMatch: string = schema.fileMatch[fileMatch];
           // If the schema is for files with a YAML extension, save the schema association
-          if (currFileMatch.indexOf('.yml') !== -1 || currFileMatch.indexOf('.yaml') !== -1) {
+          if (
+            this.yamlSettings.fileExtensions.findIndex((value) => {
+              return currFileMatch.indexOf(value) > -1;
+            }) > -1
+          ) {
             languageSettings.schemas.push({
               uri: schema.url,
               fileMatch: [currFileMatch],
@@ -232,6 +249,7 @@ export class SettingsHandler {
       indentation: this.yamlSettings.indentation,
       disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
       disableDefaultProperties: this.yamlSettings.disableDefaultProperties,
+      parentSkeletonSelectedFirst: this.yamlSettings.suggest.parentSkeletonSelectedFirst,
       yamlVersion: this.yamlSettings.yamlVersion,
     };
 

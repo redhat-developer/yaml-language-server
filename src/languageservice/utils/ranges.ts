@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Range } from 'vscode-languageserver';
+import { Range } from 'vscode-languageserver-types';
 
 /**
  * Check if rangeA and rangeB is intersect

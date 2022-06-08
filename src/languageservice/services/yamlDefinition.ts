@@ -3,9 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DefinitionParams, LocationLink, Range } from 'vscode-languageserver-protocol';
+import { DefinitionParams } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { DefinitionLink } from 'vscode-languageserver-types';
+import { DefinitionLink, LocationLink, Range } from 'vscode-languageserver-types';
 import { isAlias } from 'yaml';
 import { Telemetry } from '../../languageserver/telemetry';
 import { yamlDocumentsCache } from '../parser/yaml-documents';

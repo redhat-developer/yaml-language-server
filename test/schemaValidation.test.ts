@@ -18,7 +18,7 @@ import {
 } from './utils/errorMessages';
 import * as assert from 'assert';
 import * as path from 'path';
-import { Diagnostic, DiagnosticSeverity, Position } from 'vscode-languageserver';
+import { Diagnostic, DiagnosticSeverity, Position } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
@@ -1608,6 +1608,26 @@ obj:
   });
 
   describe('Bug fixes', () => {
+    it('schema should validate additionalProp oneOf', async () => {
+      const schema = {
+        properties: {
+          env: {
+            $ref: 'https://json.schemastore.org/github-workflow.json#/definitions/env',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = `env: \${{ matrix.env1 }}`;
+      const result = await parseSetup(content);
+      expect(result).to.be.not.empty;
+      expect(telemetry.messages).to.be.empty;
+      expect(result.length).to.eq(1);
+      assert.deepStrictEqual(
+        result[0].message,
+        'String does not match the pattern of "^\\$\\{\\{\\s*fromJSON\\(.*\\)\\s*\\}\\}$".'
+      );
+    });
+
     it('should handle not valid schema object', async () => {
       const schema = 'Foo';
       languageService.addSchema(SCHEMA_ID, schema as JSONSchema);

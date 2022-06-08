@@ -1,4 +1,4 @@
-import { TextDocuments, Disposable, ClientCapabilities, WorkspaceFolder } from 'vscode-languageserver/node';
+import { TextDocuments, Disposable, ClientCapabilities, WorkspaceFolder } from 'vscode-languageserver';
 import { CustomFormatterOptions, SchemaConfiguration } from './languageservice/yamlLanguageService';
 import { ISchemaAssociations } from './requestTypes';
 import { URI } from 'vscode-uri';
@@ -22,6 +22,9 @@ export interface Settings {
     };
     disableDefaultProperties: boolean;
     disableAdditionalProperties: boolean;
+    suggest: {
+      parentSkeletonSelectedFirst: boolean;
+    };
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
   };
@@ -36,6 +39,9 @@ export interface Settings {
   };
   vscodeEditor: {
     detectIndentation: boolean;
+  };
+  files: {
+    associations: Map<string, string>;
   };
 }
 
@@ -69,6 +75,9 @@ export class SettingsState {
   indentation: string | undefined = undefined;
   disableAdditionalProperties = false;
   disableDefaultProperties = false;
+  suggest = {
+    parentSkeletonSelectedFirst: false,
+  };
   maxItemsComputed = 5000;
 
   // File validation helpers
@@ -91,6 +100,7 @@ export class SettingsState {
   yamlVersion: YamlVersion = '1.2';
   useSchemaSelectionRequests = false;
   hasWsChangeWatchedFileDynamicRegistration = false;
+  fileExtensions: string[] = ['.yml', '.yaml'];
 }
 
 export class TextDocumentTestManager extends TextDocuments<TextDocument> {

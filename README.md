@@ -49,6 +49,7 @@ The following settings are supported:
 - `http.proxyStrictSSL`: If true the proxy server certificate should be verified against the list of supplied CAs. Default is false.
 - `[yaml].editor.formatOnType`: Enable/disable on type indent and auto formatting array
 - `yaml.disableDefaultProperties`: Disable adding not required properties with default values into completion text
+- `yaml.suggest.parentSkeletonSelectedFirst`: If true, the user must select some parent skeleton first before autocompletion starts to suggest the rest of the properties.\nWhen yaml object is not empty, autocompletion ignores this setting and returns all properties and skeletons.
 
 ##### Adding custom tags
 
@@ -361,6 +362,7 @@ This repository only contains the server implementation. Here are some known cli
 - [LSP-yaml](https://packagecontrol.io/packages/LSP-yaml) for Sublime Text
 - [monaco-yaml](https://monaco-yaml.js.org) for Monaco editor
 - [Vim-EasyComplete](https://github.com/jayli/vim-easycomplete) for Vim/NeoVim
+- [nova-yaml](https://github.com/robb-j/nova-yaml/) for Nova
 
 ## Developer Support
 

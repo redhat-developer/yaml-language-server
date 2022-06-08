@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 import * as assert from 'assert';
-import { Diagnostic, CompletionList, Hover, MarkupContent } from 'vscode-languageserver';
+import { Diagnostic, CompletionList, Hover, MarkupContent } from 'vscode-languageserver-types';
 import { ServiceSetup } from './utils/serviceSetup';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
