@@ -293,6 +293,26 @@ objB:
     expect(completion.items[1].insertText).equal('PodTemplate');
   });
 
+  it('Test that properties have enum of string type with number', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        version: {
+          type: 'array',
+          items: {
+            enum: ['12.1', '13.0', '13.1', '14.0', 'all'],
+            type: 'string',
+          },
+        },
+      },
+    });
+    const content = 'version:\n  - ';
+    const completion = await parseSetup(content, 2, 0);
+    expect(completion.items).lengthOf(5);
+    expect(completion.items[0].insertText).equal('"12.1"');
+    expect(completion.items[4].insertText).equal('all');
+  });
+
   it('Autocomplete indent on array when parent is array', async () => {
     languageService.addSchema(SCHEMA_ID, {
       type: 'object',

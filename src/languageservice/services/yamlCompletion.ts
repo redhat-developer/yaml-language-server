@@ -1309,7 +1309,7 @@ export class YamlCompletion {
         collector.add({
           kind: this.getSuggestionKind(schema.type),
           label: this.getLabelForValue(enm),
-          insertText: this.getInsertTextForValue(enm, separatorAfter, undefined),
+          insertText: this.getInsertTextForValue(enm, separatorAfter, schema.type),
           insertTextFormat: InsertTextFormat.Snippet,
           documentation: documentation,
         });
@@ -1550,7 +1550,7 @@ function convertToStringValue(param: unknown): string {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 
-  let doQuote = value.charAt(0) === '@';
+  let doQuote = !isNaN(parseInt(value)) || value.charAt(0) === '@';
 
   if (!doQuote) {
     // need to quote value if in `foo: bar`, `foo : bar` (mapping) or `foo:` (partial map) format
