@@ -551,6 +551,9 @@ objB:
             prop2: {
               type: 'string',
             },
+            prop3: {
+              type: 'string',
+            },
           },
         },
       },
@@ -560,7 +563,7 @@ objB:
       languageService.addSchema(SCHEMA_ID, schema);
       const content = 'example:\n  prop1: "test"\n  \n    #comment';
       const completion = await parseSetup(content, 2, 2);
-      expect(completion.items.length).equal(1);
+      expect(completion.items.length).equal(2);
       expect(completion.items[0]).to.be.deep.equal(
         createExpectedCompletion('prop2', 'prop2: ', 2, 2, 2, 2, CompletionItemKind.Property, InsertTextFormat.Snippet, {
           documentation: '',
@@ -571,6 +574,18 @@ objB:
     it('completion should handle comment at same indent level on new line', async () => {
       languageService.addSchema(SCHEMA_ID, schema);
       const content = 'example:\n  prop1: "test"\n  \n  #comment';
+      const completion = await parseSetup(content, 2, 2);
+      expect(completion.items.length).equal(2);
+      expect(completion.items[0]).to.be.deep.equal(
+        createExpectedCompletion('prop2', 'prop2: ', 2, 2, 2, 2, CompletionItemKind.Property, InsertTextFormat.Snippet, {
+          documentation: '',
+        })
+      );
+    });
+
+    it('completion should handle suggestion without comment on next line', async () => {
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'example:\n  prop1: "test"\n  \n  prop3: "test"';
       const completion = await parseSetup(content, 2, 2);
       expect(completion.items.length).equal(1);
       expect(completion.items[0]).to.be.deep.equal(
