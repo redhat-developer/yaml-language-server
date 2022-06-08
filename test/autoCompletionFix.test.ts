@@ -59,7 +59,7 @@ describe('Auto Completion Fix Tests', () => {
    */
   function parseCaret(content: string): Promise<CompletionList> {
     // console.log(`was: len: ${content.length}, content: "${content}"`);
-    let position = content.search(/\|[^]\|/); // | -> any char including newline -> |
+    const position = content.search(/\|[^]\|/); // | -> any char including newline -> |
     content = content.substring(0, position) + content.substring(position + 1, position + 2) + content.substring(position + 3);
     // console.log(`now: len: ${content.length}, content: "${content}", pos: ${position}, str: "${content.substring(position)}"`);
 
