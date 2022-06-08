@@ -49,12 +49,12 @@ describe('Hover Tests', () => {
    * @returns An instance of `Hover`.
    */
   function parseSetup(content: string, position?: number): Promise<Hover> {
-    // console.log('original:', content.length, content, '>' + content.substring(position) + '<');
+    // console.log(`was: len: ${content.length}, content: "${content}", str: "${content.substring(position)}"`);
     if (typeof position === 'undefined') {
       position = content.search(/\|[^]\|/); // | -> any char including newline -> |
       content = content.substring(0, position) + content.substring(position + 1, position + 2) + content.substring(position + 3);
     }
-    // console.log('position:', position, content, '>' + content.substring(position) + '<');
+    // console.log(`now: len: ${content.length}, content: "${content}", pos: ${position}, str: "${content.substring(position)}"`);
 
     const testTextDocument = setupSchemaIDTextDocument(content);
     yamlSettings.documents = new TextDocumentTestManager();
