@@ -1,3 +1,15 @@
+### 1.8.0
+- Fix: yaml-language-server fails for yaml version [#711](https://github.com/redhat-developer/yaml-language-server/issues/711)
+- Fix: Missing Schema from catalog.json in ui [#747] (https://github.com/redhat-developer/vscode-yaml/issues/747)
+- Fix: JSON Schema not applied for custom file extension [#701] (https://github.com/redhat-developer/vscode-yaml/issues/701)
+- Add: Enable eslint import checks [#716] (https://github.com/redhat-developer/yaml-language-server/pull/716)
+- Add: object with additional properties completion [#717] (https://github.com/redhat-developer/yaml-language-server/pull/717)
+- Fix: Unable to get suggestions without typing a specific order of parameters [#705] (https://github.com/redhat-developer/vscode-yaml/issues/705)
+- Add: add completion for additionalProperties propertyName [#720] (https://github.com/redhat-developer/yaml-language-server/pull/720)
+- Fix: use virtual caret in tests [#722] (https://github.com/redhat-developer/yaml-language-server/pull/722)
+- Add: Add nova-yaml to extension readme [#723] (https://github.com/redhat-developer/yaml-language-server/pull/723)
+
+hanks to Petr Spacek and Grant Dickinson
 ### 1.7.0
 - Fix: merge simple property completion [#685](https://github.com/redhat-developer/yaml-language-server/pull/685)
 - Fix: schemaStore.enable setting does not work as expected [#721](https://github.com/redhat-developer/vscode-yaml/issues/721)
