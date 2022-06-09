@@ -105,6 +105,10 @@ export class SingleYAMLDocument extends JSONDocument {
       return [this.findClosestNode(positionOffset, textBuffer, configuredIndentation), true];
     }
 
+    const textAfterPosition = lineContent.substring(position.character);
+    const spacesAfterPositionMatch = textAfterPosition.match(/^([ ]+)\n?$/);
+    const areOnlySpacesAfterPosition = !!spacesAfterPositionMatch;
+    const countOfSpacesAfterPosition = spacesAfterPositionMatch?.[1].length;
     let closestNode: Node;
     visit(this.internalDocument, (key, node: Node) => {
       if (!node) {
@@ -115,7 +119,13 @@ export class SingleYAMLDocument extends JSONDocument {
         return;
       }
 
-      if (range[0] <= positionOffset && range[1] >= positionOffset) {
+      const isNullNodeOnTheLine = (): boolean =>
+        areOnlySpacesAfterPosition &&
+        positionOffset + countOfSpacesAfterPosition === range[2] &&
+        isScalar(node) &&
+        node.value === null;
+
+      if ((range[0] <= positionOffset && range[1] >= positionOffset) || isNullNodeOnTheLine()) {
         closestNode = node;
       } else {
         return visit.SKIP;

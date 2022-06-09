@@ -76,7 +76,7 @@ describe('Auto Completion Fix Tests', () => {
     const completion = await parseSetup(content, 1, 3);
     expect(completion.items).lengthOf(1);
     expect(completion.items[0]).eql(
-      createExpectedCompletion('foo', 'foo: ', 1, 3, 1, 3, 10, 2, {
+      createExpectedCompletion('foo', 'foo: ', 1, 3, 1, 4, 10, 2, {
         documentation: '',
       })
     );
@@ -498,8 +498,9 @@ objB:
       expect(completion.items[1].label).to.be.equal('obj1');
       expect(completion.items[1].insertText).to.be.equal('obj1:\n  prop2: ${1:value}');
     });
-
-    it('should suggest when cursor is not on the end of the line', async () => {
+  });
+  describe('extra space after cursor', () => {
+    it('simple const', async () => {
       const schema: JSONSchema = {
         properties: {
           prop: {
@@ -516,7 +517,65 @@ objB:
       expect(completion.items[0].textEdit).to.be.deep.equal({ newText: 'const', range: Range.create(0, 6, 0, content.length) });
     });
 
-    it('should suggest object array when extra space is after cursor', async () => {
+    it('object - 2nd nested property', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          parent: {
+            properties: {
+              prop1: {
+                const: 'const1',
+              },
+              prop2: {
+                const: 'const2',
+              },
+            },
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'parent:\n  prop1: const1\n  prop2:   ';
+      const completion = await parseSetup(content, 2, 9);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0].label).to.be.equal('const2');
+      expect(completion.items[0].textEdit).to.be.deep.equal({
+        newText: 'const2',
+        range: Range.create(2, 9, 2, 11),
+      });
+    });
+
+    it('array - 2nd nested property', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          arrayObj: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                item1: {
+                  type: 'string',
+                },
+                item2: {
+                  const: 'const2',
+                },
+              },
+              required: ['item1', 'item2'],
+            },
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'arrayObj:\n  - item1: test\n  - item2:   ';
+      const completion = await parseSetup(content, 2, 11);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0].label).to.be.equal('const2');
+      expect(completion.items[0].textEdit).to.be.deep.equal({
+        newText: 'const2',
+        range: Range.create(2, 11, 2, 13),
+      });
+    });
+    describe('array object item', () => {
       const schema: JSONSchema = {
         properties: {
           arrayObj: {
@@ -536,17 +595,31 @@ objB:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
-      const content = 'arrayObj:\n  -   ';
-      const completion = await parseSetup(content, 1, 4);
+      it('1st item', async () => {
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'arrayObj:\n  -   ';
+        const completion = await parseSetup(content, 1, 4);
 
-      expect(completion.items.length).equal(3);
-      expect(completion.items[1].textEdit).to.be.deep.equal({
-        newText: 'item1: $1\n  item2: $2',
-        range: Range.create(1, 4, 1, 6), // removes extra spaces after cursor
+        expect(completion.items.length).equal(3);
+        expect(completion.items[1].textEdit).to.be.deep.equal({
+          newText: 'item1: $1\n  item2: $2',
+          range: Range.create(1, 4, 1, 6), // removes extra spaces after cursor
+        });
+      });
+      it('next item', async () => {
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'arrayObj:\n  - item1: a\n  - item2: b\n  -   ';
+        const completion = await parseSetup(content, 3, 4);
+
+        expect(completion.items.length).equal(3);
+        expect(completion.items[1].textEdit).to.be.deep.equal({
+          newText: 'item1: $1\n  item2: $2',
+          range: Range.create(3, 4, 3, 6), // removes extra spaces after cursor
+        });
       });
     });
-  });
+  }); //'extra space after cursor'
+
   it('should suggest from additionalProperties', async () => {
     const schema: JSONSchema = {
       type: 'object',
