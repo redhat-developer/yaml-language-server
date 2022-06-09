@@ -1306,7 +1306,7 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 4, 3, 4, 9, 2, {
+              createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 4, 3, 5, 9, 2, {
                 documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- name: test\n```' },
               })
             );
