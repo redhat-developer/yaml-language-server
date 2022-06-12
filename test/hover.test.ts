@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { ServiceSetup } from './utils/serviceSetup';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { LanguageService } from '../src';
 import * as assert from 'assert';
 import { Hover, MarkupContent, Position } from 'vscode-languageserver-types';
@@ -49,12 +49,9 @@ describe('Hover Tests', () => {
    * @returns An instance of `Hover`.
    */
   function parseSetup(content: string, position?: number): Promise<Hover> {
-    // console.log(`was: len: ${content.length}, content: "${content}", str: "${content.substring(position)}"`);
     if (typeof position === 'undefined') {
-      position = content.search(/\|[^]\|/); // | -> any char including newline -> |
-      content = content.substring(0, position) + content.substring(position + 1, position + 2) + content.substring(position + 3);
+      ({ content, position } = caretPosition(content));
     }
-    // console.log(`now: len: ${content.length}, content: "${content}", pos: ${position}, str: "${content.substring(position)}"`);
 
     const testTextDocument = setupSchemaIDTextDocument(content);
     yamlSettings.documents = new TextDocumentTestManager();

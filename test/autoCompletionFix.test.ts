@@ -8,7 +8,7 @@ import { LanguageHandlers } from '../src/languageserver/handlers/languageHandler
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
 import * as path from 'path';
@@ -53,17 +53,14 @@ describe('Auto Completion Fix Tests', () => {
   /**
    * Generates a completion list for the given document and caret (cursor) position.
    * @param content The content of the document.
-   * Alternatively, `position` can be omitted if the caret is located in the content using `|` bookends.
+   * The caret is located in the content using `|` bookends.
    * For example, `content = 'ab|c|d'` places the caret over the `'c'`, at `position = 2`
    * @returns A list of valid completions.
    */
   function parseCaret(content: string): Promise<CompletionList> {
-    // console.log(`was: len: ${content.length}, content: "${content}"`);
-    const position = content.search(/\|[^]\|/); // | -> any char including newline -> |
-    content = content.substring(0, position) + content.substring(position + 1, position + 2) + content.substring(position + 3);
-    // console.log(`now: len: ${content.length}, content: "${content}", pos: ${position}, str: "${content.substring(position)}"`);
+    const { position, content: content2 } = caretPosition(content);
 
-    const testTextDocument = setupSchemaIDTextDocument(content);
+    const testTextDocument = setupSchemaIDTextDocument(content2);
     yamlSettings.documents = new TextDocumentTestManager();
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
     return languageHandler.completionHandler({
