@@ -265,6 +265,34 @@ objB:
     );
   });
 
+  it('Array of enum autocomplete of irregular order', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        apiVersion: {
+          type: 'string',
+        },
+        metadata: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+            },
+          },
+        },
+        kind: {
+          type: 'string',
+          enum: ['Pod', 'PodTemplate'],
+        },
+      },
+    });
+    const content = 'kind: Po';
+    const completion = await parseSetup(content, 1, 9);
+    expect(completion.items.length).equal(2);
+    expect(completion.items[0].insertText).equal('Pod');
+    expect(completion.items[1].insertText).equal('PodTemplate');
+  });
+
   it('Autocomplete indent on array when parent is array', async () => {
     languageService.addSchema(SCHEMA_ID, {
       type: 'object',
@@ -594,5 +622,22 @@ objB:
         })
       );
     });
+  });
+  it('should suggest property of unknown object', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: true,
+      propertyNames: {
+        title: 'property',
+        description: 'Property Description',
+      },
+    };
+    languageService.addSchema(SCHEMA_ID, schema);
+    const content = '';
+    const completion = await parseSetup(content, 0, content.length);
+
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
+    expect(completion.items[0].documentation).to.be.equal('Property Description');
   });
 });
