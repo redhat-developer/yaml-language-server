@@ -614,4 +614,21 @@ test1:
       expect(completion.items[0].label).to.be.equal('prop1');
     });
   });
+  it('should suggest property of unknown object', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: true,
+      propertyNames: {
+        title: 'property',
+        description: 'Property Description',
+      },
+    };
+    languageService.addSchema(SCHEMA_ID, schema);
+    const content = '';
+    const completion = await parseSetup(content, 0, content.length);
+
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
+    expect(completion.items[0].documentation).to.be.equal('Property Description');
+  });
 });
