@@ -364,6 +364,7 @@ export class YamlCompletion {
                   if (parent.value === node) {
                     if (lineContent.trim().length > 0 && lineContent.indexOf(':') < 0) {
                       const map = this.createTempObjNode(currentWord, node, currentDoc);
+                      const parentParent = currentDoc.getParent(parent);
                       if (isSeq(currentDoc.internalDocument.contents)) {
                         const index = indexOf(currentDoc.internalDocument.contents, parent);
                         if (typeof index === 'number') {
@@ -371,8 +372,12 @@ export class YamlCompletion {
                           // eslint-disable-next-line no-self-assign
                           currentDoc.internalDocument = currentDoc.internalDocument;
                         }
+                      } else if (parentParent && (isMap(parentParent) || isSeq(parentParent))) {
+                        parentParent.set(parent.key, map);
+                        // eslint-disable-next-line no-self-assign
+                        currentDoc.internalDocument = currentDoc.internalDocument;
                       } else {
-                        parent.value = map;
+                        currentDoc.internalDocument.set(parent.key, map);
                         // eslint-disable-next-line no-self-assign
                         currentDoc.internalDocument = currentDoc.internalDocument;
                       }
