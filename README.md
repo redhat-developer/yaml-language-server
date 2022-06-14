@@ -362,6 +362,7 @@ This repository only contains the server implementation. Here are some known cli
 - [LSP-yaml](https://packagecontrol.io/packages/LSP-yaml) for Sublime Text
 - [monaco-yaml](https://monaco-yaml.js.org) for Monaco editor
 - [Vim-EasyComplete](https://github.com/jayli/vim-easycomplete) for Vim/NeoVim
+- [nova-yaml](https://github.com/robb-j/nova-yaml/) for Nova
 
 ## Developer Support
 
