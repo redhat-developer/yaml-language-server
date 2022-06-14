@@ -8,7 +8,7 @@ import { LanguageHandlers } from '../src/languageserver/handlers/languageHandler
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
 import * as path from 'path';
@@ -34,11 +34,11 @@ describe('Auto Completion Fix Tests', () => {
   });
 
   /**
-   *
-   * @param content
+   * Generates a completion list for the given document and caret (cursor) position.
+   * @param content The content of the document.
    * @param line starts with 0 index
    * @param character starts with 1 index
-   * @returns
+   * @returns A list of valid completions.
    */
   function parseSetup(content: string, line: number, character: number): Promise<CompletionList> {
     const testTextDocument = setupSchemaIDTextDocument(content);
@@ -46,6 +46,25 @@ describe('Auto Completion Fix Tests', () => {
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
     return languageHandler.completionHandler({
       position: Position.create(line, character),
+      textDocument: testTextDocument,
+    });
+  }
+
+  /**
+   * Generates a completion list for the given document and caret (cursor) position.
+   * @param content The content of the document.
+   * The caret is located in the content using `|` bookends.
+   * For example, `content = 'ab|c|d'` places the caret over the `'c'`, at `position = 2`
+   * @returns A list of valid completions.
+   */
+  function parseCaret(content: string): Promise<CompletionList> {
+    const { position, content: content2 } = caretPosition(content);
+
+    const testTextDocument = setupSchemaIDTextDocument(content2);
+    yamlSettings.documents = new TextDocumentTestManager();
+    (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+    return languageHandler.completionHandler({
+      position: testTextDocument.positionAt(position),
       textDocument: testTextDocument,
     });
   }
@@ -72,8 +91,8 @@ describe('Auto Completion Fix Tests', () => {
         },
       },
     });
-    const content = '- from:\n    ';
-    const completion = await parseSetup(content, 1, 3);
+    const content = '- from:\n   | |'; // len: 12, pos: 11
+    const completion = await parseCaret(content);
     expect(completion.items).lengthOf(1);
     expect(completion.items[0]).eql(
       createExpectedCompletion('foo', 'foo: ', 1, 3, 1, 3, 10, 2, {
@@ -99,7 +118,7 @@ describe('Auto Completion Fix Tests', () => {
         },
       },
     });
-    const content = '- ';
+    const content = '- '; // len: 2
     const completion = await parseSetup(content, 0, 2);
     expect(completion.items).lengthOf(1);
     expect(completion.items[0]).eql(
@@ -119,19 +138,19 @@ spec:
     - name: test
       
       image: alpine
-    `;
+    `; // len: 90
     const completion = await parseSetup(content, 7, 6);
     expect(completion.items).length.greaterThan(1);
   });
 
   it('should show completion on array item on first line', async () => {
-    const content = '-d';
+    const content = '-d'; // len: 2
     const completion = await parseSetup(content, 0, 1);
     expect(completion.items).is.empty;
   });
 
   it('should complete without error on map inside array', async () => {
-    const content = '- foo\n- bar:\n    so';
+    const content = '- foo\n- bar:\n    so'; // len: 19
     const completion = await parseSetup(content, 2, 6);
     expect(completion.items).is.empty;
   });
@@ -146,7 +165,7 @@ spec:
 objB:
   size: midle
   name: nameB2  
-`;
+`; // len: 67
     const completion = await parseSetup(content, 2, 4);
     expect(completion.items).is.not.empty;
   });
@@ -159,7 +178,7 @@ objB:
   Selector:
     query:
       - 
-`;
+`; // len: 42
     const completion = await parseSetup(content, 3, 8);
     expect(completion.items).length(5);
     expect(completion.items.map((it) => it.label)).to.have.members(['NOT', 'attribute', 'operation', 'value', 'FUNC_item']);
@@ -188,7 +207,7 @@ objB:
         },
       },
     });
-    const content = 'example:\n  sample:\n    ';
+    const content = 'example:\n  sample:\n    '; // len: 23
     const completion = await parseSetup(content + '\na: test', 2, 4);
     expect(completion.items.length).equal(1);
     expect(completion.items[0]).to.be.deep.equal(
@@ -220,8 +239,8 @@ objB:
         },
       },
     });
-    const content = 'example:\n  sample:\n    \n    prop2: value2';
-    const completion = await parseSetup(content, 2, 4);
+    const content = 'example:\n  sample:\n    |\n|    prop2: value2'; // len: 41, pos: 23
+    const completion = await parseCaret(content);
     expect(completion.items.length).equal(1);
     expect(completion.items[0]).to.be.deep.equal(
       createExpectedCompletion('prop1', 'prop1: ', 2, 4, 2, 4, 10, 2, {
@@ -252,8 +271,8 @@ objB:
         },
       },
     });
-    const content = 'examples:\n  \n  - sample:\n      prop1: value1';
-    const completion = await parseSetup(content, 1, 2);
+    const content = 'examples:\n  |\n|  - sample:\n      prop1: value1'; // len: 44, pos: 12
+    const completion = await parseCaret(content);
     expect(completion.items.length).equal(1);
     expect(completion.items[0]).to.be.deep.equal(
       createExpectedCompletion('- (array item)', '- ', 1, 2, 1, 2, 9, 2, {
@@ -286,7 +305,7 @@ objB:
         },
       },
     });
-    const content = 'kind: Po';
+    const content = 'kind: Po'; // len: 8
     const completion = await parseSetup(content, 1, 9);
     expect(completion.items.length).equal(2);
     expect(completion.items[0].insertText).equal('Pod');
@@ -313,7 +332,7 @@ objB:
         },
       },
     });
-    const content = 'examples:\n  - ';
+    const content = 'examples:\n  - '; // len: 14
     const completion = await parseSetup(content, 1, 4);
 
     expect(completion.items.length).equal(1);
@@ -348,7 +367,7 @@ objB:
         },
       },
     });
-    const content = 'examples:\n  - ';
+    const content = 'examples:\n  - '; // len: 14
     const completion = await parseSetup(content, 1, 4);
 
     expect(completion.items.length).equal(1);
@@ -384,7 +403,7 @@ objB:
     };
     it('array indent on the first item', async () => {
       languageService.addSchema(SCHEMA_ID, schema);
-      const content = 'objectWithArray:\n  - ';
+      const content = 'objectWithArray:\n  - '; // len: 21
       const completion = await parseSetup(content, 1, 4);
 
       expect(completion.items.length).equal(3);
@@ -401,7 +420,7 @@ objB:
     });
     it('array indent on the second item', async () => {
       languageService.addSchema(SCHEMA_ID, schema);
-      const content = 'objectWithArray:\n  - item: first line\n    ';
+      const content = 'objectWithArray:\n  - item: first line\n    '; // len: 42
       const completion = await parseSetup(content, 2, 4);
 
       expect(completion.items.length).equal(2);
@@ -508,12 +527,12 @@ objB:
         },
       };
       languageService.addSchema(SCHEMA_ID, schema);
-      const content = 'prop:   ';
-      const completion = await parseSetup(content, 0, 6);
+      const content = 'prop: | | '; // len: 8, pos: 6
+      const completion = await parseCaret(content);
 
       expect(completion.items.length).equal(1);
       expect(completion.items[0].label).to.be.equal('const');
-      expect(completion.items[0].textEdit).to.be.deep.equal({ newText: 'const', range: Range.create(0, 6, 0, content.length) });
+      expect(completion.items[0].textEdit).to.be.deep.equal({ newText: 'const', range: Range.create(0, 6, 0, 8) });
     });
 
     it('should suggest object array when extra space is after cursor', async () => {
@@ -537,8 +556,8 @@ objB:
         },
       };
       languageService.addSchema(SCHEMA_ID, schema);
-      const content = 'arrayObj:\n  -   ';
-      const completion = await parseSetup(content, 1, 4);
+      const content = 'arrayObj:\n  - | | '; // len: 16, pos: 14
+      const completion = await parseCaret(content);
 
       expect(completion.items.length).equal(3);
       expect(completion.items[1].textEdit).to.be.deep.equal({

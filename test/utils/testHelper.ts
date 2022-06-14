@@ -93,3 +93,24 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
     telemetry,
   };
 }
+
+/**
+ * Derives the absolute `position` of the caret given `content` containing a virtual caret.
+ * @param content The content of the document.
+ * The caret is located in the content using `|` bookends.
+ * For example, `content = 'ab|c|d'` places the caret over the `'c'`, at `position = 2`
+ * @returns The absolute position of the caret.
+ */
+export function caretPosition(content: string): { position: number; content: string } {
+  // console.log(`was: len: ${content.length}, content: "${content}", str: "${content.substring(position)}"`);
+
+  // Find bookends `|.|` in content
+  const position = content.search(/\|[^]\|/); // | -> any char including newline -> |
+  if (position === -1) throw new Error('Error in test case: no caret found in content');
+
+  // Elide bookends from content
+  content = content.substring(0, position) + content.substring(position + 1, position + 2) + content.substring(position + 3);
+
+  // console.log(`now: len: ${content.length}, content: "${content}", pos: ${position}, str: "${content.substring(position)}"`);
+  return { position, content };
+}

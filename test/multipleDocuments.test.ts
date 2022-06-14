@@ -54,7 +54,7 @@ describe('Multiple Documents Validation Tests', () => {
       return validationHandler.validateTextDocument(testTextDocument);
     }
 
-    function hoverSetup(content: string, position): Promise<Hover> {
+    function hoverSetup(content: string, position: number): Promise<Hover> {
       const testTextDocument = setupTextDocument(content);
       languageService.configure(languageSettingsSetup.languageSettings);
       yamlSettings.documents = new TextDocumentTestManager();
