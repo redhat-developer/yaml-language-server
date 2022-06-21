@@ -1210,7 +1210,7 @@ export class YamlCompletion {
       }
     }
     const types = Array.isArray(type) ? type : type;
-    if (types === 'string' || types[0] === 'string') {
+    if (types && (types === 'string' || types[0] === 'string')) {
       if (Array.isArray(types) && types.includes('integer') && isNumber(value)) {
         return this.getInsertTextForPlainText(value + separatorAfter);
       }
