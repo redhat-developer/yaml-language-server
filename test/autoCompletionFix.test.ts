@@ -319,8 +319,8 @@ objB:
         version: {
           type: 'array',
           items: {
-            enum: ['12.1', '13.0', '13.1', '14.0', 'all'],
-            type: 'string',
+            enum: ['12.1', 13, '13.1', '14.0', 'all'],
+            type: ['string', 'integer'],
           },
         },
       },
@@ -329,6 +329,7 @@ objB:
     const completion = await parseSetup(content, 2, 0);
     expect(completion.items).lengthOf(5);
     expect(completion.items[0].insertText).equal('"12.1"');
+    expect(completion.items[1].insertText).equal('13');
     expect(completion.items[4].insertText).equal('all');
   });
 

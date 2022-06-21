@@ -29,7 +29,7 @@ import { YAMLSchemaService } from './yamlSchemaService';
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { stringifyObject, StringifySettings } from '../utils/json';
-import { convertErrorToTelemetryMsg, isDefined, isString } from '../utils/objects';
+import { convertErrorToTelemetryMsg, isDefined, isNumber, isString } from '../utils/objects';
 import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { asSchema } from '../parser/jsonParser07';
@@ -1209,8 +1209,11 @@ export class YamlCompletion {
         return this.getInsertTemplateForValue(value, indent, { index: 1 }, separatorAfter);
       }
     }
-    type = Array.isArray(type) ? type[0] : type;
-    if (type === 'string') {
+    const types = Array.isArray(type) ? type : type;
+    if (types === 'string' || types[0] === 'string') {
+      if (Array.isArray(types) && types.includes('integer') && isNumber(value)) {
+        return this.getInsertTextForPlainText(value + separatorAfter);
+      }
       value = convertToStringValue(value);
     }
     return this.getInsertTextForPlainText(value + separatorAfter);
