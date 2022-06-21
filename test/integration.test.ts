@@ -210,7 +210,7 @@ describe('Kubernetes Integration Tests', () => {
 
   describe('yamlCompletion with kubernetes', function () {
     describe('doComplete', function () {
-      function parseSetup(content: string, position): Promise<CompletionList> {
+      function parseSetup(content: string, position: number): Promise<CompletionList> {
         const testTextDocument = setupTextDocument(content);
         yamlSettings.documents = new TextDocumentTestManager();
         (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
