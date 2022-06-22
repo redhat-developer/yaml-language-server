@@ -339,11 +339,14 @@ export class YamlCompletion {
     let overwriteRange: Range = null;
     if (isScalar(node) && lineContent.match(/\s+$/)) {
       // line contains trailing spaces, adjust the overwrite range to include only the text
-      overwriteRange = Range.create(
-        Position.create(position.line, lineContent.match(/^(\s+)/)[1].length),
-        Position.create(position.line, lineContent.length)
-      );
-      console.log(`overwriteRange: ${JSON.stringify(overwriteRange, null, 2)}`);
+      const matches = lineContent.match(/^(\s+)/);
+      console.log(`matches: ${JSON.stringify(matches, null, 2)}`);
+      if (matches && matches.length > 0) {
+        overwriteRange = Range.create(
+          Position.create(position.line, matches[0].length),
+          Position.create(position.line, lineContent.length)
+        );
+      }
     } else if (areOnlySpacesAfterPosition) {
       overwriteRange = Range.create(position, Position.create(position.line, lineContent.length));
     } else if (node && isScalar(node) && node.value === 'null') {
