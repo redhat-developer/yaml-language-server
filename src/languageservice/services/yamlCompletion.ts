@@ -340,7 +340,6 @@ export class YamlCompletion {
     if (isScalar(node) && lineContent.match(/\s+$/)) {
       // line contains trailing spaces, adjust the overwrite range to include only the text
       const matches = lineContent.match(/^(\s+)/);
-      console.log(`matches: ${JSON.stringify(matches, null, 2)}`);
       if (matches && matches.length > 0) {
         overwriteRange = Range.create(
           Position.create(position.line, matches[0].length),
