@@ -250,6 +250,7 @@ export class YamlCompletion {
           inlineItem.textEdit.range = Range.create(Position.create(position.line, position.character - diff), position);
         }
       }
+      inlineItem.commitCharacters = ['.'];
     });
 
     // remove tmp document
@@ -336,7 +337,14 @@ export class YamlCompletion {
 
     this.arrayPrefixIndentation = '';
     let overwriteRange: Range = null;
-    if (areOnlySpacesAfterPosition) {
+    if (isScalar(node) && lineContent.match(/\s+$/)) {
+      // line contains trailing spaces, adjust the overwrite range to include only the text
+      overwriteRange = Range.create(
+        Position.create(position.line, lineContent.match(/^(\s+)/)[1].length),
+        Position.create(position.line, lineContent.length)
+      );
+      console.log(`overwriteRange: ${JSON.stringify(overwriteRange, null, 2)}`);
+    } else if (areOnlySpacesAfterPosition) {
       overwriteRange = Range.create(position, Position.create(position.line, lineContent.length));
     } else if (node && isScalar(node) && node.value === 'null') {
       const nodeStartPos = document.positionAt(node.range[0]);
