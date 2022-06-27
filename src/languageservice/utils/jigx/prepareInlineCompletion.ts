@@ -5,9 +5,9 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { ObjectASTNode } from '../jsonASTTypes';
-import { parse as parseYAML, SingleYAMLDocument } from '../parser/yamlParser07';
-import { matchOffsetToDocument } from '../utils/arrUtils';
+import { ObjectASTNode } from '../../jsonASTTypes';
+import { parse as parseYAML, SingleYAMLDocument } from '../../parser/yamlParser07';
+import { matchOffsetToDocument } from '../arrUtils';
 
 export function prepareInlineCompletion(text: string): { doc: SingleYAMLDocument; node: ObjectASTNode; rangeOffset: number } {
   let newText = '';

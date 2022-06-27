@@ -16,7 +16,7 @@ import {
   SymbolInformation,
 } from 'vscode-languageserver-types';
 import { ErrorCode } from 'vscode-json-languageservice';
-import { jigxBranchTest } from './testHelper';
+import { jigxBranchTest } from './testHelperJigx';
 
 export function createExpectedError(
   message: string,

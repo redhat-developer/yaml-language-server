@@ -28,7 +28,7 @@ import { Node, Pair } from 'yaml';
 import { safeCreateUnicodeRegExp } from '../utils/strings';
 // jigx custom
 import * as path from 'path';
-import { prepareInlineCompletion } from '../services/yamlCompletion jigx';
+import { prepareInlineCompletion } from '../utils/jigx/prepareInlineCompletion';
 // end
 
 const localize = nls.loadMessageBundle();
