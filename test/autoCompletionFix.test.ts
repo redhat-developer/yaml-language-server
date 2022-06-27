@@ -517,6 +517,46 @@ objB:
       expect(completion.items[0].textEdit).to.be.deep.equal({ newText: 'const', range: Range.create(0, 6, 0, content.length) });
     });
 
+    it('partial key with trailing spaces', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          name: {
+            const: 'my name',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'na  ';
+      const completion = await parseSetup(content, 0, 2);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('name', 'name: my name', 0, 0, 0, 4, 10, 2, {
+          documentation: '',
+        })
+      );
+    });
+
+    it('partial key with leading and trailing spaces', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          name: {
+            const: 'my name',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '  na  ';
+      const completion = await parseSetup(content, 0, 2);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('name', 'name: my name', 0, 2, 0, 4, 10, 2, {
+          documentation: '',
+        })
+      );
+    });
+
     it('object - 2nd nested property', async () => {
       const schema: JSONSchema = {
         properties: {
