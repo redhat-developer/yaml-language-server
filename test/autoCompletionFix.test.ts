@@ -536,7 +536,25 @@ objB:
         })
       );
     });
+    it('partial key with trailing spaces with new line', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          name: {
+            const: 'my name',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'na  \n';
+      const completion = await parseSetup(content, 0, 2);
 
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('name', 'name: my name', 0, 0, 0, 5, 10, 2, {
+          documentation: '',
+        })
+      );
+    });
     it('partial key with leading and trailing spaces', async () => {
       const schema: JSONSchema = {
         properties: {
@@ -552,6 +570,35 @@ objB:
       expect(completion.items.length).equal(1);
       expect(completion.items[0]).eql(
         createExpectedCompletion('name', 'name: my name', 0, 2, 0, 4, 10, 2, {
+          documentation: '',
+        })
+      );
+    });
+
+    it('partial key with trailing spaces with special chars inside the array', async () => {
+      const schema: JSONSchema = {
+        type: 'object',
+        properties: {
+          array: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                'name / 123': {
+                  const: 'my name',
+                },
+              },
+            },
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'array:\n - name / 1 ';
+      const completion = await parseSetup(content, 1, 11);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('name / 123', 'name / 123: my name', 1, 3, 1, 12, 10, 2, {
           documentation: '',
         })
       );

@@ -341,10 +341,10 @@ export class YamlCompletion {
       overwriteRange = Range.create(position, Position.create(position.line, lineContent.length));
       if (node && isScalar(node) && lineContent.match(/\s+$/)) {
         // line contains part of a key with trailing spaces, adjust the overwrite range to include only the text
-        const matches = lineContent.match(/^(\s*)(?!\s*-)(?!\s*\w+:)(?!\s+$)(?!$)/);
+        const matches = lineContent.match(/^([\s-]*)[^:]+[ \t]+\n?$/);
         if (matches && matches.length > 0) {
           overwriteRange = Range.create(
-            Position.create(position.line, matches[0].length),
+            Position.create(position.line, matches[1].length),
             Position.create(position.line, lineContent.length)
           );
         }
