@@ -593,8 +593,8 @@ objB:
         },
       };
       languageService.addSchema(SCHEMA_ID, schema);
-      const content = 'array:\n - name / 1 ';
-      const completion = await parseSetup(content, 1, 11);
+      const content = 'array:\n - name /   ';
+      const completion = await parseSetup(content, 1, 9);
 
       expect(completion.items.length).equal(1);
       expect(completion.items[0]).eql(
