@@ -129,10 +129,15 @@ export class YamlCompletion {
     let [node, foundByClosest] = currentDoc.getNodeFromPosition(offset, textBuffer, this.indentation.length);
 
     const currentWord = this.getCurrentWord(document, offset);
+    let lineContent = textBuffer.getLineContent(position.line);
+    const lineAfterPosition = lineContent.substring(position.character);
+    const areOnlySpacesAfterPosition = /^[ ]+\n?$/.test(lineAfterPosition);
 
     this.arrayPrefixIndentation = '';
     let overwriteRange: Range = null;
-    if (node && isScalar(node) && node.value === 'null') {
+    if (areOnlySpacesAfterPosition) {
+      overwriteRange = Range.create(position, Position.create(position.line, lineContent.length));
+    } else if (node && isScalar(node) && node.value === 'null') {
       const nodeStartPos = document.positionAt(node.range[0]);
       nodeStartPos.character += 1;
       const nodeEndPos = document.positionAt(node.range[2]);
@@ -267,7 +272,6 @@ export class YamlCompletion {
       this.getCustomTagValueCompletions(collector);
     }
 
-    let lineContent = textBuffer.getLineContent(position.line);
     if (lineContent.endsWith('\n')) {
       lineContent = lineContent.substr(0, lineContent.length - 1);
     }
@@ -325,34 +329,8 @@ export class YamlCompletion {
         }
       }
 
-      let originalNode = node;
+      const originalNode = node;
       if (node) {
-        // when the value is null but the cursor is between prop name and null value (cursor is not at the end of the line)
-        if (isMap(node) && node.items.length && isPair(node.items[0])) {
-          const pairNode = node.items[0];
-          if (
-            isScalar(pairNode.value) &&
-            isScalar(pairNode.key) &&
-            pairNode.value.value === null && // value is null
-            pairNode.key.range[2] < offset && // cursor is after colon
-            pairNode.value.range[0] > offset // cursor is before null
-          ) {
-            node = pairNode.value;
-            overwriteRange.end.character += pairNode.value.range[2] - offset; // extend range to the end of the null element
-          }
-        }
-        // when the array item value is null but the cursor is between '-' and null value (cursor is not at the end of the line)
-        if (isSeq(node) && node.items.length && isScalar(node.items[0]) && lineContent.includes('-')) {
-          const nullNode = node.items[0];
-          if (
-            nullNode.value === null && // value is null
-            nullNode.range[0] > offset // cursor is before null
-          ) {
-            node = nullNode;
-            originalNode = node;
-            overwriteRange.end.character += nullNode.range[2] - offset; // extend range to the end of the null element
-          }
-        }
         if (lineContent.length === 0) {
           node = currentDoc.internalDocument.contents as Node;
         } else {
