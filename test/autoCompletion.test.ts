@@ -587,8 +587,8 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
-      // replaced by on of the next test
-      it.skip('jigx: Autocomplete does not happen right after key object', (done) => {
+      // Jigx: we are supporting this - extended by on of the next test
+      it('Autocomplete does happen right after key object', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -607,8 +607,8 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
-      // replaced by on of the next test
-      it.skip('jigx: Autocomplete does not happen right after : under an object', (done) => {
+      // Jigx: we are supporting this - extended by on of the next test
+      it('Autocomplete does happen right after : under an object', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
