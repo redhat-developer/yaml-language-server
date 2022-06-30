@@ -38,7 +38,7 @@ describe('TextBuffer', () => {
 
   it('getLineCharCode should return charCode', () => {
     const buffer = new TextBuffer(TextDocument.create('file://foo/bar', 'yaml', 1, 'Foo\nbar\nfooBar\nsome'));
-    const charCode = buffer.getLineCharCode(3, 4);
+    const charCode = buffer.getLineCharCode(3, 3);
     assert.strictEqual(charCode, 'B'.charCodeAt(0));
   });
 });
