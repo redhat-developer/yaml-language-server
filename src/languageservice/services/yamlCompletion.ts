@@ -621,7 +621,7 @@ export class YamlCompletion {
     const matchOriginal = matchingSchemas.find((it) => it.node.internalNode === originalNode && it.schema.properties);
     for (const schema of matchingSchemas) {
       if (
-        ((schema.node.internalNode === node && !matchOriginal) || schema.node.internalNode === originalNode) &&
+        ((schema.node.internalNode === node && !matchOriginal) || (schema.node.internalNode === originalNode && !hasColon)) &&
         !schema.inverted
       ) {
         this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
