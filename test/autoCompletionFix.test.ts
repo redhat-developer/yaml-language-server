@@ -319,18 +319,21 @@ objB:
         version: {
           type: 'array',
           items: {
-            enum: ['12.1', 13, '13.1', '14.0', 'all'],
-            type: ['string', 'integer'],
+            enum: ['12.1', 13, '13.1', '14.0', 'all', 14.4, false, null],
+            type: ['string', 'integer', 'number', 'boolean', 'object'],
           },
         },
       },
     });
     const content = 'version:\n  - ';
     const completion = await parseSetup(content, 2, 0);
-    expect(completion.items).lengthOf(5);
+    expect(completion.items).lengthOf(8);
     expect(completion.items[0].insertText).equal('"12.1"');
     expect(completion.items[1].insertText).equal('13');
     expect(completion.items[4].insertText).equal('all');
+    expect(completion.items[5].insertText).equal('14.4');
+    expect(completion.items[6].insertText).equal('false');
+    expect(completion.items[7].insertText).equal('null');
   });
 
   it('Autocomplete indent on array when parent is array', async () => {

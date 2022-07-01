@@ -1201,19 +1201,19 @@ export class YamlCompletion {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getInsertTextForValue(value: any, separatorAfter: string, type: string | string[]): string {
     if (value === null) {
-      value = 'null'; // replace type null with string 'null'
+      return 'null'; // replace type null with string 'null'
     }
     switch (typeof value) {
       case 'object': {
         const indent = this.indentation;
         return this.getInsertTemplateForValue(value, indent, { index: 1 }, separatorAfter);
       }
-    }
-    const types = Array.isArray(type) ? type : type;
-    if (types && (types === 'string' || types[0] === 'string')) {
-      if (Array.isArray(types) && types.includes('integer') && isNumber(value)) {
+      case 'number':
+      case 'boolean':
         return this.getInsertTextForPlainText(value + separatorAfter);
-      }
+    }
+    type = Array.isArray(type) ? type[0] : type;
+    if (type === 'string') {
       value = convertToStringValue(value);
     }
     return this.getInsertTextForPlainText(value + separatorAfter);
