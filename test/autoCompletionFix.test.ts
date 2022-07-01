@@ -537,7 +537,6 @@ objB:
       });
       const content = 'scripts:   \n  sample: s';
       const completion = await parseSetup(content, 0, 9); // before line brake
-      console.log(completion);
       expect(completion.items.length).equal(0);
     });
   });
