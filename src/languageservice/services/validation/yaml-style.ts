@@ -23,7 +23,7 @@ export class YAMLStyleValidator implements AdditionalValidator {
             this.getRangeOf(document, node.srcToken),
             'Flow style mapping is forbidden',
             DiagnosticSeverity.Error,
-            0
+            'flowMap'
           )
         );
       }
@@ -33,7 +33,7 @@ export class YAMLStyleValidator implements AdditionalValidator {
             this.getRangeOf(document, node.srcToken),
             'Flow style sequence is forbidden',
             DiagnosticSeverity.Error,
-            0
+            'flowSeq'
           )
         );
       }
@@ -42,6 +42,6 @@ export class YAMLStyleValidator implements AdditionalValidator {
   }
 
   private getRangeOf(document: TextDocument, node: FlowCollection): Range {
-    return Range.create(document.positionAt(node.start.offset), document.positionAt(node.end[0].offset));
+    return Range.create(document.positionAt(node.start.offset), document.positionAt(node.end.pop().offset));
   }
 }

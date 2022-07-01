@@ -125,8 +125,8 @@ animals: [dog , cat , mouse]  `;
       expect(result).not.to.be.empty;
       expect(result.length).to.be.equal(2);
       expect(result).to.include.deep.members([
-        createExpectedError('Flow style mapping is forbidden', 1, 12, 1, 39, DiagnosticSeverity.Error, 'YAML'),
-        createExpectedError('Flow style sequence is forbidden', 2, 9, 2, 27, DiagnosticSeverity.Error, 'YAML'),
+        createExpectedError('Flow style mapping is forbidden', 1, 12, 1, 42, DiagnosticSeverity.Error, 'YAML', 'flowMap'),
+        createExpectedError('Flow style sequence is forbidden', 2, 9, 2, 28, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
       ]);
     });
 
@@ -149,11 +149,11 @@ animals: [dog , cat , mouse]  `;
       expect(result).not.to.be.empty;
       expect(result.length).to.be.equal(1);
       expect(result).to.include.deep.members([
-        createExpectedError('Flow style sequence is forbidden', 2, 9, 2, 27, DiagnosticSeverity.Error, 'YAML'),
+        createExpectedError('Flow style sequence is forbidden', 2, 9, 2, 28, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
       ]);
     });
     it('should report flow error for empty map & sequence', async () => {
-      const yaml = 'object: {}\nobject2: []';
+      const yaml = 'object: {} \nobject2: []';
       yamlSettings.style = {
         flowMapping: 'forbid',
         flowSequence: 'forbid',
@@ -168,8 +168,8 @@ animals: [dog , cat , mouse]  `;
       expect(result).not.to.be.empty;
       expect(result.length).to.be.equal(2);
       expect(result).to.include.deep.members([
-        createExpectedError('Flow style mapping is forbidden', 0, 8, 0, 9, DiagnosticSeverity.Error, 'YAML'),
-        createExpectedError('Flow style sequence is forbidden', 1, 9, 1, 10, DiagnosticSeverity.Error, 'YAML'),
+        createExpectedError('Flow style mapping is forbidden', 0, 8, 0, 11, DiagnosticSeverity.Error, 'YAML', 'flowMap'),
+        createExpectedError('Flow style sequence is forbidden', 1, 9, 1, 10, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
       ]);
     });
   });
