@@ -94,7 +94,7 @@ export class YamlCompletion {
     this.parentSkeletonSelectedFirst = languageSettings.parentSkeletonSelectedFirst;
   }
 
-  async doComplete(document: TextDocument, position: Position, isKubernetes = false): Promise<CompletionList> {
+  async doComplete(document: TextDocument, position: Position, isKubernetes = false, doComplete = true): Promise<CompletionList> {
     const result = CompletionList.create([], false);
     if (!this.completionEnabled) {
       return result;
@@ -478,7 +478,17 @@ export class YamlCompletion {
           }
         }
 
-        this.addPropertyCompletions(schema, currentDoc, node, originalNode, '', collector, textBuffer, overwriteRange);
+        this.addPropertyCompletions(
+          schema,
+          currentDoc,
+          node,
+          originalNode,
+          '',
+          collector,
+          textBuffer,
+          overwriteRange,
+          doComplete
+        );
 
         if (!schema && currentWord.length > 0 && text.charAt(offset - currentWord.length - 1) !== '"') {
           collector.add({
@@ -492,7 +502,7 @@ export class YamlCompletion {
 
       // proposals for values
       const types: { [type: string]: boolean } = {};
-      this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types);
+      this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types, doComplete);
     } catch (err) {
       this.telemetry.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(err) });
     }
@@ -610,9 +620,10 @@ export class YamlCompletion {
     separatorAfter: string,
     collector: CompletionsCollector,
     textBuffer: TextBuffer,
-    overwriteRange: Range
+    overwriteRange: Range,
+    doComplete?: boolean
   ): void {
-    const matchingSchemas = doc.getMatchingSchemas(schema.schema);
+    const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
     const existingKey = textBuffer.getText(overwriteRange);
     const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
     const hasOnlyWhitespace = lineContent.trim().length === 0;
@@ -802,7 +813,8 @@ export class YamlCompletion {
     offset: number,
     document: TextDocument,
     collector: CompletionsCollector,
-    types: { [type: string]: boolean }
+    types: { [type: string]: boolean },
+    doComplete?: boolean
   ): void {
     let parentKey: string = null;
 
@@ -826,7 +838,7 @@ export class YamlCompletion {
 
     if (node && (parentKey !== null || isSeq(node))) {
       const separatorAfter = '';
-      const matchingSchemas = doc.getMatchingSchemas(schema.schema);
+      const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
       for (const s of matchingSchemas) {
         if (s.node.internalNode === node && !s.inverted && s.schema) {
           if (s.schema.items) {

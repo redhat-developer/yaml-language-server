@@ -517,6 +517,33 @@ objB:
       expect(completion.items[1].label).to.be.equal('obj1');
       expect(completion.items[1].insertText).to.be.equal('obj1:\n  prop2: ${1:value}');
     });
+
+    it('autoCompletion when value is null inside anyOf object', async () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              prop: {
+                const: 'const value',
+              },
+            },
+          },
+          {
+            properties: {
+              prop: {
+                type: 'null',
+              },
+            },
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const completion = await parseSetup(content, 0, 6);
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0].label).to.be.equal('prop');
+      expect(completion.items[0].insertText).to.be.equal('prop: ${1|const value,null|}');
+    });
   });
   describe('extra space after cursor', () => {
     it('simple const', async () => {

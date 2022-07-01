@@ -520,6 +520,7 @@ export function findNodeAtOffset(node: ASTNode, offset: number, includeRightBoun
 export class JSONDocument {
   public isKubernetes: boolean;
   public disableAdditionalProperties: boolean;
+  public doComplete: boolean;
 
   constructor(
     public readonly root: ASTNode,
@@ -560,6 +561,7 @@ export class JSONDocument {
       validate(this.root, schema, schema, validationResult, NoOpSchemaCollector.instance, {
         isKubernetes: this.isKubernetes,
         disableAdditionalProperties: this.disableAdditionalProperties,
+        doComplete: this.doComplete,
       });
       return validationResult.problems.map((p) => {
         const range = Range.create(
@@ -580,12 +582,18 @@ export class JSONDocument {
     return null;
   }
 
-  public getMatchingSchemas(schema: JSONSchema, focusOffset = -1, exclude: ASTNode = null): IApplicableSchema[] {
+  public getMatchingSchemas(
+    schema: JSONSchema,
+    focusOffset = -1,
+    exclude: ASTNode = null,
+    doComplete?: boolean
+  ): IApplicableSchema[] {
     const matchingSchemas = new SchemaCollector(focusOffset, exclude);
     if (this.root && schema) {
       validate(this.root, schema, schema, new ValidationResult(this.isKubernetes), matchingSchemas, {
         isKubernetes: this.isKubernetes,
         disableAdditionalProperties: this.disableAdditionalProperties,
+        doComplete: doComplete,
       });
     }
     return matchingSchemas.schemas;
@@ -594,6 +602,7 @@ export class JSONDocument {
 interface Options {
   isKubernetes: boolean;
   disableAdditionalProperties: boolean;
+  doComplete: boolean;
 }
 function validate(
   node: ASTNode,
@@ -604,7 +613,7 @@ function validate(
   options: Options
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
-  const { isKubernetes } = options;
+  const { isKubernetes, doComplete } = options;
   if (!node) {
     return;
   }
@@ -707,11 +716,11 @@ function validate(
         matchingSchemas: ISchemaCollector;
       } = null;
       for (const subSchemaRef of alternatives) {
-        const subSchema = asSchema(subSchemaRef);
+        const subSchema = { ...asSchema(subSchemaRef) };
         const subValidationResult = new ValidationResult(isKubernetes);
         const subMatchingSchemas = matchingSchemas.newSub();
         validate(node, subSchema, schema, subValidationResult, subMatchingSchemas, options);
-        if (!subValidationResult.hasProblems()) {
+        if (!subValidationResult.hasProblems() || doComplete) {
           matches.push(subSchema);
           if (subValidationResult.propertiesMatches === 0) {
             noPropertyMatches.push(subSchema);
@@ -1435,7 +1444,7 @@ function validate(
     validationResult: ValidationResult;
     matchingSchemas: ISchemaCollector;
   } {
-    if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
+    if (!maxOneMatch && !subValidationResult.hasProblems() && (!bestMatch.validationResult.hasProblems() || doComplete)) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
       bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
