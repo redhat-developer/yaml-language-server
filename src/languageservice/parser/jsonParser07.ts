@@ -797,7 +797,7 @@ function validate(
       const val = getNodeValue(node);
       let enumValueMatch = false;
       for (const e of schema.enum) {
-        if (equals(val, e) || (node.value && e.startsWith(val))) {
+        if (equals(val, e) || (typeof val === 'string' && val && e.startsWith(val))) {
           enumValueMatch = true;
           break;
         }
