@@ -137,6 +137,17 @@ export class YamlCompletion {
     let overwriteRange: Range = null;
     if (areOnlySpacesAfterPosition) {
       overwriteRange = Range.create(position, Position.create(position.line, lineContent.length));
+      const isOnlyWhitespace = lineContent.trim().length === 0;
+      if (node && isScalar(node) && !isOnlyWhitespace) {
+        // line contains part of a key with trailing spaces, adjust the overwrite range to include only the text
+        const matches = lineContent.match(/^([\s-]*)[^:]+[ \t]+\n?$/);
+        if (matches?.length) {
+          overwriteRange = Range.create(
+            Position.create(position.line, matches[1].length),
+            Position.create(position.line, lineContent.length)
+          );
+        }
+      }
     } else if (node && isScalar(node) && node.value === 'null') {
       const nodeStartPos = document.positionAt(node.range[0]);
       nodeStartPos.character += 1;
