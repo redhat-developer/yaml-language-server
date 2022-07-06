@@ -234,7 +234,7 @@ describe('Default Snippet Tests', () => {
       const completion = parseSetup(content);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 14); // This is just checking the total number of snippets in the defaultSnippets.json
+          assert.equal(result.items.length, 15); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[4].label, 'longSnippet');
           // eslint-disable-next-line
           assert.equal(
@@ -305,6 +305,17 @@ describe('Default Snippet Tests', () => {
             result.items[0].insertText,
             'apple:\n  - name: source\n    resource:\n      prop1: value1\n      prop2: value2'
           );
+        })
+        .then(done, done);
+    });
+
+    it('Test snippet in array indented completion', (done) => {
+      const content = 'arrayWithSnippet:\n  - ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 4);
+          assert.equal(result.items[0].insertText, 'item1: $1\n  item2: $2');
         })
         .then(done, done);
     });
