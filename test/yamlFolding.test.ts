@@ -157,4 +157,19 @@ SecondDict:
     expect(limitedRanges.length).to.equal(1);
     expect(warnings).to.deep.equal([TEST_URI]);
   });
+
+  it('should fold comments', () => {
+    const yaml = `
+a:
+    b:
+c:
+    #d
+e:
+    f
+    #g
+  `;
+    const doc = setupTextDocument(yaml);
+    const ranges = getFoldingRanges(doc, context);
+    expect(ranges).to.have.length(3);
+  });
 });

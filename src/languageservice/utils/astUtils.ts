@@ -81,7 +81,8 @@ export function isInComment(tokens: Token[], offset: number): boolean {
 }
 
 export function isCollectionItem(token: unknown): token is CollectionItem {
-  return token['start'] !== undefined;
+  // All CST tokens has 'type' field, only CollectionItem doesn't
+  return token['start'] !== undefined && Array.isArray(token['start']) && token['type'] === undefined;
 }
 
 function _visit(path: VisitPath, item: SourceToken, visitor: Visitor): number | symbol | Visitor | void {
