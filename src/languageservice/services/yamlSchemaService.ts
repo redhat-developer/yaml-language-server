@@ -29,6 +29,7 @@ import { JSONSchemaDescriptionExt } from '../../requestTypes';
 import { SchemaVersions } from '../yamlTypes';
 
 import Ajv, { DefinedError } from 'ajv';
+import { getSchemaTitle } from '../utils/schemaUtils';
 
 const localize = nls.loadMessageBundle();
 
@@ -169,9 +170,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       for (const err of schema07Validator.errors as DefinedError[]) {
         errs.push(`${err.instancePath} : ${err.message}`);
       }
-      resolveErrors.push(
-        `Schema '${schemaToResolve.schema.title ?? schemaToResolve.schema.url}' is not valid:\n${errs.join('\n')}`
-      );
+      resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
     }
 
     const findSection = (schema: JSONSchema, path: string): JSONSchema => {
