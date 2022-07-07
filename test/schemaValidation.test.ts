@@ -466,16 +466,16 @@ describe('Validation Tests', () => {
                 type: 'object',
                 properties: {
                   int: {
-                    type: null,
+                    type: 'null',
                   },
                   long: {
-                    type: null,
+                    type: 'null',
                   },
                   id: {
-                    type: null,
+                    type: 'null',
                   },
                   unique: {
-                    type: null,
+                    type: 'null',
                   },
                 },
                 oneOf: [
@@ -1633,7 +1633,8 @@ obj:
       languageService.addSchema(SCHEMA_ID, schema as JSONSchema);
       const content = `foo: bar`;
       const result = await parseSetup(content);
-      expect(result).to.be.empty;
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include("Schema 'default_schema_id.yaml' is not valid");
       expect(telemetry.messages).to.be.empty;
     });
 
