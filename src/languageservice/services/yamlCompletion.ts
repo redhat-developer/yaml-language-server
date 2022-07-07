@@ -1195,13 +1195,16 @@ export class YamlCompletion {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getInsertTextForValue(value: any, separatorAfter: string, type: string | string[]): string {
     if (value === null) {
-      value = 'null'; // replace type null with string 'null'
+      return 'null'; // replace type null with string 'null'
     }
     switch (typeof value) {
       case 'object': {
         const indent = this.indentation;
         return this.getInsertTemplateForValue(value, indent, { index: 1 }, separatorAfter);
       }
+      case 'number':
+      case 'boolean':
+        return this.getInsertTextForPlainText(value + separatorAfter);
     }
     type = Array.isArray(type) ? type[0] : type;
     if (type === 'string') {
@@ -1368,7 +1371,7 @@ export class YamlCompletion {
         collector.add({
           kind: this.getSuggestionKind(schema.type),
           label: this.getLabelForValue(enm),
-          insertText: this.getInsertTextForValue(enm, separatorAfter, undefined),
+          insertText: this.getInsertTextForValue(enm, separatorAfter, schema.type),
           insertTextFormat: InsertTextFormat.Snippet,
           documentation: documentation,
         });
@@ -1609,7 +1612,7 @@ function convertToStringValue(param: unknown): string {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 
-  let doQuote = value.charAt(0) === '@';
+  let doQuote = !isNaN(parseInt(value)) || value.charAt(0) === '@';
 
   if (!doQuote) {
     // need to quote value if in `foo: bar`, `foo : bar` (mapping) or `foo:` (partial map) format
