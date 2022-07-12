@@ -628,6 +628,7 @@ export class YamlCompletion {
     const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
     const hasOnlyWhitespace = lineContent.trim().length === 0;
     const hasColon = lineContent.indexOf(':') !== -1;
+    const isInArray = lineContent.trimLeft().indexOf('-') === 0;
     const nodeParent = doc.getParent(node);
     const matchOriginal = matchingSchemas.find((it) => it.node.internalNode === originalNode && it.schema.properties);
     for (const schema of matchingSchemas) {
@@ -638,7 +639,7 @@ export class YamlCompletion {
         this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
           newLineFirst: false,
           indentFirstObject: false,
-          shouldIndentWithTab: false,
+          shouldIndentWithTab: isInArray,
         });
 
         const schemaProperties = schema.schema.properties;
