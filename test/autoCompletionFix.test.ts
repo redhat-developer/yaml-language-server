@@ -542,6 +542,28 @@ objB:
       expect(completion.items[1].label).to.be.equal('obj1');
       expect(completion.items[1].insertText).to.be.equal('obj1:\n  prop2: ${1:value}');
     });
+
+    it('Autocomplete should not suggest items for parent object', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          scripts: {
+            type: 'object',
+            properties: {
+              sample: {
+                type: 'string',
+              },
+            },
+          },
+          scripts2: {
+            type: 'string',
+          },
+        },
+      });
+      const content = 'scripts:   \n  sample: | |';
+      const completion = await parseSetup(content, 0, 9); // before line brake
+      expect(completion.items.length).equal(0);
+    });
   });
   describe('extra space after cursor', () => {
     it('simple const', async () => {
