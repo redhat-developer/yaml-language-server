@@ -1,4 +1,7 @@
+import { URI } from 'vscode-uri';
 import { JSONSchema } from '../jsonSchema';
+import * as path from 'path';
+import { Globals } from './jigx/globals';
 
 export function getSchemaTypeName(schema: JSONSchema): string {
   if (schema.title) {
@@ -37,4 +40,25 @@ export function getSchemaRefTypeTitle($ref: string): string {
     console.error(`$ref (${$ref}) not parsed properly`);
   }
   return type;
+}
+
+export function getSchemaTitle(schema: JSONSchema, url: string): string {
+  // jigx custom
+  if (url.startsWith(Globals.dynamicSchema)) {
+    const name = getSchemaTypeName(schema);
+    return name;
+  }
+  // end
+  const uri = URI.parse(url);
+  let baseName = path.basename(uri.fsPath);
+  if (!path.extname(uri.fsPath)) {
+    baseName += '.json';
+  }
+  if (Object.getOwnPropertyDescriptor(schema, 'name')) {
+    return Object.getOwnPropertyDescriptor(schema, 'name').value + ` (${baseName})`;
+  } else if (schema.title) {
+    return schema.title + ` (${baseName})`;
+  }
+
+  return baseName;
 }

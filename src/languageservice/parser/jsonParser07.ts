@@ -613,7 +613,7 @@ function validate(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
   const { isKubernetes } = options;
-  if (!node || !matchingSchemas.include(node)) {
+  if (!node) {
     return;
   }
 
@@ -820,7 +820,7 @@ function validate(
       const val = getNodeValue(node);
       let enumValueMatch = false;
       for (const e of schema.enum) {
-        if (equals(val, e) || (node.value && e.startsWith(val))) {
+        if (equals(val, e) || (typeof val === 'string' && val && e.startsWith(val))) {
           enumValueMatch = true;
           break;
         }
@@ -1093,7 +1093,7 @@ function validate(
         node.items.forEach((item) => {
           if (itemSchema.oneOf && itemSchema.oneOf.length === 1) {
             const subSchemaRef = itemSchema.oneOf[0];
-            const subSchema = asSchema(subSchemaRef);
+            const subSchema = { ...asSchema(subSchemaRef) };
             subSchema.title = schema.title;
             subSchema.closestTitle = schema.closestTitle;
             validate(item, subSchema, schema, itemValidationResult, matchingSchemas, options);

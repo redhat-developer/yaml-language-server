@@ -458,6 +458,53 @@ storage:
       );
     });
 
+    it('Hover on refs node', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          title: {
+            type: 'string',
+            description: 'Title of this file',
+          },
+          refs: {
+            type: 'object',
+          },
+          users: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                name: {
+                  type: 'string',
+                  description: 'Name of the user',
+                },
+                place: {
+                  type: 'string',
+                  description: 'Place of residence',
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const content = `title: meetup
+refs:
+  place: &default_place NYC
+users:
+  - name: foo
+    place: SFC
+  - name: bar
+    |p|lace: *default_place`;
+      const result = await parseSetup(content);
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `Place of residence\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
     it('Hover on null property', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',

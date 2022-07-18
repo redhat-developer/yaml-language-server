@@ -107,7 +107,7 @@ export class YAMLHover {
         const markdownExamples: string[] = [];
 
         matchingSchemas.every((s) => {
-          if (s.node === node && !s.inverted && s.schema) {
+          if ((s.node === node || (node.type === 'property' && node.valueNode === s.node)) && !s.inverted && s.schema) {
             title = title || s.schema.title || s.schema.closestTitle;
             markdownDescription = markdownDescription || s.schema.markdownDescription || toMarkdown(s.schema.description);
             if (s.schema.enum) {

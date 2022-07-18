@@ -8,14 +8,11 @@ import { CodeLens, Range } from 'vscode-languageserver-types';
 import { YamlCommands } from '../../commands';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { YAMLSchemaService } from './yamlSchemaService';
-import { URI } from 'vscode-uri';
-import * as path from 'path';
 import { JSONSchema } from '../jsonSchema';
 import { Telemetry } from '../../languageserver/telemetry';
 import { getSchemaUrls } from '../utils/schemaUrls';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
-import { getSchemaTypeName } from '../utils/schemaUtils';
-import { Globals } from '../utils/jigx/globals';
+import { getSchemaTitle } from '../utils/schemaUtils';
 
 export class YamlCodeLens {
   constructor(private schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {}
@@ -35,7 +32,7 @@ export class YamlCodeLens {
       for (const urlToSchema of schemaUrls) {
         const lens = CodeLens.create(Range.create(0, 0, 0, 0));
         lens.command = {
-          title: getCommandTitle(urlToSchema[0], urlToSchema[1]),
+          title: getSchemaTitle(urlToSchema[1], urlToSchema[0]),
           command: YamlCommands.JUMP_TO_SCHEMA,
           arguments: [urlToSchema[0]],
         };
@@ -50,26 +47,4 @@ export class YamlCodeLens {
   resolveCodeLens(param: CodeLens): Thenable<CodeLens> | CodeLens {
     return param;
   }
-}
-
-function getCommandTitle(url: string, schema: JSONSchema): string {
-  // jigx custom
-  if (url.startsWith(Globals.dynamicSchema)) {
-    const name = getSchemaTypeName(schema);
-    return name;
-  }
-  // end
-
-  const uri = URI.parse(url);
-  let baseName = path.basename(uri.fsPath);
-  if (!path.extname(uri.fsPath)) {
-    baseName += '.json';
-  }
-  if (Object.getOwnPropertyDescriptor(schema, 'name')) {
-    return Object.getOwnPropertyDescriptor(schema, 'name').value + ` (${baseName})`;
-  } else if (schema.title) {
-    return schema.title + ` (${baseName})`;
-  }
-
-  return baseName;
 }

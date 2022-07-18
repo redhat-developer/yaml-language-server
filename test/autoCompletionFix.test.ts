@@ -312,6 +312,31 @@ objB:
     expect(completion.items[1].insertText).equal('PodTemplate');
   });
 
+  it('Test that properties have enum of string type with number', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        version: {
+          type: 'array',
+          items: {
+            enum: ['12.1', 13, '13.1', '14.0', 'all', 14.4, false, null, ['test']],
+            type: ['string', 'integer', 'number', 'boolean', 'object', 'array'],
+          },
+        },
+      },
+    });
+    const content = 'version:\n  - ';
+    const completion = await parseSetup(content, 2, 0);
+    expect(completion.items).lengthOf(9);
+    expect(completion.items[0].insertText).equal('"12.1"');
+    expect(completion.items[1].insertText).equal('13');
+    expect(completion.items[4].insertText).equal('all');
+    expect(completion.items[5].insertText).equal('14.4');
+    expect(completion.items[6].insertText).equal('false');
+    expect(completion.items[7].insertText).equal('null');
+    expect(completion.items[8].insertText).equal('\n  - ${1:test}\n');
+  });
+
   it('Autocomplete indent on array when parent is array', async () => {
     languageService.addSchema(SCHEMA_ID, {
       type: 'object',
@@ -516,6 +541,28 @@ objB:
       expect(completion.items[0].insertText).to.be.equal('obj1:\n  prop1: ');
       expect(completion.items[1].label).to.be.equal('obj1');
       expect(completion.items[1].insertText).to.be.equal('obj1:\n  prop2: ${1:value}');
+    });
+
+    it('Autocomplete should not suggest items for parent object', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          scripts: {
+            type: 'object',
+            properties: {
+              sample: {
+                type: 'string',
+              },
+            },
+          },
+          scripts2: {
+            type: 'string',
+          },
+        },
+      });
+      const content = 'scripts:   \n  sample: | |';
+      const completion = await parseSetup(content, 0, 9); // before line brake
+      expect(completion.items.length).equal(0);
     });
   });
   describe('extra space after cursor', () => {
@@ -761,6 +808,54 @@ objB:
     expect(completion.items.length).equal(1);
     expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
     expect(completion.items[0].documentation).to.be.equal('Property Description');
+  });
+
+  describe('should suggest prop of the object (based on not completed prop name)', () => {
+    const schema: JSONSchema = {
+      definitions: {
+        Obj: {
+          anyOf: [
+            { type: 'string' },
+            {
+              type: 'object',
+              properties: {
+                prop1: { type: 'string' },
+              },
+              required: ['prop1'],
+            },
+          ],
+        },
+      },
+      properties: {
+        test1: {
+          properties: {
+            nested: { $ref: '#/definitions/Obj' },
+          },
+        },
+        test2: { $ref: '#/definitions/Obj' },
+      },
+    };
+    const content = `
+test2: 
+  pr
+test1:
+  nested: 
+    pr
+`;
+    it('nested object', async () => {
+      languageService.addSchema(SCHEMA_ID, schema);
+      const completion = await parseSetup(content, 5, 6);
+
+      expect(completion.items.length).equal(2);
+      expect(completion.items[0].label).to.be.equal('prop1');
+    });
+    it('root object', async () => {
+      languageService.addSchema(SCHEMA_ID, schema);
+      const completion = await parseSetup(content, 2, 4);
+
+      expect(completion.items.length).equal(2);
+      expect(completion.items[0].label).to.be.equal('prop1');
+    });
   });
 
   describe('should suggest property before indented comment', () => {
