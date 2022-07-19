@@ -497,4 +497,33 @@ describe('Auto Completion Tests Extended', () => {
       assert.equal(completion.items.length, 0);
     });
   });
+
+  describe('completion of array', () => {
+    it('should suggest when no hypen (-)', async () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          actions: {
+            type: 'array',
+            items: {
+              type: 'array',
+              items: {
+                type: 'string',
+                defaultSnippets: [
+                  {
+                    label: 'My array item',
+                    body: { item1: '$1' },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'actions:\n  ';
+      const completion = await parseSetup(content, content.length);
+      assert.equal(completion.items.length, 1);
+    });
+  });
 });

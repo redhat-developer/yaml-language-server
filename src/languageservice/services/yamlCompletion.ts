@@ -151,6 +151,20 @@ export class YamlCompletion {
         this.indentation + arrayIndentCompensation
       );
     }
+
+    // if no suggestions and if on an empty line then try as an array
+    if (result.items.length === 0 && lineContent.match(/^\s*$/)) {
+      const modificationForInvoke = '-';
+      const newPosition = Position.create(position.line, position.character + 1);
+      result = await this.doCompletionWithModification(
+        result,
+        document,
+        position,
+        isKubernetes,
+        newPosition,
+        modificationForInvoke
+      );
+    }
     this.processInlineInitialization(result, lineContent);
 
     // const secs = (Date.now() - startTime) / 1000;
