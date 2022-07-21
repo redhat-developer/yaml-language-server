@@ -402,6 +402,54 @@ objB:
       })
     );
   });
+  it('Autocomplete indent on array object when parent is array of an array', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        array1: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['thing1'],
+            properties: {
+              thing1: {
+                type: 'object',
+                required: ['array2'],
+                properties: {
+                  array2: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      required: ['thing2', 'type'],
+                      properties: {
+                        type: {
+                          type: 'string',
+                        },
+                        thing2: {
+                          type: 'object',
+                          required: ['item1', 'item2'],
+                          properties: {
+                            item1: { type: 'string' },
+                            item2: { type: 'string' },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const content = 'array1:\n  - ';
+    const completion = await parseSetup(content, 1, 4);
+
+    expect(completion.items[0].insertText).to.be.equal(
+      'thing1:\n    array2:\n      - type: $1\n        thing2:\n          item1: $2\n          item2: $3'
+    );
+  });
   describe('array indent on different index position', () => {
     const schema = {
       type: 'object',

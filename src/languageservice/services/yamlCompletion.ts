@@ -1082,7 +1082,7 @@ export class YamlCompletion {
               if (arrayInsertLines.length > 1) {
                 for (let index = 1; index < arrayInsertLines.length; index++) {
                   const element = arrayInsertLines[index];
-                  arrayInsertLines[index] = `${indent}${this.indentation}  ${element.trimLeft()}`;
+                  arrayInsertLines[index] = `  ${element}`;
                 }
                 arrayTemplate = arrayInsertLines.join('\n');
               }
