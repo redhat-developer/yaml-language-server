@@ -1337,20 +1337,18 @@ export class YamlCompletion {
       });
     }
 
-    let stringifySettings = {
-      newLineFirst: true,
-      indentFirstObject: true,
-      shouldIndentWithTab: true,
-    };
-
-    if (isArray) {
-      stringifySettings = {
-        newLineFirst: false,
-        indentFirstObject: false,
-        shouldIndentWithTab: false,
-      };
-    }
-    this.collectDefaultSnippets(schema, separatorAfter, collector, stringifySettings, 0, isArray);
+    this.collectDefaultSnippets(
+      schema,
+      separatorAfter,
+      collector,
+      {
+        newLineFirst: !isArray,
+        indentFirstObject: !isArray,
+        shouldIndentWithTab: !isArray,
+      },
+      0,
+      isArray
+    );
     if (!hasProposals && typeof schema.items === 'object' && !Array.isArray(schema.items)) {
       this.addDefaultValueCompletions(schema.items, separatorAfter, collector, arrayDepth + 1);
     }
@@ -1407,7 +1405,7 @@ export class YamlCompletion {
     collector: CompletionsCollector,
     settings: StringifySettings,
     arrayDepth = 0,
-    isArray?: boolean
+    isArray = false
   ): void {
     if (Array.isArray(schema.defaultSnippets)) {
       for (const s of schema.defaultSnippets) {
