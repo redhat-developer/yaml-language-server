@@ -44,6 +44,7 @@ const doubleQuotesEscapeRegExp = /[\\]+"/g;
 
 const ctxSymbolLabel = '=@ctx';
 const ctxSymbol = '@ctx';
+const ctxSymbolPrefix = '@';
 
 const parentCompletionKind = CompletionItemKind.Class;
 
@@ -118,9 +119,19 @@ export class YamlCompletion {
       ctxSymbol &&
       lineContent
         .substring(0, position.character) // take lineContent only to cursor position
-        .match(new RegExp(`(${ctxSymbol})(?!.*\\1).*$`)); // https://regex101.com/r/2ewq5g/2 takes last occurrence of the ctx to the end
+        .match(new RegExp(`=?(${ctxSymbolPrefix})(?!.*\\1).*$`)); // https://regex101.com/r/2ewq5g takes last occurrence of the ctx to the end
     if (lineCtx) {
-      result = await this.doInlineCompletion(document, position, '=' + lineCtx[0]);
+      const hasEqualSymbol = lineCtx[0].startsWith('=');
+      const lineContentBeforeCtx = lineContent.slice(0, lineCtx.index);
+      // don't allow @ctx on the beginning of the expression
+      if (!hasEqualSymbol && /:[ \t'"|>]*$/.test(lineContentBeforeCtx)) {
+        return result;
+      }
+      // don't allow =@ctx inside jsonata,
+      if (hasEqualSymbol && lineContentBeforeCtx.includes(ctxSymbolLabel)) {
+        return result;
+      }
+      result = await this.doInlineCompletion(document, position, lineCtx[0]);
       return result;
     }
     // auto add space after : if needed
@@ -228,6 +239,10 @@ export class YamlCompletion {
   }
 
   private async doInlineCompletion(document: TextDocument, position: Position, lineCtx: string): Promise<CompletionList> {
+    const hasEqualSymbol = lineCtx.startsWith('=');
+    if (!hasEqualSymbol) {
+      lineCtx = '=' + lineCtx;
+    }
     const props = lineCtx.split('.');
     let newText = props.reduce((reducer, prop, index) => {
       if (!prop || prop === '\n') {
@@ -255,13 +270,24 @@ export class YamlCompletion {
 
     resultLocal.items.forEach((inlineItem) => {
       let inlineText = inlineItem.insertText;
+
+      // when expression doesn't have `=`, remove it also from `=@ctx` result
+      if (!hasEqualSymbol && inlineItem.label === ctxSymbolLabel) {
+        inlineItem.label = ctxSymbol;
+        inlineText = ctxSymbol;
+      }
+
       inlineText = inlineText.replace(/:\n?\s*(\$1)?/g, '.').replace(/\.$/, '');
       inlineItem.insertText = inlineText;
       if (inlineItem.textEdit) {
         inlineItem.textEdit.newText = inlineText;
         if (TextEdit.is(inlineItem.textEdit)) {
           const diff = inlineItem.textEdit.range.end.character - inlineItem.textEdit.range.start.character; // support =@ctx.da
-          inlineItem.textEdit.range = Range.create(Position.create(position.line, position.character - diff), position);
+          const equalSymbolCompensation = hasEqualSymbol ? 0 : 1;
+          inlineItem.textEdit.range = Range.create(
+            Position.create(position.line, position.character - diff + equalSymbolCompensation),
+            position
+          );
         }
       }
       inlineItem.commitCharacters = ['.'];
