@@ -121,6 +121,16 @@ export class YamlCompletion {
         .substring(0, position.character) // take lineContent only to cursor position
         .match(new RegExp(`=?(${ctxSymbolPrefix})(?!.*\\1).*$`)); // https://regex101.com/r/2ewq5g takes last occurrence of the ctx to the end
     if (lineCtx) {
+      const hasEqualSymbol = lineCtx[0].startsWith('=');
+      const lineContentBeforeCtx = lineContent.slice(0, lineCtx.index);
+      // don't allow @ctx on the beginning of the expression
+      if (!hasEqualSymbol && /:[ \t'"|>]*$/.test(lineContentBeforeCtx)) {
+        return result;
+      }
+      // don't allow =@ctx inside jsonata,
+      if (hasEqualSymbol && lineContentBeforeCtx.includes(ctxSymbolLabel)) {
+        return result;
+      }
       result = await this.doInlineCompletion(document, position, lineCtx[0]);
       return result;
     }

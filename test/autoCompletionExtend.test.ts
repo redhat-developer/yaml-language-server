@@ -260,6 +260,18 @@ describe('Auto Completion Tests Extended', () => {
         assert.strictEqual(result.items.length, 2);
         assert.strictEqual(result.items[1].insertText, 'data');
       });
+      it('do not allow @ctx on the beginning of the expression', async () => {
+        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+        const content = 'value: @ct';
+        const result = await parseSetup(content, content.length);
+        assert.strictEqual(result.items.length, 0);
+      });
+      it('do not allow =@ctx inside jsonata', async () => {
+        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+        const content = 'value: =@ctx.test1+=@ct';
+        const result = await parseSetup(content, content.length);
+        assert.strictEqual(result.items.length, 0);
+      });
     });
   });
 
