@@ -225,28 +225,35 @@ describe('Auto Completion Tests Extended', () => {
     });
 
     describe('Inner ctx inside expression', () => {
-      it('ctx inside apostrophes', async () => {
+      it('=@ctx inside apostrophes', async () => {
         languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
         const content = 'value: "=@ctx."';
         const result = await parseSetup(content, content.length - 1);
         assert.strictEqual(result.items.length, 2);
         assert.strictEqual(result.items[0].insertText, 'user');
       });
-      it('ctx with comment', async () => {
+      it('=@ctx within comment', async () => {
         languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
         const content = 'value: =@ctx. #comment';
         const result = await parseSetup(content, 'value: =@ctx.'.length);
         assert.strictEqual(result.items.length, 2);
         assert.strictEqual(result.items[0].insertText, 'user');
       });
-      it('ctx with jsonata expression', async () => {
+      it('@ctx within jsonata expression', async () => {
         languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
         const content = 'value: =@ctx.test1+@ctx.da';
         const result = await parseSetup(content, content.length);
         assert.strictEqual(result.items.length, 2);
         assert.strictEqual(result.items[1].insertText, 'data');
       });
-      it('ctx with predicate', async () => {
+      it('@ct within jsonata expression', async () => {
+        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+        const content = 'value: =@ctx.test1+@ct';
+        const result = await parseSetup(content, content.length);
+        assert.strictEqual(result.items.length, 1);
+        assert.strictEqual(result.items[0].insertText, '@ctx');
+      });
+      it('@ctx within predicate', async () => {
         languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
         const content = 'value: =@ctx.test1+@ctx[type=3].';
         const result = await parseSetup(content, content.length);
