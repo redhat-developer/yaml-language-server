@@ -1110,7 +1110,7 @@ export class YamlCompletion {
                   insertTextFormat: InsertTextFormat.Snippet,
                 });
 
-                this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types);
+                this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types, true);
               } else if (typeof s.schema.items === 'object' && s.schema.items.anyOf) {
                 s.schema.items.anyOf
                   .filter((i) => typeof i === 'object')
@@ -1132,7 +1132,7 @@ export class YamlCompletion {
                       insertTextFormat: InsertTextFormat.Snippet,
                     });
                   });
-                this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types);
+                this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types, true);
               } else {
                 this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types);
               }
@@ -1498,21 +1498,21 @@ export class YamlCompletion {
   ): void {
     if (typeof schema === 'object') {
       this.addEnumValueCompletions(schema, separatorAfter, collector, isArray);
-      this.addDefaultValueCompletions(schema, separatorAfter, collector);
+      this.addDefaultValueCompletions(schema, separatorAfter, collector, 0, isArray);
       this.collectTypes(schema, types);
       if (Array.isArray(schema.allOf)) {
         schema.allOf.forEach((s) => {
-          return this.addSchemaValueCompletions(s, separatorAfter, collector, types);
+          return this.addSchemaValueCompletions(s, separatorAfter, collector, types, isArray);
         });
       }
       if (Array.isArray(schema.anyOf)) {
         schema.anyOf.forEach((s) => {
-          return this.addSchemaValueCompletions(s, separatorAfter, collector, types);
+          return this.addSchemaValueCompletions(s, separatorAfter, collector, types, isArray);
         });
       }
       if (Array.isArray(schema.oneOf)) {
         schema.oneOf.forEach((s) => {
-          return this.addSchemaValueCompletions(s, separatorAfter, collector, types);
+          return this.addSchemaValueCompletions(s, separatorAfter, collector, types, isArray);
         });
       }
     }
@@ -1536,7 +1536,8 @@ export class YamlCompletion {
     schema: JSONSchema,
     separatorAfter: string,
     collector: CompletionsCollector,
-    arrayDepth = 0
+    arrayDepth = 0,
+    isArray?: boolean
   ): void {
     let hasProposals = false;
     if (isDefined(schema.default)) {
@@ -1578,11 +1579,19 @@ export class YamlCompletion {
         hasProposals = true;
       });
     }
-    this.collectDefaultSnippets(schema, separatorAfter, collector, {
-      newLineFirst: true,
-      indentFirstObject: true,
-      shouldIndentWithTab: true,
-    });
+
+    this.collectDefaultSnippets(
+      schema,
+      separatorAfter,
+      collector,
+      {
+        newLineFirst: !isArray,
+        indentFirstObject: !isArray,
+        shouldIndentWithTab: !isArray,
+      },
+      0,
+      isArray
+    );
     if (!hasProposals && typeof schema.items === 'object' && !Array.isArray(schema.items)) {
       this.addDefaultValueCompletions(schema.items, separatorAfter, collector, arrayDepth + 1);
     }
@@ -1638,7 +1647,8 @@ export class YamlCompletion {
     separatorAfter: string,
     collector: CompletionsCollector,
     settings: StringifySettings,
-    arrayDepth = 0
+    arrayDepth = 0,
+    isArray = false
   ): void {
     if (Array.isArray(schema.defaultSnippets)) {
       for (const s of schema.defaultSnippets) {
@@ -1649,7 +1659,7 @@ export class YamlCompletion {
         let filterText: string;
         if (isDefined(value)) {
           const type = s.type || schema.type;
-          if (arrayDepth === 0 && type === 'array') {
+          if ((arrayDepth === 0 && type === 'array') || isArray) {
             // We know that a - isn't present yet so we need to add one
             const fixedObj = {};
             Object.keys(value).forEach((val, index) => {
