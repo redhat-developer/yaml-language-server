@@ -580,12 +580,18 @@ export class JSONDocument {
     return null;
   }
 
-  public getMatchingSchemas(schema: JSONSchema, focusOffset = -1, exclude: ASTNode = null): IApplicableSchema[] {
+  public getMatchingSchemas(
+    schema: JSONSchema,
+    focusOffset = -1,
+    exclude: ASTNode = null,
+    doComplete?: boolean
+  ): IApplicableSchema[] {
     const matchingSchemas = new SchemaCollector(focusOffset, exclude);
     if (this.root && schema) {
       validate(this.root, schema, schema, new ValidationResult(this.isKubernetes), matchingSchemas, {
         isKubernetes: this.isKubernetes,
         disableAdditionalProperties: this.disableAdditionalProperties,
+        doComplete: doComplete,
       });
     }
     return matchingSchemas.schemas;
@@ -594,6 +600,7 @@ export class JSONDocument {
 interface Options {
   isKubernetes: boolean;
   disableAdditionalProperties: boolean;
+  doComplete?: boolean;
 }
 function validate(
   node: ASTNode,
@@ -604,7 +611,7 @@ function validate(
   options: Options
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
-  const { isKubernetes } = options;
+  const { isKubernetes, doComplete } = options;
   if (!node) {
     return;
   }
@@ -797,7 +804,7 @@ function validate(
       const val = getNodeValue(node);
       let enumValueMatch = false;
       for (const e of schema.enum) {
-        if (equals(val, e) || (typeof val === 'string' && val && e.startsWith(val))) {
+        if (equals(val, e) || (doComplete && typeof val === 'string' && val && e.startsWith(val))) {
           enumValueMatch = true;
           break;
         }

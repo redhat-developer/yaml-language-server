@@ -1712,5 +1712,41 @@ obj:
       expect(result.length).to.eq(2);
       expect(telemetry.messages).to.be.empty;
     });
+
+    it('Enum Validation with invalid data', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        definitions: {
+          rule: {
+            description: 'A rule',
+            type: 'object',
+            properties: {
+              kind: {
+                description: 'The kind of rule',
+                type: 'string',
+                enum: ['tested'],
+              },
+            },
+            required: ['kind'],
+            additionalProperties: false,
+          },
+        },
+        properties: {
+          rules: {
+            description: 'Rule list',
+            type: 'array',
+            items: {
+              $ref: '#/definitions/rule',
+            },
+            minProperties: 1,
+            additionalProperties: false,
+          },
+        },
+      });
+      const content = 'rules:\n    - kind: test';
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(1);
+      expect(result[0].message).to.eq('Value is not accepted. Valid values: "tested".');
+      expect(telemetry.messages).to.be.empty;
+    });
   });
 });
