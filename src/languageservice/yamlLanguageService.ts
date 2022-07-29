@@ -107,6 +107,15 @@ export interface LanguageSettings {
    * Default yaml lang version
    */
   yamlVersion?: YamlVersion;
+
+  /**
+   * Control the use of flow mappings. Default is allow.
+   */
+  flowMapping?: 'allow' | 'forbid';
+  /**
+   * Control the use of flow sequences. Default is allow.
+   */
+  flowSequence?: 'allow' | 'forbid';
 }
 
 export interface WorkspaceContextService {

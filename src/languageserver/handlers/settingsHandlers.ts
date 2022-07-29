@@ -118,6 +118,10 @@ export class SettingsHandler {
       if (settings.yaml.suggest) {
         this.yamlSettings.suggest.parentSkeletonSelectedFirst = settings.yaml.suggest.parentSkeletonSelectedFirst;
       }
+      this.yamlSettings.style = {
+        flowMapping: settings.yaml.style?.flowMapping ?? 'allow',
+        flowSequence: settings.yaml.style?.flowSequence ?? 'allow',
+      };
     }
 
     this.yamlSettings.schemaConfigurationSettings = [];
@@ -250,6 +254,8 @@ export class SettingsHandler {
       disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
       disableDefaultProperties: this.yamlSettings.disableDefaultProperties,
       parentSkeletonSelectedFirst: this.yamlSettings.suggest.parentSkeletonSelectedFirst,
+      flowMapping: this.yamlSettings.style?.flowMapping,
+      flowSequence: this.yamlSettings.style?.flowSequence,
       yamlVersion: this.yamlSettings.yamlVersion,
     };
 

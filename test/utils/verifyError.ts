@@ -25,7 +25,7 @@ export function createExpectedError(
   endCharacter: number,
   severity: DiagnosticSeverity = 1,
   source = 'YAML',
-  code = ErrorCode.Undefined
+  code: string | number = ErrorCode.Undefined
 ): Diagnostic {
   return Diagnostic.create(Range.create(startLine, startCharacter, endLine, endCharacter), message, severity, code, source);
 }
