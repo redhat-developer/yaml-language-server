@@ -470,30 +470,6 @@ describe('Auto Completion Tests Extended', () => {
           })
         );
       });
-
-      it('array completion - should not suggest const', async () => {
-        languageService.addSchema(SCHEMA_ID, {
-          type: 'object',
-          properties: {
-            test: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  constProp: {
-                    type: 'string',
-                    const: 'const1',
-                  },
-                },
-              },
-            },
-          },
-        });
-        const content = 'test:\n  - constProp:\n    ';
-        const result = await parseSetup(content, content.length);
-
-        expect(result.items.length).to.be.equal(0);
-      });
     });
   });
 
