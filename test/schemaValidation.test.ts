@@ -1713,7 +1713,26 @@ obj:
       expect(telemetry.messages).to.be.empty;
     });
 
-<<<<<<< HEAD
+    it('Enum Validation with invalid type', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          first: {
+            type: 'string',
+            enum: ['a', 'b'],
+          },
+          second: {
+            type: 'number',
+            enum: [1, 2],
+          },
+        },
+      });
+      const content = 'first: c\nsecond: a';
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(3);
+      expect(telemetry.messages).to.be.empty;
+    });
+
     it('Enum Validation with invalid data', async () => {
       languageService.addSchema(SCHEMA_ID, {
         definitions: {
@@ -1747,26 +1766,6 @@ obj:
       const result = await parseSetup(content);
       expect(result.length).to.eq(1);
       expect(result[0].message).to.eq('Value is not accepted. Valid values: "tested".');
-=======
-    it('Enum Validation with invalid type', async () => {
-      languageService.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: {
-          first: {
-            type: 'string',
-            enum: ['a', 'b'],
-          },
-          second: {
-            type: 'number',
-            enum: [1, 2],
-          },
-        },
-      });
-      const content = 'first: c\nsecond: a';
-      const result = await parseSetup(content);
-      expect(result.length).to.eq(3);
->>>>>>> main
-      expect(telemetry.messages).to.be.empty;
     });
   });
 });
