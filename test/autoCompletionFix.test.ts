@@ -275,10 +275,10 @@ objB:
     const completion = await parseCaret(content);
     expect(completion.items.length).equal(1);
     expect(completion.items[0]).to.be.deep.equal(
-      createExpectedCompletion('- (array item)', '- ', 1, 2, 1, 2, 9, 2, {
+      createExpectedCompletion('- (array item) object', '- ', 1, 2, 1, 2, 9, 2, {
         documentation: {
           kind: 'markdown',
-          value: 'Create an item of an array\n ```\n- \n```',
+          value: 'Create an item of an array type `object`\n ```\n- \n```',
         },
       })
     );
