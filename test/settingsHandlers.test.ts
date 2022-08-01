@@ -77,6 +77,39 @@ describe('Settings Handlers Tests', () => {
     expect(connection.client.register).calledOnce;
   });
 
+  describe('Settings for YAML style should ', () => {
+    it(' reflect to the settings ', async () => {
+      const settingsHandler = new SettingsHandler(
+        connection,
+        (languageService as unknown) as LanguageService,
+        settingsState,
+        (validationHandler as unknown) as ValidationHandler,
+        {} as Telemetry
+      );
+      workspaceStub.getConfiguration.resolves([{ style: { flowMapping: 'forbid', flowSequence: 'forbid' } }, {}, {}, {}, {}]);
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.style).to.exist;
+      expect(settingsState.style.flowMapping).to.eqls('forbid');
+      expect(settingsState.style.flowSequence).to.eqls('forbid');
+    });
+    it(' reflect default values if no settings given', async () => {
+      const settingsHandler = new SettingsHandler(
+        connection,
+        (languageService as unknown) as LanguageService,
+        settingsState,
+        (validationHandler as unknown) as ValidationHandler,
+        {} as Telemetry
+      );
+      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}, {}]);
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.style).to.exist;
+      expect(settingsState.style.flowMapping).to.eqls('allow');
+      expect(settingsState.style.flowSequence).to.eqls('allow');
+    });
+  });
+
   describe('Settings for file associations should ', () => {
     it('reflect to settings state', async () => {
       const settingsHandler = new SettingsHandler(

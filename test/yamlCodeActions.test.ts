@@ -11,6 +11,7 @@ import {
   CodeAction,
   CodeActionContext,
   Command,
+  DiagnosticSeverity,
   Range,
   TextDocumentIdentifier,
   TextEdit,
@@ -181,6 +182,34 @@ describe('CodeActions Tests', () => {
       const result = actions.getCodeAction(doc, params);
       expect(result[0].title).to.be.equal('Delete unused anchor: &bar');
       expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.del(Range.create(0, 5, 0, 13))]);
+    });
+  });
+
+  describe('Convert to Block Style', () => {
+    it(' should generate action to convert flow map to block map ', () => {
+      const yaml = `host: phl-42  
+datacenter: {location: canada , cab: 15}  
+animals: [dog , cat , mouse]  `;
+      const doc = setupTextDocument(yaml);
+      const diagnostics = [
+        createExpectedError('Flow style mapping is forbidden', 1, 12, 1, 39, DiagnosticSeverity.Error, 'YAML', 'flowMap'),
+        createExpectedError('Flow style sequence is forbidden', 2, 9, 2, 27, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
+      ];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.be.not.empty;
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([
+        TextEdit.replace(Range.create(1, 12, 1, 39), `\n  location: canada \n  cab: 15`),
+      ]);
+      expect(result[1].edit.changes[TEST_URI]).deep.equal([
+        TextEdit.replace(Range.create(2, 9, 2, 27), `\n  - dog \n  - cat \n  - mouse`),
+      ]);
     });
   });
 });

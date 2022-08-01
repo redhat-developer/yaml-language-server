@@ -1729,7 +1729,7 @@ obj:
   });
 
   describe('Enum tests', () => {
-    it('Enum Validation', async () => {
+    it('Enum Validation with invalid enum value', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -1746,6 +1746,26 @@ obj:
       const content = 'first: c\nsecond: 3';
       const result = await parseSetup(content);
       expect(result.length).to.eq(2);
+      expect(telemetry.messages).to.be.empty;
+    });
+
+    it('Enum Validation with invalid type', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          first: {
+            type: 'string',
+            enum: ['a', 'b'],
+          },
+          second: {
+            type: 'number',
+            enum: [1, 2],
+          },
+        },
+      });
+      const content = 'first: c\nsecond: a';
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(3);
       expect(telemetry.messages).to.be.empty;
     });
   });

@@ -831,8 +831,8 @@ objB:
       };
       it('1st item', async () => {
         languageService.addSchema(SCHEMA_ID, schema);
-        const content = 'arrayObj:\n  - | | '; // len: 16, pos: 14
-        const completion = await parseCaret(content);
+        const content = 'arrayObj:\n  -   ';
+        const completion = await parseSetup(content, 1, 4);
 
         expect(completion.items.length).equal(3);
         expect(completion.items[1].textEdit).to.be.deep.equal({
@@ -872,23 +872,6 @@ objB:
 
     expect(completion.items.length).equal(1);
     expect(completion.items[0].insertText).to.be.equal('test1');
-  });
-  it('should suggest property of unknown object', async () => {
-    const schema: JSONSchema = {
-      type: 'object',
-      additionalProperties: true,
-      propertyNames: {
-        title: 'property',
-        description: 'Property Description',
-      },
-    };
-    languageService.addSchema(SCHEMA_ID, schema);
-    const content = '';
-    const completion = await parseSetup(content, 0, content.length);
-
-    expect(completion.items.length).equal(1);
-    expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
-    expect(completion.items[0].documentation).to.be.equal('Property Description');
   });
 
   describe('should suggest prop of the object (based on not completed prop name)', () => {
@@ -994,54 +977,6 @@ test1:
           documentation: '',
         })
       );
-    });
-  });
-
-  describe('should suggest prop of the object (based on not completed prop name)', () => {
-    const schema: JSONSchema = {
-      definitions: {
-        Obj: {
-          anyOf: [
-            { type: 'string' },
-            {
-              type: 'object',
-              properties: {
-                prop1: { type: 'string' },
-              },
-              required: ['prop1'],
-            },
-          ],
-        },
-      },
-      properties: {
-        test1: {
-          properties: {
-            nested: { $ref: '#/definitions/Obj' },
-          },
-        },
-        test2: { $ref: '#/definitions/Obj' },
-      },
-    };
-    const content = `
-test2: 
-  pr
-test1:
-  nested: 
-    pr
-`;
-    it('nested object', async () => {
-      languageService.addSchema(SCHEMA_ID, schema);
-      const completion = await parseSetup(content, 5, 6);
-
-      expect(completion.items.length).equal(2);
-      expect(completion.items[0].label).to.be.equal('prop1');
-    });
-    it('root object', async () => {
-      languageService.addSchema(SCHEMA_ID, schema);
-      const completion = await parseSetup(content, 2, 4);
-
-      expect(completion.items.length).equal(2);
-      expect(completion.items[0].label).to.be.equal('prop1');
     });
   });
   it('should suggest property of unknown object', async () => {

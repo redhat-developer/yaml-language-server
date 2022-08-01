@@ -28,6 +28,10 @@ export interface Settings {
     suggest: {
       parentSkeletonSelectedFirst: boolean;
     };
+    style: {
+      flowMapping: 'allow' | 'forbid';
+      flowSequence: 'allow' | 'forbid';
+    };
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
   };
@@ -81,6 +85,10 @@ export class SettingsState {
   disableDefaultProperties = false;
   suggest = {
     parentSkeletonSelectedFirst: false,
+  };
+  style: {
+    flowMapping: 'allow' | 'forbid';
+    flowSequence: 'allow' | 'forbid';
   };
   maxItemsComputed = 5000;
 
