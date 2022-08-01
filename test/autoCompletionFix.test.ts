@@ -275,10 +275,10 @@ objB:
     const completion = await parseCaret(content);
     expect(completion.items.length).equal(1);
     expect(completion.items[0]).to.be.deep.equal(
-      createExpectedCompletion('- (array item)', '- ', 1, 2, 1, 2, 9, 2, {
+      createExpectedCompletion('- (array item) object', '- ', 1, 2, 1, 2, 9, 2, {
         documentation: {
           kind: 'markdown',
-          value: 'Create an item of an array\n ```\n- \n```',
+          value: 'Create an item of an array type `object`\n ```\n- \n```',
         },
       })
     );
@@ -481,7 +481,10 @@ objB:
     const content = 'array1:\n  - thing1:\n    item1: $1\n  | |';
     const completion = await parseCaret(content);
 
-    expect(completion.items[1].insertText).to.be.equal('- item1: ');
+    expect(completion.items.map((i) => ({ label: i.label, insertText: i.insertText }))).to.be.deep.eq([
+      { label: 'My array item', insertText: '- item1: ' },
+      { label: '- (array item) object', insertText: '- thing1:\n    item1: ' },
+    ]);
   });
   describe('array indent on different index position', () => {
     const schema = {
