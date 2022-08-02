@@ -561,7 +561,6 @@ export class JSONDocument {
       validate(this.root, schema, schema, validationResult, NoOpSchemaCollector.instance, {
         isKubernetes: this.isKubernetes,
         disableAdditionalProperties: this.disableAdditionalProperties,
-        doComplete: this.doComplete,
       });
       return validationResult.problems.map((p) => {
         const range = Range.create(
@@ -582,18 +581,32 @@ export class JSONDocument {
     return null;
   }
 
+  /**
+   * This method returns the list of applicable schemas
+   *
+   * currently used @param didCallFromAutoComplete flag to differentiate the method call, when it is from auto complete
+   * then user still types something and skip the validation for timebeing untill completed.
+   * On https://github.com/redhat-developer/yaml-language-server/pull/719 the auto completes need to populate the list of enum string which matches to the enum
+   * and on https://github.com/redhat-developer/vscode-yaml/issues/803 the validation should throw the error based on the enum string.
+   *
+   * @param schema schema
+   * @param focusOffset  offsetValue
+   * @param exclude excluded Node
+   * @param didCallFromAutoComplete true if method called from AutoComplete
+   * @returns array of applicable schemas
+   */
   public getMatchingSchemas(
     schema: JSONSchema,
     focusOffset = -1,
     exclude: ASTNode = null,
-    doComplete?: boolean
+    didCallFromAutoComplete?: boolean
   ): IApplicableSchema[] {
     const matchingSchemas = new SchemaCollector(focusOffset, exclude);
     if (this.root && schema) {
       validate(this.root, schema, schema, new ValidationResult(this.isKubernetes), matchingSchemas, {
         isKubernetes: this.isKubernetes,
         disableAdditionalProperties: this.disableAdditionalProperties,
-        doComplete: doComplete,
+        callFromAutoComplete: didCallFromAutoComplete,
       });
     }
     return matchingSchemas.schemas;
@@ -602,7 +615,7 @@ export class JSONDocument {
 interface Options {
   isKubernetes: boolean;
   disableAdditionalProperties: boolean;
-  doComplete: boolean;
+  callFromAutoComplete?: boolean;
 }
 function validate(
   node: ASTNode,
@@ -613,7 +626,7 @@ function validate(
   options: Options
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
-  const { isKubernetes, doComplete } = options;
+  const { isKubernetes, callFromAutoComplete } = options;
   if (!node) {
     return;
   }
@@ -720,7 +733,7 @@ function validate(
         const subValidationResult = new ValidationResult(isKubernetes);
         const subMatchingSchemas = matchingSchemas.newSub();
         validate(node, subSchema, schema, subValidationResult, subMatchingSchemas, options);
-        if (!subValidationResult.hasProblems() || doComplete) {
+        if (!subValidationResult.hasProblems() || callFromAutoComplete) {
           matches.push(subSchema);
           if (subValidationResult.propertiesMatches === 0) {
             noPropertyMatches.push(subSchema);
@@ -806,7 +819,7 @@ function validate(
       const val = getNodeValue(node);
       let enumValueMatch = false;
       for (const e of schema.enum) {
-        if (equals(val, e) || (node.value && e.startsWith(val))) {
+        if (equals(val, e) || (callFromAutoComplete && isString(val) && isString(e) && val && e.startsWith(val))) {
           enumValueMatch = true;
           break;
         }
@@ -1444,7 +1457,11 @@ function validate(
     validationResult: ValidationResult;
     matchingSchemas: ISchemaCollector;
   } {
-    if (!maxOneMatch && !subValidationResult.hasProblems() && (!bestMatch.validationResult.hasProblems() || doComplete)) {
+    if (
+      !maxOneMatch &&
+      !subValidationResult.hasProblems() &&
+      (!bestMatch.validationResult.hasProblems() || callFromAutoComplete)
+    ) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
       bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;

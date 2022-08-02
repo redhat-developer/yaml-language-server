@@ -1,4 +1,6 @@
+import { URI } from 'vscode-uri';
 import { JSONSchema } from '../jsonSchema';
+import * as path from 'path';
 
 export function getSchemaTypeName(schema: JSONSchema): string {
   if (schema.title) {
@@ -37,4 +39,19 @@ export function getSchemaRefTypeTitle($ref: string): string {
     console.error(`$ref (${$ref}) not parsed properly`);
   }
   return type;
+}
+
+export function getSchemaTitle(schema: JSONSchema, url: string): string {
+  const uri = URI.parse(url);
+  let baseName = path.basename(uri.fsPath);
+  if (!path.extname(uri.fsPath)) {
+    baseName += '.json';
+  }
+  if (Object.getOwnPropertyDescriptor(schema, 'name')) {
+    return Object.getOwnPropertyDescriptor(schema, 'name').value + ` (${baseName})`;
+  } else if (schema.title) {
+    return schema.title + ` (${baseName})`;
+  }
+
+  return baseName;
 }

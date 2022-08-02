@@ -1,7 +1,7 @@
 {
   "name": "yaml-language-server",
   "description": "YAML language server",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "author": "Gorkem Ercan (Red Hat)",
   "license": "MIT",
   "contributors": [
@@ -33,6 +33,7 @@
     "prettier": "2.0.5"
   },
   "dependencies": {
+    "ajv": "^8.11.0",
     "request-light": "^0.5.7",
     "vscode-json-languageservice": "4.1.8",
     "vscode-languageserver": "^7.0.0",
@@ -49,8 +50,8 @@
     "@types/prettier": "2.0.2",
     "@types/sinon": "^9.0.5",
     "@types/sinon-chai": "^3.2.5",
-    "@typescript-eslint/eslint-plugin": "^4.16.1",
-    "@typescript-eslint/parser": "^4.16.1",
+    "@typescript-eslint/eslint-plugin": "^5.30.0",
+    "@typescript-eslint/parser": "^5.30.0",
     "chai": "^4.2.0",
     "coveralls": "3.1.1",
     "eslint": "^7.2.0",
@@ -67,7 +68,7 @@
     "sinon-chai": "^3.5.0",
     "source-map-support": "^0.5.19",
     "ts-node": "^10.0.0",
-    "typescript": "^3.8.3"
+    "typescript": "^4.7.0"
   },
   "scripts": {
     "clean": "rimraf out/server && rimraf lib",

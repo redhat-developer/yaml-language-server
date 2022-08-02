@@ -466,16 +466,16 @@ describe('Validation Tests', () => {
                 type: 'object',
                 properties: {
                   int: {
-                    type: null,
+                    type: 'null',
                   },
                   long: {
-                    type: null,
+                    type: 'null',
                   },
                   id: {
-                    type: null,
+                    type: 'null',
                   },
                   unique: {
-                    type: null,
+                    type: 'null',
                   },
                 },
                 oneOf: [
@@ -1633,7 +1633,8 @@ obj:
       languageService.addSchema(SCHEMA_ID, schema as JSONSchema);
       const content = `foo: bar`;
       const result = await parseSetup(content);
-      expect(result).to.be.empty;
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include("Schema 'default_schema_id.yaml' is not valid");
       expect(telemetry.messages).to.be.empty;
     });
 
@@ -1688,6 +1689,83 @@ obj:
       await languageService.doComplete(testTextDocument, Position.create(6, 8), false);
       const result = await validationHandler.validateTextDocument(testTextDocument);
       expect(result).to.be.empty;
+    });
+  });
+
+  describe('Enum tests', () => {
+    it('Enum Validation with invalid enum value', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          first: {
+            type: 'string',
+            enum: ['a', 'b'],
+          },
+          second: {
+            type: 'number',
+            enum: [1, 2],
+          },
+        },
+      });
+      const content = 'first: c\nsecond: 3';
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(2);
+      expect(telemetry.messages).to.be.empty;
+    });
+
+    it('Enum Validation with invalid type', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          first: {
+            type: 'string',
+            enum: ['a', 'b'],
+          },
+          second: {
+            type: 'number',
+            enum: [1, 2],
+          },
+        },
+      });
+      const content = 'first: c\nsecond: a';
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(3);
+      expect(telemetry.messages).to.be.empty;
+    });
+
+    it('Enum Validation with invalid data', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        definitions: {
+          rule: {
+            description: 'A rule',
+            type: 'object',
+            properties: {
+              kind: {
+                description: 'The kind of rule',
+                type: 'string',
+                enum: ['tested'],
+              },
+            },
+            required: ['kind'],
+            additionalProperties: false,
+          },
+        },
+        properties: {
+          rules: {
+            description: 'Rule list',
+            type: 'array',
+            items: {
+              $ref: '#/definitions/rule',
+            },
+            minProperties: 1,
+            additionalProperties: false,
+          },
+        },
+      });
+      const content = 'rules:\n    - kind: test';
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(1);
+      expect(result[0].message).to.eq('Value is not accepted. Valid values: "tested".');
     });
   });
 });

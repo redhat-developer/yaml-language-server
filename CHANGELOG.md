@@ -1,3 +1,14 @@
+### 1.9.0
+- Add: Publish pre-release extension on nightly CI build [#682](https://github.com/redhat-developer/vscode-yaml/issues/682)
+- Add: Add title to extension configuration [#793](https://github.com/redhat-developer/vscode-yaml/pull/793)
+- Fix: [object Object] with malformed type definition on hover [#788](https://github.com/redhat-developer/vscode-yaml/issues/788)
+- Fix: Description not returned on hover when using yaml anchors [#737](https://github.com/redhat-developer/yaml-language-server/issues/737)
+- Fix: Validation of enums that are numbers stopped working in 1.8.0 [#790](https://github.com/redhat-developer/vscode-yaml/issues/790)
+- Fix: extra space after position [#732](https://github.com/redhat-developer/yaml-language-server/pull/732)
+- Fix: zero-based index [#735](https://github.com/redhat-developer/yaml-language-server/pull/735)
+- Fix: proper indenting of snippet within an array [#745](https://github.com/redhat-developer/yaml-language-server/pull/745)
+
+Thanks to Whazor Nanne, Petr Spacek, Golergka and Rickcowan
 ### 1.8.0
 - Fix: yaml-language-server fails for yaml version [#711](https://github.com/redhat-developer/yaml-language-server/issues/711)
 - Fix: Missing Schema from catalog.json in ui [#747] (https://github.com/redhat-developer/vscode-yaml/issues/747)

@@ -21,6 +21,10 @@ import { TextBuffer } from '../utils/textBuffer';
 import { LanguageSettings } from '../yamlLanguageService';
 import { YAML_SOURCE } from '../parser/jsonParser07';
 import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings';
+import { matchOffsetToDocument } from '../utils/arrUtils';
+import { isMap, isSeq } from 'yaml';
+import { yamlDocumentsCache } from '../parser/yaml-documents';
+import { FlowStyleRewriter } from '../utils/flow-style-rewriter';
 
 interface YamlDiagnosticData {
   schemaUri: string[];
@@ -45,6 +49,7 @@ export class YamlCodeActions {
     result.push(...this.getJumpToSchemaActions(params.context.diagnostics));
     result.push(...this.getTabToSpaceConverting(params.context.diagnostics, document));
     result.push(...this.getUnusedAnchorsDelete(params.context.diagnostics, document));
+    result.push(...this.getConvertToBlockStyleActions(params.context.diagnostics, document));
 
     return result;
   }
@@ -199,6 +204,30 @@ export class YamlCodeActions {
             CodeAction.create(
               'Convert to boolean',
               createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, newValue)]),
+              CodeActionKind.QuickFix
+            )
+          );
+        }
+      }
+    }
+    return results;
+  }
+
+  private getConvertToBlockStyleActions(diagnostics: Diagnostic[], document: TextDocument): CodeAction[] {
+    const results: CodeAction[] = [];
+    for (const diagnostic of diagnostics) {
+      if (diagnostic.code === 'flowMap' || diagnostic.code === 'flowSeq') {
+        const yamlDocuments = yamlDocumentsCache.getYamlDocument(document);
+        const startOffset = document.offsetAt(diagnostic.range.start);
+        const yamlDoc = matchOffsetToDocument(startOffset, yamlDocuments);
+        const node = yamlDoc.getNodeFromOffset(startOffset);
+        if (isMap(node.internalNode) || isSeq(node.internalNode)) {
+          const blockTypeDescription = isMap(node.internalNode) ? 'map' : 'sequence';
+          const rewriter = new FlowStyleRewriter(this.indentation);
+          results.push(
+            CodeAction.create(
+              `Convert to block style ${blockTypeDescription}`,
+              createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, rewriter.write(node))]),
               CodeActionKind.QuickFix
             )
           );

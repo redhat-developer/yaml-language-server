@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { Diagnostic } from 'vscode-languageserver-types';
+import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
@@ -89,6 +89,87 @@ some:
         createUnusedAnchorDiagnostic('Unused anchor "&a"', 4, 2, 4, 4),
         createUnusedAnchorDiagnostic('Unused anchor "&aa"', 5, 0, 5, 3),
         createUnusedAnchorDiagnostic('Unused anchor "&e"', 8, 4, 8, 6),
+      ]);
+    });
+  });
+
+  describe(`YAML styles test`, () => {
+    it('should not report flow style', async () => {
+      const yaml = `host: phl-42  
+datacenter:   
+  location: canada  
+  cab: 15  
+animals:  
+  - dog  
+  - cat  
+  - mouse`;
+      const result = await parseSetup(yaml);
+      expect(result).to.be.empty;
+    });
+    it('should report flow style', async () => {
+      const yaml = `host: phl-42  
+datacenter: {location: canada , cab: 15}  
+animals: [dog , cat , mouse]  `;
+
+      yamlSettings.style = {
+        flowMapping: 'forbid',
+        flowSequence: 'forbid',
+      };
+      languageSettingsSetup = new ServiceSetup().withValidate().withFlowMapping('forbid').withFlowSequence('forbid');
+      const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
+        languageSettingsSetup.languageSettings
+      );
+      validationHandler = valHandler;
+      yamlSettings = settings;
+      const result = await parseSetup(yaml);
+      expect(result).not.to.be.empty;
+      expect(result.length).to.be.equal(2);
+      expect(result).to.include.deep.members([
+        createExpectedError('Flow style mapping is forbidden', 1, 12, 1, 42, DiagnosticSeverity.Error, 'YAML', 'flowMap'),
+        createExpectedError('Flow style sequence is forbidden', 2, 9, 2, 28, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
+      ]);
+    });
+
+    it('should report only sequence when flow mapping is allow', async () => {
+      const yaml = `host: phl-42  
+datacenter: {location: canada , cab: 15}  
+animals: [dog , cat , mouse]  `;
+
+      yamlSettings.style = {
+        flowMapping: 'forbid',
+        flowSequence: 'forbid',
+      };
+      languageSettingsSetup = new ServiceSetup().withValidate().withFlowMapping('allow').withFlowSequence('forbid');
+      const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
+        languageSettingsSetup.languageSettings
+      );
+      validationHandler = valHandler;
+      yamlSettings = settings;
+      const result = await parseSetup(yaml);
+      expect(result).not.to.be.empty;
+      expect(result.length).to.be.equal(1);
+      expect(result).to.include.deep.members([
+        createExpectedError('Flow style sequence is forbidden', 2, 9, 2, 28, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
+      ]);
+    });
+    it('should report flow error for empty map & sequence', async () => {
+      const yaml = 'object: {} \nobject2: []';
+      yamlSettings.style = {
+        flowMapping: 'forbid',
+        flowSequence: 'forbid',
+      };
+      languageSettingsSetup = new ServiceSetup().withValidate().withFlowMapping('forbid').withFlowSequence('forbid');
+      const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
+        languageSettingsSetup.languageSettings
+      );
+      validationHandler = valHandler;
+      yamlSettings = settings;
+      const result = await parseSetup(yaml);
+      expect(result).not.to.be.empty;
+      expect(result.length).to.be.equal(2);
+      expect(result).to.include.deep.members([
+        createExpectedError('Flow style mapping is forbidden', 0, 8, 0, 11, DiagnosticSeverity.Error, 'YAML', 'flowMap'),
+        createExpectedError('Flow style sequence is forbidden', 1, 9, 1, 10, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
       ]);
     });
   });

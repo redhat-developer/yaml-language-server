@@ -312,6 +312,31 @@ objB:
     expect(completion.items[1].insertText).equal('PodTemplate');
   });
 
+  it('Test that properties have enum of string type with number', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        version: {
+          type: 'array',
+          items: {
+            enum: ['12.1', 13, '13.1', '14.0', 'all', 14.4, false, null, ['test']],
+            type: ['string', 'integer', 'number', 'boolean', 'object', 'array'],
+          },
+        },
+      },
+    });
+    const content = 'version:\n  - ';
+    const completion = await parseSetup(content, 2, 0);
+    expect(completion.items).lengthOf(9);
+    expect(completion.items[0].insertText).equal('"12.1"');
+    expect(completion.items[1].insertText).equal('13');
+    expect(completion.items[4].insertText).equal('all');
+    expect(completion.items[5].insertText).equal('14.4');
+    expect(completion.items[6].insertText).equal('false');
+    expect(completion.items[7].insertText).equal('null');
+    expect(completion.items[8].insertText).equal('\n  - ${1:test}\n');
+  });
+
   it('Autocomplete indent on array when parent is array', async () => {
     languageService.addSchema(SCHEMA_ID, {
       type: 'object',
@@ -375,6 +400,54 @@ objB:
       createExpectedCompletion('objectWithArray', 'objectWithArray:\n    - item: $1\n      item2: $2', 1, 4, 1, 4, 10, 2, {
         documentation: '',
       })
+    );
+  });
+  it('Autocomplete indent on array object when parent is array of an array', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        array1: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['thing1'],
+            properties: {
+              thing1: {
+                type: 'object',
+                required: ['array2'],
+                properties: {
+                  array2: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      required: ['thing2', 'type'],
+                      properties: {
+                        type: {
+                          type: 'string',
+                        },
+                        thing2: {
+                          type: 'object',
+                          required: ['item1', 'item2'],
+                          properties: {
+                            item1: { type: 'string' },
+                            item2: { type: 'string' },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const content = 'array1:\n  - ';
+    const completion = await parseSetup(content, 1, 4);
+
+    expect(completion.items[0].insertText).to.be.equal(
+      'thing1:\n    array2:\n      - type: $1\n        thing2:\n          item1: $2\n          item2: $3'
     );
   });
   describe('array indent on different index position', () => {
@@ -518,6 +591,28 @@ objB:
       expect(completion.items[1].insertText).to.be.equal('obj1:\n  prop2: ${1:value}');
     });
 
+    it('Autocomplete should not suggest items for parent object', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          scripts: {
+            type: 'object',
+            properties: {
+              sample: {
+                type: 'string',
+              },
+            },
+          },
+          scripts2: {
+            type: 'string',
+          },
+        },
+      });
+      const content = 'scripts:   \n  sample: | |';
+      const completion = await parseSetup(content, 0, 9); // before line brake
+      expect(completion.items.length).equal(0);
+    });
+
     it('autoCompletion when value is null inside anyOf object', async () => {
       const schema: JSONSchema = {
         anyOf: [
@@ -545,6 +640,7 @@ objB:
       expect(completion.items[0].insertText).to.be.equal('prop: ${1|const value,null|}');
     });
   });
+
   describe('extra space after cursor', () => {
     it('simple const', async () => {
       const schema: JSONSchema = {
@@ -561,6 +657,93 @@ objB:
       expect(completion.items.length).equal(1);
       expect(completion.items[0].label).to.be.equal('const');
       expect(completion.items[0].textEdit).to.be.deep.equal({ newText: 'const', range: Range.create(0, 6, 0, 8) });
+    });
+
+    it('partial key with trailing spaces', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          name: {
+            const: 'my name',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'na  ';
+      const completion = await parseSetup(content, 0, 2);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('name', 'name: my name', 0, 0, 0, 4, 10, 2, {
+          documentation: '',
+        })
+      );
+    });
+    it('partial key with trailing spaces with new line', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          name: {
+            const: 'my name',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'na  \n';
+      const completion = await parseSetup(content, 0, 2);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('name', 'name: my name', 0, 0, 0, 5, 10, 2, {
+          documentation: '',
+        })
+      );
+    });
+    it('partial key with leading and trailing spaces', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          name: {
+            const: 'my name',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '  na  ';
+      const completion = await parseSetup(content, 0, 2);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('name', 'name: my name', 0, 2, 0, 4, 10, 2, {
+          documentation: '',
+        })
+      );
+    });
+
+    it('partial key with trailing spaces with special chars inside the array', async () => {
+      const schema: JSONSchema = {
+        type: 'object',
+        properties: {
+          array: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                'name / 123': {
+                  const: 'my name',
+                },
+              },
+            },
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'array:\n - name /   ';
+      const completion = await parseSetup(content, 1, 9);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('name / 123', 'name / 123: my name', 1, 3, 1, 12, 10, 2, {
+          documentation: '',
+        })
+      );
     });
 
     it('object - 2nd nested property', async () => {

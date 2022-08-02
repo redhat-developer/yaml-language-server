@@ -137,6 +137,17 @@ export class YamlCompletion {
     let overwriteRange: Range = null;
     if (areOnlySpacesAfterPosition) {
       overwriteRange = Range.create(position, Position.create(position.line, lineContent.length));
+      const isOnlyWhitespace = lineContent.trim().length === 0;
+      if (node && isScalar(node) && !isOnlyWhitespace) {
+        // line contains part of a key with trailing spaces, adjust the overwrite range to include only the text
+        const matches = lineContent.match(/^([\s-]*)[^:]+[ \t]+\n?$/);
+        if (matches?.length) {
+          overwriteRange = Range.create(
+            Position.create(position.line, matches[1].length),
+            Position.create(position.line, lineContent.length)
+          );
+        }
+      }
     } else if (node && isScalar(node) && node.value === 'null') {
       const nodeStartPos = document.positionAt(node.range[0]);
       nodeStartPos.character += 1;
@@ -621,24 +632,25 @@ export class YamlCompletion {
     collector: CompletionsCollector,
     textBuffer: TextBuffer,
     overwriteRange: Range,
-    doComplete?: boolean
+    doComplete: boolean
   ): void {
     const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
     const existingKey = textBuffer.getText(overwriteRange);
     const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
     const hasOnlyWhitespace = lineContent.trim().length === 0;
     const hasColon = lineContent.indexOf(':') !== -1;
+    const isInArray = lineContent.trimLeft().indexOf('-') === 0;
     const nodeParent = doc.getParent(node);
     const matchOriginal = matchingSchemas.find((it) => it.node.internalNode === originalNode && it.schema.properties);
     for (const schema of matchingSchemas) {
       if (
-        ((schema.node.internalNode === node && !matchOriginal) || schema.node.internalNode === originalNode) &&
+        ((schema.node.internalNode === node && !matchOriginal) || (schema.node.internalNode === originalNode && !hasColon)) &&
         !schema.inverted
       ) {
         this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
           newLineFirst: false,
           indentFirstObject: false,
-          shouldIndentWithTab: false,
+          shouldIndentWithTab: isInArray,
         });
 
         const schemaProperties = schema.schema.properties;
@@ -814,7 +826,7 @@ export class YamlCompletion {
     document: TextDocument,
     collector: CompletionsCollector,
     types: { [type: string]: boolean },
-    doComplete?: boolean
+    doComplete: boolean
   ): void {
     let parentKey: string = null;
 
@@ -1082,7 +1094,7 @@ export class YamlCompletion {
               if (arrayInsertLines.length > 1) {
                 for (let index = 1; index < arrayInsertLines.length; index++) {
                   const element = arrayInsertLines[index];
-                  arrayInsertLines[index] = `${indent}${this.indentation}  ${element.trimLeft()}`;
+                  arrayInsertLines[index] = `  ${element}`;
                 }
                 arrayTemplate = arrayInsertLines.join('\n');
               }
@@ -1196,13 +1208,16 @@ export class YamlCompletion {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getInsertTextForValue(value: any, separatorAfter: string, type: string | string[]): string {
     if (value === null) {
-      value = 'null'; // replace type null with string 'null'
+      return 'null'; // replace type null with string 'null'
     }
     switch (typeof value) {
       case 'object': {
         const indent = this.indentation;
         return this.getInsertTemplateForValue(value, indent, { index: 1 }, separatorAfter);
       }
+      case 'number':
+      case 'boolean':
+        return this.getInsertTextForPlainText(value + separatorAfter);
     }
     type = Array.isArray(type) ? type[0] : type;
     if (type === 'string') {
@@ -1369,7 +1384,7 @@ export class YamlCompletion {
         collector.add({
           kind: this.getSuggestionKind(schema.type),
           label: this.getLabelForValue(enm),
-          insertText: this.getInsertTextForValue(enm, separatorAfter, undefined),
+          insertText: this.getInsertTextForValue(enm, separatorAfter, schema.type),
           insertTextFormat: InsertTextFormat.Snippet,
           documentation: documentation,
         });
@@ -1610,7 +1625,7 @@ function convertToStringValue(param: unknown): string {
     value = value.replace(doubleQuotesEscapeRegExp, '"');
   }
 
-  let doQuote = value.charAt(0) === '@';
+  let doQuote = !isNaN(parseInt(value)) || value.charAt(0) === '@';
 
   if (!doQuote) {
     // need to quote value if in `foo: bar`, `foo : bar` (mapping) or `foo:` (partial map) format
