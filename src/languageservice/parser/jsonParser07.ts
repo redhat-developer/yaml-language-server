@@ -520,7 +520,6 @@ export function findNodeAtOffset(node: ASTNode, offset: number, includeRightBoun
 export class JSONDocument {
   public isKubernetes: boolean;
   public disableAdditionalProperties: boolean;
-  public doComplete: boolean;
 
   constructor(
     public readonly root: ASTNode,
