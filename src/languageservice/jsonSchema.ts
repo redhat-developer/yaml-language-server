@@ -90,6 +90,8 @@ export interface JSONSchema {
   allowComments?: boolean; // VSCode extension
 
   schemaSequence?: JSONSchema[]; // extension for multiple schemas related to multiple documents in single yaml file
+
+  filePatternAssociation?: string; // extension for if condition to be able compare doc yaml uri with this file pattern association
 }
 
 export interface JSONSchemaMap {

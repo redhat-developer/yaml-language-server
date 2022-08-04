@@ -86,6 +86,7 @@ export class YAMLValidation {
         currentYAMLDoc.isKubernetes = isKubernetes;
         currentYAMLDoc.currentDocIndex = index;
         currentYAMLDoc.disableAdditionalProperties = this.disableAdditionalProperties;
+        currentYAMLDoc.uri = textDocument.uri;
 
         const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
 
