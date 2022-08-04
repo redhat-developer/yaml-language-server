@@ -111,6 +111,11 @@ export class YamlCompletion {
 
     setKubernetesParserOption(doc.documents, isKubernetes);
 
+    // set parser options
+    for (const jsonDoc of doc.documents) {
+      jsonDoc.uri = document.uri;
+    }
+
     const offset = document.offsetAt(position);
     const text = document.getText();
 
