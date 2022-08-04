@@ -844,7 +844,8 @@ function validate(
             source: getSchemaSource(schema, originalSchema),
             schemaUri: getSchemaUri(schema, originalSchema),
           });
-          validationResult.merge(subValidationResult);
+          // don't want to expose the error up to code-completion results
+          // validationResult.merge(subValidationResult);
         }
       }
 

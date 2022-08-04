@@ -1390,10 +1390,7 @@ obj:
         const content = 'name: aName';
         const result = await parseSetup(content);
 
-        expect(result.map((r) => r.message)).to.deep.eq([
-          "filePatternAssociation 'wrong' does not match with doc uri 'default_schema_id.yaml'.",
-          'Missing property "tomato".',
-        ]);
+        expect(result.map((r) => r.message)).to.deep.eq(['Missing property "tomato".']);
       });
     });
   });
