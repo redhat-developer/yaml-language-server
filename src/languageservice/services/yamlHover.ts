@@ -97,6 +97,10 @@ export class YAMLHover {
       return result;
     };
 
+    const removePipe = (value: string): string => {
+      return value.replace(/\|\|\s*$/, '');
+    };
+
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
       if (schema && node && !schema.errors.length) {
         const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
@@ -137,8 +141,8 @@ export class YAMLHover {
                   markdownDescription += ' || ';
                 }
               });
-              title = title.replace(/\|\|\s*$/, '');
-              markdownDescription = markdownDescription.replace(/\|\|\s*$/, '');
+              title = removePipe(title);
+              markdownDescription = removePipe(markdownDescription);
             }
             if (s.schema.examples) {
               s.schema.examples.forEach((example) => {
