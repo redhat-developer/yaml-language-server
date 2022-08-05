@@ -470,6 +470,35 @@ describe('Auto Completion Tests Extended', () => {
           })
         );
       });
+      it('array completion - should suggest correct indent when extra spaces after cursor', async () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            test: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  objA: {
+                    type: 'object',
+                    required: ['itemA'],
+                    properties: {
+                      itemA: {
+                        type: 'string',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+        const content = 'test:\n  -               ';
+        const result = await parseSetup(content, 10);
+
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0].insertText).to.be.equal('objA:\n    itemA: ');
+      });
     });
   });
 
