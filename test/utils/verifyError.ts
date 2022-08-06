@@ -16,6 +16,7 @@ import {
   SymbolInformation,
 } from 'vscode-languageserver-types';
 import { ErrorCode } from 'vscode-json-languageservice';
+import { SCHEMA_ID } from './testHelper';
 
 export function createExpectedError(
   message: string,
@@ -63,6 +64,27 @@ export function createUnusedAnchorDiagnostic(
     'YAML'
   );
   diagnostic.tags = [DiagnosticTag.Unnecessary];
+  return diagnostic;
+}
+
+export function createDeprecatedDiagnostic(
+  message: string,
+  startLine: number,
+  startCharacter: number,
+  endLine: number,
+  endCharacter: number
+): Diagnostic {
+  const diagnostic = createExpectedError(
+    message,
+    startLine,
+    startCharacter,
+    endLine,
+    endCharacter,
+    DiagnosticSeverity.Hint,
+    `yaml-schema: file:///${SCHEMA_ID}`,
+    ErrorCode.Deprecated
+  );
+  diagnostic.data = { schemaUri: [`file:///${SCHEMA_ID}`] };
   return diagnostic;
 }
 
