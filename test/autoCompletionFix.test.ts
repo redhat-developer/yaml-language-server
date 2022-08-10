@@ -848,6 +848,82 @@ objB:
       expect(result.items.length).to.be.equal(1);
       expect(result.items[0].insertText).to.be.equal('objA:\n    itemA: ');
     });
+    it('array of arrays completion - should suggest correct indent when extra spaces after cursor', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          array1: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['array2'],
+              properties: {
+                array2: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    required: ['objA'],
+                    properties: {
+                      objA: {
+                        type: 'object',
+                        required: ['itemA'],
+                        properties: {
+                          itemA: {
+                            type: 'string',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = 'array1:\n  -               ';
+      const result = await parseSetup(content, 1, 4);
+
+      expect(result.items.length).to.be.equal(2);
+      expect(result.items[0].insertText).to.be.equal('array2:\n    - objA:\n        itemA: ');
+    });
+    it('object of array of arrays completion - should suggest correct indent when extra spaces after cursor', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          array1: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                array2: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      objA: {
+                        type: 'object',
+                        required: ['itemA'],
+                        properties: {
+                          itemA: {
+                            type: 'string',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = 'array1:\n  - array2:\n      -               ';
+      const result = await parseSetup(content, 2, 8);
+
+      expect(result.items.length).to.be.equal(1);
+      expect(result.items[0].insertText).to.be.equal('objA:\n    itemA: ');
+    });
   }); //'extra space after cursor'
 
   it('should suggest from additionalProperties', async () => {
