@@ -728,11 +728,11 @@ function validate(
         matchingSchemas: ISchemaCollector;
       } = null;
       for (const subSchemaRef of alternatives) {
-        const subSchema = asSchema(subSchemaRef);
+        const subSchema = { ...asSchema(subSchemaRef) };
         const subValidationResult = new ValidationResult(isKubernetes);
         const subMatchingSchemas = matchingSchemas.newSub();
         validate(node, subSchema, schema, subValidationResult, subMatchingSchemas, options);
-        if (!subValidationResult.hasProblems()) {
+        if (!subValidationResult.hasProblems() || callFromAutoComplete) {
           matches.push(subSchema);
           if (subValidationResult.propertiesMatches === 0) {
             noPropertyMatches.push(subSchema);
@@ -1456,7 +1456,11 @@ function validate(
     validationResult: ValidationResult;
     matchingSchemas: ISchemaCollector;
   } {
-    if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
+    if (
+      !maxOneMatch &&
+      !subValidationResult.hasProblems() &&
+      (!bestMatch.validationResult.hasProblems() || callFromAutoComplete)
+    ) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
       bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
