@@ -231,7 +231,11 @@ function isAllSchemasMatched(node: ASTNode, matchingSchemas: IApplicableSchema[]
   for (const matchSchema of matchingSchemas) {
     if (node === matchSchema.node && matchSchema.schema !== schema) {
       schema.anyOf.forEach((childSchema: JSONSchema) => {
-        if (matchSchema.schema === childSchema) {
+        if (
+          matchSchema.schema.title === childSchema.title &&
+          matchSchema.schema.description === childSchema.description &&
+          matchSchema.schema.properties === childSchema.properties
+        ) {
           count++;
         }
       });
