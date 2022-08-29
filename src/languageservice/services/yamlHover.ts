@@ -13,13 +13,12 @@ import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
+import { getNodeValue } from '../parser/jsonParser07';
 import { JSONSchema } from '../jsonSchema';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
 import { Telemetry } from '../../languageserver/telemetry';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
-import { ASTNode } from 'vscode-json-languageservice';
 
 export class YAMLHover {
   private shouldHover: boolean;
@@ -97,10 +96,6 @@ export class YAMLHover {
       return result;
     };
 
-    const removePipe = (value: string): string => {
-      return value.replace(/\|\|\s*$/, '');
-    };
-
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
       if (schema && node && !schema.errors.length) {
         const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
@@ -128,21 +123,6 @@ export class YAMLHover {
                   enumValue = JSON.stringify(enumValue);
                 }
               }
-            }
-            if (s.schema.anyOf && isAllSchemasMatched(node, matchingSchemas, s.schema)) {
-              //if append title and description of all matched schemas on hover
-              title = '';
-              markdownDescription = '';
-              s.schema.anyOf.forEach((childSchema: JSONSchema, index: number) => {
-                title += childSchema.title || s.schema.closestTitle || '';
-                markdownDescription += childSchema.markdownDescription || toMarkdown(childSchema.description) || '';
-                if (index !== s.schema.anyOf.length - 1) {
-                  title += ' || ';
-                  markdownDescription += ' || ';
-                }
-              });
-              title = removePipe(title);
-              markdownDescription = removePipe(markdownDescription);
             }
             if (s.schema.examples) {
               s.schema.examples.forEach((example) => {
@@ -217,25 +197,4 @@ function toMarkdownCodeBlock(content: string): string {
     return '`` ' + content + ' ``';
   }
   return content;
-}
-
-/**
- * check all the schemas which is inside anyOf presented or not in matching schema.
- * @param node node
- * @param matchingSchemas all matching schema
- * @param schema scheam which is having anyOf
- * @returns true if all the schemas which inside anyOf presents in matching schema
- */
-function isAllSchemasMatched(node: ASTNode, matchingSchemas: IApplicableSchema[], schema: JSONSchema): boolean {
-  let count = 0;
-  for (const matchSchema of matchingSchemas) {
-    if (node === matchSchema.node && matchSchema.schema !== schema) {
-      schema.anyOf.forEach((childSchema: JSONSchema) => {
-        if (matchSchema.schema === childSchema) {
-          count++;
-        }
-      });
-    }
-  }
-  return count === schema.anyOf.length;
 }
