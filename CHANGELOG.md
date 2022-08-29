@@ -1,3 +1,13 @@
+### 1.10.0
+- Fix: TypeError: i.startsWith is not a function [#747](https://github.com/redhat-developer/yaml-language-server/issues/747)
+- Fix: fix: autocomplete indent on object within an array [#751](https://github.com/redhat-developer/yaml-language-server/pull/751)
+- Add: Yaml style linting to forbid flow style [#753](https://github.com/redhat-developer/yaml-language-server/pull/753)
+- Fix: enum validation [#803](https://github.com/redhat-developer/vscode-yaml/issues/803)
+- Fix: autocompletion problem when value is null inside anyOf object [#684](https://github.com/redhat-developer/yaml-language-server/issues/684)
+- Fix: indentation with extra spaces after cursor. [#764](https://github.com/redhat-developer/yaml-language-server/pull/764)
+
+Thanks to Rickcowan
+
 ### 1.9.0
 - Add: Publish pre-release extension on nightly CI build [#682](https://github.com/redhat-developer/vscode-yaml/issues/682)
 - Add: Add title to extension configuration [#793](https://github.com/redhat-developer/vscode-yaml/pull/793)
