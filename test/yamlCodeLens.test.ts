@@ -104,6 +104,21 @@ describe('YAML CodeLens', () => {
     );
   });
 
+  it('command name should contains schema title and description', async () => {
+    const doc = setupTextDocument('foo: bar');
+    const schema = {
+      url: 'some://url/to/schema.json',
+      title: 'fooBar',
+      description: 'fooBarDescription',
+    } as JSONSchema;
+    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    const codeLens = new YamlCodeLens((yamlSchemaService as unknown) as YAMLSchemaService, telemetry);
+    const result = await codeLens.getCodeLens(doc);
+    expect(result[0].command).is.deep.equal(
+      createCommand('fooBar - fooBarDescription (schema.json)', YamlCommands.JUMP_TO_SCHEMA, 'some://url/to/schema.json')
+    );
+  });
+
   it('should provide lens for oneOf schemas', async () => {
     const doc = setupTextDocument('foo: bar');
     const schema = {
