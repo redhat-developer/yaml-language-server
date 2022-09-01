@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { Connection, TextDocumentPositionParams } from 'vscode-languageserver';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import {
   MODIFICATION_ACTIONS,
   SchemaAdditions,
@@ -10,7 +11,12 @@ import {
   SchemaDeletionsAll,
 } from '../../languageservice/services/yamlSchemaService';
 import { LanguageService } from '../../languageservice/yamlLanguageService';
-import { HoverDetailRequest, RevalidateRequest, SchemaModificationNotification } from '../../requestTypes';
+import {
+  HoverDetailRequest,
+  RevalidateBySchemaRequest,
+  RevalidateRequest,
+  SchemaModificationNotification,
+} from '../../requestTypes';
 import { SettingsState } from '../../yamlSettings';
 import { ValidationHandler } from './validationHandlers';
 
@@ -45,6 +51,21 @@ export class RequestHandlers {
     this.connection.onRequest(RevalidateRequest.type, async (uri: string) => {
       const document = this.yamlSettings.documents.get(uri);
       await this.validationHandler.validateTextDocument(document);
+    });
+
+    /**
+     * Received request from the client that revalidation is needed.
+     */
+    this.connection.onRequest(RevalidateBySchemaRequest.type, async (params: { yaml: string; schema: unknown }) => {
+      const yamlName = Math.random().toString(36).substring(2) + '.yaml';
+      const document = TextDocument.create(yamlName, 'yaml', 0, params.yaml);
+      this.languageService.addSchema(yamlName, params.schema);
+      try {
+        const result = await this.languageService.doValidation(document, false);
+        return result;
+      } finally {
+        this.languageService.deleteSchema(yamlName);
+      }
     });
   }
 
