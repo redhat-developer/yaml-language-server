@@ -143,7 +143,9 @@ export class YamlHoverDetail {
         }[] = [];
         let matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
         // take only schemas for current node offset
-        matchingSchemas = matchingSchemas.filter((s) => s.node === node && !s.inverted && s.schema);
+        matchingSchemas = matchingSchemas.filter(
+          (s) => (s.node === node || (node.type === 'property' && node.valueNode === s.node)) && !s.inverted && s.schema
+        );
         const matchingSchemasDistinct = distinctSchemas(matchingSchemas);
         matchingSchemasDistinct.every((s) => {
           const hover = {

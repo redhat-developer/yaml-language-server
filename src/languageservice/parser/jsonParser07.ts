@@ -754,11 +754,17 @@ function validate(
         matchingSchemas: ISchemaCollector;
       } = null;
       for (const subSchemaRef of alternatives) {
+        /* jigx custom: creating new instance of schema doesn't make much sense
+         * it loosing some props that are set inside validate
+         * hoverDetail is missing `url` by this
+         * so let's revert this back to previous functionality in jigx branch.
+        const subSchema = { ...asSchema(subSchemaRef) };
+        */
         const subSchema = asSchema(subSchemaRef);
         const subValidationResult = new ValidationResult(isKubernetes);
         const subMatchingSchemas = matchingSchemas.newSub();
         validate(node, subSchema, schema, subValidationResult, subMatchingSchemas, options);
-        if (!subValidationResult.hasProblems()) {
+        if (!subValidationResult.hasProblems() || callFromAutoComplete) {
           matches.push(subSchema);
           if (subValidationResult.propertiesMatches === 0) {
             noPropertyMatches.push(subSchema);
@@ -1511,7 +1517,11 @@ function validate(
     validationResult: ValidationResult;
     matchingSchemas: ISchemaCollector;
   } {
-    if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
+    if (
+      !maxOneMatch &&
+      !subValidationResult.hasProblems() &&
+      (!bestMatch.validationResult.hasProblems() || callFromAutoComplete)
+    ) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
       bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
