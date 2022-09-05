@@ -1308,7 +1308,25 @@ obj:
           16,
           DiagnosticSeverity.Error,
           'yaml-schema: Drone CI configuration file',
-          'https://json.schemastore.org/drone'
+          'https://json.schemastore.org/drone',
+          {
+            properties: [
+              'type',
+              'environment',
+              'steps',
+              'volumes',
+              'services',
+              'image_pull_secrets',
+              'node',
+              'concurrency',
+              'name',
+              'platform',
+              'workspace',
+              'clone',
+              'trigger',
+              'depends_on',
+            ],
+          }
         )
       );
     });
@@ -1631,6 +1649,35 @@ obj:
         const result = await parseSetup(content);
         expect(result.length).to.eq(1);
         expect(result[0].message).to.eq('Property prop2 is not allowed.');
+        expect((result[0].data as { properties: unknown })?.properties).to.deep.eq(['prop1']);
+      });
+
+      it('should return additional prop error when there is unknown prop - suggest missing props)', async () => {
+        const schema = {
+          type: 'object',
+          properties: {
+            prop1: {
+              type: 'string',
+            },
+            prop2: {
+              type: 'string',
+            },
+          },
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = `prop1: value1\npropX: you should not be there 'propX'`;
+        const result = await parseSetup(content);
+        expect(
+          result.map((r) => ({
+            message: r.message,
+            properties: (r.data as { properties: unknown })?.properties,
+          }))
+        ).to.deep.eq([
+          {
+            message: 'Property propX is not allowed.',
+            properties: ['prop2'],
+          },
+        ]);
       });
 
       it('should allow additional props on object when additionalProp is true on object', async () => {

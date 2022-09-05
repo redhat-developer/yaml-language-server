@@ -39,13 +39,14 @@ export function createDiagnosticWithData(
   endCharacter: number,
   severity: DiagnosticSeverity = 1,
   source = 'YAML',
-  schemaUri: string | string[]
+  schemaUri: string | string[],
+  data: Record<string, unknown> = {}
 ): Diagnostic {
   if (jigxBranchTest) {
     source = source.replace('yaml-schema: file:///', 'yaml-schema: ');
   }
   const diagnostic: Diagnostic = createExpectedError(message, startLine, startCharacter, endLine, endCharacter, severity, source);
-  diagnostic.data = { schemaUri: typeof schemaUri === 'string' ? [schemaUri] : schemaUri };
+  diagnostic.data = { schemaUri: typeof schemaUri === 'string' ? [schemaUri] : schemaUri, ...data };
   return diagnostic;
 }
 
