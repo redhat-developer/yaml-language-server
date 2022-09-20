@@ -635,7 +635,7 @@ export class YamlCompletion {
     overwriteRange: Range,
     doComplete: boolean
   ): void {
-    const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
+    const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset, null, doComplete);
     const existingKey = textBuffer.getText(overwriteRange);
     const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
     const hasOnlyWhitespace = lineContent.trim().length === 0;
@@ -851,7 +851,7 @@ export class YamlCompletion {
 
     if (node && (parentKey !== null || isSeq(node))) {
       const separatorAfter = '';
-      const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
+      const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset, null, doComplete);
       for (const s of matchingSchemas) {
         if (s.node.internalNode === node && !s.inverted && s.schema) {
           if (s.schema.items) {
