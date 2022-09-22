@@ -625,7 +625,8 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
   });
 
   describe('Hover on anyOf', () => {
-    it('should show all matched schemas in anyOf', async () => {
+    // jigx custom: we have custom hover detail with test, no need to rewrite this test, so skip it
+    it.skip('should show all matched schemas in anyOf', async () => {
       languageService.addSchema(SCHEMA_ID, {
         title: 'The Root',
         description: 'Root Object',
