@@ -1715,7 +1715,7 @@ obj:
       expect(result.length).to.eq(1);
       assert.deepStrictEqual(
         result[0].message,
-        'String does not match the pattern of "^\\$\\{\\{\\s*fromJSON\\(.*\\)\\s*\\}\\}$".'
+        'String does not match the pattern of "^\\$\\{\\{\\s*(secrets|inputs)\\s*\\}\\}$".'
       );
     });
 
