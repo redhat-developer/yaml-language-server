@@ -3097,6 +3097,27 @@ describe('Auto Completion Tests', () => {
         })
       );
     });
+    // jigx custom
+    // it's quick fix for bug in YLS
+    // this test fails if schemaValidation parameter didCallFromAutoComplete is set to true
+    it('Should not suggested props from different schema when const match', async () => {
+      const schema = {
+        definitions: { obj1, obj2 },
+        anyOf: [
+          {
+            $ref: '#/definitions/obj1',
+          },
+          {
+            $ref: '#/definitions/obj2',
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'type: typeObj2\noptions:\n  description: desc\n`  ';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.map((i) => i.label)).deep.eq([]);
+    });
     it('Should reindex $x', async () => {
       const schema = {
         properties: {

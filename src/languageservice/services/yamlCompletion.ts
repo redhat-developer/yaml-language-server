@@ -341,7 +341,7 @@ export class YamlCompletion {
     document: TextDocument,
     position: Position,
     isKubernetes = false,
-    doComplete = true
+    doComplete = false
   ): Promise<CompletionList> {
     const result = CompletionList.create([], false);
     if (!this.completionEnabled) {
