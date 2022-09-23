@@ -1655,6 +1655,57 @@ obj:
       expect(telemetry.messages).to.be.empty;
     });
 
+    it('value matches more than one schema in oneOf with string format', async () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          repository: {
+            oneOf: [
+              {
+                type: 'string',
+                format: 'uri',
+              },
+              {
+                type: 'string',
+                pattern: '^@',
+              },
+            ],
+          },
+        },
+      };
+
+      languageService.addSchema(SCHEMA_ID, schema as JSONSchema);
+      const content = `repository: @bitnami`;
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(1);
+      expect(result[0].message).not.eq('Minimum one schema should validate.');
+      expect(telemetry.messages).to.be.empty;
+    });
+
+    it('should handle more than one schema matches in oneOf - usecase 1', async () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          foo: {},
+          bar: {},
+        },
+        oneOf: [
+          {
+            required: ['foo'],
+          },
+          {
+            required: ['bar'],
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema as JSONSchema);
+      const content = 'foo: bar\nbar: baz';
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(1);
+      expect(result[0].message).to.eq('Minimum one schema should validate.');
+      expect(telemetry.messages).to.be.empty;
+    });
+
     it('should not use same AST for completion and validation', async () => {
       const schema = {
         type: 'object',

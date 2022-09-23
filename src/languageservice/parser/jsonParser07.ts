@@ -720,7 +720,7 @@ function validate(
 
     const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean): number => {
       const matches = [];
-      const noPropertyMatches = [];
+      let noPropertyMatches;
       // remember the best match that is used for error messages
       let bestMatch: {
         schema: JSONSchema;
@@ -734,7 +734,8 @@ function validate(
         validate(node, subSchema, schema, subValidationResult, subMatchingSchemas, options);
         if (!subValidationResult.hasProblems() || callFromAutoComplete) {
           matches.push(subSchema);
-          if (subValidationResult.propertiesMatches === 0) {
+          if (subSchema.format && subValidationResult.propertiesMatches === 0) {
+            noPropertyMatches = noPropertyMatches || [];
             noPropertyMatches.push(subSchema);
           }
         }
@@ -751,7 +752,7 @@ function validate(
         }
       }
 
-      if (matches.length > 1 && noPropertyMatches.length === 0 && maxOneMatch) {
+      if (matches.length > 1 && maxOneMatch && !noPropertyMatches) {
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
