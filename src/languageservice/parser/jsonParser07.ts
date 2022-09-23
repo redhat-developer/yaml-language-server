@@ -720,13 +720,13 @@ function validate(
 
     const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean): number => {
       const matches = [];
-      let noPropertyMatches;
       // remember the best match that is used for error messages
       let bestMatch: {
         schema: JSONSchema;
         validationResult: ValidationResult;
         matchingSchemas: ISchemaCollector;
       } = null;
+      let hasSchemaMatchedWithFormat = false;
       for (const subSchemaRef of alternatives) {
         const subSchema = { ...asSchema(subSchemaRef) };
         const subValidationResult = new ValidationResult(isKubernetes);
@@ -735,8 +735,7 @@ function validate(
         if (!subValidationResult.hasProblems() || callFromAutoComplete) {
           matches.push(subSchema);
           if (subSchema.format && subValidationResult.propertiesMatches === 0) {
-            noPropertyMatches = noPropertyMatches || [];
-            noPropertyMatches.push(subSchema);
+            hasSchemaMatchedWithFormat = true;
           }
         }
         if (!bestMatch) {
@@ -752,7 +751,7 @@ function validate(
         }
       }
 
-      if (matches.length > 1 && maxOneMatch && !noPropertyMatches) {
+      if (matches.length > 1 && maxOneMatch && !hasSchemaMatchedWithFormat) {
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
