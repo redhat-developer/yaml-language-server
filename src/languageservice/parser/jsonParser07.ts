@@ -145,7 +145,7 @@ export abstract class ASTNodeImpl {
 }
 
 export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
-  public type: 'null' = 'null';
+  public type: 'null' = 'null' as const;
   public value = null;
   constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
@@ -153,7 +153,7 @@ export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
 }
 
 export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
-  public type: 'boolean' = 'boolean';
+  public type: 'boolean' = 'boolean' as const;
   public value: boolean;
 
   constructor(parent: ASTNode, internalNode: Node, boolValue: boolean, offset: number, length?: number) {
@@ -163,7 +163,7 @@ export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
 }
 
 export class ArrayASTNodeImpl extends ASTNodeImpl implements ArrayASTNode {
-  public type: 'array' = 'array';
+  public type: 'array' = 'array' as const;
   public items: ASTNode[];
 
   constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
@@ -177,7 +177,7 @@ export class ArrayASTNodeImpl extends ASTNodeImpl implements ArrayASTNode {
 }
 
 export class NumberASTNodeImpl extends ASTNodeImpl implements NumberASTNode {
-  public type: 'number' = 'number';
+  public type: 'number' = 'number' as const;
   public isInteger: boolean;
   public value: number;
 
@@ -189,7 +189,7 @@ export class NumberASTNodeImpl extends ASTNodeImpl implements NumberASTNode {
 }
 
 export class StringASTNodeImpl extends ASTNodeImpl implements StringASTNode {
-  public type: 'string' = 'string';
+  public type: 'string' = 'string' as const;
   public value: string;
 
   constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
@@ -199,7 +199,7 @@ export class StringASTNodeImpl extends ASTNodeImpl implements StringASTNode {
 }
 
 export class PropertyASTNodeImpl extends ASTNodeImpl implements PropertyASTNode {
-  public type: 'property' = 'property';
+  public type: 'property' = 'property' as const;
   public keyNode: StringASTNode;
   public valueNode: ASTNode;
   public colonOffset: number;
@@ -215,7 +215,7 @@ export class PropertyASTNodeImpl extends ASTNodeImpl implements PropertyASTNode 
 }
 
 export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
-  public type: 'object' = 'object';
+  public type: 'object' = 'object' as const;
   public properties: PropertyASTNode[];
 
   constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
