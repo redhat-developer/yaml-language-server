@@ -202,6 +202,7 @@ export class YamlCompletion {
               sortText: '_' + schemaType, // this parent completion goes first,
               kind: parentCompletionKind,
             };
+            parentCompletion.label = parentCompletion.label || completionItem.label;
             parentCompletion.parent.insertTexts = [completionItem.insertText];
             result.items.push(parentCompletion);
           } else {
