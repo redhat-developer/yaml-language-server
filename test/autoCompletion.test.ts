@@ -2814,7 +2814,7 @@ describe('Auto Completion Tests', () => {
       const content = '';
       const result = await parseSetup(content, content.length);
 
-      expect(result.items.length).equal(4);
+      expect(result.items.length).equal(3);
       expect(result.items[1]).to.deep.equal(
         createExpectedCompletion('Object1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
           documentation: {
@@ -2824,7 +2824,6 @@ describe('Auto Completion Tests', () => {
           sortText: '_Object1',
         })
       );
-      expect(result.items[1]).to.deep.equal(result.items[3]);
     });
     it('Should suggest rest of the parent object', async () => {
       const schema = {

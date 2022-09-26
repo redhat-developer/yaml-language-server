@@ -521,6 +521,24 @@ export class YamlCompletion {
 
     this.finalizeParentCompletion(result);
 
+    const uniqueItems = result.items.filter(
+      (arr, index, self) =>
+        index ===
+        self.findIndex(
+          (item) =>
+            item.label === arr.label &&
+            item.label === arr.label &&
+            item.insertText === arr.insertText &&
+            item.insertText === arr.insertText &&
+            item.kind === arr.kind &&
+            item.kind === arr.kind
+        )
+    );
+
+    if (uniqueItems?.length > 0) {
+      result.items = uniqueItems;
+    }
+
     return result;
   }
 
