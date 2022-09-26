@@ -103,7 +103,7 @@ export class YAMLValidation {
         index++;
       }
     } catch (err) {
-      this.telemetry.sendError('yaml.validation.error', convertErrorToTelemetryMsg(err));
+      this.telemetry.sendError('yaml.validation.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
     let previousErr: Diagnostic;

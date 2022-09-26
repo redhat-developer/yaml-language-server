@@ -9,7 +9,8 @@
     "outDir": "./out/server",
     "sourceMap": true,
     "target": "es6",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true, 
+    "skipLibCheck": true
   },
   "include": [ "src", "test" ],
   "exclude": ["node_modules", "out"]
