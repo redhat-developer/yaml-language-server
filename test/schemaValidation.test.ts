@@ -1767,5 +1767,52 @@ obj:
       expect(result.length).to.eq(1);
       expect(result[0].message).to.eq('Value is not accepted. Valid values: "tested".');
     });
+
+    it('value matches more than one schema in oneOf - but among one is format matches', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          repository: {
+            oneOf: [
+              {
+                type: 'string',
+                format: 'uri',
+              },
+              {
+                type: 'string',
+                pattern: '^@',
+              },
+            ],
+          },
+        },
+      });
+      const content = `repository: '@bittrr'`;
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(0);
+      expect(telemetry.messages).to.be.empty;
+    });
+
+    it('value matches more than one schema in oneOf', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          foo: {},
+          bar: {},
+        },
+        oneOf: [
+          {
+            required: ['foo'],
+          },
+          {
+            required: ['bar'],
+          },
+        ],
+      });
+      const content = `foo: bar\nbar: baz`;
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(1);
+      expect(result[0].message).to.eq('Matches multiple schemas when only one must validate.');
+      expect(telemetry.messages).to.be.empty;
+    });
   });
 });
