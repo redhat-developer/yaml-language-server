@@ -2704,6 +2704,46 @@ describe('Auto Completion Tests', () => {
       required: ['type', 'options'],
       type: 'object',
     };
+    it('Should suggest all possible option in oneOf when content empty', async () => {
+      const schema = {
+        type: 'object',
+        oneOf: [
+          {
+            additionalProperties: false,
+            properties: {
+              A: {
+                type: 'string',
+              },
+            },
+            required: ['A'],
+          },
+          {
+            additionalProperties: false,
+            properties: {
+              B: {
+                type: 'string',
+              },
+            },
+            required: ['B'],
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).equal(4);
+      expect(result.items[0]).to.deep.equal(
+        createExpectedCompletion('A', 'A: ', 0, 0, 0, 0, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(result.items[2]).to.deep.equal(
+        createExpectedCompletion('B', 'B: ', 0, 0, 0, 0, 10, 2, {
+          documentation: '',
+        })
+      );
+    });
     it('Should suggest complete object skeleton', async () => {
       const schema = {
         definitions: { obj1, obj2 },
