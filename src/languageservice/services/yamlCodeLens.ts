@@ -9,7 +9,7 @@ import { YamlCommands } from '../../commands';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONSchema } from '../jsonSchema';
-import { Telemetry } from '../../languageserver/telemetry';
+import { Telemetry } from '../telemetry';
 import { getSchemaUrls } from '../utils/schemaUrls';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { getSchemaTitle } from '../utils/schemaUtils';

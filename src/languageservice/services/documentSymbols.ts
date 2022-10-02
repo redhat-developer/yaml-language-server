@@ -11,7 +11,7 @@ import { JSONDocumentSymbols } from 'vscode-json-languageservice/lib/umd/service
 import { DocumentSymbolsContext } from 'vscode-json-languageservice/lib/umd/jsonLanguageTypes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { Telemetry } from '../../languageserver/telemetry';
+import { Telemetry } from '../telemetry';
 import { isMap, isSeq, Node } from 'yaml';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
 
