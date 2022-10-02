@@ -16,7 +16,7 @@ import { SettingsHandler } from './languageserver/handlers/settingsHandlers';
 import { YamlCommands } from './commands';
 import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
 import { commandExecutor } from './languageserver/commandExecutor';
-import { Telemetry } from './languageserver/telemetry';
+import { Telemetry } from './languageservice/telemetry';
 
 export class YAMLServerInit {
   languageService: LanguageService;
