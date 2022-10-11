@@ -1617,15 +1617,12 @@ obj:
         },
       };
       languageService.addSchema(SCHEMA_ID, schema);
-      const content = `env: \${{ matrix.env1 }}`;
+      const content = `env: \${{ matrix.env1 }`;
       const result = await parseSetup(content);
       expect(result).to.be.not.empty;
       expect(telemetry.messages).to.be.empty;
       expect(result.length).to.eq(1);
-      assert.deepStrictEqual(
-        result[0].message,
-        'String does not match the pattern of "^\\$\\{\\{\\s*(secrets|inputs)\\s*\\}\\}$".'
-      );
+      assert.deepStrictEqual(result[0].message, 'String does not match the pattern of "^.*\\$\\{\\{(.|[\r\n])*\\}\\}.*$".');
     });
 
     it('should handle not valid schema object', async () => {
