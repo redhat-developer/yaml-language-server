@@ -50,8 +50,16 @@ export function getSchemaTitle(schema: JSONSchema, url: string): string {
   if (Object.getOwnPropertyDescriptor(schema, 'name')) {
     return Object.getOwnPropertyDescriptor(schema, 'name').value + ` (${baseName})`;
   } else if (schema.title) {
-    return schema.title + ` (${baseName})`;
+    return schema.description ? schema.title + ' - ' + schema.description + ` (${baseName})` : schema.title + ` (${baseName})`;
   }
 
   return baseName;
+}
+
+export function isPrimitiveType(schema: JSONSchema): boolean {
+  return schema.type !== 'object' && !isAnyOfAllOfOneOfType(schema);
+}
+
+export function isAnyOfAllOfOneOfType(schema: JSONSchema): boolean {
+  return !!(schema.anyOf || schema.allOf || schema.oneOf);
 }

@@ -1,85 +1,110 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "definitions": {
-      "obj1": {
-        "properties": {
-          "obj1": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "obj1"
-        ],
-        "type": "object"
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "obj1": {
+      "properties": {
+        "obj1": {
+          "type": "object"
+        }
       },
-      "obj2": {
-        "properties": {
-          "obj2": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "obj2"
-        ],
-        "type": "object"
-      }
+      "required": ["obj1"],
+      "type": "object"
     },
-    "properties": {
-      "test_simpleArrayObject": {
-        "items": {
-          "$ref": "#/definitions/obj1"
-        },
-        "type": "array"
+    "obj2": {
+      "properties": {
+        "obj2": {
+          "type": "object"
+        }
       },
-      "test_array_anyOf_2objects": {
-        "items": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/obj1"
-            },
-            {
-              "$ref": "#/definitions/obj2"
-            }
-          ]
-        },
-        "type": "array"
+      "required": ["obj2"],
+      "type": "object"
+    },
+    "obj3": {
+      "properties": {
+        "obj3": {
+          "type": "object"
+        }
       },
-      "test_array_anyOf_strAndObj": {
-        "items": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "$ref": "#/definitions/obj1"
-            }
-          ]
-        },
-        "type": "array"
+      "required": ["obj3"],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "test_simpleArrayObject": {
+      "items": {
+        "$ref": "#/definitions/obj1"
       },
-      "test_anyOfObjectAndNull": {
+      "type": "array"
+    },
+    "test_array_anyOf_2objects": {
+      "items": {
         "anyOf": [
           {
             "$ref": "#/definitions/obj1"
           },
           {
-            "type": "null"
+            "$ref": "#/definitions/obj2"
           }
         ]
       },
-      "test_anyOfArrAndNull": {
+      "type": "array"
+    },
+    "test_array_anyOf_strAndObj": {
+      "items": {
         "anyOf": [
           {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "type": "string"
           },
           {
-            "type": "null"
+            "$ref": "#/definitions/obj1"
           }
         ]
-      }
+      },
+      "type": "array"
     },
-    "type": "object"
-  }
+    "test_anyOfObjectAndNull": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/obj1"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "test_anyOfArrAndNull": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "test_array_nested_anyOf": {
+      "items": {
+        "anyOf": [
+          {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/obj1"
+              },
+              {
+                "$ref": "#/definitions/obj2"
+              }
+            ]
+          },
+          {
+            "$ref": "#/definitions/obj3"
+          }
+        ]
+      },
+      "type": "array"
+    }
+  },
+  "type": "object"
+}
