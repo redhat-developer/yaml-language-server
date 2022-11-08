@@ -80,6 +80,7 @@ export interface IProblem {
   problemType?: ProblemType;
   problemArgs?: string[];
   schemaUri?: string[];
+  data?: Record<string, unknown>;
 }
 
 export abstract class ASTNodeImpl {
@@ -573,7 +574,7 @@ export class JSONDocument {
           p.code ? p.code : ErrorCode.Undefined,
           p.source
         );
-        diagnostic.data = { schemaUri: p.schemaUri };
+        diagnostic.data = { schemaUri: p.schemaUri, ...p.data };
         return diagnostic;
       });
     }
@@ -1321,6 +1322,8 @@ function validate(
       (schema.type === 'object' && schema.additionalProperties === undefined && options.disableAdditionalProperties === true)
     ) {
       if (unprocessedProperties.length > 0) {
+        const possibleProperties = schema.properties && Object.keys(schema.properties).filter((prop) => !seenKeys[prop]);
+
         for (const propertyName of unprocessedProperties) {
           const child = seenKeys[propertyName];
           if (child) {
@@ -1333,7 +1336,7 @@ function validate(
             } else {
               propertyNode = child;
             }
-            validationResult.problems.push({
+            const problem: IProblem = {
               location: {
                 offset: propertyNode.keyNode.offset,
                 length: propertyNode.keyNode.length,
@@ -1343,7 +1346,11 @@ function validate(
                 schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
               source: getSchemaSource(schema, originalSchema),
               schemaUri: getSchemaUri(schema, originalSchema),
-            });
+            };
+            if (possibleProperties?.length) {
+              problem.data = { properties: possibleProperties };
+            }
+            validationResult.problems.push(problem);
           }
         }
       }
