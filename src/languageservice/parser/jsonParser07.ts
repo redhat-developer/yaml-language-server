@@ -721,6 +721,7 @@ function validate(
 
     const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean): number => {
       const matches = [];
+      const subMatches = [];
       const noPropertyMatches = [];
       // remember the best match that is used for error messages
       let bestMatch: {
@@ -735,8 +736,12 @@ function validate(
         validate(node, subSchema, schema, subValidationResult, subMatchingSchemas, options);
         if (!subValidationResult.hasProblems() || callFromAutoComplete) {
           matches.push(subSchema);
+          subMatches.push(subSchema);
           if (subValidationResult.propertiesMatches === 0) {
             noPropertyMatches.push(subSchema);
+          }
+          if (subSchema.format) {
+            subMatches.pop();
           }
         }
         if (!bestMatch) {
@@ -752,11 +757,11 @@ function validate(
         }
       }
 
-      if (matches.length > 1 && noPropertyMatches.length === 0 && maxOneMatch) {
+      if (subMatches.length > 1 && (subMatches.length > 1 || noPropertyMatches.length === 0) && maxOneMatch) {
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
-          message: localize('oneOfWarning', 'Minimum one schema should validate.'),
+          message: localize('oneOfWarning', 'Matches multiple schemas when only one must validate.'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
