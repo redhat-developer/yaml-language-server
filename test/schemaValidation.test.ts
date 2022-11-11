@@ -1367,6 +1367,50 @@ obj:
       const result = await parseSetup(content);
       expect(result[0].message).to.eq('Missing property "pineapple".');
     });
+
+    describe('filePatternAssociation', () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+          },
+        },
+        if: {
+          filePatternAssociation: SCHEMA_ID,
+        },
+        then: {
+          required: ['pineapple'],
+        },
+        else: {
+          required: ['tomato'],
+        },
+      };
+      it('validator use "then" block if "if" match filePatternAssociation', async () => {
+        schema.if.filePatternAssociation = SCHEMA_ID;
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'name: aName';
+        const result = await parseSetup(content);
+
+        expect(result.map((r) => r.message)).to.deep.eq(['Missing property "pineapple".']);
+      });
+      it('validator use "then" block if "if" match filePatternAssociation - regexp', async () => {
+        schema.if.filePatternAssociation = '*.yaml'; // SCHEMA_ID: "default_schema_id.yaml"
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'name: aName';
+        const result = await parseSetup(content);
+
+        expect(result.map((r) => r.message)).to.deep.eq(['Missing property "pineapple".']);
+      });
+      it('validator use "else" block if "if" not match filePatternAssociation', async () => {
+        schema.if.filePatternAssociation = 'wrong';
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'name: aName';
+        const result = await parseSetup(content);
+
+        expect(result.map((r) => r.message)).to.deep.eq(['Missing property "tomato".']);
+      });
+    });
   });
 
   describe('Schema with uri-reference', () => {
