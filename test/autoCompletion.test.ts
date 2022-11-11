@@ -944,6 +944,38 @@ describe('Auto Completion Tests', () => {
           })
         );
       });
+
+      describe('Conditional Schema', () => {
+        const schema = {
+          type: 'object',
+          title: 'basket',
+          properties: {
+            name: { type: 'string' },
+          },
+          if: {
+            filePatternAssociation: SCHEMA_ID,
+          },
+          then: {
+            properties: {
+              pineapple: { type: 'string' },
+            },
+            required: ['pineapple'],
+          },
+          else: {
+            properties: {
+              tomato: { type: 'string' },
+            },
+            required: ['tomato'],
+          },
+        };
+        it('should suggest "then" block if "if" match filePatternAssociation', async () => {
+          schema.if.filePatternAssociation = SCHEMA_ID;
+          languageService.addSchema(SCHEMA_ID, schema);
+          const content = 'name: aName\n';
+          const completion = await parseSetup(content, content.length);
+          expect(completion.items.map((i) => i.label)).to.deep.equal(['pineapple', 'basket']);
+        });
+      });
     });
 
     describe('Array Specific Tests', function () {

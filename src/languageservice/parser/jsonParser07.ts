@@ -26,6 +26,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { isArrayEqual } from '../utils/arrUtils';
 import { Node, Pair } from 'yaml';
 import { safeCreateUnicodeRegExp } from '../utils/strings';
+import { FilePatternAssociation } from '../services/yamlSchemaService';
 
 const localize = nls.loadMessageBundle();
 
@@ -521,6 +522,7 @@ export function findNodeAtOffset(node: ASTNode, offset: number, includeRightBoun
 export class JSONDocument {
   public isKubernetes: boolean;
   public disableAdditionalProperties: boolean;
+  public uri: string;
 
   constructor(
     public readonly root: ASTNode,
@@ -561,6 +563,7 @@ export class JSONDocument {
       validate(this.root, schema, schema, validationResult, NoOpSchemaCollector.instance, {
         isKubernetes: this.isKubernetes,
         disableAdditionalProperties: this.disableAdditionalProperties,
+        uri: this.uri,
       });
       return validationResult.problems.map((p) => {
         const range = Range.create(
@@ -606,6 +609,7 @@ export class JSONDocument {
       validate(this.root, schema, schema, new ValidationResult(this.isKubernetes), matchingSchemas, {
         isKubernetes: this.isKubernetes,
         disableAdditionalProperties: this.disableAdditionalProperties,
+        uri: this.uri,
         callFromAutoComplete: didCallFromAutoComplete,
       });
     }
@@ -615,6 +619,7 @@ export class JSONDocument {
 interface Options {
   isKubernetes: boolean;
   disableAdditionalProperties: boolean;
+  uri: string;
   callFromAutoComplete?: boolean;
 }
 function validate(
@@ -805,6 +810,25 @@ function validate(
 
       validate(node, subSchema, originalSchema, subValidationResult, subMatchingSchemas, options);
       matchingSchemas.merge(subMatchingSchemas);
+
+      const { filePatternAssociation } = subSchema;
+      if (filePatternAssociation) {
+        const association = new FilePatternAssociation(filePatternAssociation);
+        if (!association.matchesPattern(options.uri)) {
+          subValidationResult.problems.push({
+            location: { offset: node.offset, length: node.length },
+            severity: DiagnosticSeverity.Warning,
+            message: localize(
+              'ifFilePatternAssociation',
+              `filePatternAssociation '${filePatternAssociation}' does not match with doc uri '${options.uri}'.`
+            ),
+            source: getSchemaSource(schema, originalSchema),
+            schemaUri: getSchemaUri(schema, originalSchema),
+          });
+          // don't want to expose the error up to code-completion results
+          // validationResult.merge(subValidationResult);
+        }
+      }
 
       if (!subValidationResult.hasProblems()) {
         if (thenSchema) {
