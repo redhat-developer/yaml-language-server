@@ -19,6 +19,7 @@ import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { Telemetry } from '../../languageserver/telemetry';
 import { AdditionalValidator } from './validation/types';
 import { UnusedAnchorsValidator } from './validation/unused-anchors';
+import { YAMLStyleValidator } from './validation/yaml-style';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -43,23 +44,28 @@ export class YAMLValidation {
   private jsonValidation;
   private disableAdditionalProperties: boolean;
   private yamlVersion: YamlVersion;
-  private additionalValidation: AdditionalValidation;
+  private validators: AdditionalValidator[] = [];
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
   constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
     this.validationEnabled = true;
     this.jsonValidation = new JSONValidation(schemaService, Promise);
-    this.additionalValidation = new AdditionalValidation();
   }
 
   public configure(settings: LanguageSettings): void {
+    this.validators = [];
     if (settings) {
       this.validationEnabled = settings.validate;
       this.customTags = settings.customTags;
       this.disableAdditionalProperties = settings.disableAdditionalProperties;
       this.yamlVersion = settings.yamlVersion;
+      // Add style validator if flow style is set to forbid only.
+      if (settings.flowMapping === 'forbid' || settings.flowSequence === 'forbid') {
+        this.validators.push(new YAMLStyleValidator(settings));
+      }
     }
+    this.validators.push(new UnusedAnchorsValidator());
   }
 
   public async doValidation(textDocument: TextDocument, isKubernetes = false): Promise<Diagnostic[]> {
@@ -93,11 +99,11 @@ export class YAMLValidation {
         }
 
         validationResult.push(...validation);
-        validationResult.push(...this.additionalValidation.validate(textDocument, currentYAMLDoc));
+        validationResult.push(...this.runAdditionalValidators(textDocument, currentYAMLDoc));
         index++;
       }
     } catch (err) {
-      this.telemetry.sendError('yaml.validation.error', convertErrorToTelemetryMsg(err));
+      this.telemetry.sendError('yaml.validation.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
     let previousErr: Diagnostic;
@@ -142,14 +148,7 @@ export class YAMLValidation {
 
     return duplicateMessagesRemoved;
   }
-}
-
-class AdditionalValidation {
-  private validators: AdditionalValidator[] = [];
-  constructor() {
-    this.validators.push(new UnusedAnchorsValidator());
-  }
-  validate(document: TextDocument, yarnDoc: SingleYAMLDocument): Diagnostic[] {
+  private runAdditionalValidators(document: TextDocument, yarnDoc: SingleYAMLDocument): Diagnostic[] {
     const result = [];
 
     for (const validator of this.validators) {

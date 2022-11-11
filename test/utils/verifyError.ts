@@ -25,7 +25,7 @@ export function createExpectedError(
   endCharacter: number,
   severity: DiagnosticSeverity = 1,
   source = 'YAML',
-  code = ErrorCode.Undefined
+  code: string | number = ErrorCode.Undefined
 ): Diagnostic {
   return Diagnostic.create(Range.create(startLine, startCharacter, endLine, endCharacter), message, severity, code, source);
 }
@@ -38,10 +38,11 @@ export function createDiagnosticWithData(
   endCharacter: number,
   severity: DiagnosticSeverity = 1,
   source = 'YAML',
-  schemaUri: string | string[]
+  schemaUri: string | string[],
+  data: Record<string, unknown> = {}
 ): Diagnostic {
   const diagnostic: Diagnostic = createExpectedError(message, startLine, startCharacter, endLine, endCharacter, severity, source);
-  diagnostic.data = { schemaUri: typeof schemaUri === 'string' ? [schemaUri] : schemaUri };
+  diagnostic.data = { schemaUri: typeof schemaUri === 'string' ? [schemaUri] : schemaUri, ...data };
   return diagnostic;
 }
 

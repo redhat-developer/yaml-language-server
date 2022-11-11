@@ -1050,8 +1050,8 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- ', 2, 2, 2, 2, 9, 2, {
-                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- \n```' },
+              createExpectedCompletion('- (array item) object', '- ', 2, 2, 2, 2, 9, 2, {
+                documentation: { kind: 'markdown', value: 'Create an item of an array type `object`\n ```\n- \n```' },
               })
             );
           })
@@ -1085,8 +1085,8 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- ', 1, 0, 1, 0, 9, 2, {
-                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- \n```' },
+              createExpectedCompletion('- (array item) object', '- ', 1, 0, 1, 0, 9, 2, {
+                documentation: { kind: 'markdown', value: 'Create an item of an array type `object`\n ```\n- \n```' },
               })
             );
           })
@@ -1306,8 +1306,8 @@ describe('Auto Completion Tests', () => {
             assert.equal(result.items.length, 1);
             assert.deepEqual(
               result.items[0],
-              createExpectedCompletion('- (array item)', '- name: ${1:test}', 3, 4, 3, 5, 9, 2, {
-                documentation: { kind: 'markdown', value: 'Create an item of an array\n ```\n- name: test\n```' },
+              createExpectedCompletion('- (array item) object', '- name: ${1:test}', 3, 4, 3, 5, 9, 2, {
+                documentation: { kind: 'markdown', value: 'Create an item of an array type `object`\n ```\n- name: test\n```' },
               })
             );
           })
@@ -2529,7 +2529,7 @@ describe('Auto Completion Tests', () => {
       completion
         .then(function (result) {
           assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].label, '- (array item)');
+          assert.equal(result.items[0].label, '- (array item) obj1');
         })
         .then(done, done);
     });
@@ -2586,7 +2586,7 @@ describe('Auto Completion Tests', () => {
       completion
         .then(function (result) {
           assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].label, '- (array item)');
+          assert.equal(result.items[0].label, '- (array item) obj1');
         })
         .then(done, done);
     });
@@ -2598,8 +2598,19 @@ describe('Auto Completion Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].label, '- (array item) obj1');
+          expect(result.items.map((i) => i.label)).deep.eq(['- (array item) obj1', '- (array item) obj2']);
+        })
+        .then(done, done);
+    });
+
+    it('Array nested anyOf without "-" should return all array items', (done) => {
+      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'test_array_nested_anyOf:\n  - obj1:\n    name:1\n  ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          expect(result.items.map((i) => i.label)).deep.eq(['- (array item) obj1', '- (array item) obj2', '- (array item) obj3']);
         })
         .then(done, done);
     });
@@ -2704,6 +2715,46 @@ describe('Auto Completion Tests', () => {
       required: ['type', 'options'],
       type: 'object',
     };
+    it('Should suggest all possible option in oneOf when content empty', async () => {
+      const schema = {
+        type: 'object',
+        oneOf: [
+          {
+            additionalProperties: false,
+            properties: {
+              A: {
+                type: 'string',
+              },
+            },
+            required: ['A'],
+          },
+          {
+            additionalProperties: false,
+            properties: {
+              B: {
+                type: 'string',
+              },
+            },
+            required: ['B'],
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).equal(4);
+      expect(result.items[0]).to.deep.equal(
+        createExpectedCompletion('A', 'A: ', 0, 0, 0, 0, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(result.items[2]).to.deep.equal(
+        createExpectedCompletion('B', 'B: ', 0, 0, 0, 0, 10, 2, {
+          documentation: '',
+        })
+      );
+    });
     it('Should suggest complete object skeleton', async () => {
       const schema = {
         definitions: { obj1, obj2 },
@@ -2814,7 +2865,7 @@ describe('Auto Completion Tests', () => {
       const content = '';
       const result = await parseSetup(content, content.length);
 
-      expect(result.items.length).equal(4);
+      expect(result.items.length).equal(3);
       expect(result.items[1]).to.deep.equal(
         createExpectedCompletion('Object1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
           documentation: {
@@ -2824,7 +2875,6 @@ describe('Auto Completion Tests', () => {
           sortText: '_Object1',
         })
       );
-      expect(result.items[1]).to.deep.equal(result.items[3]);
     });
     it('Should suggest rest of the parent object', async () => {
       const schema = {

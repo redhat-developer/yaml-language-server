@@ -26,10 +26,10 @@ jobs:
       - uses: actions/checkout@v2
 
       # Set up Node
-      - name: Use Node 12
+      - name: Use Node 16
         uses: actions/setup-node@v1
         with:
-          node-version: 12
+          node-version: 16
           registry-url: "https://registry.npmjs.org"
 
       # Run install dependencies
