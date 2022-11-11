@@ -47,8 +47,9 @@ console.error = (arg) => {
 const yamlSettings = new SettingsState();
 
 const fileSystem = {
-  readFile: (fsPath: string, encoding?: string) => {
-    return fs.readFile(fsPath, encoding).then((b) => b.toString());
+  readFile: async (fsPath: string, encoding?: string) => {
+    const b = await fs.readFile(fsPath, encoding as BufferEncoding);
+    return b.toString();
   },
 };
 

@@ -81,6 +81,7 @@ export interface IProblem {
   problemType?: ProblemType;
   problemArgs?: string[];
   schemaUri?: string[];
+  data?: Record<string, unknown>;
 }
 
 export abstract class ASTNodeImpl {
@@ -146,7 +147,7 @@ export abstract class ASTNodeImpl {
 }
 
 export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
-  public type: 'null' = 'null';
+  public type: 'null' = 'null' as const;
   public value = null;
   constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
@@ -154,7 +155,7 @@ export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
 }
 
 export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
-  public type: 'boolean' = 'boolean';
+  public type: 'boolean' = 'boolean' as const;
   public value: boolean;
 
   constructor(parent: ASTNode, internalNode: Node, boolValue: boolean, offset: number, length?: number) {
@@ -164,7 +165,7 @@ export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
 }
 
 export class ArrayASTNodeImpl extends ASTNodeImpl implements ArrayASTNode {
-  public type: 'array' = 'array';
+  public type: 'array' = 'array' as const;
   public items: ASTNode[];
 
   constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
@@ -178,7 +179,7 @@ export class ArrayASTNodeImpl extends ASTNodeImpl implements ArrayASTNode {
 }
 
 export class NumberASTNodeImpl extends ASTNodeImpl implements NumberASTNode {
-  public type: 'number' = 'number';
+  public type: 'number' = 'number' as const;
   public isInteger: boolean;
   public value: number;
 
@@ -190,7 +191,7 @@ export class NumberASTNodeImpl extends ASTNodeImpl implements NumberASTNode {
 }
 
 export class StringASTNodeImpl extends ASTNodeImpl implements StringASTNode {
-  public type: 'string' = 'string';
+  public type: 'string' = 'string' as const;
   public value: string;
 
   constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
@@ -200,7 +201,7 @@ export class StringASTNodeImpl extends ASTNodeImpl implements StringASTNode {
 }
 
 export class PropertyASTNodeImpl extends ASTNodeImpl implements PropertyASTNode {
-  public type: 'property' = 'property';
+  public type: 'property' = 'property' as const;
   public keyNode: StringASTNode;
   public valueNode: ASTNode;
   public colonOffset: number;
@@ -216,7 +217,7 @@ export class PropertyASTNodeImpl extends ASTNodeImpl implements PropertyASTNode 
 }
 
 export class ObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
-  public type: 'object' = 'object';
+  public type: 'object' = 'object' as const;
   public properties: PropertyASTNode[];
 
   constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
@@ -576,7 +577,7 @@ export class JSONDocument {
           p.code ? p.code : ErrorCode.Undefined,
           p.source
         );
-        diagnostic.data = { schemaUri: p.schemaUri };
+        diagnostic.data = { schemaUri: p.schemaUri, ...p.data };
         return diagnostic;
       });
     }
@@ -725,6 +726,7 @@ function validate(
 
     const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean): number => {
       const matches = [];
+      const subMatches = [];
       const noPropertyMatches = [];
       // remember the best match that is used for error messages
       let bestMatch: {
@@ -733,14 +735,18 @@ function validate(
         matchingSchemas: ISchemaCollector;
       } = null;
       for (const subSchemaRef of alternatives) {
-        const subSchema = asSchema(subSchemaRef);
+        const subSchema = { ...asSchema(subSchemaRef) };
         const subValidationResult = new ValidationResult(isKubernetes);
         const subMatchingSchemas = matchingSchemas.newSub();
         validate(node, subSchema, schema, subValidationResult, subMatchingSchemas, options);
-        if (!subValidationResult.hasProblems()) {
+        if (!subValidationResult.hasProblems() || callFromAutoComplete) {
           matches.push(subSchema);
+          subMatches.push(subSchema);
           if (subValidationResult.propertiesMatches === 0) {
             noPropertyMatches.push(subSchema);
+          }
+          if (subSchema.format) {
+            subMatches.pop();
           }
         }
         if (!bestMatch) {
@@ -756,11 +762,11 @@ function validate(
         }
       }
 
-      if (matches.length > 1 && noPropertyMatches.length === 0 && maxOneMatch) {
+      if (subMatches.length > 1 && (subMatches.length > 1 || noPropertyMatches.length === 0) && maxOneMatch) {
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
-          message: localize('oneOfWarning', 'Minimum one schema should validate.'),
+          message: localize('oneOfWarning', 'Matches multiple schemas when only one must validate.'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -1340,6 +1346,8 @@ function validate(
       (schema.type === 'object' && schema.additionalProperties === undefined && options.disableAdditionalProperties === true)
     ) {
       if (unprocessedProperties.length > 0) {
+        const possibleProperties = schema.properties && Object.keys(schema.properties).filter((prop) => !seenKeys[prop]);
+
         for (const propertyName of unprocessedProperties) {
           const child = seenKeys[propertyName];
           if (child) {
@@ -1352,7 +1360,7 @@ function validate(
             } else {
               propertyNode = child;
             }
-            validationResult.problems.push({
+            const problem: IProblem = {
               location: {
                 offset: propertyNode.keyNode.offset,
                 length: propertyNode.keyNode.length,
@@ -1362,7 +1370,11 @@ function validate(
                 schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
               source: getSchemaSource(schema, originalSchema),
               schemaUri: getSchemaUri(schema, originalSchema),
-            });
+            };
+            if (possibleProperties?.length) {
+              problem.data = { properties: possibleProperties };
+            }
+            validationResult.problems.push(problem);
           }
         }
       }
@@ -1480,7 +1492,11 @@ function validate(
     validationResult: ValidationResult;
     matchingSchemas: ISchemaCollector;
   } {
-    if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
+    if (
+      !maxOneMatch &&
+      !subValidationResult.hasProblems() &&
+      (!bestMatch.validationResult.hasProblems() || callFromAutoComplete)
+    ) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
       bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;

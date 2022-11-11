@@ -308,8 +308,9 @@ describe('Default Snippet Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 4);
+          assert.equal(result.items.length, 2);
           assert.equal(result.items[0].insertText, 'item1: $1\n  item2: $2');
+          assert.equal(result.items[1].insertText, '\n  item1: $1\n  item2: $2');
         })
         .then(done, done);
     });

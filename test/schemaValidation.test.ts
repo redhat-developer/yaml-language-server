@@ -1308,7 +1308,25 @@ obj:
           16,
           DiagnosticSeverity.Error,
           'yaml-schema: Drone CI configuration file',
-          'https://json.schemastore.org/drone'
+          'https://json.schemastore.org/drone',
+          {
+            properties: [
+              'type',
+              'environment',
+              'steps',
+              'volumes',
+              'services',
+              'image_pull_secrets',
+              'node',
+              'concurrency',
+              'name',
+              'platform',
+              'workspace',
+              'clone',
+              'trigger',
+              'depends_on',
+            ],
+          }
         )
       );
     });
@@ -1631,6 +1649,35 @@ obj:
         const result = await parseSetup(content);
         expect(result.length).to.eq(1);
         expect(result[0].message).to.eq('Property prop2 is not allowed.');
+        expect((result[0].data as { properties: unknown })?.properties).to.deep.eq(['prop1']);
+      });
+
+      it('should return additional prop error when there is unknown prop - suggest missing props)', async () => {
+        const schema = {
+          type: 'object',
+          properties: {
+            prop1: {
+              type: 'string',
+            },
+            prop2: {
+              type: 'string',
+            },
+          },
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = `prop1: value1\npropX: you should not be there 'propX'`;
+        const result = await parseSetup(content);
+        expect(
+          result.map((r) => ({
+            message: r.message,
+            properties: (r.data as { properties: unknown })?.properties,
+          }))
+        ).to.deep.eq([
+          {
+            message: 'Property propX is not allowed.',
+            properties: ['prop2'],
+          },
+        ]);
       });
 
       it('should allow additional props on object when additionalProp is true on object', async () => {
@@ -1661,15 +1708,12 @@ obj:
         },
       };
       languageService.addSchema(SCHEMA_ID, schema);
-      const content = `env: \${{ matrix.env1 }}`;
+      const content = `env: \${{ matrix.env1 }`;
       const result = await parseSetup(content);
       expect(result).to.be.not.empty;
       expect(telemetry.messages).to.be.empty;
       expect(result.length).to.eq(1);
-      assert.deepStrictEqual(
-        result[0].message,
-        'String does not match the pattern of "^\\$\\{\\{\\s*fromJSON\\(.*\\)\\s*\\}\\}$".'
-      );
+      assert.deepStrictEqual(result[0].message, 'String does not match the pattern of "^.*\\$\\{\\{(.|[\r\n])*\\}\\}.*$".');
     });
 
     it('should handle not valid schema object', async () => {
@@ -1810,6 +1854,53 @@ obj:
       const result = await parseSetup(content);
       expect(result.length).to.eq(1);
       expect(result[0].message).to.eq('Value is not accepted. Valid values: "tested".');
+    });
+
+    it('value matches more than one schema in oneOf - but among one is format matches', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          repository: {
+            oneOf: [
+              {
+                type: 'string',
+                format: 'uri',
+              },
+              {
+                type: 'string',
+                pattern: '^@',
+              },
+            ],
+          },
+        },
+      });
+      const content = `repository: '@bittrr'`;
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(0);
+      expect(telemetry.messages).to.be.empty;
+    });
+
+    it('value matches more than one schema in oneOf', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          foo: {},
+          bar: {},
+        },
+        oneOf: [
+          {
+            required: ['foo'],
+          },
+          {
+            required: ['bar'],
+          },
+        ],
+      });
+      const content = `foo: bar\nbar: baz`;
+      const result = await parseSetup(content);
+      expect(result.length).to.eq(1);
+      expect(result[0].message).to.eq('Matches multiple schemas when only one must validate.');
+      expect(telemetry.messages).to.be.empty;
     });
   });
 });

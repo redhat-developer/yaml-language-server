@@ -217,6 +217,83 @@ objB:
     );
   });
 
+  it('Should suggest valid matches from oneOf', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      oneOf: [
+        {
+          type: 'object',
+          properties: {
+            spec: {
+              type: 'object',
+            },
+          },
+        },
+        {
+          properties: {
+            spec: {
+              type: 'object',
+              required: ['bar'],
+              properties: {
+                bar: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      ],
+    });
+    const content = '|s|'; // len: 1, pos: 1
+    const completion = await parseCaret(content);
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0]).to.be.deep.equal(
+      createExpectedCompletion('spec', 'spec:\n  bar: ', 0, 0, 0, 1, 10, 2, {
+        documentation: '',
+      })
+    );
+  });
+
+  it('Should suggest all the matches from allOf', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      allOf: [
+        {
+          type: 'object',
+          properties: {
+            spec: {
+              type: 'object',
+            },
+          },
+        },
+        {
+          properties: {
+            spec: {
+              type: 'object',
+              required: ['bar'],
+              properties: {
+                bar: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      ],
+    });
+    const content = '|s|'; // len: 1, pos: 1
+    const completion = await parseCaret(content);
+    expect(completion.items.length).equal(2);
+    expect(completion.items[0]).to.be.deep.equal(
+      createExpectedCompletion('spec', 'spec:\n  ', 0, 0, 0, 1, 10, 2, {
+        documentation: '',
+      })
+    );
+    expect(completion.items[1]).to.be.deep.equal(
+      createExpectedCompletion('spec', 'spec:\n  bar: ', 0, 0, 0, 1, 10, 2, {
+        documentation: '',
+      })
+    );
+  });
+
   it('Autocomplete with a new line inside the object', async () => {
     languageService.addSchema(SCHEMA_ID, {
       type: 'object',
@@ -275,10 +352,10 @@ objB:
     const completion = await parseCaret(content);
     expect(completion.items.length).equal(1);
     expect(completion.items[0]).to.be.deep.equal(
-      createExpectedCompletion('- (array item)', '- ', 1, 2, 1, 2, 9, 2, {
+      createExpectedCompletion('- (array item) object', '- ', 1, 2, 1, 2, 9, 2, {
         documentation: {
           kind: 'markdown',
-          value: 'Create an item of an array\n ```\n- \n```',
+          value: 'Create an item of an array type `object`\n ```\n- \n```',
         },
       })
     );
@@ -612,7 +689,35 @@ objB:
       const completion = await parseSetup(content, 0, 9); // before line brake
       expect(completion.items.length).equal(0);
     });
+
+    it('autoCompletion when value is null inside anyOf object', async () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              prop: {
+                const: 'const value',
+              },
+            },
+          },
+          {
+            properties: {
+              prop: {
+                type: 'null',
+              },
+            },
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const completion = await parseSetup(content, 0, 6);
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0].label).to.be.equal('prop');
+      expect(completion.items[0].insertText).to.be.equal('prop: ${1|const value,null|}');
+    });
   });
+
   describe('extra space after cursor', () => {
     it('simple const', async () => {
       const schema: JSONSchema = {
@@ -818,6 +923,111 @@ objB:
           range: Range.create(3, 4, 3, 6), // removes extra spaces after cursor
         });
       });
+    });
+    it('array completion - should suggest correct indent when extra spaces after cursor', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                objA: {
+                  type: 'object',
+                  required: ['itemA'],
+                  properties: {
+                    itemA: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = 'test:\n  -               ';
+      const result = await parseSetup(content, 1, 4);
+
+      expect(result.items.length).to.be.equal(1);
+      expect(result.items[0].insertText).to.be.equal('objA:\n    itemA: ');
+    });
+    it('array of arrays completion - should suggest correct indent when extra spaces after cursor', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          array1: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['array2'],
+              properties: {
+                array2: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    required: ['objA'],
+                    properties: {
+                      objA: {
+                        type: 'object',
+                        required: ['itemA'],
+                        properties: {
+                          itemA: {
+                            type: 'string',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = 'array1:\n  -               ';
+      const result = await parseSetup(content, 1, 4);
+
+      expect(result.items.length).to.be.equal(2);
+      expect(result.items[0].insertText).to.be.equal('array2:\n    - objA:\n        itemA: ');
+    });
+    it('object of array of arrays completion - should suggest correct indent when extra spaces after cursor', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          array1: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                array2: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      objA: {
+                        type: 'object',
+                        required: ['itemA'],
+                        properties: {
+                          itemA: {
+                            type: 'string',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = 'array1:\n  - array2:\n      -               ';
+      const result = await parseSetup(content, 2, 8);
+
+      expect(result.items.length).to.be.equal(1);
+      expect(result.items[0].insertText).to.be.equal('objA:\n    itemA: ');
     });
   }); //'extra space after cursor'
 
