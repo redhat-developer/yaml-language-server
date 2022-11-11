@@ -1042,6 +1042,21 @@ function validate(
             }
           }
           break;
+        case 'ipv4':
+        case 'ipv6':
+          {
+            const [regex, errorMessage] = getFormatAndMessage(schema.format);
+            if (!regex.test(node.value)) {
+              validationResult.problems.push({
+                location: { offset: node.offset, length: node.length },
+                severity: DiagnosticSeverity.Warning,
+                message: schema.errorMessage || localize('formatWarning', errorMessage, schema.format),
+                source: getSchemaSource(schema, originalSchema),
+                schemaUri: getSchemaUri(schema, originalSchema),
+              });
+            }
+          }
+          break;
         default:
       }
     }
@@ -1506,6 +1521,24 @@ function validate(
     }
     return bestMatch;
   }
+}
+
+function getFormatAndMessage(format: string): [RegExp, string] {
+  let regx: RegExp, errorMessage: string;
+  if (format === 'ipv4') {
+    regx = new RegExp(
+      '^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\\.([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\\.([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\\.([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$',
+      'gm'
+    );
+    errorMessage = 'String does not match IPv4 format.';
+  } else {
+    regx = new RegExp(
+      '^((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}$',
+      'gm'
+    );
+    errorMessage = 'String does not match IPv6 format.';
+  }
+  return [regx, errorMessage];
 }
 
 function getSchemaSource(schema: JSONSchema, originalSchema: JSONSchema): string | undefined {
