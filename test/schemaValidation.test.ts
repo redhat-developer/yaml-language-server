@@ -1716,6 +1716,70 @@ obj:
       assert.deepStrictEqual(result[0].message, 'String does not match the pattern of "^.*\\$\\{\\{(.|[\r\n])*\\}\\}.*$".');
     });
 
+    it('schema should validate ipv4 format - Negative Case', async () => {
+      const schema = {
+        type: 'array',
+        items: {
+          type: 'string',
+          format: 'ipv4',
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = `- 10.15.12.500`;
+      const result = await parseSetup(content);
+      expect(result).to.be.not.empty;
+      expect(telemetry.messages).to.be.empty;
+      expect(result.length).to.eq(1);
+      assert.deepStrictEqual(result[0].message, 'String does not match IPv4 format.');
+    });
+
+    it('schema should validate ipv4 format - Positive Case', async () => {
+      const schema = {
+        type: 'array',
+        items: {
+          type: 'string',
+          format: 'ipv4',
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = `- 255.255.255.255`;
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+      expect(telemetry.messages).to.be.empty;
+    });
+
+    it('schema should validate ipv6 format - Negative Case', async () => {
+      const schema = {
+        type: 'array',
+        items: {
+          type: 'string',
+          format: 'ipv6',
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = `- 10.15.12.500`;
+      const result = await parseSetup(content);
+      expect(result).to.be.not.empty;
+      expect(telemetry.messages).to.be.empty;
+      expect(result.length).to.eq(1);
+      assert.deepStrictEqual(result[0].message, 'String does not match IPv6 format.');
+    });
+
+    it('schema should validate ipv6 format - Positive Case', async () => {
+      const schema = {
+        type: 'array',
+        items: {
+          type: 'string',
+          format: 'ipv6',
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = `- 2001:0db8:85a3:0000:0000:8a2e:0370:7334`;
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+      expect(telemetry.messages).to.be.empty;
+    });
+
     it('should handle not valid schema object', async () => {
       const schema = 'Foo';
       languageService.addSchema(SCHEMA_ID, schema as JSONSchema);
