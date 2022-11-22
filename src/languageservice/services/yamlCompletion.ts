@@ -58,7 +58,7 @@ interface CompletionItem extends CompletionItemBase {
   parent?: ParentCompletionItemOptions;
 }
 interface CompletionsCollector {
-  add(suggestion: CompletionItem): void;
+  add(suggestion: CompletionItem, oneOfSchema?: boolean): void;
   error(message: string): void;
   log(message: string): void;
   getNumberOfProposals(): number;
@@ -428,7 +428,7 @@ export class YamlCompletion {
     const proposed: { [key: string]: CompletionItem } = {};
     const existingProposeItem = '__';
     const collector: CompletionsCollector = {
-      add: (completionItem: CompletionItem) => {
+      add: (completionItem: CompletionItem, oneOfSchema: boolean) => {
         const addSuggestionForParent = function (completionItem: CompletionItem): void {
           const existsInYaml = proposed[completionItem.label]?.label === existingProposeItem;
           //don't put to parent suggestion if already in yaml
@@ -455,6 +455,7 @@ export class YamlCompletion {
               sortText: '_' + schemaType, // this parent completion goes first,
               kind: parentCompletionKind,
             };
+            parentCompletion.label = parentCompletion.label || completionItem.label;
             parentCompletion.parent.insertTexts = [completionItem.insertText];
             result.items.push(parentCompletion);
           } else {
@@ -509,7 +510,7 @@ export class YamlCompletion {
           result.items.push(completionItem);
         } else if (isInsertTextDifferent) {
           // try to merge simple insert values
-          const mergedText = this.mergeSimpleInsertTexts(label, existing.insertText, completionItem.insertText);
+          const mergedText = this.mergeSimpleInsertTexts(label, existing.insertText, completionItem.insertText, oneOfSchema);
           if (mergedText) {
             this.updateCompletionText(existing, mergedText);
           } else {
@@ -776,6 +777,24 @@ export class YamlCompletion {
 
     this.finalizeParentCompletion(result);
 
+    const uniqueItems = result.items.filter(
+      (arr, index, self) =>
+        index ===
+        self.findIndex(
+          (item) =>
+            item.label === arr.label &&
+            item.label === arr.label &&
+            item.insertText === arr.insertText &&
+            item.insertText === arr.insertText &&
+            item.kind === arr.kind &&
+            item.kind === arr.kind
+        )
+    );
+
+    if (uniqueItems?.length > 0) {
+      result.items = uniqueItems;
+    }
+
     return result;
   }
 
@@ -786,11 +805,22 @@ export class YamlCompletion {
     }
   }
 
-  mergeSimpleInsertTexts(label: string, existingText: string, addingText: string): string | undefined {
+  mergeSimpleInsertTexts(label: string, existingText: string, addingText: string, oneOfSchema: boolean): string | undefined {
     const containsNewLineAfterColon = (value: string): boolean => {
       return value.includes('\n');
     };
+    const startWithNewLine = (value: string): boolean => {
+      return value.startsWith('\n');
+    };
+    const isNullObject = (value: string): boolean => {
+      const index = value.indexOf('\n');
+      return index > 0 && value.substring(index, value.length).trim().length === 0;
+    };
     if (containsNewLineAfterColon(existingText) || containsNewLineAfterColon(addingText)) {
+      //if the exisiting object null one then replace with the non-null object
+      if (oneOfSchema && isNullObject(existingText) && !isNullObject(addingText) && !startWithNewLine(addingText)) {
+        return addingText;
+      }
       return undefined;
     }
     const existingValues = this.getValuesFromInsertText(existingText);
@@ -898,6 +928,15 @@ export class YamlCompletion {
     const isInArray = lineContent.trimLeft().indexOf('-') === 0;
     const nodeParent = doc.getParent(node);
     const matchOriginal = matchingSchemas.find((it) => it.node.internalNode === originalNode && it.schema.properties);
+    const oneOfSchema = matchingSchemas.filter((schema) => schema.schema.oneOf).map((oneOfSchema) => oneOfSchema.schema.oneOf)[0];
+    let didOneOfSchemaMatches = false;
+    if (oneOfSchema?.length < matchingSchemas.length) {
+      oneOfSchema?.forEach((property: JSONSchema, index: number) => {
+        if (!matchingSchemas[index]?.schema.oneOf && matchingSchemas[index]?.schema.properties === property.properties) {
+          didOneOfSchemaMatches = true;
+        }
+      });
+    }
     for (const schema of matchingSchemas) {
       if (
         ((schema.node.internalNode === node && !matchOriginal) || (schema.node.internalNode === originalNode && !hasColon)) &&
@@ -974,13 +1013,16 @@ export class YamlCompletion {
                     (isMap(originalNode) && originalNode.items.length === 0);
                   const existsParentCompletion = schema.schema.required?.length > 0;
                   if (!this.parentSkeletonSelectedFirst || !isNodeNull || !existsParentCompletion) {
-                    collector.add({
-                      kind: CompletionItemKind.Property,
-                      label: key,
-                      insertText,
-                      insertTextFormat: InsertTextFormat.Snippet,
-                      documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
-                    });
+                    collector.add(
+                      {
+                        kind: CompletionItemKind.Property,
+                        label: key,
+                        insertText,
+                        insertTextFormat: InsertTextFormat.Snippet,
+                        documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
+                      },
+                      didOneOfSchemaMatches
+                    );
                   }
                   // if the prop is required add it also to parent suggestion
                   if (schema.schema.required?.includes(key)) {

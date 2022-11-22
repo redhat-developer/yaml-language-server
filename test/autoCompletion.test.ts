@@ -2955,6 +2955,46 @@ describe('Auto Completion Tests', () => {
       required: ['type', 'options'],
       type: 'object',
     };
+    it('Should suggest all possible option in oneOf when content empty', async () => {
+      const schema = {
+        type: 'object',
+        oneOf: [
+          {
+            additionalProperties: false,
+            properties: {
+              A: {
+                type: 'string',
+              },
+            },
+            required: ['A'],
+          },
+          {
+            additionalProperties: false,
+            properties: {
+              B: {
+                type: 'string',
+              },
+            },
+            required: ['B'],
+          },
+        ],
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.length).equal(4);
+      expect(result.items[0]).to.deep.equal(
+        createExpectedCompletion('A', 'A: ', 0, 0, 0, 0, 10, 2, {
+          documentation: '',
+        })
+      );
+      expect(result.items[2]).to.deep.equal(
+        createExpectedCompletion('B', 'B: ', 0, 0, 0, 0, 10, 2, {
+          documentation: '',
+        })
+      );
+    });
     it('Should suggest complete object skeleton', async () => {
       const schema = {
         definitions: { obj1, obj2 },
@@ -3065,7 +3105,7 @@ describe('Auto Completion Tests', () => {
       const content = '';
       const result = await parseSetup(content, content.length);
 
-      expect(result.items.length).equal(4);
+      expect(result.items.length).equal(3);
       expect(result.items[1]).to.deep.equal(
         createExpectedCompletion('Object1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
           documentation: {
@@ -3075,7 +3115,6 @@ describe('Auto Completion Tests', () => {
           sortText: '_Object1',
         })
       );
-      expect(result.items[1]).to.deep.equal(result.items[3]);
     });
     it('Should suggest rest of the parent object', async () => {
       const schema = {
