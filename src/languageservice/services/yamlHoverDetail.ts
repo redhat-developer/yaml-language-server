@@ -241,7 +241,11 @@ export class YamlHoverDetail {
           results = [''];
         }
 
-        return createHover(results.join('\n\n'), resSchemas, decycleNode);
+        let content = results.join('\n\n');
+
+        content = descriptionImageCleanUp(content);
+
+        return createHover(content, resSchemas, decycleNode);
       }
       return null;
     });
@@ -313,4 +317,8 @@ function toMarkdownCodeBlock(content: string): string {
     return '`` ' + content + ' ``';
   }
   return content;
+}
+
+function descriptionImageCleanUp(markdownString: string): string {
+  return markdownString.replace(/<img[^>]+>/gm, (img) => (img.includes('enableInHover') ? img : ''));
 }

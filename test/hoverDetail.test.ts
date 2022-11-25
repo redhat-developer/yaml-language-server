@@ -141,4 +141,36 @@ Source: [default_schema_id.yaml](file:///default_schema_id.yaml)`
       `A script to run after install\n\nSource: [schema.json](dynamic-schema://schema.json)`
     );
   });
+  describe('Images', async () => {
+    it('Image should be excluded', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          scripts: {
+            type: 'object',
+            markdownDescription: 'First img <img src=... />\nSecond image <img src="2"/>',
+          },
+        },
+      });
+      const content = 'scripts:\n  ';
+      const result = await parseSetup(content, 1, SCHEMA_ID);
+
+      assert.strictEqual((result.contents as MarkupContent).value.includes('<img'), false);
+    });
+    it('Image should be included', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          scripts: {
+            type: 'object',
+            markdownDescription: 'First img <img src=... />\nSecond image <img enableInHover src="2"/>',
+          },
+        },
+      });
+      const content = 'scripts:\n  ';
+      const result = await parseSetup(content, 1, SCHEMA_ID);
+
+      assert.strictEqual((result.contents as MarkupContent).value.includes('<img'), true);
+    });
+  });
 });
