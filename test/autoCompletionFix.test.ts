@@ -101,6 +101,39 @@ describe('Auto Completion Fix Tests', () => {
     );
   });
 
+  it('completion with array objects', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          prop1: {
+            type: 'string',
+          },
+          prop2: {
+            type: 'string',
+          },
+          prop3: {
+            type: 'string',
+          },
+        },
+      },
+    });
+    const content = '- prop1: a\n   | |'; // len: 12, pos: 11
+    const completion = await parseCaret(content);
+    expect(completion.items).lengthOf(2);
+    expect(completion.items[0]).eql(
+      createExpectedCompletion('prop2', 'prop2: ', 1, 3, 1, 4, 10, 2, {
+        documentation: '',
+      })
+    );
+    expect(completion.items[1]).eql(
+      createExpectedCompletion('prop3', 'prop3: ', 1, 3, 1, 4, 10, 2, {
+        documentation: '',
+      })
+    );
+  });
+
   it('should show completion on array empty array item', async () => {
     languageService.addSchema(SCHEMA_ID, {
       type: 'array',
