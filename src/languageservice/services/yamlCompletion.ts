@@ -1171,7 +1171,10 @@ export class YamlCompletion {
           case 'boolean':
           case 'number':
           case 'integer':
-            insertText += `${indent}${key}: \${${insertIndex++}:${propertySchema.default}}\n`;
+            insertText += `${indent}${
+              //added quote if key is null
+              key === 'null' ? this.getInsertTextForValue(key, '', 'string') : key
+            }: \${${insertIndex++}:${propertySchema.default}}\n`;
             break;
           case 'string':
             insertText += `${indent}${key}: \${${insertIndex++}:${convertToStringValue(propertySchema.default)}}\n`;
