@@ -6,7 +6,7 @@ import * as sinon from 'sinon';
 import * as sinonChai from 'sinon-chai';
 import * as chai from 'chai';
 import { checkSchemaURI } from '../src/languageservice/utils/schemaUrls';
-import { Telemetry } from '../src/languageserver/telemetry';
+import { TelemetryImpl } from '../src/languageserver/telemetry';
 import { URI } from 'vscode-uri';
 import { Connection } from 'vscode-languageserver';
 
@@ -16,9 +16,9 @@ chai.use(sinonChai);
 describe('Telemetry Tests', () => {
   const sandbox = sinon.createSandbox();
 
-  let telemetry: sinon.SinonStubbedInstance<Telemetry>;
+  let telemetry: sinon.SinonStubbedInstance<TelemetryImpl>;
   beforeEach(() => {
-    const telemetryInstance = new Telemetry({} as Connection);
+    const telemetryInstance = new TelemetryImpl({} as Connection);
     telemetry = sandbox.stub(telemetryInstance);
   });
 
@@ -28,12 +28,12 @@ describe('Telemetry Tests', () => {
 
   describe('Kubernetos schema mapping', () => {
     it('should not report if schema is not k8s', () => {
-      checkSchemaURI([], URI.parse('file:///some/path'), 'file:///some/path/to/schema.json', (telemetry as unknown) as Telemetry);
+      checkSchemaURI([], URI.parse('file:///some/path'), 'file:///some/path/to/schema.json', telemetry);
       expect(telemetry.send).not.called;
     });
 
     it('should report if schema is k8s', () => {
-      checkSchemaURI([], URI.parse('file:///some/path'), 'kubernetes', (telemetry as unknown) as Telemetry);
+      checkSchemaURI([], URI.parse('file:///some/path'), 'kubernetes', telemetry);
       expect(telemetry.send).calledOnceWith({ name: 'yaml.schema.configured', properties: { kubernetes: true } });
     });
   });

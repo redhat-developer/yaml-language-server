@@ -11,7 +11,8 @@ import { setupTextDocument } from './utils/testHelper';
 import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { CodeLens, Command, Range } from 'vscode-languageserver-protocol';
 import { YamlCommands } from '../src/commands';
-import { Telemetry } from '../src/languageserver/telemetry';
+import { TelemetryImpl } from '../src/languageserver/telemetry';
+import { Telemetry } from '../src/languageservice/telemetry';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -19,13 +20,13 @@ chai.use(sinonChai);
 describe('YAML CodeLens', () => {
   const sandbox = sinon.createSandbox();
   let yamlSchemaService: sinon.SinonStubbedInstance<YAMLSchemaService>;
-  let telemetryStub: sinon.SinonStubbedInstance<Telemetry>;
+  let telemetryStub: sinon.SinonStubbedInstance<TelemetryImpl>;
   let telemetry: Telemetry;
 
   beforeEach(() => {
     yamlSchemaService = sandbox.createStubInstance(YAMLSchemaService);
-    telemetryStub = sandbox.createStubInstance(Telemetry);
-    telemetry = (telemetryStub as unknown) as Telemetry;
+    telemetryStub = sandbox.createStubInstance(TelemetryImpl);
+    telemetry = telemetryStub;
   });
 
   afterEach(() => {
