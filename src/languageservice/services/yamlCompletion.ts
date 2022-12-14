@@ -482,6 +482,21 @@ export class YamlCompletion {
                 node = pair.value;
               }
             }
+          } else if (isSeq(node)) {
+            if (lineContent.charAt(position.character - 1) !== '-') {
+              const map = this.createTempObjNode(currentWord, node, currentDoc);
+              map.items = [];
+              // eslint-disable-next-line no-self-assign
+              currentDoc.internalDocument = currentDoc.internalDocument;
+              for (const pair of node.items) {
+                if (isMap(pair)) {
+                  pair.items.forEach((value) => {
+                    map.items.push(value);
+                  });
+                }
+              }
+              node = map;
+            }
           }
         }
       }
@@ -691,7 +706,9 @@ export class YamlCompletion {
     }
     for (const schema of matchingSchemas) {
       if (
-        ((schema.node.internalNode === node && !matchOriginal) || (schema.node.internalNode === originalNode && !hasColon)) &&
+        ((schema.node.internalNode === node && !matchOriginal) ||
+          (schema.node.internalNode === originalNode && !hasColon) ||
+          (schema.node.parent?.internalNode === originalNode && !hasColon)) &&
         !schema.inverted
       ) {
         this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
@@ -1154,7 +1171,10 @@ export class YamlCompletion {
           case 'boolean':
           case 'number':
           case 'integer':
-            insertText += `${indent}${key}: \${${insertIndex++}:${propertySchema.default}}\n`;
+            insertText += `${indent}${
+              //added quote if key is null
+              key === 'null' ? this.getInsertTextForValue(key, '', 'string') : key
+            }: \${${insertIndex++}:${propertySchema.default}}\n`;
             break;
           case 'string':
             insertText += `${indent}${key}: \${${insertIndex++}:${convertToStringValue(propertySchema.default)}}\n`;
