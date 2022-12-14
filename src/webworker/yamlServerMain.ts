@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 import { Connection, RequestType } from 'vscode-languageserver';
 import { createConnection, BrowserMessageReader, BrowserMessageWriter } from 'vscode-languageserver/browser';
-import { Telemetry } from '../languageserver/telemetry';
+import { TelemetryImpl } from '../languageserver/telemetry';
 import { schemaRequestHandler, workspaceContext } from '../languageservice/services/schemaRequestHandler';
 import { YAMLServerInit } from '../yamlServerInit';
 import { SettingsState } from '../yamlSettings';
@@ -46,6 +46,6 @@ const schemaRequestHandlerWrapper = (connection: Connection, uri: string): Promi
 };
 
 const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
-const telemetry = new Telemetry(connection);
+const telemetry = new TelemetryImpl(connection);
 
 new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService, telemetry).start();

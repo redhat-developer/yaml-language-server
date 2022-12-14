@@ -13,7 +13,7 @@ import { YAMLServerInit } from './yamlServerInit';
 import { SettingsState } from './yamlSettings';
 import { promises as fs } from 'fs';
 import { convertErrorToTelemetryMsg } from './languageservice/utils/objects';
-import { Telemetry } from './languageserver/telemetry';
+import { TelemetryImpl } from './languageserver/telemetry';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
@@ -69,6 +69,6 @@ const schemaRequestHandlerWrapper = (connection: Connection, uri: string): Promi
 };
 
 const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
-const telemetry = new Telemetry(connection);
+const telemetry = new TelemetryImpl(connection);
 
 new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService, telemetry).start();

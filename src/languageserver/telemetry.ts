@@ -4,9 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Connection } from 'vscode-languageserver';
-import { TelemetryEvent, Telemetry as TelemetryType } from '../languageservice/telemetry';
+import { TelemetryEvent, Telemetry } from '../languageservice/telemetry';
 
-export class Telemetry implements TelemetryType {
+export class TelemetryImpl implements Telemetry {
   constructor(private readonly connection: Connection) {}
 
   send(event: TelemetryEvent): void {
