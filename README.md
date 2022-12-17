@@ -226,7 +226,7 @@ yaml.schemas: {
 
 ### Nested Schema References
 
-Suppose a file's schema is a subcomponent of an existing schema (like a `jobs/example.yml` file in a circleci orb) and there isn't an existing schema file for that subcomponent. If there is a nested schema definition for this subcomponent, you can reference it using a url fragment, e.g.:
+Suppose a file is meant to be a component of an existing schema (like a `job.yaml` file in a circleci orb), but there isn't a standalone schema that you can reference. If there is a nested schema definition for this subcomponent, you can reference it using a url fragment, e.g.:
 
 ```
 yaml.schemas: {
