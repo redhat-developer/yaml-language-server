@@ -225,6 +225,19 @@ yaml.schemas: {
 
 `yaml.schemas` allows you to specify json schemas that you want to validate against the yaml that you write. Kubernetes is an optional field. It does not require a url as the language server will provide that. You just need the keyword kubernetes and a glob pattern.
 
+### Nested Schema References
+
+Suppose a file's schema is a subcomponent of an existing schema (like a `jobs/example.yml` file in a circleci orb) and there isn't an existing schema file for that subcomponent. If there is a nested schema definition for this subcomponent, you can reference it using a url fragment, e.g.:
+
+```
+yaml.schemas: {
+    "https://json.schemastore.org/circleciconfig#/definitions/jobs/additionalProperties": "/src/jobs/*.yaml",
+}
+```
+
+> **Note**
+> This will require reading your existing schema and understanding the schemastore structure a bit. (TODO: link to a documentation or blog post here?)
+
 ### Using inlined schema
 
 It is possible to specify a yaml schema using a modeline.
