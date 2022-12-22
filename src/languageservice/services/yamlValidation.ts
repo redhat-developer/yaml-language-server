@@ -16,7 +16,7 @@ import { YAML_SOURCE } from '../parser/jsonParser07';
 import { TextBuffer } from '../utils/textBuffer';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
-import { Telemetry } from '../../languageserver/telemetry';
+import { Telemetry } from '../telemetry';
 import { AdditionalValidator } from './validation/types';
 import { UnusedAnchorsValidator } from './validation/unused-anchors';
 import { YAMLStyleValidator } from './validation/yaml-style';

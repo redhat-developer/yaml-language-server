@@ -10,7 +10,7 @@ import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
 import { SchemaSelectionRequests } from '../../requestTypes';
 import { Settings, SettingsState } from '../../yamlSettings';
-import { Telemetry } from '../telemetry';
+import { Telemetry } from '../../languageservice/telemetry';
 import { ValidationHandler } from './validationHandlers';
 
 export class SettingsHandler {

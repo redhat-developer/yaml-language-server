@@ -4,20 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Connection } from 'vscode-languageserver';
+import { TelemetryEvent, Telemetry } from '../languageservice/telemetry';
 
-/**
- * Due to LSP limitation this object must be JSON serializable
- */
-export interface TelemetryEvent {
-  name: string;
-  type?: string;
-  properties?: unknown;
-  measures?: unknown;
-  traits?: unknown;
-  context?: unknown;
-}
-
-export class Telemetry {
+export class TelemetryImpl implements Telemetry {
   constructor(private readonly connection: Connection) {}
 
   send(event: TelemetryEvent): void {

@@ -47,7 +47,7 @@ import { commandExecutor } from '../languageserver/commandExecutor';
 import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
 import { YamlCodeLens } from './services/yamlCodeLens';
 import { registerCommands } from './services/yamlCommands';
-import { Telemetry } from '../languageserver/telemetry';
+import { Telemetry } from './telemetry';
 import { YamlVersion } from './parser/yamlParser07';
 import { YamlCompletion } from './services/yamlCompletion';
 import { yamlDocumentsCache } from './parser/yaml-documents';
