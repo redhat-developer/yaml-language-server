@@ -87,7 +87,6 @@ function spacesDiff(a: string, aLength: number, b: string, bLength: number, resu
   }
   if (spacesDiff % tabsDiff === 0) {
     result.spacesDiff = spacesDiff / tabsDiff;
-    return;
   }
 }
 

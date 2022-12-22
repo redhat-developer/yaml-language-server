@@ -29,6 +29,7 @@ import { safeCreateUnicodeRegExp } from '../utils/strings';
 import { FilePatternAssociation } from '../services/yamlSchemaService';
 
 const localize = nls.loadMessageBundle();
+const MSG_PROPERTY_NOT_ALLOWED = 'Property {0} is not allowed.';
 
 export interface IRange {
   offset: number;
@@ -1272,8 +1273,7 @@ function validate(
                   length: propertyNode.keyNode.length,
                 },
                 severity: DiagnosticSeverity.Warning,
-                message:
-                  schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
+                message: schema.errorMessage || localize('DisallowedExtraPropWarning', MSG_PROPERTY_NOT_ALLOWED, propertyName),
                 source: getSchemaSource(schema, originalSchema),
                 schemaUri: getSchemaUri(schema, originalSchema),
               });
@@ -1311,7 +1311,7 @@ function validate(
                     },
                     severity: DiagnosticSeverity.Warning,
                     message:
-                      schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
+                      schema.errorMessage || localize('DisallowedExtraPropWarning', MSG_PROPERTY_NOT_ALLOWED, propertyName),
                     source: getSchemaSource(schema, originalSchema),
                     schemaUri: getSchemaUri(schema, originalSchema),
                   });
@@ -1366,8 +1366,7 @@ function validate(
                 length: propertyNode.keyNode.length,
               },
               severity: DiagnosticSeverity.Warning,
-              message:
-                schema.errorMessage || localize('DisallowedExtraPropWarning', 'Property {0} is not allowed.', propertyName),
+              message: schema.errorMessage || localize('DisallowedExtraPropWarning', MSG_PROPERTY_NOT_ALLOWED, propertyName),
               source: getSchemaSource(schema, originalSchema),
               schemaUri: getSchemaUri(schema, originalSchema),
             };
