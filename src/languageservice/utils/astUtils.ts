@@ -31,11 +31,7 @@ export function isMapContainsEmptyPair(map: YAMLMap): boolean {
   }
 
   const pair = map.items[0];
-  if (isScalar(pair.key) && isScalar(pair.value) && pair.key.value === '' && !pair.value.value) {
-    return true;
-  }
-
-  return false;
+  return isScalar(pair.key) && isScalar(pair.value) && pair.key.value === '' && !pair.value.value;
 }
 
 export function indexOf(seq: YAMLSeq, item: YamlNode): number | undefined {
