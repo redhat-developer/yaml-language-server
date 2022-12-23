@@ -244,6 +244,15 @@ or absolute path:
 # yaml-language-server: $schema=/absolute/path/to/schema
 ```
 
+### Schema priority
+
+The following is the priority of schema association in highest to lowest priority:
+1. Modeline
+2. CustomSchemaProvider API
+3. yaml.settings
+4. Schema association notification
+5. Schema Store
+
 ## Containerized Language Server
 
 An image is provided for users who would like to use the YAML language server without having to install dependencies locally.
