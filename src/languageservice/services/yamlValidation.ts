@@ -20,6 +20,7 @@ import { Telemetry } from '../telemetry';
 import { AdditionalValidator } from './validation/types';
 import { UnusedAnchorsValidator } from './validation/unused-anchors';
 import { YAMLStyleValidator } from './validation/yaml-style';
+import { MapKeyOrderValidator } from './validation/map-key-order';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -64,6 +65,7 @@ export class YAMLValidation {
       if (settings.flowMapping === 'forbid' || settings.flowSequence === 'forbid') {
         this.validators.push(new YAMLStyleValidator(settings));
       }
+      this.validators.push(new MapKeyOrderValidator());
     }
     this.validators.push(new UnusedAnchorsValidator());
   }
