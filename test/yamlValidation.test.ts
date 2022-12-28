@@ -176,7 +176,8 @@ animals: [dog , cat , mouse]  `;
   describe('Map keys order Tests', () => {
     it('should report key order error', async () => {
       const yaml = '- key 2: v\n  key 1: val\n  key 5: valu\n  key 3: ff';
-
+      yamlSettings.keyOrdering = true;
+      languageSettingsSetup = new ServiceSetup().withValidate().withKeyOrdering();
       const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
         languageSettingsSetup.languageSettings
       );
@@ -210,7 +211,8 @@ animals: [dog , cat , mouse]  `;
     });
     it('should report key order error for flow style maps', async () => {
       const yaml = '- {b: 1, a: 2}';
-
+      yamlSettings.keyOrdering = true;
+      languageSettingsSetup = new ServiceSetup().withValidate().withKeyOrdering();
       const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
         languageSettingsSetup.languageSettings
       );
@@ -226,7 +228,8 @@ animals: [dog , cat , mouse]  `;
 
     it('should NOT report any errors', async () => {
       const yaml = '- key 1: val\n  key 5: valu\n- {a: 1, c: 2}';
-
+      yamlSettings.keyOrdering = true;
+      languageSettingsSetup = new ServiceSetup().withValidate().withKeyOrdering();
       const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
         languageSettingsSetup.languageSettings
       );

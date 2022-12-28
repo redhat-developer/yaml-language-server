@@ -71,4 +71,8 @@ export class ServiceSetup {
     this.languageSettings.flowSequence = sequence;
     return this;
   }
+  withKeyOrdering(order = true): ServiceSetup {
+    this.languageSettings.keyOrdering = order;
+    return this;
+  }
 }

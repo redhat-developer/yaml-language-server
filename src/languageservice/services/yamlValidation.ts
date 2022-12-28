@@ -65,7 +65,9 @@ export class YAMLValidation {
       if (settings.flowMapping === 'forbid' || settings.flowSequence === 'forbid') {
         this.validators.push(new YAMLStyleValidator(settings));
       }
-      this.validators.push(new MapKeyOrderValidator());
+      if (settings.keyOrdering) {
+        this.validators.push(new MapKeyOrderValidator());
+      }
     }
     this.validators.push(new UnusedAnchorsValidator());
   }
