@@ -271,11 +271,13 @@ export class YamlCompletion {
 
     resultLocal.items.forEach((inlineItem) => {
       let inlineText = inlineItem.insertText;
+      let equalSymbolCompensation = 0;
 
       // when expression doesn't have `=`, remove it also from `=@ctx` result
       if (!hasEqualSymbol && inlineItem.label === ctxSymbolLabel) {
         inlineItem.label = ctxSymbol;
         inlineText = ctxSymbol;
+        equalSymbolCompensation = 1;
       }
 
       inlineText = inlineText.replace(/:\n?\s*(\$1)?/g, '.').replace(/\.$/, '');
@@ -284,7 +286,6 @@ export class YamlCompletion {
         inlineItem.textEdit.newText = inlineText;
         if (TextEdit.is(inlineItem.textEdit)) {
           const diff = inlineItem.textEdit.range.end.character - inlineItem.textEdit.range.start.character; // support =@ctx.da
-          const equalSymbolCompensation = hasEqualSymbol ? 0 : 1;
           inlineItem.textEdit.range = Range.create(
             Position.create(position.line, position.character - diff + equalSymbolCompensation),
             position

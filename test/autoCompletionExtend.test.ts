@@ -245,6 +245,9 @@ describe('Auto Completion Tests Extended', () => {
         const result = await parseSetup(content, content.length);
         assert.strictEqual(result.items.length, 2);
         assert.strictEqual(result.items[1].insertText, 'data');
+        const range = (result.items[1].textEdit as TextEdit).range;
+        assert.strictEqual(range.start.character, 24);
+        assert.strictEqual(range.end.character, content.length);
       });
       it('@ct within jsonata expression', async () => {
         languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
@@ -252,6 +255,9 @@ describe('Auto Completion Tests Extended', () => {
         const result = await parseSetup(content, content.length);
         assert.strictEqual(result.items.length, 1);
         assert.strictEqual(result.items[0].insertText, '@ctx');
+        const range = (result.items[0].textEdit as TextEdit).range;
+        assert.strictEqual(range.start.character, 19);
+        assert.strictEqual(range.end.character, content.length);
       });
       it('@ctx within predicate', async () => {
         languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
@@ -271,6 +277,15 @@ describe('Auto Completion Tests Extended', () => {
         const content = 'value: =@ctx.test1+=@ct';
         const result = await parseSetup(content, content.length);
         assert.strictEqual(result.items.length, 0);
+      });
+      it('should replace correct position inside jsonata', async () => {
+        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+        const content = 'value: "=$str(@ctx.)"';
+        const result = await parseSetup(content, 19);
+        assert.strictEqual(result.items.length > 0, true);
+        const range = (result.items[0].textEdit as TextEdit).range;
+        assert.strictEqual(range.start.character, 19);
+        assert.strictEqual(range.end.character, 19);
       });
     });
   });
