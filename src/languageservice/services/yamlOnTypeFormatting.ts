@@ -50,5 +50,4 @@ export function doDocumentOnTypeFormatting(
       return [TextEdit.insert(position, '  ')];
     }
   }
-  return;
 }

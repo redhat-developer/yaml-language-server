@@ -27,7 +27,7 @@ export class JSONSchemaSelection {
 
   async getSchemas(docUri: string): Promise<JSONSchemaDescription[]> {
     const schemas = await this.getSchemasForFile(docUri);
-    const result = Array.from(schemas).map((val) => {
+    return Array.from(schemas).map((val) => {
       return {
         name: val[1].title,
         uri: val[0],
@@ -35,8 +35,6 @@ export class JSONSchemaSelection {
         versions: val[1].versions,
       };
     });
-
-    return result;
   }
 
   private async getSchemasForFile(docUri: string): Promise<Map<string, JSONSchema>> {

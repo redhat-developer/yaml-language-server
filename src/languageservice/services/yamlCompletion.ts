@@ -547,15 +547,7 @@ export class YamlCompletion {
     const uniqueItems = result.items.filter(
       (arr, index, self) =>
         index ===
-        self.findIndex(
-          (item) =>
-            item.label === arr.label &&
-            item.label === arr.label &&
-            item.insertText === arr.insertText &&
-            item.insertText === arr.insertText &&
-            item.kind === arr.kind &&
-            item.kind === arr.kind
-        )
+        self.findIndex((item) => item.label === arr.label && item.insertText === arr.insertText && item.kind === arr.kind)
     );
 
     if (uniqueItems?.length > 0) {
@@ -1720,8 +1712,7 @@ function convertToStringValue(param: unknown): string {
  * simplify `{$1:value}` to `value`
  */
 function evaluateTab1Symbol(value: string): string {
-  const result = value.replace(/\$\{1:(.*)\}/, '$1');
-  return result;
+  return value.replace(/\$\{1:(.*)\}/, '$1');
 }
 
 function isParentCompletionItem(item: CompletionItemBase): item is CompletionItem {
