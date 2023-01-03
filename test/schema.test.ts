@@ -43,7 +43,7 @@ describe('JSON Schema', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageService: LanguageService;
 
-  before(() => {
+  beforeEach(() => {
     languageSettingsSetup = new ServiceSetup()
       .withValidate()
       .withCustomTags(['!Test', '!Ref sequence'])
@@ -590,12 +590,12 @@ describe('JSON Schema', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const schemaSettingsSample = require(path.join(__dirname, './fixtures/sample-settings.json'));
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const schemaModelineSample = require(path.join(__dirname, './fixtures/sample-modeline.json'));
+    const schemaModelineSample = path.join(__dirname, './fixtures/sample-modeline.json');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const schemaDefaultSnippetSample = require(path.join(__dirname, './fixtures/defaultSnippets-const-if-else.json'));
     const languageSettingsSetup = new ServiceSetup().withCompletion();
 
-    it('Modeline Schema takes precendence over all other schemas', async () => {
+    it('Modeline Schema takes precendence over all other schema APIs', async () => {
       languageSettingsSetup
         .withSchemaFileMatch({
           fileMatch: ['test.yaml'],
@@ -614,16 +614,11 @@ describe('JSON Schema', () => {
           uri: TEST_URI,
           priority: SchemaPriority.Settings,
           schema: schemaSettingsSample,
-        })
-        .withSchemaFileMatch({
-          fileMatch: ['test.yaml'],
-          uri: TEST_URI,
-          priority: SchemaPriority.Modeline,
-          schema: schemaModelineSample,
         });
       languageService.configure(languageSettingsSetup.languageSettings);
-      const testTextDocument = setupTextDocument('');
-      const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
+      languageService.registerCustomSchemaProvider((uri: string) => Promise.resolve(uri));
+      const testTextDocument = setupTextDocument(`# yaml-language-server: $schema=${schemaModelineSample}\n\n`);
+      const result = await languageService.doComplete(testTextDocument, Position.create(1, 0), false);
       assert.strictEqual(result.items.length, 1);
       assert.strictEqual(result.items[0].label, 'modeline');
     });
