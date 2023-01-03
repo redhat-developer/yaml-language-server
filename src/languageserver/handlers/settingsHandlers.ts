@@ -337,7 +337,7 @@ export class SettingsHandler {
       languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema, priority: priorityLevel });
     }
 
-    if (uri.normalize().includes('kubernetes')) {
+    if (uri === this.yamlSettings.kubernetesSchemaUrl) {
       if (fileMatch.constructor === Array) {
         fileMatch.forEach((url) => {
           this.yamlSettings.specificValidatorPaths.push(url);
@@ -346,7 +346,6 @@ export class SettingsHandler {
         this.yamlSettings.specificValidatorPaths.push(fileMatch);
       }
     }
-
     return languageSettings;
   }
 }

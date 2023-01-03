@@ -4,7 +4,7 @@ import { ISchemaAssociations } from './requestTypes';
 import { URI } from 'vscode-uri';
 import { JSONSchema } from './languageservice/jsonSchema';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
+import { JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from './languageservice/utils/schemaUrls';
 import { YamlVersion } from './languageservice/parser/yamlParser07';
 
 // Client settings interface to grab settings relevant for the language server
@@ -77,6 +77,7 @@ export class SettingsState {
   customTags = [];
   schemaStoreEnabled = true;
   schemaStoreUrl = JSON_SCHEMASTORE_URL;
+  kubernetesSchemaUrl = KUBERNETES_SCHEMA_URL;
   indentation: string | undefined = undefined;
   disableAdditionalProperties = false;
   disableDefaultProperties = false;
