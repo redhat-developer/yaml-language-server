@@ -15,8 +15,6 @@ import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
 import { JSONSchema } from '../jsonSchema';
-import { URI } from 'vscode-uri';
-import * as path from 'path';
 import { Telemetry } from '../telemetry';
 import { ASTNode, MarkedString } from 'vscode-json-languageservice';
 import { Schema2Md } from '../utils/jigx/schema2md';
@@ -37,7 +35,7 @@ interface YamlHoverDetailResult {
 
   node: ASTNode;
 }
-export type YamlHoverDetailPropTableStyle = 'table' | 'tsBlock' | 'none';
+export type YamlHoverDetailPropTableStyle = 'table' | 'none';
 export class YamlHoverDetail {
   private shouldHover: boolean;
   private schemaService: YAMLSchemaService;
@@ -51,12 +49,9 @@ export class YamlHoverDetail {
     this.schemaService = schemaService;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public configure(languageSettings: LanguageSettings): void {
-    if (languageSettings) {
-      this.propTableStyle = languageSettings.propTableStyle;
-      // this.shouldHover = languageSettings.hover;
-    }
-    this.schema2Md.configure({ propTableStyle: this.propTableStyle });
+    this.schema2Md.configure();
   }
 
   public doHoverDetail(document: TextDocument, position: Position, isKubernetes = false): Thenable<Hover> {
@@ -286,18 +281,6 @@ function distinctSchemas(matchingSchemas: IApplicableSchema[]): IApplicableSchem
   //   console.log('removing some schemas: ' + seenSchemaFromAnyOf.join(', ') + '. removed count:' + removedCount);
   // }
   return matchingSchemasDistinct;
-}
-
-function getSchemaName(schema: JSONSchema): string {
-  let result = 'JSON Schema';
-  const urlString = schema.url;
-  if (urlString) {
-    const url = URI.parse(urlString);
-    result = path.basename(url.fsPath || url.authority);
-  } else if (schema.title) {
-    result = schema.title;
-  }
-  return result;
 }
 
 // copied from https://github.com/microsoft/vscode-json-languageservice/blob/2ea5ad3d2ffbbe40dea11cfe764a502becf113ce/src/services/jsonHover.ts#L112
