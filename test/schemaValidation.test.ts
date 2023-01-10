@@ -400,6 +400,43 @@ describe('Validation Tests', () => {
         })
         .then(done, done);
     });
+    it('Test patterns', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          prop: {
+            type: 'string',
+            patterns: [
+              {
+                pattern: '^[^\\d]',
+                message: 'Can not start with numeric',
+                severity: 3,
+              },
+              {
+                pattern: '^[^A-Z]',
+                message: 'Can not start with capital letter',
+                severity: 4,
+              },
+            ],
+          },
+        },
+      });
+      const result = await parseSetup('prop: "1-test"');
+      assert.equal(result.length, 1);
+      assert.deepEqual(
+        { message: result[0].message, severity: result[0].severity },
+        { message: 'Can not start with numeric', severity: 3 },
+        'pattern 1'
+      );
+
+      const result2 = await parseSetup('prop: "A-test"');
+      assert.equal(result2.length, 1);
+      assert.deepEqual(
+        { message: result2[0].message, severity: result2[0].severity },
+        { message: 'Can not start with capital letter', severity: 4 },
+        'pattern 2'
+      );
+    });
   });
 
   describe('Number tests', () => {

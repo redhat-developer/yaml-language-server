@@ -1048,6 +1048,22 @@ function validate(
       }
     }
 
+    if (Array.isArray(schema.patterns)) {
+      for (const pattern of schema.patterns) {
+        const regex = safeCreateUnicodeRegExp(pattern.pattern);
+        if (!regex.test(node.value)) {
+          validationResult.problems.push({
+            location: { offset: node.offset, length: node.length },
+            severity: pattern.severity || DiagnosticSeverity.Warning,
+            message:
+              pattern.message || localize('patternWarning', 'String does not match the pattern of "{0}".', pattern.pattern),
+            source: getSchemaSource(schema, originalSchema),
+            schemaUri: getSchemaUri(schema, originalSchema),
+          });
+        }
+      }
+    }
+
     if (schema.format) {
       switch (schema.format) {
         case 'uri':
