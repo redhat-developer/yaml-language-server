@@ -1,3 +1,17 @@
+### 1.11.0
+- Fix: only the first choice is shown when hovering anyOf-typed properties [#784](https://github.com/redhat-developer/vscode-yaml/issues/784)
+- Fix: Description in the schema root does not get displayed [#809](https://github.com/redhat-developer/vscode-yaml/issues/809)
+- Fix: yaml.validation.error telemetry events are broken [#816](https://github.com/redhat-developer/vscode-yaml/issues/816)
+- Add: add diagnostic data with missing properties [#775](https://github.com/redhat-developer/yaml-language-server/pull/775)
+- Fix: Can't suggest object correctly with certain schema definition. [#769](https://github.com/redhat-developer/yaml-language-server/issues/769)
+- Fix: Property shows up multiple times in completions [#829](https://github.com/redhat-developer/vscode-yaml/issues/829)
+- Fix: oneOf validation of keys using "required" not working since 1.3.0 [#769](https://github.com/redhat-developer/vscode-yaml/issues/769)
+- Fix: incorrect behavior of keys with quotes [#842](https://github.com/redhat-developer/vscode-yaml/issues/842)
+- Fix: bad completion with array of objects [#793](https://github.com/redhat-developer/yaml-language-server/issues/793)
+- Add: Modeline takes precendence over registerContributor API [#806](https://github.com/redhat-developer/yaml-language-server/pull/806)
+
+Thanks to Petr Spacek,Josh Pinkney
+
 ### 1.10.0
 - Fix: TypeError: i.startsWith is not a function [#747](https://github.com/redhat-developer/yaml-language-server/issues/747)
 - Fix: fix: autocomplete indent on object within an array [#751](https://github.com/redhat-developer/yaml-language-server/pull/751)

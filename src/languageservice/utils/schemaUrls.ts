@@ -1,6 +1,6 @@
 import { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
-import { Telemetry } from '../../languageserver/telemetry';
+import { Telemetry } from '../telemetry';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isBoolean } from './objects';
 import { isRelativePath, relativeToAbsolutePath } from './paths';
@@ -62,10 +62,8 @@ function addSchemasForOf(schema: JSONSchema, result: Map<string, JSONSchema>): v
 
 function addInnerSchemaUrls(schemas: JSONSchemaRef[], result: Map<string, JSONSchema>): void {
   for (const subSchema of schemas) {
-    if (!isBoolean(subSchema)) {
-      if (subSchema.url && !result.has(subSchema.url)) {
-        result.set(subSchema.url, subSchema);
-      }
+    if (!isBoolean(subSchema) && subSchema.url && !result.has(subSchema.url)) {
+      result.set(subSchema.url, subSchema);
     }
   }
 }

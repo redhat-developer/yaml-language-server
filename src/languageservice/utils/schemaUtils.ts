@@ -8,15 +8,12 @@ export function getSchemaTypeName(schema: JSONSchema): string {
     return schema.title;
   }
   if (schema.$id) {
-    const type = getSchemaRefTypeTitle(schema.$id);
-    return type;
+    return getSchemaRefTypeTitle(schema.$id);
   }
   if (schema.$ref || schema._$ref) {
-    const type = getSchemaRefTypeTitle(schema.$ref || schema._$ref);
-    return type;
+    return getSchemaRefTypeTitle(schema.$ref || schema._$ref);
   }
-  const typeStr = schema.closestTitle || (Array.isArray(schema.type) ? schema.type.join(' | ') : schema.type); //object
-  return typeStr;
+  return schema.closestTitle || (Array.isArray(schema.type) ? schema.type.join(' | ') : schema.type); //object
 }
 
 /**

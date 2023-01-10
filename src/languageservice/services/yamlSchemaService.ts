@@ -344,11 +344,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   }
 
   public getSchemaForResource(resource: string, doc: JSONDocument): Promise<ResolvedSchema> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const resolveSchema = (): any => {
-      const seen: { [schemaId: string]: boolean } = Object.create(null);
-      const schemas: string[] = [];
-
+    const resolveModelineSchema = (): string | undefined => {
       let schemaFromModeline = getSchemaFromModeline(doc);
       if (schemaFromModeline !== undefined) {
         if (!schemaFromModeline.startsWith('file:') && !schemaFromModeline.startsWith('http')) {
@@ -371,10 +367,32 @@ export class YAMLSchemaService extends JSONSchemaService {
             schemaFromModeline += '#' + appendix;
           }
         }
-        this.addSchemaPriority(schemaFromModeline, SchemaPriority.Modeline);
-        schemas.push(schemaFromModeline);
-        seen[schemaFromModeline] = true;
+        return schemaFromModeline;
       }
+    };
+
+    const resolveSchemaForResource = (schemas: string[]): Promise<ResolvedSchema> => {
+      const schemaHandle = super.createCombinedSchema(resource, schemas);
+      return schemaHandle.getResolvedSchema().then((schema) => {
+        if (schema.schema && typeof schema.schema === 'object') {
+          schema.schema.url = schemaHandle.url;
+        }
+
+        if (
+          schema.schema &&
+          schema.schema.schemaSequence &&
+          schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]
+        ) {
+          return new ResolvedSchema(schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]);
+        }
+        return schema;
+      });
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const resolveSchema = (): any => {
+      const seen: { [schemaId: string]: boolean } = Object.create(null);
+      const schemas: string[] = [];
 
       for (const entry of this.filePatternAssociations) {
         if (entry.matchesPattern(resource)) {
@@ -401,25 +419,15 @@ export class YAMLSchemaService extends JSONSchemaService {
       if (schemas.length > 0) {
         // Join all schemas with the highest priority.
         const highestPrioSchemas = this.highestPrioritySchemas(schemas);
-        const schemaHandle = super.createCombinedSchema(resource, highestPrioSchemas);
-        return schemaHandle.getResolvedSchema().then((schema) => {
-          if (schema.schema && typeof schema.schema === 'object') {
-            schema.schema.url = schemaHandle.url;
-          }
-
-          if (
-            schema.schema &&
-            schema.schema.schemaSequence &&
-            schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]
-          ) {
-            return new ResolvedSchema(schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]);
-          }
-          return schema;
-        });
+        return resolveSchemaForResource(highestPrioSchemas);
       }
 
       return Promise.resolve(null);
     };
+    const modelineSchema = resolveModelineSchema();
+    if (modelineSchema) {
+      return resolveSchemaForResource([modelineSchema]);
+    }
     if (this.customSchemaProvider) {
       return this.customSchemaProvider(resource)
         .then((schemaUri) => {

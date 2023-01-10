@@ -114,7 +114,7 @@ export function createExpectedDocumentSymbol(
   children: DocumentSymbol[] = [],
   detail?: string
 ): DocumentSymbol {
-  const docSymbol = DocumentSymbol.create(
+  return DocumentSymbol.create(
     name,
     detail,
     kind,
@@ -122,8 +122,6 @@ export function createExpectedDocumentSymbol(
     Range.create(startLineSelection, startCharacterSelection, endLineSelection, endCharacterSelection),
     children
   );
-
-  return docSymbol;
 }
 
 export function createExpectedDocumentSymbolNoDetail(

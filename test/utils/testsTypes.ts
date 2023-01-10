@@ -16,7 +16,8 @@ import {
   DeleteFilesParams,
 } from 'vscode-languageserver-protocol';
 import { Connection, RemoteWorkspace } from 'vscode-languageserver';
-import { Telemetry, TelemetryEvent } from '../../src/languageserver/telemetry';
+import { TelemetryImpl } from '../../src/languageserver/telemetry';
+import { TelemetryEvent } from '../../src/languageservice/telemetry';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -57,7 +58,7 @@ export class TestWorkspace implements RemoteWorkspace {
   }
 }
 
-export class TestTelemetry extends Telemetry {
+export class TestTelemetry extends TelemetryImpl {
   messages: TelemetryEvent[] = [];
   constructor(connection: Connection) {
     super(connection);

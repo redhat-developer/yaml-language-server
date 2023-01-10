@@ -260,6 +260,30 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
+      it('Autocomplete on boolean value with key of `null`', () => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            validation: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                null: {
+                  type: 'boolean',
+                  default: false,
+                },
+              },
+            },
+          },
+        });
+        const content = ''; // len: 0
+        const completion = parseSetup(content, 0);
+        completion.then(function (result) {
+          expect(result.items.length).equal(1);
+          expect(result.items[0].insertText).equal('validation:\n  \\"null\\": ${1:false}');
+        });
+      });
+
       it('Autocomplete on boolean value (with value content)', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',

@@ -18,7 +18,7 @@ import {
   TextEdit,
 } from 'vscode-languageserver-types';
 import { Node, isPair, isScalar, isMap, YAMLMap, isSeq, YAMLSeq, isNode, Pair } from 'yaml';
-import { Telemetry } from '../../languageserver/telemetry';
+import { Telemetry } from '../telemetry';
 import { SingleYAMLDocument, YamlDocuments } from '../parser/yaml-documents';
 import { YamlVersion } from '../parser/yamlParser07';
 import { filterInvalidCustomTags, matchOffsetToDocument } from '../utils/arrUtils';
@@ -731,6 +731,21 @@ export class YamlCompletion {
                 node = pair.value;
               }
             }
+          } else if (isSeq(node)) {
+            if (lineContent.charAt(position.character - 1) !== '-') {
+              const map = this.createTempObjNode(currentWord, node, currentDoc);
+              map.items = [];
+              // eslint-disable-next-line no-self-assign
+              currentDoc.internalDocument = currentDoc.internalDocument;
+              for (const pair of node.items) {
+                if (isMap(pair)) {
+                  pair.items.forEach((value) => {
+                    map.items.push(value);
+                  });
+                }
+              }
+              node = map;
+            }
           }
         }
       }
@@ -781,15 +796,7 @@ export class YamlCompletion {
     const uniqueItems = result.items.filter(
       (arr, index, self) =>
         index ===
-        self.findIndex(
-          (item) =>
-            item.label === arr.label &&
-            item.label === arr.label &&
-            item.insertText === arr.insertText &&
-            item.insertText === arr.insertText &&
-            item.kind === arr.kind &&
-            item.kind === arr.kind
-        )
+        self.findIndex((item) => item.label === arr.label && item.insertText === arr.insertText && item.kind === arr.kind)
     );
 
     if (uniqueItems?.length > 0) {
@@ -940,7 +947,9 @@ export class YamlCompletion {
     }
     for (const schema of matchingSchemas) {
       if (
-        ((schema.node.internalNode === node && !matchOriginal) || (schema.node.internalNode === originalNode && !hasColon)) &&
+        ((schema.node.internalNode === node && !matchOriginal) ||
+          (schema.node.internalNode === originalNode && !hasColon) ||
+          (schema.node.parent?.internalNode === originalNode && !hasColon)) &&
         !schema.inverted
       ) {
         this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
@@ -1403,7 +1412,10 @@ export class YamlCompletion {
           case 'boolean':
           case 'number':
           case 'integer':
-            insertText += `${indent}${key}: \${${insertIndex++}:${propertySchema.default}}\n`;
+            insertText += `${indent}${
+              //added quote if key is null
+              key === 'null' ? this.getInsertTextForValue(key, '', 'string') : key
+            }: \${${insertIndex++}:${propertySchema.default}}\n`;
             break;
           case 'string':
             insertText += `${indent}${key}: \${${insertIndex++}:${convertToStringValue(propertySchema.default)}}\n`;
@@ -1959,8 +1971,7 @@ function convertToStringValue(param: unknown): string {
  * simplify `{$1:value}` to `value`
  */
 function evaluateTab1Symbol(value: string): string {
-  const result = value.replace(/\$\{1:(.*)\}/, '$1');
-  return result;
+  return value.replace(/\$\{1:(.*)\}/, '$1');
 }
 
 function isParentCompletionItem(item: CompletionItemBase): item is CompletionItem {
