@@ -2,19 +2,9 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { JSONSchema } from 'vscode-json-languageservice';
 import { IProblem, JSONSchemaWithProblems } from '../../parser/jsonParser07';
-import { YamlHoverDetailPropTableStyle } from '../../services/yamlHoverDetail';
 import { getSchemaRefTypeTitle } from '../schemaUtils';
 import { Globals } from './globals';
-import {
-  char_gt,
-  char_lt,
-  getDescription,
-  getIndent,
-  replace,
-  tableColumnSeparator,
-  toCodeSingleLine,
-  toTsBlock,
-} from './jigx-utils';
+import { char_gt, char_lt, getDescription, getIndent, tableColumnSeparator, toCodeSingleLine } from './jigx-utils';
 import { SchemaTypeFactory, Schema_ArrayGeneric, Schema_ArrayTyped, Schema_Object, Schema_ObjectTyped } from './schema-type';
 
 export class Schema2Md {
@@ -22,7 +12,7 @@ export class Schema2Md {
   dontPrintSimpleTypes = true;
   disableLinks = true;
   startOctothorpes = '##';
-  maxLevel = this.startOctothorpes.length + 1;
+  maxLevel = 0;
   hideText = {
     enum: true,
     objectPropTitle: true,
@@ -30,13 +20,12 @@ export class Schema2Md {
   };
   propTable = {
     linePrefix: '',
-    styleAsTsBlock: true,
   };
   constructor() {
     SchemaTypeFactory.UniqueLinks = [];
   }
-  public configure(options: { propTableStyle: YamlHoverDetailPropTableStyle }): void {
-    this.propTable.styleAsTsBlock = options.propTableStyle === 'tsBlock';
+  public configure(): void {
+    //
   }
 
   public generateMd(schema: any, propName?: string): string {
@@ -63,14 +52,14 @@ export class Schema2Md {
       //   text.push('Object properties:');
       // }
       let textTmp: string[] = [];
-      this.generatePropertySection(octothorpes, schema, subSchemaTypes).forEach(function (section) {
+      this.generatePropertySection(0, octothorpes, schema, subSchemaTypes).forEach(function (section) {
         textTmp = textTmp.concat(section);
       });
       const propTable = this.generatePropTable(octothorpes, propName || 'root', false, schema, subSchemaTypes);
       text.push(propTable);
       text = text.concat(textTmp);
     } else {
-      text = text.concat(this.generateSchemaSectionText(/*'#' +*/ octothorpes, propName || '', false, schema, subSchemaTypes));
+      text = text.concat(this.generateSchemaSectionText(0, /*'#' +*/ octothorpes, propName || '', false, schema, subSchemaTypes));
     }
     return text
       .filter(function (line) {
@@ -80,34 +69,30 @@ export class Schema2Md {
   }
 
   public generateSchemaSectionText(
+    indent: number,
     octothorpes: string,
     name: string,
     isRequired: boolean,
     schema: any,
     subSchemas: []
   ): string[] {
-    if (octothorpes.length > this.maxLevel) {
+    if (indent > this.maxLevel) {
       return [];
     }
     const schemaType = this.getActualType(schema, subSchemas);
     // const sectionTitle = generateElementTitle(octothorpes, name, schemaType, isRequired, schema);
 
     const schemaTypeTyped = SchemaTypeFactory.CreatePropTypeInstance(schema, name, isRequired);
-    let text = [schemaTypeTyped.getElementTitle('', subSchemas, true, this.propTable.styleAsTsBlock)];
+    let text = [schemaTypeTyped.getElementTitle('', subSchemas, true, false)];
 
-    const offset = getIndent(octothorpes.length, this.propTable.styleAsTsBlock);
+    const offset = getIndent(octothorpes.length, false);
     text[0] = text[0].replace(/^(.*)$/gm, offset + '$1');
     const schemaDescription = schema.markdownDescription || schema.description;
-    if (schemaDescription) {
-      if (this.propTable.styleAsTsBlock) {
-        const description = offset + '//' + schemaDescription;
-        // put description into block before title
-        text[0] = text[0].replace(/^(```.*)&/m, '$1\n' + description + '\n');
-      } else {
-        const description = offset + '*' + schemaDescription.replace(/\n\n/g, '\n\n' + offset) + '*';
-        // put description to the end of the title after the block
-        text[0] = text[0].replace(/```$/, '```\n' + description);
-      }
+    // root description is added in yamlHover service, so skip it here inside the section
+    if (schemaDescription && indent !== 0) {
+      const description = offset + '*' + schemaDescription.replace(/\n\n/g, '\n\n' + offset) + '*';
+      // put description to the end of the title after the block
+      text[0] = text[0].replace(/```$/, '```\n' + description);
     }
 
     //TODO refactor
@@ -118,7 +103,7 @@ export class Schema2Md {
           text.push(offset + 'Properties of the ' + nameWithQuat + ' object:');
         }
         let textTmp: string[] = [];
-        this.generatePropertySection(octothorpes, schema, subSchemas).forEach((section) => {
+        this.generatePropertySection(indent, octothorpes, schema, subSchemas).forEach((section) => {
           textTmp = textTmp.concat(section);
         });
         const propTable = this.generatePropTable(octothorpes, name, isRequired, schema, subSchemas);
@@ -161,7 +146,7 @@ export class Schema2Md {
 
         if (validationItems.length > 0) {
           validationItems.forEach((item: any) => {
-            text = text.concat(this.generateSchemaSectionText(octothorpes, name, false, item, subSchemas));
+            text = text.concat(this.generateSchemaSectionText(indent + 1, octothorpes, name, false, item, subSchemas));
           });
         }
       }
@@ -169,7 +154,7 @@ export class Schema2Md {
       if (itemsType === 'object') {
         !this.hideText.union && text.push(offset + 'The array object has the following properties:');
         let textTmp: string[] = [];
-        this.generatePropertySection(octothorpes, schema.items, subSchemas).forEach((section) => {
+        this.generatePropertySection(indent, octothorpes, schema.items, subSchemas).forEach((section) => {
           textTmp = textTmp.concat(section);
         });
         const propTable = this.generatePropTable(octothorpes, name, isRequired, schema.items, subSchemas);
@@ -177,25 +162,21 @@ export class Schema2Md {
         text = text.concat(textTmp);
       }
     } else if (schema.oneOf) {
-      if (octothorpes.length < this.maxLevel) {
-        !this.hideText.union && text.push(offset + 'The object must be one of the following types:');
-        const oneOfArr = schema.oneOf.map((oneOf: any) => {
-          return this.generateSchemaSectionText(octothorpes, name, false, oneOf, subSchemas);
-        });
-        oneOfArr.forEach((type: string) => {
-          text = text.concat(type);
-        });
-      }
+      !this.hideText.union && text.push(offset + 'The object must be one of the following types:');
+      const oneOfArr = schema.oneOf.map((oneOf: any) => {
+        return this.generateSchemaSectionText(indent + 1, octothorpes, name, false, oneOf, subSchemas);
+      });
+      oneOfArr.forEach((type: string) => {
+        text = text.concat(type);
+      });
     } else if (schema.anyOf) {
-      if (octothorpes.length < this.maxLevel) {
-        !this.hideText.union && text.push(offset + 'The object must be any of the following types:');
-        const anyOfArr = schema.anyOf.map((anyOf: any) => {
-          return this.generateSchemaSectionText(octothorpes, name, false, anyOf, subSchemas);
-        });
-        anyOfArr.forEach((type: string) => {
-          text = text.concat(type);
-        });
-      }
+      !this.hideText.union && text.push(offset + 'The object must be any of the following types:');
+      const anyOfArr = schema.anyOf.map((anyOf: any) => {
+        return this.generateSchemaSectionText(indent + 1, octothorpes, name, false, anyOf, subSchemas);
+      });
+      anyOfArr.forEach((type: string) => {
+        text = text.concat(type);
+      });
     } else if (schema.enum) {
       if (!this.hideText.enum) {
         text.push(offset + 'This element must be one of the following enum values:');
@@ -234,11 +215,12 @@ export class Schema2Md {
     return text;
   }
 
-  public generatePropertySection(octothorpes: string, schema: JSONSchema, subSchemas: []): any {
+  public generatePropertySection(indent: number, octothorpes: string, schema: JSONSchema, subSchemas: []): any {
     if (schema.properties) {
       const sections = Object.keys(schema.properties).map((propertyKey) => {
         const propertyIsRequired = schema.required && schema.required.indexOf(propertyKey) >= 0;
         const sectionText = this.generateSchemaSectionText(
+          indent + 1,
           octothorpes + '#',
           propertyKey,
           propertyIsRequired,
@@ -317,14 +299,11 @@ export class Schema2Md {
     const type = SchemaTypeFactory.CreatePropTypeInstance(schema, name, isRequired);
     // if (hasTypePropertyTable(type)) {
     if (type instanceof Schema_Object) {
-      let propTableTmp = [];
-      if (!this.propTable.styleAsTsBlock) {
-        propTableTmp = [
-          this.isDebug ? '| Property | Type | Required | Description |' : '| Property | Type | Required | Description |',
-          this.isDebug ? '| -------- | ---- | -------- | ----------- |' : '| -------- | ---- | -------- | ----------- |',
-          // ...type.getPropertyTable(octothorpes, schema, subSchemas)
-        ];
-      }
+      let propTableTmp = [
+        this.isDebug ? '| Property | Type | Required | Description |' : '| Property | Type | Required | Description |',
+        this.isDebug ? '| -------- | ---- | -------- | ----------- |' : '| -------- | ---- | -------- | ----------- |',
+        // ...type.getPropertyTable(octothorpes, schema, subSchemas)
+      ];
 
       const props = Object.keys(type.properties).map((key) => {
         const prop = type.properties[key];
@@ -334,30 +313,16 @@ export class Schema2Md {
         // const propTypeStr = propType.getTypeStr(subSchemas);
         const propTypeMD = propType.getTypeMD(subSchemas);
         const requiredStr = this.requiredTmp(propType.isPropRequired, prop.problem);
-        if (this.propTable.styleAsTsBlock) {
-          const replaceObj = {
-            description: '//' + getDescription(prop) || '',
-            required: requiredStr,
-            prop: key,
-            type: propTypeMD,
-          };
-          const propBlock = replace(this.tsBlockRowTmp, replaceObj);
-          return propBlock;
-        } else {
-          const description = getDescription(prop);
-          const row = [key, toCodeSingleLine(propTypeMD), requiredStr, description];
-          return (this.isDebug ? '' : '') + '| ' + row.join(' | ') + ' |';
-        }
+
+        const description = getDescription(prop);
+        const row = [key, toCodeSingleLine(propTypeMD), requiredStr, description];
+        return (this.isDebug ? '' : '') + '| ' + row.join(' | ') + ' |';
       });
       propTableTmp = propTableTmp.concat(props);
-      if (this.propTable.styleAsTsBlock) {
-        return toTsBlock(replace(this.tsBlockTmp, { rows: propTableTmp.join('\n') }), octothorpes.length);
-      } else {
-        const indent = getIndent(octothorpes.length);
+      const indent = getIndent(octothorpes.length);
 
-        const ret = propTableTmp.reduce((p, n) => `${p}${indent}${this.propTable.linePrefix}${n}\n`, ''); // '\n' + propTableTmp.join('\n');
-        return ret;
-      }
+      const ret = propTableTmp.reduce((p, n) => `${p}${indent}${this.propTable.linePrefix}${n}\n`, ''); // '\n' + propTableTmp.join('\n');
+      return ret;
     }
     return '';
   }
