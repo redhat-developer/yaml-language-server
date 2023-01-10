@@ -82,7 +82,9 @@ describe('Hover Tests', () => {
       assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
       assert.strictEqual(
         (hover.contents as MarkupContent).value,
-        `The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? 'The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.'
+          : `The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -104,7 +106,9 @@ describe('Hover Tests', () => {
       assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? 'The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.'
+          : `The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -130,7 +134,9 @@ describe('Hover Tests', () => {
       assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `A script to run after install\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? 'A script to run after install'
+          : `A script to run after install\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -156,7 +162,9 @@ describe('Hover Tests', () => {
       assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `A script to run after install\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? 'A script to run after install'
+          : `A script to run after install\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -176,20 +184,6 @@ describe('Hover Tests', () => {
           },
         },
       });
-
-      const detail = jigxBranchTest
-        ? `----
-##
->| Property | Type | Required | Description |
->| -------- | ---- | -------- | ----------- |
->| postinstall | \`string\` |  | A script to run after install |
-
-
-----
-
-`
-        : '';
-
       const content1 = 'scr|i|pts:\n  postinstall: test'; // len: 28, pos: 3
       const firstHover = await parseSetup(content1);
 
@@ -197,7 +191,16 @@ describe('Hover Tests', () => {
       assert.strictEqual((firstHover.contents as MarkupContent).kind, 'markdown');
       assert.strictEqual(
         (firstHover.contents as MarkupContent).value,
-        `Contains custom hooks used to trigger other automated tools\n\n${detail}Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? `Contains custom hooks used to trigger other automated tools
+
+----
+##
+>| Property | Type | Required | Description |
+>| -------- | ---- | -------- | ----------- |
+>| postinstall | \`string\` |  | A script to run after install |
+`
+          : `Contains custom hooks used to trigger other automated tools\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
 
       const content2 = 'scripts:\n  post|i|nstall: test'; // len: 28, pos: 15
@@ -206,7 +209,9 @@ describe('Hover Tests', () => {
       assert.strictEqual(MarkupContent.is(secondHover.contents), true);
       assert.strictEqual(
         (secondHover.contents as MarkupContent).value,
-        `A script to run after install\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? 'A script to run after install'
+          : `A script to run after install\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -261,7 +266,9 @@ describe('Hover Tests', () => {
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `A file path to the configuration file\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? 'A file path to the configuration file'
+          : `A file path to the configuration file\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -313,7 +320,9 @@ describe('Hover Tests', () => {
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `Full name of the author\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? 'Full name of the author\\.'
+          : `Full name of the author\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -345,7 +354,9 @@ describe('Hover Tests', () => {
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `Email address of the author\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? 'Email address of the author\\.'
+          : `Email address of the author\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -435,7 +446,9 @@ storage:
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `### no\\_proxy \\(list of strings\\):\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? '### no\\_proxy \\(list of strings\\):'
+          : `#### no\\_proxy \\(list of strings\\):\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
 
       const content2 = `ignition:
@@ -454,7 +467,9 @@ storage:
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `### devices \\(list of strings\\):\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? '### devices \\(list of strings\\):'
+          : `### devices \\(list of strings\\):\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -501,7 +516,10 @@ users:
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `Place of residence\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? 'Place of residence'
+          : // orig
+            `Place of residence\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -515,16 +533,15 @@ users:
           },
         },
       });
-
-      const detail = ''; //jigxBranchTest ? '----\nshould return this description\n\n----\n\n' : '';
-
       const content = 'c|h|ildObject: \n'; // len: 14, pos: 1
       const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `should return this description\n\n${detail}Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? 'should return this description'
+          : `should return this description\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -551,7 +568,9 @@ users:
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `should return this description\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? 'should return this description'
+          : `should return this description\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -607,7 +626,9 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `should return this description\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        jigxBranchTest
+          ? 'should return this description'
+          : `should return this description\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 

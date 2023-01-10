@@ -22,7 +22,7 @@ export class Schema2Md {
   dontPrintSimpleTypes = true;
   disableLinks = true;
   startOctothorpes = '##';
-  maxLevel = this.startOctothorpes.length + 1;
+  maxLevel = 0;
   hideText = {
     enum: true,
     objectPropTitle: true,
@@ -63,14 +63,14 @@ export class Schema2Md {
       //   text.push('Object properties:');
       // }
       let textTmp: string[] = [];
-      this.generatePropertySection(octothorpes, schema, subSchemaTypes).forEach(function (section) {
+      this.generatePropertySection(0, octothorpes, schema, subSchemaTypes).forEach(function (section) {
         textTmp = textTmp.concat(section);
       });
       const propTable = this.generatePropTable(octothorpes, propName || 'root', false, schema, subSchemaTypes);
       text.push(propTable);
       text = text.concat(textTmp);
     } else {
-      text = text.concat(this.generateSchemaSectionText(/*'#' +*/ octothorpes, propName || '', false, schema, subSchemaTypes));
+      text = text.concat(this.generateSchemaSectionText(0, /*'#' +*/ octothorpes, propName || '', false, schema, subSchemaTypes));
     }
     return text
       .filter(function (line) {
@@ -80,13 +80,14 @@ export class Schema2Md {
   }
 
   public generateSchemaSectionText(
+    indent: number,
     octothorpes: string,
     name: string,
     isRequired: boolean,
     schema: any,
     subSchemas: []
   ): string[] {
-    if (octothorpes.length > this.maxLevel) {
+    if (indent > this.maxLevel) {
       return [];
     }
     const schemaType = this.getActualType(schema, subSchemas);
@@ -98,7 +99,8 @@ export class Schema2Md {
     const offset = getIndent(octothorpes.length, this.propTable.styleAsTsBlock);
     text[0] = text[0].replace(/^(.*)$/gm, offset + '$1');
     const schemaDescription = schema.markdownDescription || schema.description;
-    if (schemaDescription) {
+    // root description is added in yamlHover service, so skip it here inside the section
+    if (schemaDescription && indent !== 0) {
       if (this.propTable.styleAsTsBlock) {
         const description = offset + '//' + schemaDescription;
         // put description into block before title
@@ -118,7 +120,7 @@ export class Schema2Md {
           text.push(offset + 'Properties of the ' + nameWithQuat + ' object:');
         }
         let textTmp: string[] = [];
-        this.generatePropertySection(octothorpes, schema, subSchemas).forEach((section) => {
+        this.generatePropertySection(indent, octothorpes, schema, subSchemas).forEach((section) => {
           textTmp = textTmp.concat(section);
         });
         const propTable = this.generatePropTable(octothorpes, name, isRequired, schema, subSchemas);
@@ -161,7 +163,7 @@ export class Schema2Md {
 
         if (validationItems.length > 0) {
           validationItems.forEach((item: any) => {
-            text = text.concat(this.generateSchemaSectionText(octothorpes, name, false, item, subSchemas));
+            text = text.concat(this.generateSchemaSectionText(indent + 1, octothorpes, name, false, item, subSchemas));
           });
         }
       }
@@ -169,7 +171,7 @@ export class Schema2Md {
       if (itemsType === 'object') {
         !this.hideText.union && text.push(offset + 'The array object has the following properties:');
         let textTmp: string[] = [];
-        this.generatePropertySection(octothorpes, schema.items, subSchemas).forEach((section) => {
+        this.generatePropertySection(indent, octothorpes, schema.items, subSchemas).forEach((section) => {
           textTmp = textTmp.concat(section);
         });
         const propTable = this.generatePropTable(octothorpes, name, isRequired, schema.items, subSchemas);
@@ -177,25 +179,21 @@ export class Schema2Md {
         text = text.concat(textTmp);
       }
     } else if (schema.oneOf) {
-      if (octothorpes.length < this.maxLevel) {
-        !this.hideText.union && text.push(offset + 'The object must be one of the following types:');
-        const oneOfArr = schema.oneOf.map((oneOf: any) => {
-          return this.generateSchemaSectionText(octothorpes, name, false, oneOf, subSchemas);
-        });
-        oneOfArr.forEach((type: string) => {
-          text = text.concat(type);
-        });
-      }
+      !this.hideText.union && text.push(offset + 'The object must be one of the following types:');
+      const oneOfArr = schema.oneOf.map((oneOf: any) => {
+        return this.generateSchemaSectionText(indent + 1, octothorpes, name, false, oneOf, subSchemas);
+      });
+      oneOfArr.forEach((type: string) => {
+        text = text.concat(type);
+      });
     } else if (schema.anyOf) {
-      if (octothorpes.length < this.maxLevel) {
-        !this.hideText.union && text.push(offset + 'The object must be any of the following types:');
-        const anyOfArr = schema.anyOf.map((anyOf: any) => {
-          return this.generateSchemaSectionText(octothorpes, name, false, anyOf, subSchemas);
-        });
-        anyOfArr.forEach((type: string) => {
-          text = text.concat(type);
-        });
-      }
+      !this.hideText.union && text.push(offset + 'The object must be any of the following types:');
+      const anyOfArr = schema.anyOf.map((anyOf: any) => {
+        return this.generateSchemaSectionText(indent + 1, octothorpes, name, false, anyOf, subSchemas);
+      });
+      anyOfArr.forEach((type: string) => {
+        text = text.concat(type);
+      });
     } else if (schema.enum) {
       if (!this.hideText.enum) {
         text.push(offset + 'This element must be one of the following enum values:');
@@ -234,11 +232,12 @@ export class Schema2Md {
     return text;
   }
 
-  public generatePropertySection(octothorpes: string, schema: JSONSchema, subSchemas: []): any {
+  public generatePropertySection(indent: number, octothorpes: string, schema: JSONSchema, subSchemas: []): any {
     if (schema.properties) {
       const sections = Object.keys(schema.properties).map((propertyKey) => {
         const propertyIsRequired = schema.required && schema.required.indexOf(propertyKey) >= 0;
         const sectionText = this.generateSchemaSectionText(
+          indent + 1,
           octothorpes + '#',
           propertyKey,
           propertyIsRequired,

@@ -17,7 +17,7 @@ import { getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
 import { JSONSchema } from '../jsonSchema';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
-import { Telemetry } from '../../languageserver/telemetry';
+import { Telemetry } from '../telemetry';
 import { ASTNode, MarkedString } from 'vscode-json-languageservice';
 import { Schema2Md } from '../utils/jigx/schema2md';
 import { decycle } from '../utils/jigx/cycle';
@@ -192,7 +192,7 @@ export class YamlHoverDetail {
             .map((h) => toMarkdown(h.title))
             .join(' | ');
           if (titleAll) {
-            results.push('one of: `' + titleAll + '`');
+            results.push('one of\n```yaml\n' + titleAll + '\n```');
           }
         }
         for (const hover of hoverRes) {
@@ -226,16 +226,17 @@ export class YamlHoverDetail {
 
         const decycleNode = decycle(node, 8);
 
-        if (results.length && schema.schema.url) {
-          if (results.some((l) => l.includes(newLineWithHr))) {
-            results.push('----');
-          }
+        // disable sources
+        // if (results.length && schema.schema.url) {
+        //   if (results.some((l) => l.includes(newLineWithHr))) {
+        //     results.push('----');
+        //   }
 
-          const source = resSchemas.map((schema) => {
-            return `Source: [${getSchemaName(schema) || schema.closestTitle}](${schema.url})`;
-          });
-          results.push(source.join('\n\n'));
-        }
+        //   const source = resSchemas.map((schema) => {
+        //     return `Source: [${getSchemaName(schema) || schema.closestTitle}](${schema.url})`;
+        //   });
+        //   results.push(source.join('\n\n'));
+        // }
 
         if (!results.length) {
           results = [''];

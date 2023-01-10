@@ -64,53 +64,7 @@ describe('Hover Tests Detail', () => {
 ##
 \`\`\`
 test: \`const1\` | object | Expression | string | obj1
-\`\`\`
-*description of test*
-
-\`\`\`
-test: object
-\`\`\`
-*description of object with prop list and parent*
-
->| Property | Type | Required | Description |
->| -------- | ---- | -------- | ----------- |
->| list | \`string\` |  |  |
->| parent | \`string\` |  |  |
-
-
-\`\`\`
-test: Expression
-\`\`\`
-*Expression abcd*
-
->| Property | Type | Required | Description |
->| -------- | ---- | -------- | ----------- |
->| =@ctx | \`\` |  |  |
-
-
-\`\`\`
-test: obj1
-\`\`\`
-*description of obj1*
-
->| Property | Type | Required | Description |
->| -------- | ---- | -------- | ----------- |
->| objA | \`Object A\` | ❕ | description of the parent prop |
-
-
->\`\`\`
->objA: Object A
->\`\`\`
->*description of the parent prop*
-
->>| Property | Type | Required | Description |
->>| -------- | ---- | -------- | ----------- |
->>| propI | \`string\` | ❕ |  |
-
-
-----
-
-Source: [default_schema_id.yaml](file:///default_schema_id.yaml)`
+\`\`\``
     );
     // related to test 'Hover on null property in nested object'
     assert.notStrictEqual((hover2.contents as MarkupContent).value, '', 'hover does not work with new line');
@@ -136,10 +90,7 @@ Source: [default_schema_id.yaml](file:///default_schema_id.yaml)`
 
     assert.strictEqual(MarkupContent.is(result.contents), true);
     assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
-    assert.strictEqual(
-      (result.contents as MarkupContent).value,
-      `A script to run after install\n\nSource: [schema.json](dynamic-schema://schema.json)`
-    );
+    assert.strictEqual((result.contents as MarkupContent).value, 'A script to run after install');
   });
   describe('Images', async () => {
     it('Image should be excluded', async () => {
