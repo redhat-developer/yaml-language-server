@@ -11,6 +11,7 @@ export interface StringifySettings {
 
 interface StringifySettingsInternal extends StringifySettings {
   indentation: string;
+  existingProps: string[];
 }
 
 export function stringifyObject(
@@ -24,7 +25,7 @@ export function stringifyObject(
   if (obj !== null && typeof obj === 'object') {
     /**
      * When we are autocompleting a snippet from a property we need the indent so everything underneath the property
-     * is propertly indented. When we are auto completion from a value we don't want the indent because the cursor
+     * is properly indented. When we are auto completion from a value we don't want the indent because the cursor
      * is already in the correct place
      */
     const newIndent = (depth === 0 && settings.shouldIndentWithTab) || depth > 0 ? indent + settings.indentation : '';
@@ -52,24 +53,32 @@ export function stringifyObject(
         return '';
       }
       let result = (depth === 0 && settings.newLineFirst) || depth > 0 ? '\n' : '';
+      let isFirstProp = true;
       for (let i = 0; i < keys.length; i++) {
         const key = keys[i];
+
+        if (depth === 0 && settings.existingProps.includes(key)) {
+          // Don't add existing properties to the YAML
+          continue;
+        }
+
         const isObject = typeof obj[key] === 'object';
         const colonDelimiter = isObject ? ':' : ': '; // add space only when value is primitive
         const parentArrayCompensation = isObject && /^\s|-/.test(key) ? settings.indentation : ''; // add extra space if parent is an array
         const objectIndent = newIndent + parentArrayCompensation;
 
-        // The first child of an array needs to be treated specially, otherwise identations will be off
-        if (depth === 0 && i === 0 && !settings.indentFirstObject) {
-          const value = stringifyObject(obj[key], objectIndent, stringifyLiteral, settings, (depth += 1), 0);
-          result += indent + key + colonDelimiter + value;
+        const lineBreak = isFirstProp ? '' : '\n'; // break line only if it's not the first property
+
+        // The first child of an array needs to be treated specially, otherwise indentations will be off
+        if (depth === 0 && isFirstProp && !settings.indentFirstObject) {
+          const value = stringifyObject(obj[key], objectIndent, stringifyLiteral, settings, depth + 1, 0);
+          result += lineBreak + indent + key + colonDelimiter + value;
         } else {
-          const value = stringifyObject(obj[key], objectIndent, stringifyLiteral, settings, (depth += 1), 0);
-          result += newIndent + key + colonDelimiter + value;
+          const value = stringifyObject(obj[key], objectIndent, stringifyLiteral, settings, depth + 1, 0);
+          result += lineBreak + newIndent + key + colonDelimiter + value;
         }
-        if (i < keys.length - 1) {
-          result += '\n';
-        }
+
+        isFirstProp = false;
       }
       return result;
     }
