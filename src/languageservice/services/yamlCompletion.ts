@@ -44,6 +44,8 @@ const doubleQuotesEscapeRegExp = /[\\]+"/g;
 
 const parentCompletionKind = CompletionItemKind.Class;
 
+const existingProposeItem = '__';
+
 interface ParentCompletionItemOptions {
   schema: JSONSchema;
   indent?: string;
@@ -59,6 +61,7 @@ interface CompletionsCollector {
   log(message: string): void;
   getNumberOfProposals(): number;
   result: CompletionList;
+  proposed: { [key: string]: CompletionItem };
 }
 
 interface InsertText {
@@ -181,7 +184,6 @@ export class YamlCompletion {
     }
 
     const proposed: { [key: string]: CompletionItem } = {};
-    const existingProposeItem = '__';
     const collector: CompletionsCollector = {
       add: (completionItem: CompletionItem, oneOfSchema: boolean) => {
         const addSuggestionForParent = function (completionItem: CompletionItem): void {
@@ -288,6 +290,7 @@ export class YamlCompletion {
         return result.items.length;
       },
       result,
+      proposed,
     };
 
     if (this.customTags.length > 0) {
@@ -996,6 +999,7 @@ export class YamlCompletion {
                 indentFirstObject: false,
                 shouldIndentWithTab: false,
               },
+              [],
               1
             );
             // add space before default snippet value
@@ -1474,7 +1478,15 @@ export class YamlCompletion {
             });
             value = fixedObj;
           }
-          insertText = this.getInsertTextForSnippetValue(value, separatorAfter, settings);
+          const existingProps = Object.keys(collector.proposed).filter(
+            (proposedProp) => collector.proposed[proposedProp].label === existingProposeItem
+          );
+          insertText = this.getInsertTextForSnippetValue(value, separatorAfter, settings, existingProps);
+
+          // if snippet result is empty and value has a real value, don't add it as a completion
+          if (insertText === '' && value) {
+            continue;
+          }
           label = label || this.getLabelForSnippetValue(value);
         } else if (typeof s.bodyText === 'string') {
           let prefix = '',
@@ -1503,10 +1515,15 @@ export class YamlCompletion {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getInsertTextForSnippetValue(value: any, separatorAfter: string, settings: StringifySettings, depth?: number): string {
+  private getInsertTextForSnippetValue(
+    value: unknown,
+    separatorAfter: string,
+    settings: StringifySettings,
+    existingProps: string[],
+    depth?: number
+  ): string {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const replacer = (value: any): string | any => {
+    const replacer = (value: unknown): string | any => {
       if (typeof value === 'string') {
         if (value[0] === '^') {
           return value.substr(1);
@@ -1517,7 +1534,9 @@ export class YamlCompletion {
       }
       return value;
     };
-    return stringifyObject(value, '', replacer, { ...settings, indentation: this.indentation }, depth) + separatorAfter;
+    return (
+      stringifyObject(value, '', replacer, { ...settings, indentation: this.indentation, existingProps }, depth) + separatorAfter
+    );
   }
 
   private addBooleanValueCompletion(value: boolean, separatorAfter: string, collector: CompletionsCollector): void {
