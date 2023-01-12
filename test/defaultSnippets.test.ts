@@ -98,13 +98,22 @@ describe('Default Snippet Tests', () => {
         })
         .then(done, done);
     });
-    it('Snippet in array schema should autocomplete correctly inside array item ', (done) => {
+    it('Snippet in array schema should suggest nothing inside array item if YAML already contains all props', (done) => {
       const content = 'array:\n  - item1: asd\n    item2: asd\n    ';
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
+          assert.equal(result.items.length, 0);
+        })
+        .then(done, done);
+    });
+    it('Snippet in array schema should suggest only some of the props inside an array item if YAML already contains some of the props', (done) => {
+      const content = 'array:\n  - item1: asd\n    ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
           assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].insertText, 'item1: $1\nitem2: $2');
+          assert.equal(result.items[0].insertText, 'item2: $2');
           assert.equal(result.items[0].label, 'My array item');
         })
         .then(done, done);
@@ -164,6 +173,31 @@ describe('Default Snippet Tests', () => {
           assert.equal(result.items[0].label, 'Object item');
           assert.equal(result.items[1].insertText, 'key:\n  ');
           assert.equal(result.items[1].label, 'key');
+        })
+        .then(done, done);
+    });
+
+    it('Snippet in object schema should suggest some of the snippet props because some of them are already in the YAML', (done) => {
+      const content = 'object:\n  key:\n    key2: value\n    ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.notEqual(result.items.length, 0);
+          assert.equal(result.items[0].insertText, 'key1: ');
+          assert.equal(result.items[0].label, 'Object item');
+          assert.equal(result.items[1].insertText, 'key:\n  ');
+          assert.equal(result.items[1].label, 'key');
+        })
+        .then(done, done);
+    });
+    it('Snippet in object schema should not suggest snippet props because all of them are already in the YAML', (done) => {
+      const content = 'object:\n  key:\n    key1: value\n    key2: value\n    ';
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 1);
+          assert.equal(result.items[0].insertText, 'key:\n  ');
+          assert.equal(result.items[0].label, 'key');
         })
         .then(done, done);
     });
