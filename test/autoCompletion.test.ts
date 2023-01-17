@@ -230,6 +230,31 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
+      it('Autocomplete on default value (with value content contains dash)', (done) => {
+        languageService.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              default: 'yaml-language',
+            },
+          },
+        });
+        const content = 'name: yaml-';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.deepEqual(
+              result.items[0],
+              createExpectedCompletion('yaml-language', 'yaml-language', 0, 6, 0, 11, 12, 2, {
+                detail: 'Default value',
+              })
+            );
+          })
+          .then(done, done);
+      });
+
       it('Autocomplete on boolean value (without value content)', (done) => {
         languageService.addSchema(SCHEMA_ID, {
           type: 'object',
