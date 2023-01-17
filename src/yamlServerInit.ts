@@ -17,6 +17,7 @@ import { YamlCommands } from './commands';
 import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
 import { commandExecutor } from './languageserver/commandExecutor';
 import { Telemetry } from './languageservice/telemetry';
+import { registerCommands } from './languageservice/services/yamlCommands';
 
 export class YAMLServerInit {
   languageService: LanguageService;
@@ -57,14 +58,14 @@ export class YAMLServerInit {
   // public for test setup
   connectionInitialized(params: InitializeParams): InitializeResult {
     this.yamlSettings.capabilities = params.capabilities;
-    this.languageService = getCustomLanguageService(
-      this.schemaRequestService,
-      this.workspaceContext,
-      this.connection,
-      this.telemetry,
-      this.yamlSettings,
-      params.capabilities
-    );
+    this.languageService = getCustomLanguageService({
+      schemaRequestService: this.schemaRequestService,
+      workspaceContext: this.workspaceContext,
+      connection: this.connection,
+      yamlSettings: this.yamlSettings,
+      telemetry: this.telemetry,
+      clientCapabilities: params.capabilities,
+    });
 
     // Only try to parse the workspace root if its not null. Otherwise initialize will fail
     if (params.rootUri) {
@@ -95,6 +96,7 @@ export class YAMLServerInit {
       this.yamlSettings.capabilities.workspace.didChangeWatchedFiles.dynamicRegistration
     );
     this.registerHandlers();
+    registerCommands(commandExecutor, this.connection);
 
     return {
       capabilities: {
