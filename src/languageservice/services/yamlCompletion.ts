@@ -81,7 +81,7 @@ export class YamlCompletion {
     private schemaService: YAMLSchemaService,
     private clientCapabilities: ClientCapabilities = {},
     private yamlDocument: YamlDocuments,
-    private readonly telemetry: Telemetry
+    private readonly telemetry?: Telemetry
   ) {}
 
   configure(languageSettings: LanguageSettings): void {
@@ -279,7 +279,7 @@ export class YamlCompletion {
         }
       },
       error: (message: string) => {
-        this.telemetry.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(message) });
+        this.telemetry?.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(message) });
       },
       log: (message: string) => {
         console.log(message);
@@ -530,7 +530,7 @@ export class YamlCompletion {
       const types: { [type: string]: boolean } = {};
       this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types, doComplete);
     } catch (err) {
-      this.telemetry.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
     this.finalizeParentCompletion(result);
