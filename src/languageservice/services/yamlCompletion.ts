@@ -168,9 +168,6 @@ export class YamlCompletion {
       overwriteRange = Range.create(nodeStartPos, nodeEndPos);
     } else if (node && isScalar(node) && node.value) {
       const start = document.positionAt(node.range[0]);
-      if (offset > 0 && start.character > 0 && text.charAt(offset - 1) === '-') {
-        start.character -= 1;
-      }
       overwriteRange = Range.create(start, document.positionAt(node.range[1]));
     } else if (node && isScalar(node) && node.value === null && currentWord === '-') {
       overwriteRange = Range.create(position, position);
