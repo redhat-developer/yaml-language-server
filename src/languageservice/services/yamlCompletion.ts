@@ -697,6 +697,10 @@ export class YamlCompletion {
       });
     }
     for (const schema of matchingSchemas) {
+      if (schema.schema.deprecationMessage) {
+        continue;
+      }
+
       if (
         ((schema.node.internalNode === node && !matchOriginal) ||
           (schema.node.internalNode === originalNode && !hasColon) ||
