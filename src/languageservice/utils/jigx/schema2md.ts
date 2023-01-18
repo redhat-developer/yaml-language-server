@@ -95,7 +95,7 @@ export class Schema2Md {
     const schemaDescription = schema.markdownDescription || schema.description;
     // root description is added in yamlHover service, so skip it here inside the section
     if (schemaDescription && indent !== 0) {
-      const description = offset + '*' + schemaDescription.replace(/\n\n/g, '\n\n' + offset) + '*';
+      const description = offset + '*' + schemaDescription.replace(/\n/g, '\n' + offset) + '*';
       // put description to the end of the title after the block
       text[0] = text[0].replace(/```$/, '```\n' + description);
     }
