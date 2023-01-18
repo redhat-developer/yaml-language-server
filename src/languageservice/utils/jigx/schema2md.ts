@@ -4,7 +4,7 @@ import { JSONSchema } from 'vscode-json-languageservice';
 import { IProblem, JSONSchemaWithProblems } from '../../parser/jsonParser07';
 import { getSchemaRefTypeTitle } from '../schemaUtils';
 import { Globals } from './globals';
-import { char_gt, char_lt, getDescription, getIndent, tableColumnSeparator, toCodeSingleLine } from './jigx-utils';
+import { char_gt, char_lt, getDescription, getIndent, isJSONSchema, tableColumnSeparator, toCodeSingleLine } from './jigx-utils';
 import { SchemaTypeFactory, Schema_ArrayGeneric, Schema_ArrayTyped, Schema_Object, Schema_ObjectTyped } from './schema-type';
 
 export class Schema2Md {
@@ -79,6 +79,11 @@ export class Schema2Md {
     if (indent > this.maxLevel) {
       return [];
     }
+
+    if (schema.deprecationMessage) {
+      return [];
+    }
+
     const schemaType = this.getActualType(schema, subSchemas);
     // const sectionTitle = generateElementTitle(octothorpes, name, schemaType, isRequired, schema);
 
@@ -218,13 +223,17 @@ export class Schema2Md {
   public generatePropertySection(indent: number, octothorpes: string, schema: JSONSchema, subSchemas: []): any {
     if (schema.properties) {
       const sections = Object.keys(schema.properties).map((propertyKey) => {
+        const property = schema.properties[propertyKey];
+        if (isJSONSchema(property) && property.deprecationMessage) {
+          return [];
+        }
         const propertyIsRequired = schema.required && schema.required.indexOf(propertyKey) >= 0;
         const sectionText = this.generateSchemaSectionText(
           indent + 1,
           octothorpes + '#',
           propertyKey,
           propertyIsRequired,
-          schema.properties[propertyKey],
+          property,
           subSchemas
         );
         return sectionText;
@@ -307,6 +316,9 @@ export class Schema2Md {
 
       const props = Object.keys(type.properties).map((key) => {
         const prop = type.properties[key];
+        if (prop.deprecationMessage) {
+          return;
+        }
         const isRequired = this.isPropertyRequired(schema, key);
         prop.problem = schema.problems && schema.problems.find((p) => p.problemArgs.includes(key));
         const propType = SchemaTypeFactory.CreatePropTypeInstance(prop, key, isRequired);
@@ -318,7 +330,7 @@ export class Schema2Md {
         const row = [key, toCodeSingleLine(propTypeMD), requiredStr, description];
         return (this.isDebug ? '' : '') + '| ' + row.join(' | ') + ' |';
       });
-      propTableTmp = propTableTmp.concat(props);
+      propTableTmp = propTableTmp.concat(props.filter<string>((prop): prop is string => typeof prop === 'string'));
       const indent = getIndent(octothorpes.length);
 
       const ret = propTableTmp.reduce((p, n) => `${p}${indent}${this.propTable.linePrefix}${n}\n`, ''); // '\n' + propTableTmp.join('\n');

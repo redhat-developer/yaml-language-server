@@ -35,6 +35,7 @@ export class Schema_TypeBase implements Instantiable {
   title?: string;
   description?: string;
   type?: any;
+  deprecationMessage?: string;
   propName?: string;
   isPropRequired?: boolean;
   problem?: IProblem;
@@ -238,10 +239,8 @@ export class Schema_AnyOf extends Schema_TypeBase {
   anyOf: Schema_AnyType[];
   additionalProperties?: Schema_AnyOf;
   get anyOfCombined(): Schema_AnyType[] {
-    return [
-      ...(this.anyOf || []),
-      ...(this.additionalProperties && this.additionalProperties.anyOf ? this.additionalProperties.anyOf : []),
-    ];
+    const schemas = [...(this.anyOf || []), ...(this.additionalProperties?.anyOf ? this.additionalProperties.anyOf : [])];
+    return schemas.filter((schema) => !schema.deprecationMessage);
   }
   getTypeStr(subSchemas: []): string {
     const subType = this.anyOfCombined
