@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable no-useless-escape */
+import { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
 import { Globals } from './globals';
 
 export class Utils {
@@ -222,4 +223,8 @@ export function getDescription(schema: { description?: string; markdownDescripti
     return replaceSpecialCharsInDescription(schema.description);
   }
   return '';
+}
+
+export function isJSONSchema(schema: JSONSchemaRef): schema is JSONSchema {
+  return schema && typeof schema === 'object';
 }

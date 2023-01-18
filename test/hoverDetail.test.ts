@@ -124,4 +124,58 @@ test: \`const1\` | object | Expression | string | obj1
       assert.strictEqual((result.contents as MarkupContent).value.includes('<img'), true);
     });
   });
+
+  describe('Deprecated', async () => {
+    it('Deprecated type should not be in the title', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          scripts: {
+            anyOf: [
+              {
+                type: 'object',
+                properties: {},
+                title: 'obj1-deprecated',
+                deprecationMessage: 'Deprecated',
+              },
+              {
+                type: 'object',
+                properties: {},
+                title: 'obj2',
+              },
+            ],
+          },
+        },
+      });
+      const content = 'scripts:\n  ';
+      const result = await parseSetup(content, 1, SCHEMA_ID);
+
+      assert.strictEqual((result.contents as MarkupContent).value.includes('scripts: obj2\n'), true);
+      assert.strictEqual((result.contents as MarkupContent).value.includes('obj1-deprecated'), false);
+    });
+    it('Deprecated prop should not be in the prop table', async () => {
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          scripts: {
+            type: 'object',
+            properties: {
+              prop1: {
+                type: 'string',
+              },
+              prop2: {
+                type: 'string',
+                deprecationMessage: 'Deprecated',
+              },
+            },
+          },
+        },
+      });
+      const content = 'scripts:\n  ';
+      const result = await parseSetup(content, 1, SCHEMA_ID);
+
+      assert.strictEqual((result.contents as MarkupContent).value.includes('| prop1 |'), true);
+      assert.strictEqual((result.contents as MarkupContent).value.includes('| prop2 |'), false);
+    });
+  });
 });
