@@ -856,6 +856,95 @@ objB:
       );
     });
 
+    describe('partial value with trailing spaces', () => {
+      it('partial value with trailing spaces', async () => {
+        const schema: JSONSchema = {
+          properties: {
+            name: {
+              const: 'my name',
+            },
+          },
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'name: my| |   ';
+        const completion = await parseCaret(content);
+
+        expect(completion.items.length).equal(1);
+        expect(completion.items[0]).eql(
+          createExpectedCompletion('my name', 'my name', 0, 6, 0, 12, 12, 2, {
+            documentation: undefined,
+          })
+        );
+      });
+      it('partial value with trailing spaces with new line', async () => {
+        const schema: JSONSchema = {
+          properties: {
+            name: {
+              const: 'my name',
+            },
+          },
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'name: my| |   \n';
+        const completion = await parseCaret(content);
+
+        expect(completion.items.length).equal(1);
+        expect(completion.items[0]).eql(
+          createExpectedCompletion('my name', 'my name', 0, 6, 0, 13, 12, 2, {
+            documentation: undefined,
+          })
+        );
+      });
+      it('partial value with leading and trailing spaces', async () => {
+        const schema: JSONSchema = {
+          properties: {
+            name: {
+              const: 'my name',
+            },
+          },
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'name:   my na| |   ';
+        const completion = await parseCaret(content);
+
+        expect(completion.items.length).equal(1);
+        expect(completion.items[0]).eql(
+          createExpectedCompletion('my name', 'my name', 0, 6, 0, 17, 12, 2, {
+            documentation: undefined,
+          })
+        );
+      });
+
+      it('partial value with trailing spaces with special chars inside the array', async () => {
+        const schema: JSONSchema = {
+          type: 'object',
+          properties: {
+            array: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  name: {
+                    const: 'my name / 123',
+                  },
+                },
+              },
+            },
+          },
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'array:\n - name: my name /| |  ';
+        const completion = await parseCaret(content);
+
+        expect(completion.items.length).equal(1);
+        expect(completion.items[0]).eql(
+          createExpectedCompletion('my name / 123', 'my name / 123', 1, 9, 1, 21, 12, 2, {
+            documentation: undefined,
+          })
+        );
+      });
+    });
+
     it('object - 2nd nested property', async () => {
       const schema: JSONSchema = {
         properties: {
