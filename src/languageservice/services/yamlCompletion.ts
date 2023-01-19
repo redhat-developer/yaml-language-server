@@ -153,7 +153,7 @@ export class YamlCompletion {
           // OR get unfinished value (between colon and cursor)
           lineToPosition.match(/:[ \t]((?!:[ \t]).*)$/);
 
-        if (matches?.length) {
+        if (matches?.[1]) {
           overwriteRange = Range.create(
             Position.create(position.line, position.character - matches[1].length),
             Position.create(position.line, lineContent.length)
