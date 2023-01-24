@@ -22,9 +22,12 @@ import { LanguageSettings } from '../yamlLanguageService';
 import { YAML_SOURCE } from '../parser/jsonParser07';
 import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings';
 import { matchOffsetToDocument } from '../utils/arrUtils';
-import { isMap, isSeq } from 'yaml';
+import { CST, isMap, isSeq, YAMLMap } from 'yaml';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { FlowStyleRewriter } from '../utils/flow-style-rewriter';
+import { ASTNode } from '../jsonASTTypes';
+import * as _ from 'lodash';
+import { SourceToken } from 'yaml/dist/parse/cst';
 
 interface YamlDiagnosticData {
   schemaUri: string[];
@@ -50,6 +53,7 @@ export class YamlCodeActions {
     result.push(...this.getTabToSpaceConverting(params.context.diagnostics, document));
     result.push(...this.getUnusedAnchorsDelete(params.context.diagnostics, document));
     result.push(...this.getConvertToBlockStyleActions(params.context.diagnostics, document));
+    result.push(...this.getKeyOrderActions(params.context.diagnostics, document));
 
     return result;
   }
@@ -217,10 +221,7 @@ export class YamlCodeActions {
     const results: CodeAction[] = [];
     for (const diagnostic of diagnostics) {
       if (diagnostic.code === 'flowMap' || diagnostic.code === 'flowSeq') {
-        const yamlDocuments = yamlDocumentsCache.getYamlDocument(document);
-        const startOffset = document.offsetAt(diagnostic.range.start);
-        const yamlDoc = matchOffsetToDocument(startOffset, yamlDocuments);
-        const node = yamlDoc.getNodeFromOffset(startOffset);
+        const node = getNodeforDiagnostic(document, diagnostic);
         if (isMap(node.internalNode) || isSeq(node.internalNode)) {
           const blockTypeDescription = isMap(node.internalNode) ? 'map' : 'sequence';
           const rewriter = new FlowStyleRewriter(this.indentation);
@@ -236,6 +237,83 @@ export class YamlCodeActions {
     }
     return results;
   }
+
+  private getKeyOrderActions(diagnostics: Diagnostic[], document: TextDocument): CodeAction[] {
+    const results: CodeAction[] = [];
+    for (const diagnostic of diagnostics) {
+      if (diagnostic?.code === 'mapKeyOrder') {
+        let node = getNodeforDiagnostic(document, diagnostic);
+        while (node && node.type !== 'object') {
+          node = node.parent;
+        }
+        if (node && isMap(node.internalNode)) {
+          const sorted: YAMLMap = _.cloneDeep(node.internalNode);
+          if (
+            (sorted.srcToken.type === 'block-map' || sorted.srcToken.type === 'flow-collection') &&
+            (node.internalNode.srcToken.type === 'block-map' || node.internalNode.srcToken.type === 'flow-collection')
+          ) {
+            sorted.srcToken.items.sort((a, b) => {
+              if (a.key && b.key && CST.isScalar(a.key) && CST.isScalar(b.key)) {
+                return a.key.source.localeCompare(b.key.source);
+              }
+              if (!a.key && b.key) {
+                return -1;
+              }
+              if (a.key && !b.key) {
+                return 1;
+              }
+              if (!a.key && !b.key) {
+                return 0;
+              }
+            });
+
+            for (let i = 0; i < sorted.srcToken.items.length; i++) {
+              const item = sorted.srcToken.items[i];
+              const uItem = node.internalNode.srcToken.items[i];
+              item.start = uItem.start;
+              if (
+                item.value?.type === 'alias' ||
+                item.value?.type === 'scalar' ||
+                item.value?.type === 'single-quoted-scalar' ||
+                item.value?.type === 'double-quoted-scalar'
+              ) {
+                if (uItem.value?.type === 'block-scalar') {
+                  const token = uItem.value.props.find((p) => p.type === 'newline');
+                  if (token) {
+                    item.value.end = [token as SourceToken];
+                  }
+                } else if (uItem.value) {
+                  item.value.end = uItem.value['end'];
+                }
+              } else if (item.value?.type === 'block-scalar') {
+                const nwline = item.value.props.find((p) => p.type === 'newline');
+                if (!nwline) {
+                  item.value.props.push({ type: 'newline', indent: 0, offset: item.value.offset, source: '\n' } as SourceToken);
+                }
+              }
+            }
+          }
+          const replaceRange = Range.create(document.positionAt(node.offset), document.positionAt(node.offset + node.length));
+          results.push(
+            CodeAction.create(
+              'Fix key order for this map',
+              createWorkspaceEdit(document.uri, [TextEdit.replace(replaceRange, CST.stringify(sorted.srcToken))]),
+              CodeActionKind.QuickFix
+            )
+          );
+        }
+      }
+    }
+    return results;
+  }
+}
+
+function getNodeforDiagnostic(document: TextDocument, diagnostic: Diagnostic): ASTNode {
+  const yamlDocuments = yamlDocumentsCache.getYamlDocument(document);
+  const startOffset = document.offsetAt(diagnostic.range.start);
+  const yamlDoc = matchOffsetToDocument(startOffset, yamlDocuments);
+  const node = yamlDoc.getNodeFromOffset(startOffset);
+  return node;
 }
 
 function createWorkspaceEdit(uri: string, edits: TextEdit[]): WorkspaceEdit {

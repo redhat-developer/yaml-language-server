@@ -212,4 +212,141 @@ animals: [dog , cat , mouse]  `;
       ]);
     });
   });
+
+  describe('Map Key Order', () => {
+    it(' should generate action to order a map with incorrect key order', () => {
+      const yaml = '- key 2: v\n  key 1: val\n  key 5: valu\n  key 3: ff';
+      const doc = setupTextDocument(yaml);
+      const diagnostics = [
+        createExpectedError(
+          'Wrong ordering of key "key 2" in mapping',
+          0,
+          2,
+          0,
+          9,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+        createExpectedError(
+          'Wrong ordering of key "key 5" in mapping',
+          2,
+          0,
+          2,
+          9,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+      ];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.be.not.empty;
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([
+        TextEdit.replace(Range.create(0, 2, 3, 11), `key 1: val\n  key 2: v\n  key 3: ff\n  key 5: valu`),
+      ]);
+      expect(result[1].edit.changes[TEST_URI]).deep.equal([
+        TextEdit.replace(Range.create(0, 2, 3, 11), `key 1: val\n  key 2: v\n  key 3: ff\n  key 5: valu`),
+      ]);
+    });
+    it(' should generate action to order nested and block maps', () => {
+      const yaml = '- key 2: v\n  key 1: val\n  key 5: {b: 1, a: 2}\n  ';
+      const doc = setupTextDocument(yaml);
+      const diagnostics = [
+        createExpectedError(
+          'Wrong ordering of key "key 2" in mapping',
+          0,
+          2,
+          0,
+          9,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+        createExpectedError(
+          'Wrong ordering of key "key b" in mapping',
+          2,
+          9,
+          3,
+          0,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+      ];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.be.not.empty;
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([
+        TextEdit.replace(Range.create(0, 2, 3, 0), `key 1: val\n  key 2: v\n  key 5: {b: 1, a: 2}\n`),
+      ]);
+      expect(result[1].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(2, 9, 2, 21), `{a: 2, b: 1}\n`)]);
+    });
+    it(' should generate action to order maps with multi-line strings', () => {
+      const yaml = '- cc: 1\n  gg: 2\n  aa: >\n    some\n    text\n  vv: 4';
+      const doc = setupTextDocument(yaml);
+      const diagnostics = [
+        createExpectedError(
+          'Wrong ordering of key "key gg" in mapping',
+          1,
+          0,
+          1,
+          8,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+      ];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.be.not.empty;
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([
+        TextEdit.replace(Range.create(0, 2, 5, 7), `aa: >\n    some\n    text\n  cc: 1\n  gg: 2\n  vv: 4`),
+      ]);
+    });
+    it(' should generate actions when values are missing', () => {
+      const yaml = '- cc: 1\n  gg: 2\n  aa:';
+      const doc = setupTextDocument(yaml);
+      const diagnostics = [
+        createExpectedError(
+          'Wrong ordering of key "key gg" in mapping',
+          1,
+          0,
+          1,
+          8,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+      ];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.be.not.empty;
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(0, 2, 2, 5), `aa:  cc: 1\n  gg: 2\n`)]);
+    });
+  });
 });

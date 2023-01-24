@@ -36,7 +36,7 @@ export class MapKeyOrderValidator implements AdditionalValidator {
 }
 
 function createRange(document: TextDocument, node: Pair): Range {
-  const start = node?.srcToken.start[0]?.offset || node?.srcToken?.key.offset || node?.srcToken?.sep[0]?.offset;
+  const start = node?.srcToken.start[0]?.offset ?? node?.srcToken?.key.offset ?? node?.srcToken?.sep[0]?.offset;
   const end =
     node?.srcToken?.value.offset ||
     node?.srcToken?.sep[0]?.offset ||
