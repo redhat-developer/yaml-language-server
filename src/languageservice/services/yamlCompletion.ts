@@ -283,7 +283,7 @@ export class YamlCompletion {
         equalSymbolCompensation = 1;
       }
 
-      inlineText = inlineText.replace(/:\n?\s*(\$1)?/g, '.').replace(/\.$/, '');
+      inlineText = inlineText.replace(/:\n?\s*(\$1)?$/g, '.').replace(/\.$/, '');
       inlineItem.insertText = inlineText;
       if (inlineItem.textEdit) {
         inlineItem.textEdit.newText = inlineText;
