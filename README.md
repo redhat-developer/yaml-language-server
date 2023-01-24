@@ -52,6 +52,7 @@ The following settings are supported:
 - `yaml.suggest.parentSkeletonSelectedFirst`: If true, the user must select some parent skeleton first before autocompletion starts to suggest the rest of the properties.\nWhen yaml object is not empty, autocompletion ignores this setting and returns all properties and skeletons.
 - `yaml.style.flowMapping` : Forbids flow style mappings if set to `forbid` 
 - `yaml.style.flowSequence` : Forbids flow style sequences if set to `forbid`
+- `yaml.keyOrdering` : Enforces alphabetical ordering of keys in mappings when set to `true`. Default is `false`
 
 ##### Adding custom tags
 
