@@ -346,7 +346,35 @@ animals: [dog , cat , mouse]  `;
       const result = actions.getCodeAction(doc, params);
       expect(result).to.be.not.empty;
       expect(result).to.have.lengthOf(1);
-      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(0, 2, 2, 5), `aa:  cc: 1\n  gg: 2\n`)]);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(0, 2, 2, 5), `aa:  cc: 1\n  gg: 2`)]);
+    });
+    it(' should preserve comments', () => {
+      const yaml = '- cc: 1\n  gg: 2  #a comment\n  aa: 1';
+      const doc = setupTextDocument(yaml);
+      const diagnostics = [
+        createExpectedError(
+          'Wrong ordering of key "key gg" in mapping',
+          1,
+          0,
+          1,
+          8,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+      ];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.be.not.empty;
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([
+        TextEdit.replace(Range.create(0, 2, 2, 7), `aa: 1\n  cc: 1\n  gg: 2  #a comment`),
+      ]);
     });
   });
 });

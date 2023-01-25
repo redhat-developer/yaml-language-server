@@ -277,13 +277,19 @@ export class YamlCodeActions {
                 item.value?.type === 'single-quoted-scalar' ||
                 item.value?.type === 'double-quoted-scalar'
               ) {
+                const newLineIndex = item.value?.end?.findIndex((p) => p.type === 'newline') ?? -1;
+                let newLineToken = null;
                 if (uItem.value?.type === 'block-scalar') {
-                  const token = uItem.value.props.find((p) => p.type === 'newline');
-                  if (token) {
-                    item.value.end = [token as SourceToken];
-                  }
-                } else if (uItem.value) {
-                  item.value.end = uItem.value['end'];
+                  newLineToken = uItem.value?.props?.find((p) => p.type === 'newline');
+                } else if (CST.isScalar(uItem.value)) {
+                  newLineToken = uItem.value?.end?.find((p) => p.type === 'newline');
+                }
+                if (newLineToken && newLineIndex < 0) {
+                  item.value.end = item.value.end ?? [];
+                  item.value.end.push(newLineToken as SourceToken);
+                }
+                if (!newLineToken && newLineIndex > -1) {
+                  item.value.end.splice(newLineIndex, 1);
                 }
               } else if (item.value?.type === 'block-scalar') {
                 const nwline = item.value.props.find((p) => p.type === 'newline');
