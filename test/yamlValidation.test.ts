@@ -173,4 +173,70 @@ animals: [dog , cat , mouse]  `;
       ]);
     });
   });
+  describe('Map keys order Tests', () => {
+    it('should report key order error', async () => {
+      const yaml = '- key 2: v\n  key 1: val\n  key 5: valu\n  key 3: ff';
+      yamlSettings.keyOrdering = true;
+      languageSettingsSetup = new ServiceSetup().withValidate().withKeyOrdering();
+      const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
+        languageSettingsSetup.languageSettings
+      );
+      validationHandler = valHandler;
+      yamlSettings = settings;
+      const result = await parseSetup(yaml);
+      expect(result).not.to.be.empty;
+      expect(result.length).to.be.equal(2);
+      expect(result).to.include.deep.members([
+        createExpectedError(
+          'Wrong ordering of key "key 2" in mapping',
+          0,
+          2,
+          0,
+          9,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+        createExpectedError(
+          'Wrong ordering of key "key 5" in mapping',
+          2,
+          0,
+          2,
+          9,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+      ]);
+    });
+    it('should report key order error for flow style maps', async () => {
+      const yaml = '- {b: 1, a: 2}';
+      yamlSettings.keyOrdering = true;
+      languageSettingsSetup = new ServiceSetup().withValidate().withKeyOrdering();
+      const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
+        languageSettingsSetup.languageSettings
+      );
+      validationHandler = valHandler;
+      yamlSettings = settings;
+      const result = await parseSetup(yaml);
+      expect(result).not.to.be.empty;
+      expect(result.length).to.be.equal(1);
+      expect(result).to.include.deep.members([
+        createExpectedError('Wrong ordering of key "b" in mapping', 0, 3, 0, 6, DiagnosticSeverity.Error, 'YAML', 'mapKeyOrder'),
+      ]);
+    });
+
+    it('should NOT report any errors', async () => {
+      const yaml = '- key 1: val\n  key 5: valu\n- {a: 1, c: 2}';
+      yamlSettings.keyOrdering = true;
+      languageSettingsSetup = new ServiceSetup().withValidate().withKeyOrdering();
+      const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
+        languageSettingsSetup.languageSettings
+      );
+      validationHandler = valHandler;
+      yamlSettings = settings;
+      const result = await parseSetup(yaml);
+      expect(result).to.be.empty;
+    });
+  });
 });

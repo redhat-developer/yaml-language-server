@@ -1,3 +1,7 @@
+### [UNRELEASED] 
+
+- Add: Enforce alphabetical ordering of keys in mappings and provide codeaction to fix it. 
+
 ### 1.11.0
 - Fix: only the first choice is shown when hovering anyOf-typed properties [#784](https://github.com/redhat-developer/vscode-yaml/issues/784)
 - Fix: Description in the schema root does not get displayed [#809](https://github.com/redhat-developer/vscode-yaml/issues/809)
