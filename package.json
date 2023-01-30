@@ -42,7 +42,7 @@
     "vscode-languageserver-types": "^3.16.0",
     "vscode-nls": "^5.0.0",
     "vscode-uri": "^3.0.2",
-    "yaml": "2.0.0-11"
+    "yaml": "2.2.1"
   },
   "devDependencies": {
     "@microsoft/eslint-formatter-sarif": "3.0.0",
