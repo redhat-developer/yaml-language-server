@@ -21,12 +21,14 @@ import { Diagnostic, DiagnosticSeverity, Position } from 'vscode-languageserver-
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { LanguageService } from '../src/languageservice/yamlLanguageService';
+import { LanguageService, SchemaPriority } from '../src/languageservice/yamlLanguageService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 import { IProblem } from '../src/languageservice/parser/jsonParser07';
 import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { TestTelemetry } from './utils/testsTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
+import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers';
+import { Connection } from 'vscode-languageserver';
 
 describe('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -1975,6 +1977,28 @@ obj:
       expect(result.length).to.eq(1);
       expect(result[0].message).to.eq('Matches multiple schemas when only one must validate.');
       expect(telemetry.messages).to.be.empty;
+    });
+
+    it('custom kubernetes schema should return validation errors', (done) => {
+      const settingsHandler = new SettingsHandler({} as Connection, languageService, yamlSettings, validationHandler, telemetry);
+      const initialSettings = languageSettingsSetup.withKubernetes(true).languageSettings;
+      const kubernetesSettings = settingsHandler.configureSchemas(
+        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.26.1-standalone-strict/all.json',
+        ['**'],
+        undefined,
+        initialSettings,
+        SchemaPriority.SchemaAssociation
+      );
+      languageService.configure(kubernetesSettings);
+      const content = `apiVersion: apps/v1\nkind: Deployment\nfoo: bar`;
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.equal(result.length, 1);
+          // eslint-disable-next-line
+          assert.equal(result[0].message, `Property foo is not allowed.`);
+        })
+        .then(done, done);
     });
   });
   it('Nested AnyOf const should correctly evaluate and merge problems', async () => {

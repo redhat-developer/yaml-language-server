@@ -5,7 +5,7 @@
 import { configure as configureHttpRequests, xhr } from 'request-light';
 import { Connection, DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
-import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
+import { checkSchemaURI, JSON_SCHEMASTORE_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
 import { SchemaSelectionRequests } from '../../requestTypes';
 import { Settings, SettingsState } from '../../yamlSettings';
@@ -322,7 +322,7 @@ export class SettingsHandler {
    * @param languageSettings current server settings
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private configureSchemas(
+  public configureSchemas(
     uri: string,
     fileMatch: string[],
     schema: unknown,
@@ -337,12 +337,14 @@ export class SettingsHandler {
       languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema, priority: priorityLevel });
     }
 
-    if (fileMatch.constructor === Array && uri === KUBERNETES_SCHEMA_URL) {
-      fileMatch.forEach((url) => {
-        this.yamlSettings.specificValidatorPaths.push(url);
-      });
-    } else if (uri === KUBERNETES_SCHEMA_URL) {
-      this.yamlSettings.specificValidatorPaths.push(fileMatch);
+    if (uri.normalize().includes('kubernetes')) {
+      if (fileMatch.constructor === Array) {
+        fileMatch.forEach((url) => {
+          this.yamlSettings.specificValidatorPaths.push(url);
+        });
+      } else {
+        this.yamlSettings.specificValidatorPaths.push(fileMatch);
+      }
     }
 
     return languageSettings;
