@@ -146,11 +146,16 @@ export class YamlCompletion {
       const isOnlyWhitespace = lineContent.trim().length === 0;
       const isOnlyDash = lineContent.match(/^\s*(-)\s*$/);
       if (node && isScalar(node) && !isOnlyWhitespace && !isOnlyDash) {
-        // line contains part of a key with trailing spaces, adjust the overwrite range to include only the text
-        const matches = lineContent.match(/^([\s-]*)[^:]+[ \t]+\n?$/);
-        if (matches?.length) {
+        const lineToPosition = lineContent.substring(0, position.character);
+        const matches =
+          // get indentation of unfinished property (between indent and cursor)
+          lineToPosition.match(/^[\s-]*([^:]+)?$/) ||
+          // OR get unfinished value (between colon and cursor)
+          lineToPosition.match(/:[ \t]((?!:[ \t]).*)$/);
+
+        if (matches?.[1]) {
           overwriteRange = Range.create(
-            Position.create(position.line, matches[1].length),
+            Position.create(position.line, position.character - matches[1].length),
             Position.create(position.line, lineContent.length)
           );
         }
@@ -163,15 +168,12 @@ export class YamlCompletion {
       overwriteRange = Range.create(nodeStartPos, nodeEndPos);
     } else if (node && isScalar(node) && node.value) {
       const start = document.positionAt(node.range[0]);
-      if (offset > 0 && start.character > 0 && text.charAt(offset - 1) === '-') {
-        start.character -= 1;
-      }
       overwriteRange = Range.create(start, document.positionAt(node.range[1]));
     } else if (node && isScalar(node) && node.value === null && currentWord === '-') {
       overwriteRange = Range.create(position, position);
       this.arrayPrefixIndentation = ' ';
     } else {
-      let overwriteStart = document.offsetAt(position) - currentWord.length;
+      let overwriteStart = offset - currentWord.length;
       if (overwriteStart > 0 && text[overwriteStart - 1] === '"') {
         overwriteStart--;
       }

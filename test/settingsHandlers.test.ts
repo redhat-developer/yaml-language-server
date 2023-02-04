@@ -110,6 +110,37 @@ describe('Settings Handlers Tests', () => {
     });
   });
 
+  describe('Settings for key ordering should ', () => {
+    it(' reflect to the settings ', async () => {
+      const settingsHandler = new SettingsHandler(
+        connection,
+        (languageService as unknown) as LanguageService,
+        settingsState,
+        (validationHandler as unknown) as ValidationHandler,
+        {} as Telemetry
+      );
+      workspaceStub.getConfiguration.resolves([{ keyOrdering: true }, {}, {}, {}, {}]);
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.keyOrdering).to.exist;
+      expect(settingsState.keyOrdering).to.be.true;
+    });
+    it(' reflect default values if no settings given', async () => {
+      const settingsHandler = new SettingsHandler(
+        connection,
+        (languageService as unknown) as LanguageService,
+        settingsState,
+        (validationHandler as unknown) as ValidationHandler,
+        {} as Telemetry
+      );
+      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}, {}]);
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.style).to.exist;
+      expect(settingsState.keyOrdering).to.be.false;
+    });
+  });
+
   describe('Settings for file associations should ', () => {
     it('reflect to settings state', async () => {
       const settingsHandler = new SettingsHandler(

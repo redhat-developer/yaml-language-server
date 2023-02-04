@@ -29,6 +29,7 @@ export interface Settings {
       flowMapping: 'allow' | 'forbid';
       flowSequence: 'allow' | 'forbid';
     };
+    keyOrdering: boolean;
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
   };
@@ -87,6 +88,7 @@ export class SettingsState {
     flowMapping: 'allow' | 'forbid';
     flowSequence: 'allow' | 'forbid';
   };
+  keyOrdering = true;
   maxItemsComputed = 5000;
 
   // File validation helpers
