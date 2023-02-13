@@ -57,6 +57,14 @@ export const formats = {
     errorMessage: localize('emailFormatWarning', 'String is not an e-mail address.'),
     pattern: /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
   },
+  ipv4: {
+    errorMessage: localize('ipv4FormatWarning', 'String does not match IPv4 format.'),
+    pattern: /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/gm,
+  },
+  ipv6: {
+    errorMessage: localize('ipv4FormatWarning', 'String does not match IPv6 format.'),
+    pattern: /^((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}$/gm,
+  },
 };
 
 export const YAML_SOURCE = 'YAML';
@@ -1054,6 +1062,8 @@ function validate(
         case 'date':
         case 'time':
         case 'email':
+        case 'ipv4':
+        case 'ipv6':
           {
             const format = formats[schema.format];
             if (!node.value || !format.pattern.exec(node.value)) {
@@ -1061,21 +1071,6 @@ function validate(
                 location: { offset: node.offset, length: node.length },
                 severity: DiagnosticSeverity.Warning,
                 message: schema.patternErrorMessage || schema.errorMessage || format.errorMessage,
-                source: getSchemaSource(schema, originalSchema),
-                schemaUri: getSchemaUri(schema, originalSchema),
-              });
-            }
-          }
-          break;
-        case 'ipv4':
-        case 'ipv6':
-          {
-            const [regex, errorMessage] = getFormatAndMessage(schema.format);
-            if (!regex.test(node.value)) {
-              validationResult.problems.push({
-                location: { offset: node.offset, length: node.length },
-                severity: DiagnosticSeverity.Warning,
-                message: schema.errorMessage || localize('formatWarning', errorMessage, schema.format),
                 source: getSchemaSource(schema, originalSchema),
                 schemaUri: getSchemaUri(schema, originalSchema),
               });
@@ -1544,24 +1539,6 @@ function validate(
     }
     return bestMatch;
   }
-}
-
-function getFormatAndMessage(format: string): [RegExp, string] {
-  let regx: RegExp, errorMessage: string;
-  if (format === 'ipv4') {
-    regx = new RegExp(
-      '^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\\.([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\\.([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\\.([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$',
-      'gm'
-    );
-    errorMessage = 'String does not match IPv4 format.';
-  } else {
-    regx = new RegExp(
-      '^((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}$',
-      'gm'
-    );
-    errorMessage = 'String does not match IPv6 format.';
-  }
-  return [regx, errorMessage];
 }
 
 function getSchemaSource(schema: JSONSchema, originalSchema: JSONSchema): string | undefined {
