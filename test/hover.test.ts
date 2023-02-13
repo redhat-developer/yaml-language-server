@@ -510,6 +510,28 @@ users:
       );
     });
 
+    it('hover on value and its description has multiline, indentationa and special string', async () => {
+      //https://github.com/redhat-developer/vscode-yaml/issues/886
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        title: 'Person',
+        properties: {
+          firstName: {
+            type: 'string',
+            description: 'At the top level my_var is shown properly.\n\n    Issue with my_var2\n        here my_var3',
+          },
+        },
+      });
+      const content = 'fi|r|stName: '; // len: 12, pos: 1
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `#### Person\n\nAt the top level my\\_var is shown properly\\.\n\n Issue with my\\_var2\n\n here my\\_var3\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
     it('Hover works on examples', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
