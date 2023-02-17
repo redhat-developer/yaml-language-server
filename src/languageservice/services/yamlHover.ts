@@ -206,17 +206,20 @@ function toMarkdown(plain: string | undefined): string | undefined {
   if (plain) {
     let res = plain.replace(/([^\n\r])(\r?\n)([^\n\r])/gm, '$1\n\n$3'); // single new lines to \n\n (Markdown paragraph)
     res = res.replace(/[\\`*_{}[\]()#+\-.!]/g, '\\$&'); // escape markdown syntax tokens: http://daringfireball.net/projects/markdown/syntax#backslash
-    return res.split('\n\n').length > 0 ? removeMarkdownEscapes(res) : res;
+    const splitedStrings = res.split('\n\n');
+    return splitedStrings.length > 0 ? removeMarkdownEscapes(splitedStrings) : res;
   }
   return undefined;
 }
 
 //logic used from https://github.com/microsoft/vscode/issues/16936
-function removeMarkdownEscapes(value: string): string {
+function removeMarkdownEscapes(values: string[]): string {
   let markdownString = '';
-  value.split('\n\n').forEach((splitVal) => {
+  values.forEach((splitVal, index) => {
     markdownString += splitVal.match(/([^\S\n\r]{2,})/g) ? splitVal.replace(/\\([\\`*_{}[\]()#+\-.!])/g, '$1') : splitVal;
-    markdownString += '\n\n';
+    if (index < values.length - 1) {
+      markdownString += '\n\n';
+    }
   });
   return markdownString;
 }

@@ -518,7 +518,7 @@ users:
         properties: {
           firstName: {
             type: 'string',
-            description: 'At the top level my_var is shown properly.\n\n    Issue with my_var2\n        here my_var3',
+            description: 'At the top level my_var is shown properly.\n\n    Issue with my_var2\n      here my_var3',
           },
         },
       });
@@ -528,7 +528,7 @@ users:
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `#### Person\n\nAt the top level my\\_var is shown properly\\.\n\n Issue with my\\_var2\n\n here my\\_var3\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `#### Person\n\nAt the top level my\\_var is shown properly\\.\n\n    Issue with my_var2\n\n      here my_var3\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
