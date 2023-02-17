@@ -41,7 +41,7 @@ jobs:
         run: yarn build
 
       - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@17573ee1cc1b9d061760f3a006fc4aac4f944fd5 #v2
         with:
           # Path to SARIF file relative to the root of the repository
           sarif_file: eslint-result.sarif
@@ -51,13 +51,13 @@ jobs:
 
       # Run tests
       - name: Run Test
-        uses: GabrielBB/xvfb-action@v1.0
+        uses: GabrielBB/xvfb-action@fe2609f8182a9ed5aee7d53ff3ed04098a904df2 #v1.0
         with:
           run: yarn coveralls
 
         # Run Coveralls
       - name: Coveralls
-        uses: coverallsapp/github-action@master
+        uses: coverallsapp/github-action@3284643be2c47fb6432518ecec17f1255e8a06a6 #master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
