@@ -206,9 +206,19 @@ function toMarkdown(plain: string | undefined): string | undefined {
   if (plain) {
     let res = plain.replace(/([^\n\r])(\r?\n)([^\n\r])/gm, '$1\n\n$3'); // single new lines to \n\n (Markdown paragraph)
     res = res.replace(/[\\`*_{}[\]()#+\-.!]/g, '\\$&'); // escape markdown syntax tokens: http://daringfireball.net/projects/markdown/syntax#backslash
-    return res.replace(/([^\S\n\r]{4,})/g, ' '); //replace multiple space to single space
+    return res.split('\n\n').length > 0 ? removeMarkdownEscapes(res) : res;
   }
   return undefined;
+}
+
+//logic used from https://github.com/microsoft/vscode/issues/16936
+function removeMarkdownEscapes(value: string): string {
+  let markdownString = '';
+  value.split('\n\n').forEach((splitVal) => {
+    markdownString += splitVal.match(/([^\S\n\r]{2,})/g) ? splitVal.replace(/\\([\\`*_{}[\]()#+\-.!])/g, '$1') : splitVal;
+    markdownString += '\n\n';
+  });
+  return markdownString;
 }
 
 // copied from https://github.com/microsoft/vscode-json-languageservice/blob/2ea5ad3d2ffbbe40dea11cfe764a502becf113ce/src/services/jsonHover.ts#L122
