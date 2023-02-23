@@ -63,7 +63,7 @@ export const formats = {
   },
   ipv6: {
     errorMessage: localize('ipv4FormatWarning', 'String does not match IPv6 format.'),
-    pattern: /^([0-9a-f]|:){1,4}(:([0-9a-f.]{0,4})*){1,7}$/i,
+    pattern: /^([0-9a-f]|:){1,4}(:([0-9a-f]{0,4})*){1,7}$/i,
   },
 };
 

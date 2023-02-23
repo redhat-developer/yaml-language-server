@@ -1774,7 +1774,7 @@ obj:
         },
       };
       languageService.addSchema(SCHEMA_ID, schema);
-      const content = `- 2001:0db8:85a3:0000:0000:8a2e:0370:7334\n- 2001:0db8:85a3:0000:0000:8a2e:0370:7334\n- FEDC:BA98:7654:3210:FEDC:BA98:7654:3210\n- 1080::8:800:200C:417A\n- FF01::101\n- ::1\n- ::13.1.68.3`;
+      const content = `- 2001:0db8:85a3:0000:0000:8a2e:0370:7334\n- 2001:0db8:85a3:0000:0000:8a2e:0370:7334\n- FEDC:BA98:7654:3210:FEDC:BA98:7654:3210\n- 1080::8:800:200C:417A\n- FF01::101\n- ::1`;
       const result = await parseSetup(content);
       expect(result).to.be.empty;
       expect(telemetry.messages).to.be.empty;
