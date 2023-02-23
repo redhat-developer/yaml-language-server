@@ -59,11 +59,11 @@ export const formats = {
   },
   ipv4: {
     errorMessage: localize('ipv4FormatWarning', 'String does not match IPv4 format.'),
-    pattern: /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/gm,
+    pattern: /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/,
   },
   ipv6: {
     errorMessage: localize('ipv4FormatWarning', 'String does not match IPv6 format.'),
-    pattern: /^((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}$/gm,
+    pattern: /^([0-9a-f]|:){1,4}(:([0-9a-f.]{0,4})*){1,7}$/i,
   },
 };
 
