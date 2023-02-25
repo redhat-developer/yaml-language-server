@@ -27,8 +27,7 @@ export function getLineOffsets(textDocString: string): number[] {
   return lineOffsets;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function removeDuplicatesObj(objArray: any[]): any[] {
+export function removeDuplicatesObj<T>(objArray: T[]): T[] {
   const nonDuplicateSet = new Set();
   const nonDuplicateArr = [];
   for (const obj in objArray) {
@@ -39,7 +38,6 @@ export function removeDuplicatesObj(objArray: any[]): any[] {
       nonDuplicateSet.add(stringifiedObj);
     }
   }
-
   return nonDuplicateArr;
 }
 
