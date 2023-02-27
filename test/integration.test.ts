@@ -22,6 +22,7 @@ describe('Kubernetes Integration Tests', () => {
     const fileMatch = ['*.yml', '*.yaml'];
     languageSettingsSetup = new ServiceSetup()
       .withHover()
+      .withIndentation('  ')
       .withValidate()
       .withCompletion()
       .withSchemaFileMatch({
@@ -318,8 +319,8 @@ describe('Kubernetes Integration Tests', () => {
     it('Hover on incomplete kubernetes document', async () => {
       const content = 'apiVersion: v1\nmetadata:\n  name: test\nkind: Deployment\nspec:\n   ';
       const hover = await parseSetup(content, 58);
-      assert.strictEqual(MarkupContent.is(hover.contents), true);
-      assert.strictEqual((hover.contents as MarkupContent).value, '');
+      assert.strictEqual(MarkupContent.is(hover?.contents), true);
+      assert.strictEqual((hover?.contents as MarkupContent).value, '');
     });
   });
 });

@@ -29,6 +29,7 @@ describe('Multiple Documents Validation Tests', () => {
     const fileMatch = ['*.yml', '*.yaml'];
     languageSettingsSetup = new ServiceSetup()
       .withHover()
+      .withIndentation('  ')
       .withValidate()
       .withSchemaFileMatch({
         fileMatch,
