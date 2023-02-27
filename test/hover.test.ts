@@ -20,10 +20,13 @@ describe('Hover Tests', () => {
   let telemetry: TestTelemetry;
 
   before(() => {
-    languageSettingsSetup = new ServiceSetup().withHover().withSchemaFileMatch({
-      uri: 'http://google.com',
-      fileMatch: ['bad-schema.yaml'],
-    });
+    languageSettingsSetup = new ServiceSetup()
+      .withHover()
+      .withIndentation('  ')
+      .withSchemaFileMatch({
+        uri: 'http://google.com',
+        fileMatch: ['bad-schema.yaml'],
+      });
     const {
       languageService: langService,
       languageHandler: langHandler,
@@ -528,7 +531,7 @@ users:
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `#### Person\n\nAt the top level my\\_var is shown properly\\.\n\n    Issue with my_var2\n\n      here my_var3\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `#### Person\n\nAt the top level my\\_var is shown properly\\.\n\n&emsp;&emsp;Issue with my\\_var2\n\n&emsp;&emsp;&emsp;here my\\_var3\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 

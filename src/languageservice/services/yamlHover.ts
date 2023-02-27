@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { Hover, MarkupContent, Position, Range } from 'vscode-languageserver-types';
+import { Hover, MarkupContent, MarkupKind, Position, Range } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
 import { YAMLSchemaService } from './yamlSchemaService';
@@ -23,6 +23,7 @@ import { ASTNode } from 'vscode-json-languageservice';
 
 export class YAMLHover {
   private shouldHover: boolean;
+  private indentation: string;
   private schemaService: YAMLSchemaService;
 
   constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
@@ -33,6 +34,7 @@ export class YAMLHover {
   configure(languageSettings: LanguageSettings): void {
     if (languageSettings) {
       this.shouldHover = languageSettings.hover;
+      this.indentation = languageSettings.indentation;
     }
   }
 
@@ -86,9 +88,10 @@ export class YAMLHover {
     );
 
     const createHover = (contents: string): Hover => {
+      const regex = new RegExp(this.indentation, 'g');
       const markupContent: MarkupContent = {
-        kind: 'markdown',
-        value: contents,
+        kind: MarkupKind.Markdown,
+        value: contents.replace(regex, '&emsp;'),
       };
       const result: Hover = {
         contents: markupContent,
@@ -204,24 +207,10 @@ function toMarkdown(plain: string): string;
 function toMarkdown(plain: string | undefined): string | undefined;
 function toMarkdown(plain: string | undefined): string | undefined {
   if (plain) {
-    let res = plain.replace(/([^\n\r])(\r?\n)([^\n\r])/gm, '$1\n\n$3'); // single new lines to \n\n (Markdown paragraph)
-    res = res.replace(/[\\`*_{}[\]()#+\-.!]/g, '\\$&'); // escape markdown syntax tokens: http://daringfireball.net/projects/markdown/syntax#backslash
-    const splitedStrings = res.split('\n\n');
-    return splitedStrings.length > 0 ? removeMarkdownEscapes(splitedStrings) : res;
+    const res = plain.replace(/([^\n\r])(\r?\n)([^\n\r])/gm, '$1\n\n$3'); // single new lines to \n\n (Markdown paragraph)
+    return res.replace(/[\\`*_{}[\]()#+\-.!]/g, '\\$&'); // escape markdown syntax tokens: http://daringfireball.net/projects/markdown/syntax#backslash
   }
   return undefined;
-}
-
-//logic used from https://github.com/microsoft/vscode/issues/16936
-function removeMarkdownEscapes(values: string[]): string {
-  let markdownString = '';
-  values.forEach((splitVal, index) => {
-    markdownString += splitVal.match(/([^\S\n\r]{2,})/g) ? splitVal.replace(/\\([\\`*_{}[\]()#+\-.!])/g, '$1') : splitVal;
-    if (index < values.length - 1) {
-      markdownString += '\n\n';
-    }
-  });
-  return markdownString;
 }
 
 // copied from https://github.com/microsoft/vscode-json-languageservice/blob/2ea5ad3d2ffbbe40dea11cfe764a502becf113ce/src/services/jsonHover.ts#L122
