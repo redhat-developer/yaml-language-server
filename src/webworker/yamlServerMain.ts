@@ -12,9 +12,7 @@ import { SettingsState } from '../yamlSettings';
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace FSReadFile {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  export const type: RequestType<string, string, {}> = new RequestType('fs/readFile');
+  export const type: RequestType<string, string, unknown> = new RequestType('fs/readFile');
 }
 
 const messageReader = new BrowserMessageReader(globalThis);

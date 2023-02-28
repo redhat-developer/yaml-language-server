@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import { Hover, MarkupContent, Position, Range } from 'vscode-languageserver-types';
+import { Hover, MarkupContent, MarkupKind, Position, Range } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
 import { YAMLSchemaService } from './yamlSchemaService';
@@ -23,6 +23,7 @@ import { ASTNode } from 'vscode-json-languageservice';
 
 export class YAMLHover {
   private shouldHover: boolean;
+  private indentation: string;
   private schemaService: YAMLSchemaService;
 
   constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
@@ -33,6 +34,7 @@ export class YAMLHover {
   configure(languageSettings: LanguageSettings): void {
     if (languageSettings) {
       this.shouldHover = languageSettings.hover;
+      this.indentation = languageSettings.indentation;
     }
   }
 
@@ -86,9 +88,10 @@ export class YAMLHover {
     );
 
     const createHover = (contents: string): Hover => {
+      const regex = new RegExp(this.indentation, 'g');
       const markupContent: MarkupContent = {
-        kind: 'markdown',
-        value: contents,
+        kind: MarkupKind.Markdown,
+        value: contents.replace(regex, '&emsp;'),
       };
       const result: Hover = {
         contents: markupContent,

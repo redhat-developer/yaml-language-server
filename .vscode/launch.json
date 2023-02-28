@@ -10,7 +10,8 @@
       "sourceMaps": true,
       "outFiles": ["${workspaceRoot}/out/server/**/*.ts"],
       "protocol": "inspector",
-      "trace": true
+      "trace": true,
+      "preLaunchTask": "watch typescript",
     },
     // A launch configuration that compiles the server and runs mocha unit tests
     {
