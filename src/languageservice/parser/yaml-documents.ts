@@ -69,10 +69,20 @@ export class SingleYAMLDocument extends JSONDocument {
       this._lineComments.push(`#${this._internalDocument.comment}`);
     }
   }
+  /**
+   * Updates the internal AST tree of the object
+   * from the internal node. This is call whenever the
+   * internalDocument is set but also can be called to
+   * reflect any changes on the underlying document
+   * without setting the internalDocument explicitly.
+   */
+  public updateFromInternalDocument(): void {
+    this.root = convertAST(null, this._internalDocument.contents as Node, this._internalDocument, this.lineCounter);
+  }
 
   set internalDocument(document: Document) {
     this._internalDocument = document;
-    this.root = convertAST(null, this._internalDocument.contents as Node, this._internalDocument, this.lineCounter);
+    this.updateFromInternalDocument();
   }
 
   get internalDocument(): Document {
