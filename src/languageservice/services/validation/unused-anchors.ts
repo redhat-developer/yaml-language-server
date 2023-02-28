@@ -33,7 +33,7 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
 
     for (const anchor of anchors) {
       if (!usedAnchors.has(anchor)) {
-        const aToken = this.getAnchorNode(anchorParent.get(anchor));
+        const aToken = this.getAnchorNode(anchorParent.get(anchor), anchor);
         if (aToken) {
           const range = Range.create(
             document.positionAt(aToken.offset),
@@ -48,13 +48,14 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
 
     return result;
   }
-  private getAnchorNode(parentNode: YamlNode): CST.SourceToken | undefined {
+  private getAnchorNode(parentNode: YamlNode, node: Node): CST.SourceToken | undefined {
     if (parentNode && parentNode.srcToken) {
       const token = parentNode.srcToken;
       if (isCollectionItem(token)) {
         return getAnchorFromCollectionItem(token);
       } else if (CST.isCollection(token)) {
         for (const t of token.items) {
+          if (node.srcToken !== t.value) continue;
           const anchor = getAnchorFromCollectionItem(t);
           if (anchor) {
             return anchor;
