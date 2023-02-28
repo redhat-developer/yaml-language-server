@@ -78,9 +78,10 @@ some:
   &a ss: ss
 &aa ff: 
   - s
-  - o
+  - &g o
   - &e m
-  - e`;
+  - e
+ee: *g`;
       const result = await parseSetup(yaml);
       expect(result).is.not.empty;
       expect(result.length).to.be.equal(4);
