@@ -586,6 +586,7 @@ describe('Validation Tests', () => {
     it('Error on incorrect value type (object)', (done) => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
+        title: 'Check incorrect value type object',
         properties: {
           scripts: {
             type: 'object',
@@ -611,7 +612,7 @@ describe('Validation Tests', () => {
               0,
               13,
               DiagnosticSeverity.Error,
-              `yaml-schema: file:///${SCHEMA_ID}`,
+              `yaml-schema: Check incorrect value type object`,
               `file:///${SCHEMA_ID}`
             )
           );
