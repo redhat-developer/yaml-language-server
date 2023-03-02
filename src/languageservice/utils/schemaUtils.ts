@@ -12,7 +12,11 @@ export function getSchemaTypeName(schema: JSONSchema): string {
   if (schema.$ref || schema._$ref) {
     return getSchemaRefTypeTitle(schema.$ref || schema._$ref);
   }
-  return (Array.isArray(schema.type) ? schema.type.join(' | ') : schema.type) || schema.closestTitle; //object
+  return Array.isArray(schema.type)
+    ? schema.type.join(' | ')
+    : schema.closestTitle
+    ? schema.type.concat(' ', '(', schema.closestTitle, ')')
+    : schema.type; //object
 }
 
 /**
