@@ -52,7 +52,7 @@ export class ValidationHandler {
     return this.languageService
       .doValidation(textDocument, isKubernetesAssociatedDocument(textDocument, this.yamlSettings.specificValidatorPaths))
       .then((diagnosticResults) => {
-        const diagnostics = [];
+        const diagnostics: Diagnostic[] = [];
         for (const diagnosticItem of diagnosticResults) {
           // Convert all warnings to errors
           if (diagnosticItem.severity === 2) {
