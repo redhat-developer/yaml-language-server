@@ -28,6 +28,7 @@ import {
   NumberASTNodeImpl,
   ArrayASTNodeImpl,
   BooleanASTNodeImpl,
+  NullObjectASTNodeImpl,
 } from './jsonParser07';
 
 type NodeRange = [number, number, number];
@@ -125,7 +126,9 @@ function convertSeq(node: YAMLSeq, parent: ASTNode, doc: Document, lineCounter: 
 
 function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
   if (node.value === null) {
-    return new NullASTNodeImpl(parent, node, ...toOffsetLength(node.range));
+    return ['null', '~'].includes(node.source?.toLowerCase())
+      ? new NullASTNodeImpl(parent, node, ...toOffsetLength(node.range))
+      : new NullObjectASTNodeImpl(parent, node, ...toOffsetLength(node.range));
   }
 
   switch (typeof node.value) {

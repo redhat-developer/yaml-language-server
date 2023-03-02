@@ -155,6 +155,22 @@ export abstract class ASTNodeImpl {
   }
 }
 
+export class NullObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
+  public type: 'object' = 'object' as const;
+  public value = null;
+  public properties: PropertyASTNode[];
+
+  constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
+    super(parent, internalNode, offset, length);
+
+    this.properties = [];
+  }
+
+  public get children(): ASTNode[] {
+    return this.properties;
+  }
+}
+
 export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
   public type: 'null' = 'null' as const;
   public value = null;
@@ -694,7 +710,7 @@ function validate(
         });
       }
     } else if (schema.type) {
-      if (!matchesType(schema.type)) {
+      if (!matchesType(schema.type) || (schema.type === 'object' && node.value === null)) {
         //get more specific name than just object
         const schemaType = schema.type === 'object' ? getSchemaTypeName(schema) : schema.type;
         validationResult.problems.push({

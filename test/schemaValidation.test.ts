@@ -1155,7 +1155,7 @@ obj:
 
   // https://github.com/redhat-developer/yaml-language-server/issues/118
   describe('Null literals', () => {
-    ['NULL', 'Null', 'null', '~', ''].forEach((content) => {
+    ['NULL', 'Null', 'null', '~'].forEach((content) => {
       it(`Test type null is parsed from [${content}]`, (done) => {
         const schema = {
           type: 'object',
@@ -1173,6 +1173,24 @@ obj:
           })
           .then(done, done);
       });
+    });
+
+    it(`Test type null is parsed from empty string`, (done) => {
+      const schema = {
+        type: 'object',
+        properties: {
+          nulltest: {
+            type: 'null',
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const validator = parseSetup('nulltest: ');
+      validator
+        .then(function (result) {
+          assert.equal(result.length, 1);
+        })
+        .then(done, done);
     });
 
     it('Test type null is working correctly in array', (done) => {
