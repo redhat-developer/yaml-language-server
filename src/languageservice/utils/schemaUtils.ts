@@ -2,7 +2,7 @@ import { URI } from 'vscode-uri';
 import { JSONSchema } from '../jsonSchema';
 import * as path from 'path';
 
-export function getSchemaTypeName(schema: JSONSchema): string {
+export function getSchemaTypeName(schema: JSONSchema, isRequiredValue = false): string {
   if (schema.title) {
     return schema.title;
   }
@@ -11,6 +11,9 @@ export function getSchemaTypeName(schema: JSONSchema): string {
   }
   if (schema.$ref || schema._$ref) {
     return getSchemaRefTypeTitle(schema.$ref || schema._$ref);
+  }
+  if (isRequiredValue) {
+    return schema.required.join(' | ');
   }
   return (Array.isArray(schema.type) ? schema.type.join(' | ') : schema.type) || schema.closestTitle; //object
 }

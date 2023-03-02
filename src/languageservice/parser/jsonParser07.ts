@@ -694,7 +694,11 @@ function validate(
 
   function _validateNode(): void {
     function matchesType(type: string): boolean {
-      return node.type === type || (type === 'integer' && node.type === 'number' && node.isInteger);
+      return (
+        node.type === type ||
+        (type === 'integer' && node.type === 'number' && node.isInteger) ||
+        (type === 'string' && node.value === null)
+      );
     }
 
     if (Array.isArray(schema.type)) {
@@ -710,7 +714,7 @@ function validate(
         });
       }
     } else if (schema.type) {
-      if (!matchesType(schema.type) || (schema.type === 'object' && node.value === null)) {
+      if (!matchesType(schema.type)) {
         //get more specific name than just object
         const schemaType = schema.type === 'object' ? getSchemaTypeName(schema) : schema.type;
         validationResult.problems.push({
@@ -1220,7 +1224,7 @@ function validate(
   }
 
   function _validateObjectNode(
-    node: ObjectASTNode,
+    node: ObjectASTNode | NullObjectASTNodeImpl,
     schema: JSONSchema,
     validationResult: ValidationResult,
     matchingSchemas: ISchemaCollector
@@ -1259,8 +1263,10 @@ function validate(
     }
 
     if (Array.isArray(schema.required)) {
+      let count = 0;
       for (const propertyName of schema.required) {
         if (seenKeys[propertyName] === undefined) {
+          count++;
           const keyNode = node.parent && node.parent.type === 'property' && node.parent.keyNode;
           const location = keyNode ? { offset: keyNode.offset, length: keyNode.length } : { offset: node.offset, length: 1 };
           validationResult.problems.push({
@@ -1273,6 +1279,22 @@ function validate(
             problemType: ProblemType.missingRequiredPropWarning,
           });
         }
+      }
+      //when all required missing better to show the type than each property
+      if (node.properties.length === 0 && count === schema.required.length) {
+        validationResult.problems = [];
+        const keyNode = node.parent && node.parent.type === 'property' && node.parent.keyNode;
+        const location = keyNode ? { offset: keyNode.offset, length: keyNode.length } : { offset: node.offset, length: 1 };
+        const schemaType = getSchemaTypeName(schema, true);
+        validationResult.problems.push({
+          location: location,
+          severity: DiagnosticSeverity.Warning,
+          message: getWarningMessage(ProblemType.missingRequiredPropWarning, [schemaType]),
+          source: getSchemaSource(schema, originalSchema),
+          schemaUri: getSchemaUri(schema, originalSchema),
+          problemType: ProblemType.typeMismatchWarning,
+          problemArgs: [schemaType],
+        });
       }
     }
 

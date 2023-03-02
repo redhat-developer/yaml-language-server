@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, toFsPath } from './utils/testHelper';
 import { createDiagnosticWithData, createExpectedError } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import {
@@ -1029,7 +1029,7 @@ obj:
         .then(done, done);
     });
 
-    it('Error when theres no value for a node', (done) => {
+    it('No Error when theres no value for a node on type string', (done) => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -1042,20 +1042,7 @@ obj:
       const validator = parseSetup(content);
       validator
         .then(function (result) {
-          assert.equal(result.length, 1);
-          assert.deepEqual(
-            result[0],
-            createDiagnosticWithData(
-              StringTypeError,
-              0,
-              4,
-              0,
-              4,
-              DiagnosticSeverity.Error,
-              `yaml-schema: file:///${SCHEMA_ID}`,
-              `file:///${SCHEMA_ID}`
-            )
-          );
+          expect(result).to.be.empty;
         })
         .then(done, done);
     });
@@ -1145,9 +1132,9 @@ obj:
       const validator = parseSetup(content);
       validator
         .then(function (result) {
-          assert.equal(result.length, 2);
+          assert.equal(result.length, 1);
           // eslint-disable-next-line
-          assert.equal(result[1].message, `Value is not accepted. Valid values: "ImageStreamImport", "ImageStreamLayers".`);
+          assert.equal(result[0].message, `Value is not accepted. Valid values: "ImageStreamImport", "ImageStreamLayers".`);
         })
         .then(done, done);
     });
@@ -1525,9 +1512,12 @@ obj:
       const content = 'test_anyOf_objects:\n  propA:';
       const result = await parseSetup(content);
 
-      assert.strictEqual(result.length, 3);
-      assert.strictEqual(result[2].message, 'Incorrect type. Expected "string".');
-      assert.strictEqual(result[2].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.strictEqual(result.length, 2);
+      assert.strictEqual(result[0].message, 'Missing property "objA".');
+      assert.strictEqual(result[0].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+
+      assert.strictEqual(result[1].message, 'Missing property "constA".');
+      assert.strictEqual(result[1].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
     });
     it('should combine const value', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -1538,9 +1528,9 @@ obj:
       const content = 'test_anyOf_objects:\n  constA:';
       const result = await parseSetup(content);
 
-      assert.strictEqual(result.length, 4);
-      assert.strictEqual(result[3].message, 'Value must be "constForType1" | "constForType3".');
-      assert.strictEqual(result[3].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.strictEqual(result.length, 3);
+      assert.strictEqual(result[2].message, 'Value must be "constForType1" | "constForType3".');
+      assert.strictEqual(result[2].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
     });
     it('should distinguish types in error: "Missing property from multiple schemas"', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -1860,6 +1850,18 @@ obj:
       await languageService.doComplete(testTextDocument, Position.create(6, 8), false);
       const result = await validationHandler.validateTextDocument(testTextDocument);
       expect(result).to.be.empty;
+    });
+
+    it('should show missing property error when object has null', async () => {
+      const uri = toFsPath(path.join(__dirname, './fixtures/test-missingProperty.json'));
+      const content = `# yaml-language-server: $schema=${uri}\n
+      modules:
+        - name: 
+          source:`;
+      const result = await parseSetup(content);
+      assert.strictEqual(result.length, 1);
+      assert.strictEqual(result[0].message, 'Missing property "Source".');
+      assert.strictEqual(result[0].source, 'yaml-schema: Schematics_Blueprint_v1');
     });
   });
 
