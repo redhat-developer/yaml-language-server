@@ -586,7 +586,7 @@ describe('Validation Tests', () => {
     it('Error on incorrect value type (object)', (done) => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
-        title: 'Check incorrect value type object',
+        title: 'Object',
         properties: {
           scripts: {
             type: 'object',
@@ -606,13 +606,13 @@ describe('Validation Tests', () => {
           assert.deepEqual(
             result[0],
             createDiagnosticWithData(
-              ObjectTypeError,
+              'Incorrect type. Expected "object(Object)".',
               0,
               9,
               0,
               13,
               DiagnosticSeverity.Error,
-              `yaml-schema: Check incorrect value type object`,
+              `yaml-schema: Object`,
               `file:///${SCHEMA_ID}`
             )
           );
