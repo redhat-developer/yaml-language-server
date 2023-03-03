@@ -674,7 +674,9 @@ function validate(
 
   switch (node.type) {
     case 'object':
-      _validateObjectNode(node, schema, validationResult, matchingSchemas);
+      if (node.value === undefined || node.value !== null || !callFromAutoComplete) {
+        _validateObjectNode(node, schema, validationResult, matchingSchemas);
+      }
       break;
     case 'array':
       _validateArrayNode(node, schema, validationResult, matchingSchemas);
