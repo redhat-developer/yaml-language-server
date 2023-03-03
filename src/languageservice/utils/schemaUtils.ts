@@ -3,6 +3,7 @@ import { JSONSchema } from '../jsonSchema';
 import * as path from 'path';
 
 export function getSchemaTypeName(schema: JSONSchema): string {
+  const closestTitleWithType = schema.type && schema.closestTitle;
   if (schema.title) {
     return schema.title;
   }
@@ -14,9 +15,9 @@ export function getSchemaTypeName(schema: JSONSchema): string {
   }
   return Array.isArray(schema.type)
     ? schema.type.join(' | ')
-    : schema.closestTitle
+    : closestTitleWithType
     ? schema.type.concat('(', schema.closestTitle, ')')
-    : schema.type; //object
+    : schema.type || schema.closestTitle; //object
 }
 
 /**
