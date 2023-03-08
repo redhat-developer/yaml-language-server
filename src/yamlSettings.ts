@@ -87,7 +87,7 @@ export class SettingsState {
     flowMapping: 'allow' | 'forbid';
     flowSequence: 'allow' | 'forbid';
   };
-  keyOrdering = true;
+  keyOrdering = false;
   maxItemsComputed = 5000;
 
   // File validation helpers
