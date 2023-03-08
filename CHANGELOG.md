@@ -6,7 +6,7 @@
 - Fix: Type errors inform wrong type when parent schema has keyword "title" [#845](https://github.com/redhat-developer/yaml-language-server/issues/845)
 - Fix: Anchor diagnostics [#846](https://github.com/redhat-developer/yaml-language-server/pull/846)
 - Fix: Underscore being escaped in description attribute when hovering over an attribute [#886](https://github.com/redhat-developer/vscode-yaml/issues/886)
-- Add: OpenShift Toolkit extension recommendation [#892] (https://github.com/redhat-developer/vscode-yaml/pull/892)
+- Add: OpenShift Toolkit extension recommendation [#892](https://github.com/redhat-developer/vscode-yaml/pull/892)
 
 Thanks to Petr Spacek
 
