@@ -1,6 +1,14 @@
-### [UNRELEASED] 
+### 1.12.0
+- Fix: Completion Value with dash [#832](https://github.com/redhat-developer/yaml-language-server/pull/832)
+- Add: Enforce alphabetical ordering of keys in mappings and provide codeaction to fix it. [#839](https://github.com/redhat-developer/yaml-language-server/pull/839)
+- Fix: Value completion with trailing spaces [#834](https://github.com/redhat-developer/yaml-language-server/pull/834)
+- Add: IPv4 and IPv6 validation [#843](https://github.com/redhat-developer/yaml-language-server/pull/843)
+- Fix: Type errors inform wrong type when parent schema has keyword "title" [#845](https://github.com/redhat-developer/yaml-language-server/issues/845)
+- Fix: Anchor diagnostics [#846](https://github.com/redhat-developer/yaml-language-server/pull/846)
+- Fix: Underscore being escaped in description attribute when hovering over an attribute [#886](https://github.com/redhat-developer/vscode-yaml/issues/886)
+- Add: OpenShift Toolkit extension recommendation [#892] (https://github.com/redhat-developer/vscode-yaml/pull/892)
 
-- Add: Enforce alphabetical ordering of keys in mappings and provide codeaction to fix it. 
+Thanks to Petr Spacek
 
 ### 1.11.0
 - Fix: only the first choice is shown when hovering anyOf-typed properties [#784](https://github.com/redhat-developer/vscode-yaml/issues/784)
