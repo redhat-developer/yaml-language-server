@@ -88,10 +88,14 @@ export class YAMLHover {
     );
 
     const createHover = (contents: string): Hover => {
-      const regex = new RegExp(this.indentation, 'g');
+      if (this.indentation !== undefined) {
+        const indentationMatchRegex = new RegExp(this.indentation, 'g');
+        contents = contents.replace(indentationMatchRegex, '&emsp;');
+      }
+
       const markupContent: MarkupContent = {
         kind: MarkupKind.Markdown,
-        value: contents.replace(regex, '&emsp;'),
+        value: contents,
       };
       const result: Hover = {
         contents: markupContent,
