@@ -28,7 +28,7 @@ import {
   NumberASTNodeImpl,
   ArrayASTNodeImpl,
   BooleanASTNodeImpl,
-  NullObjectASTNodeImpl,
+  MissingValueNodeImpl,
 } from './jsonParser07';
 
 type NodeRange = [number, number, number];
@@ -128,7 +128,7 @@ function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
   if (node.value === null) {
     return ['null', '~'].includes(node.source?.toLowerCase())
       ? new NullASTNodeImpl(parent, node, ...toOffsetLength(node.range))
-      : new NullObjectASTNodeImpl(parent, node, ...toOffsetLength(node.range));
+      : new MissingValueNodeImpl(parent, node, ...toOffsetLength(node.range));
   }
 
   switch (typeof node.value) {

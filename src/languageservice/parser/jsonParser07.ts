@@ -10,6 +10,7 @@ import { getSchemaTypeName } from '../utils/schemaUtils';
 import {
   ASTNode,
   ObjectASTNode,
+  MissingValueASTNode,
   ArrayASTNode,
   BooleanASTNode,
   NumberASTNode,
@@ -155,7 +156,8 @@ export abstract class ASTNodeImpl {
   }
 }
 
-export class NullObjectASTNodeImpl extends ASTNodeImpl implements ObjectASTNode {
+//Null value Object node
+export class MissingValueNodeImpl extends ASTNodeImpl implements MissingValueASTNode {
   public type: 'object' = 'object' as const;
   public value = null;
   public properties: PropertyASTNode[];
@@ -1226,7 +1228,7 @@ function validate(
   }
 
   function _validateObjectNode(
-    node: ObjectASTNode | NullObjectASTNodeImpl,
+    node: ObjectASTNode | MissingValueASTNode,
     schema: JSONSchema,
     validationResult: ValidationResult,
     matchingSchemas: ISchemaCollector

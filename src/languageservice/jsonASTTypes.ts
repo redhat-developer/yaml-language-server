@@ -32,6 +32,12 @@ export interface ObjectASTNode extends BaseASTNode {
   readonly properties: PropertyASTNode[];
   readonly children: ASTNode[];
 }
+export interface MissingValueASTNode extends BaseASTNode {
+  readonly type: 'object';
+  readonly properties: PropertyASTNode[];
+  readonly children: ASTNode[];
+  readonly value: null;
+}
 export interface PropertyASTNode extends BaseASTNode {
   readonly type: 'property';
   readonly keyNode: StringASTNode;
