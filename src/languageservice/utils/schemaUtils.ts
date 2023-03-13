@@ -3,6 +3,7 @@ import { JSONSchema } from '../jsonSchema';
 import * as path from 'path';
 
 export function getSchemaTypeName(schema: JSONSchema, isRequiredValue = false): string {
+  const closestTitleWithType = schema.type && schema.closestTitle;
   if (schema.title) {
     return schema.title;
   }
@@ -15,7 +16,11 @@ export function getSchemaTypeName(schema: JSONSchema, isRequiredValue = false): 
   if (isRequiredValue) {
     return schema.required.join(' | ');
   }
-  return (Array.isArray(schema.type) ? schema.type.join(' | ') : schema.type) || schema.closestTitle; //object
+  return Array.isArray(schema.type)
+    ? schema.type.join(' | ')
+    : closestTitleWithType
+    ? schema.type.concat('(', schema.closestTitle, ')')
+    : schema.type || schema.closestTitle; //object
 }
 
 /**
