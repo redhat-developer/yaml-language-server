@@ -77,7 +77,7 @@ export class SettingsState {
   customTags = [];
   schemaStoreEnabled = true;
   schemaStoreUrl = JSON_SCHEMASTORE_URL;
-  kubernetesSchemaUrl = KUBERNETES_SCHEMA_URL;
+  kubernetesSchemaUrls = [KUBERNETES_SCHEMA_URL];
   indentation: string | undefined = undefined;
   disableAdditionalProperties = false;
   disableDefaultProperties = false;
