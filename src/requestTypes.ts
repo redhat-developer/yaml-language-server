@@ -44,8 +44,8 @@ export namespace DynamicCustomSchemaRequestRegistration {
   export const type: NotificationType<unknown> = new NotificationType('yaml/registerCustomSchemaRequest');
 }
 
-export namespace KubernetesURLNotification {
-  export const type: NotificationType<string> = new NotificationType('yaml/kubernetesURL');
+export namespace KubernetesURLsNotification {
+  export const type: NotificationType<string[]> = new NotificationType('yaml/kubernetesURLs');
 }
 
 export namespace VSCodeContentRequestRegistration {

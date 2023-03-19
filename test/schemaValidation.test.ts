@@ -1979,26 +1979,23 @@ obj:
       expect(telemetry.messages).to.be.empty;
     });
 
-    it('custom kubernetes schema should return validation errors', (done) => {
+    it('single custom kubernetes schema should return validation errors', async () => {
+      const customKubernetesSchemaVersion = 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.26.1-standalone-strict/all.json';
+      yamlSettings.kubernetesSchemaUrls = [customKubernetesSchemaVersion];
       const settingsHandler = new SettingsHandler({} as Connection, languageService, yamlSettings, validationHandler, telemetry);
       const initialSettings = languageSettingsSetup.withKubernetes(true).languageSettings;
       const kubernetesSettings = settingsHandler.configureSchemas(
-        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.26.1-standalone-strict/all.json',
-        ['**'],
+        customKubernetesSchemaVersion,
+        ['*k8s.yml'],
         undefined,
         initialSettings,
         SchemaPriority.SchemaAssociation
       );
       languageService.configure(kubernetesSettings);
       const content = `apiVersion: apps/v1\nkind: Deployment\nfoo: bar`;
-      const validator = parseSetup(content);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 1);
-          // eslint-disable-next-line
-          assert.equal(result[0].message, `Property foo is not allowed.`);
-        })
-        .then(done, done);
+      const result = await parseSetup(content, 'invalid-k8s.yml');
+      expect(result.length).to.eq(1);
+      expect(result[0].message).to.eq('Property foo is not allowed.');
     });
   });
   it('Nested AnyOf const should correctly evaluate and merge problems', async () => {
