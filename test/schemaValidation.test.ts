@@ -1112,6 +1112,11 @@ obj:
   });
 
   describe('Test with custom kubernetes schemas', function () {
+    afterEach(() => {
+      // remove Kubernetes setting not to affect next tests
+      languageService.configure(languageSettingsSetup.withKubernetes(false).languageSettings);
+      yamlSettings.specificValidatorPaths = [];
+    });
     it('Test that properties that match multiple enums get validated properly', (done) => {
       languageService.configure(languageSettingsSetup.withKubernetes().languageSettings);
       yamlSettings.specificValidatorPaths = ['*.yml', '*.yaml'];
@@ -1197,6 +1202,45 @@ obj:
       expect(result.length).to.eq(2);
       expect(result[0].message).to.eq('Missing property "spec".');
       expect(result[1].message).to.eq('Property foo is not allowed.');
+    });
+
+    it('custom kubernetes schema version and openshift custom resource definition (CRD) should return validation errors', async () => {
+      const customKubernetesSchemaVersion =
+        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.26.1-standalone-strict/all.json';
+      const customOpenshiftSchemaVersion =
+        'https://raw.githubusercontent.com/tricktron/CRDs-catalog/f-openshift-v4.11/openshift.io/v4.11/all.json';
+      yamlSettings.kubernetesSchemaUrls = [customKubernetesSchemaVersion, customOpenshiftSchemaVersion];
+      const settingsHandler = new SettingsHandler({} as Connection, languageService, yamlSettings, validationHandler, telemetry);
+      const initialSettings = languageSettingsSetup.withKubernetes(true).languageSettings;
+      const kubernetesSettings = settingsHandler.configureSchemas(
+        customKubernetesSchemaVersion,
+        ['*k8s.yml'],
+        undefined,
+        initialSettings,
+        SchemaPriority.SchemaAssociation
+      );
+      const openshiftSettings = settingsHandler.configureSchemas(
+        customOpenshiftSchemaVersion,
+        ['*oc.yml'],
+        undefined,
+        initialSettings,
+        SchemaPriority.SchemaAssociation
+      );
+      languageService.configure(kubernetesSettings);
+      languageService.configure(openshiftSettings);
+      const kubernetes = `apiVersion: apps/v1\nkind: Deployment\nfoo: bar`;
+      const openshift = `apiVersion: route.openshift.io/v1\nkind: Route\nbaz: abc`;
+
+      const kubernetesResult = await parseSetup(kubernetes, 'invalid-k8s.yml');
+
+      expect(kubernetesResult.length).to.eq(1);
+      expect(kubernetesResult[0].message).to.eq('Property foo is not allowed.');
+
+      const openshiftResult = await parseSetup(openshift, 'invalid-oc.yml');
+
+      expect(openshiftResult.length).to.eq(2);
+      expect(openshiftResult[0].message).to.eq('Missing property "spec".');
+      expect(openshiftResult[1].message).to.eq('Property baz is not allowed.');
     });
   });
 
@@ -2018,25 +2062,6 @@ obj:
       expect(result.length).to.eq(1);
       expect(result[0].message).to.eq('Matches multiple schemas when only one must validate.');
       expect(telemetry.messages).to.be.empty;
-    });
-
-    it('single custom kubernetes schema should return validation errors', async () => {
-      const customKubernetesSchemaVersion = 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.26.1-standalone-strict/all.json';
-      yamlSettings.kubernetesSchemaUrls = [customKubernetesSchemaVersion];
-      const settingsHandler = new SettingsHandler({} as Connection, languageService, yamlSettings, validationHandler, telemetry);
-      const initialSettings = languageSettingsSetup.withKubernetes(true).languageSettings;
-      const kubernetesSettings = settingsHandler.configureSchemas(
-        customKubernetesSchemaVersion,
-        ['*k8s.yml'],
-        undefined,
-        initialSettings,
-        SchemaPriority.SchemaAssociation
-      );
-      languageService.configure(kubernetesSettings);
-      const content = `apiVersion: apps/v1\nkind: Deployment\nfoo: bar`;
-      const result = await parseSetup(content, 'invalid-k8s.yml');
-      expect(result.length).to.eq(1);
-      expect(result[0].message).to.eq('Property foo is not allowed.');
     });
   });
   it('Nested AnyOf const should correctly evaluate and merge problems', async () => {
