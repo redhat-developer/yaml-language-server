@@ -9,7 +9,6 @@ import {
   StringTypeError,
   BooleanTypeError,
   ArrayTypeError,
-  ObjectTypeError,
   IncludeWithoutValueError,
   BlockMappingEntryError,
   DuplicateKeyError,
@@ -623,6 +622,7 @@ describe('Validation Tests', () => {
     it('Error on incorrect value type (object)', (done) => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
+        title: 'Object',
         properties: {
           scripts: {
             type: 'object',
@@ -642,13 +642,13 @@ describe('Validation Tests', () => {
           assert.deepEqual(
             result[0],
             createDiagnosticWithData(
-              ObjectTypeError,
+              'Incorrect type. Expected "object(Object)".',
               0,
               9,
               0,
               13,
               DiagnosticSeverity.Error,
-              `yaml-schema: file:///${SCHEMA_ID}`,
+              `yaml-schema: Object`,
               `file:///${SCHEMA_ID}`
             )
           );
@@ -1751,6 +1751,70 @@ obj:
       expect(telemetry.messages).to.be.empty;
       expect(result.length).to.eq(1);
       assert.deepStrictEqual(result[0].message, 'String does not match the pattern of "^.*\\$\\{\\{(.|[\r\n])*\\}\\}.*$".');
+    });
+
+    it('schema should validate ipv4 format - Negative Case', async () => {
+      const schema = {
+        type: 'array',
+        items: {
+          type: 'string',
+          format: 'ipv4',
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = `- 10.15.12.500`;
+      const result = await parseSetup(content);
+      expect(result).to.be.not.empty;
+      expect(telemetry.messages).to.be.empty;
+      expect(result.length).to.eq(1);
+      assert.deepStrictEqual(result[0].message, 'String does not match IPv4 format.');
+    });
+
+    it('schema should validate ipv4 format - Positive Case', async () => {
+      const schema = {
+        type: 'array',
+        items: {
+          type: 'string',
+          format: 'ipv4',
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = `- 255.255.255.255`;
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+      expect(telemetry.messages).to.be.empty;
+    });
+
+    it('schema should validate ipv6 format - Negative Case', async () => {
+      const schema = {
+        type: 'array',
+        items: {
+          type: 'string',
+          format: 'ipv6',
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = `- 10.15.12.500`;
+      const result = await parseSetup(content);
+      expect(result).to.be.not.empty;
+      expect(telemetry.messages).to.be.empty;
+      expect(result.length).to.eq(1);
+      assert.deepStrictEqual(result[0].message, 'String does not match IPv6 format.');
+    });
+
+    it('schema should validate ipv6 format - Positive Case', async () => {
+      const schema = {
+        type: 'array',
+        items: {
+          type: 'string',
+          format: 'ipv6',
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = `- 2001:0db8:85a3:0000:0000:8a2e:0370:7334\n- 2001:0db8:85a3:0000:0000:8a2e:0370:7334\n- FEDC:BA98:7654:3210:FEDC:BA98:7654:3210\n- 1080::8:800:200C:417A\n- FF01::101\n- ::1`;
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+      expect(telemetry.messages).to.be.empty;
     });
 
     it('should handle not valid schema object', async () => {

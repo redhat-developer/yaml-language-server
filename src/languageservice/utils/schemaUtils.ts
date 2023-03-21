@@ -4,6 +4,7 @@ import * as path from 'path';
 import { Globals } from './jigx/globals';
 
 export function getSchemaTypeName(schema: JSONSchema): string {
+  const closestTitleWithType = schema.type && schema.closestTitle;
   if (schema.title) {
     return schema.title;
   }
@@ -13,7 +14,11 @@ export function getSchemaTypeName(schema: JSONSchema): string {
   if (schema.$ref || schema._$ref) {
     return getSchemaRefTypeTitle(schema.$ref || schema._$ref);
   }
-  return schema.closestTitle || (Array.isArray(schema.type) ? schema.type.join(' | ') : schema.type); //object
+  return Array.isArray(schema.type)
+    ? schema.type.join(' | ')
+    : closestTitleWithType
+    ? schema.type.concat('(', schema.closestTitle, ')')
+    : schema.type || schema.closestTitle; //object
 }
 
 /**

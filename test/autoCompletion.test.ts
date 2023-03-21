@@ -1227,7 +1227,7 @@ describe('Auto Completion Tests', () => {
         it('should suggest "then" block if "if" match filePatternAssociation', async () => {
           schema.if.filePatternAssociation = SCHEMA_ID;
           languageService.addSchema(SCHEMA_ID, schema);
-          const content = 'name: aName\n';
+          const content = 'name: aName\n ';
           const completion = await parseSetup(content, content.length);
           expect(completion.items.map((i) => i.label)).to.deep.equal(['pineapple', 'basket']);
         });

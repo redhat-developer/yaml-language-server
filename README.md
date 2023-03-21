@@ -52,6 +52,7 @@ The following settings are supported:
 - `yaml.suggest.parentSkeletonSelectedFirst`: If true, the user must select some parent skeleton first before autocompletion starts to suggest the rest of the properties.\nWhen yaml object is not empty, autocompletion ignores this setting and returns all properties and skeletons.
 - `yaml.style.flowMapping` : Forbids flow style mappings if set to `forbid` 
 - `yaml.style.flowSequence` : Forbids flow style sequences if set to `forbid`
+- `yaml.keyOrdering` : Enforces alphabetical ordering of keys in mappings when set to `true`. Default is `false`
 
 ##### Adding custom tags
 
@@ -223,6 +224,19 @@ yaml.schemas: {
 ```
 
 `yaml.schemas` allows you to specify json schemas that you want to validate against the yaml that you write. Kubernetes is an optional field. It does not require a url as the language server will provide that. You just need the keyword kubernetes and a glob pattern.
+
+### Nested Schema References
+
+Suppose a file is meant to be a component of an existing schema (like a `job.yaml` file in a circleci orb), but there isn't a standalone schema that you can reference. If there is a nested schema definition for this subcomponent, you can reference it using a url fragment, e.g.:
+
+```
+yaml.schemas: {
+    "https://json.schemastore.org/circleciconfig#/definitions/jobs/additionalProperties": "/src/jobs/*.yaml",
+}
+```
+
+> **Note**
+> This will require reading your existing schema and understanding the schemastore structure a bit. (TODO: link to a documentation or blog post here?)
 
 ### Using inlined schema
 

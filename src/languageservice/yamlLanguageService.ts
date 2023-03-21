@@ -117,6 +117,10 @@ export interface LanguageSettings {
    * Control the use of flow sequences. Default is allow.
    */
   flowSequence?: 'allow' | 'forbid';
+  /**
+   * If set enforce alphabetical ordering of keys in mappings.
+   */
+  keyOrdering?: boolean;
 }
 
 export interface WorkspaceContextService {

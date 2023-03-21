@@ -51,7 +51,7 @@ jobs:
       # Get the current package.json version so we can tag the image correctly
     - name: Get current package.json version
       id: package-version
-      uses: martinbeentjes/npm-get-version-action@master
+      uses: martinbeentjes/npm-get-version-action@7aa1d82604bb2dbe377a64ca35e692e6fe333c9c #master
 
       # Setup QEMU as requirement for docker
     - name: Set up QEMU

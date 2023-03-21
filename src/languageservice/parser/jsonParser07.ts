@@ -62,6 +62,14 @@ export const formats = {
     errorMessage: localize('emailFormatWarning', 'String is not an e-mail address.'),
     pattern: /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
   },
+  ipv4: {
+    errorMessage: localize('ipv4FormatWarning', 'String does not match IPv4 format.'),
+    pattern: /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/,
+  },
+  ipv6: {
+    errorMessage: localize('ipv6FormatWarning', 'String does not match IPv6 format.'),
+    pattern: /^([0-9a-f]|:){1,4}(:([0-9a-f]{0,4})*){1,7}$/i,
+  },
 };
 
 export const YAML_SOURCE = 'YAML';
@@ -1101,9 +1109,11 @@ function validate(
         case 'date':
         case 'time':
         case 'email':
+        case 'ipv4':
+        case 'ipv6':
           {
             const format = formats[schema.format];
-            if (!node.value || !format.pattern.exec(node.value)) {
+            if (!node.value || !format.pattern.test(node.value)) {
               validationResult.problems.push({
                 location: { offset: node.offset, length: node.length },
                 severity: DiagnosticSeverity.Warning,

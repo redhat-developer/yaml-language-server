@@ -142,6 +142,7 @@ export class SettingsHandler {
         flowMapping: settings.yaml.style?.flowMapping ?? 'allow',
         flowSequence: settings.yaml.style?.flowSequence ?? 'allow',
       };
+      this.yamlSettings.keyOrdering = settings.yaml.keyOrdering ?? false;
     }
 
     this.yamlSettings.schemaConfigurationSettings = [];
@@ -278,6 +279,7 @@ export class SettingsHandler {
       flowMapping: this.yamlSettings.style?.flowMapping,
       flowSequence: this.yamlSettings.style?.flowSequence,
       yamlVersion: this.yamlSettings.yamlVersion,
+      keyOrdering: this.yamlSettings.keyOrdering,
     };
 
     if (this.yamlSettings.schemaAssociations) {

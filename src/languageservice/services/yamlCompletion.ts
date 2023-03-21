@@ -594,8 +594,7 @@ export class YamlCompletion {
           const map = currentDoc.internalDocument.createNode({});
           map.range = [offset, offset + 1, offset + 1];
           currentDoc.internalDocument.contents = map;
-          // eslint-disable-next-line no-self-assign
-          currentDoc.internalDocument = currentDoc.internalDocument;
+          currentDoc.updateFromInternalDocument();
           node = map;
         } else {
           node = currentDoc.findClosestNode(offset, textBuffer);
@@ -621,17 +620,14 @@ export class YamlCompletion {
                         const index = indexOf(currentDoc.internalDocument.contents, parent);
                         if (typeof index === 'number') {
                           currentDoc.internalDocument.set(index, map);
-                          // eslint-disable-next-line no-self-assign
-                          currentDoc.internalDocument = currentDoc.internalDocument;
+                          currentDoc.updateFromInternalDocument();
                         }
                       } else if (parentParent && (isMap(parentParent) || isSeq(parentParent))) {
                         parentParent.set(parent.key, map);
-                        // eslint-disable-next-line no-self-assign
-                        currentDoc.internalDocument = currentDoc.internalDocument;
+                        currentDoc.updateFromInternalDocument();
                       } else {
-                        parent.value = map;
-                        // eslint-disable-next-line no-self-assign
-                        currentDoc.internalDocument = currentDoc.internalDocument;
+                        currentDoc.internalDocument.set(parent.key, map);
+                        currentDoc.updateFromInternalDocument();
                       }
 
                       currentProperty = (map as YAMLMap).items[0];
@@ -654,8 +650,7 @@ export class YamlCompletion {
                     const map = this.createTempObjNode(currentWord, node, currentDoc);
                     parent.delete(node);
                     parent.add(map);
-                    // eslint-disable-next-line no-self-assign
-                    currentDoc.internalDocument = currentDoc.internalDocument;
+                    currentDoc.updateFromInternalDocument();
                     node = map;
                   } else {
                     node = parent;
@@ -678,12 +673,10 @@ export class YamlCompletion {
 
                           if (parentParent && (isMap(parentParent) || isSeq(parentParent))) {
                             parentParent.set(parent.key, map);
-                            // eslint-disable-next-line no-self-assign
-                            currentDoc.internalDocument = currentDoc.internalDocument;
+                            currentDoc.updateFromInternalDocument();
                           } else {
                             currentDoc.internalDocument.set(parent.key, map);
-                            // eslint-disable-next-line no-self-assign
-                            currentDoc.internalDocument = currentDoc.internalDocument;
+                            currentDoc.updateFromInternalDocument();
                           }
                           currentProperty = (map as YAMLMap).items[0];
                           node = map;
@@ -700,15 +693,13 @@ export class YamlCompletion {
                     const map = this.createTempObjNode(currentWord, node, currentDoc);
                     parent.delete(node);
                     parent.add(map);
-                    // eslint-disable-next-line no-self-assign
-                    currentDoc.internalDocument = currentDoc.internalDocument;
+                    currentDoc.updateFromInternalDocument();
                     node = map;
                   } else if (lineContent.charAt(position.character - 1) === '-') {
                     const map = this.createTempObjNode('', node, currentDoc);
                     parent.delete(node);
                     parent.add(map);
-                    // eslint-disable-next-line no-self-assign
-                    currentDoc.internalDocument = currentDoc.internalDocument;
+                    currentDoc.updateFromInternalDocument();
                     node = map;
                   } else {
                     node = parent;
@@ -726,8 +717,7 @@ export class YamlCompletion {
           } else if (isScalar(node)) {
             const map = this.createTempObjNode(currentWord, node, currentDoc);
             currentDoc.internalDocument.contents = map;
-            // eslint-disable-next-line no-self-assign
-            currentDoc.internalDocument = currentDoc.internalDocument;
+            currentDoc.updateFromInternalDocument();
             currentProperty = map.items[0];
             node = map;
           } else if (isMap(node)) {
@@ -740,8 +730,7 @@ export class YamlCompletion {
             if (lineContent.charAt(position.character - 1) !== '-') {
               const map = this.createTempObjNode(currentWord, node, currentDoc);
               map.items = [];
-              // eslint-disable-next-line no-self-assign
-              currentDoc.internalDocument = currentDoc.internalDocument;
+              currentDoc.updateFromInternalDocument();
               for (const pair of node.items) {
                 if (isMap(pair)) {
                   pair.items.forEach((value) => {
