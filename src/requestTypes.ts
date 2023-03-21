@@ -73,15 +73,17 @@ export namespace SchemaModificationNotification {
 }
 
 export namespace HoverDetailRequest {
-  export const type: RequestType<TextDocumentPositionParams, {}, {}> = new RequestType('custom/hoverDetailRequest');
+  export const type: RequestType<TextDocumentPositionParams, unknown, unknown> = new RequestType('custom/hoverDetailRequest');
 }
 
 export namespace RevalidateRequest {
-  export const type: RequestType<string, {}, {}> = new RequestType('custom/revalidate');
+  export const type: RequestType<string, unknown, unknown> = new RequestType('custom/revalidate');
 }
 
 export namespace RevalidateBySchemaRequest {
-  export const type: RequestType<{ yaml: string; schema: unknown }, {}, {}> = new RequestType('custom/revalidateBySchema');
+  export const type: RequestType<{ yaml: string; schema: unknown }, unknown, unknown> = new RequestType(
+    'custom/revalidateBySchema'
+  );
 }
 
 export namespace SchemaSelectionRequests {
