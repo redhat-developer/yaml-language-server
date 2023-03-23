@@ -1157,6 +1157,47 @@ obj:
         })
         .then(done, done);
     });
+
+    it('single custom kubernetes schema version should return validation errors', async () => {
+      const customKubernetesSchemaVersion =
+        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.26.1-standalone-strict/all.json';
+      yamlSettings.kubernetesSchemaUrls = [customKubernetesSchemaVersion];
+      const settingsHandler = new SettingsHandler({} as Connection, languageService, yamlSettings, validationHandler, telemetry);
+      const initialSettings = languageSettingsSetup.withKubernetes(true).languageSettings;
+      const kubernetesSettings = settingsHandler.configureSchemas(
+        customKubernetesSchemaVersion,
+        ['*k8s.yml'],
+        undefined,
+        initialSettings,
+        SchemaPriority.SchemaAssociation
+      );
+      languageService.configure(kubernetesSettings);
+      const content = `apiVersion: apps/v1\nkind: Deployment\nfoo: bar`;
+      const result = await parseSetup(content, 'invalid-k8s.yml');
+      expect(result.length).to.eq(1);
+      expect(result[0].message).to.eq('Property foo is not allowed.');
+    });
+
+    it('single openshift schema version should return validation errors', async () => {
+      const customOpenshiftSchemaVersion =
+        'https://raw.githubusercontent.com/tricktron/CRDs-catalog/f-openshift-v4.11/openshift.io/v4.11/all.json';
+      yamlSettings.kubernetesSchemaUrls = [customOpenshiftSchemaVersion];
+      const settingsHandler = new SettingsHandler({} as Connection, languageService, yamlSettings, validationHandler, telemetry);
+      const initialSettings = languageSettingsSetup.withKubernetes(true).languageSettings;
+      const kubernetesSettings = settingsHandler.configureSchemas(
+        customOpenshiftSchemaVersion,
+        ['*oc.yml'],
+        undefined,
+        initialSettings,
+        SchemaPriority.SchemaAssociation
+      );
+      languageService.configure(kubernetesSettings);
+      const content = `apiVersion: route.openshift.io/v1\nkind: Route\nfoo: bar`;
+      const result = await parseSetup(content, 'invalid-oc.yml');
+      expect(result.length).to.eq(2);
+      expect(result[0].message).to.eq('Missing property "spec".');
+      expect(result[1].message).to.eq('Property foo is not allowed.');
+    });
   });
 
   // https://github.com/redhat-developer/yaml-language-server/issues/118
