@@ -1201,7 +1201,7 @@ obj:
       expect(result[0].message).to.eq('Missing property "spec".');
       expect(result[1].message).to.eq('Property foo is not allowed.');
     });
-    
+
     it('custom kubernetes schema version and openshift custom resource definition (CRD) should return validation errors', async () => {
       const customKubernetesSchemaVersion =
         'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.26.1-standalone-strict/all.json';
