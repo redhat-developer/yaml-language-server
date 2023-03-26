@@ -22,7 +22,6 @@ describe('Kubernetes Integration Tests', () => {
     const fileMatch = ['*.yml', '*.yaml'];
     languageSettingsSetup = new ServiceSetup()
       .withHover()
-      .withIndentation('  ')
       .withValidate()
       .withCompletion()
       .withSchemaFileMatch({
