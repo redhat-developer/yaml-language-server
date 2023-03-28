@@ -86,6 +86,14 @@ export namespace RevalidateBySchemaRequest {
   );
 }
 
+export namespace CompletionYamlRequest {
+  export const type: RequestType<
+    { yaml: string; position: TextDocumentPositionParams['position']; fileName: string },
+    unknown,
+    unknown
+  > = new RequestType('custom/completionYaml');
+}
+
 export namespace SchemaSelectionRequests {
   export const type: NotificationType<void> = new NotificationType('yaml/supportSchemaSelection');
   export const getSchema: RequestType<string, JSONSchemaDescription[], unknown> = new RequestType('yaml/get/jsonSchema');

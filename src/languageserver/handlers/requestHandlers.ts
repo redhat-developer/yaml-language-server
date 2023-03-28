@@ -12,6 +12,7 @@ import {
 } from '../../languageservice/services/yamlSchemaService';
 import { LanguageService } from '../../languageservice/yamlLanguageService';
 import {
+  CompletionYamlRequest,
   HoverDetailRequest,
   RevalidateBySchemaRequest,
   RevalidateRequest,
@@ -19,6 +20,7 @@ import {
 } from '../../requestTypes';
 import { SettingsState } from '../../yamlSettings';
 import { ValidationHandler } from './validationHandlers';
+import { yamlDocumentsCache } from '../../languageservice/parser/yaml-documents';
 
 export class RequestHandlers {
   private languageService: LanguageService;
@@ -64,9 +66,27 @@ export class RequestHandlers {
         const result = await this.languageService.doValidation(document, false);
         return result;
       } finally {
+        yamlDocumentsCache.delete(document);
         this.languageService.deleteSchema(yamlName);
       }
     });
+
+    /**
+     * Received request from the client that do completion for expression.
+     */
+    this.connection.onRequest(
+      CompletionYamlRequest.type,
+      async (params: { yaml: string; position: TextDocumentPositionParams['position']; fileName: string }) => {
+        const { yaml, fileName, position } = params;
+        const document = TextDocument.create(fileName, 'yaml', 0, yaml);
+        try {
+          const result = await this.languageService.doComplete(document, position, false);
+          return result;
+        } finally {
+          yamlDocumentsCache.delete(document);
+        }
+      }
+    );
   }
 
   private registerSchemaModificationNotificationHandler(

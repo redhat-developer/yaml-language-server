@@ -42,10 +42,6 @@ const localize = nls.loadMessageBundle();
 
 const doubleQuotesEscapeRegExp = /[\\]+"/g;
 
-const ctxSymbolLabel = '=@ctx';
-const ctxSymbol = '@ctx';
-const ctxSymbolPrefix = '@';
-
 const parentCompletionKind = CompletionItemKind.Class;
 
 const existingProposeItem = '__';
@@ -119,25 +115,6 @@ export class YamlCompletion {
       this.indentation = this.configuredIndentation;
     }
 
-    const lineCtx =
-      ctxSymbol &&
-      lineContent
-        .substring(0, position.character) // take lineContent only to cursor position
-        .match(new RegExp(`=?(${ctxSymbolPrefix})(?!.*\\1).*$`)); // https://regex101.com/r/2ewq5g takes last occurrence of the ctx to the end
-    if (lineCtx) {
-      const hasEqualSymbol = lineCtx[0].startsWith('=');
-      const lineContentBeforeCtx = lineContent.slice(0, lineCtx.index);
-      // don't allow @ctx on the beginning of the expression
-      if (!hasEqualSymbol && /:[ \t'"|>]*$/.test(lineContentBeforeCtx)) {
-        return result;
-      }
-      // don't allow =@ctx inside jsonata,
-      if (hasEqualSymbol && lineContentBeforeCtx.includes(ctxSymbolLabel)) {
-        return result;
-      }
-      result = await this.doInlineCompletion(document, position, lineCtx[0]);
-      return result;
-    }
     // auto add space after : if needed
     if (document.getText().charAt(offset - 1) === ':') {
       const newPosition = Position.create(position.line, position.character + 1);
@@ -180,7 +157,6 @@ export class YamlCompletion {
         modificationForInvoke
       );
     }
-    this.processInlineInitialization(result, lineContent);
 
     // const secs = (Date.now() - startTime) / 1000;
     // console.log(
@@ -240,78 +216,6 @@ export class YamlCompletion {
       }
     });
     return result;
-  }
-
-  private async doInlineCompletion(document: TextDocument, position: Position, lineCtx: string): Promise<CompletionList> {
-    const hasEqualSymbol = lineCtx.startsWith('=');
-    if (!hasEqualSymbol) {
-      lineCtx = '=' + lineCtx;
-    }
-    const props = lineCtx.split('.');
-    let newText = props.reduce((reducer, prop, index) => {
-      if (!prop || prop === '\n') {
-        return reducer;
-      }
-      // support =@ctx.da
-      if (index === props.length - 1 && !lineCtx.endsWith('.')) {
-        reducer += prop;
-        return reducer;
-      }
-
-      const indexer = prop.match(/\[[^[]+\]$/);
-      if (indexer) {
-        prop = prop.substring(0, indexer.index);
-      }
-
-      reducer += `${prop}:\n${this.indentation}${this.indentation.repeat(index + 1)}`;
-      return reducer;
-    }, '');
-    newText = `expression:\n${this.indentation}${newText}`;
-    const tmpUri = 'expression'; // this file name has association and schema defined in builder
-    const newDocument = TextDocument.create(tmpUri, document.languageId, 0, newText);
-    const newPosition = newDocument.positionAt(newText.length);
-    const resultLocal = await this.doCompleteWithDisabledAdditionalProps(newDocument, newPosition, false);
-
-    resultLocal.items.forEach((inlineItem) => {
-      let inlineText = inlineItem.insertText;
-      let equalSymbolCompensation = 0;
-
-      // when expression doesn't have `=`, remove it also from `=@ctx` result
-      if (!hasEqualSymbol && inlineItem.label === ctxSymbolLabel) {
-        inlineItem.label = ctxSymbol;
-        inlineText = ctxSymbol;
-        equalSymbolCompensation = 1;
-      }
-
-      inlineText = inlineText.replace(/:\n?\s*(\$1)?$/g, '.').replace(/\.$/, '');
-      inlineItem.insertText = inlineText;
-      if (inlineItem.textEdit) {
-        inlineItem.textEdit.newText = inlineText;
-        if (TextEdit.is(inlineItem.textEdit)) {
-          const diff = inlineItem.textEdit.range.end.character - inlineItem.textEdit.range.start.character; // support =@ctx.da
-          inlineItem.textEdit.range = Range.create(
-            Position.create(position.line, position.character - diff + equalSymbolCompensation),
-            position
-          );
-        }
-      }
-      inlineItem.commitCharacters = ['.'];
-    });
-
-    // remove tmp document
-    this.yamlDocument.delete(newDocument);
-
-    return resultLocal; // don't merge with anything, inline should be combined with others
-  }
-  private processInlineInitialization(result: CompletionList, lineContent: string): void {
-    // make always inline - happens when general completion returns inline label
-    const inlineItem = result.items.find((item) => item.label === ctxSymbolLabel);
-    if (inlineItem) {
-      inlineItem.insertText = (lineContent.match(/:\n?$/) ? ' ' : '') + ctxSymbolLabel;
-      if (inlineItem.textEdit) {
-        inlineItem.textEdit.newText = inlineItem.insertText;
-      }
-    }
   }
 
   private addUniquePostfix(uri: string): string {

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as path from 'path';
-import { CompletionList, TextEdit } from 'vscode-languageserver/node';
+import { CompletionList } from 'vscode-languageserver/node';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
@@ -63,233 +63,6 @@ describe('Auto Completion Tests Extended', () => {
     ensureExpressionSchema();
   });
 
-  describe('Inline object completion', () => {
-    it('simple-null', (done) => {
-      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-      const content = 'value: ';
-      const completion = parseSetup(content, content.length);
-      completion
-        .then(function (result) {
-          assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].insertText, '=@ctx');
-        })
-        .then(done, done);
-    });
-    it('simple-null with next line', (done) => {
-      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-      const content = 'value: \nnextLine: 1';
-      const completion = parseSetup(content, 7);
-      completion
-        .then(function (result) {
-          assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].insertText, '=@ctx');
-        })
-        .then(done, done);
-    });
-    it('simple-context.', (done) => {
-      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-      const content = 'value: =@ctx.';
-      const completion = parseSetup(content, content.length);
-      completion
-        .then(function (result) {
-          assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].insertText, 'user');
-        })
-        .then(done, done);
-    });
-    it('simple-context.da', (done) => {
-      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-      const content = 'value: =@ctx.da';
-      const completion = parseSetup(content, content.length);
-      completion
-        .then(function (result) {
-          assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].insertText, 'user');
-          assert.equal(result.items[1].insertText, 'data');
-          assert.deepStrictEqual((result.items[1].textEdit as TextEdit).range.start, {
-            line: 0,
-            character: content.lastIndexOf('.') + 1,
-          });
-        })
-        .then(done, done);
-    });
-    it('anyOf[obj|ref]-null', (done) => {
-      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-      const content = 'value1: ';
-      const completion = parseSetup(content, content.length);
-      completion
-        .then(function (result) {
-          assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].insertText, '\n  prop1: ');
-          assert.equal(result.items[1].insertText, '=@ctx');
-        })
-        .then(done, done);
-    });
-    it('anyOf[obj|ref]-insideObject', (done) => {
-      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-      const content = 'value1:\n  ';
-      const completion = parseSetup(content, content.length);
-      completion
-        .then(function (result) {
-          assert.equal(result.items.length, 2); // better to have 1 here
-          assert.equal(result.items[0].label, 'prop1');
-        })
-        .then(done, done);
-    });
-    it('anyOf[const|ref]-null', (done) => {
-      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-      const content = 'value2: ';
-      const completion = parseSetup(content, content.length);
-      completion
-        .then(function (result) {
-          assert.equal(result.items.length, 3);
-          assert.equal(result.items[0].insertText, 'const1');
-          assert.equal(result.items[2].insertText, '=@ctx');
-        })
-        .then(done, done);
-    });
-    it('anyOf[const|ref]-context.', (done) => {
-      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-      const content = 'value2: =@ctx.';
-      const completion = parseSetup(content, content.length);
-      completion
-        .then(function (result) {
-          assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].insertText, 'user');
-          assert.equal(result.items[1].insertText, 'data');
-        })
-        .then(done, done);
-    });
-    it('anyOf[const|ref]-context.da', (done) => {
-      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-      const content = 'value2: =@ctx.da';
-      const completion = parseSetup(content, content.length);
-      completion
-        .then(function (result) {
-          assert.equal(result.items.length, 2);
-          assert.equal(result.items[0].insertText, 'user');
-          assert.equal(result.items[1].insertText, 'data');
-          assert.deepStrictEqual((result.items[1].textEdit as TextEdit).range.start, {
-            line: 0,
-            character: content.lastIndexOf('.') + 1,
-          });
-        })
-        .then(done, done);
-    });
-
-    describe('Array', () => {
-      it('array of object null', (done) => {
-        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-        const content = 'arrayObjExpr:\n  - data: ';
-        const completion = parseSetup(content, content.length);
-        completion
-          .then(function (result) {
-            assert.equal(result.items.length, 1);
-            assert.equal(result.items[0].insertText, '=@ctx');
-          })
-          .then(done, done);
-      });
-      it('array of expr null', (done) => {
-        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-        const content = 'arraySimpleExpr:\n  - ';
-        const completion = parseSetup(content, content.length);
-        completion
-          .then(function (result) {
-            assert.equal(result.items.length, 1);
-            assert.equal(result.items[0].insertText, '=@ctx');
-          })
-          .then(done, done);
-      });
-      it('array of object ctx.', (done) => {
-        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-        const content = 'arrayObjExpr:\n  - data: =@ctx.';
-        const completion = parseSetup(content, content.length);
-        completion
-          .then(function (result) {
-            assert.equal(result.items.length, 2);
-            assert.equal(result.items[0].insertText, 'user');
-          })
-          .then(done, done);
-      });
-      it('array of expr ctx.', (done) => {
-        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-        const content = 'arraySimpleExpr:\n  - =@ctx.';
-        const completion = parseSetup(content, content.length);
-        completion
-          .then(function (result) {
-            assert.equal(result.items.length, 2);
-            assert.equal(result.items[0].insertText, 'user');
-          })
-          .then(done, done);
-      });
-    });
-
-    describe('Inner ctx inside expression', () => {
-      it('=@ctx inside apostrophes', async () => {
-        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-        const content = 'value: "=@ctx."';
-        const result = await parseSetup(content, content.length - 1);
-        assert.strictEqual(result.items.length, 2);
-        assert.strictEqual(result.items[0].insertText, 'user');
-      });
-      it('=@ctx within comment', async () => {
-        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-        const content = 'value: =@ctx. #comment';
-        const result = await parseSetup(content, 'value: =@ctx.'.length);
-        assert.strictEqual(result.items.length, 2);
-        assert.strictEqual(result.items[0].insertText, 'user');
-      });
-      it('@ctx within jsonata expression', async () => {
-        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-        const content = 'value: =@ctx.test1+@ctx.da';
-        const result = await parseSetup(content, content.length);
-        assert.strictEqual(result.items.length, 2);
-        assert.strictEqual(result.items[1].insertText, 'data');
-        const range = (result.items[1].textEdit as TextEdit).range;
-        assert.strictEqual(range.start.character, 24);
-        assert.strictEqual(range.end.character, content.length);
-      });
-      it('@ct within jsonata expression', async () => {
-        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-        const content = 'value: =@ctx.test1+@ct';
-        const result = await parseSetup(content, content.length);
-        assert.strictEqual(result.items.length, 1);
-        assert.strictEqual(result.items[0].insertText, '@ctx');
-        const range = (result.items[0].textEdit as TextEdit).range;
-        assert.strictEqual(range.start.character, 19);
-        assert.strictEqual(range.end.character, content.length);
-      });
-      it('@ctx within predicate', async () => {
-        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-        const content = 'value: =@ctx.test1+@ctx[type=3].';
-        const result = await parseSetup(content, content.length);
-        assert.strictEqual(result.items.length, 2);
-        assert.strictEqual(result.items[1].insertText, 'data');
-      });
-      it('do not allow @ctx on the beginning of the expression', async () => {
-        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-        const content = 'value: @ct';
-        const result = await parseSetup(content, content.length);
-        assert.strictEqual(result.items.length, 0);
-      });
-      it('do not allow =@ctx inside jsonata', async () => {
-        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-        const content = 'value: =@ctx.test1+=@ct';
-        const result = await parseSetup(content, content.length);
-        assert.strictEqual(result.items.length, 0);
-      });
-      it('should replace correct position inside jsonata', async () => {
-        languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
-        const content = 'value: "=$str(@ctx.)"';
-        const result = await parseSetup(content, 19);
-        assert.strictEqual(result.items.length > 0, true);
-        const range = (result.items[0].textEdit as TextEdit).range;
-        assert.strictEqual(range.start.character, 19);
-        assert.strictEqual(range.end.character, 19);
-      });
-    });
-  });
-
   describe('Complex completion', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const inlineObjectSchema = require(path.join(__dirname, './fixtures/testInlineObject.json'));
@@ -316,7 +89,7 @@ describe('Auto Completion Tests Extended', () => {
         })
       );
       expect(result.items[3]).to.deep.equal(
-        createExpectedCompletion('=@ctx', ' =@ctx', 3, 11, 3, 11, 10, 2, {
+        createExpectedCompletion('=@ctx', '\n  =@ctx:\n    ', 3, 11, 3, 11, 10, 2, {
           documentation: '',
         })
       );
@@ -358,7 +131,7 @@ describe('Auto Completion Tests Extended', () => {
         })
       );
       expect(result.items[3]).to.deep.equal(
-        createExpectedCompletion('=@ctx', '=@ctx', 3, 12, 3, 12, 10, 2, {
+        createExpectedCompletion('=@ctx', '\n  =@ctx:\n    ', 3, 12, 3, 12, 10, 2, {
           documentation: '',
         })
       );
@@ -400,7 +173,7 @@ describe('Auto Completion Tests Extended', () => {
         })
       );
       expect(result.items[2]).to.deep.equal(
-        createExpectedCompletion('=@ctx', '=@ctx', 4, 8, 4, 8, 10, 2, {
+        createExpectedCompletion('=@ctx', '=@ctx:\n  ', 4, 8, 4, 8, 10, 2, {
           documentation: '',
         })
       );
