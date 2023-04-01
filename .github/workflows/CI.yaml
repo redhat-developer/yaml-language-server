@@ -40,7 +40,12 @@ jobs:
       - name: Run build
         run: yarn build
 
+      - name: Generate SARIF
+        if: matrix.os == 'ubuntu-latest'
+        run: yarn lint-ci
+
       - name: Upload SARIF file
+        if: matrix.os == 'ubuntu-latest'
         uses: github/codeql-action/upload-sarif@17573ee1cc1b9d061760f3a006fc4aac4f944fd5 #v2
         with:
           # Path to SARIF file relative to the root of the repository
