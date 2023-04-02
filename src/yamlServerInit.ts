@@ -38,11 +38,9 @@ export class YAMLServerInit {
      * Run when the client connects to the server after it is activated.
      * The server receives the root path(s) of the workspace and the client capabilities.
      */
-    this.connection.onInitialize(
-      (params: InitializeParams): InitializeResult => {
-        return this.connectionInitialized(params);
-      }
-    );
+    this.connection.onInitialize((params: InitializeParams): InitializeResult => {
+      return this.connectionInitialized(params);
+    });
     this.connection.onInitialized(() => {
       if (this.yamlSettings.hasWsChangeWatchedFileDynamicRegistration) {
         this.connection.workspace.onDidChangeWorkspaceFolders((changedFolders) => {
