@@ -20,9 +20,11 @@ describe('Schema Errors Code Action Tests', () => {
 
   before(() => {
     languageSettingsSetup = new ServiceSetup().withValidate();
-    const { languageService: langService, validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
-      languageSettingsSetup.languageSettings
-    );
+    const {
+      languageService: langService,
+      validationHandler: valHandler,
+      yamlSettings: settings,
+    } = setupLanguageService(languageSettingsSetup.languageSettings);
     languageService = langService;
     validationHandler = valHandler;
     yamlSettings = settings;

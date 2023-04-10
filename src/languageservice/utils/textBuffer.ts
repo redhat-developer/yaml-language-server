@@ -18,7 +18,7 @@ export class TextBuffer {
   }
 
   getLineLength(lineNumber: number): number {
-    const lineOffsets = ((this.doc as unknown) as FullTextDocument).getLineOffsets();
+    const lineOffsets = (this.doc as unknown as FullTextDocument).getLineOffsets();
     if (lineNumber >= lineOffsets.length) {
       return this.doc.getText().length;
     } else if (lineNumber < 0) {
@@ -30,7 +30,7 @@ export class TextBuffer {
   }
 
   getLineContent(lineNumber: number): string {
-    const lineOffsets = ((this.doc as unknown) as FullTextDocument).getLineOffsets();
+    const lineOffsets = (this.doc as unknown as FullTextDocument).getLineOffsets();
     if (lineNumber >= lineOffsets.length) {
       return this.doc.getText();
     } else if (lineNumber < 0) {
