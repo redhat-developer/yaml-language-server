@@ -14,13 +14,13 @@ import { JSONSchemaDescription, JSONSchemaDescriptionExt, SchemaSelectionRequest
 export class JSONSchemaSelection {
   constructor(
     private readonly schemaService: YAMLSchemaService,
-    private readonly yamlSettings: SettingsState,
-    private readonly connection: Connection
+    private readonly yamlSettings?: SettingsState,
+    private readonly connection?: Connection
   ) {
-    this.connection.onRequest(SchemaSelectionRequests.getSchema, (fileUri) => {
+    this.connection?.onRequest(SchemaSelectionRequests.getSchema, (fileUri) => {
       return this.getSchemas(fileUri);
     });
-    this.connection.onRequest(SchemaSelectionRequests.getAllSchemas, (fileUri) => {
+    this.connection?.onRequest(SchemaSelectionRequests.getAllSchemas, (fileUri) => {
       return this.getAllSchemas(fileUri);
     });
   }
@@ -38,7 +38,7 @@ export class JSONSchemaSelection {
   }
 
   private async getSchemasForFile(docUri: string): Promise<Map<string, JSONSchema>> {
-    const document = this.yamlSettings.documents.get(docUri);
+    const document = this.yamlSettings?.documents.get(docUri);
     const schemas = new Map<string, JSONSchema>();
     if (!document) {
       return schemas;

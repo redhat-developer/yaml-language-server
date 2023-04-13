@@ -26,7 +26,7 @@ export class YAMLHover {
   private indentation: string;
   private schemaService: YAMLSchemaService;
 
-  constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
+  constructor(schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {
     this.shouldHover = true;
     this.schemaService = schemaService;
   }
@@ -55,7 +55,7 @@ export class YAMLHover {
       currentDoc.currentDocIndex = currentDocIndex;
       return this.getHover(document, position, currentDoc);
     } catch (error) {
-      this.telemetry.sendError('yaml.hover.error', { error: convertErrorToTelemetryMsg(error) });
+      this.telemetry?.sendError('yaml.hover.error', { error: convertErrorToTelemetryMsg(error) });
     }
   }
 
@@ -88,10 +88,14 @@ export class YAMLHover {
     );
 
     const createHover = (contents: string): Hover => {
-      const regex = new RegExp(this.indentation, 'g');
+      if (this.indentation !== undefined) {
+        const indentationMatchRegex = new RegExp(this.indentation, 'g');
+        contents = contents.replace(indentationMatchRegex, '&emsp;');
+      }
+
       const markupContent: MarkupContent = {
         kind: MarkupKind.Markdown,
-        value: contents.replace(regex, '&emsp;'),
+        value: contents,
       };
       const result: Hover = {
         contents: markupContent,

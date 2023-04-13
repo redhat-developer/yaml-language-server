@@ -18,7 +18,7 @@ import { convertErrorToTelemetryMsg } from '../utils/objects';
 export class YAMLDocumentSymbols {
   private jsonDocumentSymbols;
 
-  constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
+  constructor(schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {
     this.jsonDocumentSymbols = new JSONDocumentSymbols(schemaService);
 
     // override 'getKeyLabel' to handle complex mapping
@@ -54,7 +54,7 @@ export class YAMLDocumentSymbols {
         }
       }
     } catch (err) {
-      this.telemetry.sendError('yaml.documentSymbols.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.documentSymbols.error', { error: convertErrorToTelemetryMsg(err) });
     }
     return results;
   }
@@ -76,7 +76,7 @@ export class YAMLDocumentSymbols {
         }
       }
     } catch (err) {
-      this.telemetry.sendError('yaml.hierarchicalDocumentSymbols.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.hierarchicalDocumentSymbols.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
     return results;

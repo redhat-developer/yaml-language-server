@@ -14,7 +14,7 @@ import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { TextBuffer } from '../utils/textBuffer';
 
 export class YamlDefinition {
-  constructor(private readonly telemetry: Telemetry) {}
+  constructor(private readonly telemetry?: Telemetry) {}
 
   getDefinition(document: TextDocument, params: DefinitionParams): DefinitionLink[] | undefined {
     try {
@@ -33,7 +33,7 @@ export class YamlDefinition {
         }
       }
     } catch (err) {
-      this.telemetry.sendError('yaml.definition.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.definition.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
     return undefined;

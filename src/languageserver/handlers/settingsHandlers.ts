@@ -62,7 +62,7 @@ export class SettingsHandler {
       { section: 'editor' },
       { section: 'files' },
     ]);
-    const settings: Settings = {
+    const settings: Readonly<Settings> = {
       yaml: config[0],
       http: {
         proxy: config[1]?.proxy ?? '',

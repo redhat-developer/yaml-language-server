@@ -30,7 +30,7 @@ describe('Settings Handlers Tests', () => {
 
   beforeEach(() => {
     workspaceStub = sandbox.createStubInstance(TestWorkspace);
-    connection.workspace = (workspaceStub as unknown) as RemoteWorkspace;
+    connection.workspace = workspaceStub as unknown as RemoteWorkspace;
     connection.onDidChangeConfiguration = sandbox.mock();
     connection.client = {} as RemoteClient;
     connection.client.register = sandbox.mock();
@@ -52,9 +52,9 @@ describe('Settings Handlers Tests', () => {
     settingsState.hasConfigurationCapability = false;
     const settingsHandler = new SettingsHandler(
       connection,
-      (languageService as unknown) as LanguageService,
+      languageService as unknown as LanguageService,
       settingsState,
-      (validationHandler as unknown) as ValidationHandler,
+      validationHandler as unknown as ValidationHandler,
       {} as Telemetry
     );
 
@@ -67,9 +67,9 @@ describe('Settings Handlers Tests', () => {
     settingsState.hasConfigurationCapability = true;
     const settingsHandler = new SettingsHandler(
       connection,
-      (languageService as unknown) as LanguageService,
+      languageService as unknown as LanguageService,
       settingsState,
-      (validationHandler as unknown) as ValidationHandler,
+      validationHandler as unknown as ValidationHandler,
       {} as Telemetry
     );
 
@@ -81,9 +81,9 @@ describe('Settings Handlers Tests', () => {
     it(' reflect to the settings ', async () => {
       const settingsHandler = new SettingsHandler(
         connection,
-        (languageService as unknown) as LanguageService,
+        languageService as unknown as LanguageService,
         settingsState,
-        (validationHandler as unknown) as ValidationHandler,
+        validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{ style: { flowMapping: 'forbid', flowSequence: 'forbid' } }, {}, {}, {}, {}]);
@@ -96,9 +96,9 @@ describe('Settings Handlers Tests', () => {
     it(' reflect default values if no settings given', async () => {
       const settingsHandler = new SettingsHandler(
         connection,
-        (languageService as unknown) as LanguageService,
+        languageService as unknown as LanguageService,
         settingsState,
-        (validationHandler as unknown) as ValidationHandler,
+        validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{}, {}, {}, {}, {}]);
@@ -114,9 +114,9 @@ describe('Settings Handlers Tests', () => {
     it(' reflect to the settings ', async () => {
       const settingsHandler = new SettingsHandler(
         connection,
-        (languageService as unknown) as LanguageService,
+        languageService as unknown as LanguageService,
         settingsState,
-        (validationHandler as unknown) as ValidationHandler,
+        validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{ keyOrdering: true }, {}, {}, {}, {}]);
@@ -128,9 +128,9 @@ describe('Settings Handlers Tests', () => {
     it(' reflect default values if no settings given', async () => {
       const settingsHandler = new SettingsHandler(
         connection,
-        (languageService as unknown) as LanguageService,
+        languageService as unknown as LanguageService,
         settingsState,
-        (validationHandler as unknown) as ValidationHandler,
+        validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{}, {}, {}, {}, {}]);
@@ -145,9 +145,9 @@ describe('Settings Handlers Tests', () => {
     it('reflect to settings state', async () => {
       const settingsHandler = new SettingsHandler(
         connection,
-        (languageService as unknown) as LanguageService,
+        languageService as unknown as LanguageService,
         settingsState,
-        (validationHandler as unknown) as ValidationHandler,
+        validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{}, {}, {}, {}, { associations: { '*.bu': 'yaml' } }]);
@@ -174,9 +174,9 @@ describe('Settings Handlers Tests', () => {
       settingsState.fileExtensions.push('*.bu');
       const settingsHandler = new SettingsHandler(
         connection,
-        (languageService as unknown) as LanguageService,
+        languageService as unknown as LanguageService,
         settingsState,
-        (validationHandler as unknown) as ValidationHandler,
+        validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
@@ -208,9 +208,9 @@ describe('Settings Handlers Tests', () => {
       });
       const settingsHandler = new SettingsHandler(
         connection,
-        (languageService as unknown) as LanguageService,
+        languageService as unknown as LanguageService,
         settingsState,
-        (validationHandler as unknown) as ValidationHandler,
+        validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
@@ -246,9 +246,9 @@ describe('Settings Handlers Tests', () => {
     });
     const settingsHandler = new SettingsHandler(
       connection,
-      (languageService as unknown) as LanguageService,
+      languageService as unknown as LanguageService,
       settingsState,
-      (validationHandler as unknown) as ValidationHandler,
+      validationHandler as unknown as ValidationHandler,
       {} as Telemetry
     );
     workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
@@ -274,7 +274,7 @@ describe('Settings Handlers Tests', () => {
         connection,
         languageService,
         settingsState,
-        (validationHandler as unknown) as ValidationHandler,
+        validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
       const configureSpy = sinon.spy(languageService, 'configure');
@@ -357,9 +357,9 @@ describe('Settings Handlers Tests', () => {
     it('should fetch preferences', async () => {
       const settingsHandler = new SettingsHandler(
         connection,
-        (languageService as unknown) as LanguageService,
+        languageService as unknown as LanguageService,
         settingsState,
-        (validationHandler as unknown) as ValidationHandler,
+        validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{}, {}, {}, {}, {}]);
@@ -381,9 +381,9 @@ describe('Settings Handlers Tests', () => {
       settingsState.schemaStoreEnabled = true;
       const settingsHandler = new SettingsHandler(
         connection,
-        (languageService as unknown) as LanguageService,
+        languageService as unknown as LanguageService,
         settingsState,
-        (validationHandler as unknown) as ValidationHandler,
+        validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
 
@@ -398,9 +398,9 @@ describe('Settings Handlers Tests', () => {
     it('detect indentation settings change', async () => {
       const settingsHandler = new SettingsHandler(
         connection,
-        (languageService as unknown) as LanguageService,
+        languageService as unknown as LanguageService,
         settingsState,
-        (validationHandler as unknown) as ValidationHandler,
+        validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{}, {}, {}, { tabSize: 4, detectIndentation: false }]);

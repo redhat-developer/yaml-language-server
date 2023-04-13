@@ -44,10 +44,8 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getFoldingRanges } from './services/yamlFolding';
 import { FoldingRangesContext, SchemaVersions } from './yamlTypes';
 import { YamlCodeActions } from './services/yamlCodeActions';
-import { commandExecutor } from '../languageserver/commandExecutor';
 import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
 import { YamlCodeLens } from './services/yamlCodeLens';
-import { registerCommands } from './services/yamlCommands';
 import { Telemetry } from './telemetry';
 import { YamlVersion } from './parser/yamlParser07';
 import { YamlCompletion } from './services/yamlCompletion';
@@ -183,30 +181,28 @@ export interface LanguageService {
   resolveCodeLens(param: CodeLens): Thenable<CodeLens> | CodeLens;
 }
 
-export function getLanguageService(
-  schemaRequestService: SchemaRequestService,
-  workspaceContext: WorkspaceContextService,
-  connection: Connection,
-  telemetry: Telemetry,
-  yamlSettings: SettingsState,
-  clientCapabilities?: ClientCapabilities
-): LanguageService {
-  const schemaService = new YAMLSchemaService(schemaRequestService, workspaceContext);
-  const completer = new YamlCompletion(schemaService, clientCapabilities, yamlDocumentsCache, telemetry);
-  const hover = new YAMLHover(schemaService, telemetry);
-  const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService, telemetry);
-  const yamlValidation = new YAMLValidation(schemaService, telemetry);
+export function getLanguageService(params: {
+  schemaRequestService: SchemaRequestService;
+  workspaceContext: WorkspaceContextService;
+  connection?: Connection;
+  telemetry?: Telemetry;
+  yamlSettings?: SettingsState;
+  clientCapabilities?: ClientCapabilities;
+}): LanguageService {
+  const schemaService = new YAMLSchemaService(params.schemaRequestService, params.workspaceContext);
+  const completer = new YamlCompletion(schemaService, params.clientCapabilities, yamlDocumentsCache, params.telemetry);
+  const hover = new YAMLHover(schemaService, params.telemetry);
+  const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService, params.telemetry);
+  const yamlValidation = new YAMLValidation(schemaService, params.telemetry);
   const formatter = new YAMLFormatter();
-  const hoverDetail = new YamlHoverDetail(schemaService, telemetry);
-  const yamlCodeActions = new YamlCodeActions(clientCapabilities);
-  const yamlCodeLens = new YamlCodeLens(schemaService, telemetry);
-  const yamlLinks = new YamlLinks(telemetry);
-  const yamlDefinition = new YamlDefinition(telemetry);
+  const hoverDetail = new YamlHoverDetail(schemaService, params.telemetry);
+  const yamlCodeActions = new YamlCodeActions(params.clientCapabilities);
+  const yamlCodeLens = new YamlCodeLens(schemaService, params.telemetry);
+  const yamlLinks = new YamlLinks(params.telemetry);
+  const yamlDefinition = new YamlDefinition(params.telemetry);
 
-  new JSONSchemaSelection(schemaService, yamlSettings, connection);
+  new JSONSchemaSelection(schemaService, params.yamlSettings, params.connection);
 
-  // register all commands
-  registerCommands(commandExecutor, connection);
   return {
     configure: (settings) => {
       schemaService.clearExternalSchemas();

@@ -49,7 +49,7 @@ export class YAMLValidation {
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
-  constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
+  constructor(schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {
     this.validationEnabled = true;
     this.jsonValidation = new JSONValidation(schemaService, Promise);
   }
@@ -94,7 +94,7 @@ export class YAMLValidation {
 
         const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
 
-        const syd = (currentYAMLDoc as unknown) as SingleYAMLDocument;
+        const syd = currentYAMLDoc as unknown as SingleYAMLDocument;
         if (syd.errors.length > 0) {
           // TODO: Get rid of these type assertions (shouldn't need them)
           validationResult.push(...syd.errors);
@@ -108,7 +108,7 @@ export class YAMLValidation {
         index++;
       }
     } catch (err) {
-      this.telemetry.sendError('yaml.validation.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.validation.error', { error: convertErrorToTelemetryMsg(err) });
     }
 
     let previousErr: Diagnostic;
