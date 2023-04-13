@@ -27,9 +27,13 @@ export class Utils {
  *
  * @param componentIdName could be format: "@jigx/jc-list" or jc-list
  */
-export function getFileInfo(
-  componentIdName: string
-): { componentId: string; category: string; filePath: string; sidebarPath: string; navigationPath: string } {
+export function getFileInfo(componentIdName: string): {
+  componentId: string;
+  category: string;
+  filePath: string;
+  sidebarPath: string;
+  navigationPath: string;
+} {
   const componentNameWithoutJigx = componentIdName.replace(Globals.ComponentPrefix, '');
   const schemaConfig = Utils.SchemaPathConfig.find((s) => s.reg.test(componentNameWithoutJigx));
   let componentId = componentIdName.startsWith(Globals.ComponentPrefix)
