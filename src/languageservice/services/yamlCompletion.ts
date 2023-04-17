@@ -218,15 +218,9 @@ export class YamlCompletion {
     return result;
   }
 
-  private addUniquePostfix(uri: string): string {
-    return uri.replace(/\.([^.]+)$/, `_tmp_${Math.random().toString(36).substring(2)}.$1`);
-  }
-  private removeUniquePostfix(uri: string): string {
-    return uri.replace(/_tmp_[0-9a-z]+\.([^.]+)$/, '.$1');
-  }
   private updateTextDocument(document: TextDocument, changes: TextDocumentContentChangeEvent[]): TextDocument {
     // generates unique name for the file. Note that this has impact to config
-    const tmpUri = this.addUniquePostfix(document.uri);
+    const tmpUri = addUniquePostfix(document.uri);
     const newDoc = TextDocument.create(tmpUri, document.languageId, -1, document.getText());
     TextDocument.update(newDoc, changes, 0);
     return newDoc;
@@ -454,7 +448,7 @@ export class YamlCompletion {
     }
 
     try {
-      const documentUri = this.removeUniquePostfix(document.uri); // return back the original name to find schema
+      const documentUri = removeUniquePostfix(document.uri); // return back the original name to find schema
       const schema = await this.schemaService.getSchemaForResource(documentUri, currentDoc);
 
       if (!schema || schema.errors.length) {
@@ -1894,4 +1888,12 @@ function evaluateTab1Symbol(value: string): string {
 
 function isParentCompletionItem(item: CompletionItemBase): item is CompletionItem {
   return 'parent' in item;
+}
+
+export function addUniquePostfix(uri: string): string {
+  return uri.replace(/(^|\/)([^./]+\.\w+)$/, `$1_tmp_${Math.random().toString(36).substring(2)}/$2`);
+}
+
+export function removeUniquePostfix(uri: string): string {
+  return uri.replace(/(^|\/)_tmp_[0-9a-z]+\//, '$1');
 }

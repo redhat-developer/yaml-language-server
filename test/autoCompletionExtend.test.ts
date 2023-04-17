@@ -13,6 +13,7 @@ import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './ut
 import assert = require('assert');
 import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
+import { addUniquePostfix, removeUniquePostfix } from '../src/languageservice/services/yamlCompletion';
 
 describe('Auto Completion Tests Extended', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -28,11 +29,9 @@ describe('Auto Completion Tests Extended', () => {
       uri: 'http://google.com',
       fileMatch: ['bad-schema.yaml'],
     });
-    const {
-      languageService: langService,
-      languageHandler: langHandler,
-      yamlSettings: settings,
-    } = setupLanguageService(languageSettingsSetup.languageSettings);
+    const { languageService: langService, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(
+      languageSettingsSetup.languageSettings
+    );
     languageService = langService;
     languageHandler = langHandler;
     yamlSettings = settings;
@@ -280,6 +279,44 @@ describe('Auto Completion Tests Extended', () => {
       const content = '';
       const completion = await parseSetup(content, content.length);
       assert.equal(completion.items.length, 0);
+    });
+  });
+
+  describe('Conditional Schema without space after colon', () => {
+    const schema = {
+      type: 'object',
+      title: 'basket',
+      properties: {
+        name: { type: 'string' },
+      },
+      if: {
+        filePatternAssociation: SCHEMA_ID,
+      },
+      then: {
+        properties: {
+          name: { enum: ['val1', 'val2'] },
+        },
+      },
+    };
+    it('should use filePatternAssociation when _tmp_ filename is used', async () => {
+      schema.if.filePatternAssociation = SCHEMA_ID;
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'name:';
+      const completion = await parseSetup(content, content.length);
+      expect(completion.items.map((i) => i.label)).to.deep.equal(['val1', 'val2']);
+    });
+    it('should create unique tmp address for SCHEMA_ID (default_schema_id.yaml)', () => {
+      const uri = addUniquePostfix(SCHEMA_ID);
+      expect(uri.startsWith('_tmp_')).to.be.true;
+      expect(uri.endsWith('/' + SCHEMA_ID)).to.be.true;
+      expect(removeUniquePostfix(uri)).to.equal(SCHEMA_ID);
+    });
+    it('should create unique tmp address', () => {
+      const origUri = 'User:/a/b/file.jigx';
+      const uri = addUniquePostfix(origUri);
+      expect(uri.includes('/_tmp_')).to.be.true;
+      expect(uri.endsWith('/file.jigx')).to.be.true;
+      expect(removeUniquePostfix(uri)).to.equal(origUri);
     });
   });
 
