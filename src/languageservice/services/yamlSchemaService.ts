@@ -110,18 +110,21 @@ export class YAMLSchemaService extends JSONSchemaService {
   private contextService: WorkspaceContextService;
   private requestService: SchemaRequestService;
   public schemaPriorityMapping: Map<string, Set<SchemaPriority>>;
+  private associateSchemaItself: boolean;
 
   private schemaUriToNameAndDescription = new Map<string, SchemaStoreSchema>();
 
   constructor(
     requestService: SchemaRequestService,
     contextService?: WorkspaceContextService,
-    promiseConstructor?: PromiseConstructor
+    promiseConstructor?: PromiseConstructor,
+    associateSchemaItself?: boolean
   ) {
     super(requestService, contextService, promiseConstructor);
     this.customSchemaProvider = undefined;
     this.requestService = requestService;
     this.schemaPriorityMapping = new Map();
+    this.associateSchemaItself = associateSchemaItself;
   }
 
   registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider): void {
@@ -412,7 +415,7 @@ export class YAMLSchemaService extends JSONSchemaService {
        * in language features
        */
       const normalizedResourceID = this.normalizeId(resource);
-      if (this.schemasById[normalizedResourceID]) {
+      if (this.associateSchemaItself && this.schemasById[normalizedResourceID]) {
         schemas.push(normalizedResourceID);
       }
 
