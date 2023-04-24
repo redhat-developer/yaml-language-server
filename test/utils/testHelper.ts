@@ -60,6 +60,7 @@ export interface TestLanguageServerSetup {
 
 export function setupLanguageService(languageSettings: LanguageSettings): TestLanguageServerSetup {
   const yamlSettings = new SettingsState();
+  yamlSettings.associateSchemaItself = true;
   process.argv.push('--node-ipc');
   const connection = createConnection();
   const schemaRequestHandlerWrapper = (connection: Connection, uri: string): Promise<string> => {
