@@ -1299,7 +1299,7 @@ test1:
   });
 
   describe('Deprecated schema', () => {
-    it('should not autocomplete deprecated schema', async () => {
+    it('should not autocomplete deprecated schema - property completion', async () => {
       const schema: JSONSchema = {
         properties: {
           prop1: { type: 'string' },
@@ -1309,6 +1309,38 @@ test1:
       languageService.addSchema(SCHEMA_ID, schema);
       const content = '';
       const completion = await parseSetup(content, 0, 1);
+
+      expect(completion.items.length).equal(0);
+    });
+    it('should not autocomplete deprecated schema - value completion', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          prop1: {
+            anyOf: [
+              {
+                type: 'string',
+                default: 'value_default',
+                deprecationMessage: 'Deprecated default',
+              },
+              {
+                type: 'object',
+                defaultSnippets: [
+                  {
+                    label: 'snippet',
+                    body: {
+                      value1: 'value_snippet',
+                    },
+                  },
+                ],
+                deprecationMessage: 'Deprecated snippet',
+              },
+            ],
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'prop1: ';
+      const completion = await parseSetup(content, 0, content.length);
 
       expect(completion.items.length).equal(0);
     });
