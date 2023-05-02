@@ -27,7 +27,9 @@ export class Utils {
  *
  * @param componentIdName could be format: "@jigx/jc-list" or jc-list
  */
-export function getFileInfo(componentIdName: string): {
+export function getFileInfo(
+  componentIdName: string
+): {
   componentId: string;
   category: string;
   filePath: string;

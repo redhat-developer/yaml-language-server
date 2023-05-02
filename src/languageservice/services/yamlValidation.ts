@@ -94,7 +94,7 @@ export class YAMLValidation {
 
         const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
 
-        const syd = currentYAMLDoc as unknown as SingleYAMLDocument;
+        const syd = (currentYAMLDoc as unknown) as SingleYAMLDocument;
         if (syd.errors.length > 0) {
           // TODO: Get rid of these type assertions (shouldn't need them)
           validationResult.push(...syd.errors);

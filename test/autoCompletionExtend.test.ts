@@ -29,11 +29,9 @@ describe('Auto Completion Tests Extended', () => {
       uri: 'http://google.com',
       fileMatch: ['bad-schema.yaml'],
     });
-    const {
-      languageService: langService,
-      languageHandler: langHandler,
-      yamlSettings: settings,
-    } = setupLanguageService(languageSettingsSetup.languageSettings);
+    const { languageService: langService, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(
+      languageSettingsSetup.languageSettings
+    );
     languageService = langService;
     languageHandler = langHandler;
     yamlSettings = settings;

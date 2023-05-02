@@ -35,11 +35,11 @@ describe('Yaml Commands', () => {
 
   it('JumpToSchema handler should call "showDocument"', async () => {
     const showDocumentStub = sandbox.stub();
-    const connection = {
+    const connection = ({
       window: {
         showDocument: showDocumentStub,
       },
-    } as unknown as Connection;
+    } as unknown) as Connection;
     showDocumentStub.resolves(true);
     registerCommands(commandExecutor, connection);
     const arg = commandExecutorStub.args[0];
@@ -49,11 +49,11 @@ describe('Yaml Commands', () => {
 
   it('JumpToSchema handler should call "showDocument" with plain win path', async () => {
     const showDocumentStub = sandbox.stub();
-    const connection = {
+    const connection = ({
       window: {
         showDocument: showDocumentStub,
       },
-    } as unknown as Connection;
+    } as unknown) as Connection;
     showDocumentStub.resolves(true);
     registerCommands(commandExecutor, connection);
     const arg = commandExecutorStub.args[0];
