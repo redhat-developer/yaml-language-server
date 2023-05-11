@@ -20,13 +20,10 @@ describe('Hover Tests', () => {
   let telemetry: TestTelemetry;
 
   before(() => {
-    languageSettingsSetup = new ServiceSetup()
-      .withHover()
-      .withIndentation('  ')
-      .withSchemaFileMatch({
-        uri: 'http://google.com',
-        fileMatch: ['bad-schema.yaml'],
-      });
+    languageSettingsSetup = new ServiceSetup().withHover().withSchemaFileMatch({
+      uri: 'http://google.com',
+      fileMatch: ['bad-schema.yaml'],
+    });
     const {
       languageService: langService,
       languageHandler: langHandler,
@@ -513,7 +510,26 @@ users:
       );
     });
 
-    it('hover on value and its description has multiline, indentationa and special string', async () => {
+    it('hover on value and its description has multiline, indentation and special string', async () => {
+      (() => {
+        languageSettingsSetup = new ServiceSetup()
+          .withHover()
+          .withIndentation('  ')
+          .withSchemaFileMatch({
+            uri: 'http://google.com',
+            fileMatch: ['bad-schema.yaml'],
+          });
+        const {
+          languageService: langService,
+          languageHandler: langHandler,
+          yamlSettings: settings,
+          telemetry: testTelemetry,
+        } = setupLanguageService(languageSettingsSetup.languageSettings);
+        languageService = langService;
+        languageHandler = langHandler;
+        yamlSettings = settings;
+        telemetry = testTelemetry;
+      })();
       //https://github.com/redhat-developer/vscode-yaml/issues/886
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
