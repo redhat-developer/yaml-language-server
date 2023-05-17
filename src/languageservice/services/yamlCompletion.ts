@@ -144,11 +144,11 @@ export class YamlCompletion {
 
     this.arrayPrefixIndentation = '';
     let overwriteRange: Range = null;
+    const isOnlyHyphen = lineContent.match(/^\s*(-)\s*$/);
     if (areOnlySpacesAfterPosition) {
       overwriteRange = Range.create(position, Position.create(position.line, lineContent.length));
       const isOnlyWhitespace = lineContent.trim().length === 0;
-      const isOnlyDash = lineContent.match(/^\s*(-)\s*$/);
-      if (node && isScalar(node) && !isOnlyWhitespace && !isOnlyDash) {
+      if (node && isScalar(node) && !isOnlyWhitespace && !isOnlyHyphen) {
         const lineToPosition = lineContent.substring(0, position.character);
         const matches =
           // get indentation of unfinished property (between indent and cursor)
@@ -357,6 +357,12 @@ export class YamlCompletion {
       if (node) {
         if (lineContent.length === 0) {
           node = currentDoc.internalDocument.contents as Node;
+        } else if (isSeq(node) && isOnlyHyphen) {
+          const index = this.findItemAtOffset(node, document, offset);
+          const item = node.items[index];
+          if (isNode(item)) {
+            node = item;
+          }
         } else {
           const parent = currentDoc.getParent(node);
           if (parent) {
@@ -717,19 +723,19 @@ export class YamlCompletion {
                 const propertySchema = schemaProperties[key];
 
                 if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema['doNotSuggest']) {
-                  let identCompensation = '';
+                  let indentCompensation = '';
                   if (nodeParent && isSeq(nodeParent) && node.items.length <= 1 && !hasOnlyWhitespace) {
-                    // because there is a slash '-' to prevent the properties generated to have the correct
-                    // indent
-                    const sourceText = textBuffer.getText();
-                    const indexOfSlash = sourceText.lastIndexOf('-', node.range[0] - 1);
-                    if (indexOfSlash >= 0) {
-                      // add one space to compensate the '-'
-                      const overwriteChars = overwriteRange.end.character - overwriteRange.start.character;
-                      identCompensation = ' ' + sourceText.slice(indexOfSlash + 1, node.range[1] - overwriteChars);
+                    // because there is a slash '-' to prevent the properties generated to have the correct indent
+                    const fromLastHyphenToPosition = lineContent.slice(
+                      lineContent.lastIndexOf('-'),
+                      overwriteRange.start.character
+                    );
+                    const hyphenFollowedByEmpty = fromLastHyphenToPosition.match(/-([ \t]*)/);
+                    if (hyphenFollowedByEmpty) {
+                      indentCompensation = ' ' + hyphenFollowedByEmpty[1];
                     }
                   }
-                  identCompensation += this.arrayPrefixIndentation;
+                  indentCompensation += this.arrayPrefixIndentation;
 
                   // if check that current node has last pair with "null" value and key witch match key from schema,
                   // and if schema has array definition it add completion item for array item creation
@@ -760,7 +766,7 @@ export class YamlCompletion {
                       key,
                       propertySchema,
                       separatorAfter,
-                      identCompensation + this.indentation
+                      indentCompensation + this.indentation
                     );
                   }
                   const isNodeNull =
@@ -787,13 +793,13 @@ export class YamlCompletion {
                         key,
                         propertySchema,
                         separatorAfter,
-                        identCompensation + this.indentation
+                        indentCompensation + this.indentation
                       ),
                       insertTextFormat: InsertTextFormat.Snippet,
                       documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
                       parent: {
                         schema: schema.schema,
-                        indent: identCompensation,
+                        indent: indentCompensation,
                       },
                     });
                   }
