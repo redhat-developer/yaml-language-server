@@ -1,3 +1,13 @@
+### 1.13.0
+- Fix: The default value for keyorder [#859](https://github.com/redhat-developer/yaml-language-server/pull/859)
+- Fix: older changelog heading levels [#861](https://github.com/redhat-developer/yaml-language-server/pull/861)
+- Fix: hover behavior when indentation not set [#863](https://github.com/redhat-developer/yaml-language-server/pull/863)
+- Add: Run sarif seperately [#866](https://github.com/redhat-developer/yaml-language-server/pull/866)
+- Fix: Formatting YAML file inserts ternary operators [#255](https://github.com/redhat-developer/vscode-yaml/issues/255)
+- Fix: Mark settings readonly [#868](https://github.com/redhat-developer/yaml-language-server/pull/868)
+
+Thanks to [Kasama](https://github.com/Kasama)
+
 ### 1.12.0
 - Fix: Completion Value with dash [#832](https://github.com/redhat-developer/yaml-language-server/pull/832)
 - Add: Enforce alphabetical ordering of keys in mappings and provide codeaction to fix it. [#839](https://github.com/redhat-developer/yaml-language-server/pull/839)
