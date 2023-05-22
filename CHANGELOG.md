@@ -6,7 +6,7 @@
 - Fix: Formatting YAML file inserts ternary operators [#255](https://github.com/redhat-developer/vscode-yaml/issues/255)
 - Fix: Mark settings readonly [#868](https://github.com/redhat-developer/yaml-language-server/pull/868)
 
-Thanks to Roberto Pommella Alegro Kasama
+Thanks to [Kasama](https://github.com/Kasama)
 
 ### 1.12.0
 - Fix: Completion Value with dash [#832](https://github.com/redhat-developer/yaml-language-server/pull/832)
