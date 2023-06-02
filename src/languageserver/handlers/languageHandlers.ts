@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { FoldingRange } from 'vscode-json-languageservice';
+
 import { Connection } from 'vscode-languageserver';
 import {
   CodeActionParams,
@@ -12,6 +12,7 @@ import {
   DocumentOnTypeFormattingParams,
   DocumentSymbolParams,
   FoldingRangeParams,
+  SelectionRangeParams,
   TextDocumentPositionParams,
   CodeLensParams,
   DefinitionParams,
@@ -24,6 +25,8 @@ import {
   DocumentLink,
   DocumentSymbol,
   Hover,
+  FoldingRange,
+  SelectionRange,
   SymbolInformation,
   TextEdit,
 } from 'vscode-languageserver-types';
@@ -61,6 +64,7 @@ export class LanguageHandlers {
     this.connection.onCompletion((textDocumentPosition) => this.completionHandler(textDocumentPosition));
     this.connection.onDidChangeWatchedFiles((change) => this.watchedFilesHandler(change));
     this.connection.onFoldingRanges((params) => this.foldingRangeHandler(params));
+    this.connection.onSelectionRanges((params) => this.selectionRangeHandler(params));
     this.connection.onCodeAction((params) => this.codeActionHandler(params));
     this.connection.onDocumentOnTypeFormatting((params) => this.formatOnTypeHandler(params));
     this.connection.onCodeLens((params) => this.codeLensHandler(params));
@@ -205,6 +209,15 @@ export class LanguageHandlers {
     };
 
     return this.languageService.getFoldingRanges(textDocument, context);
+  }
+
+  selectionRangeHandler(params: SelectionRangeParams): SelectionRange[] {
+    const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
+    if (!textDocument) {
+      return;
+    }
+
+    return this.languageService.getSelectionRanges(textDocument, params.positions);
   }
 
   codeActionHandler(params: CodeActionParams): CodeAction[] | undefined {
