@@ -811,6 +811,10 @@ function validate(
         validationResult.merge(bestMatch.validationResult);
         validationResult.propertiesMatches += bestMatch.validationResult.propertiesMatches;
         validationResult.propertiesValueMatches += bestMatch.validationResult.propertiesValueMatches;
+        validationResult.enumValueMatch = validationResult.enumValueMatch || bestMatch.validationResult.enumValueMatch;
+        if (bestMatch.validationResult.enumValues?.length) {
+          validationResult.enumValues = (validationResult.enumValues || []).concat(bestMatch.validationResult.enumValues);
+        }
         matchingSchemas.merge(bestMatch.matchingSchemas);
       }
       return matches.length;
