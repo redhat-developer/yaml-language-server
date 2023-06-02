@@ -28,7 +28,8 @@ export function getSelectionRanges(document: TextDocument, positions: Position[]
     const result: Range[] = [];
     for (const ymlDoc of doc.documents) {
       let currentNode: ASTNode;
-      let currentOffset: number;
+      let firstNodeOffset: number;
+      let isFirstNode = true;
       ymlDoc.visit((node) => {
         const endOffset = node.offset + node.length;
         // Skip if end offset doesn't even reach cursor position
@@ -61,14 +62,15 @@ export function getSelectionRanges(document: TextDocument, positions: Position[]
         // Allow equal for children to override
         if (!currentNode || startOffset >= currentNode.offset) {
           currentNode = node;
-          currentOffset = startOffset;
+          firstNodeOffset = startOffset;
         }
         return true;
       });
       while (currentNode) {
+        const startOffset = isFirstNode ? firstNodeOffset : currentNode.offset;
         const endOffset = currentNode.offset + currentNode.length;
         const range = {
-          start: document.positionAt(currentOffset),
+          start: document.positionAt(startOffset),
           end: document.positionAt(endOffset),
         };
         const text = document.getText(range);
@@ -87,14 +89,15 @@ export function getSelectionRanges(document: TextDocument, positions: Position[]
           (currentNode.type === 'array' && isSurroundedBy('[', ']'))
         ) {
           result.push({
-            start: document.positionAt(currentOffset + 1),
+            start: document.positionAt(startOffset + 1),
             end: document.positionAt(endOffset - 1),
           });
         }
         result.push(range);
         currentNode = currentNode.parent;
-        currentOffset = currentNode?.offset;
+        isFirstNode = false;
       }
+      // A position can't be in multiple documents
       if (result.length > 0) {
         break;
       }
