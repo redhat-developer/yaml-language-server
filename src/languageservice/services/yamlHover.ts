@@ -6,7 +6,7 @@
 
 import { Hover, MarkupContent, MarkupKind, Position, Range } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
-import { LanguageSettings } from '../yamlLanguageService';
+import { LanguageSettings, HoverSettings } from '../yamlLanguageService';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -24,7 +24,7 @@ import { stringify as stringifyYAML } from 'yaml';
 export class YAMLHover {
   private shouldHover: boolean;
   private indentation: string;
-  private hoverSettings: LanguageSettings['hoverSettings'];
+  private hoverSettings: HoverSettings;
   private schemaService: YAMLSchemaService;
 
   constructor(schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {
@@ -36,7 +36,7 @@ export class YAMLHover {
     if (languageSettings) {
       this.shouldHover = languageSettings.hover;
       this.indentation = languageSettings.indentation;
-      this.hoverSettings = languageSettings.hoverSettings;
+      this.hoverSettings = languageSettings.hoverSettings ?? {};
     }
   }
 
@@ -105,9 +105,8 @@ export class YAMLHover {
       return value.replace(/\|\|\s*$/, '');
     };
 
-    const hoverSettings = this.hoverSettings || {};
-    const showSource = !!hoverSettings?.showSource;
-    const showTitle = !!hoverSettings?.showTitle;
+    const showSource = this.hoverSettings?.showSource ?? true; // showSource enabled by default
+    const showTitle = this.hoverSettings?.showTitle ?? true; // showTitle enabled by default
 
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
       if (schema && node && !schema.errors.length) {
