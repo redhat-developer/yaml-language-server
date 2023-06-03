@@ -74,6 +74,7 @@ export interface SchemasSettings {
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
   hover?: boolean; //Setting for whether we want to have hover results
+  hoverSettings?: {showSource?: boolean; showTitle?: boolean;}; // Settings for hover parts
   completion?: boolean; //Setting for whether we want to have completion results
   format?: boolean; //Setting for whether we want to have the formatter or not
   isKubernetes?: boolean; //If true then its validating against kubernetes
