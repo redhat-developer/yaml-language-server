@@ -551,6 +551,114 @@ users:
       );
     });
 
+    it('Hover hides title and source when disabled', async () => {
+      (() => {
+        languageSettingsSetup = new ServiceSetup()
+          .withHover()
+          .withSchemaFileMatch({
+            uri: 'http://google.com',
+            fileMatch: ['bad-schema.yaml'],
+          })
+          .withHoverSettings({
+            showTitle: false,
+            showSource: false,
+          });
+        const {
+          languageService: langService,
+          languageHandler: langHandler,
+          yamlSettings: settings,
+          telemetry: testTelemetry,
+        } = setupLanguageService(languageSettingsSetup.languageSettings);
+        languageService = langService;
+        languageHandler = langHandler;
+        yamlSettings = settings;
+        telemetry = testTelemetry;
+      })();
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        title: 'Living being',
+        properties: {
+          animal: {
+            type: 'string',
+            description: 'should return this description',
+            enum: ['cat', 'dog'],
+            examples: ['cat', 'dog'],
+          },
+        },
+      });
+      const content = 'animal:\n  ca|t|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+Examples:
+
+\`\`\`"cat"\`\`\`
+
+\`\`\`"dog"\`\`\``
+      );
+    });
+
+    it('Hover works when title and source explicitely enabled', async () => {
+      (() => {
+        languageSettingsSetup = new ServiceSetup()
+          .withHover()
+          .withSchemaFileMatch({
+            uri: 'http://google.com',
+            fileMatch: ['bad-schema.yaml'],
+          })
+          .withHoverSettings({
+            showTitle: true,
+            showSource: true,
+          });
+        const {
+          languageService: langService,
+          languageHandler: langHandler,
+          yamlSettings: settings,
+          telemetry: testTelemetry,
+        } = setupLanguageService(languageSettingsSetup.languageSettings);
+        languageService = langService;
+        languageHandler = langHandler;
+        yamlSettings = settings;
+        telemetry = testTelemetry;
+      })();
+      languageService.addSchema(SCHEMA_ID, {
+        type: 'object',
+        title: 'Living being',
+        properties: {
+          animal: {
+            type: 'string',
+            description: 'should return this description',
+            enum: ['cat', 'dog'],
+            examples: ['cat', 'dog'],
+          },
+        },
+      });
+      const content = 'animal:\n  ca|t|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `#### Living being
+
+should return this description
+
+Examples:
+
+\`\`\`"cat"\`\`\`
+
+\`\`\`"dog"\`\`\`
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
     it('Hover works on examples', async () => {
       languageService.addSchema(SCHEMA_ID, {
         type: 'object',
