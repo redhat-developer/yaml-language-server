@@ -106,9 +106,9 @@ export class YAMLHover {
     };
 
     const hoverSettings = this.hoverSettings || {};
-    const showSource = hoverSettings.hasOwnProperty('showSource') ? hoverSettings.showSource : true;
-    const showTitle = hoverSettings.hasOwnProperty('showTitle') ? hoverSettings.showTitle : true;
-    
+    const showSource = !!hoverSettings?.showSource;
+    const showTitle = !!hoverSettings?.showTitle;
+
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
       if (schema && node && !schema.errors.length) {
         const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
