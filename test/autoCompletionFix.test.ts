@@ -883,8 +883,8 @@ objB:
         },
       };
       languageService.addSchema(SCHEMA_ID, schema);
-      const content = 'array:\n - na   ';
-      const completion = await parseSetup(content, 1, 5);
+      const content = 'array:\n - na| |  ';
+      const completion = await parseCaret(content);
 
       expect(completion.items.length).equal(1);
       expect(completion.items[0].insertText).eql('obj1:\n    ');
@@ -1208,16 +1208,25 @@ objB:
       };
       it('should get extra space compensation for the 1st prop in array object item', async () => {
         languageService.addSchema(SCHEMA_ID, schema);
-        const content = 'array1:\n  - \n    propB: test';
-        const result = await parseSetup(content, 1, 4); // after `- `
+        const content = 'array1:\n  - |\n|    propB: test';
+        const result = await parseCaret(content);
 
         expect(result.items.length).to.be.equal(1);
         expect(result.items[0].insertText).to.be.equal('objA:\n    ');
       });
       it('should get extra space compensation for the 1st prop in array object item - extra spaces', async () => {
         languageService.addSchema(SCHEMA_ID, schema);
-        const content = 'array1:\n  -     \n    propB: test';
-        const result = await parseSetup(content, 1, 4); // after `- `
+        const content = 'array1:\n  - | |   \n    propB: test';
+        const result = await parseCaret(content);
+
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0].insertText).to.be.equal('objA:\n    ');
+      });
+      // previous PR doesn't fix this
+      it.skip('should get extra space compensation for the 1st prop in array object item - extra lines', async () => {
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = 'array1:\n  - \n    |\n|    propB: test';
+        const result = await parseCaret(content);
 
         expect(result.items.length).to.be.equal(1);
         expect(result.items[0].insertText).to.be.equal('objA:\n    ');

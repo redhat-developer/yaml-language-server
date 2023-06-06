@@ -211,16 +211,77 @@ objB:
       expect(((result as YAMLMap).items[0].key as Scalar).value).eqls('bar');
     });
 
-    it('Find closes node: array', () => {
-      const doc = setupTextDocument('foo:\n  - bar: aaa\n  ');
-      const yamlDoc = documents.getYamlDocument(doc);
-      const textBuffer = new TextBuffer(doc);
+    describe('Array', () => {
+      it('Find closes node: array', () => {
+        const doc = setupTextDocument('foo:\n  - bar: aaa\n  ');
+        const yamlDoc = documents.getYamlDocument(doc);
+        const textBuffer = new TextBuffer(doc);
 
-      const result = yamlDoc.documents[0].findClosestNode(20, textBuffer);
+        const result = yamlDoc.documents[0].findClosestNode(20, textBuffer);
 
-      expect(result).is.not.undefined;
-      expect(isSeq(result)).is.true;
-      expect((((result as YAMLSeq).items[0] as YAMLMap).items[0].key as Scalar).value).eqls('bar');
+        expect(result).is.not.undefined;
+        expect(isSeq(result)).is.true;
+        expect((((result as YAMLSeq).items[0] as YAMLMap).items[0].key as Scalar).value).eqls('bar');
+      });
+      it.skip('Find first array item node', () => {
+        const doc = setupTextDocument(`foo:
+  - 
+    item1: aaa
+`);
+        const yamlDoc = documents.getYamlDocument(doc);
+        const textBuffer = new TextBuffer(doc);
+
+        const result = yamlDoc.documents[0].findClosestNode(9, textBuffer);
+
+        expect(result).is.not.undefined;
+        expect(isMap(result)).is.true;
+        expect(((result as YAMLMap).items[0].key as Scalar).value).eqls('item1');
+      });
+      it.skip('Find first array item node - extra indent', () => {
+        const doc = setupTextDocument(`foo:
+  - 
+    
+    item1: aaa
+`);
+        const yamlDoc = documents.getYamlDocument(doc);
+        const textBuffer = new TextBuffer(doc);
+
+        const result = yamlDoc.documents[0].findClosestNode(9, textBuffer);
+
+        expect(result).is.not.undefined;
+        expect(isMap(result)).is.true;
+        expect(((result as YAMLMap).items[0].key as Scalar).value).eqls('item1');
+      });
+
+      it.skip('Find second array item node', () => {
+        const doc = setupTextDocument(`foo:
+  - item1: aaa
+  - 
+    item2: bbb`);
+        const yamlDoc = documents.getYamlDocument(doc);
+        const textBuffer = new TextBuffer(doc);
+
+        const result = yamlDoc.documents[0].findClosestNode(24, textBuffer);
+
+        expect(result).is.not.undefined;
+        expect(isMap(result)).is.true;
+        expect(((result as YAMLMap).items[0].key as Scalar).value).eqls('item2');
+      });
+      it.skip('Find second array item node: - extra indent', () => {
+        const doc = setupTextDocument(`foo:
+  - item1: aaa
+  -
+    
+    item2: bbb`);
+        const yamlDoc = documents.getYamlDocument(doc);
+        const textBuffer = new TextBuffer(doc);
+
+        const result = yamlDoc.documents[0].findClosestNode(28, textBuffer);
+
+        expect(result).is.not.undefined;
+        expect(isMap(result)).is.true;
+        expect(((result as YAMLMap).items[0].key as Scalar).value).eqls('item2');
+      });
     });
 
     it('Find closes node: root map', () => {
