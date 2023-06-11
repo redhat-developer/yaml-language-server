@@ -211,7 +211,7 @@ export class LanguageHandlers {
     return this.languageService.getFoldingRanges(textDocument, context);
   }
 
-  selectionRangeHandler(params: SelectionRangeParams): SelectionRange[] {
+  selectionRangeHandler(params: SelectionRangeParams): SelectionRange[] | undefined {
     const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
     if (!textDocument) {
       return;
