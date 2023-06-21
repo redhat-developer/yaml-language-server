@@ -110,6 +110,7 @@ export class YAMLServerInit {
         definitionProvider: true,
         documentLinkProvider: {},
         foldingRangeProvider: true,
+        selectionRangeProvider: true,
         codeActionProvider: true,
         codeLensProvider: {
           resolveProvider: false,
