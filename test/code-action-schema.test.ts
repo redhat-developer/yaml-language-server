@@ -2,32 +2,37 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, TEST_URI } from './utils/testHelper';
+import {
+  SCHEMA_ID,
+  setupLanguageService,
+  setupSchemaIDTextDocument,
+  TEST_URI,
+  TestCustomSchemaProvider,
+} from './utils/testHelper';
 import { ServiceSetup } from './utils/serviceSetup';
 import { TextDocumentIdentifier, CodeActionParams, CodeActionContext, TextEdit, Range } from 'vscode-languageserver';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 describe('Schema Errors Code Action Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let validationHandler: ValidationHandler;
-  let languageService: LanguageService;
   let yamlSettings: SettingsState;
+  let schemaProvider: TestCustomSchemaProvider;
 
   before(() => {
     languageSettingsSetup = new ServiceSetup().withValidate();
     const {
-      languageService: langService,
       validationHandler: valHandler,
       yamlSettings: settings,
+      schemaProvider: testSchemaProvider,
     } = setupLanguageService(languageSettingsSetup.languageSettings);
-    languageService = langService;
     validationHandler = valHandler;
     yamlSettings = settings;
+    schemaProvider = testSchemaProvider;
   });
 
   function parseSetup(content: string, customSchemaID?: string): TextDocument {
@@ -38,12 +43,12 @@ describe('Schema Errors Code Action Tests', () => {
   }
 
   afterEach(() => {
-    languageService.deleteSchema(SCHEMA_ID);
+    schemaProvider.deleteSchema(SCHEMA_ID);
   });
 
   describe('Convert value code action tests', () => {
     it('Should provide convert to boolean action for false', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           analytics: {
@@ -70,7 +75,7 @@ describe('Schema Errors Code Action Tests', () => {
     });
 
     it('Should provide convert to boolean action for true', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           analytics: {
