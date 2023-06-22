@@ -3,8 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { ServiceSetup } from './utils/serviceSetup';
-import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
-import { LanguageService } from '../src';
+import {
+  caretPosition,
+  SCHEMA_ID,
+  setupLanguageService,
+  setupSchemaIDTextDocument,
+  TestCustomSchemaProvider,
+} from './utils/testHelper';
 import * as assert from 'assert';
 import { Hover, MarkupContent, Position } from 'vscode-languageserver-types';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
@@ -15,9 +20,9 @@ import { TestTelemetry } from './utils/testsTypes';
 describe('Hover Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageHandler: LanguageHandlers;
-  let languageService: LanguageService;
   let yamlSettings: SettingsState;
   let telemetry: TestTelemetry;
+  let schemaProvider: TestCustomSchemaProvider;
 
   before(() => {
     languageSettingsSetup = new ServiceSetup().withHover().withSchemaFileMatch({
@@ -25,19 +30,19 @@ describe('Hover Tests', () => {
       fileMatch: ['bad-schema.yaml'],
     });
     const {
-      languageService: langService,
       languageHandler: langHandler,
       yamlSettings: settings,
       telemetry: testTelemetry,
+      schemaProvider: testSchemaProvider,
     } = setupLanguageService(languageSettingsSetup.languageSettings);
-    languageService = langService;
     languageHandler = langHandler;
     yamlSettings = settings;
     telemetry = testTelemetry;
+    schemaProvider = testSchemaProvider;
   });
 
   afterEach(() => {
-    languageService.deleteSchema(SCHEMA_ID);
+    schemaProvider.deleteSchema(SCHEMA_ID);
   });
 
   /**
@@ -64,7 +69,7 @@ describe('Hover Tests', () => {
 
   describe('Hover', function () {
     it('Hover on key on root', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           cwd: {
@@ -86,7 +91,7 @@ describe('Hover Tests', () => {
     });
 
     it('Hover on value on root', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           cwd: {
@@ -108,7 +113,7 @@ describe('Hover Tests', () => {
     });
 
     it('Hover on key with depth', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           scripts: {
@@ -134,7 +139,7 @@ describe('Hover Tests', () => {
     });
 
     it('Hover on value with depth', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           scripts: {
@@ -160,7 +165,7 @@ describe('Hover Tests', () => {
     });
 
     it('Hover works on both root node and child nodes works', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           scripts: {
@@ -196,7 +201,7 @@ describe('Hover Tests', () => {
     });
 
     it('Hover does not show results when there isnt description field', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           analytics: {
@@ -212,7 +217,7 @@ describe('Hover Tests', () => {
     });
 
     it('Hover on first document in multi document', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           analytics: {
@@ -228,7 +233,7 @@ describe('Hover Tests', () => {
     });
 
     it('Hover on second document in multi document', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           analytics: {
@@ -251,7 +256,7 @@ describe('Hover Tests', () => {
     });
 
     it('Hover should not return anything on key', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {},
       });
@@ -263,7 +268,7 @@ describe('Hover Tests', () => {
     });
 
     it('Hover should not return anything on value', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {},
       });
@@ -275,7 +280,7 @@ describe('Hover Tests', () => {
     });
 
     it('Hover works on array nodes', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           authors: {
@@ -303,7 +308,7 @@ describe('Hover Tests', () => {
     });
 
     it('Hover works on additional array nodes', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           authors: {
@@ -335,7 +340,7 @@ describe('Hover Tests', () => {
     });
 
     it('Hover works on oneOf reference array nodes', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         definitions: {
           stringoptions: {
@@ -444,7 +449,7 @@ storage:
     });
 
     it('Hover on refs node', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         additionalProperties: false,
         properties: {
@@ -491,7 +496,7 @@ users:
     });
 
     it('Hover on null property', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           childObject: {
@@ -520,18 +525,18 @@ users:
             fileMatch: ['bad-schema.yaml'],
           });
         const {
-          languageService: langService,
           languageHandler: langHandler,
           yamlSettings: settings,
           telemetry: testTelemetry,
+          schemaProvider: testSchemaProvider,
         } = setupLanguageService(languageSettingsSetup.languageSettings);
-        languageService = langService;
         languageHandler = langHandler;
         yamlSettings = settings;
         telemetry = testTelemetry;
+        schemaProvider = testSchemaProvider;
       })();
       //https://github.com/redhat-developer/vscode-yaml/issues/886
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         title: 'Person',
         properties: {
@@ -552,7 +557,7 @@ users:
     });
 
     it('Hover works on examples', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           animal: {
@@ -583,7 +588,7 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
     });
 
     it('Hover on property next value on null', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           childObject: {
@@ -622,7 +627,7 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
 
   describe('Hover on anyOf', () => {
     it('should show all matched schemas in anyOf', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         title: 'The Root',
         description: 'Root Object',
         type: 'object',

@@ -4,7 +4,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, toFsPath } from './utils/testHelper';
+import {
+  caretPosition,
+  SCHEMA_ID,
+  setupLanguageService,
+  setupSchemaIDTextDocument,
+  TestCustomSchemaProvider,
+  toFsPath,
+} from './utils/testHelper';
 import assert = require('assert');
 import path = require('path');
 import { createExpectedCompletion } from './utils/verifyError';
@@ -20,6 +27,7 @@ describe('Auto Completion Tests', () => {
   let languageService: LanguageService;
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
+  let schemaProvider: TestCustomSchemaProvider;
 
   before(() => {
     languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
@@ -30,10 +38,12 @@ describe('Auto Completion Tests', () => {
       languageService: langService,
       languageHandler: langHandler,
       yamlSettings: settings,
+      schemaProvider: testSchemaProvider,
     } = setupLanguageService(languageSettingsSetup.languageSettings);
     languageService = langService;
     languageHandler = langHandler;
     yamlSettings = settings;
+    schemaProvider = testSchemaProvider;
   });
 
   /**
@@ -59,14 +69,14 @@ describe('Auto Completion Tests', () => {
   }
 
   afterEach(() => {
-    languageService.deleteSchema(SCHEMA_ID);
+    schemaProvider.deleteSchema(SCHEMA_ID);
     languageService.configure(languageSettingsSetup.languageSettings);
   });
 
   describe('YAML Completion Tests', function () {
     describe('JSON Schema Tests', function () {
       it('Autocomplete on root without word', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             name: {
@@ -90,7 +100,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete on root with partial word', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             name: {
@@ -114,7 +124,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete on default value (without :)', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             name: {
@@ -139,7 +149,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete on default value (without value content)', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             name: {
@@ -164,7 +174,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete on default value with \\"', async () => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             name: {
@@ -185,7 +195,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete name and value with \\"', async () => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             name: {
@@ -206,7 +216,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete on default value (with value content)', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             name: {
@@ -231,7 +241,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete on default value (with value content contains dash)', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             name: {
@@ -256,7 +266,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete on boolean value (without value content)', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             yaml: {
@@ -286,7 +296,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete on boolean value with key of `null`', () => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             validation: {
@@ -310,7 +320,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete on boolean value (with value content)', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             yaml: {
@@ -340,7 +350,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete on number value (without value content)', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             timeout: {
@@ -365,7 +375,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete on number value (with value content)', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             timeout: {
@@ -390,7 +400,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete key in middle of file', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -420,7 +430,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete key with default value in middle of file', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -453,7 +463,7 @@ describe('Auto Completion Tests', () => {
         const languageSettingsSetup = new ServiceSetup().withCompletion();
         languageSettingsSetup.languageSettings.disableDefaultProperties = true;
         languageService.configure(languageSettingsSetup.languageSettings);
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -483,7 +493,7 @@ describe('Auto Completion Tests', () => {
         const languageSettingsSetup = new ServiceSetup().withCompletion();
         languageSettingsSetup.languageSettings.disableDefaultProperties = true;
         languageService.configure(languageSettingsSetup.languageSettings);
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -512,7 +522,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete second key in middle of file', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -546,7 +556,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete does not happen right after key object', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             timeout: {
@@ -565,7 +575,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete does not happen right after : under an object', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -593,7 +603,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete with defaultSnippet markdown', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -621,7 +631,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete on multi yaml documents in a single file on root', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             timeout: {
@@ -646,7 +656,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete on multi yaml documents in a single file on scalar', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             timeout: {
@@ -671,7 +681,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocompletion has no results on value when they are not available', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             time: {
@@ -689,7 +699,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Test that properties that have multiple types get auto completed properly', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -741,7 +751,7 @@ describe('Auto Completion Tests', () => {
             },
           ],
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'kind: '; // len: 6
         const validator = parseSetup(content, 6);
         validator
@@ -777,7 +787,7 @@ describe('Auto Completion Tests', () => {
 
       it('Insert required attributes at correct level', (done) => {
         const schema = require(path.join(__dirname, './fixtures/testRequiredProperties.json'));
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- top:\n    prop1: demo\n- ';
         const completion = parseSetup(content, content.length);
         completion
@@ -795,7 +805,7 @@ describe('Auto Completion Tests', () => {
 
       it('Insert required attributes at correct level even on first element', (done) => {
         const schema = require(path.join(__dirname, './fixtures/testRequiredProperties.json'));
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- ';
         const completion = parseSetup(content, content.length);
         completion
@@ -813,7 +823,7 @@ describe('Auto Completion Tests', () => {
 
       it('Provide the 3 types when none provided', (done) => {
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- ';
         const completion = parseSetup(content, content.length);
         completion
@@ -843,7 +853,7 @@ describe('Auto Completion Tests', () => {
 
       it('Provide the 2 types when one is provided', (done) => {
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  ';
         const completion = parseSetup(content, content.length);
         completion
@@ -867,7 +877,7 @@ describe('Auto Completion Tests', () => {
 
       it('Provide the 2 types when one is provided and the second is typed', (done) => {
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  p';
         const completion = parseSetup(content, content.length);
         completion
@@ -891,7 +901,7 @@ describe('Auto Completion Tests', () => {
 
       it('Provide no completion when maxProperties reached', (done) => {
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  prop2:\n  ';
         const completion = parseSetup(content, content.length);
         completion
@@ -902,7 +912,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocompletion should escape @', async () => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             '@type': {
@@ -922,7 +932,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocompletion should escape colon when indicating map', async () => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             'test: colon': {
@@ -947,7 +957,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocompletion should not escape colon when no white-space following', async () => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             'test:colon': {
@@ -972,7 +982,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocompletion should not escape colon when no key part present', async () => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             ':colon': {
@@ -1021,7 +1031,7 @@ describe('Auto Completion Tests', () => {
         };
         it('should suggest "then" block if "if" match filePatternAssociation', async () => {
           schema.if.filePatternAssociation = SCHEMA_ID;
-          languageService.addSchema(SCHEMA_ID, schema);
+          schemaProvider.addSchema(SCHEMA_ID, schema);
           const content = 'name: aName\n ';
           const completion = await parseSetup(content, content.length);
           expect(completion.items.map((i) => i.label)).to.deep.equal(['pineapple', 'basket']);
@@ -1032,7 +1042,7 @@ describe('Auto Completion Tests', () => {
     describe('Array Specific Tests', function () {
       it('Should insert empty array item', (done) => {
         const schema = require(path.join(__dirname, './fixtures/testStringArray.json'));
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'fooBa'; // len: 5
         const completion = parseSetup(content, content.lastIndexOf('Ba') + 2); // pos: 3+2
         completion
@@ -1043,7 +1053,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Array autocomplete without word and extra space', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             authors: {
@@ -1075,7 +1085,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Array autocomplete without word and autocompletion beside -', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             authors: {
@@ -1107,7 +1117,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Array autocomplete without word on space before array symbol', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             authors: {
@@ -1142,7 +1152,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Array autocomplete on empty node with array from schema', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             authors: {
@@ -1177,7 +1187,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Array autocomplete with letter', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             authors: {
@@ -1209,7 +1219,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Array autocomplete without word (second item)', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             authors: {
@@ -1244,7 +1254,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Array autocomplete with letter (second item)', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             authors: {
@@ -1279,7 +1289,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocompletion after array', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             authors: {
@@ -1317,7 +1327,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocompletion after array with depth - no indent', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             archive: {
@@ -1357,7 +1367,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocompletion after array with depth - indent', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             archive: {
@@ -1398,7 +1408,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Array of enum autocomplete without word on array symbol', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             references: {
@@ -1425,7 +1435,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Array of enum autocomplete without word', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             references: {
@@ -1452,7 +1462,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Array of enum autocomplete with letter', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             references: {
@@ -1481,7 +1491,7 @@ describe('Auto Completion Tests', () => {
       it('Array of objects autocomplete with 4 space indentation check', async () => {
         const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('    ');
         languageService.configure(languageSettingsSetup.languageSettings);
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             metadata: {
@@ -1534,7 +1544,7 @@ describe('Auto Completion Tests', () => {
     it('Array of objects autocomplete with 2 space indentation check', async () => {
       const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('  ');
       languageService.configure(languageSettingsSetup.languageSettings);
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           metadata: {
@@ -1586,7 +1596,7 @@ describe('Auto Completion Tests', () => {
     it('Array of objects autocomplete with 3 space indentation check', async () => {
       const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('   ');
       languageService.configure(languageSettingsSetup.languageSettings);
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           metadata: {
@@ -1661,7 +1671,7 @@ describe('Auto Completion Tests', () => {
     it('Object in array with 4 space indentation check', async () => {
       const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('    ');
       languageService.configure(languageSettingsSetup.languageSettings);
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           rules: {
@@ -1735,7 +1745,7 @@ describe('Auto Completion Tests', () => {
 
   describe('JSON Schema 7 Specific Tests', function () {
     it('Autocomplete works with examples', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           foodItems: {
@@ -1763,7 +1773,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Autocomplete works with const', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           fruit: {
@@ -1786,7 +1796,7 @@ describe('Auto Completion Tests', () => {
         .then(done, done);
     });
     it('Autocomplete should suggest prop with const value', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           fruit: {
@@ -1809,7 +1819,7 @@ describe('Auto Completion Tests', () => {
         .then(done, done);
     });
     it('Should insert quotation value if there is special char', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           from: {
@@ -1833,7 +1843,7 @@ describe('Auto Completion Tests', () => {
   describe('Indentation Specific Tests', function () {
     it('Indent should be considered with position relative to slash', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'install:\n  - he'; // len: 15
       const completion = parseSetup(content, content.lastIndexOf('he') + 2); // pos: 13+2
       completion
@@ -1851,7 +1861,7 @@ describe('Auto Completion Tests', () => {
 
     it('Large indent should be considered with position relative to slash', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'install:\n -            he'; // len: 25
       const completion = parseSetup(content, content.lastIndexOf('he') + 2); // pos: 23+2
       completion
@@ -1869,7 +1879,7 @@ describe('Auto Completion Tests', () => {
 
     it('Tab indent should be considered with position relative to slash', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'install:\n -\t             he'; // len: 27
       const completion = parseSetup(content, content.lastIndexOf('he') + 2); // pos: 25+2
       completion
@@ -1959,7 +1969,7 @@ describe('Auto Completion Tests', () => {
     it('should not provide modeline completion on first character when schema is associated', async () => {
       const specificSchemaId = path.join(__dirname, 'test.yaml');
       const testTextDocument = setupSchemaIDTextDocument('', specificSchemaId);
-      languageService.addSchema(specificSchemaId, {
+      schemaProvider.addSchema(specificSchemaId, {
         type: 'object',
         properties: {
           name: {
@@ -2019,7 +2029,7 @@ describe('Auto Completion Tests', () => {
     it('4 space indentation', async () => {
       const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('    ');
       languageService.configure(languageSettingsSetup.languageSettings);
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           scripts: {
@@ -2051,7 +2061,7 @@ describe('Auto Completion Tests', () => {
 
   describe('Bug fixes', () => {
     it('Object in array completion indetetion', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           components: {
@@ -2105,7 +2115,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Object completion', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           env: {
@@ -2133,7 +2143,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Complex default object completion', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           env: {
@@ -2175,7 +2185,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should handle array schema without items', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'array',
         items: {
           anyOf: [
@@ -2208,7 +2218,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('auto completion based on the list indentation', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'array',
         items: {
           type: 'object',
@@ -2242,7 +2252,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should complete string which contains number in default value', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           env: {
@@ -2269,7 +2279,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should complete string which contains number in examples values', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           fooBar: {
@@ -2296,7 +2306,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should provide label as string for examples completion item', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           fooBar: {
@@ -2316,7 +2326,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should provide completion for flow map', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: { A: { type: 'string', enum: ['a1', 'a2'] }, B: { type: 'string', enum: ['b1', 'b2'] } },
       });
@@ -2333,7 +2343,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should provide completion for "null" enum value', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           kind: {
@@ -2354,7 +2364,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should provide completion for empty file', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         oneOf: [
           {
             type: 'object',
@@ -2393,7 +2403,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should not provide additional ":" on existing property completion', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           kind: {
@@ -2412,7 +2422,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should not provide additional ":" on existing property completion when try to complete partial property', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           kind: {
@@ -2431,7 +2441,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should use markdownDescription for property completion', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           kind: {
@@ -2458,7 +2468,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should follow $ref in additionalItems', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           test: {
@@ -2491,7 +2501,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should follow $ref in additionalItems: extra space after cursor', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           test: {
@@ -2523,7 +2533,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should follow $ref in additionalItems for flow style array', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           test: {
@@ -2567,7 +2577,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should convert to string non string completion label', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           version: {
@@ -2592,7 +2602,7 @@ describe('Auto Completion Tests', () => {
   describe('Array completion', () => {
     it('Simple array object completion with "-" without any item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  -';
       const completion = parseSetup(content, content.length);
       completion
@@ -2606,7 +2616,7 @@ describe('Auto Completion Tests', () => {
 
     it('Simple array object completion without "-" after array item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  ';
       const completion = parseSetup(content, content.length);
       completion
@@ -2619,7 +2629,7 @@ describe('Auto Completion Tests', () => {
 
     it('Simple array object completion with "-" after array item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  -';
       const completion = parseSetup(content, content.length);
       completion
@@ -2633,7 +2643,7 @@ describe('Auto Completion Tests', () => {
 
     it('Array anyOf two objects completion with "- " without any item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - ';
       const completion = parseSetup(content, content.length);
       completion
@@ -2649,7 +2659,7 @@ describe('Auto Completion Tests', () => {
 
     it('Array anyOf two objects completion with "-" without any item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  -';
       const completion = parseSetup(content, content.length);
       completion
@@ -2663,7 +2673,7 @@ describe('Auto Completion Tests', () => {
 
     it('Simple array object completion without "-" befor array empty item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  |\n|  -'; // len: 30, pos: 26
       const completion = parseSetup(content);
       completion
@@ -2676,7 +2686,7 @@ describe('Auto Completion Tests', () => {
 
     it('Array anyOf two objects completion without "-" after array item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  ';
       const completion = parseSetup(content, content.length);
       completion
@@ -2688,7 +2698,7 @@ describe('Auto Completion Tests', () => {
 
     it('Array nested anyOf without "-" should return all array items', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_nested_anyOf:\n  - obj1:\n    name:1\n  ';
       const completion = parseSetup(content, content.length);
       completion
@@ -2700,7 +2710,7 @@ describe('Auto Completion Tests', () => {
 
     it('Array anyOf two objects completion with "-" after array item', (done) => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  -';
       const completion = parseSetup(content, content.length);
       completion
@@ -2714,7 +2724,7 @@ describe('Auto Completion Tests', () => {
 
     it('Array anyOf two objects completion indentation', async () => {
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj';
       const completion = await parseSetup(content, content.length);
       expect(completion.items.length).is.equal(4);
@@ -2724,7 +2734,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Autocomplete key in nested object while typing', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           parent: {
@@ -2822,7 +2832,7 @@ describe('Auto Completion Tests', () => {
           },
         ],
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = '';
       const result = await parseSetup(content, content.length);
 
@@ -2850,7 +2860,7 @@ describe('Auto Completion Tests', () => {
           },
         ],
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = '';
       const result = await parseSetup(content, content.length);
 
@@ -2899,7 +2909,7 @@ describe('Auto Completion Tests', () => {
         },
         type: 'array',
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = '- ';
       const result = await parseSetup(content, content.length);
 
@@ -2944,7 +2954,7 @@ describe('Auto Completion Tests', () => {
           },
         ],
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = '';
       const result = await parseSetup(content, content.length);
 
@@ -2964,7 +2974,7 @@ describe('Auto Completion Tests', () => {
         definitions: { obj1 },
         $ref: '#/definitions/obj1',
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'type: typeObj1\n';
       const result = await parseSetup(content, content.length);
 
@@ -2998,7 +3008,7 @@ describe('Auto Completion Tests', () => {
         required: ['type', 'options', 'prop1'],
         type: 'object',
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = '';
       const result = await parseSetup(content, content.length);
 
@@ -3031,7 +3041,7 @@ describe('Auto Completion Tests', () => {
             },
           ],
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '';
         const result = await parseSetup(content, content.length);
 
@@ -3053,7 +3063,7 @@ describe('Auto Completion Tests', () => {
             },
           },
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'name:\n  ';
         const result = await parseSetup(content, content.length);
 
@@ -3074,7 +3084,7 @@ describe('Auto Completion Tests', () => {
           },
           type: 'array',
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- ';
         const result = await parseSetup(content, content.length);
 
@@ -3085,7 +3095,7 @@ describe('Auto Completion Tests', () => {
           definitions: { obj1 },
           $ref: '#/definitions/obj1',
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'type: typeObj1\n';
         const result = await parseSetup(content, content.length);
 
@@ -3096,7 +3106,7 @@ describe('Auto Completion Tests', () => {
           definitions: { obj1 },
           $ref: '#/definitions/obj1',
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'ty';
         const result = await parseSetup(content, content.length);
 
@@ -3109,7 +3119,7 @@ describe('Auto Completion Tests', () => {
             vegetable: {},
           },
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '';
         const result = await parseSetup(content, content.length);
 
