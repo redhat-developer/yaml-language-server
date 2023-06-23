@@ -48,7 +48,8 @@ export const formats = {
   },
   'date-time': {
     errorMessage: localize('dateTimeFormatWarning', 'String is not a RFC3339 date-time.'),
-    pattern: /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i,
+    pattern:
+      /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i,
   },
   date: {
     errorMessage: localize('dateFormatWarning', 'String is not a RFC3339 date.'),
@@ -60,7 +61,8 @@ export const formats = {
   },
   email: {
     errorMessage: localize('emailFormatWarning', 'String is not an e-mail address.'),
-    pattern: /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+    pattern:
+      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
   },
   ipv4: {
     errorMessage: localize('ipv4FormatWarning', 'String does not match IPv4 format.'),

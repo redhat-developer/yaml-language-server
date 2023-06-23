@@ -52,7 +52,7 @@ export function isInComment(tokens: Token[], offset: number): boolean {
   let inComment = false;
   for (const token of tokens) {
     if (token.type === 'document') {
-      _visit([], (token as unknown) as SourceToken, (item) => {
+      _visit([], token as unknown as SourceToken, (item) => {
         if (isCollectionItem(item) && item.value?.type === 'comment') {
           if (token.offset <= offset && item.value.source.length + item.value.offset >= offset) {
             inComment = true;

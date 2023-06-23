@@ -29,9 +29,11 @@ describe('Kubernetes Integration Tests', () => {
         uri,
       })
       .withKubernetes();
-    const { validationHandler: valHandler, languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(
-      languageSettingsSetup.languageSettings
-    );
+    const {
+      validationHandler: valHandler,
+      languageHandler: langHandler,
+      yamlSettings: settings,
+    } = setupLanguageService(languageSettingsSetup.languageSettings);
     validationHandler = valHandler;
     languageHandler = langHandler;
     yamlSettings = settings;
