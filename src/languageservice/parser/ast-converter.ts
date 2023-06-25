@@ -34,6 +34,7 @@ type NodeRange = [number, number, number];
 
 const maxRefCount = 1000;
 let refDepth = 0;
+const seenAlias = new Set<Alias>();
 
 export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineCounter: LineCounter): ASTNode | undefined {
   if (!parent) {
@@ -56,12 +57,13 @@ export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineC
   if (isScalar(node)) {
     return convertScalar(node, parent);
   }
-  if (isAlias(node)) {
-    if (refDepth > maxRefCount) {
-      // document contains excessive aliasing
-      return;
-    }
-    return convertAlias(node, parent, doc, lineCounter);
+  if (isAlias(node) && !seenAlias.has(node) && refDepth < maxRefCount) {
+    seenAlias.add(node);
+    const converted = convertAlias(node, parent, doc, lineCounter);
+    seenAlias.delete(node);
+    return converted;
+  } else {
+    return;
   }
 }
 
