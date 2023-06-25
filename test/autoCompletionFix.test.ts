@@ -8,7 +8,13 @@ import { LanguageHandlers } from '../src/languageserver/handlers/languageHandler
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
-import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import {
+  caretPosition,
+  SCHEMA_ID,
+  setupLanguageService,
+  setupSchemaIDTextDocument,
+  TestCustomSchemaProvider,
+} from './utils/testHelper';
 import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
 import * as path from 'path';
@@ -19,7 +25,7 @@ describe('Auto Completion Fix Tests', () => {
   let languageService: LanguageService;
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
-
+  let schemaProvider: TestCustomSchemaProvider;
   before(() => {
     languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
       uri: 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json',
@@ -29,10 +35,12 @@ describe('Auto Completion Fix Tests', () => {
       languageService: langService,
       languageHandler: langHandler,
       yamlSettings: settings,
+      schemaProvider: testSchemaProvider,
     } = setupLanguageService(languageSettingsSetup.languageSettings);
     languageService = langService;
     languageHandler = langHandler;
     yamlSettings = settings;
+    schemaProvider = testSchemaProvider;
   });
 
   /**
@@ -72,12 +80,12 @@ describe('Auto Completion Fix Tests', () => {
   }
 
   afterEach(() => {
-    languageService.deleteSchema(SCHEMA_ID);
+    schemaProvider.deleteSchema(SCHEMA_ID);
     languageService.configure(languageSettingsSetup.languageSettings);
   });
 
   it('should show completion on map under array', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       type: 'array',
       items: {
         type: 'object',
@@ -104,7 +112,7 @@ describe('Auto Completion Fix Tests', () => {
   });
 
   it('completion with array objects', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       type: 'array',
       items: {
         type: 'object',
@@ -137,7 +145,7 @@ describe('Auto Completion Fix Tests', () => {
   });
 
   it('should show completion on array empty array item', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       type: 'array',
       items: {
         type: 'object',
@@ -193,7 +201,7 @@ spec:
   it('should complete  array', async () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const schema = require(path.join(__dirname, './fixtures/test-nested-object-array.json'));
-    languageService.addSchema(SCHEMA_ID, schema);
+    schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = `objA:
   - name: nameA1
       
@@ -208,7 +216,7 @@ objB:
   it('should complete array item for "oneOf" schema', async () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const schema = require(path.join(__dirname, './fixtures/test-completion-oneOf.json'));
-    languageService.addSchema(SCHEMA_ID, schema);
+    schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = `metadata:
   Selector:
     query:
@@ -220,7 +228,7 @@ objB:
   });
 
   it('Autocomplete with short nextLine - nested object', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       type: 'object',
       properties: {
         example: {
@@ -253,7 +261,7 @@ objB:
   });
 
   it('Should suggest valid matches from oneOf', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       oneOf: [
         {
           type: 'object',
@@ -289,7 +297,7 @@ objB:
   });
 
   it('Should suggest all the matches from allOf', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       allOf: [
         {
           type: 'object',
@@ -330,7 +338,7 @@ objB:
   });
 
   it('Autocomplete with a new line inside the object', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       type: 'object',
       properties: {
         example: {
@@ -362,7 +370,7 @@ objB:
   });
 
   it('Autocomplete on the first array item', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       type: 'object',
       properties: {
         examples: {
@@ -397,7 +405,7 @@ objB:
   });
 
   it('Array of enum autocomplete of irregular order', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       type: 'object',
       properties: {
         apiVersion: {
@@ -425,7 +433,7 @@ objB:
   });
 
   it('Test that properties have enum of string type with number', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       type: 'object',
       properties: {
         version: {
@@ -450,7 +458,7 @@ objB:
   });
 
   it('Autocomplete indent on array when parent is array', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       type: 'object',
       properties: {
         examples: {
@@ -480,7 +488,7 @@ objB:
     );
   });
   it('Autocomplete indent on array object when parent is array', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       type: 'object',
       properties: {
         examples: {
@@ -515,7 +523,7 @@ objB:
     );
   });
   it('Autocomplete indent on array object when parent is array of an array', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       type: 'object',
       properties: {
         array1: {
@@ -587,7 +595,7 @@ objB:
       },
     };
     it('array indent on the first item', async () => {
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'objectWithArray:\n  - '; // len: 21
       const completion = await parseSetup(content, 1, 4);
 
@@ -604,7 +612,7 @@ objB:
       );
     });
     it('array indent on the second item', async () => {
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'objectWithArray:\n  - item: first line\n    '; // len: 42
       const completion = await parseSetup(content, 2, 4);
 
@@ -643,7 +651,7 @@ objB:
           },
         ],
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = '';
       const completion = await parseSetup(content, 0, 1);
 
@@ -668,7 +676,7 @@ objB:
           },
         ],
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = '';
       const completion = await parseSetup(content, 0, 1);
 
@@ -692,7 +700,7 @@ objB:
           },
         ],
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = '';
       const completion = await parseSetup(content, 0, 1);
 
@@ -704,7 +712,7 @@ objB:
     });
 
     it('Autocomplete should not suggest items for parent object', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           scripts: {
@@ -744,7 +752,7 @@ objB:
           },
         ],
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = '';
       const completion = await parseSetup(content, 0, 6);
       expect(completion.items.length).equal(1);
@@ -762,7 +770,7 @@ objB:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'prop: | | '; // len: 8, pos: 6
       const completion = await parseCaret(content);
 
@@ -779,7 +787,7 @@ objB:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'na  ';
       const completion = await parseSetup(content, 0, 2);
 
@@ -798,7 +806,7 @@ objB:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'na  \n';
       const completion = await parseSetup(content, 0, 2);
 
@@ -817,7 +825,7 @@ objB:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = '  na  ';
       const completion = await parseSetup(content, 0, 2);
 
@@ -846,7 +854,7 @@ objB:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'array:\n - name /   ';
       const completion = await parseSetup(content, 1, 9);
 
@@ -867,7 +875,7 @@ objB:
             },
           },
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'name: my| |   ';
         const completion = await parseCaret(content);
 
@@ -886,7 +894,7 @@ objB:
             },
           },
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'name: my| |   \n';
         const completion = await parseCaret(content);
 
@@ -905,7 +913,7 @@ objB:
             },
           },
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'name:   my na| |   ';
         const completion = await parseCaret(content);
 
@@ -934,7 +942,7 @@ objB:
             },
           },
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'array:\n - name: my name /| |  ';
         const completion = await parseCaret(content);
 
@@ -962,7 +970,7 @@ objB:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'parent:\n  prop1: const1\n  prop2:   ';
       const completion = await parseSetup(content, 2, 9);
 
@@ -994,7 +1002,7 @@ objB:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'arrayObj:\n  - item1: test\n  - item2:   ';
       const completion = await parseSetup(content, 2, 11);
 
@@ -1026,7 +1034,7 @@ objB:
         },
       };
       it('1st item', async () => {
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'arrayObj:\n  -   ';
         const completion = await parseSetup(content, 1, 4);
 
@@ -1037,7 +1045,7 @@ objB:
         });
       });
       it('next item', async () => {
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'arrayObj:\n  - item1: a\n  - item2: b\n  -   ';
         const completion = await parseSetup(content, 3, 4);
 
@@ -1049,7 +1057,7 @@ objB:
       });
     });
     it('array completion - should suggest correct indent when extra spaces after cursor', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           test: {
@@ -1078,7 +1086,7 @@ objB:
       expect(result.items[0].insertText).to.be.equal('objA:\n    itemA: ');
     });
     it('array of arrays completion - should suggest correct indent when extra spaces after cursor', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           array1: {
@@ -1117,7 +1125,7 @@ objB:
       expect(result.items[0].insertText).to.be.equal('array2:\n    - objA:\n        itemA: ');
     });
     it('object of array of arrays completion - should suggest correct indent when extra spaces after cursor', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           array1: {
@@ -1167,7 +1175,7 @@ objB:
         ],
       },
     };
-    languageService.addSchema(SCHEMA_ID, schema);
+    schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = 'value: ';
     const completion = await parseSetup(content, 0, content.length);
 
@@ -1208,14 +1216,14 @@ test1:
     pr
 `;
     it('nested object', async () => {
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const completion = await parseSetup(content, 5, 6);
 
       expect(completion.items.length).equal(2);
       expect(completion.items[0].label).to.be.equal('prop1');
     });
     it('root object', async () => {
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const completion = await parseSetup(content, 2, 4);
 
       expect(completion.items.length).equal(2);
@@ -1245,7 +1253,7 @@ test1:
     };
 
     it('completion should handle indented comment on new line', async () => {
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'example:\n  prop1: "test"\n  \n    #comment';
       const completion = await parseSetup(content, 2, 2);
       expect(completion.items.length).equal(2);
@@ -1257,7 +1265,7 @@ test1:
     });
 
     it('completion should handle comment at same indent level on new line', async () => {
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'example:\n  prop1: "test"\n  \n  #comment';
       const completion = await parseSetup(content, 2, 2);
       expect(completion.items.length).equal(2);
@@ -1269,7 +1277,7 @@ test1:
     });
 
     it('completion should handle suggestion without comment on next line', async () => {
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'example:\n  prop1: "test"\n  \n  prop3: "test"';
       const completion = await parseSetup(content, 2, 2);
       expect(completion.items.length).equal(1);
@@ -1289,7 +1297,7 @@ test1:
         description: 'Property Description',
       },
     };
-    languageService.addSchema(SCHEMA_ID, schema);
+    schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = '';
     const completion = await parseSetup(content, 0, content.length);
 
