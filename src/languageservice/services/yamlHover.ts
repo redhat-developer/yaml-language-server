@@ -153,7 +153,7 @@ export class YAMLHover {
             }
             if (s.schema.examples) {
               s.schema.examples.forEach((example) => {
-                markdownExamples.push(JSON.stringify(example));
+                markdownExamples.push(JSON.stringify(example, null, 2));
               });
             }
           }
