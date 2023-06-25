@@ -270,6 +270,12 @@ metadata:
       );
     });
 
+    it('should work with circular aliases', () => {
+      const yaml = '&a [ 1, *a ]\n';
+      const parsedDocument = parse(yaml);
+      parsedDocument.documents[0].root;
+      expect(parsedDocument.documents).to.have.length(1);
+    });
     it('should not add "undefined" as array item', () => {
       const yaml = `foo: 
   - *`;
