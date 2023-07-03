@@ -2016,7 +2016,7 @@ obj:
         },
       },
     };
-    languageService.addSchema(SCHEMA_ID, schema);
+    schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = `options:\n  provider: testX`;
     const result = await parseSetup(content);
     assert.deepEqual(

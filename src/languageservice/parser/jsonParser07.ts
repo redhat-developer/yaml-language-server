@@ -894,7 +894,10 @@ function validate(
 
     if (isDefined(schema.const)) {
       const val = getNodeValue(node);
-      if (!equals(val, schema.const)) {
+      if (
+        !equals(val, schema.const) &&
+        !(callFromAutoComplete && isString(val) && isString(schema.const) && schema.const.startsWith(val))
+      ) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
