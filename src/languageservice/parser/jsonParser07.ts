@@ -83,7 +83,7 @@ export const ProblemTypeMessages: Record<ProblemType, string> = {
   [ProblemType.missingRequiredPropWarning]: 'Missing property "{0}".',
   [ProblemType.typeMismatchWarning]: 'Incorrect type. Expected "{0}".',
   [ProblemType.constWarning]: 'Value must be {0}.',
-  [ProblemType.deprecatedWarning]: 'deprecated.',
+  [ProblemType.deprecatedWarning]: 'Prop is deprecated.',
 };
 export interface IProblem {
   location: IRange;
@@ -939,7 +939,7 @@ function validate(
         severity: DiagnosticSeverity.Warning,
         code: ErrorCode.Deprecated,
         problemType: ProblemType.deprecatedWarning,
-        message: schema.errorMessage || getWarningMessage(ProblemType.deprecatedWarning, []),
+        message: schema.deprecationMessage || getWarningMessage(ProblemType.deprecatedWarning, []),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
         problemArgs: [],
