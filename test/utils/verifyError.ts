@@ -80,7 +80,7 @@ export function createDeprecatedDiagnostic(
     startCharacter,
     endLine,
     endCharacter,
-    DiagnosticSeverity.Warning,
+    DiagnosticSeverity.Error,
     `yaml-schema: file:///${SCHEMA_ID}`,
     ErrorCode.Deprecated
   );

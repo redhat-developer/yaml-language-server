@@ -1976,8 +1976,12 @@ obj:
   });
 
   describe('Deprecated diagnostics', () => {
+    afterEach(() => {
+      schemaProvider.deleteSchema(SCHEMA_ID);
+    });
+
     it('should report deprecated field', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           name: {
@@ -1989,7 +1993,7 @@ obj:
       const content = 'name: foo\n';
       const result = await parseSetup(content);
       expect(result.length).to.be.equal(1);
-      expect(result[0]).deep.equal(createDeprecatedDiagnostic('deprecated.', 0, 0, 0, 9));
+      expect(result[0]).deep.equal(createDeprecatedDiagnostic('Prop is deprecated.', 0, 0, 0, 9));
     });
   });
 });
