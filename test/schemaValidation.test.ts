@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { SCHEMA_ID, TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
-import { createDiagnosticWithData, createExpectedError } from './utils/verifyError';
+import { createDeprecatedDiagnostic, createDiagnosticWithData, createExpectedError } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import {
   StringTypeError,
@@ -1972,6 +1972,28 @@ obj:
       expect(result.length).to.eq(1);
       expect(result[0].message).to.eq('Matches multiple schemas when only one must validate.');
       expect(telemetry.messages).to.be.empty;
+    });
+  });
+
+  describe('Deprecated diagnostics', () => {
+    afterEach(() => {
+      schemaProvider.deleteSchema(SCHEMA_ID);
+    });
+
+    it('should report deprecated field', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            deprecated: true,
+          },
+        },
+      });
+      const content = 'name: foo\n';
+      const result = await parseSetup(content);
+      expect(result.length).to.be.equal(1);
+      expect(result[0]).deep.equal(createDeprecatedDiagnostic('Prop is deprecated.', 0, 0, 0, 9));
     });
   });
 });

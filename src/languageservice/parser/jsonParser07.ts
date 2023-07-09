@@ -76,12 +76,14 @@ export enum ProblemType {
   missingRequiredPropWarning = 'missingRequiredPropWarning',
   typeMismatchWarning = 'typeMismatchWarning',
   constWarning = 'constWarning',
+  deprecatedWarning = 'deprecatedWarning',
 }
 
 export const ProblemTypeMessages: Record<ProblemType, string> = {
   [ProblemType.missingRequiredPropWarning]: 'Missing property "{0}".',
   [ProblemType.typeMismatchWarning]: 'Incorrect type. Expected "{0}".',
   [ProblemType.constWarning]: 'Value must be {0}.',
+  [ProblemType.deprecatedWarning]: 'Prop is deprecated.',
 };
 export interface IProblem {
   location: IRange;
@@ -674,6 +676,8 @@ function validate(
     case 'property':
       return validate(node.valueNode, schema, schema, validationResult, matchingSchemas, options);
   }
+
+  _validateDeprecated(node, schema, validationResult);
   _validateNode();
 
   matchingSchemas.add({ node: node, schema: schema });
@@ -915,6 +919,30 @@ function validate(
         message: schema.deprecationMessage,
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
+      });
+    }
+  }
+
+  function _validateDeprecated(node: ASTNode, schema: JSONSchema, validationResult: ValidationResult): void {
+    if (schema.deprecated) {
+      let location;
+      if (node.parent !== undefined && node.parent.type === 'property') {
+        location = {
+          offset: node.parent.offset,
+          length: node.parent.length,
+        };
+      } else {
+        location = { offset: node.offset, length: node.length };
+      }
+      validationResult.problems.push({
+        location,
+        severity: DiagnosticSeverity.Warning,
+        code: ErrorCode.Deprecated,
+        problemType: ProblemType.deprecatedWarning,
+        message: schema.deprecationMessage || getWarningMessage(ProblemType.deprecatedWarning, []),
+        source: getSchemaSource(schema, originalSchema),
+        schemaUri: getSchemaUri(schema, originalSchema),
+        problemArgs: [],
       });
     }
   }
