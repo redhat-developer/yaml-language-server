@@ -76,14 +76,14 @@ export enum ProblemType {
   missingRequiredPropWarning = 'missingRequiredPropWarning',
   typeMismatchWarning = 'typeMismatchWarning',
   constWarning = 'constWarning',
-  deprecatedHint = 'deprecatedHint',
+  deprecatedWarning = 'deprecatedWarning',
 }
 
 export const ProblemTypeMessages: Record<ProblemType, string> = {
   [ProblemType.missingRequiredPropWarning]: 'Missing property "{0}".',
   [ProblemType.typeMismatchWarning]: 'Incorrect type. Expected "{0}".',
   [ProblemType.constWarning]: 'Value must be {0}.',
-  [ProblemType.deprecatedHint]: 'deprecated.',
+  [ProblemType.deprecatedWarning]: 'deprecated.',
 };
 export interface IProblem {
   location: IRange;
@@ -936,10 +936,10 @@ function validate(
       }
       validationResult.problems.push({
         location,
-        severity: DiagnosticSeverity.Hint,
+        severity: DiagnosticSeverity.Warning,
         code: ErrorCode.Deprecated,
-        problemType: ProblemType.deprecatedHint,
-        message: schema.errorMessage || getWarningMessage(ProblemType.deprecatedHint, []),
+        problemType: ProblemType.deprecatedWarning,
+        message: schema.errorMessage || getWarningMessage(ProblemType.deprecatedWarning, []),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
         problemArgs: [],
