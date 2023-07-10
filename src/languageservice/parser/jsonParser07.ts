@@ -786,6 +786,10 @@ function validate(
         validationResult.merge(bestMatch.validationResult);
         validationResult.propertiesMatches += bestMatch.validationResult.propertiesMatches;
         validationResult.propertiesValueMatches += bestMatch.validationResult.propertiesValueMatches;
+        validationResult.enumValueMatch = validationResult.enumValueMatch || bestMatch.validationResult.enumValueMatch;
+        if (bestMatch.validationResult.enumValues?.length) {
+          validationResult.enumValues = (validationResult.enumValues || []).concat(bestMatch.validationResult.enumValues);
+        }
         matchingSchemas.merge(bestMatch.matchingSchemas);
       }
       return matches.length;
@@ -890,7 +894,10 @@ function validate(
 
     if (isDefined(schema.const)) {
       const val = getNodeValue(node);
-      if (!equals(val, schema.const)) {
+      if (
+        !equals(val, schema.const) &&
+        !(callFromAutoComplete && isString(val) && isString(schema.const) && schema.const.startsWith(val))
+      ) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
