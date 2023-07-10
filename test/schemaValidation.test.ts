@@ -1974,4 +1974,54 @@ obj:
       expect(telemetry.messages).to.be.empty;
     });
   });
+  it('Nested AnyOf const should correctly evaluate and merge problems', async () => {
+    // note that 'missing form property' is necessary to trigger the bug (there has to be some problem in both subSchemas)
+    // order of the object in `anyOf` is also important
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        options: {
+          anyOf: [
+            {
+              type: 'object',
+              properties: {
+                form: {
+                  type: 'string',
+                },
+                provider: {
+                  type: 'string',
+                  const: 'test1',
+                },
+              },
+              required: ['form', 'provider'],
+            },
+            {
+              type: 'object',
+              properties: {
+                form: {
+                  type: 'string',
+                },
+                provider: {
+                  anyOf: [
+                    {
+                      type: 'string',
+                      const: 'testX',
+                    },
+                  ],
+                },
+              },
+              required: ['form', 'provider'],
+            },
+          ],
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = `options:\n  provider: testX`;
+    const result = await parseSetup(content);
+    assert.deepEqual(
+      result.map((e) => e.message),
+      ['Missing property "form".'] // not inclide provider error
+    );
+  });
 });
