@@ -91,9 +91,16 @@ describe('Default Snippet Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].insertText, '- item1: $1\n  item2: $2');
-          assert.equal(result.items[0].label, 'My array item');
+          assert.deepEqual(
+            result.items.map((i) => ({ insertText: i.insertText, label: i.label })),
+            [
+              { insertText: '- item1: $1\n  item2: $2', label: 'My array item' },
+              {
+                insertText: '- $1\n',
+                label: '- (array item) ',
+              },
+            ]
+          );
         })
         .then(done, done);
     });
