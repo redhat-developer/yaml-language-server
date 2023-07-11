@@ -343,7 +343,7 @@ describe('Auto Completion Tests Extended', () => {
   });
 
   describe('completion of array', () => {
-    it('should suggest when no hypen (-)', async () => {
+    it('should suggest when no hyphen (-)', async () => {
       const schema = {
         type: 'object',
         properties: {
@@ -368,6 +368,23 @@ describe('Auto Completion Tests Extended', () => {
       const content = 'actions:\n  ';
       const completion = await parseSetup(content, content.length);
       assert.equal(completion.items.length, 1);
+    });
+    it('should suggest when no hyphen (-) just after the colon', async () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          actions: {
+            type: 'array',
+            items: {
+              enum: ['a', 'b', 'c'],
+            },
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'actions:';
+      const completion = await parseSetup(content, content.length);
+      assert.equal(completion.items.length, 3);
     });
   });
 

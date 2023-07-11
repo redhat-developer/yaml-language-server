@@ -143,6 +143,20 @@ export class YamlCompletion {
         firstPrefix + arrayIndentCompensation,
         this.indentation + arrayIndentCompensation
       );
+      if (result.items.length === 0) {
+        // try with array symbol
+        result = await this.doCompletionWithModification(
+          result,
+          document,
+          position,
+          isKubernetes,
+          doComplete,
+          Position.create(newPosition.line, newPosition.character + 2),
+          modificationForInvoke + '- ',
+          firstPrefix + arrayIndentCompensation + '- ',
+          this.indentation + arrayIndentCompensation
+        );
+      }
     }
 
     // if no suggestions and if on an empty line then try as an array
