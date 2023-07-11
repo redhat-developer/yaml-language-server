@@ -9,11 +9,12 @@ import { LanguageHandlers } from '../src/languageserver/handlers/languageHandler
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import { SCHEMA_ID, caretPosition, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import assert = require('assert');
 import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
 import { addUniquePostfix, removeUniquePostfix } from '../src/languageservice/services/yamlCompletion';
+import { JSONSchema } from 'vscode-json-languageservice';
 
 describe('Auto Completion Tests Extended', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -42,6 +43,25 @@ describe('Auto Completion Tests Extended', () => {
 
   function parseSetup(content: string, position: number): Promise<CompletionList> {
     const testTextDocument = setupSchemaIDTextDocument(content);
+    yamlSettings.documents = new TextDocumentTestManager();
+    (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+    return languageHandler.completionHandler({
+      position: testTextDocument.positionAt(position),
+      textDocument: testTextDocument,
+    });
+  }
+
+  /**
+   * Generates a completion list for the given document and caret (cursor) position.
+   * @param content The content of the document.
+   * The caret is located in the content using `|` bookends.
+   * For example, `content = 'ab|c|d'` places the caret over the `'c'`, at `position = 2`
+   * @returns A list of valid completions.
+   */
+  function parseCaret(content: string): Promise<CompletionList> {
+    const { position, content: content2 } = caretPosition(content);
+
+    const testTextDocument = setupSchemaIDTextDocument(content2);
     yamlSettings.documents = new TextDocumentTestManager();
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
     return languageHandler.completionHandler({
@@ -348,6 +368,50 @@ describe('Auto Completion Tests Extended', () => {
       const content = 'actions:\n  ';
       const completion = await parseSetup(content, content.length);
       assert.equal(completion.items.length, 1);
+    });
+  });
+
+  describe('Alternatives anyOf with const and enums', () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        options: {
+          anyOf: [
+            {
+              type: 'object',
+              properties: {
+                provider: {
+                  anyOf: [{ type: 'string', const: 'test1' }, { type: 'string' }],
+                },
+                entity: { type: 'string', const: 'entity1' },
+              },
+              required: ['entity', 'provider'],
+            },
+            {
+              type: 'object',
+              properties: {
+                provider: { type: 'string', const: 'testX' },
+                entity: { type: 'string', const: 'entityX' },
+              },
+              required: ['entity', 'provider'],
+            },
+          ],
+        },
+      },
+    };
+    it('Nested anyOf const should return only the first alternative because second const (anyOf[1].const) is not valid', async () => {
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'options:\n  provider: "some string valid with anyOf[0]"\n  entity: f|\n|';
+      const completion = await parseCaret(content);
+
+      expect(completion.items.map((i) => i.insertText)).deep.equal(['entity1']);
+    });
+    it('Nested anyOf const should return only the first alternative because second const (anyOf[1].const) is not valid - (with null value)', async () => {
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'options:\n  provider: "some string valid only by anyOf[0]"\n  entity: |\n|';
+      const completion = await parseCaret(content);
+
+      expect(completion.items.map((i) => i.insertText)).deep.equal(['entity1']);
     });
   });
 });

@@ -766,6 +766,74 @@ function validate(
         validationResult: ValidationResult;
         matchingSchemas: ISchemaCollector;
       } = null;
+
+      // jigx custom: remove subSchemas if the mustMatchProps (`type`, `provider`) is different
+      // another idea is to add some attribute to schema, so type will have `mustMatch` attribute - this could work in general not only for jigx
+      const mustMatchProps = ['type', 'provider'];
+      const validationData: Record<(typeof mustMatchProps)[number], { node: IRange; values: string[] }> = {};
+      for (const mustMatch of mustMatchProps) {
+        const mustMatchYamlProp = node.children.find(
+          (ch): ch is PropertyASTNode => ch.type === 'property' && ch.keyNode.value === mustMatch && ch.valueNode.value !== null
+        );
+        // must match property is not in yaml, so continue as usual
+        if (!mustMatchYamlProp) {
+          continue;
+        }
+
+        // take only subSchemas that have the same mustMatch property in yaml and in schema
+        alternatives = alternatives.filter((subSchemaRef) => {
+          const subSchema = asSchema(subSchemaRef);
+
+          const typeSchemaProp = subSchema.properties?.[mustMatch];
+
+          if (typeof typeSchemaProp !== 'object') {
+            // jig.list has anyOf in the root, so no `type` prop directly in that schema, so jig.list will be excluded in the next iteration
+            return true;
+          }
+          const subValidationResult = new ValidationResult(isKubernetes);
+          const subMatchingSchemas = matchingSchemas.newSub();
+          validate(mustMatchYamlProp, typeSchemaProp, subSchema, subValidationResult, subMatchingSchemas, options);
+          if (
+            !subValidationResult.hasProblems() ||
+            // a little bit hack that I wasn't able to solve it in official YLS
+            // problem: some schemas look like this: `provider: { anyOf: [{enum: ['pr1', 'pr2']}, {type: 'string', title: 'expression'}] }`
+            //          and with yaml value `provider: =expression`
+            //          when it's invoked from code-completion both options are merged together as a possible option
+            //             note: if the anyOf order will be opposite, then the first one will be selected as the best match
+            //          but they are merged together also with problems, so even if one of the sub-schema has a problem, the second one can be ok
+            // solution: check if there are more possible schemas and check if there is only single problem
+            (subMatchingSchemas.schemas.length > 1 && subValidationResult.problems.length === 1)
+          ) {
+            return true;
+          }
+          if (!validationData[mustMatch]) {
+            validationData[mustMatch] = { node: mustMatchYamlProp.valueNode, values: [] };
+          }
+          validationData[mustMatch].values.push(...subValidationResult.enumValues);
+          return false;
+        });
+
+        // if no match, just return
+        // example is jig.list with anyOf in the root... so types are in anyOf[0]
+        if (!alternatives.length) {
+          const data = validationData[mustMatch];
+          // const values = [...new Set(data.values)];
+          validationResult.problems.push({
+            location: { offset: data.node.offset, length: data.node.length },
+            severity: DiagnosticSeverity.Warning,
+            code: ErrorCode.EnumValueMismatch,
+            problemType: ProblemType.constWarning,
+            message: 'Must match property: `' + mustMatch + '`', // with values: ' + values.map((value) => '`' + value + '`').join(', '),
+            // data: { values }, // not reliable problem with `list: anyOf: []`
+          });
+          validationResult.enumValueMatch = false;
+          return 0;
+        }
+        // don't need to check other mustMatchProps (`type` => `provider`)
+        break;
+      }
+      // end jigx custom
+
       for (const subSchemaRef of alternatives) {
         /* jigx custom: creating new instance of schema doesn't make much sense
          * it loosing some props that are set inside validate
@@ -925,7 +993,10 @@ function validate(
 
     if (isDefined(schema.const)) {
       const val = getNodeValue(node);
-      if (!equals(val, schema.const)) {
+      if (
+        !equals(val, schema.const) &&
+        !(callFromAutoComplete && isString(val) && isString(schema.const) && schema.const.startsWith(val))
+      ) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,

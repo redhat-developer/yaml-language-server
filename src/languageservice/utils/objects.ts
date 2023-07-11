@@ -62,7 +62,7 @@ export function isNumber(val: unknown): val is number {
 }
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-export function isDefined(val: unknown): val is object {
+export function isDefined(val: unknown): val is object | string | number | boolean {
   return typeof val !== 'undefined';
 }
 

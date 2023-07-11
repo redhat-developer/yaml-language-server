@@ -98,7 +98,7 @@ export class YamlCompletion {
     this.parentSkeletonSelectedFirst = languageSettings.parentSkeletonSelectedFirst;
   }
 
-  async doComplete(document: TextDocument, position: Position, isKubernetes = false): Promise<CompletionList> {
+  async doComplete(document: TextDocument, position: Position, isKubernetes = false, doComplete = true): Promise<CompletionList> {
     let result = CompletionList.create([], false);
     if (!this.completionEnabled) {
       return result;
@@ -118,9 +118,9 @@ export class YamlCompletion {
     // auto add space after : if needed
     if (document.getText().charAt(offset - 1) === ':') {
       const newPosition = Position.create(position.line, position.character + 1);
-      result = await this.doCompletionWithModification(result, document, position, isKubernetes, newPosition, ' ');
+      result = await this.doCompletionWithModification(result, document, position, isKubernetes, doComplete, newPosition, ' ');
     } else {
-      result = await this.doCompleteWithDisabledAdditionalProps(document, position, isKubernetes);
+      result = await this.doCompleteWithDisabledAdditionalProps(document, position, isKubernetes, doComplete);
     }
 
     // try as a object if is on property line
@@ -137,6 +137,7 @@ export class YamlCompletion {
         document,
         position,
         isKubernetes,
+        doComplete,
         newPosition,
         modificationForInvoke,
         firstPrefix + arrayIndentCompensation,
@@ -153,6 +154,7 @@ export class YamlCompletion {
         document,
         position,
         isKubernetes,
+        doComplete,
         newPosition,
         modificationForInvoke
       );
@@ -171,6 +173,7 @@ export class YamlCompletion {
     document: TextDocument,
     position: Position, // original position
     isKubernetes: boolean,
+    doComplete: boolean,
     newPosition: Position, // new position
     modificationForInvoke: string,
     firstPrefix = modificationForInvoke,
@@ -179,7 +182,7 @@ export class YamlCompletion {
     const newDocument = this.updateTextDocument(document, [
       { range: Range.create(position, position), text: modificationForInvoke },
     ]);
-    const resultLocal = await this.doCompleteWithDisabledAdditionalProps(newDocument, newPosition, isKubernetes);
+    const resultLocal = await this.doCompleteWithDisabledAdditionalProps(newDocument, newPosition, isKubernetes, doComplete);
     resultLocal.items.map((item) => {
       let firstPrefixLocal = firstPrefix;
       // if there is single space (space after colon) and insert text already starts with \n (it's a object), don't add space
@@ -229,21 +232,22 @@ export class YamlCompletion {
   private async doCompleteWithDisabledAdditionalProps(
     document: TextDocument,
     position: Position,
-    isKubernetes = false
+    isKubernetes = false,
+    doComplete: boolean
   ): Promise<CompletionList> {
     // update yaml parser settings
     const doc = this.yamlDocument.getYamlDocument(document, { customTags: this.customTags, yamlVersion: this.yamlVersion }, true);
     doc.documents.forEach((doc) => {
       doc.disableAdditionalProperties = true;
     });
-    return this.doCompleteInternal(document, position, isKubernetes);
+    return this.doCompleteInternal(document, position, isKubernetes, doComplete);
   }
 
   private async doCompleteInternal(
     document: TextDocument,
     position: Position,
     isKubernetes = false,
-    doComplete = false
+    doComplete: boolean
   ): Promise<CompletionList> {
     const result = CompletionList.create([], false);
     if (!this.completionEnabled) {

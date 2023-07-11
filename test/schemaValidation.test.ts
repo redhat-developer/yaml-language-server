@@ -1880,7 +1880,68 @@ obj:
       expect(result).to.be.empty;
     });
   });
+
   describe('Jigx', () => {
+    describe('Provider anyOf test', () => {
+      it('should choose correct provider1 based on mustMatch properties even the second option has more propertiesValueMatches', async () => {
+        const schema = {
+          anyOf: [
+            {
+              properties: {
+                provider: {
+                  const: 'provider1',
+                },
+                entity: {
+                  type: 'string',
+                },
+                data: {
+                  type: 'object',
+                  additionalProperties: true,
+                  properties: {
+                    b: {
+                      type: 'string',
+                    },
+                  },
+                  required: ['b'],
+                },
+              },
+              required: ['provider', 'entity', 'data'],
+            },
+            {
+              properties: {
+                provider: {
+                  anyOf: [{ const: 'provider2' }, { const: 'provider3' }],
+                },
+                entity: {
+                  enum: ['entity1', 'entity2'],
+                },
+                data: {
+                  type: 'object',
+                  additionalProperties: true,
+                  properties: {
+                    a: {
+                      type: 'string',
+                    },
+                  },
+                  required: ['a'],
+                },
+              },
+              required: ['provider', 'entity', 'data'],
+            },
+          ],
+        };
+        languageService.addSchema(SCHEMA_ID, schema);
+        const content = `
+provider: provider1
+entity: entity1
+data:
+  a: val
+`;
+        const result = await parseSetup(content);
+        expect(result?.map((r) => r.message)).deep.equals(['Missing property "b".']);
+      });
+    });
+
     it('Expression is valid inline object', async function () {
       const schema = {
         id: 'test://schemas/main',
