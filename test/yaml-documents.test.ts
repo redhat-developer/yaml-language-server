@@ -212,6 +212,18 @@ objB:
     });
 
     describe('Array', () => {
+      // Problem in `getNodeFromPosition` function. This method doesn't give proper results for arrays
+      // for example, this yaml return nodes:
+      // foo:
+      // - # foo object is returned (should be foo[0])
+      //   # foo object is returned (should be foo[0])
+      //   item1: aaaf
+      //   # foo[0] object is returned (OK)
+      // - # foo object is returned (should be foo[1])
+      //   # foo[!!0!!] object is returned (should be foo[1])
+      //   item2: bbb
+      //   # foo[1] object is returned (OK)
+
       it('Find closes node: array', () => {
         const doc = setupTextDocument('foo:\n  - bar: aaa\n  ');
         const yamlDoc = documents.getYamlDocument(doc);
