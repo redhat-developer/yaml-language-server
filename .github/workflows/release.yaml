@@ -20,63 +20,63 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-      # Set up Node
-    - name: Use Node 16 
-      uses: actions/setup-node@v1
-      with:
-        node-version: 16
-        registry-url: 'https://registry.npmjs.org'
+        # Set up Node
+      - name: Use Node 16
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16
+          registry-url: 'https://registry.npmjs.org'
 
-      # Run install dependencies
-    - name: Install dependencies
-      run: yarn
+        # Run install dependencies
+      - name: Install dependencies
+        run: yarn
 
-      # Build extension
-    - name: Run build
-      run: yarn build
+        # Build extension
+      - name: Run build
+        run: yarn build
 
-      # Run tests
-    - name: Run Test
-      run: yarn test
+        # Run tests
+      - name: Run Test
+        run: yarn test
 
-      # Publish to npm
-    - run: |
-        yarn check-dependencies
-        yarn publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+        # Publish to npm
+      - run: |
+          yarn check-dependencies
+          yarn publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
-      # Get the current package.json version so we can tag the image correctly
-    - name: Get current package.json version
-      id: package-version
-      uses: martinbeentjes/npm-get-version-action@7aa1d82604bb2dbe377a64ca35e692e6fe333c9c #master
+        # Get the current package.json version so we can tag the image correctly
+      - name: Get current package.json version
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@7aa1d82604bb2dbe377a64ca35e692e6fe333c9c #master
 
-      # Setup QEMU as requirement for docker
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
-      
-      # Setup DockerBuildx as requirement for docker
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+        # Setup QEMU as requirement for docker
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
 
-      # Login to Quay
-    - name: Login to Quay
-      uses: docker/login-action@v1 
-      with:
-        registry: quay.io
-        username: ${{ secrets.QUAY_USERNAME }}
-        password: ${{ secrets.QUAY_TOKEN }}
+        # Setup DockerBuildx as requirement for docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
-      # Build and push the latest version of yaml language server image
-    - name: Build and push
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        file: ./Dockerfile
-        platforms: linux/amd64
-        push: true
-        tags: |
-          quay.io/redhat-developer/yaml-language-server:latest
-          quay.io/redhat-developer/yaml-language-server:${{ steps.package-version.outputs.current-version}}
+        # Login to Quay
+      - name: Login to Quay
+        uses: docker/login-action@v1
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_TOKEN }}
+
+        # Build and push the latest version of yaml language server image
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            quay.io/redhat-developer/yaml-language-server:latest
+            quay.io/redhat-developer/yaml-language-server:${{ steps.package-version.outputs.current-version}}

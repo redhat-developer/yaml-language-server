@@ -14,7 +14,11 @@ export class ValidationHandler {
   private languageService: LanguageService;
   private yamlSettings: SettingsState;
 
-  constructor(private readonly connection: Connection, languageService: LanguageService, yamlSettings: SettingsState) {
+  constructor(
+    private readonly connection: Connection,
+    languageService: LanguageService,
+    yamlSettings: SettingsState
+  ) {
     this.languageService = languageService;
     this.yamlSettings = yamlSettings;
 

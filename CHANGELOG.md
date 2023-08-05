@@ -1,5 +1,6 @@
 ### 1.14.0
-- Fix: Request textDocument/hover failed with message: Invalid regular expression: /(?s).*/: Invalid group [#874](https://github.com/redhat-developer/yaml-language-server/issues/874)
+
+- Fix: Request textDocument/hover failed with message: Invalid regular expression: /(?s).\*/: Invalid group [#874](https://github.com/redhat-developer/yaml-language-server/issues/874)
 - Fix: nested anyof const [#888](https://github.com/redhat-developer/yaml-language-server/pull/888)
 - Fix: Parsing example object as plain string [#889](https://github.com/redhat-developer/yaml-language-server/issues/889)
 - Fix: Improve smart select [#307](https://github.com/redhat-developer/vscode-yaml/issues/307)
@@ -9,6 +10,7 @@
 Thanks to [Tony](https://github.com/Legend-Master),[Ace](https://github.com/AceTheCreator) and [PetrSpacek](https://github.com/p-spacek) for your contributions.
 
 ### 1.13.0
+
 - Fix: The default value for keyorder [#859](https://github.com/redhat-developer/yaml-language-server/pull/859)
 - Fix: older changelog heading levels [#861](https://github.com/redhat-developer/yaml-language-server/pull/861)
 - Fix: hover behavior when indentation not set [#863](https://github.com/redhat-developer/yaml-language-server/pull/863)
@@ -19,6 +21,7 @@ Thanks to [Tony](https://github.com/Legend-Master),[Ace](https://github.com/AceT
 Thanks to [Kasama](https://github.com/Kasama)
 
 ### 1.12.0
+
 - Fix: Completion Value with dash [#832](https://github.com/redhat-developer/yaml-language-server/pull/832)
 - Add: Enforce alphabetical ordering of keys in mappings and provide codeaction to fix it. [#839](https://github.com/redhat-developer/yaml-language-server/pull/839)
 - Fix: Value completion with trailing spaces [#834](https://github.com/redhat-developer/yaml-language-server/pull/834)
@@ -31,6 +34,7 @@ Thanks to [Kasama](https://github.com/Kasama)
 Thanks to Petr Spacek
 
 ### 1.11.0
+
 - Fix: only the first choice is shown when hovering anyOf-typed properties [#784](https://github.com/redhat-developer/vscode-yaml/issues/784)
 - Fix: Description in the schema root does not get displayed [#809](https://github.com/redhat-developer/vscode-yaml/issues/809)
 - Fix: yaml.validation.error telemetry events are broken [#816](https://github.com/redhat-developer/vscode-yaml/issues/816)
@@ -45,6 +49,7 @@ Thanks to Petr Spacek
 Thanks to Petr Spacek,Josh Pinkney
 
 ### 1.10.0
+
 - Fix: TypeError: i.startsWith is not a function [#747](https://github.com/redhat-developer/yaml-language-server/issues/747)
 - Fix: fix: autocomplete indent on object within an array [#751](https://github.com/redhat-developer/yaml-language-server/pull/751)
 - Add: Yaml style linting to forbid flow style [#753](https://github.com/redhat-developer/yaml-language-server/pull/753)
@@ -55,6 +60,7 @@ Thanks to Petr Spacek,Josh Pinkney
 Thanks to Rickcowan
 
 ### 1.9.0
+
 - Add: Publish pre-release extension on nightly CI build [#682](https://github.com/redhat-developer/vscode-yaml/issues/682)
 - Add: Add title to extension configuration [#793](https://github.com/redhat-developer/vscode-yaml/pull/793)
 - Fix: [object Object] with malformed type definition on hover [#788](https://github.com/redhat-developer/vscode-yaml/issues/788)
@@ -65,7 +71,9 @@ Thanks to Rickcowan
 - Fix: proper indenting of snippet within an array [#745](https://github.com/redhat-developer/yaml-language-server/pull/745)
 
 Thanks to Whazor Nanne, Petr Spacek, Golergka and Rickcowan
+
 ### 1.8.0
+
 - Fix: yaml-language-server fails for yaml version [#711](https://github.com/redhat-developer/yaml-language-server/issues/711)
 - Fix: Missing Schema from catalog.json in ui [#747] (https://github.com/redhat-developer/vscode-yaml/issues/747)
 - Fix: JSON Schema not applied for custom file extension [#701] (https://github.com/redhat-developer/vscode-yaml/issues/701)
@@ -79,6 +87,7 @@ Thanks to Whazor Nanne, Petr Spacek, Golergka and Rickcowan
 Thanks to Petr Spacek and Grant Dickinson
 
 ### 1.7.0
+
 - Fix: merge simple property completion [#685](https://github.com/redhat-developer/yaml-language-server/pull/685)
 - Fix: schemaStore.enable setting does not work as expected [#721](https://github.com/redhat-developer/vscode-yaml/issues/721)
 - Fix: oneOf: misleading validation failures with Incorrect type. Expected "object" [#692](https://github.com/redhat-developer/vscode-yaml/issues/692)
@@ -95,6 +104,7 @@ Thanks to Petr Spacek and Grant Dickinson
 Thanks to Petr Spacek
 
 ### 1.6.0
+
 - Add: differentiate similar schemas on completion [#681](https://github.com/redhat-developer/yaml-language-server/pull/681)
 - Fix: changed on specific to undefined check instead of null and undefined check [#678](https://github.com/redhat-developer/yaml-language-server/issues/665)
 - Fix: array object completion - should not suggest const [#620](https://github.com/redhat-developer/yaml-language-server/pull/670)
@@ -102,9 +112,11 @@ Thanks to Petr Spacek
 Thanks to Petr Spacek
 
 ### 1.5.1
+
 - Fix: Yaml errors after updating to v1.5.0 [#708](https://github.com/redhat-developer/vscode-yaml/issues/708)
 
 ### 1.5.0
+
 - Fix: TypeError: Cannot create property 'url' on string [#652](https://github.com/redhat-developer/yaml-language-server/issues/652)
 - Fix: suggestion item title [#659](https://github.com/redhat-developer/yaml-language-server/pull/659)
 - Remove data from unused anchor diagnostics [#661](https://github.com/redhat-developer/yaml-language-server/pull/661)
@@ -118,6 +130,7 @@ Thanks to Petr Spacek
 Thanks to lijing00333, Remco Haszing, Petr Spacek and yassun4dev
 
 ### 1.4.0
+
 - Feat: Report unused anchors [#587](https://github.com/redhat-developer/yaml-language-server/issues/587)
 - Fix: Formatter does not respect `Editor: Detect Indentation = false` [#573](https://github.com/redhat-developer/vscode-yaml/issues/573)
 - Fix: Flakiness in validator: Incorrect type. Expected "string" [#671](https://github.com/redhat-developer/vscode-yaml/issues/671)
@@ -128,6 +141,7 @@ Thanks to lijing00333, Remco Haszing, Petr Spacek and yassun4dev
 - Fix: Schema validation matches @bitnami as a uri-formatted string. [#586](https://github.com/redhat-developer/yaml-language-server/issues/586)
 
 ### 1.3.0
+
 - Fix: Wrong hover information [#647](https://github.com/redhat-developer/vscode-yaml/issues/647)
 - Fix: relative file paths with fragments [#603](https://github.com/redhat-developer/yaml-language-server/pull/603)
 - Update K8S json schema version from 1.20.5 to 1.22.4 [#611](https://github.com/redhat-developer/yaml-language-server/pull/611)
@@ -146,18 +160,20 @@ Thanks to lijing00333, Remco Haszing, Petr Spacek and yassun4dev
 - Feat: disable default props [#606](https://github.com/redhat-developer/yaml-language-server/pull/606)
 - Fix: Schema validation matches `@bitnami` as a uri-formatted string. [#586](https://github.com/redhat-developer/yaml-language-server/issues/586)
 - Fix: Array indent doesn't work properly inside another array [#634](https://github.com/redhat-developer/yaml-language-server/pull/634)
-- Fix: _PROXY environment and setting not honoured since 1.1.1 [#588](https://github.com/redhat-developer/yaml-language-server/issues/588)
+- Fix: \_PROXY environment and setting not honoured since 1.1.1 [#588](https://github.com/redhat-developer/yaml-language-server/issues/588)
 - Fix: array indent on different index position [#635](https://github.com/redhat-developer/yaml-language-server/pull/635)
 - Feat: parent completion [#628](https://github.com/redhat-developer/yaml-language-server/pull/628)
 
 Thanks to tonypai, Martti Laine, Petr Spacek, sfalmo
 
 ### 1.2.2
+
 - Fix: LSP triggeringregisterCapability despite dynamicRegistration set to false [#583](https://github.com/redhat-developer/yaml-language-server/issues/583)
 - Add methods which allow client get schemas info [#556](https://github.com/redhat-developer/yaml-language-server/pull/556)
 - Fix: links error reporting [#596](https://github.com/redhat-developer/yaml-language-server/pull/596)
 
 ### 1.2.1
+
 - Fix: Can not load schema file when the URL is redirected. [#586](https://github.com/redhat-developer/vscode-yaml/issues/586)
 - docs: fix typos [#592](https://github.com/redhat-developer/yaml-language-server/pull/592)
 - Fix: Schema comment still not working properly in 1.1.0. [#629](https://github.com/redhat-developer/vscode-yaml/issues/629)
@@ -193,10 +209,12 @@ Thanks to Aurélien Pupier
 Thanks to Johnny Graettinger, Martin Aeschlimann and Aurélien Pupier
 
 ### 1.0.0
+
 - Use [eemeli/yaml](https://github.com/eemeli/yaml) as YAML parser [#421](https://github.com/redhat-developer/yaml-language-server/issues/421)
 - Fix: Completion provider: t.replace is not a function [#547](https://github.com/redhat-developer/yaml-language-server/issues/547)
 
 ### 0.23.0
+
 - Replace js-yaml with yaml [#526](https://github.com/redhat-developer/yaml-language-server/pull/526)
 - Update monaco-yaml link in docs [#527](https://github.com/redhat-developer/yaml-language-server/pull/527)
 - Update vscode-nls and vscode-uri dependencies [#531](https://github.com/redhat-developer/yaml-language-server/pull/531)
@@ -215,7 +233,6 @@ Thanks to Remco Haszing
 - Fix: UnhandledPromiseRejectionWarning on jsonParser [#494](https://github.com/redhat-developer/yaml-language-server/issues/494)
 - Fix: Schema URL fragments broken since 0.21.0 [#557](https://github.com/redhat-developer/vscode-yaml/issues/557)
 - Fix: Unhandled Promise rejections with dynamicRegistration disabled [#498](https://github.com/redhat-developer/yaml-language-server/issues/498)
-
 
 Thanks to Rob Anderson
 
@@ -285,7 +302,7 @@ Thanks to Andrew Metcalf, Remco Haszing, Petr Spacek and Sorin Sbarnea
 ### 0.16.0
 
 - CodeAction to open json schema from yaml error [#395](https://github.com/redhat-developer/yaml-language-server/pull/395)
-- Upgrade to `4.0.2` vscode-json-languageservice  [#405](https://github.com/redhat-developer/yaml-language-server/issues/405)
+- Upgrade to `4.0.2` vscode-json-languageservice [#405](https://github.com/redhat-developer/yaml-language-server/issues/405)
 - feat: add ability to delete all schemas from cache [#397](https://github.com/redhat-developer/yaml-language-server/pull/397)
 - feat: multiple schema distinction in validation [#410](https://github.com/redhat-developer/yaml-language-server/pull/410)
 - Fix: Object autocompletion in arrays with custom indentation produces invalid output [#432](https://github.com/redhat-developer/vscode-yaml/issues/432)
