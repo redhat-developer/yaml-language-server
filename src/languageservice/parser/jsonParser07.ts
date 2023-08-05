@@ -286,7 +286,10 @@ export interface ISchemaCollector {
 
 class SchemaCollector implements ISchemaCollector {
   schemas: IApplicableSchema[] = [];
-  constructor(private focusOffset = -1, private exclude: ASTNode = null) {}
+  constructor(
+    private focusOffset = -1,
+    private exclude: ASTNode = null
+  ) {}
   add(schema: IApplicableSchema): void {
     this.schemas.push(schema);
   }
