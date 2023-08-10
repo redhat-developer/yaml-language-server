@@ -1400,4 +1400,70 @@ test1:
       expect(completion.items[0].label).equal('item1');
     });
   });
+
+  describe('doNotSuggest schema', () => {
+    it('should not autocomplete schema with doNotSuggest - property completion', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          prop1: { type: 'string' },
+        },
+        doNotSuggest: true,
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const completion = await parseSetup(content, 0, 1);
+
+      expect(completion.items.length).equal(0);
+    });
+    it('should not autocomplete schema with doNotSuggest - value completion', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          prop1: {
+            anyOf: [
+              {
+                type: 'string',
+                default: 'value_default',
+                doNotSuggest: true,
+              },
+              {
+                type: 'object',
+                defaultSnippets: [
+                  {
+                    label: 'snippet',
+                    body: {
+                      value1: 'value_snippet',
+                    },
+                  },
+                ],
+                doNotSuggest: true,
+              },
+            ],
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'prop1: ';
+      const completion = await parseSetup(content, 0, content.length);
+
+      expect(completion.items.length).equal(0);
+    });
+    it('should autocomplete inside schema in doNotSuggest', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          obj1: {
+            properties: {
+              item1: { type: 'string' },
+            },
+          },
+        },
+        doNotSuggest: true,
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'obj1:\n | |';
+      const completion = await parseCaret(content);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0].label).equal('item1');
+    });
+  });
 });

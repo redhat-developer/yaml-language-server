@@ -856,7 +856,7 @@ export class YamlCompletion {
       });
     }
     for (const schema of matchingSchemas) {
-      if (schema.schema.deprecationMessage) {
+      if (schema.schema.deprecationMessage || schema.schema.doNotSuggest) {
         continue;
       }
 
@@ -885,7 +885,7 @@ export class YamlCompletion {
               if (Object.prototype.hasOwnProperty.call(schemaProperties, key)) {
                 const propertySchema = schemaProperties[key];
 
-                if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema['doNotSuggest']) {
+                if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema.doNotSuggest) {
                   let identCompensation = '';
                   if (nodeParent && isSeq(nodeParent) && node.items.length <= 1 && !hasOnlyWhitespace) {
                     // because there is a slash '-' to prevent the properties generated to have the correct
@@ -1477,7 +1477,7 @@ export class YamlCompletion {
     isArray?: boolean
   ): void {
     if (typeof schema === 'object') {
-      if (schema.deprecationMessage) {
+      if (schema.deprecationMessage || schema.doNotSuggest) {
         return;
       }
 
