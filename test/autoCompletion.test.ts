@@ -1489,7 +1489,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Array of enum autocomplete on 2nd position without `-`', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             references: {
