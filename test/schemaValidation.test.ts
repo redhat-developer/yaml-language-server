@@ -403,7 +403,7 @@ describe('Validation Tests', () => {
         .then(done, done);
     });
     it('Test patterns', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           prop: {
