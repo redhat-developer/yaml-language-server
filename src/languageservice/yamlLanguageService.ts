@@ -55,6 +55,8 @@ import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionH
 import { YamlDefinition } from './services/yamlDefinition';
 import { getSelectionRanges } from './services/yamlSelectionRanges';
 
+export { type Telemetry };
+
 export enum SchemaPriority {
   SchemaStore = 1,
   SchemaAssociation = 2,
