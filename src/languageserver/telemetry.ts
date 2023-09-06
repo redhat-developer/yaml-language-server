@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Connection } from 'vscode-languageserver';
-import { TelemetryEvent, Telemetry } from '../languageservice/telemetry';
+import { TelemetryEvent, Telemetry } from '../languageservice/yamlLanguageService';
 import { convertErrorToTelemetryMsg } from '../languageservice/utils/objects';
 
 export class TelemetryImpl implements Telemetry {

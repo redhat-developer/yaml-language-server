@@ -4,6 +4,7 @@ import {
   LanguageService,
   SchemaRequestService,
   WorkspaceContextService,
+  Telemetry,
 } from './languageservice/yamlLanguageService';
 import { workspaceFoldersChanged } from './languageservice/utils/paths';
 import { URI } from 'vscode-uri';
@@ -16,7 +17,6 @@ import { SettingsHandler } from './languageserver/handlers/settingsHandlers';
 import { YamlCommands } from './commands';
 import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
 import { commandExecutor } from './languageserver/commandExecutor';
-import { Telemetry } from './languageservice/telemetry';
 import { registerCommands } from './languageservice/services/yamlCommands';
 
 export class YAMLServerInit {

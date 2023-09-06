@@ -5,7 +5,7 @@
 import { findLinks as JSONFindLinks } from 'vscode-json-languageservice/lib/umd/services/jsonLinks';
 import { DocumentLink } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Telemetry } from '../telemetry';
+import { Telemetry } from '../yamlLanguageService';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 
 export class YamlLinks {
