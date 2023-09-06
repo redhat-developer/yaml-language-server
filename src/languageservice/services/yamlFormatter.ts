@@ -21,7 +21,7 @@ export class YAMLFormatter {
     }
   }
 
-  public format(document: TextDocument, options: FormattingOptions & CustomFormatterOptions): TextEdit[] {
+  public format(document: TextDocument, options: Partial<FormattingOptions> & CustomFormatterOptions = {}): TextEdit[] {
     if (!this.formatterEnabled) {
       return [];
     }
