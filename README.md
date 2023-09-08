@@ -388,6 +388,7 @@ This repository only contains the server implementation. Here are some known cli
 - [monaco-yaml](https://monaco-yaml.js.org) for Monaco editor
 - [Vim-EasyComplete](https://github.com/jayli/vim-easycomplete) for Vim/NeoVim
 - [nova-yaml](https://github.com/robb-j/nova-yaml/) for Nova
+- [volar-service-yaml](https://github.com/volarjs/services/tree/master/packages/yaml) for Volar
 
 ## Developer Support
 
