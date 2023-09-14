@@ -89,7 +89,7 @@ export class YAMLHover {
 
     const createHover = (contents: string): Hover => {
       if (this.indentation !== undefined) {
-        const indentationMatchRegex = new RegExp(this.indentation, 'g');
+        const indentationMatchRegex = new RegExp(` {${this.indentation.length}}`, 'g');
         contents = contents.replace(indentationMatchRegex, '&emsp;');
       }
 
@@ -153,7 +153,7 @@ export class YAMLHover {
             }
             if (s.schema.examples) {
               s.schema.examples.forEach((example) => {
-                markdownExamples.push(JSON.stringify(example));
+                markdownExamples.push(JSON.stringify(example, null, 2));
               });
             }
           }

@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import { SCHEMA_ID, TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { createDiagnosticWithData, createExpectedError } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import {
@@ -33,6 +33,7 @@ describe('Validation Tests', () => {
   let languageService: LanguageService;
   let yamlSettings: SettingsState;
   let telemetry: TestTelemetry;
+  let schemaProvider: TestCustomSchemaProvider;
 
   before(() => {
     languageSettingsSetup = new ServiceSetup()
@@ -51,11 +52,13 @@ describe('Validation Tests', () => {
       validationHandler: valHandler,
       yamlSettings: settings,
       telemetry: testTelemetry,
+      schemaProvider: testSchemaProvider,
     } = setupLanguageService(languageSettingsSetup.languageSettings);
     languageService = langService;
     validationHandler = valHandler;
     yamlSettings = settings;
     telemetry = testTelemetry;
+    schemaProvider = testSchemaProvider;
   });
 
   function parseSetup(content: string, customSchemaID?: string): Promise<Diagnostic[]> {
@@ -66,12 +69,12 @@ describe('Validation Tests', () => {
   }
 
   afterEach(() => {
-    languageService.deleteSchema(SCHEMA_ID);
+    schemaProvider.deleteSchema(SCHEMA_ID);
   });
 
   describe('Boolean tests', () => {
     it('Boolean true test', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           analytics: {
@@ -89,7 +92,7 @@ describe('Validation Tests', () => {
     });
 
     it('Basic false test', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           analytics: {
@@ -107,7 +110,7 @@ describe('Validation Tests', () => {
     });
 
     it('Test that boolean value without quotations is valid', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           analytics: {
@@ -125,7 +128,7 @@ describe('Validation Tests', () => {
     });
 
     it('Test that boolean value in quotations is interpreted as string not boolean', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           analytics: {
@@ -156,7 +159,7 @@ describe('Validation Tests', () => {
     });
 
     it('Error on incorrect value type (boolean)', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           cwd: {
@@ -189,7 +192,7 @@ describe('Validation Tests', () => {
 
   describe('String tests', () => {
     it('Test that boolean inside of quotations is of type string', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           analytics: {
@@ -207,7 +210,7 @@ describe('Validation Tests', () => {
     });
 
     it('Type string validates under children', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           scripts: {
@@ -230,7 +233,7 @@ describe('Validation Tests', () => {
     });
 
     it('Type String does not error on valid node', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           cwd: {
@@ -248,7 +251,7 @@ describe('Validation Tests', () => {
     });
 
     it('Error on incorrect value type (string)', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           analytics: {
@@ -279,7 +282,7 @@ describe('Validation Tests', () => {
     });
 
     it('Test that boolean is invalid when no strings present and schema wants string', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           cwd: {
@@ -312,7 +315,7 @@ describe('Validation Tests', () => {
 
   describe('Pattern tests', () => {
     it('Test a valid Unicode pattern', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           prop: {
@@ -328,7 +331,7 @@ describe('Validation Tests', () => {
         .then(done, done);
     });
     it('Test an invalid Unicode pattern', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           prop: {
@@ -359,7 +362,7 @@ describe('Validation Tests', () => {
     });
 
     it('Test a valid Unicode patternProperty', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         patternProperties: {
           '^tes\\p{Letter}$': true,
@@ -373,7 +376,7 @@ describe('Validation Tests', () => {
         .then(done, done);
     });
     it('Test an invalid Unicode patternProperty', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         patternProperties: {
           '^tes\\p{Letter}$': true,
@@ -440,7 +443,7 @@ describe('Validation Tests', () => {
 
   describe('Number tests', () => {
     it('Type Number does not error on valid node', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           timeout: {
@@ -458,7 +461,7 @@ describe('Validation Tests', () => {
     });
 
     it('Error on incorrect value type (number)', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           cwd: {
@@ -491,7 +494,7 @@ describe('Validation Tests', () => {
 
   describe('Null tests', () => {
     it('Basic test on nodes with null', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         additionalProperties: false,
         properties: {
@@ -539,7 +542,7 @@ describe('Validation Tests', () => {
 
   describe('Object tests', () => {
     it('Basic test on nodes with children', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           scripts: {
@@ -565,7 +568,7 @@ describe('Validation Tests', () => {
     });
 
     it('Test with multiple nodes with children', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           analytics: {
@@ -597,7 +600,7 @@ describe('Validation Tests', () => {
     });
 
     it('Type Object does not error on valid node', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           registry: {
@@ -620,7 +623,7 @@ describe('Validation Tests', () => {
     });
 
     it('Error on incorrect value type (object)', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         title: 'Object',
         properties: {
@@ -659,7 +662,7 @@ describe('Validation Tests', () => {
 
   describe('Array tests', () => {
     it('Type Array does not error on valid node', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           resolvers: {
@@ -680,7 +683,7 @@ describe('Validation Tests', () => {
     });
 
     it('Error on incorrect value type (array)', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           resolvers: {
@@ -713,7 +716,7 @@ describe('Validation Tests', () => {
 
   describe('Anchor tests', () => {
     it('Anchor should not error', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           default: {
@@ -736,7 +739,7 @@ describe('Validation Tests', () => {
     });
 
     it('Anchor with multiple references should not error', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           default: {
@@ -759,7 +762,7 @@ describe('Validation Tests', () => {
     });
 
     it('Multiple Anchor in array of references should not error', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           default: {
@@ -783,7 +786,7 @@ describe('Validation Tests', () => {
     });
 
     it('Multiple Anchors being referenced in same level at same time for yaml 1.1', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           customize: {
@@ -804,7 +807,7 @@ describe('Validation Tests', () => {
     });
 
     it('Multiple Anchors being referenced in same level at same time for yaml generate error for 1.2', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           customize: {
@@ -826,7 +829,7 @@ describe('Validation Tests', () => {
     });
 
     it('Nested object anchors should expand properly', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         additionalProperties: {
           type: 'object',
@@ -858,7 +861,7 @@ describe('Validation Tests', () => {
     });
 
     it('Anchor reference with a validation error in a sub-object emits the error in the right location', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           src: {},
@@ -908,7 +911,7 @@ describe('Validation Tests', () => {
     });
 
     it('Array Anchor merge', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           arr: {
@@ -945,7 +948,7 @@ obj:
 
   describe('Custom tag tests', () => {
     it('Custom Tags without type', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           analytics: {
@@ -972,7 +975,7 @@ obj:
     });
 
     it('Custom Tags with type', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           resolvers: {
@@ -993,7 +996,7 @@ obj:
     });
 
     it('Include with value should not error', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           customize: {
@@ -1024,7 +1027,7 @@ obj:
 
   describe('Multiple type tests', function () {
     it('Do not error when there are multiple types in schema and theyre valid', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           license: {
@@ -1044,7 +1047,7 @@ obj:
 
   describe('Invalid YAML errors', function () {
     it('Error when theres a finished untyped item', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           cwd: {
@@ -1066,7 +1069,7 @@ obj:
     });
 
     it('Error when theres no value for a node', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           cwd: {
@@ -1130,7 +1133,7 @@ obj:
         },
         $schema: 'http://json-schema.org/draft-07/schema#',
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test: &test\n  prop1: hello\nsample:\n  <<: *test\n  prop2: another_test';
       const validator = parseSetup(content);
       validator
@@ -1176,7 +1179,7 @@ obj:
           },
         ],
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'kind: ';
       const validator = parseSetup(content);
       validator
@@ -1201,7 +1204,7 @@ obj:
             },
           },
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const validator = parseSetup('nulltest: ' + content);
         validator
           .then(function (result) {
@@ -1223,7 +1226,7 @@ obj:
         },
         required: ['values'],
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'values: [Null, NULL, null, ~,]';
       const validator = parseSetup(content);
       validator
@@ -1236,7 +1239,7 @@ obj:
 
   describe('Multi Document schema validation tests', () => {
     it('Document does not error when --- is present with schema', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           cwd: {
@@ -1254,7 +1257,7 @@ obj:
     });
 
     it('Multi Document does not error when --- is present with schema', (done) => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           cwd: {
@@ -1274,7 +1277,7 @@ obj:
 
   describe('Schema with title', () => {
     it('validator uses schema title instead of url', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         title: 'Schema Super title',
         properties: {
@@ -1371,7 +1374,7 @@ obj:
 
   describe('Conditional Schema', () => {
     it('validator use "then" block if "if" valid', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         default: [],
         properties: {
@@ -1425,7 +1428,7 @@ obj:
       };
       it('validator use "then" block if "if" match filePatternAssociation', async () => {
         schema.if.filePatternAssociation = SCHEMA_ID;
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'name: aName';
         const result = await parseSetup(content);
 
@@ -1433,7 +1436,7 @@ obj:
       });
       it('validator use "then" block if "if" match filePatternAssociation - regexp', async () => {
         schema.if.filePatternAssociation = '*.yaml'; // SCHEMA_ID: "default_schema_id.yaml"
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'name: aName';
         const result = await parseSetup(content);
 
@@ -1441,7 +1444,7 @@ obj:
       });
       it('validator use "else" block if "if" not match filePatternAssociation', async () => {
         schema.if.filePatternAssociation = 'wrong';
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'name: aName';
         const result = await parseSetup(content);
 
@@ -1461,7 +1464,7 @@ obj:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schemaWithURIReference);
+      schemaProvider.addSchema(SCHEMA_ID, schemaWithURIReference);
       let content = `
       one: '//foo/bar'
       `;
@@ -1497,7 +1500,7 @@ obj:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schemaWithURIReference);
+      schemaProvider.addSchema(SCHEMA_ID, schemaWithURIReference);
       const content = `
       one: ''
       `;
@@ -1515,14 +1518,14 @@ obj:
       yamlSettings.specificValidatorPaths = [];
     });
     afterEach(() => {
-      languageService.deleteSchema(sharedSchemaId);
+      schemaProvider.deleteSchema(SCHEMA_ID);
+      schemaProvider.deleteSchema(sharedSchemaId);
     });
     it('should distinguish types in error "Incorrect type (Expected "type1 | type2 | type3")"', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
-
-      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
-      languageService.addSchema(SCHEMA_ID, schema.schema);
+      schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', schema.sharedSchema);
+      schemaProvider.addSchema(SCHEMA_ID, schema.schema);
       const content = 'test_anyOf_objects:\n  ';
       const result = await parseSetup(content);
 
@@ -1538,8 +1541,8 @@ obj:
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
 
-      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
-      languageService.addSchema(SCHEMA_ID, schema.schema);
+      schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', schema.sharedSchema);
+      schemaProvider.addSchema(SCHEMA_ID, schema.schema);
       const content = 'test_anyOf_objects:\n  propA:';
       const result = await parseSetup(content);
 
@@ -1551,8 +1554,8 @@ obj:
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
 
-      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
-      languageService.addSchema(SCHEMA_ID, schema.schema);
+      schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', schema.sharedSchema);
+      schemaProvider.addSchema(SCHEMA_ID, schema.schema);
       const content = 'test_anyOf_objects:\n  constA:';
       const result = await parseSetup(content);
 
@@ -1564,8 +1567,8 @@ obj:
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
 
-      languageService.addSchema(sharedSchemaId, schema.sharedSchema);
-      languageService.addSchema(SCHEMA_ID, schema.schema);
+      schemaProvider.addSchemaWithUri(sharedSchemaId, 'file:///sharedSchema.json', schema.sharedSchema);
+      schemaProvider.addSchema(SCHEMA_ID, schema.schema);
       const content = 'test_anyOf_objects:\n  someProp:';
       const result = await parseSetup(content);
 
@@ -1593,7 +1596,7 @@ obj:
 
   describe('Empty document validation', () => {
     it('should provide validation for empty document', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           scripts: {
@@ -1621,7 +1624,7 @@ obj:
     });
 
     it('should provide validation for document which contains only whitespaces', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           scripts: {
@@ -1657,7 +1660,7 @@ obj:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = `prop2: you could be there 'prop2'`;
       const result = await parseSetup(content);
       expect(result.length).to.eq(0);
@@ -1681,7 +1684,7 @@ obj:
             },
           },
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = `prop2: you should not be there 'prop2'`;
         const result = await parseSetup(content);
         expect(result.length).to.eq(1);
@@ -1701,7 +1704,7 @@ obj:
             },
           },
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = `prop1: value1\npropX: you should not be there 'propX'`;
         const result = await parseSetup(content);
         expect(
@@ -1727,7 +1730,7 @@ obj:
           },
           additionalProperties: true,
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = `prop2: you could be there 'prop2'`;
         const result = await parseSetup(content);
         expect(result.length).to.eq(0);
@@ -1744,7 +1747,7 @@ obj:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = `env: \${{ matrix.env1 }`;
       const result = await parseSetup(content);
       expect(result).to.be.not.empty;
@@ -1761,7 +1764,7 @@ obj:
           format: 'ipv4',
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = `- 10.15.12.500`;
       const result = await parseSetup(content);
       expect(result).to.be.not.empty;
@@ -1778,7 +1781,7 @@ obj:
           format: 'ipv4',
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = `- 255.255.255.255`;
       const result = await parseSetup(content);
       expect(result).to.be.empty;
@@ -1793,7 +1796,7 @@ obj:
           format: 'ipv6',
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = `- 10.15.12.500`;
       const result = await parseSetup(content);
       expect(result).to.be.not.empty;
@@ -1810,7 +1813,7 @@ obj:
           format: 'ipv6',
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = `- 2001:0db8:85a3:0000:0000:8a2e:0370:7334\n- 2001:0db8:85a3:0000:0000:8a2e:0370:7334\n- FEDC:BA98:7654:3210:FEDC:BA98:7654:3210\n- 1080::8:800:200C:417A\n- FF01::101\n- ::1`;
       const result = await parseSetup(content);
       expect(result).to.be.empty;
@@ -1819,7 +1822,7 @@ obj:
 
     it('should handle not valid schema object', async () => {
       const schema = 'Foo';
-      languageService.addSchema(SCHEMA_ID, schema as JSONSchema);
+      schemaProvider.addSchema(SCHEMA_ID, schema as JSONSchema);
       const content = `foo: bar`;
       const result = await parseSetup(content);
       expect(result).to.have.length(1);
@@ -1837,7 +1840,7 @@ obj:
         },
         additionalProperties: true,
       };
-      languageService.addSchema(SCHEMA_ID, schema as JSONSchema);
+      schemaProvider.addSchema(SCHEMA_ID, schema as JSONSchema);
       const content = `bar: ddd`;
       const result = await parseSetup(content);
       expect(result.length).to.eq(1);
@@ -1864,7 +1867,7 @@ obj:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = `container:
   image: alpine
   command:
@@ -1979,8 +1982,12 @@ data:
   });
 
   describe('Enum tests', () => {
+    afterEach(() => {
+      schemaProvider.deleteSchema(SCHEMA_ID);
+    });
+
     it('Enum Validation with invalid enum value', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           first: {
@@ -2000,7 +2007,7 @@ data:
     });
 
     it('Enum Validation with invalid type', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           first: {
@@ -2020,7 +2027,7 @@ data:
     });
 
     it('Enum Validation with invalid data', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         definitions: {
           rule: {
             description: 'A rule',
@@ -2055,7 +2062,7 @@ data:
     });
 
     it('value matches more than one schema in oneOf - but among one is format matches', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           repository: {
@@ -2079,7 +2086,7 @@ data:
     });
 
     it('value matches more than one schema in oneOf', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           foo: {},
@@ -2143,7 +2150,7 @@ data:
         },
       },
     };
-    languageService.addSchema(SCHEMA_ID, schema);
+    schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = `options:\n  provider: testX`;
     const result = await parseSetup(content);
     assert.deepEqual(

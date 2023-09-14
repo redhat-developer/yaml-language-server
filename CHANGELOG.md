@@ -1,3 +1,13 @@
+### 1.14.0
+- Fix: Request textDocument/hover failed with message: Invalid regular expression: /(?s).*/: Invalid group [#874](https://github.com/redhat-developer/yaml-language-server/issues/874)
+- Fix: nested anyof const [#888](https://github.com/redhat-developer/yaml-language-server/pull/888)
+- Fix: Parsing example object as plain string [#889](https://github.com/redhat-developer/yaml-language-server/issues/889)
+- Fix: Improve smart select [#307](https://github.com/redhat-developer/vscode-yaml/issues/307)
+- Fix: Local YAML schema applied to schema file itself [#894](https://github.com/redhat-developer/vscode-yaml/issues/894)
+- Fix: Recursive anchors crash extension [#897](https://github.com/redhat-developer/yaml-language-server/issues/897)
+
+Thanks to [Tony](https://github.com/Legend-Master),[Ace](https://github.com/AceTheCreator) and [PetrSpacek](https://github.com/p-spacek) for your contributions.
+
 ### 1.13.0
 - Fix: The default value for keyorder [#859](https://github.com/redhat-developer/yaml-language-server/pull/859)
 - Fix: older changelog heading levels [#861](https://github.com/redhat-developer/yaml-language-server/pull/861)

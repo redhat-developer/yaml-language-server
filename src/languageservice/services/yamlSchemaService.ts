@@ -405,17 +405,6 @@ export class YAMLSchemaService extends JSONSchemaService {
         }
       }
 
-      /**
-       * If this resource matches a schemaID directly then use that schema.
-       * This will be used in the case where the yaml language server is being used as a library
-       * and clients want to save a schema with a particular ID and also use that schema
-       * in language features
-       */
-      const normalizedResourceID = this.normalizeId(resource);
-      if (this.schemasById[normalizedResourceID]) {
-        schemas.push(normalizedResourceID);
-      }
-
       if (schemas.length > 0) {
         // Join all schemas with the highest priority.
         const highestPrioSchemas = this.highestPrioritySchemas(schemas);
@@ -444,7 +433,7 @@ export class YAMLSchemaService extends JSONSchemaService {
                 return {
                   errors: [],
                   schema: {
-                    anyOf: schemas.map((schemaObj) => {
+                    allOf: schemas.map((schemaObj) => {
                       return schemaObj.schema;
                     }),
                   },
@@ -516,11 +505,11 @@ export class YAMLSchemaService extends JSONSchemaService {
   private async resolveCustomSchema(schemaUri, doc): ResolvedSchema {
     const unresolvedSchema = await this.loadSchema(schemaUri);
     const schema = await this.resolveSchemaContent(unresolvedSchema, schemaUri, []);
-    if (schema.schema) {
+    if (schema.schema && typeof schema.schema === 'object') {
       schema.schema.url = schemaUri;
     }
     if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[doc.currentDocIndex]) {
-      return new ResolvedSchema(schema.schema.schemaSequence[doc.currentDocIndex]);
+      return new ResolvedSchema(schema.schema.schemaSequence[doc.currentDocIndex], schema.errors);
     }
     return schema;
   }

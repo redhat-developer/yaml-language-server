@@ -15,6 +15,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { ClientCapabilities } from 'vscode-json-languageservice';
 import { yamlDocumentsCache } from '../../src/languageservice/parser/yaml-documents';
 import { TestTelemetry } from './testsTypes';
+import { JSONSchema } from '../../src/languageservice/jsonSchema';
 
 export function toFsPath(str: unknown): string {
   if (typeof str !== 'string') {
@@ -56,6 +57,7 @@ export interface TestLanguageServerSetup {
   languageHandler: LanguageHandlers;
   yamlSettings: SettingsState;
   telemetry: TestTelemetry;
+  schemaProvider: TestCustomSchemaProvider;
 }
 
 export function setupLanguageService(languageSettings: LanguageSettings): TestLanguageServerSetup {
@@ -63,6 +65,11 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
   process.argv.push('--node-ipc');
   const connection = createConnection();
   const schemaRequestHandlerWrapper = (connection: Connection, uri: string): Promise<string> => {
+    const testSchemaProvider = TestCustomSchemaProvider.instance();
+    const testSchema = testSchemaProvider.getContentForSchema(uri);
+    if (testSchema) {
+      return Promise.resolve(testSchema);
+    }
     return schemaRequestHandler(
       connection,
       uri,
@@ -86,12 +93,15 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
   const languageHandler = serverInit.languageHandler;
   languageHandler.isTest = true;
   languageService.configure(languageSettings);
+  const schemaProvider = TestCustomSchemaProvider.instance();
+  languageService.registerCustomSchemaProvider(schemaItSelfCustomSchemaProvider);
   return {
     languageService,
     validationHandler,
     languageHandler,
     yamlSettings,
     telemetry,
+    schemaProvider,
   };
 }
 
@@ -114,4 +124,104 @@ export function caretPosition(content: string): { position: number; content: str
 
   // console.log(`now: len: ${content.length}, content: "${content}", pos: ${position}, str: "${content.substring(position)}"`);
   return { position, content };
+}
+
+/*
+ * A class that provides custom schemas for testing purposes.
+ */
+export class TestCustomSchemaProvider {
+  private schemas: Array<[string, string, JSONSchema]> = new Array(0);
+  private static self: TestCustomSchemaProvider;
+
+  private constructor() {
+    // use instance only
+  }
+
+  public static instance(): TestCustomSchemaProvider {
+    if (!TestCustomSchemaProvider.self) {
+      TestCustomSchemaProvider.self = new TestCustomSchemaProvider();
+    }
+    return TestCustomSchemaProvider.self;
+  }
+
+  /**
+   * Adds a schema to the list of custom schemas.
+   * @param doc The uri of the document
+   * @param schema The JSON schema object.
+   */
+  public addSchema(doc: string, schema: JSONSchema): void {
+    this.addSchemaWithUri(doc, `file:///${doc}`, schema);
+  }
+
+  /**
+   * Adds a schema to the list of custom schemas.
+   * @param doc The uri of the document
+   * @param uri The uri of the schema
+   * @param schema The JSON schema object.
+   */
+  public addSchemaWithUri(doc: string, uri: string, schema: JSONSchema): void {
+    const item: [string, string, JSONSchema] = [doc, uri, schema];
+    this.schemas.push(item);
+  }
+
+  /**
+   * Deletes a schema from the list of custom schemas.
+   * @param doc The uri of the document
+   */
+  public deleteSchema(doc: string): void {
+    const items = this.schemas.filter((item) => item[0] === doc);
+    if (items.length > 0) {
+      this.schemas = this.schemas.filter((item) => item[0] !== doc);
+    }
+  }
+
+  /**
+   * Checks if a schema exists for a given document.
+   * @param doc The uri of the document
+   * @returns True if a schema exists for the document, false otherwise.
+   */
+  public has(doc: string): boolean {
+    const item = this.schemas.findIndex((item) => item[0] === doc);
+    return item > -1;
+  }
+
+  /**
+   * Returns the schemas for a given document
+   * @param doc The uri of the document.
+   * @returns The uris of the schemas
+   * @throws Error if no schema found
+   */
+  public getSchemas(doc: string): string | string[] {
+    if (this.has(doc)) {
+      const items = this.schemas.filter((item) => item[0] === doc);
+      if (items.length === 1) {
+        return items[0][1];
+      }
+      return items.map((item) => {
+        return item[1];
+      });
+    }
+    throw new Error(`Test schema not found for ${doc}`);
+  }
+
+  /**
+   * Returns the content of a schema for a given uri.
+   * @param uri The uri of the schema.
+   * @returns The content of the schema as a string, or null if the schema is not found.
+   */
+  public getContentForSchema(uri: string): string | null {
+    const item = this.schemas.findIndex((item) => item[1] === uri);
+    if (item < 0) {
+      return null;
+    }
+    return JSON.stringify(this.schemas[item][2]);
+  }
+}
+
+export async function schemaItSelfCustomSchemaProvider(uri: string): Promise<string | string[]> {
+  const schemaProvider = TestCustomSchemaProvider.instance();
+  if (schemaProvider.has(uri)) {
+    return schemaProvider.getSchemas(uri);
+  }
+  return undefined;
 }

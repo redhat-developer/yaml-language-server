@@ -24,6 +24,7 @@ import {
   DocumentLink,
   CodeLens,
   DefinitionLink,
+  SelectionRange,
 } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
@@ -53,6 +54,7 @@ import { yamlDocumentsCache } from './parser/yaml-documents';
 import { SettingsState } from '../yamlSettings';
 import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers';
 import { YamlDefinition } from './services/yamlDefinition';
+import { getSelectionRanges } from './services/yamlSelectionRanges';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -176,6 +178,7 @@ export interface LanguageService {
   doHoverDetail(document: TextDocument, position: Position): Promise<Hover | null>;
   deleteSchemasWhole(schemaDeletions: SchemaDeletionsAll): void;
   getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | null;
+  getSelectionRanges(document: TextDocument, positions: Position[]): SelectionRange[] | undefined;
   getCodeAction(document: TextDocument, params: CodeActionParams): CodeAction[] | undefined;
   getCodeLens(document: TextDocument): Thenable<CodeLens[] | undefined> | CodeLens[] | undefined;
   resolveCodeLens(param: CodeLens): Thenable<CodeLens> | CodeLens;
@@ -260,6 +263,7 @@ export function getLanguageService(params: {
     },
     doHoverDetail: hoverDetail.doHoverDetail.bind(hoverDetail),
     getFoldingRanges,
+    getSelectionRanges,
     getCodeAction: (document, params) => {
       return yamlCodeActions.getCodeAction(document, params);
     },
