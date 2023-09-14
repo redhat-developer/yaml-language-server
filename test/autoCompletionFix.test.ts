@@ -571,7 +571,7 @@ objB:
     );
   });
   it('Autocomplete with snippet without hypen (-) inside an array', async () => {
-    languageService.addSchema(SCHEMA_ID, {
+    schemaProvider.addSchema(SCHEMA_ID, {
       type: 'object',
       properties: {
         array1: {
@@ -1351,7 +1351,7 @@ test1:
         },
         deprecationMessage: 'Deprecated',
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = '';
       const completion = await parseSetup(content, 0, 1);
 
@@ -1383,7 +1383,7 @@ test1:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'prop1: ';
       const completion = await parseSetup(content, 0, content.length);
 
@@ -1400,7 +1400,7 @@ test1:
         },
         deprecationMessage: 'Deprecated',
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'obj1:\n | |';
       const completion = await parseCaret(content);
 
@@ -1417,7 +1417,7 @@ test1:
         },
         doNotSuggest: true,
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = '';
       const completion = await parseSetup(content, 0, 1);
 
@@ -1449,7 +1449,7 @@ test1:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'prop1: ';
       const completion = await parseSetup(content, 0, content.length);
 
@@ -1466,7 +1466,7 @@ test1:
         },
         doNotSuggest: true,
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'obj1:\n | |';
       const completion = await parseCaret(content);
 

@@ -492,7 +492,7 @@ describe('Auto Completion Tests', () => {
         const languageSettingsSetup = new ServiceSetup().withCompletion();
         languageSettingsSetup.languageSettings.disableDefaultProperties = true;
         languageService.configure(languageSettingsSetup.languageSettings);
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -519,7 +519,7 @@ describe('Auto Completion Tests', () => {
 
       // not sure when this test failed, not sure which fix fixed this
       it('Autocomplete key with default value in middle of file - nested object', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -556,7 +556,7 @@ describe('Auto Completion Tests', () => {
         const languageSettingsSetup = new ServiceSetup().withCompletion();
         languageSettingsSetup.languageSettings.disableDefaultProperties = true;
         languageService.configure(languageSettingsSetup.languageSettings);
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -697,7 +697,7 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
       it('Autocomplete does happen right after : under an object and with defaultSnippet', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -724,7 +724,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete does happen right after key object', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             timeout: {
@@ -749,7 +749,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete does happen right after : under an object', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -783,7 +783,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Autocomplete does happen right after : under an object and with defaultSnippet', (done) => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             scripts: {
@@ -3212,7 +3212,7 @@ describe('Auto Completion Tests', () => {
           },
         ],
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'type: typeObj2\noptions:\n  description: desc\n`  ';
       const result = await parseSetup(content, content.length);
 

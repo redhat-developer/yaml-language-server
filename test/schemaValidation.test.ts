@@ -403,7 +403,7 @@ describe('Validation Tests', () => {
         .then(done, done);
     });
     it('Test patterns', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           prop: {
@@ -1933,7 +1933,7 @@ obj:
             },
           ],
         };
-        languageService.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = `
 provider: provider1
 entity: entity1
@@ -1965,7 +1965,7 @@ data:
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
 
       const result = await parseSetup('expr: =@ctx');
       assert.strictEqual(result.length, 0);

@@ -9,7 +9,14 @@ import { LanguageHandlers } from '../src/languageserver/handlers/languageHandler
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
-import { SCHEMA_ID, caretPosition, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+
+import {
+  SCHEMA_ID,
+  caretPosition,
+  setupLanguageService,
+  setupSchemaIDTextDocument,
+  TestCustomSchemaProvider,
+} from './utils/testHelper';
 import assert = require('assert');
 import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
@@ -21,6 +28,7 @@ describe('Auto Completion Tests Extended', () => {
   let languageService: LanguageService;
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
+  let schemaProvider: TestCustomSchemaProvider;
 
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const inlineObjectSchema = require(path.join(__dirname, './fixtures/testInlineObject.json'));
@@ -34,10 +42,12 @@ describe('Auto Completion Tests Extended', () => {
       languageService: langService,
       languageHandler: langHandler,
       yamlSettings: settings,
+      schemaProvider: testSchemaProvider,
     } = setupLanguageService(languageSettingsSetup.languageSettings);
     languageService = langService;
     languageHandler = langHandler;
     yamlSettings = settings;
+    schemaProvider = testSchemaProvider;
     ensureExpressionSchema();
   });
 
@@ -71,7 +81,7 @@ describe('Auto Completion Tests Extended', () => {
   }
 
   function ensureExpressionSchema(): void {
-    languageService.addSchema('expression', {
+    schemaProvider.addSchema('expression', {
       properties: {
         expression: {
           ...inlineObjectSchema.definitions.Expression,
@@ -81,7 +91,7 @@ describe('Auto Completion Tests Extended', () => {
   }
 
   afterEach(() => {
-    languageService.deleteSchema(SCHEMA_ID);
+    schemaProvider.deleteSchema(SCHEMA_ID);
     languageService.configure(languageSettingsSetup.languageSettings);
     ensureExpressionSchema();
   });
@@ -91,7 +101,7 @@ describe('Auto Completion Tests Extended', () => {
     const inlineObjectSchema = require(path.join(__dirname, './fixtures/testInlineObject.json'));
 
     it('nested completion - no space after :', async () => {
-      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+      schemaProvider.addSchema(SCHEMA_ID, inlineObjectSchema);
       const content = 'nested:\n  scripts:\n    sample:\n      test:';
       const result = await parseSetup(content, content.length);
 
@@ -133,7 +143,7 @@ describe('Auto Completion Tests Extended', () => {
       );
     });
     it('nested completion - space after : ', async () => {
-      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+      schemaProvider.addSchema(SCHEMA_ID, inlineObjectSchema);
       const content = 'nested:\n  scripts:\n    sample:\n      test: ';
       const result = await parseSetup(content, content.length);
 
@@ -180,7 +190,7 @@ describe('Auto Completion Tests Extended', () => {
     });
 
     it('nested completion - some newLine after : ', async () => {
-      languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+      schemaProvider.addSchema(SCHEMA_ID, inlineObjectSchema);
       const content = 'nested:\n  scripts:\n    sample:\n      test:\n        ';
       const result = await parseSetup(content + '\nnewLine: test', content.length);
 
@@ -218,7 +228,7 @@ describe('Auto Completion Tests Extended', () => {
     });
     describe('array completion', () => {
       it('array completion - should suggest only one const', async () => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             test: {
@@ -249,7 +259,7 @@ describe('Auto Completion Tests Extended', () => {
         );
       });
       it('array completion - should suggest correct indent', async () => {
-        languageService.addSchema(SCHEMA_ID, {
+        schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
             test: {
@@ -297,7 +307,7 @@ describe('Auto Completion Tests Extended', () => {
         },
         then: {},
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = '';
       const completion = await parseSetup(content, content.length);
       assert.equal(completion.items.length, 0);
@@ -322,7 +332,7 @@ describe('Auto Completion Tests Extended', () => {
     };
     it('should use filePatternAssociation when _tmp_ filename is used', async () => {
       schema.if.filePatternAssociation = SCHEMA_ID;
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'name:';
       const completion = await parseSetup(content, content.length);
       expect(completion.items.map((i) => i.label)).to.deep.equal(['val1', 'val2']);
@@ -364,7 +374,7 @@ describe('Auto Completion Tests Extended', () => {
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'actions:\n  ';
       const completion = await parseSetup(content, content.length);
       assert.equal(completion.items.length, 1);
@@ -381,7 +391,7 @@ describe('Auto Completion Tests Extended', () => {
           },
         },
       };
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'actions:';
       const completion = await parseSetup(content, content.length);
       assert.equal(completion.items.length, 3);
@@ -417,14 +427,14 @@ describe('Auto Completion Tests Extended', () => {
       },
     };
     it('Nested anyOf const should return only the first alternative because second const (anyOf[1].const) is not valid', async () => {
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'options:\n  provider: "some string valid with anyOf[0]"\n  entity: f|\n|';
       const completion = await parseCaret(content);
 
       expect(completion.items.map((i) => i.insertText)).deep.equal(['entity1']);
     });
     it('Nested anyOf const should return only the first alternative because second const (anyOf[1].const) is not valid - (with null value)', async () => {
-      languageService.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'options:\n  provider: "some string valid only by anyOf[0]"\n  entity: |\n|';
       const completion = await parseCaret(content);
 

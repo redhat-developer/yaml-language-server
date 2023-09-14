@@ -5,17 +5,16 @@
 import * as assert from 'assert';
 import * as path from 'path';
 import { Hover, MarkupContent } from 'vscode-languageserver';
-import { LanguageService } from '../src';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import { SCHEMA_ID, TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 
 describe('Hover Tests Detail', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageHandler: LanguageHandlers;
-  let languageService: LanguageService;
   let yamlSettings: SettingsState;
+  let schemaProvider: TestCustomSchemaProvider;
 
   before(() => {
     languageSettingsSetup = new ServiceSetup().withHover().withSchemaFileMatch({
@@ -23,17 +22,17 @@ describe('Hover Tests Detail', () => {
       fileMatch: ['bad-schema.yaml'],
     });
     const {
-      languageService: langService,
       languageHandler: langHandler,
       yamlSettings: settings,
+      schemaProvider: testSchemaProvider,
     } = setupLanguageService(languageSettingsSetup.languageSettings);
-    languageService = langService;
     languageHandler = langHandler;
     yamlSettings = settings;
+    schemaProvider = testSchemaProvider;
   });
 
   afterEach(() => {
-    languageService.deleteSchema(SCHEMA_ID);
+    schemaProvider.deleteSchema(SCHEMA_ID);
   });
 
   function parseSetup(content: string, position, customSchema?: string): Promise<Hover> {
@@ -49,7 +48,7 @@ describe('Hover Tests Detail', () => {
   const inlineObjectSchema = require(path.join(__dirname, './fixtures/testInlineObject.json'));
 
   it('AnyOf complex', async () => {
-    languageService.addSchema(SCHEMA_ID, inlineObjectSchema);
+    schemaProvider.addSchema(SCHEMA_ID, inlineObjectSchema);
     const content = 'nested:\n  scripts:\n    sample:\n      test:';
     const hover = await parseSetup(content, content.length - 2);
     const content2 = 'nested:\n  scripts:\n    sample:\n      test: \n';
@@ -73,7 +72,7 @@ test: \`const1\` | object | Expression | string | obj1
     assert.strictEqual((hover.contents as MarkupContent).value, (hover2.contents as MarkupContent).value);
   });
   it('Source command', async () => {
-    languageService.addSchema('dynamic-schema://schema.json', {
+    schemaProvider.addSchema('dynamic-schema://schema.json', {
       type: 'object',
       properties: {
         scripts: {
@@ -96,7 +95,7 @@ test: \`const1\` | object | Expression | string | obj1
   });
   describe('Images', async () => {
     it('Image should be excluded', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           scripts: {
@@ -111,7 +110,7 @@ test: \`const1\` | object | Expression | string | obj1
       assert.strictEqual((result.contents as MarkupContent).value.includes('<img'), false);
     });
     it('Image should be included', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           scripts: {
@@ -129,7 +128,7 @@ test: \`const1\` | object | Expression | string | obj1
 
   describe('Deprecated', async () => {
     it('Deprecated type should not be in the title', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           scripts: {
@@ -156,7 +155,7 @@ test: \`const1\` | object | Expression | string | obj1
       assert.strictEqual((result.contents as MarkupContent).value.includes('obj1-deprecated'), false);
     });
     it('Deprecated prop should not be in the prop table', async () => {
-      languageService.addSchema(SCHEMA_ID, {
+      schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           scripts: {
