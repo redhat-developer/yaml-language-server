@@ -824,6 +824,8 @@ function validate(
             code: ErrorCode.EnumValueMismatch,
             problemType: ProblemType.constWarning,
             message: 'Must match property: `' + mustMatch + '`', // with values: ' + values.map((value) => '`' + value + '`').join(', '),
+            source: getSchemaSource(schema, originalSchema),
+            schemaUri: getSchemaUri(schema, originalSchema),
             // data: { values }, // not reliable problem with `list: anyOf: []`
           });
           validationResult.enumValueMatch = false;
