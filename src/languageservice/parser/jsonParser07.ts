@@ -409,7 +409,7 @@ export class ValidationResult {
               (problemType !== ProblemType.missingRequiredPropWarning || isArrayEqual(p.problemArgs, bestResult.problemArgs)) // missingProp is merged only with same problemArg
           );
           if (mergingResult) {
-            if (mergingResult.problemArgs.length) {
+            if (mergingResult.problemArgs?.length) {
               mergingResult.problemArgs
                 .filter((p) => !bestResult.problemArgs.includes(p))
                 .forEach((p) => bestResult.problemArgs.push(p));
