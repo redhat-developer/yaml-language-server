@@ -809,7 +809,9 @@ function validate(
           if (!validationData[mustMatch]) {
             validationData[mustMatch] = { node: mustMatchYamlProp.valueNode, values: [] };
           }
-          validationData[mustMatch].values.push(...subValidationResult.enumValues);
+          if (subValidationResult.enumValues?.length) {
+            validationData[mustMatch].values.push(...subValidationResult.enumValues);
+          }
           return false;
         });
 
