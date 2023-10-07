@@ -1,5 +1,3 @@
-'use strict';
-
 import * as assert from 'assert';
 import * as parser from '../src/languageservice/parser/yamlParser07';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
