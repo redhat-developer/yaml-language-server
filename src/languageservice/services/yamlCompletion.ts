@@ -18,7 +18,7 @@ import {
   TextEdit,
 } from 'vscode-languageserver-types';
 import { Node, isPair, isScalar, isMap, YAMLMap, isSeq, YAMLSeq, isNode, Pair } from 'yaml';
-import { Telemetry } from '../telemetry';
+import { Telemetry } from '../yamlLanguageService';
 import { SingleYAMLDocument, YamlDocuments } from '../parser/yaml-documents';
 import { YamlVersion } from '../parser/yamlParser07';
 import { filterInvalidCustomTags, matchOffsetToDocument } from '../utils/arrUtils';

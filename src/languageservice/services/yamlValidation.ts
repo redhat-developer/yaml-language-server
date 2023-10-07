@@ -6,7 +6,7 @@
 'use strict';
 
 import { Diagnostic, Position } from 'vscode-languageserver-types';
-import { LanguageSettings } from '../yamlLanguageService';
+import { LanguageSettings, Telemetry } from '../yamlLanguageService';
 import { YAMLDocument, YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
@@ -16,7 +16,6 @@ import { YAML_SOURCE } from '../parser/jsonParser07';
 import { TextBuffer } from '../utils/textBuffer';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
-import { Telemetry } from '../telemetry';
 import { AdditionalValidator } from './validation/types';
 import { UnusedAnchorsValidator } from './validation/unused-anchors';
 import { YAMLStyleValidator } from './validation/yaml-style';

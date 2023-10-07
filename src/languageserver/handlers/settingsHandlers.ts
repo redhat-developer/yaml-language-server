@@ -7,10 +7,9 @@ import { Connection, DidChangeConfigurationNotification, DocumentFormattingReque
 import { convertErrorToTelemetryMsg } from '../../languageservice/utils/objects';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
-import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
+import { LanguageService, LanguageSettings, SchemaPriority, Telemetry } from '../../languageservice/yamlLanguageService';
 import { SchemaSelectionRequests } from '../../requestTypes';
 import { Settings, SettingsState } from '../../yamlSettings';
-import { Telemetry } from '../../languageservice/telemetry';
 import { ValidationHandler } from './validationHandlers';
 
 export class SettingsHandler {

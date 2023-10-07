@@ -46,7 +46,6 @@ import { FoldingRangesContext, SchemaVersions } from './yamlTypes';
 import { YamlCodeActions } from './services/yamlCodeActions';
 import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
 import { YamlCodeLens } from './services/yamlCodeLens';
-import { Telemetry } from './telemetry';
 import { YamlVersion } from './parser/yamlParser07';
 import { YamlCompletion } from './services/yamlCompletion';
 import { yamlDocumentsCache } from './parser/yaml-documents';
@@ -55,7 +54,25 @@ import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionH
 import { YamlDefinition } from './services/yamlDefinition';
 import { getSelectionRanges } from './services/yamlSelectionRanges';
 
-export { type Telemetry };
+/**
+ * Due to LSP limitation this object must be JSON serializable
+ */
+export interface TelemetryEvent {
+  name: string;
+  type?: string;
+  properties?: unknown;
+  measures?: unknown;
+  traits?: unknown;
+  context?: unknown;
+}
+
+export interface Telemetry {
+  send(event: TelemetryEvent): void;
+
+  sendError(name: string, properties: unknown): void;
+
+  sendTrack(name: string, properties: unknown): void;
+}
 
 export enum SchemaPriority {
   SchemaStore = 1,
