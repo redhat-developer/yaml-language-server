@@ -20,7 +20,10 @@ export class YAMLFormatter {
     }
   }
 
-  public async format(document: TextDocument, options: FormattingOptions & CustomFormatterOptions): Promise<TextEdit[]> {
+  public async format(
+    document: TextDocument,
+    options: Partial<FormattingOptions> & CustomFormatterOptions = {}
+  ): Promise<TextEdit[]> {
     if (!this.formatterEnabled) {
       return [];
     }

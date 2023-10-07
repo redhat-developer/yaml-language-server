@@ -47,7 +47,7 @@ export class YamlCodeLens {
 
     return result;
   }
-  resolveCodeLens(param: CodeLens): Thenable<CodeLens> | CodeLens {
+  resolveCodeLens(param: CodeLens): PromiseLike<CodeLens> | CodeLens {
     return param;
   }
 }
