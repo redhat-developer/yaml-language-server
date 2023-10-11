@@ -259,7 +259,7 @@ export class LanguageHandlers {
     return this.languageService.getCodeAction(textDocument, params);
   }
 
-  codeLensHandler(params: CodeLensParams): Thenable<CodeLens[] | undefined> | CodeLens[] | undefined {
+  codeLensHandler(params: CodeLensParams): PromiseLike<CodeLens[] | undefined> | CodeLens[] | undefined {
     const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
     if (!textDocument) {
       return;
@@ -267,7 +267,7 @@ export class LanguageHandlers {
     return this.languageService.getCodeLens(textDocument);
   }
 
-  codeLensResolveHandler(param: CodeLens): Thenable<CodeLens> | CodeLens {
+  codeLensResolveHandler(param: CodeLens): PromiseLike<CodeLens> | CodeLens {
     return this.languageService.resolveCodeLens(param);
   }
 
