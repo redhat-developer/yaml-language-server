@@ -3,7 +3,6 @@
  *  Copyright (c) Adam Voss. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { Range, Position, TextEdit, FormattingOptions } from 'vscode-languageserver-types';
 import { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
@@ -21,7 +20,7 @@ export class YAMLFormatter {
     }
   }
 
-  public format(document: TextDocument, options: FormattingOptions & CustomFormatterOptions): TextEdit[] {
+  public format(document: TextDocument, options: Partial<FormattingOptions> & CustomFormatterOptions = {}): TextEdit[] {
     if (!this.formatterEnabled) {
       return [];
     }

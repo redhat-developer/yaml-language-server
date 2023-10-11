@@ -3,7 +3,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
 import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
@@ -242,7 +241,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       }
 
       const toWalk: JSONSchema[] = [node];
-      const seen: JSONSchema[] = [];
+      const seen: Set<JSONSchema> = new Set();
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const openPromises: Promise<any>[] = [];
@@ -278,7 +277,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         }
       };
       const handleRef = (next: JSONSchema): void => {
-        const seenRefs = [];
+        const seenRefs = new Set();
         while (next.$ref) {
           const ref = next.$ref;
           const segments = ref.split('#', 2);
@@ -289,9 +288,9 @@ export class YAMLSchemaService extends JSONSchemaService {
             openPromises.push(resolveExternalLink(next, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies));
             return;
           } else {
-            if (seenRefs.indexOf(ref) === -1) {
+            if (!seenRefs.has(ref)) {
               merge(next, parentSchema, parentSchemaURL, segments[1]); // can set next.$ref again, use seenRefs to avoid circle
-              seenRefs.push(ref);
+              seenRefs.add(ref);
             }
           }
         }
@@ -330,10 +329,10 @@ export class YAMLSchemaService extends JSONSchemaService {
 
       while (toWalk.length) {
         const next = toWalk.pop();
-        if (seen.indexOf(next) >= 0) {
+        if (seen.has(next)) {
           continue;
         }
-        seen.push(next);
+        seen.add(next);
         handleRef(next);
       }
       return Promise.all(openPromises);
