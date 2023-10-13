@@ -240,6 +240,19 @@ describe('Default Snippet Tests', () => {
         .then(done, done);
     });
 
+    it('Snippet in string schema should autocomplete on same line (snippet is defined in body property)', (done) => {
+      const content = 'arrayStringValueSnippet:\n - |\n|';
+      const completion = parseSetup(content);
+      completion
+        .then(function (result) {
+          assert.deepEqual(
+            result.items.map((i) => ({ label: i.label, insertText: i.insertText })),
+            [{ insertText: 'banana', label: 'Banana' }]
+          );
+        })
+        .then(done, done);
+    });
+
     it('Snippet in boolean schema should autocomplete on same line', (done) => {
       const content = 'boolean: | |'; // len: 10, pos: 9
       const completion = parseSetup(content);
@@ -273,7 +286,7 @@ describe('Default Snippet Tests', () => {
       const completion = parseSetup(content);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 15); // This is just checking the total number of snippets in the defaultSnippets.json
+          assert.equal(result.items.length, 16); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[4].label, 'longSnippet');
           // eslint-disable-next-line
           assert.equal(

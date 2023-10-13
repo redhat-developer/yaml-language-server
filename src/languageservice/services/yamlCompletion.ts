@@ -814,7 +814,7 @@ export class YamlCompletion {
             collector,
             {},
             'property',
-            Array.isArray(nodeParent.items)
+            Array.isArray(nodeParent.items) && !isInArray
           );
         }
 
@@ -1424,10 +1424,11 @@ export class YamlCompletion {
         } else if (schema.enumDescriptions && i < schema.enumDescriptions.length) {
           documentation = schema.enumDescriptions[i];
         }
+        const insertText = (isArray ? '- ' : '') + this.getInsertTextForValue(enm, separatorAfter, schema.type);
         collector.add({
           kind: this.getSuggestionKind(schema.type),
           label: this.getLabelForValue(enm),
-          insertText: this.getInsertTextForValue(enm, separatorAfter, schema.type),
+          insertText,
           insertTextFormat: InsertTextFormat.Snippet,
           documentation: documentation,
         });

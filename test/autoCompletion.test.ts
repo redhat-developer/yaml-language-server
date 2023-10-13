@@ -1488,7 +1488,7 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
-      it('Array of enum autocomplete on 2nd position without `-`', (done) => {
+      it('Array of enum autocomplete on 2nd position without `-` should auto add `-` and `- (array item)`', (done) => {
         schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -1508,7 +1508,7 @@ describe('Auto Completion Tests', () => {
               result.items.map((i) => ({ label: i.label, insertText: i.insertText })),
               [
                 {
-                  insertText: 'Test',
+                  insertText: '- Test', // auto added `- `
                   label: 'Test',
                 },
                 {
