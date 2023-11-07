@@ -902,6 +902,30 @@ objB:
         })
       );
     });
+    it('indent compensation for partial key with trailing spaces', async () => {
+      const schema: JSONSchema = {
+        type: 'object',
+        properties: {
+          array: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                obj1: {
+                  type: 'object',
+                },
+              },
+            },
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'array:\n  - obj| |  ';
+      const completion = await parseCaret(content);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0].insertText).eql('obj1:\n    ');
+    });
 
     describe('partial value with trailing spaces', () => {
       it('partial value with trailing spaces', async () => {
@@ -1122,6 +1146,41 @@ objB:
       expect(result.items.length).to.be.equal(1);
       expect(result.items[0].insertText).to.be.equal('objA:\n    itemA: ');
     });
+
+    it('array completion - should suggest correct indent when extra spaces after cursor followed by with different array item', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                objA: {
+                  type: 'object',
+                  required: ['itemA'],
+                  properties: {
+                    itemA: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = `
+test:
+  - | |    
+  - objA:
+      itemA: test`;
+      const result = await parseCaret(content);
+
+      expect(result.items.length).to.be.equal(1);
+      expect(result.items[0].insertText).to.be.equal('objA:\n    itemA: ');
+    });
+
     it('array of arrays completion - should suggest correct indent when extra spaces after cursor', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
@@ -1197,6 +1256,44 @@ objB:
 
       expect(result.items.length).to.be.equal(1);
       expect(result.items[0].insertText).to.be.equal('objA:\n    itemA: ');
+    });
+
+    describe('array item with existing property', () => {
+      const schema: JSONSchema = {
+        type: 'object',
+        properties: {
+          array1: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                objA: {
+                  type: 'object',
+                },
+                propB: {
+                  const: 'test',
+                },
+              },
+            },
+          },
+        },
+      };
+      it('should get extra space compensation for the 1st prop in array object item', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = 'array1:\n  - |\n|    propB: test';
+        const result = await parseCaret(content);
+
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0].insertText).to.be.equal('objA:\n    ');
+      });
+      it('should get extra space compensation for the 1st prop in array object item - extra spaces', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = 'array1:\n  - | |   \n    propB: test';
+        const result = await parseCaret(content);
+
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0].insertText).to.be.equal('objA:\n    ');
+      });
     });
   }); //'extra space after cursor'
 
