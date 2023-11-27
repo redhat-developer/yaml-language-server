@@ -49,6 +49,7 @@ export function getSelectionRanges(document: TextDocument, positions: Position[]
           }
           startOffset = newOffset;
         }
+
         // Allow equal for children to override
         if (!currentNode || startOffset >= currentNode.offset) {
           currentNode = node;
@@ -123,9 +124,10 @@ export function getSelectionRanges(document: TextDocument, positions: Position[]
   }
 
   function getTextFromOffsets(startOffset: number, endOffset: number): string {
-    const start = document.positionAt(startOffset);
-    const end = document.positionAt(endOffset);
-    return document.getText({ start, end });
+    return document.getText({
+      start: document.positionAt(startOffset),
+      end: document.positionAt(endOffset),
+    });
   }
 }
 
