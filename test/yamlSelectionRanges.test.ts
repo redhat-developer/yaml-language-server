@@ -12,14 +12,16 @@ function isRangesEqual(range1: Range, range2: Range): boolean {
   );
 }
 
-function expectSelections(selectionRange: SelectionRange, ranges: Range[]): void {
+function expectSelections(selectionRange: SelectionRange | undefined, ranges: Range[]): void {
   for (const range of ranges) {
-    expect(selectionRange.range).eql(range);
+    expect(selectionRange?.range).eql(range);
+
     // Deduplicate ranges
-    while (selectionRange.parent && isRangesEqual(selectionRange.range, selectionRange.parent.range)) {
+    while (selectionRange?.parent && isRangesEqual(selectionRange.range, selectionRange.parent.range)) {
       selectionRange = selectionRange.parent;
     }
-    selectionRange = selectionRange.parent;
+
+    selectionRange = selectionRange?.parent;
   }
 }
 

@@ -3,10 +3,7 @@ import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { ASTNode } from 'vscode-json-languageservice';
 
-export function getSelectionRanges(document: TextDocument, positions: Position[]): SelectionRange[] | undefined {
-  if (!document) {
-    return;
-  }
+export function getSelectionRanges(document: TextDocument, positions: Position[]): SelectionRange[] {
   const doc = yamlDocumentsCache.getYamlDocument(document);
   return positions.map((position) => {
     const ranges = getRanges(position);
