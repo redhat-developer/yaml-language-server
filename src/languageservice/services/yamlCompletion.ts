@@ -326,6 +326,8 @@ export class YamlCompletion {
             Position.create(position.line, lineContent.length)
           );
         }
+      } else if (node && isScalar(node) && node.value === null && currentWord === '-') {
+        this.arrayPrefixIndentation = ' ';
       }
     } else if (node && isScalar(node) && node.value === 'null') {
       const nodeStartPos = document.positionAt(node.range[0]);
