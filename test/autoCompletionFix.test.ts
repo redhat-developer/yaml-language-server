@@ -1144,6 +1144,42 @@ test:
       expect(result.items[0].insertText).to.be.equal('objA:\n    itemA: ');
     });
 
+    it('array completion - should suggest correct indent when cursor is just after hyphen with trailing spaces', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                objA: {
+                  type: 'object',
+                  required: ['itemA'],
+                  properties: {
+                    itemA: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = `
+test:
+  -| |    
+`;
+      const result = await parseCaret(content);
+
+      expect(result.items.length).to.be.equal(1);
+      expect(result.items[0].textEdit).to.deep.equal({
+        newText: ' objA:\n    itemA: ',
+        // range should contains all the trailing spaces
+        range: Range.create(2, 3, 2, 9),
+      });
+    });
     it('array of arrays completion - should suggest correct indent when extra spaces after cursor', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
