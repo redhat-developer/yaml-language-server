@@ -556,6 +556,37 @@ users:
       );
     });
 
+    it('Hover displays enum descriptions if present', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            type: 'string',
+            description: 'should return this description',
+            enum: ['cat', 'dog', 'non'],
+            enumDescriptions: ['', 'Canis familiaris'],
+          },
+        },
+      });
+      const content = 'animal:\n  ca|t|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+Allowed Values:
+
+* \`cat\`
+* \`dog\`: Canis familiaris
+* \`non\`
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
     it('Hover works on examples', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
@@ -577,11 +608,15 @@ users:
         (result.contents as MarkupContent).value,
         `should return this description
 
+Allowed Values:
+
+* \`cat\`
+* \`dog\`
+
 Examples:
 
-\`\`\`"cat"\`\`\`
-
-\`\`\`"dog"\`\`\`
+* \`\`\`"cat"\`\`\`
+* \`\`\`"dog"\`\`\`
 
 Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
