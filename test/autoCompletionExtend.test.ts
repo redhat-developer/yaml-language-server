@@ -20,7 +20,7 @@ import {
 import assert = require('assert');
 import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
-import { addUniquePostfix, removeUniquePostfix } from '../src/languageservice/services/yamlCompletion';
+import { addUniquePostfix, expressionSchemaName, removeUniquePostfix } from '../src/languageservice/services/yamlCompletion';
 import { JSONSchema } from 'vscode-json-languageservice';
 
 describe('Auto Completion Tests Extended', () => {
@@ -51,8 +51,8 @@ describe('Auto Completion Tests Extended', () => {
     ensureExpressionSchema();
   });
 
-  function parseSetup(content: string, position: number): Promise<CompletionList> {
-    const testTextDocument = setupSchemaIDTextDocument(content);
+  function parseSetup(content: string, position: number, schemaName?: string): Promise<CompletionList> {
+    const testTextDocument = setupSchemaIDTextDocument(content, schemaName);
     yamlSettings.documents = new TextDocumentTestManager();
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
     return languageHandler.completionHandler({
@@ -68,10 +68,10 @@ describe('Auto Completion Tests Extended', () => {
    * For example, `content = 'ab|c|d'` places the caret over the `'c'`, at `position = 2`
    * @returns A list of valid completions.
    */
-  function parseCaret(content: string): Promise<CompletionList> {
+  function parseCaret(content: string, schemaName?: string): Promise<CompletionList> {
     const { position, content: content2 } = caretPosition(content);
 
-    const testTextDocument = setupSchemaIDTextDocument(content2);
+    const testTextDocument = setupSchemaIDTextDocument(content2, schemaName);
     yamlSettings.documents = new TextDocumentTestManager();
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
     return languageHandler.completionHandler({
@@ -81,7 +81,7 @@ describe('Auto Completion Tests Extended', () => {
   }
 
   function ensureExpressionSchema(): void {
-    schemaProvider.addSchema('expression', {
+    schemaProvider.addSchema('expression-schema', {
       properties: {
         expression: {
           ...inlineObjectSchema.definitions.Expression,
@@ -439,6 +439,43 @@ describe('Auto Completion Tests Extended', () => {
       const completion = await parseCaret(content);
 
       expect(completion.items.map((i) => i.insertText)).deep.equal(['entity1']);
+    });
+  });
+  describe('Chain of single properties', () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        prop1: {
+          type: 'object',
+          properties: {
+            prop2: {
+              type: 'object',
+              properties: {
+                prop3: {
+                  type: 'object',
+                  properties: {
+                    prop4: {
+                      type: 'object',
+                    },
+                  },
+                  required: ['prop4'],
+                },
+              },
+              required: ['prop3'],
+            },
+          },
+          required: ['prop2'],
+        },
+      },
+      required: ['prop1'],
+    };
+    it('should suggest chain of properties - without parent intellisense', async () => {
+      // `expression` schema is important because client will use it to get completion
+      schemaProvider.addSchema(expressionSchemaName, schema);
+      const content = 'prop1:\n | |';
+      const completion = await parseCaret(content, expressionSchemaName);
+      expect(completion.items.length).to.be.equal(1);
+      expect(completion.items[0].insertText).equal('prop2:\n  prop3:\n    prop4:\n      ');
     });
   });
 });

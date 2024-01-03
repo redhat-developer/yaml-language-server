@@ -69,6 +69,8 @@ interface InsertText {
   insertIndex: number;
 }
 
+export const expressionSchemaName = 'expression';
+
 export class YamlCompletion {
   private customTags: string[];
   private completionEnabled = true;
@@ -943,7 +945,9 @@ export class YamlCompletion {
                   const isNodeNull =
                     (isScalar(originalNode) && originalNode.value === null) ||
                     (isMap(originalNode) && originalNode.items.length === 0);
-                  const existsParentCompletion = schema.schema.required?.length > 0;
+                  // jigx custom - exclude parent skeleton for expression completion, required prop made troubles
+                  const existsParentCompletion = schema.schema.required?.length > 0 && doc.uri !== expressionSchemaName;
+                  // end jigx custom
                   if (!this.parentSkeletonSelectedFirst || !isNodeNull || !existsParentCompletion) {
                     collector.add(
                       {
@@ -957,7 +961,7 @@ export class YamlCompletion {
                     );
                   }
                   // if the prop is required add it also to parent suggestion
-                  if (schema.schema.required?.includes(key)) {
+                  if (existsParentCompletion && schema.schema.required?.includes(key)) {
                     collector.add({
                       label: key,
                       insertText: this.getInsertTextForProperty(
