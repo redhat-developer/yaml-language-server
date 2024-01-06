@@ -1,8 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "required": [
-    "metadata"
-  ],
+  "required": ["metadata"],
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -40,11 +38,7 @@
     "FUNC_item": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "attribute",
-        "operation",
-        "value"
-      ],
+      "required": ["attribute", "operation", "value"],
       "properties": {
         "attribute": {
           "type": "string"
@@ -123,11 +117,7 @@
       }
     },
     "queryItem": {
-      "oneOf": [
-      
-        {"$ref": "#/definitions/AND_Item"},
-        {"$ref": "#/definitions/OR_Item"}
-      ]
+      "oneOf": [{ "$ref": "#/definitions/AND_Item" }, { "$ref": "#/definitions/OR_Item" }]
     }
   }
 }

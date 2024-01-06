@@ -48,7 +48,10 @@ export class YAMLValidation {
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
-  constructor(schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {
+  constructor(
+    schemaService: YAMLSchemaService,
+    private readonly telemetry?: Telemetry
+  ) {
     this.validationEnabled = true;
     this.jsonValidation = new JSONValidation(schemaService, Promise);
   }

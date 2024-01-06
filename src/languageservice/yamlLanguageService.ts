@@ -166,7 +166,7 @@ export interface LanguageService {
   findDocumentSymbols2: (document: TextDocument, context?: DocumentSymbolsContext) => DocumentSymbol[];
   findLinks: (document: TextDocument) => Promise<DocumentLink[]>;
   resetSchema: (uri: string) => boolean;
-  doFormat: (document: TextDocument, options?: CustomFormatterOptions) => TextEdit[];
+  doFormat: (document: TextDocument, options?: CustomFormatterOptions) => Promise<TextEdit[]>;
   doDefinition: (document: TextDocument, params: DefinitionParams) => DefinitionLink[] | undefined;
   doDocumentOnTypeFormatting: (document: TextDocument, params: DocumentOnTypeFormattingParams) => TextEdit[] | undefined;
   addSchema: (schemaID: string, schema: JSONSchema) => void;

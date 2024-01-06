@@ -11,15 +11,14 @@ on:
     branches: [main]
 
 permissions:
-    contents: read
-
+  contents: read
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
   build:
     permissions:
-      checks: write  ## for coveralls
+      checks: write ## for coveralls
       contents: read ##  for docker-push
       security-events: write ## for upload-sarif
     # The type of runner that the job will run on
@@ -38,7 +37,7 @@ jobs:
         uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2.5.2
         with:
           node-version: 16
-          registry-url: "https://registry.npmjs.org"
+          registry-url: 'https://registry.npmjs.org'
 
       # Run install dependencies
       - name: Install dependencies
@@ -84,7 +83,7 @@ jobs:
       - name: Set up QEMU
         if: ${{ success() && runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/main'}}
         uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2.2.0
-  
+
         # Setup DockerBuildx as requirement for docker
       - name: Set up Docker Buildx
         if: ${{ success() && runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/main'}}
@@ -93,7 +92,7 @@ jobs:
         # Login to Quay
       - name: Login to Quay
         if: ${{ success() && runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/main'}}
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc  # v2.2.0
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}

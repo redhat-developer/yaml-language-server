@@ -14,7 +14,10 @@ import { SchemaModificationNotification } from '../../requestTypes';
 
 export class RequestHandlers {
   private languageService: LanguageService;
-  constructor(private readonly connection: Connection, languageService: LanguageService) {
+  constructor(
+    private readonly connection: Connection,
+    languageService: LanguageService
+  ) {
     this.languageService = languageService;
   }
 

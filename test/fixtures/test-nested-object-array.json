@@ -1,11 +1,8 @@
 {
-  "allOf": [
-    { "$ref": "#/$configs/objectA" }, 
-    { "$ref": "#/$configs/objectB" }
-  ],
+  "allOf": [{ "$ref": "#/$configs/objectA" }, { "$ref": "#/$configs/objectB" }],
 
   "$defs": {
-    "name": {      
+    "name": {
       "name": { "type": "string", "description": "name" }
     },
     "prop1": {
@@ -14,7 +11,7 @@
     "prop2": {
       "prop1": { "type": "string", "description": "prop2" }
     }
-  },  
+  },
 
   "$configs": {
     "objectA": {

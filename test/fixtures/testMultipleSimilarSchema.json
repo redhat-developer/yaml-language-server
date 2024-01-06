@@ -15,11 +15,7 @@
             "const": "constForType1"
           }
         },
-        "required": [
-          "objA",
-          "propA",
-          "constA"
-        ],
+        "required": ["objA", "propA", "constA"],
         "type": "object"
       }
     }
@@ -33,9 +29,7 @@
             "type": "object"
           }
         },
-        "required": [
-          "obj2"
-        ],
+        "required": ["obj2"],
         "type": "object"
       },
       "type3": {
@@ -51,11 +45,7 @@
             "const": "constForType3"
           }
         },
-        "required": [
-          "objA",
-          "propA",
-          "constA"
-        ],
+        "required": ["objA", "propA", "constA"],
         "type": "object"
       }
     },
