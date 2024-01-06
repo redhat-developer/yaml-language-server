@@ -26,7 +26,7 @@ import { CST, isMap, isSeq, YAMLMap } from 'yaml';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { FlowStyleRewriter } from '../utils/flow-style-rewriter';
 import { ASTNode } from '../jsonASTTypes';
-import * as _ from 'lodash';
+import cloneDeep  from '@types/lodash.clonedeep';
 import { SourceToken } from 'yaml/dist/parse/cst';
 
 interface YamlDiagnosticData {
@@ -247,7 +247,7 @@ export class YamlCodeActions {
           node = node.parent;
         }
         if (node && isMap(node.internalNode)) {
-          const sorted: YAMLMap = _.cloneDeep(node.internalNode);
+          const sorted: YAMLMap = cloneDeep(node.internalNode);
           if (
             (sorted.srcToken.type === 'block-map' || sorted.srcToken.type === 'flow-collection') &&
             (node.internalNode.srcToken.type === 'block-map' || node.internalNode.srcToken.type === 'flow-collection')

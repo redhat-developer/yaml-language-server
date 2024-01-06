@@ -33,6 +33,7 @@
     "prettier": "2.8.7"
   },
   "dependencies": {
+    "@types/lodash.clonedeep": "^4.5.7",
     "ajv": "^8.11.0",
     "lodash": "4.17.21",
     "request-light": "^0.5.7",
