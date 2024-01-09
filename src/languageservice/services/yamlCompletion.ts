@@ -1205,7 +1205,7 @@ export class YamlCompletion {
         insertText = `\${${insertIndex++}:0}`;
         break;
       case 'string':
-        insertText = `\${${insertIndex++}:""}`;
+        insertText = `\${${insertIndex++}}`;
         break;
       case 'object':
         {
