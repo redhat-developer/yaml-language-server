@@ -18,13 +18,12 @@ import {
   TextEdit,
 } from 'vscode-languageserver-types';
 import { Node, isPair, isScalar, isMap, YAMLMap, isSeq, YAMLSeq, isNode, Pair } from 'yaml';
-import { Telemetry } from '../telemetry';
+import { Telemetry, LanguageSettings } from '../yamlLanguageService';
 import { SingleYAMLDocument, YamlDocuments } from '../parser/yaml-documents';
 import { YamlVersion } from '../parser/yamlParser07';
 import { filterInvalidCustomTags, matchOffsetToDocument } from '../utils/arrUtils';
 import { guessIndentation } from '../utils/indentationGuesser';
 import { TextBuffer } from '../utils/textBuffer';
-import { LanguageSettings } from '../yamlLanguageService';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';

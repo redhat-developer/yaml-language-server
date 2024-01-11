@@ -12,7 +12,7 @@ import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { CodeLens, Command, Range } from 'vscode-languageserver-protocol';
 import { YamlCommands } from '../src/commands';
 import { TelemetryImpl } from '../src/languageserver/telemetry';
-import { Telemetry } from '../src/languageservice/telemetry';
+import { Telemetry } from '../src/languageservice/yamlLanguageService';
 
 const expect = chai.expect;
 chai.use(sinonChai);
