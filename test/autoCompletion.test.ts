@@ -1488,6 +1488,39 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
+      it('Array of enum autocomplete on 2nd position without `-` should auto add `-` and `- (array item)`', (done) => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            references: {
+              type: 'array',
+              items: {
+                enum: ['Test'],
+              },
+            },
+          },
+        });
+        const content = 'references:\n  - Test\n  |\n|';
+        const completion = parseSetup(content);
+        completion
+          .then(function (result) {
+            assert.deepEqual(
+              result.items.map((i) => ({ label: i.label, insertText: i.insertText })),
+              [
+                {
+                  insertText: '- Test', // auto added `- `
+                  label: 'Test',
+                },
+                {
+                  insertText: '- $1\n',
+                  label: '- (array item) ',
+                },
+              ]
+            );
+          })
+          .then(done, done);
+      });
+
       it('Array of objects autocomplete with 4 space indentation check', async () => {
         const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('    ');
         languageService.configure(languageSettingsSetup.languageSettings);
@@ -1926,7 +1959,8 @@ describe('Auto Completion Tests', () => {
       assert.equal(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
 
       const resultDoc2 = await parseSetup(content, content.length);
-      assert.equal(resultDoc2.items.length, 0, `Expecting no items in completion but found ${resultDoc2.items.length}`);
+      assert.equal(resultDoc2.items.length, 1, `Expecting 1 item in completion but found ${resultDoc2.items.length}`);
+      assert.equal(resultDoc2.items[0].label, '- (array item) ');
     });
 
     it('should handle absolute path', async () => {

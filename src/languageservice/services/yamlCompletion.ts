@@ -814,7 +814,7 @@ export class YamlCompletion {
             collector,
             {},
             'property',
-            Array.isArray(nodeParent.items)
+            Array.isArray(nodeParent.items) && !isInArray
           );
         }
 
@@ -910,13 +910,8 @@ export class YamlCompletion {
                 if (index < s.schema.items.length) {
                   this.addSchemaValueCompletions(s.schema.items[index], separatorAfter, collector, types, 'value');
                 }
-              } else if (
-                typeof s.schema.items === 'object' &&
-                (s.schema.items.type === 'object' || isAnyOfAllOfOneOfType(s.schema.items))
-              ) {
-                this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types, 'value', true);
               } else {
-                this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types, 'value');
+                this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types, 'value', true);
               }
             }
           }
@@ -958,7 +953,7 @@ export class YamlCompletion {
     );
     collector.add({
       kind: this.getSuggestionKind(schema.type),
-      label: '- (array item) ' + (schemaType || index),
+      label: '- (array item) ' + ((schemaType || index) ?? ''),
       documentation: documentation,
       insertText: insertText,
       insertTextFormat: InsertTextFormat.Snippet,
@@ -1429,10 +1424,11 @@ export class YamlCompletion {
         } else if (schema.enumDescriptions && i < schema.enumDescriptions.length) {
           documentation = schema.enumDescriptions[i];
         }
+        const insertText = (isArray ? '- ' : '') + this.getInsertTextForValue(enm, separatorAfter, schema.type);
         collector.add({
           kind: this.getSuggestionKind(schema.type),
           label: this.getLabelForValue(enm),
-          insertText: this.getInsertTextForValue(enm, separatorAfter, schema.type),
+          insertText,
           insertTextFormat: InsertTextFormat.Snippet,
           documentation: documentation,
         });
