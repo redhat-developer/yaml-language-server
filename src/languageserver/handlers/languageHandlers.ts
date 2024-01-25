@@ -3,9 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import * as path from 'path';
 import { Connection } from 'vscode-languageserver';
 import {
   CodeActionParams,
+  CodeLensParams,
+  DefinitionParams,
   DidChangeWatchedFilesParams,
   DocumentFormattingParams,
   DocumentLinkParams,
@@ -14,8 +17,6 @@ import {
   FoldingRangeParams,
   SelectionRangeParams,
   TextDocumentPositionParams,
-  CodeLensParams,
-  DefinitionParams,
 } from 'vscode-languageserver-protocol';
 import {
   CodeAction,
@@ -24,23 +25,25 @@ import {
   DefinitionLink,
   DocumentLink,
   DocumentSymbol,
-  Hover,
   FoldingRange,
+  Hover,
   SelectionRange,
   SymbolInformation,
   TextEdit,
 } from 'vscode-languageserver-types';
+import { LanguageModes, getLanguageModes } from '../../embeddedlanguage/modes/languageModes';
 import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
 import { LanguageService } from '../../languageservice/yamlLanguageService';
+import { ResultLimitReachedNotification } from '../../requestTypes';
 import { SettingsState } from '../../yamlSettings';
 import { ValidationHandler } from './validationHandlers';
-import { ResultLimitReachedNotification } from '../../requestTypes';
-import * as path from 'path';
+import { Telemetry } from '../../languageservice/telemetry';
 
 export class LanguageHandlers {
   private languageService: LanguageService;
   private yamlSettings: SettingsState;
   private validationHandler: ValidationHandler;
+  private languageModes: LanguageModes;
 
   pendingLimitExceededWarnings: { [uri: string]: { features: { [name: string]: string }; timeout?: NodeJS.Timeout } };
 
@@ -48,12 +51,27 @@ export class LanguageHandlers {
     private readonly connection: Connection,
     languageService: LanguageService,
     yamlSettings: SettingsState,
-    validationHandler: ValidationHandler
+    validationHandler: ValidationHandler,
+    telemetry: Telemetry
   ) {
     this.languageService = languageService;
     this.yamlSettings = yamlSettings;
     this.validationHandler = validationHandler;
     this.pendingLimitExceededWarnings = {};
+
+    const workspace = {
+      get settings() {
+        return {};
+      },
+      get folders() {
+        return yamlSettings.workspaceFolders;
+      },
+      get root() {
+        return yamlSettings.workspaceRoot.fsPath;
+      },
+    };
+
+    this.languageModes = getLanguageModes(workspace, telemetry);
   }
 
   public registerHandlers(): void {
@@ -70,9 +88,13 @@ export class LanguageHandlers {
     this.connection.onCodeLens((params) => this.codeLensHandler(params));
     this.connection.onCodeLensResolve((params) => this.codeLensResolveHandler(params));
     this.connection.onDefinition((params) => this.definitionHandler(params));
+    this.connection.onShutdown(() => this.languageModes.dispose());
 
     this.yamlSettings.documents.onDidChangeContent((change) => this.cancelLimitExceededWarnings(change.document.uri));
-    this.yamlSettings.documents.onDidClose((event) => this.cancelLimitExceededWarnings(event.document.uri));
+    this.yamlSettings.documents.onDidClose((event) => {
+      this.cancelLimitExceededWarnings(event.document.uri);
+      this.languageModes.onDocumentRemoved(event.document);
+    });
   }
 
   documentLinkHandler(params: DocumentLinkParams): Promise<DocumentLink[]> {
@@ -156,7 +178,7 @@ export class LanguageHandlers {
    * Called when auto-complete is triggered in an editor
    * Returns a list of valid completion items
    */
-  completionHandler(textDocumentPosition: TextDocumentPositionParams): Promise<CompletionList> {
+  async completionHandler(textDocumentPosition: TextDocumentPositionParams): Promise<CompletionList> {
     const textDocument = this.yamlSettings.documents.get(textDocumentPosition.textDocument.uri);
 
     const result: CompletionList = {
@@ -167,6 +189,12 @@ export class LanguageHandlers {
     if (!textDocument) {
       return Promise.resolve(result);
     }
+
+    const mode = this.languageModes.getModeAtPosition(textDocument, textDocumentPosition.position);
+    if (mode?.doComplete) {
+      return mode.doComplete(textDocument, textDocumentPosition.position);
+    }
+
     return this.languageService.doComplete(
       textDocument,
       textDocumentPosition.position,
