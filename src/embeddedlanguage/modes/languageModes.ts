@@ -128,6 +128,8 @@ export function getLanguageModes(workspace: Workspace, telemetry: Telemetry): La
   return {
     getModeAtPosition(document: TextDocument, position: Position): LanguageMode | undefined {
       const languageId = yamlEmbeddedDocument.get(document).getLanguageAtPosition(position);
+      // const languageId = getYamlEmbeddedDocument(document, workspace, telemetry).getLanguageAtPosition(position);
+
       if (languageId) {
         return modes[languageId];
       }

@@ -37,12 +37,11 @@ import {
 } from 'vscode-languageserver-types';
 import { LanguageModes, getLanguageModes, isCompletionItemData } from '../../embeddedlanguage/modes/languageModes';
 import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
+import { Telemetry } from '../../languageservice/telemetry';
 import { LanguageService } from '../../languageservice/yamlLanguageService';
 import { ResultLimitReachedNotification } from '../../requestTypes';
 import { SettingsState } from '../../yamlSettings';
 import { ValidationHandler } from './validationHandlers';
-import { Telemetry } from '../../languageservice/telemetry';
-import { TextDocument } from 'vscode-css-languageservice';
 
 export class LanguageHandlers {
   private languageService: LanguageService;
@@ -232,7 +231,7 @@ export class LanguageHandlers {
   async completionResolveHandler(item: CompletionItem): Promise<CompletionItem | null> {
     const data = item.data;
     if (isCompletionItemData(data)) {
-      const document: TextDocument = this.yamlSettings.documents.get(data.uri);
+      const document = this.yamlSettings.documents.get(data.uri);
 
       if (!document) {
         return null;
