@@ -1,11 +1,25 @@
+import { existsSync, readFileSync } from 'fs';
+import { dirname, join, resolve } from 'path';
 import * as ts from 'typescript';
 import { Position, TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../../languageservice/parser/yaml-documents';
 import { matchOffsetToDocument } from '../../languageservice/utils/arrUtils';
 import { getLanguageModelCache } from '../languageModelCache';
-import { CompletionItemKind, CompletionList, LanguageMode, Range, TextEdit, Workspace } from './languageModes';
-import { join, resolve, dirname } from 'path';
-import { existsSync } from 'fs';
+import {
+  CompletionItem,
+  CompletionItemData,
+  CompletionItemKind,
+  CompletionList,
+  Definition,
+  Hover,
+  LanguageMode,
+  ParameterInformation,
+  Range,
+  SignatureHelp,
+  SignatureInformation,
+  TextEdit,
+  Workspace,
+} from './languageModes';
 
 // eslint-disable-next-line no-useless-escape
 const JS_WORD_REGEX = /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g;
@@ -37,29 +51,8 @@ const append = (result: string, str: string, n: number): string => {
   return result;
 };
 
-const substituteWithWhitespace = (
-  result: string,
-  start: number,
-  end: number,
-  oldContent: string,
-  before: string,
-  after: string
-): string => {
-  result += before;
-  let accumulatedWS = -before.length; // start with a negative value to account for the before string
-  for (let i = start; i < end; i++) {
-    const ch = oldContent[i];
-    if (ch === '\n' || ch === '\r') {
-      // only write new lines, skip the whitespace
-      accumulatedWS = 0;
-      result += ch;
-    } else {
-      accumulatedWS++;
-    }
-  }
-  result = append(result, ' ', accumulatedWS - after.length);
-  result += after;
-  return result;
+export const isCompletionItemData = (value: any): value is CompletionItemData => {
+  return value && typeof value.languageId === 'string' && typeof value.uri === 'string' && typeof value.offset === 'number';
 };
 
 interface LanguageServiceHost {
@@ -237,17 +230,17 @@ const getJsDocumentAtPosition = (document: TextDocument, position: Position): Te
 };
 
 export function getJavaScriptMode(languageId: string, workspace: Workspace): LanguageMode {
-  // const languageServiceHostCache = getLanguageModelCache<LanguageServiceHost>(10, 60, (document) =>
-  //   getLanguageServiceHost(ts.ScriptKind.JS, document)
-  // );
+  const languageServiceHostCache = getLanguageModelCache<LanguageServiceHost>(10, 60, (document) =>
+    getLanguageServiceHost(ts.ScriptKind.JS, document, workspace)
+  );
 
   return {
     getId() {
       return languageId;
     },
     async doComplete(document: TextDocument, position: Position): Promise<CompletionList> {
-      // const host = languageServiceHostCache.get(document);
-      const host = getLanguageServiceHost(ts.ScriptKind.JS, document, workspace);
+      const host = languageServiceHostCache.get(document);
+      // const host = getLanguageServiceHost(ts.ScriptKind.JS, document, workspace);
       const jsDocument = getJsDocumentAtPosition(document, position);
       const jsLanguageService = await host.getLanguageService(jsDocument);
       const offset = jsDocument.offsetAt(position);
@@ -262,6 +255,13 @@ export function getJavaScriptMode(languageId: string, workspace: Workspace): Lan
       return {
         isIncomplete: false,
         items: completions.entries.map((entry) => {
+          const data: CompletionItemData = {
+            // data used for resolving item details (see 'doResolve')
+            languageId,
+            uri: document.uri,
+            offset: offset,
+          };
+
           return {
             uri: document.uri,
             position: position,
@@ -269,12 +269,109 @@ export function getJavaScriptMode(languageId: string, workspace: Workspace): Lan
             sortText: entry.sortText,
             kind: convertKind(entry.kind),
             textEdit: TextEdit.replace(replaceRange, entry.name),
+            data,
           };
         }),
       };
     },
+    async doSignatureHelp(document: TextDocument, position: Position): Promise<SignatureHelp | null> {
+      const host = languageServiceHostCache.get(document);
+      // const host = getLanguageServiceHost(ts.ScriptKind.JS, document, workspace);
+      const jsDocument = getJsDocumentAtPosition(document, position);
+      const jsLanguageService = await host.getLanguageService(jsDocument);
+      const signHelp = jsLanguageService.getSignatureHelpItems(jsDocument.uri, jsDocument.offsetAt(position), undefined);
+      if (signHelp) {
+        const ret: SignatureHelp = {
+          activeSignature: signHelp.selectedItemIndex,
+          activeParameter: signHelp.argumentIndex,
+          signatures: [],
+        };
+        signHelp.items.forEach((item) => {
+          const signature: SignatureInformation = {
+            label: '',
+            documentation: undefined,
+            parameters: [],
+          };
+
+          signature.label += ts.displayPartsToString(item.prefixDisplayParts);
+          item.parameters.forEach((p, i, a) => {
+            const label = ts.displayPartsToString(p.displayParts);
+            const parameter: ParameterInformation = {
+              label: label,
+              documentation: ts.displayPartsToString(p.documentation),
+            };
+            signature.label += label;
+            signature.parameters!.push(parameter);
+            if (i < a.length - 1) {
+              signature.label += ts.displayPartsToString(item.separatorDisplayParts);
+            }
+          });
+          signature.label += ts.displayPartsToString(item.suffixDisplayParts);
+          ret.signatures.push(signature);
+        });
+        return ret;
+      }
+      return null;
+    },
+    async doHover(document: TextDocument, position: Position): Promise<Hover | null> {
+      const host = languageServiceHostCache.get(document);
+      // const host = getLanguageServiceHost(ts.ScriptKind.JS, document, workspace);
+      const jsDocument = getJsDocumentAtPosition(document, position);
+      const jsLanguageService = await host.getLanguageService(jsDocument);
+      const info = jsLanguageService.getQuickInfoAtPosition(jsDocument.uri, jsDocument.offsetAt(position));
+      if (info) {
+        const contents = ts.displayPartsToString(info.displayParts);
+        return {
+          range: convertRange(jsDocument, info.textSpan),
+          contents: ['```typescript', contents, '```'].join('\n'),
+        };
+      }
+      return null;
+    },
+    async doResolve(document: TextDocument, item: CompletionItem): Promise<CompletionItem> {
+      if (isCompletionItemData(item.data)) {
+        const host = languageServiceHostCache.get(document);
+        // const host = getLanguageServiceHost(ts.ScriptKind.JS, document, workspace);
+        const jsDocument = getJsDocumentAtPosition(document, document.positionAt(item.data.offset));
+        const jsLanguageService = await host.getLanguageService(jsDocument);
+        const details = jsLanguageService.getCompletionEntryDetails(
+          jsDocument.uri,
+          item.data.offset,
+          item.label,
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        );
+        if (details) {
+          item.detail = ts.displayPartsToString(details.displayParts);
+          item.documentation = ts.displayPartsToString(details.documentation);
+          delete item.data;
+        }
+      }
+      return item;
+    },
+    async findDefinition(document: TextDocument, position: Position): Promise<Definition | null> {
+      const host = languageServiceHostCache.get(document);
+      // const host = getLanguageServiceHost(ts.ScriptKind.JS, document, workspace);
+      const jsDocument = getJsDocumentAtPosition(document, position);
+      const jsLanguageService = await host.getLanguageService(jsDocument);
+      const definition = jsLanguageService.getDefinitionAtPosition(jsDocument.uri, jsDocument.offsetAt(position));
+      if (definition) {
+        return definition.map((d) => {
+          const defDoc = TextDocument.create(d.fileName, 'javascript', 1, readFileSync(d.fileName).toString());
+          const range = convertRange(defDoc, d.textSpan);
+
+          return {
+            uri: d.fileName,
+            range,
+          };
+        });
+      }
+      return null;
+    },
     dispose() {
-      // languageServiceHostCache.dispose();
+      languageServiceHostCache.dispose();
     },
   };
 }

@@ -16,28 +16,33 @@ import {
   DocumentSymbolParams,
   FoldingRangeParams,
   SelectionRangeParams,
+  SignatureHelpParams,
   TextDocumentPositionParams,
 } from 'vscode-languageserver-protocol';
 import {
   CodeAction,
   CodeLens,
+  CompletionItem,
   CompletionList,
+  Definition,
   DefinitionLink,
   DocumentLink,
   DocumentSymbol,
   FoldingRange,
   Hover,
   SelectionRange,
+  SignatureHelp,
   SymbolInformation,
   TextEdit,
 } from 'vscode-languageserver-types';
-import { LanguageModes, getLanguageModes } from '../../embeddedlanguage/modes/languageModes';
+import { LanguageModes, getLanguageModes, isCompletionItemData } from '../../embeddedlanguage/modes/languageModes';
 import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
 import { LanguageService } from '../../languageservice/yamlLanguageService';
 import { ResultLimitReachedNotification } from '../../requestTypes';
 import { SettingsState } from '../../yamlSettings';
 import { ValidationHandler } from './validationHandlers';
 import { Telemetry } from '../../languageservice/telemetry';
+import { TextDocument } from 'vscode-css-languageservice';
 
 export class LanguageHandlers {
   private languageService: LanguageService;
@@ -79,6 +84,8 @@ export class LanguageHandlers {
     this.connection.onDocumentSymbol((documentSymbolParams) => this.documentSymbolHandler(documentSymbolParams));
     this.connection.onDocumentFormatting((formatParams) => this.formatterHandler(formatParams));
     this.connection.onHover((textDocumentPositionParams) => this.hoverHandler(textDocumentPositionParams));
+    this.connection.onCompletionResolve((completionResolveParams) => this.completionResolveHandler(completionResolveParams));
+    this.connection.onSignatureHelp((signatureHelpParams) => this.signatureHelpHandler(signatureHelpParams));
     this.connection.onCompletion((textDocumentPosition) => this.completionHandler(textDocumentPosition));
     this.connection.onDidChangeWatchedFiles((change) => this.watchedFilesHandler(change));
     this.connection.onFoldingRanges((params) => this.foldingRangeHandler(params));
@@ -171,7 +178,27 @@ export class LanguageHandlers {
       return Promise.resolve(undefined);
     }
 
+    const mode = this.languageModes.getModeAtPosition(document, textDocumentPositionParams.position);
+    if (mode?.doHover) {
+      return mode.doHover(document, textDocumentPositionParams.position);
+    }
+
     return this.languageService.doHover(document, textDocumentPositionParams.position);
+  }
+
+  async signatureHelpHandler(signatureHelp: SignatureHelpParams): Promise<SignatureHelp | null> {
+    const textDocument = this.yamlSettings.documents.get(signatureHelp.textDocument.uri);
+
+    if (!textDocument) {
+      return null;
+    }
+
+    const mode = this.languageModes.getModeAtPosition(textDocument, signatureHelp.position);
+    if (mode?.doSignatureHelp) {
+      return mode.doSignatureHelp(textDocument, signatureHelp.position);
+    }
+
+    return null;
   }
 
   /**
@@ -200,6 +227,23 @@ export class LanguageHandlers {
       textDocumentPosition.position,
       isKubernetesAssociatedDocument(textDocument, this.yamlSettings.specificValidatorPaths)
     );
+  }
+
+  async completionResolveHandler(item: CompletionItem): Promise<CompletionItem | null> {
+    const data = item.data;
+    if (isCompletionItemData(data)) {
+      const document: TextDocument = this.yamlSettings.documents.get(data.uri);
+
+      if (!document) {
+        return null;
+      }
+
+      const mode = this.languageModes.getModeAtPosition(document, document.positionAt(data.offset));
+      if (mode && mode.doResolve) {
+        return mode.doResolve(document, item);
+      }
+    }
+    return item;
   }
 
   /**
@@ -269,10 +313,15 @@ export class LanguageHandlers {
     return this.languageService.resolveCodeLens(param);
   }
 
-  definitionHandler(params: DefinitionParams): DefinitionLink[] {
+  definitionHandler(params: DefinitionParams): DefinitionLink[] | Promise<Definition> {
     const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
     if (!textDocument) {
       return;
+    }
+
+    const mode = this.languageModes.getModeAtPosition(textDocument, params.position);
+    if (mode?.findDefinition) {
+      return mode.findDefinition(textDocument, params.position);
     }
 
     return this.languageService.doDefinition(textDocument, params);

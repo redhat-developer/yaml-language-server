@@ -3,7 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CompletionList, Position, Range, WorkspaceFolder } from 'vscode-languageserver';
+import {
+  CompletionItem,
+  CompletionList,
+  Definition,
+  Hover,
+  Position,
+  Range,
+  SignatureHelp,
+  WorkspaceFolder,
+} from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Telemetry } from '../../languageservice/telemetry';
 import { LanguageModelCache, getLanguageModelCache } from '../languageModelCache';
@@ -71,15 +80,15 @@ export interface LanguageMode {
   // getSelectionRange?: (document: TextDocument, position: Position) => Promise<SelectionRange>;
   // doValidation?: (document: TextDocument) => Promise<Diagnostic[]>;
   doComplete?: (document: TextDocument, position: Position) => Promise<CompletionList>;
-  // doResolve?: (document: TextDocument, item: CompletionItem) => Promise<CompletionItem>;
-  // doHover?: (document: TextDocument, position: Position) => Promise<Hover | null>;
-  // doSignatureHelp?: (document: TextDocument, position: Position) => Promise<SignatureHelp | null>;
+  doResolve?: (document: TextDocument, item: CompletionItem) => Promise<CompletionItem>;
+  doHover?: (document: TextDocument, position: Position) => Promise<Hover | null>;
+  doSignatureHelp?: (document: TextDocument, position: Position) => Promise<SignatureHelp | null>;
   // doRename?: (document: TextDocument, position: Position, newName: string) => Promise<WorkspaceEdit | null>;
   // doLinkedEditing?: (document: TextDocument, position: Position) => Promise<Range[] | null>;
   // findDocumentHighlight?: (document: TextDocument, position: Position) => Promise<DocumentHighlight[]>;
   // findDocumentSymbols?: (document: TextDocument) => Promise<SymbolInformation[]>;
   // findDocumentLinks?: (document: TextDocument, documentContext: DocumentContext) => Promise<DocumentLink[]>;
-  // findDefinition?: (document: TextDocument, position: Position) => Promise<Definition | null>;
+  findDefinition?: (document: TextDocument, position: Position) => Promise<Definition | null>;
   // findReferences?: (document: TextDocument, position: Position) => Promise<Location[]>;
   // format?: (document: TextDocument, range: Range, options: FormattingOptions) => Promise<TextEdit[]>;
   // findDocumentColors?: (document: TextDocument) => Promise<ColorInformation[]>;

@@ -99,7 +99,7 @@ export class YAMLServerInit {
     return {
       capabilities: {
         textDocumentSync: TextDocumentSyncKind.Incremental,
-        completionProvider: { resolveProvider: false },
+        completionProvider: { resolveProvider: true, triggerCharacters: ['.', ':', '<', '"', '=', '/'] },
         hoverProvider: true,
         documentSymbolProvider: true,
         documentFormattingProvider: false,
@@ -118,6 +118,7 @@ export class YAMLServerInit {
         executeCommandProvider: {
           commands: Object.keys(YamlCommands).map((k) => YamlCommands[k]),
         },
+        signatureHelpProvider: { triggerCharacters: ['('] },
         workspace: {
           workspaceFolders: {
             changeNotifications: true,
