@@ -1,5 +1,4 @@
 import { stripIndent } from 'common-tags';
-import { randomUUID } from 'crypto';
 import { existsSync, readFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import * as ts from 'typescript';
@@ -378,7 +377,7 @@ const getJsDocumentAtPosition = (document: TextDocument, position: Position): Te
       .join('\n');
   }
 
-  return TextDocument.create(`${document.uri}.${randomUUID()}`, 'javascript', document.version, content);
+  return TextDocument.create(document.uri, 'javascript', document.version, content);
 };
 
 export function getJavaScriptMode(languageId: string, workspace: Workspace): LanguageMode {
