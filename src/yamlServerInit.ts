@@ -99,7 +99,7 @@ export class YAMLServerInit {
     return {
       capabilities: {
         textDocumentSync: TextDocumentSyncKind.Incremental,
-        completionProvider: { resolveProvider: false },
+        completionProvider: { resolveProvider: true, triggerCharacters: ['.', ':', '<', '"', '=', '/'] },
         hoverProvider: true,
         documentSymbolProvider: true,
         documentFormattingProvider: false,
@@ -118,6 +118,7 @@ export class YAMLServerInit {
         executeCommandProvider: {
           commands: Object.keys(YamlCommands).map((k) => YamlCommands[k]),
         },
+        signatureHelpProvider: { triggerCharacters: ['('] },
         workspace: {
           workspaceFolders: {
             changeNotifications: true,
@@ -139,7 +140,13 @@ export class YAMLServerInit {
       this.telemetry
     );
     // this.settingsHandler.registerHandlers();
-    this.languageHandler = new LanguageHandlers(this.connection, this.languageService, this.yamlSettings, this.validationHandler);
+    this.languageHandler = new LanguageHandlers(
+      this.connection,
+      this.languageService,
+      this.yamlSettings,
+      this.validationHandler,
+      this.telemetry
+    );
     this.languageHandler.registerHandlers();
     new NotificationHandlers(this.connection, this.languageService, this.yamlSettings, this.settingsHandler).registerHandlers();
     new RequestHandlers(this.connection, this.languageService).registerHandlers();
