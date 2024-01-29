@@ -5,11 +5,7 @@
     "lib": ["WebWorker"],
     "module": "esnext",
     "outDir": "./lib/esm",
+    "resolveJsonModule": true
   },
-  "exclude": [
-    "node_modules",
-    "out",
-    "lib",
-    "test"
-  ]
+  "exclude": ["node_modules", "out", "lib", "test"]
 }

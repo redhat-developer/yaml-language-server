@@ -1,0 +1,997 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema",
+  "$id": "https://ebuilder.macrosreply.info/schemas/ebuilder.component.schema.json",
+  "title": "eBuilder engine - Component schema",
+  "description": "eBuilder engine - Component schema",
+  "type": "object",
+  "properties": {
+    "includes": {
+      "description": "Root includes",
+      "type": "object",
+      "additionalProperties": { "type": "string", "pattern": "^(.)?\\S+\\.(ya?ml|vue)$" }
+    },
+    "slot": {
+      "description": "Root slot",
+      "type": "string"
+    },
+    "style": {
+      "description": "Root style",
+      "type": "string"
+    },
+    "children": {
+      "$ref": "#/definitions/children"
+    },
+    "authorize": {
+      "$ref": "#/definitions/authorize"
+    },
+    "rootVars": {
+      "$ref": "#/definitions/rootVars"
+    },
+    "rootStore": {
+      "$ref": "#/definitions/rootStore"
+    },
+    "on": {
+      "$ref": "#/definitions/on"
+    }
+  },
+  "definitions": {
+    "htmlChildren": {
+      "type": "object",
+      "anyOf": [
+        {
+          "description": "HTML tag",
+          "type": "object",
+          "properties": {
+            "name": {
+              "enum": [
+                "a",
+                "abbr",
+                "address",
+                "area",
+                "article",
+                "aside",
+                "audio",
+                "b",
+                "bdi",
+                "bdo",
+                "blockquote",
+                "body",
+                "br",
+                "button",
+                "canvas",
+                "caption",
+                "cite",
+                "code",
+                "col",
+                "colgroup",
+                "command",
+                "datalist",
+                "dd",
+                "del",
+                "details",
+                "dfn",
+                "div",
+                "dl",
+                "dt",
+                "em",
+                "embed",
+                "fieldset",
+                "figcaption",
+                "figure",
+                "footer",
+                "form",
+                "h1",
+                "h2",
+                "h3",
+                "h4",
+                "h5",
+                "h6",
+                "header",
+                "hr",
+                "html",
+                "i",
+                "iframe",
+                "img",
+                "input",
+                "ins",
+                "kbd",
+                "keygen",
+                "label",
+                "legend",
+                "li",
+                "main",
+                "map",
+                "mark",
+                "menu",
+                "meter",
+                "nav",
+                "object",
+                "ol",
+                "optgroup",
+                "option",
+                "output",
+                "p",
+                "param",
+                "pre",
+                "progress",
+                "q",
+                "rp",
+                "rt",
+                "ruby",
+                "s",
+                "samp",
+                "section",
+                "select",
+                "small",
+                "source",
+                "span",
+                "strong",
+                "sub",
+                "summary",
+                "sup",
+                "table",
+                "tbody",
+                "td",
+                "textarea",
+                "tfoot",
+                "th",
+                "thead",
+                "time",
+                "tr",
+                "track",
+                "u",
+                "ul",
+                "var",
+                "video",
+                "wbr"
+              ]
+            },
+            "slot": {
+              "type": "string"
+            },
+            "props": {
+              "type": "object",
+              "properties": {
+                "accept": {
+                  "$ref": "#/definitions/any"
+                },
+                "accesskey": {
+                  "$ref": "#/definitions/any"
+                },
+                "action": {
+                  "$ref": "#/definitions/any"
+                },
+                "align": {
+                  "$ref": "#/definitions/any"
+                },
+                "alt": {
+                  "$ref": "#/definitions/any"
+                },
+                "async": {
+                  "$ref": "#/definitions/any"
+                },
+                "autocomplete": {
+                  "$ref": "#/definitions/any"
+                },
+                "autofocus": {
+                  "$ref": "#/definitions/any"
+                },
+                "autoplay": {
+                  "$ref": "#/definitions/any"
+                },
+                "bgcolor": {
+                  "$ref": "#/definitions/any"
+                },
+                "border": {
+                  "$ref": "#/definitions/any"
+                },
+                "charset": {
+                  "$ref": "#/definitions/any"
+                },
+                "checked": {
+                  "$ref": "#/definitions/any"
+                },
+                "cite": {
+                  "$ref": "#/definitions/any"
+                },
+                "class": {
+                  "$ref": "#/definitions/any"
+                },
+                "color": {
+                  "$ref": "#/definitions/any"
+                },
+                "cols": {
+                  "$ref": "#/definitions/any"
+                },
+                "colspan": {
+                  "$ref": "#/definitions/any"
+                },
+                "content": {
+                  "$ref": "#/definitions/any"
+                },
+                "contenteditable": {
+                  "$ref": "#/definitions/any"
+                },
+                "contextmenu": {
+                  "$ref": "#/definitions/any"
+                },
+                "controls": {
+                  "$ref": "#/definitions/any"
+                },
+                "coords": {
+                  "$ref": "#/definitions/any"
+                },
+                "data": {
+                  "$ref": "#/definitions/any"
+                },
+                "datetime": {
+                  "$ref": "#/definitions/any"
+                },
+                "default": {
+                  "$ref": "#/definitions/any"
+                },
+                "defer": {
+                  "$ref": "#/definitions/any"
+                },
+                "dir": {
+                  "$ref": "#/definitions/any"
+                },
+                "dirname": {
+                  "$ref": "#/definitions/any"
+                },
+                "disabled": {
+                  "$ref": "#/definitions/any"
+                },
+                "download": {
+                  "$ref": "#/definitions/any"
+                },
+                "draggable": {
+                  "$ref": "#/definitions/any"
+                },
+                "dropzone": {
+                  "$ref": "#/definitions/any"
+                },
+                "enctype": {
+                  "$ref": "#/definitions/any"
+                },
+                "for": {
+                  "$ref": "#/definitions/any"
+                },
+                "form": {
+                  "$ref": "#/definitions/any"
+                },
+                "formaction": {
+                  "$ref": "#/definitions/any"
+                },
+                "headers": {
+                  "$ref": "#/definitions/any"
+                },
+                "height": {
+                  "$ref": "#/definitions/any"
+                },
+                "hidden": {
+                  "$ref": "#/definitions/any"
+                },
+                "high": {
+                  "$ref": "#/definitions/any"
+                },
+                "href": {
+                  "$ref": "#/definitions/any"
+                },
+                "hreflang": {
+                  "$ref": "#/definitions/any"
+                },
+                "http": {
+                  "$ref": "#/definitions/any"
+                },
+                "id": {
+                  "$ref": "#/definitions/any"
+                },
+                "ismap": {
+                  "$ref": "#/definitions/any"
+                },
+                "kind": {
+                  "$ref": "#/definitions/any"
+                },
+                "label": {
+                  "$ref": "#/definitions/any"
+                },
+                "lang": {
+                  "$ref": "#/definitions/any"
+                },
+                "list": {
+                  "$ref": "#/definitions/any"
+                },
+                "loop": {
+                  "$ref": "#/definitions/any"
+                },
+                "low": {
+                  "$ref": "#/definitions/any"
+                },
+                "max": {
+                  "$ref": "#/definitions/any"
+                },
+                "maxlength": {
+                  "$ref": "#/definitions/any"
+                },
+                "media": {
+                  "$ref": "#/definitions/any"
+                },
+                "method": {
+                  "$ref": "#/definitions/any"
+                },
+                "min": {
+                  "$ref": "#/definitions/any"
+                },
+                "multiple": {
+                  "$ref": "#/definitions/any"
+                },
+                "muted": {
+                  "$ref": "#/definitions/any"
+                },
+                "name": {
+                  "$ref": "#/definitions/any"
+                },
+                "novalidate": {
+                  "$ref": "#/definitions/any"
+                },
+                "onabort": {
+                  "$ref": "#/definitions/any"
+                },
+                "onafterprint": {
+                  "$ref": "#/definitions/any"
+                },
+                "onbeforeprint": {
+                  "$ref": "#/definitions/any"
+                },
+                "onbeforeunload": {
+                  "$ref": "#/definitions/any"
+                },
+                "onblur": {
+                  "$ref": "#/definitions/any"
+                },
+                "oncanplay": {
+                  "$ref": "#/definitions/any"
+                },
+                "oncanplaythrough": {
+                  "$ref": "#/definitions/any"
+                },
+                "onchange": {
+                  "$ref": "#/definitions/any"
+                },
+                "onclick": {
+                  "$ref": "#/definitions/any"
+                },
+                "oncontextmenu": {
+                  "$ref": "#/definitions/any"
+                },
+                "oncopy": {
+                  "$ref": "#/definitions/any"
+                },
+                "oncuechange": {
+                  "$ref": "#/definitions/any"
+                },
+                "oncut": {
+                  "$ref": "#/definitions/any"
+                },
+                "ondblclick": {
+                  "$ref": "#/definitions/any"
+                },
+                "ondrag": {
+                  "$ref": "#/definitions/any"
+                },
+                "ondragend": {
+                  "$ref": "#/definitions/any"
+                },
+                "ondragenter": {
+                  "$ref": "#/definitions/any"
+                },
+                "ondragleave": {
+                  "$ref": "#/definitions/any"
+                },
+                "ondragover": {
+                  "$ref": "#/definitions/any"
+                },
+                "ondragstart": {
+                  "$ref": "#/definitions/any"
+                },
+                "ondrop": {
+                  "$ref": "#/definitions/any"
+                },
+                "ondurationchange": {
+                  "$ref": "#/definitions/any"
+                },
+                "onemptied": {
+                  "$ref": "#/definitions/any"
+                },
+                "onended": {
+                  "$ref": "#/definitions/any"
+                },
+                "onerror": {
+                  "$ref": "#/definitions/any"
+                },
+                "onfocus": {
+                  "$ref": "#/definitions/any"
+                },
+                "onhashchange": {
+                  "$ref": "#/definitions/any"
+                },
+                "oninput": {
+                  "$ref": "#/definitions/any"
+                },
+                "oninvalid": {
+                  "$ref": "#/definitions/any"
+                },
+                "onkeydown": {
+                  "$ref": "#/definitions/any"
+                },
+                "onkeypress": {
+                  "$ref": "#/definitions/any"
+                },
+                "onkeyup": {
+                  "$ref": "#/definitions/any"
+                },
+                "onload": {
+                  "$ref": "#/definitions/any"
+                },
+                "onloadeddata": {
+                  "$ref": "#/definitions/any"
+                },
+                "onloadedmetadata": {
+                  "$ref": "#/definitions/any"
+                },
+                "onloadstart": {
+                  "$ref": "#/definitions/any"
+                },
+                "onmousedown": {
+                  "$ref": "#/definitions/any"
+                },
+                "onmousemove": {
+                  "$ref": "#/definitions/any"
+                },
+                "onmouseout": {
+                  "$ref": "#/definitions/any"
+                },
+                "onmouseover": {
+                  "$ref": "#/definitions/any"
+                },
+                "onmouseup": {
+                  "$ref": "#/definitions/any"
+                },
+                "onmousewheel": {
+                  "$ref": "#/definitions/any"
+                },
+                "onoffline": {
+                  "$ref": "#/definitions/any"
+                },
+                "ononline": {
+                  "$ref": "#/definitions/any"
+                },
+                "onpagehide": {
+                  "$ref": "#/definitions/any"
+                },
+                "onpageshow": {
+                  "$ref": "#/definitions/any"
+                },
+                "onpaste": {
+                  "$ref": "#/definitions/any"
+                },
+                "onpause": {
+                  "$ref": "#/definitions/any"
+                },
+                "onplay": {
+                  "$ref": "#/definitions/any"
+                },
+                "onplaying": {
+                  "$ref": "#/definitions/any"
+                },
+                "onpopstate": {
+                  "$ref": "#/definitions/any"
+                },
+                "onprogress": {
+                  "$ref": "#/definitions/any"
+                },
+                "onratechange": {
+                  "$ref": "#/definitions/any"
+                },
+                "onreset": {
+                  "$ref": "#/definitions/any"
+                },
+                "onresize": {
+                  "$ref": "#/definitions/any"
+                },
+                "onscroll": {
+                  "$ref": "#/definitions/any"
+                },
+                "onsearch": {
+                  "$ref": "#/definitions/any"
+                },
+                "onseeked": {
+                  "$ref": "#/definitions/any"
+                },
+                "onseeking": {
+                  "$ref": "#/definitions/any"
+                },
+                "onselect": {
+                  "$ref": "#/definitions/any"
+                },
+                "onshow": {
+                  "$ref": "#/definitions/any"
+                },
+                "onstalled": {
+                  "$ref": "#/definitions/any"
+                },
+                "onstorage": {
+                  "$ref": "#/definitions/any"
+                },
+                "onsubmit": {
+                  "$ref": "#/definitions/any"
+                },
+                "onsuspend": {
+                  "$ref": "#/definitions/any"
+                },
+                "ontimeupdate": {
+                  "$ref": "#/definitions/any"
+                },
+                "ontoggle": {
+                  "$ref": "#/definitions/any"
+                },
+                "onunload": {
+                  "$ref": "#/definitions/any"
+                },
+                "onvolumechange": {
+                  "$ref": "#/definitions/any"
+                },
+                "onwaiting": {
+                  "$ref": "#/definitions/any"
+                },
+                "onwheel": {
+                  "$ref": "#/definitions/any"
+                },
+                "open": {
+                  "$ref": "#/definitions/any"
+                },
+                "optimum": {
+                  "$ref": "#/definitions/any"
+                },
+                "pattern": {
+                  "$ref": "#/definitions/any"
+                },
+                "placeholder": {
+                  "$ref": "#/definitions/any"
+                },
+                "poster": {
+                  "$ref": "#/definitions/any"
+                },
+                "preload": {
+                  "$ref": "#/definitions/any"
+                },
+                "readonly": {
+                  "$ref": "#/definitions/any"
+                },
+                "rel": {
+                  "$ref": "#/definitions/any"
+                },
+                "required": {
+                  "$ref": "#/definitions/any"
+                },
+                "reversed": {
+                  "$ref": "#/definitions/any"
+                },
+                "rows": {
+                  "$ref": "#/definitions/any"
+                },
+                "rowspan": {
+                  "$ref": "#/definitions/any"
+                },
+                "sandbox": {
+                  "$ref": "#/definitions/any"
+                },
+                "scope": {
+                  "$ref": "#/definitions/any"
+                },
+                "selected": {
+                  "$ref": "#/definitions/any"
+                },
+                "shape": {
+                  "$ref": "#/definitions/any"
+                },
+                "size": {
+                  "$ref": "#/definitions/any"
+                },
+                "sizes": {
+                  "$ref": "#/definitions/any"
+                },
+                "span": {
+                  "$ref": "#/definitions/any"
+                },
+                "spellcheck": {
+                  "$ref": "#/definitions/any"
+                },
+                "src": {
+                  "$ref": "#/definitions/any"
+                },
+                "srcdoc": {
+                  "$ref": "#/definitions/any"
+                },
+                "srclang": {
+                  "$ref": "#/definitions/any"
+                },
+                "srcset": {
+                  "$ref": "#/definitions/any"
+                },
+                "start": {
+                  "$ref": "#/definitions/any"
+                },
+                "step": {
+                  "$ref": "#/definitions/any"
+                },
+                "style": {
+                  "$ref": "#/definitions/any"
+                },
+                "tabindex": {
+                  "$ref": "#/definitions/any"
+                },
+                "target": {
+                  "$ref": "#/definitions/any"
+                },
+                "title": {
+                  "$ref": "#/definitions/any"
+                },
+                "translate": {
+                  "$ref": "#/definitions/any"
+                },
+                "type": {
+                  "$ref": "#/definitions/any"
+                },
+                "usemap": {
+                  "$ref": "#/definitions/any"
+                },
+                "value": {
+                  "$ref": "#/definitions/any"
+                },
+                "width": {
+                  "$ref": "#/definitions/any"
+                },
+                "wrap": {
+                  "$ref": "#/definitions/any"
+                }
+              }
+            },
+            "children": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "description": "Component children",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/child"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "ebChildren": {
+      "type": "object",
+      "anyOf": [
+        {
+          "description": "eBuilder builtin component",
+          "type": "object",
+          "properties": {
+            "name": {
+              "enum": [
+                "eb-config-provider",
+                "eb-vnode",
+                "eb-button",
+                "eb-alert",
+                "eb-router-link",
+                "eb-brand-logo",
+                "eb-breadcrumb",
+                "eb-router-prompt",
+                "eb-if",
+                "eb-hover-overlay",
+                "eb-card",
+                "eb-col",
+                "eb-collapse",
+                "eb-descriptions",
+                "eb-for-in",
+                "eb-form",
+                "eb-icon",
+                "eb-list",
+                "eb-menu",
+                "eb-context-menu",
+                "eb-modal",
+                "eb-router-view",
+                "eb-row",
+                "eb-tab-content",
+                "eb-table",
+                "eb-tabs",
+                "eb-typography",
+                "eb-user-menu",
+                "eb-user-unauthorized",
+                "eb-image",
+                "eb-tree",
+                "eb-loading",
+                "eb-monaco-viewer",
+                "eb-files-drop",
+                "eb-pdf-viewer",
+                "eb-layout-master",
+                "eb-layout-master-tabs",
+                "eb-layout-sidebar",
+                "eb-layout-sidebar-menu",
+                "eb-layout-main",
+                "eb-cell-form-item",
+                "eb-checkbox",
+                "eb-datetime",
+                "eb-file",
+                "eb-hidden",
+                "eb-html-editor",
+                "eb-number",
+                "eb-password",
+                "eb-select",
+                "eb-select-search",
+                "eb-text",
+                "eb-textarea",
+                "eb-transfer",
+                "eb-radio",
+                "eb-monaco-editor"
+              ]
+            },
+            "slot": {
+              "type": "string"
+            },
+            "props": {
+              "type": "object"
+            },
+            "children": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "description": "Component children",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/child"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "includedChildren": {
+      "type": "object",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "slot": {
+              "type": "string"
+            },
+            "props": {
+              "type": "object"
+            },
+            "children": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "description": "Component children",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/child"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "child": {
+      "type": "object",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/htmlChildren"
+        },
+        {
+          "$ref": "#/definitions/ebChildren"
+        },
+        {
+          "$ref": "#/definitions/includedChildren"
+        }
+      ]
+    },
+    "children": {
+      "description": "Component children",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/child"
+      }
+    },
+    "rootVars": {
+      "description": "Component root variables",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object"
+              }
+            ]
+          }
+        },
+        {
+          "type": "object"
+        }
+      ]
+    },
+    "rootStore": {
+      "description": "Component root store",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "storeKey": {
+            "type": "string"
+          },
+          "initialState": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "on": {
+      "description": "Component event listeners",
+      "type": "object",
+      "properties": {
+        "load": {
+          "$ref": "#/definitions/emit"
+        },
+        "unload": {
+          "$ref": "#/definitions/emit"
+        },
+        "emit": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "handler": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/definitions/emit"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "watch": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string"
+              },
+              "handler": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/definitions/emit"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "emit": {
+      "description": "Event emit",
+      "type": "object",
+      "properties": {
+        "emit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "checks": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "params": {
+                  "type": "object"
+                }
+              }
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "depends": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "checks": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "params": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "authorize": {
+      "description": "Authorize action",
+      "type": "object",
+      "properties": {
+        "policy": {
+          "type": "string"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "enum": ["Modify", "Show", "Deny"]
+            }
+          }
+        }
+      }
+    },
+    "any": {
+      "type": ["string", "number", "boolean", "object", "array", "null"]
+    }
+  }
+}

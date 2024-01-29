@@ -9,9 +9,11 @@
     "outDir": "./out/server",
     "sourceMap": true,
     "target": "es2020",
-    "allowSyntheticDefaultImports": true, 
-    "skipLibCheck": true
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "resolveJsonModule": true
   },
-  "include": [ "src", "test" ],
+  "include": ["src", "test"],
   "exclude": ["node_modules", "out"]
 }
