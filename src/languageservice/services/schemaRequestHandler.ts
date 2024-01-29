@@ -6,6 +6,8 @@ import { CustomSchemaContentRequest, VSCodeContentRequest } from '../../requestT
 import { isRelativePath, relativeToAbsolutePath } from '../utils/paths';
 import { WorkspaceContextService } from '../yamlLanguageService';
 
+import { schemas } from '../../schemas';
+
 export interface FileSystem {
   readFile(fsPath: string, encoding?: string): Promise<string>;
 }
@@ -26,9 +28,17 @@ export const schemaRequestHandler = (
     return Promise.reject('No schema specified');
   }
 
-  // If the requested schema URI is a relative file path
-  // Convert it into a proper absolute path URI
+  // Return builtin eBuilder json schema here
+  // This is for POC, maybe we can put them in https://ebuilder.macrosreply.info/
+  if (uri.startsWith('https://ebuilder.macrosreply.info/schemas/')) {
+    const schema = uri.replace('https://ebuilder.macrosreply.info/schemas/', '');
+
+    return Promise.resolve(JSON.stringify(schemas[schema]));
+  }
+
   if (isRelativePath(uri)) {
+    // If the requested schema URI is a relative file path
+    // Convert it into a proper absolute path URI
     uri = relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);
   }
 

@@ -4,11 +4,7 @@
     "lib": ["webworker"],
     "module": "umd",
     "outDir": "./lib/umd",
+    "resolveJsonModule": false
   },
-  "exclude": [
-    "node_modules",
-    "out",
-    "lib",
-    "test"
-  ]
+  "exclude": ["node_modules", "out", "lib", "test"]
 }

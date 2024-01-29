@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema",
+  "$id": "https://ebuilder.macrosreply.info/schemas/ebuilder.component.schema.json",
+  "title": "eBuilder engine - Locale schema",
+  "description": "eBuilder engine - Locale schema",
+  "type": "object",
+  "properties": {
+    "language": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "definitions": {}
+}
