@@ -52,7 +52,7 @@ export class RequestHandlers {
      */
     this.connection.onRequest(RevalidateRequest.type, async (uri: string) => {
       const document = this.yamlSettings.documents.get(uri);
-      await this.validationHandler.validateTextDocument(document);
+      await this.validationHandler.validate(document);
     });
 
     /**
