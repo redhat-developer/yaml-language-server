@@ -52,6 +52,9 @@ export class RequestHandlers {
      */
     this.connection.onRequest(RevalidateRequest.type, async (uri: string) => {
       const document = this.yamlSettings.documents.get(uri);
+      if (!document) {
+        console.log('Revalidate: No document found for uri: ' + uri);
+      }
       await this.validationHandler.validate(document);
     });
 

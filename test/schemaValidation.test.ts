@@ -1946,6 +1946,35 @@ data:
         const result = await parseSetup(content);
         expect(result?.map((r) => r.message)).deep.equals(['Missing property "b".']);
       });
+
+      it('should allow provider with invalid value and propagate inner pattern error', async () => {
+        const schema = {
+          anyOf: [
+            {
+              properties: {
+                provider: {
+                  const: 'provider1',
+                  pattern: '^$',
+                  patternErrorMessage: 'Try to avoid provider1',
+                },
+              },
+              required: ['provider'],
+            },
+            {
+              properties: {
+                provider: {
+                  const: 'provider2',
+                },
+              },
+              required: ['provider'],
+            },
+          ],
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = 'provider: provider1';
+        const result = await parseSetup(content);
+        expect(result?.map((r) => r.message)).deep.equals(['Try to avoid provider1']);
+      });
     });
 
     it('Expression is valid inline object', async function () {

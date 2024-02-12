@@ -767,6 +767,7 @@ function validate(
         matchingSchemas: ISchemaCollector;
       } = null;
 
+      let alternativesFiltered = alternatives;
       // jigx custom: remove subSchemas if the mustMatchProps (`type`, `provider`) is different
       // another idea is to add some attribute to schema, so type will have `mustMatch` attribute - this could work in general not only for jigx
       const mustMatchProps = ['type', 'provider'];
@@ -781,7 +782,7 @@ function validate(
         }
 
         // take only subSchemas that have the same mustMatch property in yaml and in schema
-        alternatives = alternatives.filter((subSchemaRef) => {
+        alternativesFiltered = alternatives.filter((subSchemaRef) => {
           const subSchema = asSchema(subSchemaRef);
 
           const typeSchemaProp = subSchema.properties?.[mustMatch];
@@ -795,6 +796,8 @@ function validate(
           validate(mustMatchYamlProp, typeSchemaProp, subSchema, subValidationResult, subMatchingSchemas, options);
           if (
             !subValidationResult.hasProblems() ||
+            // allows some of the other errors like: patterns validations
+            subValidationResult.enumValueMatch ||
             // a little bit hack that I wasn't able to solve it in official YLS
             // problem: some schemas look like this: `provider: { anyOf: [{enum: ['pr1', 'pr2']}, {type: 'string', title: 'expression'}] }`
             //          and with yaml value `provider: =expression`
@@ -817,7 +820,7 @@ function validate(
 
         // if no match, just return
         // example is jig.list with anyOf in the root... so types are in anyOf[0]
-        if (!alternatives.length) {
+        if (!alternativesFiltered.length) {
           const data = validationData[mustMatch];
           // const values = [...new Set(data.values)];
           validationResult.problems.push({
@@ -836,6 +839,8 @@ function validate(
         // don't need to check other mustMatchProps (`type` => `provider`)
         break;
       }
+
+      alternatives = alternativesFiltered;
       // end jigx custom
 
       for (const subSchemaRef of alternatives) {
