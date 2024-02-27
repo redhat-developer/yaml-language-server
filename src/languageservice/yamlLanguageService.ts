@@ -154,6 +154,7 @@ export interface CustomFormatterOptions {
   proseWrap?: string;
   printWidth?: number;
   enable?: boolean;
+  sequenceItemIndent?: number;
 }
 
 export interface LanguageService {

@@ -43,11 +43,33 @@ export class YAMLFormatter {
         printWidth: options.printWidth,
       };
 
-      const formatted = prettier.format(text, prettierOptions);
-
+      let formatted = prettier.format(text, prettierOptions);
+      const regx = RegExp('[\\s]+[-][\\s]+[\\D]+[\\d]*', 'gm');
+      const matches = formatted.match(regx);
+      if (matches) {
+        for (const match of matches) {
+          if (match.indexOf(':') == -1) {
+            formatted = formatted.replace(
+              match,
+              '\n'.concat(this.doSequenceIndent(prettierOptions.tabWidth, options.sequenceItemIndent, match))
+            );
+          }
+        }
+      }
       return [TextEdit.replace(Range.create(Position.create(0, 0), document.positionAt(text.length)), formatted)];
     } catch (error) {
       return [];
     }
+  }
+
+  /**
+   * do the indent on sequence item
+   *
+   */
+  public doSequenceIndent(actualTabWidth: number, customizedIndent: number, matchStr: string): string {
+    const regx = RegExp('\\s+(?=-)', 'gm');
+    const whiteSpaceLength = matchStr.match(regx)[0].length - 1;
+    const expectedIndentSize = whiteSpaceLength - actualTabWidth + customizedIndent;
+    return ' '.repeat(expectedIndentSize).concat(matchStr.trim());
   }
 }
