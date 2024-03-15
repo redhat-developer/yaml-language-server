@@ -20,7 +20,7 @@ export class SettingsHandler {
     private readonly yamlSettings: SettingsState,
     private readonly validationHandler: ValidationHandler,
     private readonly telemetry: Telemetry
-  ) {}
+  ) { }
 
   async registerHandlers(): Promise<void> {
     if (this.yamlSettings.hasConfigurationCapability && this.yamlSettings.clientDynamicRegisterSupport) {
@@ -81,7 +81,7 @@ export class SettingsHandler {
 
       if (settings.yaml.schemaStore) {
         this.yamlSettings.schemaStoreEnabled = settings.yaml.schemaStore.enable;
-        if (settings.yaml.schemaStore.url.length !== 0) {
+        if (settings.yaml.schemaStore.url?.length !== 0) {
           this.yamlSettings.schemaStoreUrl = settings.yaml.schemaStore.url;
         }
       }
