@@ -180,7 +180,7 @@ export class SettingsHandler {
   private async setSchemaStoreSettingsIfNotSet(): Promise<void> {
     const schemaStoreIsSet = this.yamlSettings.schemaStoreSettings.length !== 0;
     let schemaStoreUrl = '';
-    if (this.yamlSettings.schemaStoreUrl.length !== 0) {
+    if (this.yamlSettings.schemaStoreUrl?.length !== 0) {
       schemaStoreUrl = this.yamlSettings.schemaStoreUrl;
     } else {
       schemaStoreUrl = JSON_SCHEMASTORE_URL;
