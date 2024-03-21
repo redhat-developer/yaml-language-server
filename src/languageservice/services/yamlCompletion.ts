@@ -293,7 +293,7 @@ export class YamlCompletion {
       proposed,
     };
 
-    if (this.customTags.length > 0) {
+    if (this.customTags && this.customTags.length > 0) {
       this.getCustomTagValueCompletions(collector);
     }
 

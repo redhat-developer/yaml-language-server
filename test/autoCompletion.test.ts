@@ -3126,5 +3126,10 @@ describe('Auto Completion Tests', () => {
         expect(result.items.map((i) => i.label)).to.have.members(['fruit', 'vegetable']);
       });
     });
+    it('Should function when settings are undefined', async () => {
+      languageService.configure({ completion: true });
+      const content = '';
+      await parseSetup(content, 0);
+    });
   });
 });
