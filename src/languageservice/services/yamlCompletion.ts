@@ -1292,7 +1292,7 @@ export class YamlCompletion {
           case 'anyOf': {
             let value = propertySchema.default || propertySchema.const;
             if (value) {
-              if (type === 'string') {
+              if (type === 'string' || typeof value === 'string') {
                 value = convertToStringValue(value);
               }
               insertText += `${indent}${key}: \${${insertIndex++}:${value}}\n`;
@@ -1406,7 +1406,7 @@ export class YamlCompletion {
       case 'string': {
         let snippetValue = JSON.stringify(value);
         snippetValue = snippetValue.substr(1, snippetValue.length - 2); // remove quotes
-        snippetValue = this.getInsertTextForPlainText(snippetValue); // escape \ and }
+        snippetValue = getInsertTextForPlainText(snippetValue); // escape \ and }
         if (type === 'string') {
           snippetValue = convertToStringValue(snippetValue);
         }
@@ -1417,10 +1417,6 @@ export class YamlCompletion {
         return '${1:' + value + '}' + separatorAfter;
     }
     return this.getInsertTextForValue(value, separatorAfter, type);
-  }
-
-  private getInsertTextForPlainText(text: string): string {
-    return text.replace(/[\\$}]/g, '\\$&'); // escape $, \ and }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1435,13 +1431,13 @@ export class YamlCompletion {
       }
       case 'number':
       case 'boolean':
-        return this.getInsertTextForPlainText(value + separatorAfter);
+        return getInsertTextForPlainText(value + separatorAfter);
     }
     type = Array.isArray(type) ? type[0] : type;
     if (type === 'string') {
       value = convertToStringValue(value);
     }
-    return this.getInsertTextForPlainText(value + separatorAfter);
+    return getInsertTextForPlainText(value + separatorAfter);
   }
 
   private getInsertTemplateForValue(
@@ -1466,14 +1462,14 @@ export class YamlCompletion {
           if (typeof element === 'object') {
             valueTemplate = `${this.getInsertTemplateForValue(element, indent + this.indentation, navOrder, separatorAfter)}`;
           } else {
-            valueTemplate = ` \${${navOrder.index++}:${this.getInsertTextForPlainText(element + separatorAfter)}}\n`;
+            valueTemplate = ` \${${navOrder.index++}:${getInsertTextForPlainText(element + separatorAfter)}}\n`;
           }
           insertText += `${valueTemplate}`;
         }
       }
       return insertText;
     }
-    return this.getInsertTextForPlainText(value + separatorAfter);
+    return getInsertTextForPlainText(value + separatorAfter);
   }
 
   private addSchemaValueCompletions(
@@ -1860,6 +1856,13 @@ export class YamlCompletion {
   }
 }
 
+/**
+ * escape $, \ and }
+ */
+function getInsertTextForPlainText(text: string): string {
+  return text.replace(/[\\$}]/g, '\\$&'); //
+}
+
 const isNumberExp = /^\d+$/;
 function convertToStringValue(param: unknown): string {
   let value: string;
@@ -1871,6 +1874,8 @@ function convertToStringValue(param: unknown): string {
   if (value.length === 0) {
     return value;
   }
+
+  value = getInsertTextForPlainText(value); // escape $, \ and }
 
   if (value === 'true' || value === 'false' || value === 'null' || isNumberExp.test(value)) {
     return `"${value}"`;

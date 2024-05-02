@@ -1138,6 +1138,34 @@ describe('Auto Completion Tests', () => {
         );
       });
 
+      it('Autocompletion should escape $ in defaultValue in anyOf', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            car: {
+              type: 'object',
+              required: ['engine'],
+              properties: {
+                engine: {
+                  anyOf: [
+                    {
+                      type: 'object',
+                    },
+                    {
+                      type: 'string',
+                    },
+                  ],
+                  default: 'type$1234',
+                },
+              },
+            },
+          },
+        });
+        const content = '';
+        const completion = await parseSetup(content, 0);
+        expect(completion.items.map((i) => i.insertText)).to.deep.equal(['car:\n  engine: ${1:type\\$1234}']);
+      });
+
       it('Autocompletion should escape colon when indicating map', async () => {
         schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
