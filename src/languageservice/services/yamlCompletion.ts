@@ -1290,8 +1290,8 @@ export class YamlCompletion {
           case 'number':
           case 'integer':
           case 'anyOf': {
-            let value = propertySchema.default || propertySchema.const;
-            if (value) {
+            let value = propertySchema.default === undefined ? propertySchema.const : propertySchema.default;
+            if (isDefined(value)) {
               if (type === 'string' || typeof value === 'string') {
                 value = convertToStringValue(value);
               }
