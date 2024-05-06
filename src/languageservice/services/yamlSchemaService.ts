@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
-import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
+import { LanguageSettings, SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
 import {
   UnresolvedSchema,
   ResolvedSchema,
@@ -27,7 +27,7 @@ import { getSchemaFromModeline } from './modelineUtil';
 import { JSONSchemaDescriptionExt } from '../../requestTypes';
 import { SchemaVersions } from '../yamlTypes';
 
-import Ajv, { DefinedError } from 'ajv';
+import Ajv, { DefinedError, ValidateFunction } from 'ajv';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
 const localize = nls.loadMessageBundle();
@@ -37,7 +37,8 @@ const ajv = new Ajv();
 // load JSON Schema 07 def to validate loaded schemas
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
-const schema07Validator = ajv.compile(jsonSchema07);
+
+var schema07Validator: ValidateFunction;
 
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
@@ -111,6 +112,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   public schemaPriorityMapping: Map<string, Set<SchemaPriority>>;
 
   private schemaUriToNameAndDescription = new Map<string, SchemaStoreSchema>();
+  private skipSchemaValidation: boolean;
 
   constructor(
     requestService: SchemaRequestService,
@@ -121,6 +123,13 @@ export class YAMLSchemaService extends JSONSchemaService {
     this.customSchemaProvider = undefined;
     this.requestService = requestService;
     this.schemaPriorityMapping = new Map();
+    this.skipSchemaValidation = false;
+  }
+  
+  configure(languageSettings: LanguageSettings): void {
+    if (languageSettings) {
+      this.skipSchemaValidation = languageSettings.skipSchemaValidation;
+    }
   }
 
   registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider): void {
@@ -155,6 +164,16 @@ export class YAMLSchemaService extends JSONSchemaService {
     return result;
   }
 
+  private getSchemaValidator(): ValidateFunction | undefined {
+    if (this.skipSchemaValidation) {
+      return undefined;
+    }
+    if (!schema07Validator) {
+      schema07Validator = ajv.compile(jsonSchema07);
+    }
+    return schema07Validator;
+  }
+
   async resolveSchemaContent(
     schemaToResolve: UnresolvedSchema,
     schemaURL: string,
@@ -164,9 +183,10 @@ export class YAMLSchemaService extends JSONSchemaService {
     let schema: JSONSchema = schemaToResolve.schema;
     const contextService = this.contextService;
 
-    if (!schema07Validator(schema)) {
+    const schemaValidator = this.getSchemaValidator();
+    if (schemaValidator && !schemaValidator(schema)) {
       const errs: string[] = [];
-      for (const err of schema07Validator.errors as DefinedError[]) {
+      for (const err of schemaValidator.errors as DefinedError[]) {
         errs.push(`${err.instancePath} : ${err.message}`);
       }
       resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
