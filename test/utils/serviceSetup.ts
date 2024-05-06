@@ -21,6 +21,7 @@ export class ServiceSetup {
     yamlVersion: '1.2',
     flowMapping: 'allow',
     flowSequence: 'allow',
+    skipSchemaValidation: false,
   };
 
   withValidate(): ServiceSetup {
