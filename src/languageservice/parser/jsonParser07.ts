@@ -724,7 +724,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: localize('notSchemaWarning', 'Matches a schema that is not allowed.'),
+          message: notSchema.errorMessage || localize('notSchemaWarning', 'Matches a schema that is not allowed.'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
