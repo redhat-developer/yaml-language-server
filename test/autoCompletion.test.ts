@@ -22,6 +22,7 @@ import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageService } from '../src';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { jigxBranchTest } from './utils/testHelperJigx';
+import { convertObjectToArrayItem } from '../src/languageservice/services/yamlCompletion';
 
 //TODO Petr fix merge
 describe('Auto Completion Tests', () => {
@@ -1164,6 +1165,89 @@ describe('Auto Completion Tests', () => {
         const content = '';
         const completion = await parseSetup(content, 0);
         expect(completion.items.map((i) => i.insertText)).to.deep.equal(['car:\n  engine: ${1:type\\$1234}']);
+      });
+
+      it('Autocompletion with default value as an object', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            car: {
+              type: 'object',
+              default: {
+                engine: {
+                  fuel: 'gasoline',
+                },
+                wheel: 4,
+              },
+            },
+          },
+        });
+        const content = 'car: |\n|';
+        const completion = await parseSetup(content);
+        expect(completion.items.map((i) => i.insertText)).to.deep.equal([
+          '\n  ${1:engine}:\n    ${2:fuel}: ${3:gasoline}\n  ${4:wheel}: ${5:4}\n',
+        ]);
+      });
+
+      it('Autocompletion with default value as an array', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            garage: {
+              type: 'array',
+              items: {
+                type: 'object',
+              },
+              default: [
+                {
+                  car: {
+                    engine: { fuel: 'gasoline' },
+                    wheel: [1, 2],
+                  },
+                },
+                {
+                  car: {
+                    engine: { fuel: 'diesel' },
+                  },
+                },
+              ],
+            },
+          },
+        });
+        const content = 'garage: |\n|';
+        const completion = await parseSetup(content);
+        const expected = `
+  - \${1:car}:
+      \${2:engine}:
+        \${3:fuel}: \${4:gasoline}
+      \${5:wheel}:
+        - \${6:1}
+        - \${7:2}
+  - \${1:car}:
+      \${2:engine}:
+        \${3:fuel}: \${4:diesel}
+`;
+        expect(completion.items.map((i) => i.insertText)).to.deep.equal([expected]);
+      });
+
+      it('should convert object to array item', () => {
+        const objectText = `
+  car:
+    engine:
+      fuel: gasoline
+    wheel:
+      - 1
+      - 2
+`;
+        const expectedArrayItem = `  - car:
+      engine:
+        fuel: gasoline
+      wheel:
+        - 1
+        - 2
+`;
+        const arrayItem = convertObjectToArrayItem(objectText, '  ');
+        expect(arrayItem).to.equal(expectedArrayItem);
       });
 
       it('Autocompletion should escape colon when indicating map', async () => {
