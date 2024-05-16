@@ -247,7 +247,7 @@ export class LanguageHandlers {
       return;
     }
 
-    return this.languageService.doDefinition(textDocument, params);
+    return this.languageService.doDefinition(textDocument, params, this.yamlSettings.documents);
   }
 
   // Adapted from:
