@@ -32,6 +32,9 @@ export interface Settings {
     keyOrdering: boolean;
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
+    gitlabci: {
+      enabled: boolean;
+    };
   };
   http: {
     proxy: string;
@@ -89,6 +92,9 @@ export class SettingsState {
   };
   keyOrdering = false;
   maxItemsComputed = 5000;
+  gitlabci = {
+    enabled: false,
+  };
 
   // File validation helpers
   pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};

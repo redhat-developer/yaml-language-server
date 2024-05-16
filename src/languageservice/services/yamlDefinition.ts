@@ -13,9 +13,10 @@ import { matchOffsetToDocument } from '../utils/arrUtils';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { TextBuffer } from '../utils/textBuffer';
 import { TextDocuments } from 'vscode-languageserver';
+import { SettingsState } from '../../yamlSettings';
 
 export class YamlDefinition {
-  constructor(private readonly telemetry?: Telemetry) {}
+  constructor(private readonly telemetry?: Telemetry, private readonly settings?: SettingsState) {}
 
   // Find node within all yaml documents
   findNodeFromPath(allDocuments: [string, YAMLDocument, TextDocument][], path: string[]): [string, Pair<unknown, unknown>, TextDocument] | undefined {
@@ -52,9 +53,11 @@ export class YamlDefinition {
 
   getDefinition(document: TextDocument, params: DefinitionParams, documents: TextDocuments<TextDocument>): DefinitionLink[] | undefined {
     try {
-      // Ensure caching of all documents
-      for (let doc of documents.all()) {
-        yamlDocumentsCache.getYamlDocument(doc);
+      if (this.settings?.gitlabci.enabled) {
+        // Ensure caching of all documents
+        for (let doc of documents.all()) {
+          yamlDocumentsCache.getYamlDocument(doc);
+        }
       }
 
       const all = yamlDocumentsCache.getAllDocuments();
@@ -71,13 +74,15 @@ export class YamlDefinition {
             const selectionRange = Range.create(document.positionAt(defNode.range[0]), document.positionAt(defNode.range[1]));
             return [LocationLink.create(document.uri, targetRange, selectionRange)];
           }
-        } else if (node && isScalar(node) && parent && isPair(parent) && isScalar(parent.key) && parent.key.value === 'extends' && isMap(currentDoc.internalDocument.contents)) {
+        } else if (this.settings?.gitlabci.enabled && node && isScalar(node) && parent && isPair(parent) && isScalar(parent.key) && parent.key.value === 'extends' && isMap(currentDoc.internalDocument.contents)) {
+          // extends tag
           const pathResult = this.findNodeFromPath(all, [node.value as string]);
           if (pathResult) {
             const [uri, target, targetDocument] = pathResult;
             return this.createDefinitionFromTarget(target as Pair<Node, Node>, targetDocument, uri);
           }
-        } else if (node && isScalar(node) && parent && isSeq(parent) && parent.tag === '!reference') {
+        } else if (this.settings?.gitlabci.enabled && node && isScalar(node) && parent && isSeq(parent) && parent.tag === '!reference') {
+          // !reference tag
           const pathResult = this.findNodeFromPath(all, parent.items.map((item: Scalar) => item.value as string));
           if (pathResult) {
             const [uri, target, targetDocument] = pathResult;
