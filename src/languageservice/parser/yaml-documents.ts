@@ -279,7 +279,7 @@ export class YamlDocuments {
 
   getAllDocuments(): [string, YAMLDocument, TextDocument][] {
     const documents: [string, YAMLDocument, TextDocument][] = [];
-    for (let [uri, doc] of this.cache.entries()) {
+    for (const [uri, doc] of this.cache.entries()) {
       const txtdoc = this.textDocumentMapping.get(uri);
       documents.push([uri, doc.document, txtdoc]);
     }

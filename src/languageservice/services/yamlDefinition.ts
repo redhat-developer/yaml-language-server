@@ -6,7 +6,7 @@
 import { DefinitionParams } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DefinitionLink, LocationLink, Range } from 'vscode-languageserver-types';
-import { isAlias, isSeq, isMap, isScalar, isPair, isDocument, isNode, YAMLMap, Node, Pair, Scalar } from 'yaml';
+import { isAlias, isSeq, isMap, isScalar, isPair, YAMLMap, Node, Pair, Scalar } from 'yaml';
 import { Telemetry } from '../telemetry';
 import { YAMLDocument, yamlDocumentsCache } from '../parser/yaml-documents';
 import { matchOffsetToDocument } from '../utils/arrUtils';
@@ -19,14 +19,17 @@ export class YamlDefinition {
   constructor(private readonly telemetry?: Telemetry, private readonly settings?: SettingsState) {}
 
   // Find node within all yaml documents
-  findNodeFromPath(allDocuments: [string, YAMLDocument, TextDocument][], path: string[]): [string, Pair<unknown, unknown>, TextDocument] | undefined {
-    for (let [uri, docctx, doctxt] of allDocuments) {
-      for (let doc of docctx.documents) {
+  findNodeFromPath(
+    allDocuments: [string, YAMLDocument, TextDocument][],
+    path: string[]
+  ): [string, Pair<unknown, unknown>, TextDocument] | undefined {
+    for (const [uri, docctx, doctxt] of allDocuments) {
+      for (const doc of docctx.documents) {
         if (isMap(doc.internalDocument.contents)) {
           let node: YAMLMap<unknown, unknown> = doc.internalDocument.contents;
           let i = 0;
           while (i < path.length) {
-            const target = node.items.find(({key: key}) => key == path[i]);
+            const target = node.items.find(({ key: key }) => key == path[i]);
             if (target && i == path.length - 1) {
               return [uri, target, doctxt];
             } else if (target && isMap(target.value)) {
@@ -51,11 +54,15 @@ export class YamlDefinition {
     return [LocationLink.create(uri, targetRange, selectionRange)];
   }
 
-  getDefinition(document: TextDocument, params: DefinitionParams, documents: TextDocuments<TextDocument>): DefinitionLink[] | undefined {
+  getDefinition(
+    document: TextDocument,
+    params: DefinitionParams,
+    documents: TextDocuments<TextDocument>
+  ): DefinitionLink[] | undefined {
     try {
       if (this.settings?.gitlabci.enabled) {
         // Ensure caching of all documents
-        for (let doc of documents.all()) {
+        for (const doc of documents.all()) {
           yamlDocumentsCache.getYamlDocument(doc);
         }
       }
@@ -74,16 +81,35 @@ export class YamlDefinition {
             const selectionRange = Range.create(document.positionAt(defNode.range[0]), document.positionAt(defNode.range[1]));
             return [LocationLink.create(document.uri, targetRange, selectionRange)];
           }
-        } else if (this.settings?.gitlabci.enabled && node && isScalar(node) && parent && isPair(parent) && isScalar(parent.key) && parent.key.value === 'extends' && isMap(currentDoc.internalDocument.contents)) {
+        } else if (
+          this.settings?.gitlabci.enabled &&
+          node &&
+          isScalar(node) &&
+          parent &&
+          isPair(parent) &&
+          isScalar(parent.key) &&
+          parent.key.value === 'extends' &&
+          isMap(currentDoc.internalDocument.contents)
+        ) {
           // extends tag
           const pathResult = this.findNodeFromPath(all, [node.value as string]);
           if (pathResult) {
             const [uri, target, targetDocument] = pathResult;
             return this.createDefinitionFromTarget(target as Pair<Node, Node>, targetDocument, uri);
           }
-        } else if (this.settings?.gitlabci.enabled && node && isScalar(node) && parent && isSeq(parent) && parent.tag === '!reference') {
+        } else if (
+          this.settings?.gitlabci.enabled &&
+          node &&
+          isScalar(node) &&
+          parent &&
+          isSeq(parent) &&
+          parent.tag === '!reference'
+        ) {
           // !reference tag
-          const pathResult = this.findNodeFromPath(all, parent.items.map((item: Scalar) => item.value as string));
+          const pathResult = this.findNodeFromPath(
+            all,
+            parent.items.map((item: Scalar) => item.value as string)
+          );
           if (pathResult) {
             const [uri, target, targetDocument] = pathResult;
             return this.createDefinitionFromTarget(target as Pair<Node, Node>, targetDocument, uri);
