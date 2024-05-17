@@ -12,11 +12,16 @@ import { JSONDocument } from '../parser/jsonParser07';
  * @param doc
  */
 export function getDollarSchema(doc: SingleYAMLDocument | JSONDocument): string | undefined {
-  if (doc instanceof SingleYAMLDocument && doc.root && doc.root.type === 'object') {
-    let dollarSchema = doc.root.properties['$schema'];
-    dollarSchema = typeof dollarSchema === 'string' ? dollarSchema.trim() : undefined;
+  if ((doc instanceof SingleYAMLDocument || doc instanceof JSONDocument) && doc.root?.type === 'object') {
+    let dollarSchema: string | undefined = undefined;
+    for (const property of doc.root.properties) {
+      if (property.keyNode?.value === '$schema' && typeof property.valueNode?.value === 'string') {
+        dollarSchema = property.valueNode?.value;
+        break;
+      }
+    }
     if (typeof dollarSchema === 'string') {
-      return dollarSchema.trim();
+      return dollarSchema;
     }
     if (dollarSchema) {
       console.log('The $schema attribute is not a string, and will be ignored');
