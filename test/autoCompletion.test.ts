@@ -1366,7 +1366,7 @@ describe('Auto Completion Tests', () => {
         const completion = parseSetup(content, content.lastIndexOf('Ba') + 2); // pos: 3+2
         completion
           .then(function (result) {
-            assert.strictEqual('fooBar:\n  - ${1:""}', result.items[0].insertText);
+            assert.strictEqual('fooBar:\n  - ${1}', result.items[0].insertText);
           })
           .then(done, done);
       });
