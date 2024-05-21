@@ -13,6 +13,7 @@ import { matchOffsetToDocument } from '../utils/arrUtils';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { TextBuffer } from '../utils/textBuffer';
 import { SettingsState } from '../../yamlSettings';
+import { dirname, resolve } from 'path';
 
 export class YamlDefinition {
   constructor(private readonly telemetry?: Telemetry, private readonly settings?: SettingsState) {}
@@ -120,6 +121,26 @@ export class YamlDefinition {
             const targetRange = Range.create(document.positionAt(defNode.range[0]), document.positionAt(defNode.range[2]));
             const selectionRange = Range.create(document.positionAt(defNode.range[0]), document.positionAt(defNode.range[1]));
             return [LocationLink.create(document.uri, targetRange, selectionRange)];
+          }
+        } else if (
+          this.settings?.gitlabci.enabled &&
+          node &&
+          isScalar(node) &&
+          this.findParentWithKey(node, 'include', currentDoc, 2) &&
+          isMap(currentDoc.internalDocument.contents)
+        ) {
+          // include node
+          const path = node.value as string;
+          if (path.startsWith('./') && document.uri.startsWith('file://')) {
+            // Resolve relative path form document.uri
+            let curPath = new URL(document.uri).pathname;
+            let dirPath = dirname(curPath);
+            let absPath = resolve(dirPath, path);
+
+            return [
+              // First line of the document
+              LocationLink.create(absPath, Range.create(0, 0, 1, 0), Range.create(0, 0, 1, 0)),
+            ];
           }
         } else if (
           this.settings?.gitlabci.enabled &&
