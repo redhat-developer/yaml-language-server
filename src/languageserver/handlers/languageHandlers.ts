@@ -29,6 +29,8 @@ import {
   SelectionRange,
   SymbolInformation,
   TextEdit,
+  LocationLink,
+  Range,
 } from 'vscode-languageserver-types';
 import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
 import { LanguageService } from '../../languageservice/yamlLanguageService';

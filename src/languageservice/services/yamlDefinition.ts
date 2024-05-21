@@ -12,7 +12,6 @@ import { SingleYAMLDocument, YAMLDocument, yamlDocumentsCache } from '../parser/
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { TextBuffer } from '../utils/textBuffer';
-import { TextDocuments } from 'vscode-languageserver';
 import { SettingsState } from '../../yamlSettings';
 
 export class YamlDefinition {
@@ -28,6 +27,7 @@ export class YamlDefinition {
         if (isMap(doc.internalDocument.contents)) {
           let node: YAMLMap<unknown, unknown> = doc.internalDocument.contents;
           let i = 0;
+          // Follow path
           while (i < path.length) {
             const target = node.items.find(({ key: key }) => key == path[i]);
             if (target && i == path.length - 1) {
@@ -44,14 +44,48 @@ export class YamlDefinition {
     }
   }
 
-  createDefinitionFromTarget(target: Pair<Node, Node>, document: TextDocument, uri: string): LocationLink[] | undefined {
+  // Like findNodeFromPath but will follow extends tags
+  findNodeFromPathRecursive(
+    allDocuments: [string, YAMLDocument, TextDocument][],
+    path: string[],
+    maxDepth = 16
+  ): [string, Pair<unknown, unknown>, TextDocument][] {
+    // TODO : Max recursion depth
+    const result = [];
+    let pathResult = this.findNodeFromPath(allDocuments, path);
+    for (let i = 0; pathResult && i < maxDepth; ++i) {
+      result.push(pathResult);
+      const [_uri, target, _targetDocument] = pathResult;
+      path = null;
+      if (isMap(target.value)) {
+        // Find extends within result
+        const extendsNode = target.value.items.find(({ key: key }) => key == 'extends');
+        if (extendsNode) {
+          // Only follow the first extends tag
+          if (isScalar(extendsNode.value)) {
+            path = [extendsNode.value.value as string];
+          } else if (isSeq(extendsNode.value) && isScalar(extendsNode.value.items[0])) {
+            path = [extendsNode.value.items[0].value as string];
+          }
+        }
+      }
+      if (path === null) {
+        break;
+      }
+      pathResult = this.findNodeFromPath(allDocuments, path);
+    }
+
+    return result;
+  }
+
+  createDefinitionFromTarget(target: Pair<Node, Node>, document: TextDocument, uri: string): LocationLink | undefined {
     const start = target.key.range[0];
     const endDef = target.key.range[1];
     const endFull = target.value.range[2];
     const targetRange = Range.create(document.positionAt(start), document.positionAt(endFull));
     const selectionRange = Range.create(document.positionAt(start), document.positionAt(endDef));
 
-    return [LocationLink.create(uri, targetRange, selectionRange)];
+    return LocationLink.create(uri, targetRange, selectionRange);
   }
 
   // Returns whether or not this node has a parent with the given key
@@ -94,11 +128,13 @@ export class YamlDefinition {
           this.findParentWithKey(node, 'extends', currentDoc, 2) &&
           isMap(currentDoc.internalDocument.contents)
         ) {
-          // extends tag
-          const pathResult = this.findNodeFromPath(all, [node.value as string]);
-          if (pathResult) {
-            const [uri, target, targetDocument] = pathResult;
-            return this.createDefinitionFromTarget(target as Pair<Node, Node>, targetDocument, uri);
+          const pathResults = this.findNodeFromPathRecursive(all, [node.value as string]);
+          if (pathResults.length) {
+            const result = [];
+            for (const [uri, target, targetDocument] of pathResults) {
+              result.push(this.createDefinitionFromTarget(target as Pair<Node, Node>, targetDocument, uri));
+            }
+            return result;
           }
         } else if (
           this.settings?.gitlabci.enabled &&
@@ -111,7 +147,7 @@ export class YamlDefinition {
           const pathResult = this.findNodeFromPath(all, [node.value as string]);
           if (pathResult) {
             const [uri, target, targetDocument] = pathResult;
-            return this.createDefinitionFromTarget(target as Pair<Node, Node>, targetDocument, uri);
+            return [this.createDefinitionFromTarget(target as Pair<Node, Node>, targetDocument, uri)];
           }
         } else if (
           this.settings?.gitlabci.enabled &&
@@ -128,7 +164,7 @@ export class YamlDefinition {
           );
           if (pathResult) {
             const [uri, target, targetDocument] = pathResult;
-            return this.createDefinitionFromTarget(target as Pair<Node, Node>, targetDocument, uri);
+            return [this.createDefinitionFromTarget(target as Pair<Node, Node>, targetDocument, uri)];
           }
         }
       }
