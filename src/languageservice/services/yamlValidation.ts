@@ -58,6 +58,9 @@ export class YAMLValidation {
     if (settings) {
       this.validationEnabled = settings.validate;
       this.customTags = settings.customTags;
+      if (settings.gitlabci.enabled) {
+        this.customTags.push('!reference sequence');
+      }
       this.disableAdditionalProperties = settings.disableAdditionalProperties;
       this.yamlVersion = settings.yamlVersion;
       // Add style validator if flow style is set to forbid only.
