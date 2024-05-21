@@ -8,7 +8,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DefinitionLink, LocationLink, Range } from 'vscode-languageserver-types';
 import { isAlias, isSeq, isMap, isScalar, isPair, YAMLMap, Node, Pair, Scalar } from 'yaml';
 import { Telemetry } from '../telemetry';
-import { YAMLDocument, yamlDocumentsCache } from '../parser/yaml-documents';
+import { SingleYAMLDocument, YAMLDocument, yamlDocumentsCache } from '../parser/yaml-documents';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { TextBuffer } from '../utils/textBuffer';
@@ -54,6 +54,20 @@ export class YamlDefinition {
     return [LocationLink.create(uri, targetRange, selectionRange)];
   }
 
+  // Returns whether or not this node has a parent with the given key
+  // Useful to find the parent for nested nodes (e.g. extends with an array)
+  findParentWithKey(node: Node, key: string, currentDoc: SingleYAMLDocument, maxDepth = 2): Pair {
+    let parent = currentDoc.getParent(node);
+    for (let i = 0; i < maxDepth; ++i) {
+      if (parent && isPair(parent) && isScalar(parent.key) && parent.key.value === key) {
+        return parent;
+      }
+      parent = currentDoc.getParent(parent);
+    }
+
+    return null;
+  }
+
   getDefinition(
     document: TextDocument,
     params: DefinitionParams
@@ -77,13 +91,23 @@ export class YamlDefinition {
           this.settings?.gitlabci.enabled &&
           node &&
           isScalar(node) &&
-          parent &&
-          isPair(parent) &&
-          isScalar(parent.key) &&
-          parent.key.value === 'extends' &&
+          this.findParentWithKey(node, 'extends', currentDoc, 2) &&
           isMap(currentDoc.internalDocument.contents)
         ) {
           // extends tag
+          const pathResult = this.findNodeFromPath(all, [node.value as string]);
+          if (pathResult) {
+            const [uri, target, targetDocument] = pathResult;
+            return this.createDefinitionFromTarget(target as Pair<Node, Node>, targetDocument, uri);
+          }
+        } else if (
+          this.settings?.gitlabci.enabled &&
+          node &&
+          isScalar(node) &&
+          this.findParentWithKey(node, 'needs', currentDoc, 2) &&
+          isMap(currentDoc.internalDocument.contents)
+        ) {
+          // needs tag
           const pathResult = this.findNodeFromPath(all, [node.value as string]);
           if (pathResult) {
             const [uri, target, targetDocument] = pathResult;
