@@ -51,12 +51,11 @@ export class YamlDefinition {
     path: string[],
     maxDepth = 16
   ): [string, Pair<unknown, unknown>, TextDocument][] {
-    // TODO : Max recursion depth
     const result = [];
     let pathResult = this.findNodeFromPath(allDocuments, path);
     for (let i = 0; pathResult && i < maxDepth; ++i) {
       result.push(pathResult);
-      const [_uri, target, _targetDocument] = pathResult;
+      const target = pathResult[1];
       path = null;
       if (isMap(target.value)) {
         // Find extends within result
@@ -103,10 +102,7 @@ export class YamlDefinition {
     return null;
   }
 
-  getDefinition(
-    document: TextDocument,
-    params: DefinitionParams
-  ): DefinitionLink[] | undefined {
+  getDefinition(document: TextDocument, params: DefinitionParams): DefinitionLink[] | undefined {
     try {
       const all = yamlDocumentsCache.getAllDocuments();
       const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
@@ -132,10 +128,10 @@ export class YamlDefinition {
           // include node
           const path = node.value as string;
           if (path.startsWith('./') && document.uri.startsWith('file://')) {
-            // Resolve relative path form document.uri
-            let curPath = new URL(document.uri).pathname;
-            let dirPath = dirname(curPath);
-            let absPath = resolve(dirPath, path);
+            // Resolve relative path from document.uri
+            const curPath = new URL(document.uri).pathname;
+            const dirPath = dirname(curPath);
+            const absPath = resolve(dirPath, path);
 
             return [
               // First line of the document

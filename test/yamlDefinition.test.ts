@@ -15,13 +15,10 @@ describe('YAML Definition', () => {
     const doc = setupTextDocument('foo: &bar some\naaa: *bar');
     const documents = new TextDocumentTestManager();
     (documents as TextDocumentTestManager).set(doc);
-    const result = new YamlDefinition({} as Telemetry).getDefinition(
-      doc,
-      {
-        position: Position.create(1, 2),
-        textDocument: { uri: TEST_URI },
-      },
-    );
+    const result = new YamlDefinition({} as Telemetry).getDefinition(doc, {
+      position: Position.create(1, 2),
+      textDocument: { uri: TEST_URI },
+    });
     expect(result).is.undefined;
   });
 
@@ -29,13 +26,10 @@ describe('YAML Definition', () => {
     const doc = setupTextDocument('foo: &bar some\naaa: *bar');
     const documents = new TextDocumentTestManager();
     (documents as TextDocumentTestManager).set(doc);
-    const result = new YamlDefinition({} as Telemetry).getDefinition(
-      doc,
-      {
-        position: Position.create(1, 7),
-        textDocument: { uri: TEST_URI },
-      },
-    );
+    const result = new YamlDefinition({} as Telemetry).getDefinition(doc, {
+      position: Position.create(1, 7),
+      textDocument: { uri: TEST_URI },
+    });
     expect(result).is.not.undefined;
     expect(result[0]).is.eqls(LocationLink.create(TEST_URI, Range.create(0, 10, 1, 0), Range.create(0, 10, 0, 14)));
   });

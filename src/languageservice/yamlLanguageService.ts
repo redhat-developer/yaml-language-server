@@ -39,7 +39,6 @@ import {
   Connection,
   DocumentOnTypeFormattingParams,
   DefinitionParams,
-  TextDocuments,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getFoldingRanges } from './services/yamlFolding';
@@ -176,10 +175,7 @@ export interface LanguageService {
   findLinks: (document: TextDocument) => Promise<DocumentLink[]>;
   resetSchema: (uri: string) => boolean;
   doFormat: (document: TextDocument, options?: CustomFormatterOptions) => TextEdit[];
-  doDefinition: (
-    document: TextDocument,
-    params: DefinitionParams
-  ) => DefinitionLink[] | undefined;
+  doDefinition: (document: TextDocument, params: DefinitionParams) => DefinitionLink[] | undefined;
   doDocumentOnTypeFormatting: (document: TextDocument, params: DocumentOnTypeFormattingParams) => TextEdit[] | undefined;
   addSchema: (schemaID: string, schema: JSONSchema) => void;
   deleteSchema: (schemaID: string) => void;
