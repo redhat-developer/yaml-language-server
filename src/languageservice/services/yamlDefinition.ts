@@ -56,17 +56,9 @@ export class YamlDefinition {
 
   getDefinition(
     document: TextDocument,
-    params: DefinitionParams,
-    documents: TextDocuments<TextDocument>
+    params: DefinitionParams
   ): DefinitionLink[] | undefined {
     try {
-      if (this.settings?.gitlabci.enabled) {
-        // Ensure caching of all documents
-        for (const doc of documents.all()) {
-          yamlDocumentsCache.getYamlDocument(doc);
-        }
-      }
-
       const all = yamlDocumentsCache.getAllDocuments();
       const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
       const offset = document.offsetAt(params.position);

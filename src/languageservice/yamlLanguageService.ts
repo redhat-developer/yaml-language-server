@@ -178,8 +178,7 @@ export interface LanguageService {
   doFormat: (document: TextDocument, options?: CustomFormatterOptions) => TextEdit[];
   doDefinition: (
     document: TextDocument,
-    params: DefinitionParams,
-    allDocuments: TextDocuments<TextDocument>
+    params: DefinitionParams
   ) => DefinitionLink[] | undefined;
   doDocumentOnTypeFormatting: (document: TextDocument, params: DocumentOnTypeFormattingParams) => TextEdit[] | undefined;
   addSchema: (schemaID: string, schema: JSONSchema) => void;
