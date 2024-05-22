@@ -93,7 +93,7 @@ export class SettingsState {
   keyOrdering = false;
   maxItemsComputed = 5000;
   gitlabci = {
-    enabled: false,
+    enabled: true,
   };
 
   // File validation helpers
