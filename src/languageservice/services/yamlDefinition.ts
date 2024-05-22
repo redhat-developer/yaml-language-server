@@ -6,7 +6,7 @@
 import { DefinitionParams } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DefinitionLink, LocationLink, Range } from 'vscode-languageserver-types';
-import { isAlias, isSeq, isScalar, Node, Pair, Scalar } from 'yaml';
+import { isAlias, isSeq, isScalar, Node, Pair, Scalar, isMap } from 'yaml';
 import { Telemetry } from '../telemetry';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { matchOffsetToDocument } from '../utils/arrUtils';
@@ -14,7 +14,7 @@ import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { TextBuffer } from '../utils/textBuffer';
 import { SettingsState } from '../../yamlSettings';
 import { dirname, resolve } from 'path';
-import { findParentWithKey, createDefinitionFromTarget, findNodeFromPath, findNodeFromPathRecursive } from './gitlabciUtils';
+import { findParentWithKey, createDefinitionFromTarget, findNodeFromPath, findNodeFromPathRecursive, findChildWithKey } from './gitlabciUtils';
 
 export class YamlDefinition {
   constructor(private readonly telemetry?: Telemetry, private readonly settings?: SettingsState) {}
@@ -25,9 +25,10 @@ export class YamlDefinition {
       const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
       const offset = document.offsetAt(params.position);
       const currentDoc = matchOffsetToDocument(offset, yamlDocument);
+      let gitlabciExtendsNode = null;
       if (currentDoc) {
         const [node] = currentDoc.getNodeFromPosition(offset, new TextBuffer(document));
-        const parent = currentDoc.getParent(node);
+        const parent = currentDoc.getParent(node) as Pair | undefined;
         if (node && isAlias(node)) {
           const defNode = node.resolve(currentDoc.internalDocument);
           if (defNode && defNode.range) {
@@ -57,10 +58,12 @@ export class YamlDefinition {
         } else if (
           this.settings?.gitlabci.enabled &&
           node &&
-          isScalar(node) &&
-          findParentWithKey(node, 'extends', currentDoc, 2)
+          (isScalar(node) && findParentWithKey(node, 'extends', currentDoc, 2) || isMap(parent.value) && (gitlabciExtendsNode = findChildWithKey(parent.value, 'extends')))
         ) {
-          const pathResults = findNodeFromPathRecursive(all, [node.value as string]);
+          // Name of the job to extend
+          let extendJob = gitlabciExtendsNode ? gitlabciExtendsNode.value.value as string : (node as Scalar).value as string;
+
+          const pathResults = findNodeFromPathRecursive(all, [extendJob]);
           if (pathResults.length) {
             const result = [];
             for (const [uri, target, targetDocument] of pathResults) {
