@@ -20,9 +20,8 @@ export function findNodeFromPath(
     for (const doc of docctx.documents) {
       if (isMap(doc.internalDocument.contents)) {
         let node: YAMLMap<unknown, unknown> = doc.internalDocument.contents;
-        let i = 0;
         // Follow path
-        while (i < path.length) {
+        for (let i = 0; i < path.length; ++i) {
           const target = node.items.find(({ key: key }) => key == path[i]);
           if (target && i == path.length - 1) {
             return [uri, target, doctxt];
@@ -31,7 +30,6 @@ export function findNodeFromPath(
           } else {
             break;
           }
-          ++i;
         }
       }
     }
