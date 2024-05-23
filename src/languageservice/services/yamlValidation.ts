@@ -58,7 +58,7 @@ export class YAMLValidation {
     if (settings) {
       this.validationEnabled = settings.validate;
       this.customTags = settings.customTags;
-      if (settings.gitlabci.enabled) {
+      if (settings.gitlabci?.enabled) {
         this.customTags.push('!reference sequence');
       }
       this.disableAdditionalProperties = settings.disableAdditionalProperties;
