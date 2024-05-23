@@ -5,7 +5,7 @@
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { LocationLink, Position, Range } from 'vscode-languageserver-types';
-import { isSeq, isMap, isScalar, isPair, YAMLMap, Node, Pair, isNode, Scalar } from 'yaml';
+import { isSeq, isMap, isScalar, isPair, YAMLMap, Node, Pair, isNode, Scalar, visit } from 'yaml';
 import { SingleYAMLDocument, YAMLDocument } from '../parser/yaml-documents';
 
 // Find node within all yaml documents
@@ -120,13 +120,26 @@ export function getJobNodes(
   return jobNodes;
 }
 
-// Find where jobs are used, such as within extends or needs nodes
+// Find where jobs are used, such as within extends or needs nodes and reference tags
 export function findUsages(allDocuments: [string, YAMLDocument, TextDocument][]): Map<string, LocationLink[]> {
   const targetAttributes = ['extends', 'needs'];
   const usages = new Map<string, LocationLink[]>();
   const jobNodes = getJobNodes(allDocuments);
 
   for (const [jobLoc, doc, job] of jobNodes) {
+    // !reference tags
+    visit(job.value, (_, node) => {
+      // Support only top level jobs so the sequence must be of length 1
+      if (isSeq(node) && node.tag === '!reference' && node.items.length === 1 && isScalar(node.items[0])) {
+        const jobName = node.items[0].value as string;
+        const range = Range.create(doc.positionAt(node.items[0].range[0]), doc.positionAt(node.items[0].range[1]));
+        const loc = LocationLink.create(jobLoc.targetUri, range, range);
+        if (usages.has(jobName)) usages.get(jobName).push(loc);
+        else usages.set(jobName, [loc]);
+      }
+    });
+
+    // Extends / needs attributes
     // For each attribute of each job
     for (const item of job.value.items) {
       if (isScalar(item.key)) {
@@ -146,7 +159,6 @@ export function findUsages(allDocuments: [string, YAMLDocument, TextDocument][])
 
           for (const referencedJob of referencedJobs) {
             const jobName = referencedJob.value as string;
-            // TODO : Verify range
             const targetRange = Range.create(doc.positionAt(referencedJob.range[0]), doc.positionAt(referencedJob.range[1]));
             const loc = LocationLink.create(jobLoc.targetUri, targetRange, targetRange);
 
