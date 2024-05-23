@@ -73,6 +73,7 @@ export interface SchemasSettings {
 
 export interface GitlabciSettings {
   enabled?: boolean;
+  codelensEnabled?: boolean;
 }
 
 export interface LanguageSettings {
@@ -204,7 +205,7 @@ export function getLanguageService(params: {
   const yamlValidation = new YAMLValidation(schemaService, params.telemetry);
   const formatter = new YAMLFormatter();
   const yamlCodeActions = new YamlCodeActions(params.clientCapabilities);
-  const yamlCodeLens = new YamlCodeLens(schemaService, params.telemetry);
+  const yamlCodeLens = new YamlCodeLens(schemaService, params.telemetry, params.yamlSettings);
   const yamlLinks = new YamlLinks(params.telemetry);
   const yamlDefinition = new YamlDefinition(params.telemetry, params.yamlSettings);
 

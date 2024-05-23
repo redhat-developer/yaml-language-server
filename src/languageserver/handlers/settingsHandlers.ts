@@ -124,7 +124,8 @@ export class SettingsHandler {
       };
       this.yamlSettings.keyOrdering = settings.yaml.keyOrdering ?? false;
       if (settings.yaml.gitlabci) {
-        this.yamlSettings.gitlabci.enabled = settings.yaml.gitlabci.enabled ?? false;
+        this.yamlSettings.gitlabci.enabled = settings.yaml.gitlabci.enabled ?? true;
+        this.yamlSettings.gitlabci.codelensEnabled = settings.yaml.gitlabci.codelensEnabled ?? true;
       }
     }
 

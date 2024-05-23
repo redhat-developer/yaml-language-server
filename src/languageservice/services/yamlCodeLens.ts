@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { CodeLens, Range } from 'vscode-languageserver-types';
+import { CodeLens, Location, Position, Range } from 'vscode-languageserver-types';
 import { YamlCommands } from '../../commands';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { YAMLSchemaService } from './yamlSchemaService';
@@ -13,14 +13,51 @@ import { Telemetry } from '../telemetry';
 import { getSchemaUrls } from '../utils/schemaUrls';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { getSchemaTitle } from '../utils/schemaUtils';
+import { isMap, isPair, isScalar } from 'yaml';
+import { findUsages, toExportedPos, toExportedRange } from './gitlabciUtils';
+import { URI } from 'vscode-uri';
+import { SettingsState } from '../../yamlSettings';
 
 export class YamlCodeLens {
-  constructor(private schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {}
+  constructor(private schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry, private readonly settings?: SettingsState) {}
 
   async getCodeLens(document: TextDocument): Promise<CodeLens[]> {
     const result = [];
     try {
       const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
+
+      if (this.settings?.gitlabci?.enabled && this.settings?.gitlabci?.codelensEnabled) {
+        // GitlabCI Job Usages
+        const usages = findUsages(yamlDocumentsCache.getAllDocuments());
+        for (const doc of yamlDocument.documents) {
+          if (isMap(doc.internalDocument.contents)) {
+            for (const jobNode of doc.internalDocument.contents.items) {
+              // If at least one usage
+              if (isPair(jobNode) && isScalar(jobNode.key) && usages.has(jobNode.key.value as string)) {
+                const jobUsages = usages.get(jobNode.key.value as string);
+                const nodeRange = Range.create(document.positionAt(jobNode.key.range[0]), document.positionAt(jobNode.key.range[1]));
+                const lens = CodeLens.create(nodeRange);
+                // Locations for all usages
+                const locations = [];
+                for (const loc of jobUsages) {
+                  locations.push({
+                    uri: URI.parse(loc.targetUri),
+                    range: toExportedRange(loc.targetRange)
+                  })
+                }
+                lens.command = {
+                  title: jobUsages.length === 1 ? '1 usage' : `${jobUsages.length} usages`,
+                  command: 'editor.action.peekLocations',
+                  arguments: [URI.parse(document.uri), toExportedPos(nodeRange.end), locations]
+                };
+
+                result.push(lens);
+              }
+            }
+          }
+        }
+      }
+
       let schemaUrls = new Map<string, JSONSchema>();
       for (const currentYAMLDoc of yamlDocument.documents) {
         const schema = await this.schemaService.getSchemaForResource(document.uri, currentYAMLDoc);

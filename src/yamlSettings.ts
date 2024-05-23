@@ -34,6 +34,7 @@ export interface Settings {
     yamlVersion: YamlVersion;
     gitlabci: {
       enabled: boolean;
+      codelensEnabled: boolean;
     };
   };
   http: {
@@ -94,6 +95,7 @@ export class SettingsState {
   maxItemsComputed = 5000;
   gitlabci = {
     enabled: true,
+    codelensEnabled: true,
   };
 
   // File validation helpers

@@ -4,9 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { LocationLink, Range } from 'vscode-languageserver-types';
-import { isSeq, isMap, isScalar, isPair, YAMLMap, Node, Pair } from 'yaml';
+import { LocationLink, Position, Range } from 'vscode-languageserver-types';
+import { isSeq, isMap, isScalar, isPair, YAMLMap, Node, Pair, isNode, Scalar } from 'yaml';
 import { SingleYAMLDocument, YAMLDocument } from '../parser/yaml-documents';
+import { YamlNode } from '../jsonASTTypes';
 
 // Find node within all yaml documents
 export function findNodeFromPath(
@@ -96,4 +97,81 @@ export function findParentWithKey(node: Node, key: string, currentDoc: SingleYAM
 // Find if possible a child with the given key
 export function findChildWithKey(node: YAMLMap, targetKey: string): Pair | undefined {
   return node.items.find(({ key: key }) => key == targetKey);
+}
+
+// Get all potential job nodes from all documents
+// A job node is a map node at the root of the document
+export function getJobNodes(allDocuments: [string, YAMLDocument, TextDocument][]) : [LocationLink, TextDocument, Pair<Node, YAMLMap>][] {
+  const jobNodes = [];
+  for (const [uri, docctx, doctxt] of allDocuments) {
+    for (const doc of docctx.documents) {
+      if (isMap(doc.internalDocument.contents)) {
+        for (const node of doc.internalDocument.contents.items) {
+          if (isNode(node.key) && isMap(node.value)) {
+            const loc = createDefinitionFromTarget(node as Pair<Node, Node>, doctxt, uri);
+            jobNodes.push([loc, doctxt, node]);
+          }
+        }
+      }
+    }
+  }
+
+  return jobNodes;
+}
+
+// Find where jobs are used, such as within extends or needs nodes
+export function findUsages(allDocuments: [string, YAMLDocument, TextDocument][]): Map<string, LocationLink[]> {
+  const targetAttributes = ["extends", "needs"];
+  const usages = new Map<string, LocationLink[]>();
+  const jobNodes = getJobNodes(allDocuments);
+
+  for (const [jobLoc, doc, job] of jobNodes) {
+    // For each attribute of each job
+    for (const item of job.value.items) {
+      if (isScalar(item.key)) {
+        if (targetAttributes.includes(item.key.value as string)) {
+          const referencedJobs: Scalar[] = [];
+
+          // Get all job names
+          if (isScalar(item.value) && typeof item.value.value === 'string') {
+            referencedJobs.push(item.value);
+          } else if (isSeq(item.value)) {
+            for (const seqItem of item.value.items) {
+              if (isScalar(seqItem) && typeof seqItem.value === 'string') {
+                referencedJobs.push(seqItem);
+              }
+            }
+          }
+
+          for (const referencedJob of referencedJobs) {
+            const jobName = referencedJob.value as string;
+            // TODO : Verify range
+            const targetRange = Range.create(doc.positionAt(referencedJob.range[0]), doc.positionAt(referencedJob.range[1]));
+            const loc = LocationLink.create(jobLoc.targetUri, targetRange, targetRange);
+
+            // Add it to the references
+            if (usages.has(jobName))
+              usages.get(jobName).push(loc);
+            else
+              usages.set(jobName, [loc]);
+          }
+        }
+      }
+    }
+  }
+
+  return usages;
+}
+
+export function toExportedPos(pos: Position): object {
+  return {lineNumber: pos.line + 1, column: pos.character + 1};
+}
+
+export function toExportedRange(range: Range): object {
+  return {
+    startLineNumber: range.start.line + 1,
+    startColumn: range.start.character + 1,
+    endLineNumber: range.end.line + 1,
+    endColumn: range.end.character + 1,
+  }
 }

@@ -54,6 +54,7 @@ The following settings are supported:
 - `yaml.style.flowSequence` : Forbids flow style sequences if set to `forbid`
 - `yaml.keyOrdering` : Enforces alphabetical ordering of keys in mappings when set to `true`. Default is `false`
 - `yaml.gitlabci.enabled` : Enables gitlab-ci add-ons
+- `yaml.gitlabci.codelensEnabled` : Enables gitlab-ci related code lens
 
 ##### Adding custom tags
 
