@@ -7,7 +7,6 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { LocationLink, Position, Range } from 'vscode-languageserver-types';
 import { isSeq, isMap, isScalar, isPair, YAMLMap, Node, Pair, isNode, Scalar } from 'yaml';
 import { SingleYAMLDocument, YAMLDocument } from '../parser/yaml-documents';
-import { YamlNode } from '../jsonASTTypes';
 
 // Find node within all yaml documents
 export function findNodeFromPath(
@@ -101,7 +100,9 @@ export function findChildWithKey(node: YAMLMap, targetKey: string): Pair | undef
 
 // Get all potential job nodes from all documents
 // A job node is a map node at the root of the document
-export function getJobNodes(allDocuments: [string, YAMLDocument, TextDocument][]) : [LocationLink, TextDocument, Pair<Node, YAMLMap>][] {
+export function getJobNodes(
+  allDocuments: [string, YAMLDocument, TextDocument][]
+): [LocationLink, TextDocument, Pair<Node, YAMLMap>][] {
   const jobNodes = [];
   for (const [uri, docctx, doctxt] of allDocuments) {
     for (const doc of docctx.documents) {
@@ -121,7 +122,7 @@ export function getJobNodes(allDocuments: [string, YAMLDocument, TextDocument][]
 
 // Find where jobs are used, such as within extends or needs nodes
 export function findUsages(allDocuments: [string, YAMLDocument, TextDocument][]): Map<string, LocationLink[]> {
-  const targetAttributes = ["extends", "needs"];
+  const targetAttributes = ['extends', 'needs'];
   const usages = new Map<string, LocationLink[]>();
   const jobNodes = getJobNodes(allDocuments);
 
@@ -150,10 +151,8 @@ export function findUsages(allDocuments: [string, YAMLDocument, TextDocument][])
             const loc = LocationLink.create(jobLoc.targetUri, targetRange, targetRange);
 
             // Add it to the references
-            if (usages.has(jobName))
-              usages.get(jobName).push(loc);
-            else
-              usages.set(jobName, [loc]);
+            if (usages.has(jobName)) usages.get(jobName).push(loc);
+            else usages.set(jobName, [loc]);
           }
         }
       }
@@ -164,7 +163,7 @@ export function findUsages(allDocuments: [string, YAMLDocument, TextDocument][])
 }
 
 export function toExportedPos(pos: Position): object {
-  return {lineNumber: pos.line + 1, column: pos.character + 1};
+  return { lineNumber: pos.line + 1, column: pos.character + 1 };
 }
 
 export function toExportedRange(range: Range): object {
@@ -173,5 +172,5 @@ export function toExportedRange(range: Range): object {
     startColumn: range.start.character + 1,
     endLineNumber: range.end.line + 1,
     endColumn: range.end.character + 1,
-  }
+  };
 }

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { CodeLens, Location, Position, Range } from 'vscode-languageserver-types';
+import { CodeLens, Range } from 'vscode-languageserver-types';
 import { YamlCommands } from '../../commands';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { YAMLSchemaService } from './yamlSchemaService';
@@ -19,7 +19,11 @@ import { URI } from 'vscode-uri';
 import { SettingsState } from '../../yamlSettings';
 
 export class YamlCodeLens {
-  constructor(private schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry, private readonly settings?: SettingsState) {}
+  constructor(
+    private schemaService: YAMLSchemaService,
+    private readonly telemetry?: Telemetry,
+    private readonly settings?: SettingsState
+  ) {}
 
   async getCodeLens(document: TextDocument): Promise<CodeLens[]> {
     const result = [];
@@ -35,20 +39,23 @@ export class YamlCodeLens {
               // If at least one usage
               if (isPair(jobNode) && isScalar(jobNode.key) && usages.has(jobNode.key.value as string)) {
                 const jobUsages = usages.get(jobNode.key.value as string);
-                const nodeRange = Range.create(document.positionAt(jobNode.key.range[0]), document.positionAt(jobNode.key.range[1]));
+                const nodeRange = Range.create(
+                  document.positionAt(jobNode.key.range[0]),
+                  document.positionAt(jobNode.key.range[1])
+                );
                 const lens = CodeLens.create(nodeRange);
                 // Locations for all usages
                 const locations = [];
                 for (const loc of jobUsages) {
                   locations.push({
                     uri: URI.parse(loc.targetUri),
-                    range: toExportedRange(loc.targetRange)
-                  })
+                    range: toExportedRange(loc.targetRange),
+                  });
                 }
                 lens.command = {
                   title: jobUsages.length === 1 ? '1 usage' : `${jobUsages.length} usages`,
                   command: 'editor.action.peekLocations',
-                  arguments: [URI.parse(document.uri), toExportedPos(nodeRange.end), locations]
+                  arguments: [URI.parse(document.uri), toExportedPos(nodeRange.end), locations],
                 };
 
                 result.push(lens);

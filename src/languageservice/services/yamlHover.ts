@@ -99,11 +99,11 @@ export class YAMLHover {
       // Job title hover : Show hierarchy
       // hoverRangeNode = job name, parent = key value pair, grandparent = full document, great grandparent = null
       if (hoverRangeNode && hoverRangeNode.parent && hoverRangeNode.parent.parent && !hoverRangeNode.parent.parent.parent) {
-          const jobName = hoverRangeNode.value as string;
-          const hierarchy = findNodeFromPathRecursive(allDocuments, [jobName]);
-          if (hierarchy.length >= 2) {
+        const jobName = hoverRangeNode.value as string;
+        const hierarchy = findNodeFromPathRecursive(allDocuments, [jobName]);
+        if (hierarchy.length >= 2) {
           const names = [];
-          for (const [_, target, __] of hierarchy) {
+          for (const [, target, ,] of hierarchy) {
             names.push((('`' + (target.key as Scalar).value) as string) + '`');
           }
 

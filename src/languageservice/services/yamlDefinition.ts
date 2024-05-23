@@ -14,7 +14,13 @@ import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { TextBuffer } from '../utils/textBuffer';
 import { SettingsState } from '../../yamlSettings';
 import { dirname, resolve } from 'path';
-import { findParentWithKey, createDefinitionFromTarget, findNodeFromPath, findNodeFromPathRecursive, findChildWithKey } from './gitlabciUtils';
+import {
+  findParentWithKey,
+  createDefinitionFromTarget,
+  findNodeFromPath,
+  findNodeFromPathRecursive,
+  findChildWithKey,
+} from './gitlabciUtils';
 
 export class YamlDefinition {
   constructor(private readonly telemetry?: Telemetry, private readonly settings?: SettingsState) {}
@@ -58,10 +64,13 @@ export class YamlDefinition {
         } else if (
           this.settings?.gitlabci.enabled &&
           node &&
-          (isScalar(node) && findParentWithKey(node, 'extends', currentDoc, 2) || isMap(parent.value) && (gitlabciExtendsNode = findChildWithKey(parent.value, 'extends')))
+          ((isScalar(node) && findParentWithKey(node, 'extends', currentDoc, 2)) ||
+            (isMap(parent.value) && (gitlabciExtendsNode = findChildWithKey(parent.value, 'extends'))))
         ) {
           // Name of the job to extend
-          let extendJob = gitlabciExtendsNode ? gitlabciExtendsNode.value.value as string : (node as Scalar).value as string;
+          const extendJob = gitlabciExtendsNode
+            ? (gitlabciExtendsNode.value.value as string)
+            : ((node as Scalar).value as string);
 
           const pathResults = findNodeFromPathRecursive(all, [extendJob]);
           if (pathResults.length) {
