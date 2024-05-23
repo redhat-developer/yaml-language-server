@@ -18,9 +18,7 @@ import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
 import { commandExecutor } from './languageserver/commandExecutor';
 import { Telemetry } from './languageservice/telemetry';
 import { registerCommands } from './languageservice/services/yamlCommands';
-import { readFileSync, readdirSync, statSync } from 'fs';
-import { yamlDocumentsCache } from './languageservice/parser/yaml-documents';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import { registerWorkspaces } from './languageservice/services/gitlabciUtils';
 
 export class YAMLServerInit {
   languageService: LanguageService;
@@ -48,6 +46,10 @@ export class YAMLServerInit {
       if (this.yamlSettings.hasWsChangeWatchedFileDynamicRegistration) {
         this.connection.workspace.onDidChangeWorkspaceFolders((changedFolders) => {
           this.yamlSettings.workspaceFolders = workspaceFoldersChanged(this.yamlSettings.workspaceFolders, changedFolders);
+
+          if (this.yamlSettings.gitlabci.enabled) {
+            registerWorkspaces(this.yamlSettings.workspaceFolders);
+          }
         });
       }
       // need to call this after connection initialized
@@ -131,29 +133,8 @@ export class YAMLServerInit {
     };
   }
 
-  private registerFile(path: string): void {
-    const content = readFileSync(path, 'utf8');
-    const doc = TextDocument.create('file://' + path, 'yaml', 1, content);
-    yamlDocumentsCache.getYamlDocument(doc);
-  }
-
-  private registerWorkspaceFiles(path: string): void {
-    const files = readdirSync(path);
-    for (const file of files) {
-      const filePath = path + '/' + file;
-      if (file.endsWith('.yaml') || file.endsWith('.yml')) {
-        this.registerFile(filePath);
-      } else if (statSync(filePath).isDirectory()) {
-        this.registerWorkspaceFiles(filePath);
-      }
-    }
-  }
-
   private registerHandlers(): void {
-    // Walk through all the files in the workspace and register them
-    for (const folder of this.yamlSettings.workspaceFolders) {
-      this.registerWorkspaceFiles(URI.parse(folder.uri).fsPath);
-    }
+    registerWorkspaces(this.yamlSettings.workspaceFolders);
 
     // Register all features that the language server has
     this.validationHandler = new ValidationHandler(this.connection, this.languageService, this.yamlSettings);

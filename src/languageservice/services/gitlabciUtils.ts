@@ -6,7 +6,10 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { LocationLink, Position, Range } from 'vscode-languageserver-types';
 import { isSeq, isMap, isScalar, isPair, YAMLMap, Node, Pair, isNode, Scalar, visit } from 'yaml';
-import { SingleYAMLDocument, YAMLDocument } from '../parser/yaml-documents';
+import { SingleYAMLDocument, YAMLDocument, yamlDocumentsCache } from '../parser/yaml-documents';
+import { readFileSync, readdirSync, statSync } from 'fs';
+import { WorkspaceFolder } from 'vscode-languageserver';
+import { URI } from 'vscode-uri';
 
 // Find node within all yaml documents
 export function findNodeFromPath(
@@ -185,4 +188,31 @@ export function toExportedRange(range: Range): object {
     endLineNumber: range.end.line + 1,
     endColumn: range.end.character + 1,
   };
+}
+
+// Parse the file at this parse and add it to the cache
+function registerFile(path: string): void {
+  const content = readFileSync(path, 'utf8');
+  const doc = TextDocument.create('file://' + path, 'yaml', 1, content);
+  yamlDocumentsCache.getYamlDocument(doc);
+}
+
+function registerWorkspaceFiles(path: string): void {
+  const files = readdirSync(path);
+  for (const file of files) {
+    const filePath = path + '/' + file;
+    if (file.endsWith('.yaml') || file.endsWith('.yml')) {
+      registerFile(filePath);
+    } else if (statSync(filePath).isDirectory()) {
+      registerWorkspaceFiles(filePath);
+    }
+  }
+}
+
+// Walk through all the files in the workspace and put them in cache
+// Useful to have cross files references for gitlabci
+export function registerWorkspaces(workspaceFolders: WorkspaceFolder[]): void {
+  for (const folder of workspaceFolders) {
+    registerWorkspaceFiles(URI.parse(folder.uri).fsPath);
+  }
 }
