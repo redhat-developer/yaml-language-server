@@ -956,6 +956,7 @@ export class YamlCompletion {
                         insertText,
                         insertTextFormat: InsertTextFormat.Snippet,
                         documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
+                        ...(schema.schema.title ? { data: { schemaTitle: schema.schema.title } } : undefined),
                       },
                       didOneOfSchemaMatches
                     );
