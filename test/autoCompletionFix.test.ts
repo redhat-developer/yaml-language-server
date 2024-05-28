@@ -482,7 +482,7 @@ objB:
 
     expect(completion.items.length).equal(1);
     expect(completion.items[0]).to.be.deep.equal(
-      createExpectedCompletion('objectWithArray', 'objectWithArray:\n    - ${1:""}', 1, 4, 1, 4, 10, 2, {
+      createExpectedCompletion('objectWithArray', 'objectWithArray:\n    - ${1}', 1, 4, 1, 4, 10, 2, {
         documentation: '',
       })
     );
