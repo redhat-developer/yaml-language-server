@@ -293,7 +293,7 @@ export class YamlCompletion {
       proposed,
     };
 
-    if (this.customTags.length > 0) {
+    if (this.customTags && this.customTags.length > 0) {
       this.getCustomTagValueCompletions(collector);
     }
 
@@ -925,7 +925,8 @@ export class YamlCompletion {
             if (propertySchema) {
               this.addSchemaValueCompletions(propertySchema, separatorAfter, collector, types, 'value');
             }
-          } else if (s.schema.additionalProperties) {
+          }
+          if (s.schema.additionalProperties) {
             this.addSchemaValueCompletions(s.schema.additionalProperties, separatorAfter, collector, types, 'value');
           }
         }
