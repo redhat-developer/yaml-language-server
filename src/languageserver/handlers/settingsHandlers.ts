@@ -20,7 +20,7 @@ export class SettingsHandler {
     private readonly yamlSettings: SettingsState,
     private readonly validationHandler: ValidationHandler,
     private readonly telemetry: Telemetry
-  ) { }
+  ) {}
 
   async registerHandlers(): Promise<void> {
     if (this.yamlSettings.hasConfigurationCapability && this.yamlSettings.clientDynamicRegisterSupport) {
