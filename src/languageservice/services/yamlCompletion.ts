@@ -925,7 +925,8 @@ export class YamlCompletion {
             if (propertySchema) {
               this.addSchemaValueCompletions(propertySchema, separatorAfter, collector, types, 'value');
             }
-          } else if (s.schema.additionalProperties) {
+          }
+          if (s.schema.additionalProperties) {
             this.addSchemaValueCompletions(s.schema.additionalProperties, separatorAfter, collector, types, 'value');
           }
         }
@@ -1205,7 +1206,7 @@ export class YamlCompletion {
         insertText = `\${${insertIndex++}:0}`;
         break;
       case 'string':
-        insertText = `\${${insertIndex++}:""}`;
+        insertText = `\${${insertIndex++}}`;
         break;
       case 'object':
         {
