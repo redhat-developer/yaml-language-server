@@ -2866,7 +2866,12 @@ describe('Auto Completion Tests', () => {
 
       expect(result.items.length).equal(5);
       expect(result.items[0]).to.deep.equal(
-        createExpectedCompletion('type', 'type: ${1|typeObj1,typeObj2|}', 0, 0, 0, 0, 10, 2, { documentation: '' })
+        createExpectedCompletion('type', 'type: ${1|typeObj1,typeObj2|}', 0, 0, 0, 0, 10, 2, {
+          documentation: '',
+          data: {
+            schemaTitle: 'Object1',
+          },
+        })
       );
       expect(result.items[1]).to.deep.equal(
         createExpectedCompletion('Object1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
@@ -2878,7 +2883,12 @@ describe('Auto Completion Tests', () => {
         })
       );
       expect(result.items[2]).to.deep.equal(
-        createExpectedCompletion('options', 'options:\n  label: ', 0, 0, 0, 0, 10, 2, { documentation: '' })
+        createExpectedCompletion('options', 'options:\n  label: ', 0, 0, 0, 0, 10, 2, {
+          documentation: '',
+          data: {
+            schemaTitle: 'Object1',
+          },
+        })
       );
       expect(result.items[3]).to.deep.equal(
         createExpectedCompletion('obj2', 'type: typeObj2\noptions:\n  description: ', 0, 0, 0, 0, 7, 2, {
@@ -2915,7 +2925,12 @@ describe('Auto Completion Tests', () => {
 
       expect(result.items.length).equal(5);
       expect(result.items[0]).to.deep.equal(
-        createExpectedCompletion('type', 'type: ${1|typeObj1,typeObj2|}', 0, 2, 0, 2, 10, 2, { documentation: '' })
+        createExpectedCompletion('type', 'type: ${1|typeObj1,typeObj2|}', 0, 2, 0, 2, 10, 2, {
+          documentation: '',
+          data: {
+            schemaTitle: 'Object1',
+          },
+        })
       );
       expect(result.items[1]).to.deep.equal(
         createExpectedCompletion('Object1', 'type: typeObj1\n  options:\n    label: ', 0, 2, 0, 2, 7, 2, {
@@ -2927,7 +2942,10 @@ describe('Auto Completion Tests', () => {
         })
       );
       expect(result.items[2]).to.deep.equal(
-        createExpectedCompletion('options', 'options:\n    label: ', 0, 2, 0, 2, 10, 2, { documentation: '' })
+        createExpectedCompletion('options', 'options:\n    label: ', 0, 2, 0, 2, 10, 2, {
+          documentation: '',
+          data: { schemaTitle: 'Object1' },
+        })
       );
       expect(result.items[3]).to.deep.equal(
         createExpectedCompletion('obj2', 'type: typeObj2\n  options:\n    description: ', 0, 2, 0, 2, 7, 2, {
