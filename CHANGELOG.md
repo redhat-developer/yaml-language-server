@@ -2,6 +2,8 @@
 - Fix: some small type issues [#918](https://github.com/redhat-developer/yaml-language-server/pull/918)
 - Add: volar-service-yaml to clients [#920](https://github.com/redhat-developer/yaml-language-server/pull/920)
 - Fix: Remove ide-yaml from known clients [#921](https://github.com/redhat-developer/yaml-language-server/pull/921)
+- Fix: schema loading performance [#923](https://github.com/redhat-developer/yaml-language-server/pull/923)
+- Fix: undefined error in mergingResult.problemArgs [#924](https://github.com/redhat-developer/yaml-language-server/pull/924)
 - Add: unify string insert text for array and property [#934](https://github.com/redhat-developer/yaml-language-server/pull/934)
 - Add: Improve some special cases for selection ranges [#939](https://github.com/redhat-developer/yaml-language-server/pull/939)
 - Fix: show all enums on hover [#942](https://github.com/redhat-developer/yaml-language-server/pull/942)
