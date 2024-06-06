@@ -1,3 +1,17 @@
+### 1.15.0
+- Fix: some small type issues [#918](https://github.com/redhat-developer/yaml-language-server/pull/918)
+- Add: volar-service-yaml to clients [#920](https://github.com/redhat-developer/yaml-language-server/pull/920)
+- Fix: Remove ide-yaml from known clients [#921](https://github.com/redhat-developer/yaml-language-server/pull/921)
+- Add: unify string insert text for array and property [#934](https://github.com/redhat-developer/yaml-language-server/pull/934)
+- Add: Improve some special cases for selection ranges [#939](https://github.com/redhat-developer/yaml-language-server/pull/939)
+- Fix: show all enums on hover [#942](https://github.com/redhat-developer/yaml-language-server/pull/942)
+- Fix: render examples as yaml on hover [#947](https://github.com/redhat-developer/yaml-language-server/pull/947)
+- Fix: snippets in additionalProperties [#951](https://github.com/redhat-developer/yaml-language-server/pull/951)
+- Fix: crash when url is undefined [#954](https://github.com/redhat-developer/yaml-language-server/pull/954)
+- Fix: Add null check for customTags [#955](https://github.com/redhat-developer/yaml-language-server/pull/955)
+
+Thanks to [Remco Haszing](https://github.com/remcohaszing), [PetrSpacek](https://github.com/p-spacek), [Tony](https://github.com/Legend-Master) and [Skip Baney](https://github.com/twelvelabs) for your contributions.
+
 ### 1.14.0
 - Fix: Request textDocument/hover failed with message: Invalid regular expression: /(?s).*/: Invalid group [#874](https://github.com/redhat-developer/yaml-language-server/issues/874)
 - Fix: nested anyof const [#888](https://github.com/redhat-developer/yaml-language-server/pull/888)
