@@ -582,15 +582,15 @@ describe('JSON Schema', () => {
 
   describe('Test schema priority', function () {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const schemaAssociationSample = require(path.join(__dirname, './fixtures/sample-association.json'));
+    const schemaAssociationSample = require('./fixtures/sample-association.json');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const schemaStoreSample = require(path.join(__dirname, './fixtures/sample-schemastore.json'));
+    const schemaStoreSample = require('./fixtures/sample-schemastore.json');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const schemaSettingsSample = require(path.join(__dirname, './fixtures/sample-settings.json'));
+    const schemaSettingsSample = require('./fixtures/sample-settings.json');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const schemaModelineSample = path.join(__dirname, './fixtures/sample-modeline.json');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const schemaDefaultSnippetSample = require(path.join(__dirname, './fixtures/defaultSnippets-const-if-else.json'));
+    const schemaDefaultSnippetSample = require('./fixtures/defaultSnippets-const-if-else.json');
     const languageSettingsSetup = new ServiceSetup().withCompletion();
 
     it('Modeline Schema takes precendence over all other schema APIs', async () => {
