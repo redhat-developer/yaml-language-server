@@ -537,7 +537,9 @@ export function getJavaScriptMode(languageId: string, workspace: Workspace): Lan
         host.dispose();
       }
     },
-    dispose() {},
+    dispose() {
+      // Noop
+    },
   };
 }
 

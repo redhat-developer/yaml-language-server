@@ -31,6 +31,7 @@ function getLanguageAtPosition(document: TextDocument, position: Position): stri
   const node = currentDoc.getNodeFromOffset(offset, true);
 
   if (
+    node &&
     'type' in node.internalNode &&
     ['BLOCK_LITERAL', 'PLAIN'].includes(node.internalNode.type) &&
     typeof node.internalNode.value === 'string'

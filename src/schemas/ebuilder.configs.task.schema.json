@@ -4,6 +4,149 @@
   "title": "eBuilder engine - Configs/Task schema",
   "description": "eBuilder engine - Configs/Task schema",
   "type": "object",
-  "properties": {},
-  "definitions": {}
+  "properties": {
+    "tasks": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "type": { "enum": ["library", "webhook", "schedule", "forward-task", "upload-files"] },
+          "authorize": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/authorize"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/authorize"
+                }
+              }
+            ]
+          },
+          "fileAccept": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "maxFiles": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "upload": {
+            "type": "object",
+            "properties": {
+              "folderPath": {
+                "type": "string"
+              },
+              "maxFileSize": {
+                "type": "number"
+              },
+              "acceptExtensions": {
+                "type": "string"
+              }
+            },
+            "required": ["folderPath", "maxFileSize", "acceptExtensions"]
+          },
+          "activator": {
+            "type": "object",
+            "properties": {
+              "assembly": {
+                "type": "string"
+              },
+              "class": {
+                "type": "string"
+              }
+            },
+            "required": ["assembly", "class"]
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "method": {
+                "type": "string"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "querystring": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/definitions/any"
+                    }
+                  },
+                  "path": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/definitions/any"
+                    }
+                  },
+                  "body": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/definitions/any"
+                    }
+                  }
+                }
+              }
+            },
+            "required": ["url", "method"]
+          },
+          "forwardTo": {
+            "type": "object",
+            "properties": {
+              "host": {
+                "type": "string"
+              },
+              "app": {
+                "type": "string"
+              },
+              "task": {
+                "type": "string"
+              },
+              "authPolicies": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/definitions/any"
+                }
+              }
+            },
+            "required": ["url", "method"]
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "authorize": {
+      "type": "object",
+      "properties": {
+        "policy": {
+          "type": "string"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "enum": ["Modify", "Show", "Deny"]
+            }
+          }
+        }
+      }
+    },
+    "any": {
+      "type": ["string", "number", "boolean", "object", "array", "null"]
+    }
+  }
 }
