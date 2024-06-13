@@ -115,7 +115,7 @@
                 }
               }
             },
-            "required": ["url", "method"]
+            "required": ["host", "app", "task", "authPolicies"]
           }
         }
       }
