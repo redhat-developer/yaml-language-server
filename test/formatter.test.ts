@@ -76,8 +76,8 @@ list:
      k1: v1
      k2: v2
 list:
-     - item1
-     - item2
+- item1
+- item2
 `;
         assert.equal(edits[0].newText, expected);
       });
@@ -99,8 +99,8 @@ list:
      k1: v1
      k2: v2
 list:
-     - item1
-     - item2
+- item1
+- item2
 `;
         assert.equal(edits[0].newText, expected);
       });
@@ -123,10 +123,60 @@ list:
      k1: v1
      k2: v2
 list:
-     - item1
-     - item2
+- item1
+- item2
 `;
         assert.equal(edits[0].newText, expected);
+      });
+
+      it('do sequence indentation', () => {
+        const content = `simple_val: Testing 1
+object_val:
+  sub_object_val: Testing 2
+  array_val:
+    - Testing 3
+    - Testing 4
+`;
+
+        const edits = parseSetup(content, {
+          tabSize: 3,
+          tabWidth: 5,
+          sequenceItemIndent: 0,
+        });
+
+        const expected = `simple_val: Testing 1
+object_val:
+     sub_object_val: Testing 2
+     array_val:
+     - Testing 3
+     - Testing 4
+`;
+        assert.strictEqual(edits[0].newText, expected);
+      });
+
+      it('do not sequence indentation', () => {
+        const content = `simple_val: Testing 1
+object_val:
+  sub_object_val: Testing 2
+array_val:
+- Testing 3
+- Testing 4
+`;
+
+        const edits = parseSetup(content, {
+          tabSize: 3,
+          tabWidth: 5,
+          sequenceItemIndent: 2,
+        });
+
+        const expected = `simple_val: Testing 1
+object_val:
+     sub_object_val: Testing 2
+array_val:
+  - Testing 3
+  - Testing 4
+`;
+        assert.strictEqual(edits[0].newText, expected);
       });
     });
   });
