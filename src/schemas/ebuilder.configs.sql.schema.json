@@ -4,6 +4,412 @@
   "title": "eBuilder engine - Configs/Sql schema",
   "description": "eBuilder engine - Configs/Sql schema",
   "type": "object",
-  "properties": {},
-  "definitions": {}
+  "properties": {
+    "query": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "inputParams": {
+            "$ref": "#/definitions/inputParams"
+          },
+          "datasource": {
+            "type": "string"
+          },
+          "authorize": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/authorize"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/authorize"
+                }
+              }
+            ]
+          },
+          "responseType": {
+            "enum": ["list", "single", "singleOrNull", "first", "firstOrNull"]
+          },
+          "propType": {
+            "type": "object",
+            "additionalProperties": {
+              "enum": ["string", "bool", "int", "double", "long", "decimal", "json"]
+            }
+          },
+          "pre": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/sqlStep"
+            }
+          },
+          "baseCommand": {
+            "type": "string"
+          },
+          "placeholders": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/definitions/engineTargetString"
+            }
+          },
+          "command": {
+            "$ref": "#/definitions/engineTargetString"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "mutation": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "inputParams": {
+            "$ref": "#/definitions/inputParams"
+          },
+          "datasource": {
+            "type": "string"
+          },
+          "authorize": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/authorize"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/authorize"
+                }
+              }
+            ]
+          },
+          "transactionIsolationLevel": {
+            "oneOf": [
+              {
+                "enum": ["default", "read-committed", "repeatable-read", "serializable"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "default": {
+                    "enum": ["default", "read-committed", "repeatable-read", "serializable"]
+                  },
+                  "oracle": {
+                    "enum": ["default", "read-committed", "repeatable-read", "serializable"]
+                  },
+                  "postgresql": {
+                    "enum": ["default", "read-committed", "repeatable-read", "serializable"]
+                  },
+                  "mssql": {
+                    "enum": ["default", "read-committed", "repeatable-read", "serializable"]
+                  },
+                  "mysql": {
+                    "enum": ["default", "read-committed", "repeatable-read", "serializable"]
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/sqlStep"
+            }
+          },
+          "response": {
+            "$ref": "#/definitions/mutationResponse"
+          },
+          "command": {
+            "$ref": "#/definitions/engineTargetString"
+          },
+          "placeholders": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/definitions/engineTargetString"
+            }
+          },
+          "on": {
+            "type": "object",
+            "properties": {
+              "success": {
+                "task": {
+                  "type": "string"
+                },
+                "mutation": {
+                  "type": "string"
+                },
+                "params": {
+                  "$ref": "#/definitions/any"
+                },
+                "checks": {
+                  "$ref": "#/definitions/checks"
+                },
+                "checksBefore": {
+                  "$ref": "#/definitions/checks"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "authorize": {
+      "type": "object",
+      "properties": {
+        "policy": {
+          "type": "string"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "enum": ["Modify", "Show", "Deny"]
+            }
+          }
+        }
+      }
+    },
+    "inputParam": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "enum": ["int", "decimal", "number", "string", "bool", "dateTime", "datetime", "array", "object"]
+        },
+        "items": {
+          "$ref": "#/definitions/inputParam"
+        },
+        "properties": {
+          "$ref": "#/definitions/inputParams"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "required": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "nullable": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "inputParams": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "$ref": "#/definitions/inputParam"
+      }
+    },
+    "check": {
+      "type": "object",
+      "properties": {
+        "if": {
+          "type": "string"
+        },
+        "param": {
+          "$ref": "#/definitions/any"
+        },
+        "op": {
+          "enum": ["equal", "notEqual", "in", "notIn", "defined", "undefined"]
+        },
+        "value": {
+          "$ref": "#/definitions/any"
+        },
+        "elseThrowErrorCode": {
+          "type": "number"
+        },
+        "throwErrorCode": {
+          "type": "number",
+          "deprecated": true
+        },
+        "throw": {
+          "type": "string",
+          "deprecated": true
+        },
+        "silentThrow": {
+          "type": "boolean",
+          "deprecated": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/check"
+      }
+    },
+    "sqlStep": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "jsExpression": {
+          "type": "string"
+        },
+        "placeholders": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/engineTargetString"
+          }
+        },
+        "command": {
+          "$ref": "#/definitions/engineTargetString"
+        },
+        "save": {
+          "enum": ["last-insert-id", "output-params", "scalar", "first-row", "all-rows"]
+        },
+        "extra": {
+          "type": "object",
+          "properties": {
+            "identityCol": {
+              "type": "string"
+            }
+          }
+        },
+        "checks": {
+          "deprecated": true,
+          "$ref": "#/definitions/checks"
+        },
+        "checksAfter": {
+          "$ref": "#/definitions/checks"
+        },
+        "checksBefore": {
+          "$ref": "#/definitions/checks"
+        },
+        "catchErrors": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/mutationResponse"
+          },
+          "propertyNames": {
+            "type": "number"
+          }
+        },
+        "stepParams": {
+          "$ref": "#/definitions/any"
+        },
+        "subStepsParams": {
+          "$ref": "#/definitions/any"
+        },
+        "subSteps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/sqlStep"
+          }
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "defaultValue": {
+                "$ref": "#/definitions/any"
+              }
+            }
+          }
+        },
+        "defaultResult": {
+          "$ref": "#/definitions/any"
+        },
+        "task": {
+          "type": "string"
+        },
+        "taskParams": {
+          "$ref": "#/definitions/any"
+        },
+        "mutation": {
+          "type": "string"
+        },
+        "mutationParams": {
+          "$ref": "#/definitions/any"
+        }
+      },
+      "required": ["key"],
+      "additionalProperties": false
+    },
+    "engineTargetString": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "default": {
+              "type": "string"
+            },
+            "oracle": {
+              "type": "string"
+            },
+            "postgresql": {
+              "type": "string"
+            },
+            "mssql": {
+              "type": "string"
+            },
+            "mysql": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "any": {
+      "type": ["string", "number", "boolean", "object", "array", "null"]
+    },
+    "mutationResponse": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/any"
+          }
+        },
+        "message": {
+          "type": "string"
+        },
+        "statusCode": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
 }
