@@ -38,7 +38,7 @@ const ajv = new Ajv();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
 
-var schema07Validator: ValidateFunction;
+let schema07Validator: ValidateFunction;
 
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
