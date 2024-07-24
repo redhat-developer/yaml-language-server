@@ -86,7 +86,19 @@ describe('Formatter Tests', () => {
           printWidth: 20,
           proseWrap: 'always',
         });
-        assert.equal(edits[0].newText, 'comments: >\n  test test test\n  test test test\n  test test test\n  test test test\n');
+        assert.equal(edits[0].newText, 'comments: >\n  test test test test\n  test test test test\n  test test test test\n');
+      });
+
+      it('Formatting handles trailing commas (default)', async () => {
+        const content = `{
+  key: 'value',
+  food: 'raisins',
+  airport: 'YYZ',
+  lightened_bulb: 'illuminating',
+}
+`;
+        const edits = await parseSetup(content, { singleQuote: true, trailingComma: true });
+        assert.equal(edits.length, 0);
       });
 
       it('Formatting handles trailing commas (enabled)', async () => {
@@ -98,7 +110,7 @@ describe('Formatter Tests', () => {
 }
 `;
         const edits = await parseSetup(content, { singleQuote: true });
-        assert.equal(edits[0].newText, content);
+        assert.equal(edits.length, 0);
       });
 
       it('Formatting handles trailing commas (disabled)', async () => {

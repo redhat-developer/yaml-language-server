@@ -4,20 +4,23 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Range, Position, TextEdit, FormattingOptions } from 'vscode-languageserver-types';
-import { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
-import { Options } from 'prettier';
-import * as yamlPlugin from 'prettier/plugins/yaml';
-import * as estreePlugin from 'prettier/plugins/estree';
-import { format } from 'prettier/standalone';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { FormattingOptions, Position, Range, TextEdit } from 'vscode-languageserver-types';
+import { parseDocument, ToStringOptions } from 'yaml';
+import { YamlVersion } from '../parser/yamlParser07';
+import { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
+import { getCustomTags } from '../parser/custom-tag-provider';
 
 export class YAMLFormatter {
   private formatterEnabled = true;
+  private yamlVersion: YamlVersion = '1.2';
+  private customTags: string[] = [];
 
   public configure(shouldFormat: LanguageSettings): void {
     if (shouldFormat) {
       this.formatterEnabled = shouldFormat.format;
+      this.yamlVersion = shouldFormat.yamlVersion;
+      this.customTags = shouldFormat.customTags;
     }
   }
 
@@ -31,24 +34,28 @@ export class YAMLFormatter {
 
     try {
       const text = document.getText();
+      const doc = parseDocument(text, {
+        version: this.yamlVersion,
+        customTags: getCustomTags(this.customTags),
+      });
 
-      const prettierOptions: Options = {
-        parser: 'yaml',
-        plugins: [yamlPlugin, estreePlugin],
-
+      const toStringOptions: ToStringOptions = {
         // --- FormattingOptions ---
-        tabWidth: (options.tabWidth as number) || options.tabSize,
+        indent: (options.tabWidth as number) || options.tabSize || 2,
 
         // --- CustomFormatterOptions ---
         singleQuote: options.singleQuote,
-        bracketSpacing: options.bracketSpacing,
-        // 'preserve' is the default for Options.proseWrap. See also server.ts
-        proseWrap: 'always' === options.proseWrap ? 'always' : 'never' === options.proseWrap ? 'never' : 'preserve',
-        printWidth: options.printWidth,
-        trailingComma: options.trailingComma === false ? 'none' : 'all',
+        flowCollectionPadding: options.bracketSpacing,
+        blockQuote: options.proseWrap === 'always' ? 'folded' : true,
+        lineWidth: Math.max(options.printWidth || 0, 22),
+        trailingComma: options.trailingComma === undefined ? true : options.trailingComma,
       };
 
-      const formatted = await format(text, prettierOptions);
+      const formatted = doc.toString(toStringOptions);
+
+      if (formatted === text) {
+        return [];
+      }
 
       return [TextEdit.replace(Range.create(Position.create(0, 0), document.positionAt(text.length)), formatted)];
     } catch (error) {
