@@ -96,7 +96,6 @@ export class SettingsHandler {
 
       if (settings.yaml.format) {
         this.yamlSettings.yamlFormatterSettings = {
-          proseWrap: settings.yaml.format.proseWrap || 'preserve',
           printWidth: settings.yaml.format.printWidth || 80,
         };
 
