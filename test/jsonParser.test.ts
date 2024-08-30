@@ -1541,6 +1541,28 @@ describe('JSON Parser', () => {
     }
   });
 
+  it('multipleOfFloat', function () {
+    const schema: JsonSchema.JSONSchema = {
+      type: 'array',
+      items: {
+        type: 'number',
+        multipleOf: 0.05,
+      },
+    };
+    {
+      const { textDoc, jsonDoc } = toDocument('[0.9]');
+      const semanticErrors = jsonDoc.validate(textDoc, schema);
+
+      assert.strictEqual(semanticErrors.length, 0);
+    }
+    {
+      const { textDoc, jsonDoc } = toDocument('[42.3222222]');
+      const semanticErrors = jsonDoc.validate(textDoc, schema);
+
+      assert.strictEqual(semanticErrors.length, 1);
+    }
+  });
+
   it('dependencies with array', function () {
     const schema: JsonSchema.JSONSchema = {
       type: 'object',
