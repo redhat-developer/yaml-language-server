@@ -2251,6 +2251,33 @@ describe('Auto Completion Tests', () => {
       expect(completion.items[0].insertText).eq('prop2: ');
     });
 
+    it('should complete properties of an object under a list', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          steps: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                task: {
+                  type: 'string',
+                },
+                inputs: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const content = 'steps:\n- task: PowerShell@2\n  '; // len: 30
+      const completion = await parseSetup(content, 30);
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0].label).eq('inputs');
+    });
+
     it('should complete string which contains number in default value', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
