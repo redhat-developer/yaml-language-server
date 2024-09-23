@@ -196,14 +196,21 @@ function registerFile(path: string): void {
 }
 
 function registerWorkspaceFiles(path: string): void {
-  const files = readdirSync(path);
-  for (const file of files) {
-    const filePath = path + '/' + file;
-    if (file.endsWith('.yaml') || file.endsWith('.yml')) {
-      registerFile(filePath);
-    } else if (statSync(filePath).isDirectory()) {
-      registerWorkspaceFiles(filePath);
+  try {
+    const files = readdirSync(path);
+    for (const file of files) {
+      const filePath = path + '/' + file;
+      const stats = statSync(filePath);
+
+      if (file.endsWith('.yaml') || file.endsWith('.yml')) {
+        registerFile(filePath);
+      } else if (stats.isDirectory()) {
+        registerWorkspaceFiles(filePath);
+      }
     }
+  } catch (e) {
+    console.warn('Error reading directory: ' + path + ', ignoring it');
+    return;
   }
 }
 
