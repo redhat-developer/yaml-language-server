@@ -170,6 +170,20 @@ export class YamlHoverDetail {
               }
             }
           }
+          // customization for jsonata snippet
+          if (
+            s.schema.defaultSnippets &&
+            propertyName === 'jsonata' &&
+            node.parent?.children?.[1].value?.toString()?.startsWith('$')
+          ) {
+            const propertyValue = node.parent?.children?.[1].value?.toString();
+            const snippet = s.schema.defaultSnippets.find((snippet) => snippet.label === propertyValue);
+            if (snippet) {
+              hover.markdownDescription = snippet.markdownDescription;
+              hoverRes.push(hover);
+              return true;
+            }
+          }
           const decycleSchema = decycle(s.schema, 8);
           resSchemas.push(decycleSchema);
           if (this.propTableStyle !== 'none') {

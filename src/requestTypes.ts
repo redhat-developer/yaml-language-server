@@ -94,6 +94,14 @@ export namespace CompletionYamlRequest {
   > = new RequestType('custom/completionYaml');
 }
 
+export namespace HoverYamlRequest {
+  export const type: RequestType<
+    { yaml: string; position: TextDocumentPositionParams['position']; fileName: string },
+    unknown,
+    unknown
+  > = new RequestType('custom/hoverYaml');
+}
+
 export namespace SchemaSelectionRequests {
   export const type: NotificationType<void> = new NotificationType('yaml/supportSchemaSelection');
   export const getSchema: RequestType<string, JSONSchemaDescription[], unknown> = new RequestType('yaml/get/jsonSchema');

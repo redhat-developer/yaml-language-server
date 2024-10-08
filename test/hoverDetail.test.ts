@@ -179,4 +179,26 @@ test: \`const1\` | object | Expression | string | obj1
       assert.strictEqual((result.contents as MarkupContent).value.includes('| prop2 |'), false);
     });
   });
+  describe('Snippets for jsonata customization', async () => {
+    it('Should hover info from snippet', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          jsonata: {
+            type: 'string',
+            defaultSnippets: [
+              {
+                label: '$sum',
+                markdownDescription: '## `$sum()',
+              },
+            ],
+          },
+        },
+      });
+      const content = 'jsonata:\n  $sum';
+      const result = await parseSetup(content, 1, SCHEMA_ID);
+
+      assert.strictEqual((result.contents as MarkupContent).value, '## `$sum()');
+    });
+  });
 });

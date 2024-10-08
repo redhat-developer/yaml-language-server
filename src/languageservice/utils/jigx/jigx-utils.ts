@@ -134,7 +134,12 @@ export function replaceSpecialCharsInDescription(text: string): string {
   };
   // I want to support MD syntax in description
   // const ret = text.replace(/[\|\*\(\)\[\]\+\-\\_`#<>\n]/g, (m) => map[m]);
-  const ret = text.replace(/<br \/>\n/g, '<br />').replace(/[\|\\_#\n]/g, (m) => map[m]);
+  let ret = text
+    .replace(/```/g, '') // codeblock doesn't work with md table
+    .replace(/\n\n/g, '\n')
+    .replace(/<br \/>\n/g, '<br />')
+    .replace(/\n|./g, (m) => map[m] ?? m);
+  ret = replaceSpacesToNbsp(ret);
   return ret;
 }
 
@@ -207,6 +212,10 @@ export function simplifyNbsp(str: string): string {
   return str.replace(/&nbsp;&nbsp;&nbsp;&nbsp;/g, '&emsp;').replace(/&nbsp;&nbsp;/g, '&ensp;');
 }
 
+export function replaceSpacesToNbsp(str: string): string {
+  return str.replace(/ {4}/g, '&emsp;').replace(/ {2}/g, '&ensp;');
+  //.replace(/ /g, '&nbsp;'); // don't replace simple space, it's not indent probably
+}
 /**
  *
  * @param indent 2 is root
