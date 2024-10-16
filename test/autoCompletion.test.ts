@@ -1909,6 +1909,26 @@ describe('Auto Completion Tests', () => {
         .then(done, done);
     });
 
+    it('Provide completion from schema declared in file without addon name', (done) => {
+      const content = `# $schema:${uri}\n- `;
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 3);
+        })
+        .then(done, done);
+    });
+
+    it('Provide completion from schema declared in file without addon name with space', (done) => {
+      const content = `# $schema:  ${uri}\n- `;
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 3);
+        })
+        .then(done, done);
+    });
+
     it('Provide completion from schema declared in file with several attributes', (done) => {
       const content = `# yaml-language-server: $schema=${uri} anothermodeline=value\n- `;
       const completion = parseSetup(content, content.length);
@@ -1919,8 +1939,28 @@ describe('Auto Completion Tests', () => {
         .then(done, done);
     });
 
+    it('Provide completion from schema declared in file with several attributes without addon name', (done) => {
+      const content = `# $schema: ${uri} anothermodeline=value\n- `;
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 3);
+        })
+        .then(done, done);
+    });
+
     it('Provide completion from schema declared in file with several documents', async () => {
       const documentContent1 = `# yaml-language-server: $schema=${uri} anothermodeline=value\n- `; // 149
+      const content = `${documentContent1}|\n|---\n- `; // len: 156, pos: 149
+      const result = await parseSetup(content);
+      assert.equal(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
+
+      const resultDoc2 = await parseSetup(content, content.length);
+      assert.equal(resultDoc2.items.length, 0, `Expecting no items in completion but found ${resultDoc2.items.length}`);
+    });
+
+    it('Provide completion from schema declared in file with several documents without LSP name', async () => {
+      const documentContent1 = `# $schema: ${uri} anothermodeline=value\n- `; // 149
       const content = `${documentContent1}|\n|---\n- `; // len: 156, pos: 149
       const result = await parseSetup(content);
       assert.equal(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
@@ -1998,6 +2038,17 @@ describe('Auto Completion Tests', () => {
       assert.strictEqual(result.items.length, 0, `Expecting 0 item in completion but found ${result.items.length}`);
     });
 
+    it('should not provide modeline completion on first character when modeline already present without LSP name', async () => {
+      const testTextDocument = setupSchemaIDTextDocument('# $schema:', path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(0),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 0, `Expecting 0 item in completion but found ${result.items.length}`);
+    });
+
     it('should provide schema id completion in modeline', async () => {
       const modeline = '# yaml-language-server: $schema=';
       const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(__dirname, 'test.yaml'));
@@ -2011,8 +2062,34 @@ describe('Auto Completion Tests', () => {
       assert.strictEqual(result.items[0].label, 'http://google.com');
     });
 
+    it('should provide schema id completion in modeline without LSP name', async () => {
+      const modeline = '# $schema: ';
+      const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(modeline.length),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.strictEqual(result.items[0].label, 'http://google.com');
+    });
+
     it('should provide schema id completion in modeline for any line', async () => {
       const modeline = 'foo:\n  bar\n# yaml-language-server: $schema=';
+      const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(__dirname, 'test.yaml'));
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const result = await languageHandler.completionHandler({
+        position: testTextDocument.positionAt(modeline.length),
+        textDocument: testTextDocument,
+      });
+      assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
+      assert.strictEqual(result.items[0].label, 'http://google.com');
+    });
+
+    it('should provide schema id completion in modeline for any line without LSP name', async () => {
+      const modeline = 'foo:\n  bar\n# $schema: ';
       const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(__dirname, 'test.yaml'));
       yamlSettings.documents = new TextDocumentTestManager();
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
