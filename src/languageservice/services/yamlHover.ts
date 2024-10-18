@@ -12,13 +12,14 @@ import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
+import { IApplicableSchema } from '../parser/jsonParser07';
 import { JSONSchema } from '../jsonSchema';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
 import { Telemetry } from '../telemetry';
 import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { ASTNode } from 'vscode-json-languageservice';
+import { stringify as stringifyYAML } from 'yaml';
 
 export class YAMLHover {
   private shouldHover: boolean;
@@ -87,11 +88,6 @@ export class YAMLHover {
     );
 
     const createHover = (contents: string): Hover => {
-      if (this.indentation !== undefined) {
-        const indentationMatchRegex = new RegExp(` {${this.indentation.length}}`, 'g');
-        contents = contents.replace(indentationMatchRegex, '&emsp;');
-      }
-
       const markupContent: MarkupContent = {
         kind: MarkupKind.Markdown,
         value: contents,
@@ -113,27 +109,31 @@ export class YAMLHover {
 
         let title: string | undefined = undefined;
         let markdownDescription: string | undefined = undefined;
-        let markdownEnumValueDescription: string | undefined = undefined;
-        let enumValue: string | undefined = undefined;
+        let markdownEnumDescriptions: string[] = [];
         const markdownExamples: string[] = [];
+        const markdownEnums: markdownEnum[] = [];
 
         matchingSchemas.every((s) => {
           if ((s.node === node || (node.type === 'property' && node.valueNode === s.node)) && !s.inverted && s.schema) {
             title = title || s.schema.title || s.schema.closestTitle;
-            markdownDescription = markdownDescription || s.schema.markdownDescription || toMarkdown(s.schema.description);
+            markdownDescription = markdownDescription || s.schema.markdownDescription || this.toMarkdown(s.schema.description);
             if (s.schema.enum) {
-              const idx = s.schema.enum.indexOf(getNodeValue(node));
               if (s.schema.markdownEnumDescriptions) {
-                markdownEnumValueDescription = s.schema.markdownEnumDescriptions[idx];
+                markdownEnumDescriptions = s.schema.markdownEnumDescriptions;
               } else if (s.schema.enumDescriptions) {
-                markdownEnumValueDescription = toMarkdown(s.schema.enumDescriptions[idx]);
+                markdownEnumDescriptions = s.schema.enumDescriptions.map(this.toMarkdown, this);
+              } else {
+                markdownEnumDescriptions = [];
               }
-              if (markdownEnumValueDescription) {
-                enumValue = s.schema.enum[idx];
+              s.schema.enum.forEach((enumValue, idx) => {
                 if (typeof enumValue !== 'string') {
                   enumValue = JSON.stringify(enumValue);
                 }
-              }
+                markdownEnums.push({
+                  value: enumValue,
+                  description: markdownEnumDescriptions[idx],
+                });
+              });
             }
             if (s.schema.anyOf && isAllSchemasMatched(node, matchingSchemas, s.schema)) {
               //if append title and description of all matched schemas on hover
@@ -141,7 +141,7 @@ export class YAMLHover {
               markdownDescription = '';
               s.schema.anyOf.forEach((childSchema: JSONSchema, index: number) => {
                 title += childSchema.title || s.schema.closestTitle || '';
-                markdownDescription += childSchema.markdownDescription || toMarkdown(childSchema.description) || '';
+                markdownDescription += childSchema.markdownDescription || this.toMarkdown(childSchema.description) || '';
                 if (index !== s.schema.anyOf.length - 1) {
                   title += ' || ';
                   markdownDescription += ' || ';
@@ -152,7 +152,7 @@ export class YAMLHover {
             }
             if (s.schema.examples) {
               s.schema.examples.forEach((example) => {
-                markdownExamples.push(JSON.stringify(example, null, 2));
+                markdownExamples.push(stringifyYAML(example, null, 2));
               });
             }
           }
@@ -160,37 +160,69 @@ export class YAMLHover {
         });
         let result = '';
         if (title) {
-          result = '#### ' + toMarkdown(title);
+          result = '#### ' + this.toMarkdown(title);
         }
         if (markdownDescription) {
-          if (result.length > 0) {
-            result += '\n\n';
-          }
+          result = ensureLineBreak(result);
           result += markdownDescription;
         }
-        if (markdownEnumValueDescription) {
-          if (result.length > 0) {
-            result += '\n\n';
-          }
-          result += `\`${toMarkdownCodeBlock(enumValue)}\`: ${markdownEnumValueDescription}`;
+        if (markdownEnums.length !== 0) {
+          result = ensureLineBreak(result);
+          result += 'Allowed Values:\n\n';
+          markdownEnums.forEach((me) => {
+            if (me.description) {
+              result += `* \`${toMarkdownCodeBlock(me.value)}\`: ${me.description}\n`;
+            } else {
+              result += `* \`${toMarkdownCodeBlock(me.value)}\`\n`;
+            }
+          });
         }
         if (markdownExamples.length !== 0) {
-          if (result.length > 0) {
-            result += '\n\n';
-          }
-          result += 'Examples:';
           markdownExamples.forEach((example) => {
-            result += `\n\n\`\`\`${example}\`\`\``;
+            result = ensureLineBreak(result);
+            result += 'Example:\n\n';
+            result += `\`\`\`yaml\n${example}\`\`\`\n`;
           });
         }
         if (result.length > 0 && schema.schema.url) {
-          result += `\n\nSource: [${getSchemaName(schema.schema)}](${schema.schema.url})`;
+          result = ensureLineBreak(result);
+          result += `Source: [${getSchemaName(schema.schema)}](${schema.schema.url})`;
         }
         return createHover(result);
       }
       return null;
     });
   }
+
+  // copied from https://github.com/microsoft/vscode-json-languageservice/blob/2ea5ad3d2ffbbe40dea11cfe764a502becf113ce/src/services/jsonHover.ts#L112
+  private toMarkdown(plain: string | undefined): string | undefined {
+    if (plain) {
+      let escaped = plain.replace(/([^\n\r])(\r?\n)([^\n\r])/gm, '$1\n\n$3'); // single new lines to \n\n (Markdown paragraph)
+      escaped = escaped.replace(/[\\`*_{}[\]()#+\-.!]/g, '\\$&'); // escape markdown syntax tokens: http://daringfireball.net/projects/markdown/syntax#backslash
+      if (this.indentation !== undefined) {
+        // escape indentation whitespace to prevent it from being converted to markdown code blocks.
+        const indentationMatchRegex = new RegExp(` {${this.indentation.length}}`, 'g');
+        escaped = escaped.replace(indentationMatchRegex, '&emsp;');
+      }
+      return escaped;
+    }
+    return undefined;
+  }
+}
+
+interface markdownEnum {
+  value: string;
+  description: string;
+}
+
+function ensureLineBreak(content: string): string {
+  if (content.length === 0) {
+    return content;
+  }
+  if (!content.endsWith('\n')) {
+    content += '\n';
+  }
+  return content + '\n';
 }
 
 function getSchemaName(schema: JSONSchema): string {
@@ -203,17 +235,6 @@ function getSchemaName(schema: JSONSchema): string {
     result = schema.title;
   }
   return result;
-}
-
-// copied from https://github.com/microsoft/vscode-json-languageservice/blob/2ea5ad3d2ffbbe40dea11cfe764a502becf113ce/src/services/jsonHover.ts#L112
-function toMarkdown(plain: string): string;
-function toMarkdown(plain: string | undefined): string | undefined;
-function toMarkdown(plain: string | undefined): string | undefined {
-  if (plain) {
-    const res = plain.replace(/([^\n\r])(\r?\n)([^\n\r])/gm, '$1\n\n$3'); // single new lines to \n\n (Markdown paragraph)
-    return res.replace(/[\\`*_{}[\]()#+\-.!]/g, '\\$&'); // escape markdown syntax tokens: http://daringfireball.net/projects/markdown/syntax#backslash
-  }
-  return undefined;
 }
 
 // copied from https://github.com/microsoft/vscode-json-languageservice/blob/2ea5ad3d2ffbbe40dea11cfe764a502becf113ce/src/services/jsonHover.ts#L122
