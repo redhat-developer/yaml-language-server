@@ -1291,7 +1291,7 @@ obj:
           4,
           18,
           DiagnosticSeverity.Error,
-          'yaml-schema: Package',
+          'yaml-schema: Composer Package',
           'https://raw.githubusercontent.com/composer/composer/master/res/composer-schema.json'
         )
       );
