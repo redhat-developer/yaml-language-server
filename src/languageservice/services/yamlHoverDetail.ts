@@ -21,7 +21,7 @@ import { Schema2Md } from '../utils/jigx/schema2md';
 import { decycle } from '../utils/jigx/cycle';
 import { Globals } from '../utils/jigx/globals';
 
-interface YamlHoverDetailResult {
+export interface YamlHoverDetailResult {
   /**
    * The hover's content
    */
@@ -148,7 +148,7 @@ export class YamlHoverDetail {
         const matchingSchemasDistinct = distinctSchemas(matchingSchemas);
         matchingSchemasDistinct.every((s) => {
           const hover = {
-            title: s.schema.title || s.schema.closestTitle,
+            title: `${s.schema.title || s.schema.closestTitle || ''}` + (s.schema.const ? ` '${s.schema.const}'` : ''),
             markdownDescription:
               s.schema.markdownDescription ||
               (s.schema.url?.startsWith(Globals.dynamicSchema) ? s.schema.description : toMarkdown(s.schema.description)),
@@ -200,12 +200,13 @@ export class YamlHoverDetail {
         const newLineWithHr = '\n\n----\n';
         let results: string[] = [];
         if (hoverRes.length > 1) {
+          const isLongTitle = hoverRes.length > 3;
           const titleAll = hoverRes
             .filter((h) => h.title)
-            .map((h) => toMarkdown(h.title))
-            .join(' | ');
+            .map((h) => h.title)
+            .join(isLongTitle ? ' |\n  ' : ' | ');
           if (titleAll) {
-            results.push('one of\n```yaml\n' + titleAll + '\n```');
+            results.push('```yaml\nanyOf: ' + (isLongTitle ? '\n  ' : '') + titleAll + '\n```');
           }
         }
         for (const hover of hoverRes) {
@@ -288,6 +289,22 @@ function distinctSchemas(matchingSchemas: IApplicableSchema[]): IApplicableSchem
       s.schema.oneOf ||
       !seenSchemaFromAnyOf.includes(s.schema.$id || s.schema._$ref || s.schema.url)
   );
+
+  // remove duplicities
+  matchingSchemasDistinct = matchingSchemasDistinct.filter((schema, index, self) => {
+    const getKey = (schema: JSONSchema): string =>
+      schema.$id ||
+      schema._$ref ||
+      `${schema.title || 't'} ${schema.description || 'd'} ${schema.const || 'c'} ${schema.enum || 'e'}`;
+    const key = getKey(schema.schema);
+    return (
+      index ===
+      self.findIndex((selfSchema) => {
+        const selfKey = getKey(selfSchema.schema);
+        return key === selfKey;
+      })
+    );
+  });
 
   // see jsonParser07.testBranch need to solve better
   if (matchingSchemasDistinct.some((s) => s.schema.$comment === 'then/else')) {

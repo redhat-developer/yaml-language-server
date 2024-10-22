@@ -196,7 +196,8 @@ export class Schema_Enum extends Schema_TypeBase {
   type: S_SimpleType;
   enum: string[];
   getTypeStr(): string {
-    return `Enum${char_lt}${this.type}${char_gt}`;
+    const enumList = (this.enum?.slice(0, 5).join(', ') || this.type) + (this.enum?.length > 5 ? ', ...' : '');
+    return `Enum${char_lt}${enumList}${char_gt}`;
   }
 }
 export class Schema_Const extends Schema_TypeBase {
@@ -327,42 +328,39 @@ export class SchemaTypeFactory {
   public static CreatePropTypeInstance(schema: JSONSchema, propName?: string, isPropRequired?: boolean): Schema_AnyType {
     isPropRequired =
       isPropRequired !== undefined ? isPropRequired : (schema.required && schema.required.indexOf(propName) >= 0) || false;
-    if (schema.type) {
-      if (schema.type == 'array' && schema.items) {
-        // const arrStr = getActualTypeStr(schema.items, subSchemas) + '[]';
-        // let arrType = getActualTypeStr(schema.items, subSchemas);
-        if ((<JSONSchema>schema.items).anyOf) {
-          return createInstance(Schema_ArrayGeneric, schema, { propName, isPropRequired }); // `Array<${arrType}>`;
-        }
-        return createInstance(Schema_ArrayTyped, schema, { propName, isPropRequired }); //  arrType + '[]';
-      } else if (schema.type instanceof Array) {
-        return createInstance(Schema_SimpleAnyOf, schema, { propName, isPropRequired }); // schema.type.join(tableColumnSeparator);
-      } else if (schema.enum) {
-        return createInstance(Schema_Enum, schema, { propName, isPropRequired });
-      } else if (schema.type === 'object' && schema.properties) {
-        return createInstance(Schema_Object, schema, { propName, isPropRequired });
-      } else if (
-        schema.type === 'object' &&
-        schema.additionalProperties &&
-        typeof schema.additionalProperties !== 'boolean' &&
-        schema.additionalProperties &&
-        schema.additionalProperties.anyOf
-      ) {
-        return createInstance(Schema_AnyOf, schema, { propName, isPropRequired });
-      } else if (schema.const) {
-        return createInstance(Schema_Const, schema, { propName, isPropRequired });
-      } else if (Schema_ObjectTyped.get$ref(schema)) {
-        //has to be also here because parser gives to some $ref types also real type automatically
-        //in doc, this don't have to be there
-        return createInstance(Schema_ObjectTyped, schema, { propName, isPropRequired });
+    if (schema.type && schema.type == 'array' && schema.items) {
+      // const arrStr = getActualTypeStr(schema.items, subSchemas) + '[]';
+      // let arrType = getActualTypeStr(schema.items, subSchemas);
+      if ((<JSONSchema>schema.items).anyOf) {
+        return createInstance(Schema_ArrayGeneric, schema, { propName, isPropRequired }); // `Array<${arrType}>`;
       }
-      return createInstance(Schema_SimpleType, schema, { propName, isPropRequired }); //schema.type
+      return createInstance(Schema_ArrayTyped, schema, { propName, isPropRequired }); //  arrType + '[]';
+    } else if (schema.type instanceof Array) {
+      return createInstance(Schema_SimpleAnyOf, schema, { propName, isPropRequired }); // schema.type.join(tableColumnSeparator);
+    } else if (schema.type === 'object' && schema.properties) {
+      return createInstance(Schema_Object, schema, { propName, isPropRequired });
+    } else if (
+      schema.type === 'object' &&
+      schema.additionalProperties &&
+      typeof schema.additionalProperties !== 'boolean' &&
+      schema.additionalProperties &&
+      schema.additionalProperties.anyOf
+    ) {
+      return createInstance(Schema_AnyOf, schema, { propName, isPropRequired });
+    } else if (schema.enum) {
+      return createInstance(Schema_Enum, schema, { propName, isPropRequired });
+    } else if (schema.const) {
+      return createInstance(Schema_Const, schema, { propName, isPropRequired });
     } else if (schema.oneOf || schema.anyOf) {
       return createInstance(Schema_AnyOf, schema, { propName, isPropRequired });
     } else if (Schema_ObjectTyped.get$ref(schema)) {
+      //has to be also here because parser gives to some $ref types also real type automatically
+      //in doc, this don't have to be there
       //won't never used. Schema_Object is used instead - schema structure is little bit different
-      //parser gives to some $ref types also real type automatically - so condition for schema.type is used
+      //parser gives to some $ref types also real type automatically
       return createInstance(Schema_ObjectTyped, schema, { propName, isPropRequired });
+    } else if (schema.type) {
+      return createInstance(Schema_SimpleType, schema, { propName, isPropRequired }); //schema.type
     } else {
       return createInstance(Schema_Undefined, schema, { propName, isPropRequired });
     }
