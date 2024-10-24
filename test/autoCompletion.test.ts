@@ -1249,6 +1249,20 @@ describe('Auto Completion Tests', () => {
         const arrayItem = convertObjectToArrayItem(objectText, '  ');
         expect(arrayItem).to.equal(expectedArrayItem);
       });
+      it('Autocompletion should escape $ in property', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            $prop$1: {
+              type: 'string',
+            },
+          },
+          required: ['$prop$1'],
+        });
+        const content = '';
+        const completion = await parseSetup(content, 0);
+        expect(completion.items.map((i) => i.insertText)).includes('\\$prop\\$1: ');
+      });
 
       it('Autocompletion should escape colon when indicating map', async () => {
         schemaProvider.addSchema(SCHEMA_ID, {

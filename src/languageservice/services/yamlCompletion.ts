@@ -1866,7 +1866,10 @@ export class YamlCompletion {
  * escape $, \ and }
  */
 function getInsertTextForPlainText(text: string): string {
-  return text.replace(/[\\$}]/g, '\\$&'); //
+  return text.replace(/(\\?)([\\$}])/g, (match, escapeChar, specialChar) => {
+    // If it's already escaped (has a backslash before it), return it as is
+    return escapeChar ? match : `\\${specialChar}`;
+  });
 }
 
 const isNumberExp = /^\d+$/;
