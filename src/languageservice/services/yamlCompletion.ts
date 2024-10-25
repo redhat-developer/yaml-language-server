@@ -815,8 +815,9 @@ export class YamlCompletion {
           completionItem.textEdit.newText = completionItem.insertText;
         }
         // remove $x or use {$x:value} in documentation
-        const mdText = insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
-
+        let mdText = insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
+        // unescape special chars for markdown, reverse operation to getInsertTextForPlainText
+        mdText = getOriginalTextFromEscaped(mdText);
         const originalDocumentation = completionItem.documentation ? [completionItem.documentation, '', '----', ''] : [];
         completionItem.documentation = {
           kind: MarkupKind.Markdown,
@@ -1272,6 +1273,7 @@ export class YamlCompletion {
 
     Object.keys(schema.properties).forEach((key: string) => {
       const propertySchema = schema.properties[key] as JSONSchema;
+      const keyEscaped = getInsertTextForPlainText(key);
       let type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
       if (!type) {
         if (propertySchema.anyOf) {
@@ -1296,9 +1298,9 @@ export class YamlCompletion {
               if (type === 'string' || typeof value === 'string') {
                 value = convertToStringValue(value);
               }
-              insertText += `${indent}${key}: \${${insertIndex++}:${value}}\n`;
+              insertText += `${indent}${keyEscaped}: \${${insertIndex++}:${value}}\n`;
             } else {
-              insertText += `${indent}${key}: $${insertIndex++}\n`;
+              insertText += `${indent}${keyEscaped}: $${insertIndex++}\n`;
             }
             break;
           }
@@ -1315,7 +1317,7 @@ export class YamlCompletion {
                 arrayTemplate = arrayInsertLines.join('\n');
               }
               insertIndex = arrayInsertResult.insertIndex;
-              insertText += `${indent}${key}:\n${indent}${this.indentation}- ${arrayTemplate}\n`;
+              insertText += `${indent}${keyEscaped}:\n${indent}${this.indentation}- ${arrayTemplate}\n`;
             }
             break;
           case 'object':
@@ -1327,7 +1329,7 @@ export class YamlCompletion {
                 insertIndex++
               );
               insertIndex = objectInsertResult.insertIndex;
-              insertText += `${indent}${key}:\n${objectInsertResult.insertText}\n`;
+              insertText += `${indent}${keyEscaped}:\n${objectInsertResult.insertText}\n`;
             }
             break;
         }
@@ -1342,7 +1344,7 @@ export class YamlCompletion {
             }: \${${insertIndex++}:${propertySchema.default}}\n`;
             break;
           case 'string':
-            insertText += `${indent}${key}: \${${insertIndex++}:${convertToStringValue(propertySchema.default)}}\n`;
+            insertText += `${indent}${keyEscaped}: \${${insertIndex++}:${convertToStringValue(propertySchema.default)}}\n`;
             break;
           case 'array':
           case 'object':
@@ -1870,6 +1872,10 @@ function getInsertTextForPlainText(text: string): string {
     // If it's already escaped (has a backslash before it), return it as is
     return escapeChar ? match : `\\${specialChar}`;
   });
+}
+
+function getOriginalTextFromEscaped(text: string): string {
+  return text.replace(/\\([\\$}])/g, '$1');
 }
 
 const isNumberExp = /^\d+$/;

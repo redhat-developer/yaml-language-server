@@ -321,6 +321,27 @@ describe('Auto Completion Tests', () => {
           expect(result.items[0].insertText).equal('validation:\n  \\"null\\": ${1:false}');
         });
       });
+      it('Autocomplete key object with special chars', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            $validation: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                $prop$1: {
+                  type: 'string',
+                  default: '$value$1',
+                },
+              },
+            },
+          },
+        });
+        const content = ''; // len: 0
+        const result = await parseSetup(content, 0);
+        expect(result.items.length).equal(1);
+        expect(result.items[0].insertText).equals('\\$validation:\n  \\$prop\\$1: ${1:\\$value\\$1}');
+      });
 
       it('Autocomplete on boolean value (with value content)', (done) => {
         schemaProvider.addSchema(SCHEMA_ID, {
@@ -3531,6 +3552,33 @@ describe('Auto Completion Tests', () => {
         const result = await parseSetup(content, content.length);
 
         expect(result.items.map((i) => i.label)).to.have.members(['fruit', 'vegetable']);
+      });
+      it('Should escape insert text with special chars but do not escape it in documenation', async () => {
+        const schema = {
+          properties: {
+            $prop1: {
+              properties: {
+                $prop2: {
+                  type: 'string',
+                },
+              },
+              required: ['$prop2'],
+            },
+          },
+          required: ['$prop1'],
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = '';
+        const result = await parseSetup(content, content.length);
+
+        expect(
+          result.items.map((i) => ({ inserText: i.insertText, documentation: (i.documentation as MarkupContent).value }))
+        ).to.deep.equal([
+          {
+            inserText: '\\$prop1:\n  \\$prop2: ',
+            documentation: '```yaml\n$prop1:\n  $prop2: \n```',
+          },
+        ]);
       });
     });
     it('Should function when settings are undefined', async () => {
