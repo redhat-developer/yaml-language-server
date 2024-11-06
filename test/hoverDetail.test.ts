@@ -345,4 +345,32 @@ test: \`const1\` | object | Expression | string | obj1
       );
     });
   });
+  it('Hover on mustMatch(type) property without match', async () => {
+    schemaProvider.addSchema(SCHEMA_ID, {
+      anyOf: [
+        {
+          type: 'object',
+          properties: {
+            type: {
+              const: 'const1',
+              description: 'description1',
+            },
+          },
+        },
+        {
+          type: 'object',
+          properties: {
+            type: {
+              const: 'const2',
+              description: 'description2',
+            },
+          },
+        },
+      ],
+    });
+    const content = 'type: ';
+    const result = await parseSetup(content, 2, SCHEMA_ID);
+    const value = (result.contents as MarkupContent).value;
+    expect(value).includes("anyOf:  'const1' |  'const2'");
+  });
 });

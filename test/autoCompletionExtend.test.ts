@@ -441,6 +441,95 @@ describe('Auto Completion Tests Extended', () => {
       expect(completion.items.map((i) => i.insertText)).deep.equal(['entity1']);
     });
   });
+  describe('Allow schemas based on mustMatch properties', () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        options: {
+          anyOf: [
+            {
+              type: 'object',
+              properties: {
+                provider: { type: 'string', const: 'test1' },
+                entity: { type: 'string', const: 'entity1' },
+              },
+              required: ['provider'],
+            },
+            {
+              type: 'object',
+              properties: {
+                provider: { type: 'string', const: 'testX' },
+                entity: { type: 'string', const: 'entityX' },
+              },
+              required: ['entity', 'provider'],
+            },
+          ],
+        },
+      },
+    };
+    it('Should also suggest less possible schema even if the second schema looks better', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'options:\n  provider: |\n|  entity: entityX\n';
+      const completion = await parseCaret(content);
+
+      expect(completion.items.map((i) => i.insertText)).deep.equal(['test1', 'testX']);
+    });
+    describe('mustMatchSchemas equivalent to our specific  and generic providers', () => {
+      const optionGeneric = {
+        type: 'object',
+        properties: {
+          provider: {
+            anyOf: [
+              { type: 'string', enum: ['test1', 'test2'] },
+              {
+                type: 'string',
+                pattern: '^(((\\|)|(>[-+]?))[\\s]*)?=[\\s]*[\\S][\\S\\s]*$',
+              },
+            ],
+          },
+          entity: { type: 'string', const: 'entity1' },
+        },
+        required: ['entity', 'provider'],
+      };
+      const optionSpecific = {
+        type: 'object',
+        properties: {
+          provider: { type: 'string', const: 'testX' },
+          entity: { type: 'string', const: 'entityX' },
+        },
+        required: ['entity', 'provider'],
+      };
+
+      it('Will add both schemas into mustMachSchemas, but it should give only one correct option - specific first', async () => {
+        const schema: JSONSchema = {
+          type: 'object',
+          properties: {
+            options: {
+              anyOf: [optionSpecific, optionGeneric],
+            },
+          },
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = 'options:\n  provider: testX\n  entity: |\n|';
+        const completion = await parseCaret(content);
+        expect(completion.items.map((i) => i.insertText)).deep.equal(['entityX']);
+      });
+      it('Will add both schemas into mustMachSchemas, but it should give only one correct option - generic first', async () => {
+        const schema: JSONSchema = {
+          type: 'object',
+          properties: {
+            options: {
+              anyOf: [optionGeneric, optionSpecific],
+            },
+          },
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = 'options:\n  provider: testX\n  entity: |\n|';
+        const completion = await parseCaret(content);
+        expect(completion.items.map((i) => i.insertText)).deep.equal(['entityX']);
+      });
+    });
+  });
   describe('Chain of single properties', () => {
     const schema: JSONSchema = {
       type: 'object',
