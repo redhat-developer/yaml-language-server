@@ -804,15 +804,10 @@ function validate(
           if (
             !subValidationResult.hasProblems() ||
             // allows some of the other errors like: patterns validations
-            subValidationResult.enumValueMatch ||
-            // a little bit hack that I wasn't able to solve it in official YLS
-            // problem: some schemas look like this: `provider: { anyOf: [{enum: ['pr1', 'pr2']}, {type: 'string', title: 'expression'}] }`
-            //          and with yaml value `provider: =expression`
-            //          when it's invoked from code-completion both options are merged together as a possible option
-            //             note: if the anyOf order will be opposite, then the first one will be selected as the best match
-            //          but they are merged together also with problems, so even if one of the sub-schema has a problem, the second one can be ok
-            // solution: check if there are more possible schemas and check if there is only single problem
-            (subMatchingSchemas.schemas.length > 1 && subValidationResult.problems.length === 1)
+            subValidationResult.enumValueMatch
+            // note that there was a special hack for type: `provider: { anyOf: [{enum: ['pr1', 'pr2']}, {type: 'string', title: 'expression'}] }`
+            // seems that we don't need it anymore, caused more troubles
+            // check previous commits for more details
           ) {
             // we have enum/const match on mustMatch prop
             // so we want to use this schema forcely in genericComparison mechanism
@@ -1667,6 +1662,15 @@ function validate(
         };
       } else {
         mergeValidationMatches(bestMatch, subMatchingSchemas, subValidationResult);
+        // could be inside mergeValidationMatches fn but better to avoid conflicts
+        bestMatch.validationResult.primaryValueMatches = Math.max(
+          bestMatch.validationResult.primaryValueMatches,
+          subValidationResult.primaryValueMatches
+        );
+        bestMatch.validationResult.propertiesMatches = Math.max(
+          bestMatch.validationResult.propertiesMatches,
+          subValidationResult.propertiesMatches
+        );
       }
       return bestMatch;
     }

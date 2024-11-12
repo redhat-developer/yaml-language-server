@@ -475,6 +475,7 @@ describe('Auto Completion Tests Extended', () => {
       expect(completion.items.map((i) => i.insertText)).deep.equal(['test1', 'testX']);
     });
     describe('mustMatchSchemas equivalent to our specific  and generic providers', () => {
+      // schema should be similar to ProviderExecuteOptions = OneDriveProviderExecuteOptions | GenericProviderExecuteOptions
       const optionGeneric = {
         type: 'object',
         properties: {
@@ -483,21 +484,33 @@ describe('Auto Completion Tests Extended', () => {
               { type: 'string', enum: ['test1', 'test2'] },
               {
                 type: 'string',
-                pattern: '^(((\\|)|(>[-+]?))[\\s]*)?=[\\s]*[\\S][\\S\\s]*$',
+                pattern: '^=.*',
               },
             ],
           },
-          entity: { type: 'string', const: 'entity1' },
+          method: { type: 'string', enum: ['create', 'delete'] },
+          entity: { type: 'string' },
+          data: { type: 'object', additionalProperties: true },
         },
-        required: ['entity', 'provider'],
+        required: ['provider', 'method'],
+        title: 'generic',
       };
       const optionSpecific = {
         type: 'object',
         properties: {
           provider: { type: 'string', const: 'testX' },
+          method: { type: 'string', enum: ['create', 'delete'] },
           entity: { type: 'string', const: 'entityX' },
+          data: {
+            type: 'object',
+            properties: {
+              dataProp: { type: 'string' },
+            },
+            required: ['dataProp'],
+          },
         },
-        required: ['entity', 'provider'],
+        title: 'specific',
+        required: ['entity', 'provider', 'method', 'data'],
       };
 
       it('Will add both schemas into mustMachSchemas, but it should give only one correct option - specific first', async () => {
@@ -527,6 +540,32 @@ describe('Auto Completion Tests Extended', () => {
         const content = 'options:\n  provider: testX\n  entity: |\n|';
         const completion = await parseCaret(content);
         expect(completion.items.map((i) => i.insertText)).deep.equal(['entityX']);
+      });
+      it('Should suggest correct data prop for "onedrive simulation"', async () => {
+        const optionFirstAlmostGood = {
+          type: 'object',
+          properties: {
+            provider: { type: 'string', const: 'testX' },
+          },
+          title: 'almost good',
+          required: ['provider'],
+        };
+        const schema: JSONSchema = {
+          type: 'object',
+          properties: {
+            options: {
+              anyOf: [optionFirstAlmostGood, optionSpecific, optionGeneric],
+            },
+          },
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = 'options:\n  provider: testX\n  method: create\n  |\n|';
+        const completion = await parseCaret(content);
+        expect(completion.items.map((i) => i.label)).deep.equal(['entity', 'specific', 'data'], 'outside data');
+
+        const content2 = 'options:\n  provider: testX\n  method: create\n  data:\n  |\n|';
+        const completion2 = await parseCaret(content2);
+        expect(completion2.items.map((i) => i.label)).deep.equal(['dataProp', 'object(specific)'], 'inside data');
       });
     });
   });
