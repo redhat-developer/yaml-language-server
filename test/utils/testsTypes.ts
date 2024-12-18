@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Event, NotificationHandler, RequestHandler } from 'vscode-jsonrpc';
+import { Disposable, Event, NotificationHandler, RequestHandler } from 'vscode-jsonrpc';
 import {
   ApplyWorkspaceEditParams,
   WorkspaceEdit,
@@ -14,6 +14,8 @@ import {
   CreateFilesParams,
   RenameFilesParams,
   DeleteFilesParams,
+  ClientCapabilities,
+  ServerCapabilities,
 } from 'vscode-languageserver-protocol';
 import { Connection, RemoteWorkspace } from 'vscode-languageserver';
 import { TelemetryImpl } from '../../src/languageserver/telemetry';
@@ -27,6 +29,9 @@ export class TestWorkspace implements RemoteWorkspace {
   applyEdit(paramOrEdit: ApplyWorkspaceEditParams | WorkspaceEdit): Promise<ApplyWorkspaceEditResponse> {
     throw new Error('Method not implemented.');
   }
+  fillServerCapabilities(capabilities: ServerCapabilities<any>): void {
+    throw new Error('Method not implemented.');
+  }
   getConfiguration(): Promise<any>;
   getConfiguration(section: string): Promise<any>;
   getConfiguration(item: ConfigurationItem): Promise<any>;
@@ -37,23 +42,26 @@ export class TestWorkspace implements RemoteWorkspace {
   getWorkspaceFolders(): Promise<WorkspaceFolder[]> {
     throw new Error('Method not implemented.');
   }
+  initialize(capabilities: ClientCapabilities): void {
+    throw new Error('Method not implemented.');
+  }
   onDidChangeWorkspaceFolders: Event<WorkspaceFoldersChangeEvent>;
-  onDidCreateFiles(handler: NotificationHandler<CreateFilesParams>): void {
+  onDidCreateFiles(handler: NotificationHandler<CreateFilesParams>): Disposable {
     throw new Error('Method not implemented.');
   }
-  onDidRenameFiles(handler: NotificationHandler<RenameFilesParams>): void {
+  onDidRenameFiles(handler: NotificationHandler<RenameFilesParams>): Disposable {
     throw new Error('Method not implemented.');
   }
-  onDidDeleteFiles(handler: NotificationHandler<DeleteFilesParams>): void {
+  onDidDeleteFiles(handler: NotificationHandler<DeleteFilesParams>): Disposable {
     throw new Error('Method not implemented.');
   }
-  onWillCreateFiles(handler: RequestHandler<CreateFilesParams, WorkspaceEdit, never>): void {
+  onWillCreateFiles(handler: RequestHandler<CreateFilesParams, WorkspaceEdit, never>): Disposable {
     throw new Error('Method not implemented.');
   }
-  onWillRenameFiles(handler: RequestHandler<RenameFilesParams, WorkspaceEdit, never>): void {
+  onWillRenameFiles(handler: RequestHandler<RenameFilesParams, WorkspaceEdit, never>): Disposable {
     throw new Error('Method not implemented.');
   }
-  onWillDeleteFiles(handler: RequestHandler<DeleteFilesParams, WorkspaceEdit, never>): void {
+  onWillDeleteFiles(handler: RequestHandler<DeleteFilesParams, WorkspaceEdit, never>): Disposable {
     throw new Error('Method not implemented.');
   }
 }
