@@ -26,6 +26,7 @@ import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 import { IProblem } from '../src/languageservice/parser/jsonParser07';
 import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { TestTelemetry } from './utils/testsTypes';
+import { ErrorCode } from 'vscode-json-languageservice';
 
 describe('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -396,7 +397,8 @@ describe('Validation Tests', () => {
               4,
               DiagnosticSeverity.Error,
               `yaml-schema: file:///${SCHEMA_ID}`,
-              `file:///${SCHEMA_ID}`
+              `file:///${SCHEMA_ID}`,
+              ErrorCode.PropertyExpected
             )
           );
         })
@@ -1289,7 +1291,7 @@ obj:
           4,
           18,
           DiagnosticSeverity.Error,
-          'yaml-schema: Package',
+          'yaml-schema: Composer Package',
           'https://raw.githubusercontent.com/composer/composer/master/res/composer-schema.json'
         )
       );
@@ -1312,6 +1314,7 @@ obj:
           DiagnosticSeverity.Error,
           'yaml-schema: Drone CI configuration file',
           'https://json.schemastore.org/drone',
+          ErrorCode.PropertyExpected,
           {
             properties: [
               'type',

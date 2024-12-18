@@ -28,9 +28,12 @@ import { FlowStyleRewriter } from '../utils/flow-style-rewriter';
 import { ASTNode } from '../jsonASTTypes';
 import * as _ from 'lodash';
 import { SourceToken } from 'yaml/dist/parse/cst';
+import { ErrorCode } from 'vscode-json-languageservice';
 
 interface YamlDiagnosticData {
   schemaUri: string[];
+  values?: string[];
+  properties?: string[];
 }
 export class YamlCodeActions {
   private indentation = '  ';
@@ -54,6 +57,7 @@ export class YamlCodeActions {
     result.push(...this.getUnusedAnchorsDelete(params.context.diagnostics, document));
     result.push(...this.getConvertToBlockStyleActions(params.context.diagnostics, document));
     result.push(...this.getKeyOrderActions(params.context.diagnostics, document));
+    result.push(...this.getQuickFixForPropertyOrValueMismatch(params.context.diagnostics, document));
 
     return result;
   }
@@ -221,7 +225,7 @@ export class YamlCodeActions {
     const results: CodeAction[] = [];
     for (const diagnostic of diagnostics) {
       if (diagnostic.code === 'flowMap' || diagnostic.code === 'flowSeq') {
-        const node = getNodeforDiagnostic(document, diagnostic);
+        const node = getNodeForDiagnostic(document, diagnostic);
         if (isMap(node.internalNode) || isSeq(node.internalNode)) {
           const blockTypeDescription = isMap(node.internalNode) ? 'map' : 'sequence';
           const rewriter = new FlowStyleRewriter(this.indentation);
@@ -242,7 +246,7 @@ export class YamlCodeActions {
     const results: CodeAction[] = [];
     for (const diagnostic of diagnostics) {
       if (diagnostic?.code === 'mapKeyOrder') {
-        let node = getNodeforDiagnostic(document, diagnostic);
+        let node = getNodeForDiagnostic(document, diagnostic);
         while (node && node.type !== 'object') {
           node = node.parent;
         }
@@ -292,8 +296,8 @@ export class YamlCodeActions {
                   item.value.end.splice(newLineIndex, 1);
                 }
               } else if (item.value?.type === 'block-scalar') {
-                const nwline = item.value.props.find((p) => p.type === 'newline');
-                if (!nwline) {
+                const newline = item.value.props.find((p) => p.type === 'newline');
+                if (!newline) {
                   item.value.props.push({ type: 'newline', indent: 0, offset: item.value.offset, source: '\n' } as SourceToken);
                 }
               }
@@ -312,9 +316,52 @@ export class YamlCodeActions {
     }
     return results;
   }
+
+  /**
+   * Check if diagnostic contains info for quick fix
+   * Supports Enum/Const/Property mismatch
+   */
+  private getPossibleQuickFixValues(diagnostic: Diagnostic): string[] | undefined {
+    if (typeof diagnostic.data !== 'object') {
+      return;
+    }
+    if (
+      diagnostic.code === ErrorCode.EnumValueMismatch &&
+      'values' in diagnostic.data &&
+      Array.isArray((diagnostic.data as YamlDiagnosticData).values)
+    ) {
+      return (diagnostic.data as YamlDiagnosticData).values;
+    } else if (
+      diagnostic.code === ErrorCode.PropertyExpected &&
+      'properties' in diagnostic.data &&
+      Array.isArray((diagnostic.data as YamlDiagnosticData).properties)
+    ) {
+      return (diagnostic.data as YamlDiagnosticData).properties;
+    }
+  }
+
+  private getQuickFixForPropertyOrValueMismatch(diagnostics: Diagnostic[], document: TextDocument): CodeAction[] {
+    const results: CodeAction[] = [];
+    for (const diagnostic of diagnostics) {
+      const values = this.getPossibleQuickFixValues(diagnostic);
+      if (!values?.length) {
+        continue;
+      }
+      for (const value of values) {
+        results.push(
+          CodeAction.create(
+            value,
+            createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, value)]),
+            CodeActionKind.QuickFix
+          )
+        );
+      }
+    }
+    return results;
+  }
 }
 
-function getNodeforDiagnostic(document: TextDocument, diagnostic: Diagnostic): ASTNode {
+function getNodeForDiagnostic(document: TextDocument, diagnostic: Diagnostic): ASTNode {
   const yamlDocuments = yamlDocumentsCache.getYamlDocument(document);
   const startOffset = document.offsetAt(diagnostic.range.start);
   const yamlDoc = matchOffsetToDocument(startOffset, yamlDocuments);

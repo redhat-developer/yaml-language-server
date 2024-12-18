@@ -595,7 +595,14 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
             type: 'string',
             description: 'should return this description',
             enum: ['cat', 'dog'],
-            examples: ['cat', 'dog'],
+            examples: [
+              'cat',
+              {
+                animal: {
+                  type: 'dog',
+                },
+              },
+            ],
           },
         },
       });
@@ -613,10 +620,18 @@ Allowed Values:
 * \`cat\`
 * \`dog\`
 
-Examples:
+Example:
 
-* \`\`\`"cat"\`\`\`
-* \`\`\`"dog"\`\`\`
+\`\`\`yaml
+cat
+\`\`\`
+
+Example:
+
+\`\`\`yaml
+animal:
+  type: dog
+\`\`\`
 
 Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );

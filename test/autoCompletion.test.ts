@@ -1047,7 +1047,7 @@ describe('Auto Completion Tests', () => {
         const completion = parseSetup(content, content.lastIndexOf('Ba') + 2); // pos: 3+2
         completion
           .then(function (result) {
-            assert.strictEqual('fooBar:\n  - ${1:""}', result.items[0].insertText);
+            assert.strictEqual('fooBar:\n  - ${1}', result.items[0].insertText);
           })
           .then(done, done);
       });
@@ -3125,6 +3125,11 @@ describe('Auto Completion Tests', () => {
 
         expect(result.items.map((i) => i.label)).to.have.members(['fruit', 'vegetable']);
       });
+    });
+    it('Should function when settings are undefined', async () => {
+      languageService.configure({ completion: true });
+      const content = '';
+      await parseSetup(content, 0);
     });
   });
 });
