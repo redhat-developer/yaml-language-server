@@ -56,7 +56,7 @@ describe('Formatter Tests', () => {
           printWidth: 20,
           proseWrap: 'always',
         });
-        assert.equal(edits[0].newText, 'comments: >\n  test test test\n  test test test\n  test test test\n  test test test\n');
+        assert.equal(edits[0].newText, 'comments: >\n  test test test test\n  test test test test\n  test test test test\n');
       });
 
       it('Formatting uses tabSize', () => {
