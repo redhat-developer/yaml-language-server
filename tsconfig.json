@@ -9,7 +9,7 @@
     "outDir": "./out/server",
     "sourceMap": true,
     "target": "es2020",
-    "allowSyntheticDefaultImports": true, 
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true
   },
   "include": [ "src", "test" ],
