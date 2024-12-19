@@ -10,7 +10,6 @@ import { isAlias } from 'yaml';
 import { Telemetry } from '../telemetry';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { matchOffsetToDocument } from '../utils/arrUtils';
-import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { TextBuffer } from '../utils/textBuffer';
 
 export class YamlDefinition {
@@ -33,7 +32,7 @@ export class YamlDefinition {
         }
       }
     } catch (err) {
-      this.telemetry?.sendError('yaml.definition.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.definition.error', err);
     }
 
     return undefined;

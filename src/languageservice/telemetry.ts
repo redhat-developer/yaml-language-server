@@ -18,7 +18,7 @@ export interface TelemetryEvent {
 export interface Telemetry {
   send(event: TelemetryEvent): void;
 
-  sendError(name: string, properties: unknown): void;
+  sendError(name: string, error: unknown): void;
 
   sendTrack(name: string, properties: unknown): void;
 }

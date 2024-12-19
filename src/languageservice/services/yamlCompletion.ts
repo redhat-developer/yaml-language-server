@@ -29,7 +29,7 @@ import { YAMLSchemaService } from './yamlSchemaService';
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { stringifyObject, StringifySettings } from '../utils/json';
-import { convertErrorToTelemetryMsg, isDefined, isString } from '../utils/objects';
+import { isDefined, isString } from '../utils/objects';
 import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { asSchema } from '../parser/jsonParser07';
@@ -281,7 +281,7 @@ export class YamlCompletion {
         }
       },
       error: (message: string) => {
-        this.telemetry?.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(message) });
+        this.telemetry?.sendError('yaml.completion.error', message);
       },
       log: (message: string) => {
         console.log(message);
@@ -533,7 +533,7 @@ export class YamlCompletion {
       const types: { [type: string]: boolean } = {};
       this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types, doComplete);
     } catch (err) {
-      this.telemetry?.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.completion.error', err);
     }
 
     this.finalizeParentCompletion(result);
