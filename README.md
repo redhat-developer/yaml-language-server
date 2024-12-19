@@ -159,8 +159,8 @@ On Mac/Linux with full path:
 
 Since `0.11.0` YAML Schemas can be used for validation:
 
-```json
- "/home/user/custom_schema.yaml": "someFilePattern.yaml"
+```yaml
+"/home/user/custom_schema.yaml": "someFilePattern.yaml"
 ```
 
 A schema can be associated with multiple globs using a json array, e.g.
@@ -205,7 +205,7 @@ You can also use relative paths when working with multi root workspaces.
 
 Suppose you have a multi root workspace that is laid out like:
 
-```
+```yaml
 My_first_project:
    test.yaml
    my_schema.json
@@ -275,7 +275,7 @@ The image is located at `quay.io/redhat-developer/yaml-language-server`
 
 To run the image you can use:
 
-```
+```sh
 docker run -it quay.io/redhat-developer/yaml-language-server:latest
 ```
 
