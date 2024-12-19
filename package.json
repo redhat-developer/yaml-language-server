@@ -30,6 +30,7 @@
     "url": "https://github.com/redhat-developer/yaml-language-server.git"
   },
   "dependencies": {
+    "@types/lodash.clonedeep": "^4.5.7",
     "ajv": "^8.11.0",
     "lodash": "4.17.21",
     "prettier": "^3.0.0",
