@@ -17,7 +17,10 @@ import { convertErrorToTelemetryMsg } from '../utils/objects';
 export class YAMLDocumentSymbols {
   private jsonDocumentSymbols;
 
-  constructor(schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {
+  constructor(
+    schemaService: YAMLSchemaService,
+    private readonly telemetry?: Telemetry
+  ) {
     this.jsonDocumentSymbols = new JSONDocumentSymbols(schemaService);
 
     // override 'getKeyLabel' to handle complex mapping

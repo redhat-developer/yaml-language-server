@@ -16,8 +16,8 @@ export function getSchemaTypeName(schema: JSONSchema): string {
   return Array.isArray(schema.type)
     ? schema.type.join(' | ')
     : closestTitleWithType
-    ? schema.type.concat('(', schema.closestTitle, ')')
-    : schema.type || schema.closestTitle; //object
+      ? schema.type.concat('(', schema.closestTitle, ')')
+      : schema.type || schema.closestTitle; //object
 }
 
 /**
