@@ -6,7 +6,7 @@
 
 import { Hover, MarkupContent, MarkupKind, Position, Range } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
-import { LanguageSettings } from '../yamlLanguageService';
+import { LanguageSettings, HoverSettings } from '../yamlLanguageService';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -24,6 +24,7 @@ import { stringify as stringifyYAML } from 'yaml';
 export class YAMLHover {
   private shouldHover: boolean;
   private indentation: string;
+  private hoverSettings: HoverSettings;
   private schemaService: YAMLSchemaService;
 
   constructor(
@@ -38,6 +39,7 @@ export class YAMLHover {
     if (languageSettings) {
       this.shouldHover = languageSettings.hover;
       this.indentation = languageSettings.indentation;
+      this.hoverSettings = languageSettings.hoverSettings ?? {};
     }
   }
 
@@ -106,6 +108,9 @@ export class YAMLHover {
       return value.replace(/\|\|\s*$/, '');
     };
 
+    const showSource = this.hoverSettings?.showSource ?? true; // showSource enabled by default
+    const showTitle = this.hoverSettings?.showTitle ?? true; // showTitle enabled by default
+
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
       if (schema && node && !schema.errors.length) {
         const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
@@ -162,7 +167,7 @@ export class YAMLHover {
           return true;
         });
         let result = '';
-        if (title) {
+        if (showTitle && title) {
           result = '#### ' + this.toMarkdown(title);
         }
         if (markdownDescription) {
@@ -187,7 +192,7 @@ export class YAMLHover {
             result += `\`\`\`yaml\n${example}\`\`\`\n`;
           });
         }
-        if (result.length > 0 && schema.schema.url) {
+        if (showSource && result.length > 0 && schema.schema.url) {
           result = ensureLineBreak(result);
           result += `Source: [${getSchemaName(schema.schema)}](${schema.schema.url})`;
         }

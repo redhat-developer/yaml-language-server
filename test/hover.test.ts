@@ -587,6 +587,107 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
+    it('Hover hides title and source when disabled', async () => {
+      (() => {
+        languageSettingsSetup = new ServiceSetup()
+          .withHover()
+          .withHoverSettings({
+            showTitle: false,
+            showSource: false,
+          })
+          .withIndentation('  ')
+          .withSchemaFileMatch({
+            uri: 'http://google.com',
+            fileMatch: ['bad-schema.yaml'],
+          });
+        const {
+          languageHandler: langHandler,
+          yamlSettings: settings,
+          telemetry: testTelemetry,
+          schemaProvider: testSchemaProvider,
+        } = setupLanguageService(languageSettingsSetup.languageSettings);
+        languageHandler = langHandler;
+        yamlSettings = settings;
+        telemetry = testTelemetry;
+        schemaProvider = testSchemaProvider;
+      })();
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        title: 'Living being',
+        properties: {
+          animal: {
+            type: 'string',
+            description: 'should return this description',
+            examples: ['cat'],
+          },
+        },
+      });
+      const content = 'animal:\n  ca|t|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+Example:
+
+\`\`\`yaml
+cat
+\`\`\`
+`
+      );
+    });
+
+    it('Hover works when title and source explicitely enabled', async () => {
+      (() => {
+        languageSettingsSetup = new ServiceSetup()
+          .withHover()
+          .withSchemaFileMatch({
+            uri: 'http://google.com',
+            fileMatch: ['bad-schema.yaml'],
+          })
+          .withHoverSettings({
+            showTitle: true,
+            showSource: true,
+          });
+        const {
+          languageHandler: langHandler,
+          yamlSettings: settings,
+          telemetry: testTelemetry,
+          schemaProvider: testSchemaProvider,
+        } = setupLanguageService(languageSettingsSetup.languageSettings);
+        languageHandler = langHandler;
+        yamlSettings = settings;
+        telemetry = testTelemetry;
+        schemaProvider = testSchemaProvider;
+      })();
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        title: 'Living being',
+        properties: {
+          animal: {
+            type: 'string',
+            description: 'should return this description',
+          },
+        },
+      });
+      const content = 'animal:\n  ca|t|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `#### Living being
+
+should return this description
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
     it('Hover works on examples', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
