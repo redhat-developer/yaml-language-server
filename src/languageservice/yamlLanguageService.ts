@@ -157,28 +157,28 @@ export interface CustomFormatterOptions {
 }
 
 export interface LanguageService {
-  configure(settings: LanguageSettings): void;
-  registerCustomSchemaProvider(schemaProvider: CustomSchemaProvider): void;
-  doComplete(document: TextDocument, position: Position, isKubernetes: boolean): Promise<CompletionList>;
-  doValidation(document: TextDocument, isKubernetes: boolean): Promise<Diagnostic[]>;
-  doHover(document: TextDocument, position: Position): Promise<Hover | null>;
-  findDocumentSymbols(document: TextDocument, context: DocumentSymbolsContext): SymbolInformation[];
-  findDocumentSymbols2(document: TextDocument, context: DocumentSymbolsContext): DocumentSymbol[];
-  findLinks(document: TextDocument): Promise<DocumentLink[]>;
-  resetSchema(uri: string): boolean;
-  doFormat(document: TextDocument, options: CustomFormatterOptions): TextEdit[];
-  doDefinition(document: TextDocument, params: DefinitionParams): DefinitionLink[] | undefined;
-  doDocumentOnTypeFormatting(document: TextDocument, params: DocumentOnTypeFormattingParams): TextEdit[] | undefined;
-  addSchema(schemaID: string, schema: JSONSchema): void;
-  deleteSchema(schemaID: string): void;
-  modifySchemaContent(schemaAdditions: SchemaAdditions): void;
-  deleteSchemaContent(schemaDeletions: SchemaDeletions): void;
-  deleteSchemasWhole(schemaDeletions: SchemaDeletionsAll): void;
-  getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | null;
-  getSelectionRanges(document: TextDocument, positions: Position[]): SelectionRange[] | undefined;
-  getCodeAction(document: TextDocument, params: CodeActionParams): CodeAction[] | undefined;
-  getCodeLens(document: TextDocument): Thenable<CodeLens[] | undefined> | CodeLens[] | undefined;
-  resolveCodeLens(param: CodeLens): Thenable<CodeLens> | CodeLens;
+  configure: (settings: LanguageSettings) => void;
+  registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => void;
+  doComplete: (document: TextDocument, position: Position, isKubernetes: boolean) => Promise<CompletionList>;
+  doValidation: (document: TextDocument, isKubernetes: boolean) => Promise<Diagnostic[]>;
+  doHover: (document: TextDocument, position: Position) => Promise<Hover | null>;
+  findDocumentSymbols: (document: TextDocument, context?: DocumentSymbolsContext) => SymbolInformation[];
+  findDocumentSymbols2: (document: TextDocument, context?: DocumentSymbolsContext) => DocumentSymbol[];
+  findLinks: (document: TextDocument) => Promise<DocumentLink[]>;
+  resetSchema: (uri: string) => boolean;
+  doFormat: (document: TextDocument, options?: CustomFormatterOptions) => Promise<TextEdit[]>;
+  doDefinition: (document: TextDocument, params: DefinitionParams) => DefinitionLink[] | undefined;
+  doDocumentOnTypeFormatting: (document: TextDocument, params: DocumentOnTypeFormattingParams) => TextEdit[] | undefined;
+  addSchema: (schemaID: string, schema: JSONSchema) => void;
+  deleteSchema: (schemaID: string) => void;
+  modifySchemaContent: (schemaAdditions: SchemaAdditions) => void;
+  deleteSchemaContent: (schemaDeletions: SchemaDeletions) => void;
+  deleteSchemasWhole: (schemaDeletions: SchemaDeletionsAll) => void;
+  getFoldingRanges: (document: TextDocument, context: FoldingRangesContext) => FoldingRange[] | null;
+  getSelectionRanges: (document: TextDocument, positions: Position[]) => SelectionRange[];
+  getCodeAction: (document: TextDocument, params: CodeActionParams) => CodeAction[] | undefined;
+  getCodeLens: (document: TextDocument) => PromiseLike<CodeLens[] | undefined> | CodeLens[] | undefined;
+  resolveCodeLens: (param: CodeLens) => PromiseLike<CodeLens> | CodeLens;
 }
 
 export function getLanguageService(params: {

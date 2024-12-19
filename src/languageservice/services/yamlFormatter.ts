@@ -3,13 +3,11 @@
  *  Copyright (c) Adam Voss. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { Range, Position, TextEdit, FormattingOptions } from 'vscode-languageserver-types';
 import { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
-import * as prettier from 'prettier';
-import { Options } from 'prettier';
-import * as parser from 'prettier/parser-yaml';
+import { format, Options } from 'prettier';
+import * as parser from 'prettier/plugins/yaml';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 export class YAMLFormatter {
@@ -21,7 +19,10 @@ export class YAMLFormatter {
     }
   }
 
-  public format(document: TextDocument, options: FormattingOptions & CustomFormatterOptions): TextEdit[] {
+  public async format(
+    document: TextDocument,
+    options: Partial<FormattingOptions> & CustomFormatterOptions = {}
+  ): Promise<TextEdit[]> {
     if (!this.formatterEnabled) {
       return [];
     }
@@ -44,7 +45,7 @@ export class YAMLFormatter {
         printWidth: options.printWidth,
       };
 
-      const formatted = prettier.format(text, prettierOptions);
+      const formatted = await format(text, prettierOptions);
 
       return [TextEdit.replace(Range.create(Position.create(0, 0), document.positionAt(text.length)), formatted)];
     } catch (error) {

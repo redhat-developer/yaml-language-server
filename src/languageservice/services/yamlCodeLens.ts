@@ -15,7 +15,10 @@ import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
 export class YamlCodeLens {
-  constructor(private schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {}
+  constructor(
+    private schemaService: YAMLSchemaService,
+    private readonly telemetry?: Telemetry
+  ) {}
 
   async getCodeLens(document: TextDocument): Promise<CodeLens[]> {
     const result = [];
@@ -44,7 +47,7 @@ export class YamlCodeLens {
 
     return result;
   }
-  resolveCodeLens(param: CodeLens): Thenable<CodeLens> | CodeLens {
+  resolveCodeLens(param: CodeLens): PromiseLike<CodeLens> | CodeLens {
     return param;
   }
 }

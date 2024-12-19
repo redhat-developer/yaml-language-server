@@ -60,7 +60,7 @@ export interface JSONSchemaSettings {
 export class SettingsState {
   yamlConfigurationSettings: JSONSchemaSettings[] = undefined;
   schemaAssociations: ISchemaAssociations | SchemaConfiguration[] | undefined = undefined;
-  formatterRegistration: Thenable<Disposable> = null;
+  formatterRegistration: PromiseLike<Disposable> = null;
   specificValidatorPaths = [];
   schemaConfigurationSettings = [];
   yamlShouldValidate = true;

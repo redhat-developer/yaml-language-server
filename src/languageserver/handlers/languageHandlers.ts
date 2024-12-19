@@ -114,7 +114,7 @@ export class LanguageHandlers {
    * Called when the formatter is invoked
    * Returns the formatted document content using prettier
    */
-  formatterHandler(formatParams: DocumentFormattingParams): TextEdit[] {
+  formatterHandler(formatParams: DocumentFormattingParams): Promise<TextEdit[]> {
     const document = this.yamlSettings.documents.get(formatParams.textDocument.uri);
 
     if (!document) {
@@ -229,7 +229,7 @@ export class LanguageHandlers {
     return this.languageService.getCodeAction(textDocument, params);
   }
 
-  codeLensHandler(params: CodeLensParams): Thenable<CodeLens[] | undefined> | CodeLens[] | undefined {
+  codeLensHandler(params: CodeLensParams): PromiseLike<CodeLens[] | undefined> | CodeLens[] | undefined {
     const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
     if (!textDocument) {
       return;
@@ -237,7 +237,7 @@ export class LanguageHandlers {
     return this.languageService.getCodeLens(textDocument);
   }
 
-  codeLensResolveHandler(param: CodeLens): Thenable<CodeLens> | CodeLens {
+  codeLensResolveHandler(param: CodeLens): PromiseLike<CodeLens> | CodeLens {
     return this.languageService.resolveCodeLens(param);
   }
 

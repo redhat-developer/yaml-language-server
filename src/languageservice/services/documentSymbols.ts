@@ -3,7 +3,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { SymbolInformation, DocumentSymbol } from 'vscode-languageserver-types';
 import { YAMLSchemaService } from './yamlSchemaService';
@@ -18,7 +17,10 @@ import { convertErrorToTelemetryMsg } from '../utils/objects';
 export class YAMLDocumentSymbols {
   private jsonDocumentSymbols;
 
-  constructor(schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {
+  constructor(
+    schemaService: YAMLSchemaService,
+    private readonly telemetry?: Telemetry
+  ) {
     this.jsonDocumentSymbols = new JSONDocumentSymbols(schemaService);
 
     // override 'getKeyLabel' to handle complex mapping
