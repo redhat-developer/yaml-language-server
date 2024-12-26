@@ -28,16 +28,13 @@ import { JSONSchemaDescriptionExt } from '../../requestTypes';
 import { SchemaVersions } from '../yamlTypes';
 
 import Ajv, { DefinedError } from 'ajv';
+import Ajv04 from 'ajv-draft-04';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
-const localize = nls.loadMessageBundle();
-
 const ajv = new Ajv();
+const ajv04 = new Ajv04();
 
-// load JSON Schema 07 def to validate loaded schemas
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
-const schema07Validator = ajv.compile(jsonSchema07);
+const localize = nls.loadMessageBundle();
 
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
@@ -164,9 +161,18 @@ export class YAMLSchemaService extends JSONSchemaService {
     let schema: JSONSchema = schemaToResolve.schema;
     const contextService = this.contextService;
 
-    if (!schema07Validator(schema)) {
+    let validationErrors: DefinedError[] = [];
+    if (this.normalizeId(schema.$schema) == ajv04.defaultMeta()) {
+      if (!ajv04.validateSchema(schema)) {
+        validationErrors = validationErrors.concat(ajv04.errors as DefinedError[]);
+      }
+    } else if (!ajv.validateSchema(schema)) {
+      validationErrors = validationErrors.concat(ajv.errors as DefinedError[]);
+    }
+
+    if (validationErrors.length > 0) {
       const errs: string[] = [];
-      for (const err of schema07Validator.errors as DefinedError[]) {
+      for (const err of validationErrors) {
         errs.push(`${err.instancePath} : ${err.message}`);
       }
       resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);

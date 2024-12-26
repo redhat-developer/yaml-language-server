@@ -67,6 +67,50 @@ describe('YAML Schema Service', () => {
       expect(schema.schema.type).eqls('array');
     });
 
+    it('should handle schemas that use draft-04', async () => {
+      const content = `openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Minimal ping API server
+paths:
+  /ping:
+    get:
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pong'
+components:
+  schemas:
+    # base types
+    Pong:
+      type: object
+      required:
+        - ping
+      properties:
+        ping:
+          type: string
+          example: pong`;
+
+      const yamlDock = parse(content);
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const openapiV3Schema = require(path.join(__dirname, './fixtures/sample-openapiv3.0.0-schema.json'));
+
+      requestServiceMock = sandbox.fake.resolves(JSON.stringify(openapiV3Schema));
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      service.registerCustomSchemaProvider(() => {
+        return new Promise<string | string[]>((resolve) => {
+          resolve('http://fakeschema.faketld');
+        });
+      });
+
+      const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
+      expect(requestServiceMock).calledWithExactly('http://fakeschema.faketld');
+      expect(schema).to.not.be.null;
+    });
+
     it('should handle url with fragments when root object is schema', async () => {
       const content = `# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#/definitions/schemaArray`;
       const yamlDock = parse(content);
@@ -78,7 +122,7 @@ describe('YAML Schema Service', () => {
     },
     "bar": {
       "type": "string"
-    } 
+    }
   }, "properties": {"foo": {"type": "boolean"}}, "required": ["foo"]}`);
 
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
