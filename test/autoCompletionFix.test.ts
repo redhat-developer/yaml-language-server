@@ -1329,4 +1329,70 @@ test1:
     expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
     expect(completion.items[0].documentation).to.be.equal('Property Description');
   });
+
+  describe('Deprecated schema', () => {
+    it('should not autocomplete deprecated schema - property completion', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          prop1: { type: 'string' },
+        },
+        deprecationMessage: 'Deprecated',
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const completion = await parseSetup(content, 0, 1);
+
+      expect(completion.items.length).equal(0);
+    });
+    it('should not autocomplete deprecated schema - value completion', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          prop1: {
+            anyOf: [
+              {
+                type: 'string',
+                default: 'value_default',
+                deprecationMessage: 'Deprecated default',
+              },
+              {
+                type: 'object',
+                defaultSnippets: [
+                  {
+                    label: 'snippet',
+                    body: {
+                      value1: 'value_snippet',
+                    },
+                  },
+                ],
+                deprecationMessage: 'Deprecated snippet',
+              },
+            ],
+          },
+        },
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'prop1: ';
+      const completion = await parseSetup(content, 0, content.length);
+
+      expect(completion.items.length).equal(0);
+    });
+    it('should autocomplete inside deprecated schema', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          obj1: {
+            properties: {
+              item1: { type: 'string' },
+            },
+          },
+        },
+        deprecationMessage: 'Deprecated',
+      };
+      languageService.addSchema(SCHEMA_ID, schema);
+      const content = 'obj1:\n | |';
+      const completion = await parseCaret(content);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0].label).equal('item1');
+    });
+  });
 });
