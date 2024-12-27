@@ -2,6 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import { readFile } from 'fs/promises';
 import * as sinon from 'sinon';
 import * as chai from 'chai';
 import * as sinonChai from 'sinon-chai';
@@ -96,9 +97,11 @@ components:
 
       const yamlDock = parse(content);
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const openapiV3Schema = require(path.join(__dirname, './fixtures/sample-openapiv3.0.0-schema.json'));
+      const openapiV3Schema = await readFile(path.join(__dirname, './fixtures/sample-openapiv3.0.0-schema.json'), {
+        encoding: 'utf-8',
+      });
 
-      requestServiceMock = sandbox.fake.resolves(JSON.stringify(openapiV3Schema));
+      requestServiceMock = sandbox.fake.resolves(openapiV3Schema);
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       service.registerCustomSchemaProvider(() => {
         return new Promise<string | string[]>((resolve) => {
