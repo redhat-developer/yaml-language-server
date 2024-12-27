@@ -28,11 +28,20 @@ import { JSONSchemaDescriptionExt } from '../../requestTypes';
 import { SchemaVersions } from '../yamlTypes';
 
 import Ajv, { DefinedError } from 'ajv';
+import Ajv2019 from 'ajv/dist/2019';
+import Ajv2020 from 'ajv/dist/2020';
 import Ajv04 from 'ajv-draft-04';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
 const ajv = new Ajv();
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const draft6MetaSchema = require('ajv/dist/refs/json-schema-draft-06.json');
+ajv.addMetaSchema(draft6MetaSchema);
+
 const ajv04 = new Ajv04();
+const ajv2019 = new Ajv2019();
+const ajv2020 = new Ajv2020();
 
 const localize = nls.loadMessageBundle();
 
@@ -162,12 +171,30 @@ export class YAMLSchemaService extends JSONSchemaService {
     const contextService = this.contextService;
 
     let validationErrors: DefinedError[] = [];
-    if (this.normalizeId(schema.$schema) == ajv04.defaultMeta()) {
-      if (!ajv04.validateSchema(schema)) {
-        validationErrors = validationErrors.concat(ajv04.errors as DefinedError[]);
+    switch (this.normalizeId(schema.$schema)) {
+      case ajv04.defaultMeta(): {
+        if (!ajv04.validateSchema(schema)) {
+          validationErrors = validationErrors.concat(ajv04.errors as DefinedError[]);
+        }
+        break;
       }
-    } else if (!ajv.validateSchema(schema)) {
-      validationErrors = validationErrors.concat(ajv.errors as DefinedError[]);
+      case ajv2019.defaultMeta(): {
+        if (!ajv2019.validateSchema(schema)) {
+          validationErrors = validationErrors.concat(ajv2019.errors as DefinedError[]);
+        }
+        break;
+      }
+      case ajv2020.defaultMeta(): {
+        if (!ajv2020.validateSchema(schema)) {
+          validationErrors = validationErrors.concat(ajv2020.errors as DefinedError[]);
+        }
+        break;
+      }
+      default:
+        if (!ajv.validateSchema(schema)) {
+          validationErrors = validationErrors.concat(ajv.errors as DefinedError[]);
+        }
+        break;
     }
 
     if (validationErrors.length > 0) {
