@@ -83,7 +83,7 @@ const getTypeOfNodeInRootDTS = (rootVarsPropValueNode: ASTNode): string => {
 };
 
 /**
- * Create a .d.ts file for global $rootVars, $rootProps, $rootSlots, $rootStore, $router, $router and
+ * Create a .d.ts file for global $rootVars, $rootMemo, $rootProps, $rootSlots, $rootStore, $router, $router and
  * @param document
  * @returns
  */
@@ -91,6 +91,7 @@ const buildComponentRootDTS = (document: TextDocument): string => {
   const doc = yamlDocumentsCache.getYamlDocument(document);
   const yamlDoc = doc.documents.find((x) => x.internalDocument) ?? doc.documents[0];
   let rootVars = '{}';
+  let rootMemo = '{}';
   let rootStore = '{}';
 
   const rootVarsNode = yamlDoc.root.children.find((x) => x.type === 'property' && x.keyNode.value === 'rootVars');
@@ -121,6 +122,25 @@ const buildComponentRootDTS = (document: TextDocument): string => {
       }
 
       rootVars += `}`;
+    }
+  }
+
+  const rootMemoNode = yamlDoc.root.children.find((x) => x.type === 'property' && x.keyNode.value === 'rootMemo');
+  if (rootMemoNode) {
+    const rootMemoNodeValue = (rootMemoNode as PropertyASTNode).valueNode;
+
+    if (rootMemoNodeValue) {
+      rootMemo = `{`;
+
+      if (rootMemoNodeValue.type === 'object') {
+        for (const property of rootMemoNodeValue.properties) {
+          const rootMemoPropName = property.keyNode.value;
+
+          rootMemo += ` ${rootMemoPropName}: any; `;
+        }
+      }
+
+      rootMemo += `}`;
     }
   }
 
@@ -171,6 +191,7 @@ const buildComponentRootDTS = (document: TextDocument): string => {
       declare const $rootProps: Record<string, any>;
       declare const $rootSlots: Record<string, any>;
       declare const $rootVars: ${rootVars};
+      declare const $rootMemo: ${rootMemo};
       declare const $rootStore: ${rootStore};
     }
   `;
