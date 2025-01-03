@@ -7,10 +7,13 @@
   "properties": {
     "tasks": {
       "type": "object",
+      "propertyNames": {
+        "pattern": "^task-[a-zA-Z0-9-]+$"
+      },
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "type": { "enum": ["library", "webhook", "schedule", "forward-task", "upload-files"] },
+          "type": { "enum": ["library", "webhook", "schedule", "forward-task", "upload-files", "publish-signal"] },
           "authorize": {
             "oneOf": [
               {
@@ -116,11 +119,41 @@
               }
             },
             "required": ["host", "app", "task", "authPolicies"]
+          },
+          "signal": {
+            "type": "object",
+            "properties": {
+              "channel": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "signal": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/definitions/any"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "required": ["name", "data"]
+              }
+            },
+            "additionalProperties": false,
+            "required": ["channel", "signal"]
           }
         }
       }
     }
   },
+  "additionalProperties": false,
   "definitions": {
     "authorize": {
       "type": "object",

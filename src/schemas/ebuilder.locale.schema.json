@@ -12,5 +12,6 @@
       }
     }
   },
+  "additionalProperties": false,
   "definitions": {}
 }

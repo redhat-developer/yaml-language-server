@@ -4,6 +4,67 @@
   "title": "eBuilder engine - Configs/Constant schema",
   "description": "eBuilder engine - Configs/Constant schema",
   "type": "object",
-  "properties": {},
-  "definitions": {}
+  "properties": {
+    "constants": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/constant"
+          },
+          {
+            "$ref": "#/definitions/any"
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "any": {
+      "oneOf": [
+        {
+          "type": ["string", "number", "boolean", "null"]
+        },
+        {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/constant"
+              },
+              {
+                "$ref": "#/definitions/any"
+              }
+            ]
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/constant"
+              },
+              {
+                "$ref": "#/definitions/any"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "constant": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "public": {
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/constant"
+        }
+      }
+    }
+  }
 }

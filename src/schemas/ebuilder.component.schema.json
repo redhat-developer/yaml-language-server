@@ -31,6 +31,9 @@
     "rootVars": {
       "$ref": "#/definitions/rootVars"
     },
+    "rootMemo": {
+      "$ref": "#/definitions/rootMemo"
+    },
     "rootStore": {
       "$ref": "#/definitions/rootStore"
     },
@@ -38,6 +41,7 @@
       "$ref": "#/definitions/on"
     }
   },
+  "additionalProperties": false,
   "definitions": {
     "htmlChildren": {
       "type": "object",
@@ -783,7 +787,7 @@
               "type": "string"
             },
             "props": {
-              "type": "object"
+              "type": ["object", "string"]
             },
             "children": {
               "anyOf": [
@@ -845,6 +849,12 @@
         }
       ]
     },
+    "rootMemo": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/any"
+      }
+    },
     "rootStore": {
       "description": "Component root store",
       "type": "object",
@@ -865,10 +875,24 @@
       "type": "object",
       "properties": {
         "load": {
-          "$ref": "#/definitions/emit"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/emit"
+            }
+          ]
         },
         "unload": {
-          "$ref": "#/definitions/emit"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/emit"
+            }
+          ]
         },
         "emit": {
           "type": "array",

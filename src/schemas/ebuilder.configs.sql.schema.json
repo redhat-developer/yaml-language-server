@@ -7,6 +7,9 @@
   "properties": {
     "query": {
       "type": "object",
+      "propertyNames": {
+        "pattern": "^query-[a-zA-Z0-9-]+$"
+      },
       "additionalProperties": {
         "type": "object",
         "properties": {
@@ -32,10 +35,34 @@
           "responseType": {
             "enum": ["list", "single", "singleOrNull", "first", "firstOrNull"]
           },
+          "responseTypeErrors": {
+            "type": "object",
+            "properties": {
+              "notFound": {
+                "$ref": "#/definitions/mutationResponse"
+              },
+              "moreThanOne": {
+                "$ref": "#/definitions/mutationResponse"
+              }
+            },
+            "additionalProperties": false
+          },
           "propType": {
             "type": "object",
             "additionalProperties": {
               "enum": ["string", "bool", "int", "double", "long", "decimal", "json"]
+            }
+          },
+          "hideProps": {
+            "type": "object",
+            "additionalProperties": {
+              "type": ["string", "boolean"]
+            }
+          },
+          "customProps": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/definitions/taskOrQuery"
             }
           },
           "pre": {
@@ -62,6 +89,9 @@
     },
     "mutation": {
       "type": "object",
+      "propertyNames": {
+        "pattern": "^mutation-[a-zA-Z0-9-]+$"
+      },
       "additionalProperties": {
         "type": "object",
         "properties": {
@@ -134,26 +164,22 @@
             "type": "object",
             "properties": {
               "success": {
-                "task": {
-                  "type": "string"
-                },
-                "mutation": {
-                  "type": "string"
-                },
-                "params": {
-                  "$ref": "#/definitions/any"
-                },
-                "checks": {
-                  "$ref": "#/definitions/checks"
-                },
-                "checksBefore": {
-                  "$ref": "#/definitions/checks"
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/taskOrMutation"
+                }
+              },
+              "error": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/taskOrMutation"
                 }
               }
             },
             "additionalProperties": false
           }
-        }
+        },
+        "additionalProperties": false
       }
     }
   },
@@ -172,13 +198,23 @@
           }
         },
         "permissions": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": {
-              "enum": ["Modify", "Show", "Deny"]
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": {
+                  "enum": ["Modify", "Show", "Deny"]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "enum": ["Modify", "Show", "Deny"]
+              }
             }
-          }
+          ]
         }
       }
     },
@@ -189,7 +225,7 @@
           "type": "string"
         },
         "type": {
-          "enum": ["int", "decimal", "number", "string", "bool", "dateTime", "datetime", "array", "object"]
+          "enum": ["int", "decimal", "number", "string", "bool", "dateTime", "datetime", "array", "object", "uuid"]
         },
         "items": {
           "$ref": "#/definitions/inputParam"
@@ -214,6 +250,25 @@
                 "properties": {
                   "nullable": {
                     "type": "boolean"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "enum": {
+                    "type": "array",
+                    "items": {
+                      "type": ["string", "number", "boolean"]
+                    }
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "enumFromConstant": {
+                    "type": "string"
                   }
                 }
               }
@@ -275,6 +330,9 @@
         "key": {
           "type": "string"
         },
+        "datasource": {
+          "type": "string"
+        },
         "jsExpression": {
           "type": "string"
         },
@@ -311,7 +369,7 @@
         "catchErrors": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/mutationResponse"
+            "$ref": "#/definitions/mutationResponseWithCallback"
           },
           "propertyNames": {
             "type": "number"
@@ -370,6 +428,9 @@
         {
           "type": "object",
           "properties": {
+            "if": {
+              "type": "string"
+            },
             "default": {
               "type": "string"
             },
@@ -387,11 +448,50 @@
             }
           },
           "additionalProperties": false
+        },
+        {
+          "$ref": "#/definitions/any"
         }
       ]
     },
     "any": {
       "type": ["string", "number", "boolean", "object", "array", "null"]
+    },
+    "taskOrQuery": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "type": "string"
+        },
+        "query": {
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/any"
+        }
+      },
+      "additionalProperties": false
+    },
+    "taskOrMutation": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "type": "string"
+        },
+        "mutation": {
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/any"
+        },
+        "checks": {
+          "$ref": "#/definitions/checks"
+        },
+        "checksBefore": {
+          "$ref": "#/definitions/checks"
+        }
+      },
+      "additionalProperties": false
     },
     "mutationResponse": {
       "type": "object",
@@ -407,6 +507,27 @@
         },
         "statusCode": {
           "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    },
+    "mutationResponseWithCallback": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/any"
+          }
+        },
+        "message": {
+          "type": "string"
+        },
+        "statusCode": {
+          "type": "integer"
+        },
+        "callback": {
+          "$ref": "#/definitions/taskOrMutation"
         }
       },
       "additionalProperties": false
