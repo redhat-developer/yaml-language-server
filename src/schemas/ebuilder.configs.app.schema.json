@@ -4,7 +4,235 @@
   "title": "eBuilder engine - Configs/App schema",
   "description": "eBuilder engine - Configs/App schema",
   "type": "object",
-  "properties": {},
+  "properties": {
+    "domain": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "component": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["default", "custom"]
+          }
+        }
+      }
+    },
+    "signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "authorize": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "policy": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "policy": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "datasource": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "default": {
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["ODBC", "Elasticsearch"]
+          },
+          "dbType": {
+            "type": "string",
+            "enum": ["MSSQL", "Oracle", "PostgreSQL", "MySQL", "Elasticsearch"]
+          },
+          "mssql": {
+            "$ref": "#/definitions/mssql"
+          },
+          "oracle": {
+            "$ref": "#/definitions/oracle"
+          },
+          "postgresql": {
+            "$ref": "#/definitions/postgresql"
+          },
+          "mysql": {
+            "$ref": "#/definitions/mysql"
+          },
+          "elasticsearch": {
+            "$ref": "#/definitions/elasticsearch"
+          }
+        }
+      }
+    }
+  },
   "additionalProperties": false,
-  "definitions": {}
+  "definitions": {
+    "baseOdbConnectionString": {
+      "type": "object",
+      "properties": {
+        "port": {
+          "type": ["number", "string"]
+        },
+        "connectionString": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "encryptedPassword": {
+          "type": ["boolean", "string"]
+        },
+        "timezone": {
+          "type": "string"
+        }
+      }
+    },
+    "oracle": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/definitions/baseOdbConnectionString" },
+        {
+          "properties": {
+            "host": {
+              "type": "string"
+            },
+            "sid": {
+              "type": "string"
+            },
+            "serviceName": {
+              "type": "string"
+            },
+            "protocol": {
+              "type": "string"
+            },
+            "sort": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "mssql": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/definitions/baseOdbConnectionString" },
+        {
+          "properties": {
+            "database": {
+              "type": "string"
+            },
+            "server": {
+              "type": "string"
+            },
+            "datasource": {
+              "type": "string"
+            },
+            "trustServerCertificate": {
+              "type": ["boolean", "string"]
+            },
+            "integratedSecurity": {
+              "type": ["boolean", "string"]
+            }
+          }
+        }
+      ]
+    },
+    "postgresql": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/definitions/baseOdbConnectionString" },
+        {
+          "properties": {
+            "database": {
+              "type": "string"
+            },
+            "host": {
+              "type": "string"
+            },
+            "schema": {
+              "type": "string"
+            },
+            "options": {
+              "type": "string"
+            },
+            "maxPoolSize": {
+              "type": ["number", "string"]
+            }
+          }
+        }
+      ]
+    },
+    "mysql": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/definitions/baseOdbConnectionString" },
+        {
+          "properties": {
+            "useSSL": {
+              "type": ["boolean", "string"]
+            },
+            "characterSet": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "elasticsearch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "encryptedPassword": {
+          "type": ["boolean", "string"]
+        },
+        "certificateFingerprint": {
+          "type": "string"
+        }
+      }
+    }
+  }
 }

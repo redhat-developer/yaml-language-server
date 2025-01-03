@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema",
+  "$id": "https://ebuilder.macrosreply.info/schemas/ebuilder.component.schema.json",
+  "title": "eBuilder engine - Configs/Resource schema",
+  "description": "eBuilder engine - Configs/Resource schema",
+  "type": "object",
+  "properties": {
+    "resource": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string",
+            "enum": ["get", "post", "put", "delete", "patch"]
+          },
+          "path": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["task", "query", "mutation"]
+          },
+          "target": {
+            "type": "string"
+          },
+          "openApiOperation": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "openApiProps": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {}
+}

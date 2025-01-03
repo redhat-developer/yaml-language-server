@@ -75,7 +75,7 @@ export class NotificationHandlers {
         return [`${baseURL}/ebuilder.component.schema.json`];
       }
 
-      if (/^configs\/app\.ya?ml$/gi.test(relativePath)) {
+      if (/^configs\/app(\.\S+)*\.ya?ml$/gi.test(relativePath)) {
         return [`${baseURL}/ebuilder.configs.app.schema.json`];
       }
 
@@ -83,7 +83,11 @@ export class NotificationHandlers {
         return [`${baseURL}/ebuilder.configs.constant.schema.json`];
       }
 
-      if (/^configs\/security\.ya?ml$/gi.test(relativePath)) {
+      if (/^configs\/resource(\.\S+)*\.ya?ml$/gi.test(relativePath)) {
+        return [`${baseURL}/ebuilder.configs.resource.schema.json`];
+      }
+
+      if (/^configs\/security(\.\S+)*\.ya?ml$/gi.test(relativePath)) {
         return [`${baseURL}/ebuilder.configs.security.schema.json`];
       }
 
@@ -95,7 +99,7 @@ export class NotificationHandlers {
         return [`${baseURL}/ebuilder.configs.task.schema.json`];
       }
 
-      if (/^configs\/ui\.ya?ml$/gi.test(relativePath)) {
+      if (/^configs\/ui(\.\S+)*\.ya?ml$/gi.test(relativePath)) {
         return [`${baseURL}/ebuilder.configs.ui.schema.json`];
       }
 
