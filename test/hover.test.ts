@@ -764,6 +764,32 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
       expect(telemetry.messages).to.be.empty;
     });
+    it('should show the parent description in anyOf (no child descriptions)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        title: 'The Root',
+        description: 'Root Object',
+        type: 'object',
+        properties: {
+          optionalZipFile: {
+            title: 'ZIP file',
+            anyOf: [{ type: "string", pattern: "\\.zip$" }, { type: "null" }],
+            default: null,
+            description: "Optional ZIP file path."
+          },
+        },
+        required: ['optionalZipFile'],
+        additionalProperties: false,
+      });
+      let content = 'optionalZipF|i|le:';
+      let result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `#### ZIP file || ZIP file\n\nOptional ZIP file path.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+      expect(telemetry.messages).to.be.empty;
+    });
   });
 
   describe('Bug fixes', () => {
