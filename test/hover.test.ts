@@ -774,7 +774,7 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
             title: 'ZIP file',
             anyOf: [{ type: "string", pattern: "\\.zip$" }, { type: "null" }],
             default: null,
-            description: "Optional ZIP file path."
+            description: "Optional ZIP file path.",
           },
         },
         required: ['optionalZipFile'],
@@ -790,6 +790,76 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
       expect(telemetry.messages).to.be.empty;
     });
+    it('should concat parent and child descriptions in anyOf', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        title: 'The Root',
+        description: 'Root Object',
+        type: 'object',
+        properties: {
+          child: {
+            title: 'Child',
+            anyOf: [
+              {
+                $ref: '#/definitions/FirstChoice',
+              },
+              {
+                $ref: '#/definitions/SecondChoice',
+              },
+            ],
+            description: "The parent description."
+          },
+        },
+        required: ['child'],
+        additionalProperties: false,
+        definitions: {
+          FirstChoice: {
+            title: 'FirstChoice',
+            description: 'The first choice',
+            type: 'object',
+            properties: {
+              choice: {
+                title: 'Choice',
+                default: 'first',
+                enum: ['first'],
+                type: 'string',
+              },
+              property_a: {
+                title: 'Property A',
+                type: 'string',
+              },
+            },
+            required: ['property_a'],
+          },
+          SecondChoice: {
+            title: 'SecondChoice',
+            description: 'The second choice',
+            type: 'object',
+            properties: {
+              choice: {
+                title: 'Choice',
+                default: 'second',
+                enum: ['second'],
+                type: 'string',
+              },
+              property_b: {
+                title: 'Property B',
+                type: 'string',
+              },
+            },
+            required: ['property_b'],
+          },
+        },
+      });
+
+      let content = 'ch|i|ld:';
+      let result = await parseSetup(content);
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `#### FirstChoice || SecondChoice\n\nThe parent description.\nThe first choice || The second choice\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+      expect(telemetry.messages).to.be.empty;
+    })
   });
 
   describe('Bug fixes', () => {
