@@ -772,16 +772,16 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
         properties: {
           optionalZipFile: {
             title: 'ZIP file',
-            anyOf: [{ type: "string", pattern: "\\.zip$" }, { type: "null" }],
+            anyOf: [{ type: 'string', pattern: '\\.zip$' }, { type: 'null' }],
             default: null,
-            description: "Optional ZIP file path.",
+            description: 'Optional ZIP file path.',
           },
         },
         required: ['optionalZipFile'],
         additionalProperties: false,
       });
-      let content = 'optionalZipF|i|le:';
-      let result = await parseSetup(content);
+      const content = 'optionalZipF|i|le:';
+      const result = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
@@ -806,7 +806,7 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
                 $ref: '#/definitions/SecondChoice',
               },
             ],
-            description: "The parent description."
+            description: 'The parent description.',
           },
         },
         required: ['child'],
@@ -851,15 +851,15 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
         },
       });
 
-      let content = 'ch|i|ld:';
-      let result = await parseSetup(content);
+      const content = 'ch|i|ld:';
+      const result = await parseSetup(content);
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
         `#### FirstChoice || SecondChoice\n\nThe parent description.\nThe first choice || The second choice\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
       expect(telemetry.messages).to.be.empty;
-    })
+    });
   });
 
   describe('Bug fixes', () => {

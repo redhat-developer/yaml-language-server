@@ -141,7 +141,7 @@ export class YAMLHover {
             if (s.schema.anyOf && isAllSchemasMatched(node, matchingSchemas, s.schema)) {
               //if append title and description of all matched schemas on hover
               title = '';
-              markdownDescription = s.schema.description ? (s.schema.description + '\n') : '';
+              markdownDescription = s.schema.description ? s.schema.description + '\n' : '';
               s.schema.anyOf.forEach((childSchema: JSONSchema, index: number) => {
                 title += childSchema.title || s.schema.closestTitle || '';
                 markdownDescription += childSchema.markdownDescription || this.toMarkdown(childSchema.description) || '';
