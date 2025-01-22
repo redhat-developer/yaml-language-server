@@ -34,11 +34,6 @@ import Ajv04 from 'ajv-draft-04';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
 const ajv = new Ajv();
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const draft6MetaSchema = require('ajv/dist/refs/json-schema-draft-06.json');
-ajv.addMetaSchema(draft6MetaSchema);
-
 const ajv04 = new Ajv04();
 const ajv2019 = new Ajv2019();
 const ajv2020 = new Ajv2020();
