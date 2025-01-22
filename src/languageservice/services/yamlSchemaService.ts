@@ -35,7 +35,8 @@ import { getSchemaTitle } from '../utils/schemaUtils';
 
 const ajv = new Ajv();
 
-import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const draft6MetaSchema = require('ajv/dist/refs/json-schema-draft-06.json');
 ajv.addMetaSchema(draft6MetaSchema);
 
 const ajv04 = new Ajv04();
