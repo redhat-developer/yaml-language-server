@@ -11,7 +11,7 @@ import { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver
 import { LanguageService, LanguageSettings, SchemaConfiguration, SchemaPriority } from '../src';
 import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { Telemetry } from '../src/languageservice/telemetry';
+import { Telemetry } from '../src/languageservice/yamlLanguageService';
 import { SettingsState } from '../src/yamlSettings';
 import { setupLanguageService } from './utils/testHelper';
 import { TestWorkspace } from './utils/testsTypes';
