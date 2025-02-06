@@ -287,7 +287,10 @@ export interface ISchemaCollector {
 
 class SchemaCollector implements ISchemaCollector {
   schemas: IApplicableSchema[] = [];
-  constructor(private focusOffset = -1, private exclude: ASTNode = null) {}
+  constructor(
+    private focusOffset = -1,
+    private exclude: ASTNode = null
+  ) {}
   add(schema: IApplicableSchema): void {
     this.schemas.push(schema);
   }
@@ -889,6 +892,7 @@ function validate(
             ),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
+          data: { values: schema.enum },
         });
       }
     }
@@ -908,6 +912,7 @@ function validate(
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
           problemArgs: [JSON.stringify(schema.const)],
+          data: { values: [schema.const] },
         });
         validationResult.enumValueMatch = false;
       } else {
@@ -1386,6 +1391,7 @@ function validate(
                 length: propertyNode.keyNode.length,
               },
               severity: DiagnosticSeverity.Warning,
+              code: ErrorCode.PropertyExpected,
               message: schema.errorMessage || localize('DisallowedExtraPropWarning', MSG_PROPERTY_NOT_ALLOWED, propertyName),
               source: getSchemaSource(schema, originalSchema),
               schemaUri: getSchemaUri(schema, originalSchema),
