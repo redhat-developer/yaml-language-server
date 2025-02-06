@@ -28,7 +28,7 @@ describe('Auto Completion Fix Tests', () => {
   let schemaProvider: TestCustomSchemaProvider;
   before(() => {
     languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
-      uri: 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json',
+      uri: 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.1-standalone-strict/all.json',
       fileMatch: [SCHEMA_ID],
     });
     const {

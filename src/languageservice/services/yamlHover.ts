@@ -25,7 +25,10 @@ export class YAMLHover {
   private indentation: string;
   private schemaService: YAMLSchemaService;
 
-  constructor(schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {
+  constructor(
+    schemaService: YAMLSchemaService,
+    private readonly telemetry?: Telemetry
+  ) {
     this.shouldHover = true;
     this.schemaService = schemaService;
   }
@@ -99,7 +102,7 @@ export class YAMLHover {
     };
 
     const removePipe = (value: string): string => {
-      return value.replace(/\|\|\s*$/, '');
+      return value.replace(/\s\|\|\s*$/, '');
     };
 
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
@@ -137,7 +140,7 @@ export class YAMLHover {
             if (s.schema.anyOf && isAllSchemasMatched(node, matchingSchemas, s.schema)) {
               //if append title and description of all matched schemas on hover
               title = '';
-              markdownDescription = '';
+              markdownDescription = s.schema.description ? s.schema.description + '\n' : '';
               s.schema.anyOf.forEach((childSchema: JSONSchema, index: number) => {
                 title += childSchema.title || s.schema.closestTitle || '';
                 markdownDescription += childSchema.markdownDescription || this.toMarkdown(childSchema.description) || '';

@@ -14,7 +14,10 @@ import { getSchemaUrls } from '../utils/schemaUrls';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
 export class YamlCodeLens {
-  constructor(private schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {}
+  constructor(
+    private schemaService: YAMLSchemaService,
+    private readonly telemetry?: Telemetry
+  ) {}
 
   async getCodeLens(document: TextDocument): Promise<CodeLens[]> {
     const result = [];
