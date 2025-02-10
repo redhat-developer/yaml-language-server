@@ -142,7 +142,7 @@ export class LanguageHandlers {
    * Called when the formatter is invoked
    * Returns the formatted document content using prettier
    */
-  formatterHandler(formatParams: DocumentFormattingParams): TextEdit[] {
+  formatterHandler(formatParams: DocumentFormattingParams): Promise<TextEdit[]> {
     const document = this.yamlSettings.documents.get(formatParams.textDocument.uri);
 
     if (!document) {
