@@ -40,7 +40,7 @@ export class ValidationHandler {
   }
 
   private cleanPendingValidation(textDocument: TextDocument): void {
-    const request = this.yamlSettings.pendingValidationRequests[textDocument.uri];
+    const request = setTimeout(() => this.yamlSettings.pendingValidationRequests[textDocument.uri]);
 
     if (request) {
       clearTimeout(request);
