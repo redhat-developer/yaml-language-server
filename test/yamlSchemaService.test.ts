@@ -37,6 +37,17 @@ describe('YAML Schema Service', () => {
       expect(requestServiceMock).calledOnceWith('http://json-schema.org/draft-07/schema#');
     });
 
+    it('should handle inline schema http url without LSP prefix', () => {
+      const documentContent = `# $schema:http://json-schema.org/draft-07/schema# anothermodeline=value\n`;
+      const content = `${documentContent}\n---\n- `;
+      const yamlDock = parse(content);
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      service.getSchemaForResource('', yamlDock.documents[0]);
+
+      expect(requestServiceMock).calledOnceWith('http://json-schema.org/draft-07/schema#');
+    });
+
     it('should handle inline schema https url', () => {
       const documentContent = `# yaml-language-server: $schema=https://json-schema.org/draft-07/schema# anothermodeline=value\n`;
       const content = `${documentContent}\n---\n- `;
@@ -48,8 +59,19 @@ describe('YAML Schema Service', () => {
       expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
     });
 
+    it('should handle inline schema https url without LSP prefix', () => {
+      const documentContent = `# $schema:https://json-schema.org/draft-07/schema# anothermodeline=value\n`;
+      const content = `${documentContent}\n---\n- `;
+      const yamlDock = parse(content);
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      service.getSchemaForResource('', yamlDock.documents[0]);
+
+      expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
+    });
+
     it('should handle url with fragments', async () => {
-      const content = `# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#/definitions/schemaArray\nfoo: bar`;
+      const content = `# $schema: https://json-schema.org/draft-07/schema#/definitions/schemaArray\nfoo: bar`;
       const yamlDock = parse(content);
 
       requestServiceMock = sandbox.fake.resolves(`{"definitions": {"schemaArray": {
@@ -115,7 +137,7 @@ components:
     });
 
     it('should handle url with fragments when root object is schema', async () => {
-      const content = `# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#/definitions/schemaArray`;
+      const content = `# $schema: https://json-schema.org/draft-07/schema#/definitions/schemaArray`;
       const yamlDock = parse(content);
 
       requestServiceMock = sandbox.fake.resolves(`{"definitions": {"schemaArray": {
@@ -141,7 +163,7 @@ components:
     });
 
     it('should handle file path with fragments', async () => {
-      const content = `# yaml-language-server: $schema=schema.json#/definitions/schemaArray\nfoo: bar`;
+      const content = `# $schema: schema.json#/definitions/schemaArray\nfoo: bar`;
       const yamlDock = parse(content);
 
       requestServiceMock = sandbox.fake.resolves(`{"definitions": {"schemaArray": {
@@ -167,7 +189,7 @@ components:
     });
 
     it('should handle modeline schema comment in the middle of file', () => {
-      const documentContent = `foo:\n  bar\n# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#\naa:bbb\n`;
+      const documentContent = `foo:\n  bar\n# $schema: https://json-schema.org/draft-07/schema#\naa:bbb\n`;
       const content = `${documentContent}`;
       const yamlDock = parse(content);
 
@@ -178,7 +200,7 @@ components:
     });
 
     it('should handle modeline schema comment in multiline comments', () => {
-      const documentContent = `foo:\n  bar\n#first comment\n# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#\naa:bbb\n`;
+      const documentContent = `foo:\n  bar\n#first comment\n# $schema: https://json-schema.org/draft-07/schema#\naa:bbb\n`;
       const content = `${documentContent}`;
       const yamlDock = parse(content);
 
