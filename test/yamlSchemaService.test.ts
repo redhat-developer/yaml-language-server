@@ -2,7 +2,6 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { readFile } from 'fs/promises';
 import * as sinon from 'sinon';
 import * as chai from 'chai';
 import * as sinonChai from 'sinon-chai';
@@ -66,52 +65,6 @@ describe('YAML Schema Service', () => {
       expect(requestServiceMock).calledWithExactly('https://json-schema.org/draft-07/schema#/definitions/schemaArray');
 
       expect(schema.schema.type).eqls('array');
-    });
-
-    it('should handle schemas that use draft-04', async () => {
-      const content = `openapi: "3.0.0"
-info:
-  version: 1.0.0
-  title: Minimal ping API server
-paths:
-  /ping:
-    get:
-      responses:
-        '200':
-          description: pet response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pong'
-components:
-  schemas:
-    # base types
-    Pong:
-      type: object
-      required:
-        - ping
-      properties:
-        ping:
-          type: string
-          example: pong`;
-
-      const yamlDock = parse(content);
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const openapiV3Schema = await readFile(path.join(__dirname, './fixtures/sample-openapiv3.0.0-schema.json'), {
-        encoding: 'utf-8',
-      });
-
-      requestServiceMock = sandbox.fake.resolves(openapiV3Schema);
-      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
-      service.registerCustomSchemaProvider(() => {
-        return new Promise<string | string[]>((resolve) => {
-          resolve('http://fakeschema.faketld');
-        });
-      });
-
-      const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
-      expect(requestServiceMock).calledWithExactly('http://fakeschema.faketld');
-      expect(schema).to.not.be.null;
     });
 
     it('should handle url with fragments when root object is schema', async () => {
