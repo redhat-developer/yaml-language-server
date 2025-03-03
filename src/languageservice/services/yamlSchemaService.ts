@@ -30,9 +30,9 @@ import { SchemaVersions } from '../yamlTypes';
 import Ajv, { DefinedError } from 'ajv';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
-const ajv = new Ajv();
-
 const localize = nls.loadMessageBundle();
+
+const ajv = new Ajv();
 
 // load JSON Schema 07 def to validate loaded schemas
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -165,7 +165,9 @@ export class YAMLSchemaService extends JSONSchemaService {
     const contextService = this.contextService;
 
     if (!schema07Validator(schema)) {
+    if (!schema07Validator(schema)) {
       const errs: string[] = [];
+      for (const err of schema07Validator.errors as DefinedError[]) {
       for (const err of schema07Validator.errors as DefinedError[]) {
         errs.push(`${err.instancePath} : ${err.message}`);
       }
