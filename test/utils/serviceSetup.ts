@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { LanguageSettings, SchemasSettings } from '../../src/languageservice/yamlLanguageService';
+import { HoverSettings, LanguageSettings, SchemasSettings } from '../../src/languageservice/yamlLanguageService';
 
 export class ServiceSetup {
   /*
@@ -12,6 +12,7 @@ export class ServiceSetup {
   languageSettings: LanguageSettings = {
     validate: false,
     hover: false,
+    hoverSettings: {},
     completion: false,
     format: false,
     isKubernetes: false,
@@ -30,6 +31,11 @@ export class ServiceSetup {
 
   withHover(): ServiceSetup {
     this.languageSettings.hover = true;
+    return this;
+  }
+
+  withHoverSettings(hoverSettings: HoverSettings): ServiceSetup {
+    this.languageSettings.hoverSettings = hoverSettings;
     return this;
   }
 
