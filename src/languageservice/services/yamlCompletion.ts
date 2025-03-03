@@ -691,6 +691,10 @@ export class YamlCompletion {
       });
     }
     for (const schema of matchingSchemas) {
+      if (schema.schema.doNotSuggest) {
+        continue;
+      }
+
       if (
         ((schema.node.internalNode === node && !matchOriginal) ||
           (schema.node.internalNode === originalNode && !hasColon) ||
@@ -716,7 +720,7 @@ export class YamlCompletion {
               if (Object.prototype.hasOwnProperty.call(schemaProperties, key)) {
                 const propertySchema = schemaProperties[key];
 
-                if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema['doNotSuggest']) {
+                if (typeof propertySchema === 'object' && !propertySchema.deprecationMessage && !propertySchema.doNotSuggest) {
                   let identCompensation = '';
                   if (nodeParent && isSeq(nodeParent) && node.items.length <= 1 && !hasOnlyWhitespace) {
                     // because there is a slash '-' to prevent the properties generated to have the correct
@@ -1309,6 +1313,10 @@ export class YamlCompletion {
     isArray?: boolean
   ): void {
     if (typeof schema === 'object') {
+      if (schema.doNotSuggest) {
+        return;
+      }
+
       this.addEnumValueCompletions(schema, separatorAfter, collector, isArray);
       this.addDefaultValueCompletions(schema, separatorAfter, collector);
       this.collectTypes(schema, types);
