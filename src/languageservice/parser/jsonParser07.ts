@@ -27,6 +27,7 @@ import { isArrayEqual } from '../utils/arrUtils';
 import { Node, Pair } from 'yaml';
 import { safeCreateUnicodeRegExp } from '../utils/strings';
 import { FilePatternAssociation } from '../services/yamlSchemaService';
+import { floatSafeRemainder } from '../utils/math';
 
 const localize = nls.loadMessageBundle();
 const MSG_PROPERTY_NOT_ALLOWED = 'Property {0} is not allowed.';
@@ -935,7 +936,7 @@ function validate(
     const val = node.value;
 
     if (isNumber(schema.multipleOf)) {
-      if (val % schema.multipleOf !== 0) {
+      if (floatSafeRemainder(val, schema.multipleOf) !== 0) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
