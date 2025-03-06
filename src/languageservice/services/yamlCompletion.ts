@@ -640,8 +640,9 @@ export class YamlCompletion {
           completionItem.textEdit.newText = completionItem.insertText;
         }
         // remove $x or use {$x:value} in documentation
-        const mdText = insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
-
+        let mdText = insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
+        // unescape special chars for markdown, reverse operation to getInsertTextForPlainText
+        mdText = getOriginalTextFromEscaped(mdText);
         const originalDocumentation = completionItem.documentation ? [completionItem.documentation, '', '----', ''] : [];
         completionItem.documentation = {
           kind: MarkupKind.Markdown,
@@ -1095,6 +1096,7 @@ export class YamlCompletion {
 
     Object.keys(schema.properties).forEach((key: string) => {
       const propertySchema = schema.properties[key] as JSONSchema;
+      const keyEscaped = getInsertTextForPlainText(key);
       let type = Array.isArray(propertySchema.type) ? propertySchema.type[0] : propertySchema.type;
       if (!type) {
         if (propertySchema.anyOf) {
@@ -1114,14 +1116,14 @@ export class YamlCompletion {
           case 'number':
           case 'integer':
           case 'anyOf': {
-            let value = propertySchema.default || propertySchema.const;
-            if (value) {
-              if (type === 'string') {
+            let value = propertySchema.default === undefined ? propertySchema.const : propertySchema.default;
+            if (isDefined(value)) {
+              if (type === 'string' || typeof value === 'string') {
                 value = convertToStringValue(value);
               }
-              insertText += `${indent}${key}: \${${insertIndex++}:${value}}\n`;
+              insertText += `${indent}${keyEscaped}: \${${insertIndex++}:${value}}\n`;
             } else {
-              insertText += `${indent}${key}: $${insertIndex++}\n`;
+              insertText += `${indent}${keyEscaped}: $${insertIndex++}\n`;
             }
             break;
           }
@@ -1138,7 +1140,7 @@ export class YamlCompletion {
                 arrayTemplate = arrayInsertLines.join('\n');
               }
               insertIndex = arrayInsertResult.insertIndex;
-              insertText += `${indent}${key}:\n${indent}${this.indentation}- ${arrayTemplate}\n`;
+              insertText += `${indent}${keyEscaped}:\n${indent}${this.indentation}- ${arrayTemplate}\n`;
             }
             break;
           case 'object':
@@ -1150,7 +1152,7 @@ export class YamlCompletion {
                 insertIndex++
               );
               insertIndex = objectInsertResult.insertIndex;
-              insertText += `${indent}${key}:\n${objectInsertResult.insertText}\n`;
+              insertText += `${indent}${keyEscaped}:\n${objectInsertResult.insertText}\n`;
             }
             break;
         }
@@ -1165,7 +1167,7 @@ export class YamlCompletion {
             }: \${${insertIndex++}:${propertySchema.default}}\n`;
             break;
           case 'string':
-            insertText += `${indent}${key}: \${${insertIndex++}:${convertToStringValue(propertySchema.default)}}\n`;
+            insertText += `${indent}${keyEscaped}: \${${insertIndex++}:${convertToStringValue(propertySchema.default)}}\n`;
             break;
           case 'array':
           case 'object':
@@ -1230,7 +1232,7 @@ export class YamlCompletion {
       case 'string': {
         let snippetValue = JSON.stringify(value);
         snippetValue = snippetValue.substr(1, snippetValue.length - 2); // remove quotes
-        snippetValue = this.getInsertTextForPlainText(snippetValue); // escape \ and }
+        snippetValue = getInsertTextForPlainText(snippetValue); // escape \ and }
         if (type === 'string') {
           snippetValue = convertToStringValue(snippetValue);
         }
@@ -1241,10 +1243,6 @@ export class YamlCompletion {
         return '${1:' + value + '}' + separatorAfter;
     }
     return this.getInsertTextForValue(value, separatorAfter, type);
-  }
-
-  private getInsertTextForPlainText(text: string): string {
-    return text.replace(/[\\$}]/g, '\\$&'); // escape $, \ and }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1259,13 +1257,13 @@ export class YamlCompletion {
       }
       case 'number':
       case 'boolean':
-        return this.getInsertTextForPlainText(value + separatorAfter);
+        return getInsertTextForPlainText(value + separatorAfter);
     }
     type = Array.isArray(type) ? type[0] : type;
     if (type === 'string') {
       value = convertToStringValue(value);
     }
-    return this.getInsertTextForPlainText(value + separatorAfter);
+    return getInsertTextForPlainText(value + separatorAfter);
   }
 
   private getInsertTemplateForValue(
@@ -1290,14 +1288,14 @@ export class YamlCompletion {
           if (typeof element === 'object') {
             valueTemplate = `${this.getInsertTemplateForValue(element, indent + this.indentation, navOrder, separatorAfter)}`;
           } else {
-            valueTemplate = ` \${${navOrder.index++}:${this.getInsertTextForPlainText(element + separatorAfter)}}\n`;
+            valueTemplate = ` \${${navOrder.index++}:${getInsertTextForPlainText(element + separatorAfter)}}\n`;
           }
           insertText += `${valueTemplate}`;
         }
       }
       return insertText;
     }
-    return this.getInsertTextForPlainText(value + separatorAfter);
+    return getInsertTextForPlainText(value + separatorAfter);
   }
 
   private addSchemaValueCompletions(
@@ -1669,6 +1667,20 @@ export class YamlCompletion {
   }
 }
 
+/**
+ * escape $, \ and }
+ */
+function getInsertTextForPlainText(text: string): string {
+  return text.replace(/(\\?)([\\$}])/g, (match, escapeChar, specialChar) => {
+    // If it's already escaped (has a backslash before it), return it as is
+    return escapeChar ? match : `\\${specialChar}`;
+  });
+}
+
+function getOriginalTextFromEscaped(text: string): string {
+  return text.replace(/\\([\\$}])/g, '$1');
+}
+
 const isNumberExp = /^\d+$/;
 function convertToStringValue(param: unknown): string {
   let value: string;
@@ -1680,6 +1692,8 @@ function convertToStringValue(param: unknown): string {
   if (value.length === 0) {
     return value;
   }
+
+  value = getInsertTextForPlainText(value); // escape $, \ and }
 
   if (value === 'true' || value === 'false' || value === 'null' || isNumberExp.test(value)) {
     return `"${value}"`;
