@@ -243,19 +243,21 @@ yaml.schemas: {
 It is possible to specify a yaml schema using a modeline.
 
 ```yaml
-# yaml-language-server: $schema=<urlToTheSchema>
+# $schema: <urlToTheSchema>
 ```
+
+_Note_: In previous versions, `# yaml-language-server: $schema=<url>` was a way of specifying a schema. Although still supported for backwards compatibility, this is discouraged as it isn't supported in other editors. `# $schema: <url>` is supported by IntelliJ IDEs as well.
 
 Also it is possible to use relative path in a modeline:
 
 ```yaml
-# yaml-language-server: $schema=../relative/path/to/schema
+# $schema: ../relative/path/to/schema
 ```
 
 or absolute path:
 
 ```yaml
-# yaml-language-server: $schema=/absolute/path/to/schema
+# $schema: /absolute/path/to/schema
 ```
 
 ### Schema priority

@@ -309,7 +309,7 @@ export class YamlCompletion {
           const inlineSchemaCompletion = {
             kind: CompletionItemKind.Text,
             label: 'Inline schema',
-            insertText: '# yaml-language-server: $schema=',
+            insertText: '# $schema: ',
             insertTextFormat: InsertTextFormat.PlainText,
           };
           result.items.push(inlineSchemaCompletion);
@@ -317,19 +317,22 @@ export class YamlCompletion {
       }
 
       if (isModeline(lineContent) || isInComment(doc.tokens, offset)) {
-        const schemaIndex = lineContent.indexOf('$schema=');
-        if (schemaIndex !== -1 && schemaIndex + '$schema='.length <= position.character) {
-          this.schemaService.getAllSchemas().forEach((schema) => {
-            const schemaIdCompletion: CompletionItem = {
-              kind: CompletionItemKind.Constant,
-              label: schema.name ?? schema.uri,
-              detail: schema.description,
-              insertText: schema.uri,
-              insertTextFormat: InsertTextFormat.PlainText,
-              insertTextMode: InsertTextMode.asIs,
-            };
-            result.items.push(schemaIdCompletion);
-          });
+        const schemaIndex = lineContent.indexOf('$schema');
+        if (schemaIndex !== -1 && schemaIndex + '$schema:'.length <= position.character) {
+          const postSchemaChar = lineContent[schemaIndex + '$schema'.length];
+          if (postSchemaChar === ':' || postSchemaChar === '=') {
+            this.schemaService.getAllSchemas().forEach((schema) => {
+              const schemaIdCompletion: CompletionItem = {
+                kind: CompletionItemKind.Constant,
+                label: schema.name ?? schema.uri,
+                detail: schema.description,
+                insertText: schema.uri,
+                insertTextFormat: InsertTextFormat.PlainText,
+                insertTextMode: InsertTextMode.asIs,
+              };
+              result.items.push(schemaIdCompletion);
+            });
+          }
         }
         return result;
       }
