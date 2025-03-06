@@ -30,9 +30,9 @@ import { SchemaVersions } from '../yamlTypes';
 import Ajv, { DefinedError } from 'ajv';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
-const localize = nls.loadMessageBundle();
-
 const ajv = new Ajv();
+
+const localize = nls.loadMessageBundle();
 
 // load JSON Schema 07 def to validate loaded schemas
 // eslint-disable-next-line @typescript-eslint/no-var-requires

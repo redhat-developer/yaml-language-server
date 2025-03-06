@@ -6,7 +6,7 @@ import { isBoolean } from './objects';
 import { isRelativePath, relativeToAbsolutePath } from './paths';
 
 export const KUBERNETES_SCHEMA_URL =
-  'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json';
+  'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.1-standalone-strict/all.json';
 export const JSON_SCHEMASTORE_URL = 'https://www.schemastore.org/api/json/catalog.json';
 
 export function checkSchemaURI(

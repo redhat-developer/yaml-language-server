@@ -14,7 +14,6 @@ import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jso
 import { YAML_SOURCE } from '../parser/jsonParser07';
 import { TextBuffer } from '../utils/textBuffer';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { Telemetry } from '../telemetry';
 import { AdditionalValidator } from './validation/types';
 import { UnusedAnchorsValidator } from './validation/unused-anchors';
@@ -48,7 +47,10 @@ export class YAMLValidation {
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
-  constructor(schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {
+  constructor(
+    schemaService: YAMLSchemaService,
+    private readonly telemetry?: Telemetry
+  ) {
     this.validationEnabled = true;
     this.jsonValidation = new JSONValidation(schemaService, Promise);
   }
@@ -107,7 +109,7 @@ export class YAMLValidation {
         index++;
       }
     } catch (err) {
-      this.telemetry?.sendError('yaml.validation.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.validation.error', err);
     }
 
     let previousErr: Diagnostic;
