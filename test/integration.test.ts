@@ -18,7 +18,7 @@ describe('Kubernetes Integration Tests', () => {
   let yamlSettings: SettingsState;
 
   before(() => {
-    const uri = 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json';
+    const uri = 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.1-standalone-strict/all.json';
     const fileMatch = ['*.yml', '*.yaml'];
     languageSettingsSetup = new ServiceSetup()
       .withHover()
@@ -123,7 +123,7 @@ describe('Kubernetes Integration Tests', () => {
         });
 
         it('Type Object does not error on valid node', (done) => {
-          const content = 'metadata:\n  clusterName: tes';
+          const content = 'metadata:\n  name: tes';
           const validator = parseSetup(content);
           validator
             .then(function (result) {
@@ -265,8 +265,8 @@ describe('Kubernetes Integration Tests', () => {
       });
 
       it('Autocomplete on boolean value (without value content)', (done) => {
-        const content = 'spec:\n  allowPrivilegeEscalation: ';
-        const completion = parseSetup(content, 38);
+        const content = 'apiVersion: apps/v1\nkind: Deployment\nspec:\n  paused: ';
+        const completion = parseSetup(content, content.length);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 2);
@@ -275,8 +275,8 @@ describe('Kubernetes Integration Tests', () => {
       });
 
       it('Autocomplete on boolean value (with value content)', (done) => {
-        const content = 'spec:\n  allowPrivilegeEscalation: fal';
-        const completion = parseSetup(content, 43);
+        const content = 'apiVersion: apps/v1\nkind: Deployment\nspec:\n  paused: fal';
+        const completion = parseSetup(content, content.length);
         completion
           .then(function (result) {
             assert.equal(result.items.length, 2);
