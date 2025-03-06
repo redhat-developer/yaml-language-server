@@ -556,15 +556,15 @@ users:
       );
     });
 
-    it('Hover works on examples', async () => {
+    it('Hover displays enum descriptions if present', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
           animal: {
             type: 'string',
             description: 'should return this description',
-            enum: ['cat', 'dog'],
-            examples: ['cat', 'dog'],
+            enum: ['cat', 'dog', 'non'],
+            enumDescriptions: ['', 'Canis familiaris'],
           },
         },
       });
@@ -577,11 +577,61 @@ users:
         (result.contents as MarkupContent).value,
         `should return this description
 
-Examples:
+Allowed Values:
 
-\`\`\`"cat"\`\`\`
+* \`cat\`
+* \`dog\`: Canis familiaris
+* \`non\`
 
-\`\`\`"dog"\`\`\`
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
+    it('Hover works on examples', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            type: 'string',
+            description: 'should return this description',
+            enum: ['cat', 'dog'],
+            examples: [
+              'cat',
+              {
+                animal: {
+                  type: 'dog',
+                },
+              },
+            ],
+          },
+        },
+      });
+      const content = 'animal:\n  ca|t|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+Allowed Values:
+
+* \`cat\`
+* \`dog\`
+
+Example:
+
+\`\`\`yaml
+cat
+\`\`\`
+
+Example:
+
+\`\`\`yaml
+animal:
+  type: dog
+\`\`\`
 
 Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
@@ -711,6 +761,102 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       assert.strictEqual(
         (result.contents as MarkupContent).value,
         `#### SecondChoice\n\nThe second choice\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+      expect(telemetry.messages).to.be.empty;
+    });
+    it('should show the parent description in anyOf (no child descriptions)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        title: 'The Root',
+        description: 'Root Object',
+        type: 'object',
+        properties: {
+          optionalZipFile: {
+            title: 'ZIP file',
+            anyOf: [{ type: 'string', pattern: '\\.zip$' }, { type: 'null' }],
+            default: null,
+            description: 'Optional ZIP file path.',
+          },
+        },
+        required: ['optionalZipFile'],
+        additionalProperties: false,
+      });
+      const content = 'optionalZipF|i|le:';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `#### ZIP file || ZIP file\n\nOptional ZIP file path.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+      expect(telemetry.messages).to.be.empty;
+    });
+    it('should concat parent and child descriptions in anyOf', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        title: 'The Root',
+        description: 'Root Object',
+        type: 'object',
+        properties: {
+          child: {
+            title: 'Child',
+            anyOf: [
+              {
+                $ref: '#/definitions/FirstChoice',
+              },
+              {
+                $ref: '#/definitions/SecondChoice',
+              },
+            ],
+            description: 'The parent description.',
+          },
+        },
+        required: ['child'],
+        additionalProperties: false,
+        definitions: {
+          FirstChoice: {
+            title: 'FirstChoice',
+            description: 'The first choice',
+            type: 'object',
+            properties: {
+              choice: {
+                title: 'Choice',
+                default: 'first',
+                enum: ['first'],
+                type: 'string',
+              },
+              property_a: {
+                title: 'Property A',
+                type: 'string',
+              },
+            },
+            required: ['property_a'],
+          },
+          SecondChoice: {
+            title: 'SecondChoice',
+            description: 'The second choice',
+            type: 'object',
+            properties: {
+              choice: {
+                title: 'Choice',
+                default: 'second',
+                enum: ['second'],
+                type: 'string',
+              },
+              property_b: {
+                title: 'Property B',
+                type: 'string',
+              },
+            },
+            required: ['property_b'],
+          },
+        },
+      });
+
+      const content = 'ch|i|ld:';
+      const result = await parseSetup(content);
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `#### FirstChoice || SecondChoice\n\nThe parent description.\nThe first choice || The second choice\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
       expect(telemetry.messages).to.be.empty;
     });

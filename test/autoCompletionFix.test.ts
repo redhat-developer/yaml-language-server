@@ -28,7 +28,7 @@ describe('Auto Completion Fix Tests', () => {
   let schemaProvider: TestCustomSchemaProvider;
   before(() => {
     languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
-      uri: 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json',
+      uri: 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.1-standalone-strict/all.json',
       fileMatch: [SCHEMA_ID],
     });
     const {
@@ -482,7 +482,7 @@ objB:
 
     expect(completion.items.length).equal(1);
     expect(completion.items[0]).to.be.deep.equal(
-      createExpectedCompletion('objectWithArray', 'objectWithArray:\n    - ${1:""}', 1, 4, 1, 4, 10, 2, {
+      createExpectedCompletion('objectWithArray', 'objectWithArray:\n    - ${1}', 1, 4, 1, 4, 10, 2, {
         documentation: '',
       })
     );
@@ -1181,6 +1181,30 @@ objB:
 
     expect(completion.items.length).equal(1);
     expect(completion.items[0].insertText).to.be.equal('test1');
+  });
+
+  it('should suggest defaultSnippets from additionalProperties', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'string',
+        },
+      },
+      additionalProperties: {
+        anyOf: [
+          {
+            type: 'string',
+            defaultSnippets: [{ label: 'snippet', body: 'snippetBody' }],
+          },
+        ],
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = 'value: |\n|';
+    const completion = await parseCaret(content);
+
+    expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['snippetBody']);
   });
 
   describe('should suggest prop of the object (based on not completed prop name)', () => {

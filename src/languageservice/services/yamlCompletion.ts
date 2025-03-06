@@ -29,7 +29,7 @@ import { YAMLSchemaService } from './yamlSchemaService';
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { stringifyObject, StringifySettings } from '../utils/json';
-import { convertErrorToTelemetryMsg, isDefined, isString } from '../utils/objects';
+import { isDefined, isString } from '../utils/objects';
 import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { asSchema } from '../parser/jsonParser07';
@@ -281,7 +281,7 @@ export class YamlCompletion {
         }
       },
       error: (message: string) => {
-        this.telemetry?.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(message) });
+        this.telemetry?.sendError('yaml.completion.error', message);
       },
       log: (message: string) => {
         console.log(message);
@@ -293,7 +293,7 @@ export class YamlCompletion {
       proposed,
     };
 
-    if (this.customTags.length > 0) {
+    if (this.customTags && this.customTags.length > 0) {
       this.getCustomTagValueCompletions(collector);
     }
 
@@ -533,7 +533,7 @@ export class YamlCompletion {
       const types: { [type: string]: boolean } = {};
       this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types, doComplete);
     } catch (err) {
-      this.telemetry?.sendError('yaml.completion.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.completion.error', err);
     }
 
     this.finalizeParentCompletion(result);
@@ -920,7 +920,8 @@ export class YamlCompletion {
             if (propertySchema) {
               this.addSchemaValueCompletions(propertySchema, separatorAfter, collector, types, 'value');
             }
-          } else if (s.schema.additionalProperties) {
+          }
+          if (s.schema.additionalProperties) {
             this.addSchemaValueCompletions(s.schema.additionalProperties, separatorAfter, collector, types, 'value');
           }
         }
@@ -1200,7 +1201,7 @@ export class YamlCompletion {
         insertText = `\${${insertIndex++}:0}`;
         break;
       case 'string':
-        insertText = `\${${insertIndex++}:""}`;
+        insertText = `\${${insertIndex++}}`;
         break;
       case 'object':
         {

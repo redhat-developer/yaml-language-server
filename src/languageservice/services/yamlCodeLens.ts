@@ -11,11 +11,13 @@ import { YAMLSchemaService } from './yamlSchemaService';
 import { JSONSchema } from '../jsonSchema';
 import { Telemetry } from '../telemetry';
 import { getSchemaUrls } from '../utils/schemaUrls';
-import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
 export class YamlCodeLens {
-  constructor(private schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {}
+  constructor(
+    private schemaService: YAMLSchemaService,
+    private readonly telemetry?: Telemetry
+  ) {}
 
   async getCodeLens(document: TextDocument): Promise<CodeLens[]> {
     const result = [];
@@ -39,7 +41,7 @@ export class YamlCodeLens {
         result.push(lens);
       }
     } catch (err) {
-      this.telemetry?.sendError('yaml.codeLens.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.codeLens.error', err);
     }
 
     return result;

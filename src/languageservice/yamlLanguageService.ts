@@ -166,7 +166,7 @@ export interface LanguageService {
   findDocumentSymbols2: (document: TextDocument, context?: DocumentSymbolsContext) => DocumentSymbol[];
   findLinks: (document: TextDocument) => Promise<DocumentLink[]>;
   resetSchema: (uri: string) => boolean;
-  doFormat: (document: TextDocument, options?: CustomFormatterOptions) => TextEdit[];
+  doFormat: (document: TextDocument, options?: CustomFormatterOptions) => Promise<TextEdit[]>;
   doDefinition: (document: TextDocument, params: DefinitionParams) => DefinitionLink[] | undefined;
   doDocumentOnTypeFormatting: (document: TextDocument, params: DocumentOnTypeFormattingParams) => TextEdit[] | undefined;
   addSchema: (schemaID: string, schema: JSONSchema) => void;
@@ -175,7 +175,7 @@ export interface LanguageService {
   deleteSchemaContent: (schemaDeletions: SchemaDeletions) => void;
   deleteSchemasWhole: (schemaDeletions: SchemaDeletionsAll) => void;
   getFoldingRanges: (document: TextDocument, context: FoldingRangesContext) => FoldingRange[] | null;
-  getSelectionRanges: (document: TextDocument, positions: Position[]) => SelectionRange[] | undefined;
+  getSelectionRanges: (document: TextDocument, positions: Position[]) => SelectionRange[];
   getCodeAction: (document: TextDocument, params: CodeActionParams) => CodeAction[] | undefined;
   getCodeLens: (document: TextDocument) => PromiseLike<CodeLens[] | undefined> | CodeLens[] | undefined;
   resolveCodeLens: (param: CodeLens) => PromiseLike<CodeLens> | CodeLens;

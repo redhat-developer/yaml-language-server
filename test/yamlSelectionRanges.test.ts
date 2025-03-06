@@ -12,14 +12,16 @@ function isRangesEqual(range1: Range, range2: Range): boolean {
   );
 }
 
-function expectSelections(selectionRange: SelectionRange, ranges: Range[]): void {
+function expectSelections(selectionRange: SelectionRange | undefined, ranges: Range[]): void {
   for (const range of ranges) {
-    expect(selectionRange.range).eql(range);
+    expect(selectionRange?.range).eql(range);
+
     // Deduplicate ranges
-    while (selectionRange.parent && isRangesEqual(selectionRange.range, selectionRange.parent.range)) {
+    while (selectionRange?.parent && isRangesEqual(selectionRange.range, selectionRange.parent.range)) {
       selectionRange = selectionRange.parent;
     }
-    selectionRange = selectionRange.parent;
+
+    selectionRange = selectionRange?.parent;
   }
 }
 
@@ -64,6 +66,20 @@ key:
 
     positions = [
       {
+        line: 3,
+        character: 3,
+      },
+    ];
+    ranges = getSelectionRanges(document, positions);
+    expect(ranges.length).equal(positions.length);
+    expectSelections(ranges[0], [
+      { start: { line: 3, character: 2 }, end: { line: 3, character: 8 } },
+      { start: { line: 2, character: 2 }, end: { line: 3, character: 8 } },
+      { start: { line: 1, character: 0 }, end: { line: 3, character: 8 } },
+    ]);
+
+    positions = [
+      {
         line: 2,
         character: 0,
       },
@@ -73,6 +89,64 @@ key:
     expectSelections(ranges[0], [
       { start: { line: 2, character: 0 }, end: { line: 3, character: 8 } },
       { start: { line: 1, character: 0 }, end: { line: 3, character: 8 } },
+    ]);
+  });
+
+  it('selection ranges for array of objects', () => {
+    const yaml = `
+times:
+  - second: 1
+    millisecond: 10
+  - second: 2
+    millisecond: 0
+    `;
+    let positions: Position[] = [
+      {
+        line: 4,
+        character: 0,
+      },
+    ];
+    const document = setupTextDocument(yaml);
+    let ranges = getSelectionRanges(document, positions);
+    expect(ranges.length).equal(positions.length);
+    expectSelections(ranges[0], [
+      { start: { line: 2, character: 2 }, end: { line: 5, character: 18 } },
+      { start: { line: 1, character: 0 }, end: { line: 5, character: 18 } },
+    ]);
+
+    positions = [
+      {
+        line: 5,
+        character: 2,
+      },
+    ];
+    ranges = getSelectionRanges(document, positions);
+    expect(ranges.length).equal(positions.length);
+    expectSelections(ranges[0], [
+      { start: { line: 4, character: 4 }, end: { line: 5, character: 18 } },
+      { start: { line: 2, character: 2 }, end: { line: 5, character: 18 } },
+      { start: { line: 1, character: 0 }, end: { line: 5, character: 18 } },
+    ]);
+  });
+
+  it('selection ranges for trailing spaces', () => {
+    const yaml = `
+key:
+  - 1
+  - 2   \t
+    `;
+    const positions: Position[] = [
+      {
+        line: 2,
+        character: 9,
+      },
+    ];
+    const document = setupTextDocument(yaml);
+    const ranges = getSelectionRanges(document, positions);
+    expect(ranges.length).equal(positions.length);
+    expectSelections(ranges[0], [
+      { start: { line: 2, character: 2 }, end: { line: 3, character: 9 } },
+      { start: { line: 1, character: 0 }, end: { line: 3, character: 9 } },
     ]);
   });
 
