@@ -12,8 +12,8 @@ import {
   TestCustomSchemaProvider,
   toFsPath,
 } from './utils/testHelper';
-import assert = require('assert');
-import path = require('path');
+import * as assert from 'assert';
+import * as path from 'path';
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import { CompletionList, InsertTextFormat, MarkupContent, MarkupKind, Position } from 'vscode-languageserver-types';
