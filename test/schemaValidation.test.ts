@@ -2050,7 +2050,7 @@ obj:
       },
     };
     schemaProvider.addSchema(SCHEMA_ID, schema);
-    const content = `myProperty:\n\t  foo: bar`;
+    const content = `myProperty:\n  foo: bar`;
     const result = await parseSetup(content);
     assert.equal(result.length, 0);
   });
