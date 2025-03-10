@@ -52,8 +52,8 @@ describe('JSON Parser', () => {
 
   function assertObject(node: ASTNode, expectedProperties: string[]): void {
     assert.equal(node.type, 'object');
-    assert.equal((<ObjectASTNode>node).properties.length, expectedProperties.length);
-    const keyList = (<ObjectASTNode>node).properties.map((p) => p.keyNode.value);
+    assert.equal((node as ObjectASTNode).properties.length, expectedProperties.length);
+    const keyList = (node as ObjectASTNode).properties.map((p) => p.keyNode.value);
     assert.deepEqual(keyList, expectedProperties);
   }
 
@@ -1708,7 +1708,7 @@ describe('JSON Parser', () => {
     function parse<T>(v: string): T {
       const { jsonDoc } = toDocument(v);
       assert.equal(jsonDoc.syntaxErrors.length, 0);
-      return <T>getNodeValue(jsonDoc.root);
+      return getNodeValue(jsonDoc.root) as T;
     }
 
     let value = parse<{ far: string }>('// comment\n{\n"far": "boo"\n}');

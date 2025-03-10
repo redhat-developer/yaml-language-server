@@ -78,7 +78,7 @@ describe('YAML Schema Service', () => {
     },
     "bar": {
       "type": "string"
-    } 
+    }
   }, "properties": {"foo": {"type": "boolean"}}, "required": ["foo"]}`);
 
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);

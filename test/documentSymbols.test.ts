@@ -9,7 +9,7 @@ import {
   createExpectedDocumentSymbolNoDetail,
 } from './utils/verifyError';
 import { DocumentSymbol, SymbolKind, SymbolInformation } from 'vscode-languageserver-types';
-import assert = require('assert');
+import * as assert from 'assert';
 import { ServiceSetup } from './utils/serviceSetup';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';

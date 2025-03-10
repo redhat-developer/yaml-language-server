@@ -2,14 +2,13 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { xhr, configure as configureHttpRequests } from 'request-light';
+import { configure as configureHttpRequests, xhr } from 'request-light';
 import {
-  DocumentFormattingRequest,
   Connection,
   DidChangeConfigurationNotification,
+  DocumentFormattingRequest,
   DocumentSelector, // jigx
 } from 'vscode-languageserver';
-import { convertErrorToTelemetryMsg } from '../../languageservice/utils/objects';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
@@ -33,7 +32,7 @@ export class SettingsHandler {
         // Register for all configuration changes.
         await this.connection.client.register(DidChangeConfigurationNotification.type);
       } catch (err) {
-        this.telemetry.sendError('yaml.settings.error', { error: convertErrorToTelemetryMsg(err) });
+        this.telemetry.sendError('yaml.settings.error', err);
       }
     }
     this.connection.onDidChangeConfiguration(() => this.pullConfiguration());
