@@ -131,10 +131,13 @@ export class YAMLHover {
                 if (typeof enumValue !== 'string') {
                   enumValue = JSON.stringify(enumValue);
                 }
-                markdownEnums.push({
-                  value: enumValue,
-                  description: markdownEnumDescriptions[idx],
-                });
+                //insert only if the value is not present yet (avoiding duplicates)
+                if (!markdownEnums.some((me) => me.value === enumValue)) {
+                  markdownEnums.push({
+                    value: enumValue,
+                    description: markdownEnumDescriptions[idx],
+                  });
+                }
               });
             }
             if (s.schema.anyOf && isAllSchemasMatched(node, matchingSchemas, s.schema)) {
