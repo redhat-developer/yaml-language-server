@@ -1,3 +1,8 @@
+### 1.17.0
+- Feat: Supported docker arm64 image [#1027](https://github.com/redhat-developer/yaml-language-server/pull/1027)
+- Fix: Reverted ajv-draft04 as it not support HTTPS [#1026](https://github.com/redhat-developer/yaml-language-server/pull/1026)
+- Fix: Use replaceAll() instead of replace() when turning a label into a regex [#1078](https://github.com/redhat-developer/vscode-yaml/issues/1078)
+
 ### 1.16.0
 - Feat: Add support for draft-04 (2019 and 2020 included) json schemas while supporting draft-07 [#1006](https://github.com/redhat-developer/yaml-language-server/pull/1006)
 - Feat: quickFix for enum, const, property [#900](https://github.com/redhat-developer/yaml-language-server/pull/900)
