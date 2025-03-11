@@ -28,17 +28,16 @@ import { JSONSchemaDescriptionExt } from '../../requestTypes';
 import { SchemaVersions } from '../yamlTypes';
 
 import Ajv, { DefinedError } from 'ajv';
-import Ajv2019 from 'ajv/dist/2019';
-import Ajv2020 from 'ajv/dist/2020';
-import Ajv04 from 'ajv-draft-04';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
 const ajv = new Ajv();
-const ajv04 = new Ajv04();
-const ajv2019 = new Ajv2019();
-const ajv2020 = new Ajv2020();
 
 const localize = nls.loadMessageBundle();
+
+// load JSON Schema 07 def to validate loaded schemas
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
+const schema07Validator = ajv.compile(jsonSchema07);
 
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
@@ -165,36 +164,9 @@ export class YAMLSchemaService extends JSONSchemaService {
     let schema: JSONSchema = schemaToResolve.schema;
     const contextService = this.contextService;
 
-    let validationErrors: DefinedError[] = [];
-    switch (this.normalizeId(schema.$schema)) {
-      case ajv04.defaultMeta(): {
-        if (!ajv04.validateSchema(schema)) {
-          validationErrors = validationErrors.concat(ajv04.errors as DefinedError[]);
-        }
-        break;
-      }
-      case ajv2019.defaultMeta(): {
-        if (!ajv2019.validateSchema(schema)) {
-          validationErrors = validationErrors.concat(ajv2019.errors as DefinedError[]);
-        }
-        break;
-      }
-      case ajv2020.defaultMeta(): {
-        if (!ajv2020.validateSchema(schema)) {
-          validationErrors = validationErrors.concat(ajv2020.errors as DefinedError[]);
-        }
-        break;
-      }
-      default:
-        if (!ajv.validateSchema(schema)) {
-          validationErrors = validationErrors.concat(ajv.errors as DefinedError[]);
-        }
-        break;
-    }
-
-    if (validationErrors.length > 0) {
+    if (!schema07Validator(schema)) {
       const errs: string[] = [];
-      for (const err of validationErrors) {
+      for (const err of schema07Validator.errors as DefinedError[]) {
         errs.push(`${err.instancePath} : ${err.message}`);
       }
       resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
@@ -307,7 +279,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       const handleRef = (next: JSONSchema): void => {
         const seenRefs = new Set();
         while (next.$ref) {
-          const ref = next.$ref;
+          const ref = decodeURIComponent(next.$ref);
           const segments = ref.split('#', 2);
           //return back removed $ref. We lost info about referenced type without it.
           next._$ref = next.$ref;
