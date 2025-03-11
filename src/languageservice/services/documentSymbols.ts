@@ -12,7 +12,6 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { Telemetry } from '../telemetry';
 import { isMap, isSeq, Node } from 'yaml';
-import { convertErrorToTelemetryMsg } from '../utils/objects';
 
 export class YAMLDocumentSymbols {
   private jsonDocumentSymbols;
@@ -56,7 +55,7 @@ export class YAMLDocumentSymbols {
         }
       }
     } catch (err) {
-      this.telemetry?.sendError('yaml.documentSymbols.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.documentSymbols.error', err);
     }
     return results;
   }
@@ -78,7 +77,7 @@ export class YAMLDocumentSymbols {
         }
       }
     } catch (err) {
-      this.telemetry?.sendError('yaml.hierarchicalDocumentSymbols.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.hierarchicalDocumentSymbols.error', err);
     }
 
     return results;
