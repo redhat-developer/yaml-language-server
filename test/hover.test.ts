@@ -587,6 +587,46 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
+    it('Hover displays unique enum values', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            description: 'should return this description',
+            anyOf: [
+              {
+                enum: ['cat', 'dog', 'non'],
+                enumDescriptions: ['', 'Canis familiaris'],
+              },
+              {
+                enum: ['bird', 'fish', 'non'], // the second "non" from this enum should be filtered out
+                enumDescriptions: ['', 'Special fish'],
+              },
+            ],
+          },
+        },
+      });
+      const content = 'animal:\n  no|n|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+Allowed Values:
+
+* \`cat\`
+* \`dog\`: Canis familiaris
+* \`non\`
+* \`bird\`
+* \`fish\`: Special fish
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
     it('Hover works on examples', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
