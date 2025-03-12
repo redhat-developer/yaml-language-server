@@ -238,7 +238,7 @@
             "body": { "item1": "$1", "item2": "$2" }
           }
         ],
-        "type": "string"
+        "type": "object"
       }
     }
   }

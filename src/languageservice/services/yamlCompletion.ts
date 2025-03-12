@@ -63,6 +63,20 @@ interface CompletionsCollector {
   getNumberOfProposals(): number;
   result: CompletionList;
   proposed: { [key: string]: CompletionItem };
+  context: {
+    /**
+     * The content of the line where the completion is happening.
+     */
+    lineContent?: string;
+    /**
+     * `true` if the line has a colon.
+     */
+    hasColon?: boolean;
+    /**
+     * `true` if the line starts with a hyphen.
+     */
+    hasHyphen?: boolean;
+  };
 }
 
 interface InsertText {
@@ -292,6 +306,7 @@ export class YamlCompletion {
       },
       result,
       proposed,
+      context: {},
     };
 
     if (this.customTags && this.customTags.length > 0) {
@@ -495,6 +510,10 @@ export class YamlCompletion {
           }
         }
       }
+
+      collector.context.lineContent = lineContent;
+      collector.context.hasColon = lineContent.indexOf(':') !== -1;
+      collector.context.hasHyphen = lineContent.trimStart().indexOf('-') === 0;
 
       // completion for object keys
       if (node && isMap(node)) {
@@ -1340,7 +1359,7 @@ export class YamlCompletion {
   ): void {
     if (typeof schema === 'object') {
       this.addEnumValueCompletions(schema, separatorAfter, collector, isArray);
-      this.addDefaultValueCompletions(schema, separatorAfter, collector);
+      this.addDefaultValueCompletions(schema, separatorAfter, collector, 0, isArray);
       this.collectTypes(schema, types);
 
       if (isArray && completionType === 'value' && !isAnyOfAllOfOneOfType(schema)) {
@@ -1384,7 +1403,8 @@ export class YamlCompletion {
     schema: JSONSchema,
     separatorAfter: string,
     collector: CompletionsCollector,
-    arrayDepth = 0
+    arrayDepth = 0,
+    isArray?: boolean
   ): void {
     let hasProposals = false;
     if (isDefined(schema.default)) {
@@ -1426,19 +1446,21 @@ export class YamlCompletion {
         hasProposals = true;
       });
     }
+
     this.collectDefaultSnippets(
       schema,
       separatorAfter,
       collector,
       {
-        newLineFirst: true,
-        indentFirstObject: true,
-        shouldIndentWithTab: true,
+        newLineFirst: !isArray,
+        indentFirstObject: !isArray,
+        shouldIndentWithTab: !isArray,
       },
-      arrayDepth
+      arrayDepth,
+      isArray
     );
     if (!hasProposals && typeof schema.items === 'object' && !Array.isArray(schema.items)) {
-      this.addDefaultValueCompletions(schema.items, separatorAfter, collector, arrayDepth + 1);
+      this.addDefaultValueCompletions(schema.items, separatorAfter, collector, arrayDepth + 1, true);
     }
   }
 
@@ -1493,29 +1515,19 @@ export class YamlCompletion {
     separatorAfter: string,
     collector: CompletionsCollector,
     settings: StringifySettings,
-    arrayDepth = 0
+    arrayDepth = 0,
+    isArray = false
   ): void {
     if (Array.isArray(schema.defaultSnippets)) {
       for (const s of schema.defaultSnippets) {
         let type = schema.type;
-        let value = s.body;
+        const value = s.body;
         let label = s.label;
         let insertText: string;
         let filterText: string;
         if (isDefined(value)) {
           const type = s.type || schema.type;
-          if (arrayDepth === 0 && type === 'array') {
-            // We know that a - isn't present yet so we need to add one
-            const fixedObj = {};
-            Object.keys(value).forEach((val, index) => {
-              if (index === 0 && !val.startsWith('-')) {
-                fixedObj[`- ${val}`] = value[val];
-              } else {
-                fixedObj[`  ${val}`] = value[val];
-              }
-            });
-            value = fixedObj;
-          }
+
           const existingProps = Object.keys(collector.proposed).filter(
             (proposedProp) => collector.proposed[proposedProp].label === existingProposeItem
           );
@@ -1525,10 +1537,22 @@ export class YamlCompletion {
           if (insertText === '' && value) {
             continue;
           }
-          // detection of specific situation: snippets for value Completion
-          // snippets located inside schema.items and line without hyphen (value completion)
-          if (arrayDepth === 1 && !Array.isArray(value) && settings.newLineFirst) {
-            insertText = addIndentationToMultilineString(insertText.trimStart(), `\n${this.indentation}- `, '  ');
+
+          if ((arrayDepth === 0 && type === 'array') || isArray) {
+            // add extra hyphen if we are in array, but the hyphen is missing on current line
+            // but don't add it for array value because it's already there from getInsertTextForSnippetValue
+            const addHyphen = !collector.context.hasHyphen && !Array.isArray(value) ? '- ' : '';
+            // add new line if the cursor is after the colon
+            const addNewLine = collector.context.hasColon ? `\n${this.indentation}` : '';
+            // add extra indent if new line and hyphen are added
+            const addIndent = isArray && addNewLine && addHyphen ? this.indentation : '';
+            // const addIndent = addHyphen && addNewLine ? this.indentation : '';
+
+            insertText = addIndentationToMultilineString(
+              insertText.trimStart(),
+              `${addNewLine}${addHyphen}`,
+              `${addIndent}${this.indentation}`
+            );
           }
 
           label = label || this.getLabelForSnippetValue(value);
