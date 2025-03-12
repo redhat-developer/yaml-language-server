@@ -56,6 +56,7 @@ export interface NumberASTNode extends BaseASTNode {
 export interface BooleanASTNode extends BaseASTNode {
   readonly type: 'boolean';
   readonly value: boolean;
+  readonly source: string;
 }
 export interface NullASTNode extends BaseASTNode {
   readonly type: 'null';
