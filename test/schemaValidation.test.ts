@@ -26,6 +26,7 @@ import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 import { IProblem } from '../src/languageservice/parser/jsonParser07';
 import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { TestTelemetry } from './utils/testsTypes';
+import { ErrorCode } from 'vscode-json-languageservice';
 
 describe('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -396,7 +397,8 @@ describe('Validation Tests', () => {
               4,
               DiagnosticSeverity.Error,
               `yaml-schema: file:///${SCHEMA_ID}`,
-              `file:///${SCHEMA_ID}`
+              `file:///${SCHEMA_ID}`,
+              ErrorCode.PropertyExpected
             )
           );
         })
@@ -1312,6 +1314,7 @@ obj:
           DiagnosticSeverity.Error,
           'yaml-schema: Drone CI configuration file',
           'https://json.schemastore.org/drone',
+          ErrorCode.PropertyExpected,
           {
             properties: [
               'type',
@@ -2023,5 +2026,32 @@ obj:
       result.map((e) => e.message),
       ['Missing property "form".'] // not inclide provider error
     );
+  });
+
+  it('URL-encoded characters in $ref', async () => {
+    // note that 'missing form property' is necessary to trigger the bug (there has to be some problem in both subSchemas)
+    // order of the object in `anyOf` is also important
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        myProperty: {
+          $ref: '#/definitions/Interface%3Ctype%3E',
+        },
+      },
+      definitions: {
+        'Interface<type>': {
+          type: 'object',
+          properties: {
+            foo: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = `myProperty:\n  foo: bar`;
+    const result = await parseSetup(content);
+    assert.equal(result.length, 0);
   });
 });

@@ -24,7 +24,7 @@ describe('Formatter Tests', () => {
   describe('Formatter', function () {
     describe('Test that formatter works with custom tags', function () {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      function parseSetup(content: string, options: any = {}): TextEdit[] {
+      function parseSetup(content: string, options: any = {}): Promise<TextEdit[]> {
         const testTextDocument = setupTextDocument(content);
         yamlSettings.documents = new TextDocumentTestManager();
         (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
@@ -35,31 +35,32 @@ describe('Formatter Tests', () => {
         });
       }
 
-      it('Formatting works without custom tags', () => {
+      it('Formatting works without custom tags', async () => {
         const content = 'cwd: test';
-        const edits = parseSetup(content);
+        const edits = await parseSetup(content);
+        console.dir({ edits });
         assert.notEqual(edits.length, 0);
         assert.equal(edits[0].newText, 'cwd: test\n');
       });
 
-      it('Formatting works with custom tags', () => {
+      it('Formatting works with custom tags', async () => {
         const content = 'cwd:       !Test test';
-        const edits = parseSetup(content);
+        const edits = await parseSetup(content);
         assert.notEqual(edits.length, 0);
         assert.equal(edits[0].newText, 'cwd: !Test test\n');
       });
 
-      it('Formatting wraps text', () => {
+      it('Formatting wraps text', async () => {
         const content = `comments: >
                 test test test test test test test test test test test test`;
-        const edits = parseSetup(content, {
+        const edits = await parseSetup(content, {
           printWidth: 20,
           proseWrap: 'always',
         });
         assert.equal(edits[0].newText, 'comments: >\n  test test test\n  test test test\n  test test test\n  test test test\n');
       });
 
-      it('Formatting uses tabSize', () => {
+      it('Formatting uses tabSize', async () => {
         const content = `map:
   k1: v1
   k2: v2
@@ -68,7 +69,7 @@ list:
   - item2
 `;
 
-        const edits = parseSetup(content, {
+        const edits = await parseSetup(content, {
           tabSize: 5,
         });
 
@@ -82,7 +83,7 @@ list:
         assert.equal(edits[0].newText, expected);
       });
 
-      it('Formatting uses tabWidth', () => {
+      it('Formatting uses tabWidth', async () => {
         const content = `map:
   k1: v1
   k2: v2
@@ -91,7 +92,7 @@ list:
   - item2
 `;
 
-        const edits = parseSetup(content, {
+        const edits = await parseSetup(content, {
           tabWidth: 5,
         });
 
@@ -105,7 +106,7 @@ list:
         assert.equal(edits[0].newText, expected);
       });
 
-      it('Formatting uses tabWidth over tabSize', () => {
+      it('Formatting uses tabWidth over tabSize', async () => {
         const content = `map:
   k1: v1
   k2: v2
@@ -114,7 +115,7 @@ list:
   - item2
 `;
 
-        const edits = parseSetup(content, {
+        const edits = await parseSetup(content, {
           tabSize: 3,
           tabWidth: 5,
         });

@@ -1,3 +1,36 @@
+### 1.17.0
+- Feat: Supported docker arm64 image [#1027](https://github.com/redhat-developer/yaml-language-server/pull/1027)
+- Fix: Reverted ajv-draft04 as it not support HTTPS [#1026](https://github.com/redhat-developer/yaml-language-server/pull/1026)
+- Fix: Use replaceAll() instead of replace() when turning a label into a regex [#1078](https://github.com/redhat-developer/vscode-yaml/issues/1078)
+
+### 1.16.0
+- Feat: Add support for draft-04 (2019 and 2020 included) json schemas while supporting draft-07 [#1006](https://github.com/redhat-developer/yaml-language-server/pull/1006)
+- Feat: quickFix for enum, const, property [#900](https://github.com/redhat-developer/yaml-language-server/pull/900)
+- Add: Send real errors to telemetry [#981](https://github.com/redhat-developer/yaml-language-server/pull/981)
+- Add: Missing field descriptions for anyOf [#1007](https://github.com/redhat-developer/yaml-language-server/pull/1007)
+- Add: k8s update schema to 1.32.1 [#1011](https://github.com/redhat-developer/yaml-language-server/pull/1011)
+- Add: Adjust to new hover behviour for enum [#1030](https://github.com/redhat-developer/vscode-yaml/pull/1030)
+- Bump: Dependencies [#1000](https://github.com/redhat-developer/yaml-language-server/pull/1000) [#1001](https://github.com/redhat-developer/yaml-language-server/pull/1001) [#1002](https://github.com/redhat-developer/yaml-language-server/pull/1002) [#1003](https://github.com/redhat-developer/yaml-language-server/pull/1003)
+
+Thanks to [Remco Haszing](https://github.com/remcohaszing), [Petr Spacek](https://github.com/p-spacek), [David Hernando](https://github.com/Davidonium), [Yannik Tausch](https://github.com/ytausch), [Lauri Tirkkonen](https://github.com/lotheac) for your contributions.
+
+### 1.15.0
+- Fix: some small type issues [#918](https://github.com/redhat-developer/yaml-language-server/pull/918)
+- Add: volar-service-yaml to clients [#920](https://github.com/redhat-developer/yaml-language-server/pull/920)
+- Fix: Remove ide-yaml from known clients [#921](https://github.com/redhat-developer/yaml-language-server/pull/921)
+- Fix: schema loading performance [#923](https://github.com/redhat-developer/yaml-language-server/pull/923)
+- Fix: undefined error in mergingResult.problemArgs [#924](https://github.com/redhat-developer/yaml-language-server/pull/924)
+- Add: unify string insert text for array and property [#934](https://github.com/redhat-developer/yaml-language-server/pull/934)
+- Add: Improve some special cases for selection ranges [#939](https://github.com/redhat-developer/yaml-language-server/pull/939)
+- Fix: show all enums on hover [#942](https://github.com/redhat-developer/yaml-language-server/pull/942)
+- Fix: update README syntax highlighting [#945](https://github.com/redhat-developer/yaml-language-server/pull/945)
+- Fix: render examples as yaml on hover [#947](https://github.com/redhat-developer/yaml-language-server/pull/947)
+- Fix: snippets in additionalProperties [#951](https://github.com/redhat-developer/yaml-language-server/pull/951)
+- Fix: crash when url is undefined [#954](https://github.com/redhat-developer/yaml-language-server/pull/954)
+- Fix: Add null check for customTags [#955](https://github.com/redhat-developer/yaml-language-server/pull/955)
+
+Thanks to [Remco Haszing](https://github.com/remcohaszing), [Petr Spacek](https://github.com/p-spacek), [Tony](https://github.com/Legend-Master), [Gustav Eikaas](https://github.com/GustavEikaas), [Skip Baney](https://github.com/twelvelabs) and [Pierre Prinetti](https://github.com/pierreprinetti) for your contributions.
+
 ### 1.14.0
 - Fix: Request textDocument/hover failed with message: Invalid regular expression: /(?s).*/: Invalid group [#874](https://github.com/redhat-developer/yaml-language-server/issues/874)
 - Fix: nested anyof const [#888](https://github.com/redhat-developer/yaml-language-server/pull/888)
