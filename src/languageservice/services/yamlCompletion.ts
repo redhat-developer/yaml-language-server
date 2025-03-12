@@ -1673,7 +1673,8 @@ const isNumberExp = /^\d+$/;
 function convertToStringValue(param: unknown): string {
   let value: string;
   if (typeof param === 'string') {
-    value = param;
+    //support YAML spec 1.1 boolean values
+    value = ['on', 'off', 'true', 'false', 'yes', 'no'].includes(param.toLowerCase()) ? `'${param}'` : param;
   } else {
     value = '' + param;
   }

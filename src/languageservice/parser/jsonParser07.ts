@@ -168,10 +168,12 @@ export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
 export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
   public type: 'boolean' = 'boolean' as const;
   public value: boolean;
+  public source: string;
 
-  constructor(parent: ASTNode, internalNode: Node, boolValue: boolean, offset: number, length?: number) {
+  constructor(parent: ASTNode, internalNode: Node, boolValue: boolean, boolSource: string, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
     this.value = boolValue;
+    this.source = boolSource;
   }
 }
 
@@ -501,8 +503,9 @@ export function getNodeValue(node: ASTNode): any {
     case 'null':
     case 'string':
     case 'number':
-    case 'boolean':
       return node.value;
+    case 'boolean':
+      return node.source;
     default:
       return undefined;
   }
@@ -866,7 +869,7 @@ function validate(
       const val = getNodeValue(node);
       let enumValueMatch = false;
       for (const e of schema.enum) {
-        if (equals(val, e) || (callFromAutoComplete && isString(val) && isString(e) && val && e.startsWith(val))) {
+        if (val === e || (callFromAutoComplete && isString(val) && isString(e) && val && e.startsWith(val))) {
           enumValueMatch = true;
           break;
         }
