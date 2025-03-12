@@ -1674,7 +1674,7 @@ function convertToStringValue(param: unknown): string {
   let value: string;
   if (typeof param === 'string') {
     //support YAML spec 1.1 boolean values
-    value = ['on', 'off', 'true', 'false', 'yes', 'no'].includes(param.toLowerCase()) ? `'${param}'` : param;
+    value = ['on', 'off', 'true', 'false', 'yes', 'no'].includes(param.toLowerCase()) ? `"${param}"` : param;
   } else {
     value = '' + param;
   }
