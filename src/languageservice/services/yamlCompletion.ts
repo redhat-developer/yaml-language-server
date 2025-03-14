@@ -691,6 +691,10 @@ export class YamlCompletion {
       });
     }
     for (const schema of matchingSchemas) {
+      if (schema.schema.deprecationMessage) {
+        continue;
+      }
+
       if (
         ((schema.node.internalNode === node && !matchOriginal) ||
           (schema.node.internalNode === originalNode && !hasColon) ||
@@ -1309,6 +1313,10 @@ export class YamlCompletion {
     isArray?: boolean
   ): void {
     if (typeof schema === 'object') {
+      if (schema.deprecationMessage) {
+        return;
+      }
+
       this.addEnumValueCompletions(schema, separatorAfter, collector, isArray);
       this.addDefaultValueCompletions(schema, separatorAfter, collector);
       this.collectTypes(schema, types);
