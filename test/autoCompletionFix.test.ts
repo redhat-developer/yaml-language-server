@@ -1333,6 +1333,25 @@ snippets:
           },
         ]);
       });
+      it('should suggest defaultSnippet for OBJECT property - unfinished property, should keep all snippet properties', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `
+snippets:
+  item1: value
+  snippetOb|\n|
+`;
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([
+          {
+            label: 'snippetObject',
+            insertText: `snippetObject:
+  item1: value
+  item2:
+    item3: value nested`,
+          },
+        ]);
+      });
 
       it('should suggest defaultSnippet for OBJECT property - value after colon', async () => {
         schemaProvider.addSchema(SCHEMA_ID, schema);

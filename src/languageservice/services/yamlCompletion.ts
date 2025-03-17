@@ -1118,7 +1118,7 @@ export class YamlCompletion {
             indentFirstObject: false,
             shouldIndentWithTab: false,
           },
-          Object.keys(collector.proposed),
+          [],
           0
         );
         value = addIndentationToMultilineString(value, indent, indent);

@@ -184,14 +184,14 @@ describe('Default Snippet Tests', () => {
     });
 
     it('Snippet in object schema should suggest some of the snippet props because some of them are already in the YAML', (done) => {
-      const content = 'object:\n  key:\n    key2: value\n    ';
+      const content = 'object:\n  key:\n    key2: value\n    '; // position is nested in `key`
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
           assert.notEqual(result.items.length, 0);
           assert.equal(result.items[0].insertText, 'key1: ');
           assert.equal(result.items[0].label, 'Object item');
-          assert.equal(result.items[1].insertText, 'key:\n  key1: ');
+          assert.equal(result.items[1].insertText, 'key:\n  key1: $1\n  key2: $2'); // recursive item (key inside key)
           assert.equal(result.items[1].label, 'key');
         })
         .then(done, done);
@@ -202,7 +202,8 @@ describe('Default Snippet Tests', () => {
       completion
         .then(function (result) {
           assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].insertText, 'key:\n');
+          // snippet for nested `key` property
+          assert.equal(result.items[0].insertText, 'key:\n  key1: $1\n  key2: $2'); // recursive item (key inside key)
           assert.equal(result.items[0].label, 'key');
         })
         .then(done, done);
