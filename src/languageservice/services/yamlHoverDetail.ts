@@ -44,7 +44,11 @@ export class YamlHoverDetail {
   private schema2Md = new Schema2Md();
   propTableStyle: YamlHoverDetailPropTableStyle;
 
-  constructor(schemaService: YAMLSchemaService, private readonly telemetry: Telemetry) {
+  // eslint-disable-next-line prettier/prettier
+  constructor(
+    schemaService: YAMLSchemaService,
+    private readonly telemetry: Telemetry
+  ) {
     // this.shouldHover = true;
     this.schemaService = schemaService;
   }
