@@ -1347,4 +1347,26 @@ test1:
     expect(completion.items[0].insertText).to.be.equal('"YES"');
     expect(completion.items[1].insertText).to.be.equal('"NO"');
   });
+  it('should suggest quotes with escapeChars', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        begin: {
+          type: 'string',
+          default: '\\"',
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    let content = 'be';
+    let completion = await parseSetup(content, 0, content.length);
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0].insertText).to.be.equal('begin: "\\""');
+
+    content = 'begin: ';
+    completion = await parseSetup(content, 0, content.length);
+    expect(completion.items.length).equal(1);
+    expect(completion.items[0].insertText).to.be.equal('"\\""');
+  });
 });
