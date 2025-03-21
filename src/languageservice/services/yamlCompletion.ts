@@ -37,6 +37,7 @@ import { indexOf, isInComment, isMapContainsEmptyPair } from '../utils/astUtils'
 import { isModeline } from './modelineUtil';
 import { getSchemaTypeName, isAnyOfAllOfOneOfType, isPrimitiveType } from '../utils/schemaUtils';
 import { YamlNode } from '../jsonASTTypes';
+import { addIndentationToMultilineString } from '../utils/strings';
 import { SettingsState } from '../../yamlSettings';
 
 const localize = nls.loadMessageBundle();
@@ -63,6 +64,20 @@ interface CompletionsCollector {
   getNumberOfProposals(): number;
   result: CompletionList;
   proposed: { [key: string]: CompletionItem };
+  context: {
+    /**
+     * The content of the line where the completion is happening.
+     */
+    lineContent?: string;
+    /**
+     * `true` if the line has a colon.
+     */
+    hasColon?: boolean;
+    /**
+     * `true` if the line starts with a hyphen.
+     */
+    hasHyphen?: boolean;
+  };
 }
 
 interface InsertText {
@@ -294,6 +309,7 @@ export class YamlCompletion {
       },
       result,
       proposed,
+      context: {},
     };
 
     if (this.customTags && this.customTags.length > 0) {
@@ -498,6 +514,10 @@ export class YamlCompletion {
         }
       }
 
+      collector.context.lineContent = lineContent;
+      collector.context.hasColon = lineContent.indexOf(':') !== -1;
+      collector.context.hasHyphen = lineContent.trimStart().indexOf('-') === 0;
+
       // completion for object keys
       if (node && isMap(node)) {
         // don't suggest properties that are already present
@@ -526,7 +546,7 @@ export class YamlCompletion {
           collector.add({
             kind: CompletionItemKind.Property,
             label: currentWord,
-            insertText: this.getInsertTextForProperty(currentWord, null, ''),
+            insertText: this.getInsertTextForProperty(currentWord, null, '', collector),
             insertTextFormat: InsertTextFormat.Snippet,
           });
         }
@@ -763,6 +783,7 @@ export class YamlCompletion {
                       key,
                       propertySchema,
                       separatorAfter,
+                      collector,
                       identCompensation + this.indentation
                     );
                   }
@@ -790,6 +811,7 @@ export class YamlCompletion {
                         key,
                         propertySchema,
                         separatorAfter,
+                        collector,
                         identCompensation + this.indentation
                       ),
                       insertTextFormat: InsertTextFormat.Snippet,
@@ -817,7 +839,7 @@ export class YamlCompletion {
             collector,
             {},
             'property',
-            Array.isArray(nodeParent.items)
+            Array.isArray(nodeParent.items) && !isInArray
           );
         }
 
@@ -913,13 +935,8 @@ export class YamlCompletion {
                 if (index < s.schema.items.length) {
                   this.addSchemaValueCompletions(s.schema.items[index], separatorAfter, collector, types, 'value');
                 }
-              } else if (
-                typeof s.schema.items === 'object' &&
-                (s.schema.items.type === 'object' || isAnyOfAllOfOneOfType(s.schema.items))
-              ) {
-                this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types, 'value', true);
               } else {
-                this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types, 'value');
+                this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types, 'value', true);
               }
             }
           }
@@ -952,7 +969,7 @@ export class YamlCompletion {
     index?: number
   ): void {
     const schemaType = getSchemaTypeName(schema);
-    const insertText = `- ${this.getInsertTextForObject(schema, separatorAfter).insertText.trimLeft()}`;
+    const insertText = `- ${this.getInsertTextForObject(schema, separatorAfter, collector).insertText.trimLeft()}`;
     //append insertText to documentation
     const schemaTypeTitle = schemaType ? ' type `' + schemaType + '`' : '';
     const schemaDescription = schema.description ? ' (' + schema.description + ')' : '';
@@ -962,7 +979,7 @@ export class YamlCompletion {
     );
     collector.add({
       kind: this.getSuggestionKind(schema.type),
-      label: '- (array item) ' + (schemaType || index),
+      label: '- (array item) ' + ((schemaType || index) ?? ''),
       documentation: documentation,
       insertText: insertText,
       insertTextFormat: InsertTextFormat.Snippet,
@@ -973,6 +990,7 @@ export class YamlCompletion {
     key: string,
     propertySchema: JSONSchema,
     separatorAfter: string,
+    collector: CompletionsCollector,
     indent = this.indentation
   ): string {
     const propertyText = this.getInsertTextForValue(key, '', 'string');
@@ -1043,11 +1061,11 @@ export class YamlCompletion {
         nValueProposals += propertySchema.examples.length;
       }
       if (propertySchema.properties) {
-        return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter, indent).insertText}`;
+        return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter, collector, indent).insertText}`;
       } else if (propertySchema.items) {
-        return `${resultText}\n${indent}- ${
-          this.getInsertTextForArray(propertySchema.items, separatorAfter, 1, indent).insertText
-        }`;
+        let insertText = this.getInsertTextForArray(propertySchema.items, separatorAfter, collector, 1, indent).insertText;
+        insertText = resultText + addIndentationToMultilineString(insertText, `\n${indent}- `, '  ');
+        return insertText;
       }
       if (nValueProposals === 0) {
         switch (type) {
@@ -1087,10 +1105,30 @@ export class YamlCompletion {
   private getInsertTextForObject(
     schema: JSONSchema,
     separatorAfter: string,
+    collector: CompletionsCollector,
     indent = this.indentation,
     insertIndex = 1
   ): InsertText {
     let insertText = '';
+    if (Array.isArray(schema.defaultSnippets) && schema.defaultSnippets.length === 1) {
+      const body = schema.defaultSnippets[0].body;
+      if (isDefined(body)) {
+        let value = this.getInsertTextForSnippetValue(
+          body,
+          '',
+          {
+            newLineFirst: false,
+            indentFirstObject: false,
+            shouldIndentWithTab: false,
+          },
+          [],
+          0
+        );
+        value = addIndentationToMultilineString(value, indent, indent);
+
+        return { insertText: value, insertIndex };
+      }
+    }
     if (!schema.properties) {
       insertText = `${indent}$${insertIndex++}\n`;
       return { insertText, insertIndex };
@@ -1130,18 +1168,22 @@ export class YamlCompletion {
           }
           case 'array':
             {
-              const arrayInsertResult = this.getInsertTextForArray(propertySchema.items, separatorAfter, insertIndex++, indent);
-              const arrayInsertLines = arrayInsertResult.insertText.split('\n');
-              let arrayTemplate = arrayInsertResult.insertText;
-              if (arrayInsertLines.length > 1) {
-                for (let index = 1; index < arrayInsertLines.length; index++) {
-                  const element = arrayInsertLines[index];
-                  arrayInsertLines[index] = `  ${element}`;
-                }
-                arrayTemplate = arrayInsertLines.join('\n');
-              }
+              const arrayInsertResult = this.getInsertTextForArray(
+                propertySchema.items,
+                separatorAfter,
+                collector,
+                insertIndex++,
+                indent
+              );
+
               insertIndex = arrayInsertResult.insertIndex;
-              insertText += `${indent}${key}:\n${indent}${this.indentation}- ${arrayTemplate}\n`;
+              insertText +=
+                `${indent}${key}:` +
+                addIndentationToMultilineString(
+                  arrayInsertResult.insertText,
+                  `\n${indent}${this.indentation}- `,
+                  `${this.indentation}  `
+                );
             }
             break;
           case 'object':
@@ -1149,6 +1191,7 @@ export class YamlCompletion {
               const objectInsertResult = this.getInsertTextForObject(
                 propertySchema,
                 separatorAfter,
+                collector,
                 `${indent}${this.indentation}`,
                 insertIndex++
               );
@@ -1184,8 +1227,14 @@ export class YamlCompletion {
     return { insertText, insertIndex };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getInsertTextForArray(schema: any, separatorAfter: string, insertIndex = 1, indent = this.indentation): InsertText {
+  private getInsertTextForArray(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    schema: any,
+    separatorAfter: string,
+    collector: CompletionsCollector,
+    insertIndex = 1,
+    indent = this.indentation
+  ): InsertText {
     let insertText = '';
     if (!schema) {
       insertText = `$${insertIndex++}`;
@@ -1213,7 +1262,7 @@ export class YamlCompletion {
         break;
       case 'object':
         {
-          const objectInsertResult = this.getInsertTextForObject(schema, separatorAfter, `${indent}  `, insertIndex++);
+          const objectInsertResult = this.getInsertTextForObject(schema, separatorAfter, collector, indent, insertIndex++);
           insertText = objectInsertResult.insertText.trimLeft();
           insertIndex = objectInsertResult.insertIndex;
         }
@@ -1313,7 +1362,7 @@ export class YamlCompletion {
   ): void {
     if (typeof schema === 'object') {
       this.addEnumValueCompletions(schema, separatorAfter, collector, isArray);
-      this.addDefaultValueCompletions(schema, separatorAfter, collector);
+      this.addDefaultValueCompletions(schema, separatorAfter, collector, 0, isArray);
       this.collectTypes(schema, types);
 
       if (isArray && completionType === 'value' && !isAnyOfAllOfOneOfType(schema)) {
@@ -1357,7 +1406,8 @@ export class YamlCompletion {
     schema: JSONSchema,
     separatorAfter: string,
     collector: CompletionsCollector,
-    arrayDepth = 0
+    arrayDepth = 0,
+    isArray?: boolean
   ): void {
     let hasProposals = false;
     if (isDefined(schema.default)) {
@@ -1399,13 +1449,21 @@ export class YamlCompletion {
         hasProposals = true;
       });
     }
-    this.collectDefaultSnippets(schema, separatorAfter, collector, {
-      newLineFirst: true,
-      indentFirstObject: true,
-      shouldIndentWithTab: true,
-    });
+
+    this.collectDefaultSnippets(
+      schema,
+      separatorAfter,
+      collector,
+      {
+        newLineFirst: !isArray,
+        indentFirstObject: !isArray,
+        shouldIndentWithTab: !isArray,
+      },
+      arrayDepth,
+      isArray
+    );
     if (!hasProposals && typeof schema.items === 'object' && !Array.isArray(schema.items)) {
-      this.addDefaultValueCompletions(schema.items, separatorAfter, collector, arrayDepth + 1);
+      this.addDefaultValueCompletions(schema.items, separatorAfter, collector, arrayDepth + 1, true);
     }
   }
 
@@ -1433,10 +1491,11 @@ export class YamlCompletion {
         } else if (schema.enumDescriptions && i < schema.enumDescriptions.length) {
           documentation = schema.enumDescriptions[i];
         }
+        const insertText = (isArray ? '- ' : '') + this.getInsertTextForValue(enm, separatorAfter, schema.type);
         collector.add({
           kind: this.getSuggestionKind(schema.type),
           label: this.getLabelForValue(enm),
-          insertText: this.getInsertTextForValue(enm, separatorAfter, schema.type),
+          insertText,
           insertTextFormat: InsertTextFormat.Snippet,
           documentation: documentation,
         });
@@ -1459,29 +1518,19 @@ export class YamlCompletion {
     separatorAfter: string,
     collector: CompletionsCollector,
     settings: StringifySettings,
-    arrayDepth = 0
+    arrayDepth = 0,
+    isArray = false
   ): void {
     if (Array.isArray(schema.defaultSnippets)) {
       for (const s of schema.defaultSnippets) {
         let type = schema.type;
-        let value = s.body;
+        const value = s.body;
         let label = s.label;
         let insertText: string;
         let filterText: string;
         if (isDefined(value)) {
           const type = s.type || schema.type;
-          if (arrayDepth === 0 && type === 'array') {
-            // We know that a - isn't present yet so we need to add one
-            const fixedObj = {};
-            Object.keys(value).forEach((val, index) => {
-              if (index === 0 && !val.startsWith('-')) {
-                fixedObj[`- ${val}`] = value[val];
-              } else {
-                fixedObj[`  ${val}`] = value[val];
-              }
-            });
-            value = fixedObj;
-          }
+
           const existingProps = Object.keys(collector.proposed).filter(
             (proposedProp) => collector.proposed[proposedProp].label === existingProposeItem
           );
@@ -1491,6 +1540,24 @@ export class YamlCompletion {
           if (insertText === '' && value) {
             continue;
           }
+
+          if ((arrayDepth === 0 && type === 'array') || isArray) {
+            // add extra hyphen if we are in array, but the hyphen is missing on current line
+            // but don't add it for array value because it's already there from getInsertTextForSnippetValue
+            const addHyphen = !collector.context.hasHyphen && !Array.isArray(value) ? '- ' : '';
+            // add new line if the cursor is after the colon
+            const addNewLine = collector.context.hasColon ? `\n${this.indentation}` : '';
+            // add extra indent if new line and hyphen are added
+            const addIndent = isArray && addNewLine && addHyphen ? this.indentation : '';
+            // const addIndent = addHyphen && addNewLine ? this.indentation : '';
+
+            insertText = addIndentationToMultilineString(
+              insertText.trimStart(),
+              `${addNewLine}${addHyphen}`,
+              `${addIndent}${this.indentation}`
+            );
+          }
+
           label = label || this.getLabelForSnippetValue(value);
         } else if (typeof s.bodyText === 'string') {
           let prefix = '',

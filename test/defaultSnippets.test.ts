@@ -91,9 +91,16 @@ describe('Default Snippet Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].insertText, '- item1: $1\n  item2: $2');
-          assert.equal(result.items[0].label, 'My array item');
+          assert.deepEqual(
+            result.items.map((i) => ({ insertText: i.insertText, label: i.label })),
+            [
+              { insertText: '- item1: $1\n  item2: $2', label: 'My array item' },
+              {
+                insertText: '- $1\n',
+                label: '- (array item) ',
+              },
+            ]
+          );
         })
         .then(done, done);
     });
@@ -156,7 +163,7 @@ describe('Default Snippet Tests', () => {
           assert.equal(result.items.length, 2);
           assert.equal(result.items[0].insertText, 'key1: $1\nkey2: $2');
           assert.equal(result.items[0].label, 'Object item');
-          assert.equal(result.items[1].insertText, 'key:\n  ');
+          assert.equal(result.items[1].insertText, 'key:\n  key1: $1\n  key2: $2');
           assert.equal(result.items[1].label, 'key');
         })
         .then(done, done);
@@ -170,21 +177,21 @@ describe('Default Snippet Tests', () => {
           assert.notEqual(result.items.length, 0);
           assert.equal(result.items[0].insertText, 'key1: $1\nkey2: $2');
           assert.equal(result.items[0].label, 'Object item');
-          assert.equal(result.items[1].insertText, 'key:\n  ');
+          assert.equal(result.items[1].insertText, 'key:\n  key1: $1\n  key2: $2');
           assert.equal(result.items[1].label, 'key');
         })
         .then(done, done);
     });
 
     it('Snippet in object schema should suggest some of the snippet props because some of them are already in the YAML', (done) => {
-      const content = 'object:\n  key:\n    key2: value\n    ';
+      const content = 'object:\n  key:\n    key2: value\n    '; // position is nested in `key`
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
           assert.notEqual(result.items.length, 0);
           assert.equal(result.items[0].insertText, 'key1: ');
           assert.equal(result.items[0].label, 'Object item');
-          assert.equal(result.items[1].insertText, 'key:\n  ');
+          assert.equal(result.items[1].insertText, 'key:\n  key1: $1\n  key2: $2'); // recursive item (key inside key)
           assert.equal(result.items[1].label, 'key');
         })
         .then(done, done);
@@ -195,7 +202,8 @@ describe('Default Snippet Tests', () => {
       completion
         .then(function (result) {
           assert.equal(result.items.length, 1);
-          assert.equal(result.items[0].insertText, 'key:\n  ');
+          // snippet for nested `key` property
+          assert.equal(result.items[0].insertText, 'key:\n  key1: $1\n  key2: $2'); // recursive item (key inside key)
           assert.equal(result.items[0].label, 'key');
         })
         .then(done, done);
@@ -233,6 +241,19 @@ describe('Default Snippet Tests', () => {
         .then(done, done);
     });
 
+    it('Snippet in string schema should autocomplete on same line (snippet is defined in body property)', (done) => {
+      const content = 'arrayStringValueSnippet:\n - |\n|';
+      const completion = parseSetup(content);
+      completion
+        .then(function (result) {
+          assert.deepEqual(
+            result.items.map((i) => ({ label: i.label, insertText: i.insertText })),
+            [{ insertText: 'banana', label: 'Banana' }]
+          );
+        })
+        .then(done, done);
+    });
+
     it('Snippet in boolean schema should autocomplete on same line', (done) => {
       const content = 'boolean: | |'; // len: 10, pos: 9
       const completion = parseSetup(content);
@@ -266,7 +287,7 @@ describe('Default Snippet Tests', () => {
       const completion = parseSetup(content);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 15); // This is just checking the total number of snippets in the defaultSnippets.json
+          assert.equal(result.items.length, 16); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[4].label, 'longSnippet');
           // eslint-disable-next-line
           assert.equal(
@@ -342,9 +363,8 @@ describe('Default Snippet Tests', () => {
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
-          assert.equal(result.items.length, 2);
+          assert.equal(result.items.length, 1);
           assert.equal(result.items[0].insertText, 'item1: $1\n  item2: $2');
-          assert.equal(result.items[1].insertText, '\n  item1: $1\n  item2: $2');
         })
         .then(done, done);
     });

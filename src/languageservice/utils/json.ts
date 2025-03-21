@@ -37,7 +37,7 @@ export function stringifyObject(
       let result = '';
       for (let i = 0; i < obj.length; i++) {
         let pseudoObj = obj[i];
-        if (typeof obj[i] !== 'object') {
+        if (typeof obj[i] !== 'object' || obj[i] === null) {
           result += '\n' + newIndent + '- ' + stringifyLiteral(obj[i]);
           continue;
         }

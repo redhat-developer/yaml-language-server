@@ -110,6 +110,18 @@
         }
       ]
     },
+    "arrayStringValueSnippet": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "defaultSnippets": [
+          {
+            "label": "Banana",
+            "body": "banana"
+          }
+        ]
+      }
+    },
     "arrayObjectSnippet": {
       "type": "object",
       "defaultSnippets": [
@@ -226,7 +238,7 @@
             "body": { "item1": "$1", "item2": "$2" }
           }
         ],
-        "type": "string"
+        "type": "object"
       }
     }
   }
