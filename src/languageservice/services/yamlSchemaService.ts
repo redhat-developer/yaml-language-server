@@ -31,9 +31,9 @@ import Ajv, { DefinedError } from 'ajv';
 import { getSchemaTitle } from '../utils/schemaUtils';
 import { getDollarSchema } from './dollarUtils';
 
-const localize = nls.loadMessageBundle();
-
 const ajv = new Ajv();
+
+const localize = nls.loadMessageBundle();
 
 // load JSON Schema 07 def to validate loaded schemas
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -280,7 +280,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       const handleRef = (next: JSONSchema): void => {
         const seenRefs = new Set();
         while (next.$ref) {
-          const ref = next.$ref;
+          const ref = decodeURIComponent(next.$ref);
           const segments = ref.split('#', 2);
           //return back removed $ref. We lost info about referenced type without it.
           next._$ref = next.$ref;

@@ -22,6 +22,7 @@ import { setupTextDocument, TEST_URI } from './utils/testHelper';
 import { createDiagnosticWithData, createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
 import { YamlCommands } from '../src/commands';
 import { LanguageSettings } from '../src';
+import { ErrorCode } from 'vscode-json-languageservice';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -375,6 +376,60 @@ animals: [dog , cat , mouse]  `;
       expect(result[0].edit.changes[TEST_URI]).deep.equal([
         TextEdit.replace(Range.create(0, 2, 2, 7), `aa: 1\n  cc: 1\n  gg: 2  #a comment`),
       ]);
+    });
+  });
+
+  describe('Enum value or property mismatch quick fix', () => {
+    it('should generate proper action for enum mismatch', () => {
+      const doc = setupTextDocument('foo: value1');
+      const diagnostic = createDiagnosticWithData(
+        'message',
+        0,
+        5,
+        0,
+        11,
+        DiagnosticSeverity.Hint,
+        'YAML',
+        'schemaUri',
+        ErrorCode.EnumValueMismatch,
+        { values: ['valueX', 'valueY'] }
+      );
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([diagnostic]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result.map((r) => r.title)).deep.equal(['valueX', 'valueY']);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(0, 5, 0, 11), 'valueX')]);
+    });
+
+    it('should generate proper action for wrong property', () => {
+      const doc = setupTextDocument('foo: value1');
+      const diagnostic = createDiagnosticWithData(
+        'message',
+        0,
+        0,
+        0,
+        3,
+        DiagnosticSeverity.Hint,
+        'YAML',
+        'schemaUri',
+        ErrorCode.PropertyExpected,
+        {
+          properties: ['fooX', 'fooY'],
+        }
+      );
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([diagnostic]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result.map((r) => r.title)).deep.equal(['fooX', 'fooY']);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(0, 0, 0, 3), 'fooX')]);
     });
   });
 });

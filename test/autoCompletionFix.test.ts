@@ -28,7 +28,7 @@ describe('Auto Completion Fix Tests', () => {
   let schemaProvider: TestCustomSchemaProvider;
   before(() => {
     languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
-      uri: 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json',
+      uri: 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.1-standalone-strict/all.json',
       fileMatch: [SCHEMA_ID],
     });
     const {
@@ -1328,5 +1328,23 @@ test1:
     expect(completion.items.length).equal(1);
     expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
     expect(completion.items[0].documentation).to.be.equal('Property Description');
+  });
+  it('should suggest enum based on type', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        test: {
+          type: 'string',
+          enum: ['YES', 'NO'],
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = 'test: ';
+    const completion = await parseSetup(content, 0, content.length);
+    expect(completion.items.length).equal(2);
+    expect(completion.items[0].insertText).to.be.equal('"YES"');
+    expect(completion.items[1].insertText).to.be.equal('"NO"');
   });
 });
