@@ -1292,7 +1292,9 @@ export class YamlCompletion {
     let insertText = '';
     if (Array.isArray(schema.defaultSnippets) && schema.defaultSnippets.length === 1) {
       const body = schema.defaultSnippets[0].body;
-      if (isDefined(body)) {
+      // Jigx custom: we need to exclude templateRef
+      if (isDefined(body) && !schema.defaultSnippets[0].label?.startsWith('templateRef')) {
+        // end jigx custom
         let value = this.getInsertTextForSnippetValue(
           body,
           '',
