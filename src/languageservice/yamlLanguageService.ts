@@ -193,7 +193,7 @@ export function getLanguageService(params: {
     params.schemaRequestService,
     params.workspaceContext,
     undefined,
-    params.yamlSettings.shouldIgnoreModelineSchema
+    params.yamlSettings?.shouldIgnoreModelineSchema
   );
   const completer = new YamlCompletion(schemaService, params.clientCapabilities, yamlDocumentsCache, params.telemetry);
   const hover = new YAMLHover(schemaService, params.telemetry);
