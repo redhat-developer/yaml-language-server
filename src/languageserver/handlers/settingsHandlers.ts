@@ -93,6 +93,8 @@ export class SettingsHandler {
       }
       this.yamlSettings.yamlVersion = settings.yaml.yamlVersion ?? '1.2';
 
+      this.yamlSettings.shouldIgnoreModelineSchema = settings.yaml.shouldIgnoreModelineSchema ?? false;
+
       if (settings.yaml.format) {
         this.yamlSettings.yamlFormatterSettings = {
           proseWrap: settings.yaml.format.proseWrap || 'preserve',

@@ -189,7 +189,12 @@ export function getLanguageService(params: {
   yamlSettings?: SettingsState;
   clientCapabilities?: ClientCapabilities;
 }): LanguageService {
-  const schemaService = new YAMLSchemaService(params.schemaRequestService, params.workspaceContext);
+  const schemaService = new YAMLSchemaService(
+    params.schemaRequestService,
+    params.workspaceContext,
+    undefined,
+    params.yamlSettings.shouldIgnoreModelineSchema
+  );
   const completer = new YamlCompletion(schemaService, params.clientCapabilities, yamlDocumentsCache, params.telemetry);
   const hover = new YAMLHover(schemaService, params.telemetry);
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService, params.telemetry);
