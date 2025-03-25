@@ -1329,6 +1329,22 @@ test1:
     expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
     expect(completion.items[0].documentation).to.be.equal('Property Description');
   });
+  it('should not suggest propertyNames with doNotSuggest', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: true,
+      propertyNames: {
+        title: 'property',
+        doNotSuggest: true,
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = '';
+    const completion = await parseSetup(content, 0, content.length);
+
+    expect(completion.items.length).equal(0);
+  });
+
   it('should suggest enum based on type', async () => {
     const schema: JSONSchema = {
       type: 'object',
