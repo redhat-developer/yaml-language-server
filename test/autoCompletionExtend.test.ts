@@ -350,6 +350,28 @@ describe('Auto Completion Tests Extended', () => {
       expect(uri.endsWith('/file.jigx')).to.be.true;
       expect(removeUniquePostfix(uri)).to.equal(origUri);
     });
+    it('should allow OR in filePatternAssociation for jigx files', async () => {
+      const schemaName = 'folder/test.jigx';
+      const schema = {
+        type: 'object',
+        title: 'basket',
+        properties: {
+          name: { type: 'string' },
+        },
+        if: {
+          filePatternAssociation: 'folder/*.jigx$|test2.jigx',
+        },
+        then: {
+          properties: {
+            name: { enum: ['val1', 'val2'] },
+          },
+        },
+      };
+      schemaProvider.addSchema(schemaName, schema);
+      const content = 'name:';
+      const completion = await parseSetup(content, content.length, schemaName);
+      expect(completion.items.map((i) => i.label)).to.deep.equal(['val1', 'val2']);
+    });
   });
 
   describe('completion of array', () => {

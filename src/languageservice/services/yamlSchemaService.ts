@@ -74,6 +74,17 @@ export class FilePatternAssociation {
 
   constructor(pattern: string) {
     try {
+      // JIGX custom - if pattern includes 'jigx' then don't escape some special chars
+      // we need to keep `|` and `$` in the pattern
+      if (pattern.includes('jigx')) {
+        pattern = pattern.endsWith('$') ? pattern : pattern + '$';
+        pattern = pattern.replace(/[-\\{}+?^.,[\]()#]/g, '\\$&');
+        this.patternRegExp = new RegExp(pattern.replace(/[*]/g, '.*'));
+        this.schemas = [];
+        return;
+      }
+      // END
+
       this.patternRegExp = new RegExp(convertSimple2RegExpPattern(pattern) + '$');
     } catch (e) {
       // invalid pattern
