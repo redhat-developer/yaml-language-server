@@ -1124,7 +1124,12 @@ export class YamlCompletion {
           [],
           0
         );
-        value = addIndentationToMultilineString(value, indent, indent);
+        if (Array.isArray(body)) {
+          // hyphen will be added later, so remove it, indent is ok
+          value = value.replace(/^\n( *)- /, '$1');
+        } else {
+          value = addIndentationToMultilineString(value, indent, indent);
+        }
 
         return { insertText: value, insertIndex };
       }
@@ -1455,9 +1460,9 @@ export class YamlCompletion {
       separatorAfter,
       collector,
       {
-        newLineFirst: !isArray,
-        indentFirstObject: !isArray,
-        shouldIndentWithTab: !isArray,
+        newLineFirst: !isArray && !collector.context.hasHyphen,
+        indentFirstObject: !isArray && !collector.context.hasHyphen,
+        shouldIndentWithTab: !isArray && !collector.context.hasHyphen,
       },
       arrayDepth,
       isArray
@@ -1534,7 +1539,13 @@ export class YamlCompletion {
           const existingProps = Object.keys(collector.proposed).filter(
             (proposedProp) => collector.proposed[proposedProp].label === existingProposeItem
           );
+
           insertText = this.getInsertTextForSnippetValue(value, separatorAfter, settings, existingProps);
+
+          if (collector.context.hasHyphen && Array.isArray(value)) {
+            // modify the array snippet if the line contains a hyphen
+            insertText = insertText.replace(/^\n( *)- /, '$1');
+          }
 
           // if snippet result is empty and value has a real value, don't add it as a completion
           if (insertText === '' && value) {
