@@ -34,6 +34,8 @@ export function stringifyObject(
       if (obj.length === 0) {
         return '';
       }
+      // don't indent the first element of the primitive array
+      const newIndent = depth > 0 ? indent + settings.indentation : '';
       let result = '';
       for (let i = 0; i < obj.length; i++) {
         let pseudoObj = obj[i];
@@ -44,7 +46,15 @@ export function stringifyObject(
         if (!Array.isArray(obj[i])) {
           pseudoObj = prependToObject(obj[i], consecutiveArrays);
         }
-        result += stringifyObject(pseudoObj, indent, stringifyLiteral, settings, (depth += 1), consecutiveArrays);
+        result += stringifyObject(
+          pseudoObj,
+          indent,
+          stringifyLiteral,
+          // overwrite the settings for array, it's valid for object type - not array
+          { ...settings, newLineFirst: true, shouldIndentWithTab: false },
+          depth,
+          consecutiveArrays
+        );
       }
       return result;
     } else {

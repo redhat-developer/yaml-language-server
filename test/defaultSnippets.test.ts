@@ -2,31 +2,74 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { toFsPath, setupSchemaIDTextDocument, setupLanguageService, caretPosition } from './utils/testHelper';
 import * as assert from 'assert';
-import * as path from 'path';
-import { ServiceSetup } from './utils/serviceSetup';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { CompletionList, TextEdit } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 import { jigxBranchTest } from './utils/testHelperJigx';
+import * as path from 'path';
+import { JSONSchema } from 'vscode-json-languageservice';
+import { CompletionList, TextEdit } from 'vscode-languageserver-types';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { LanguageService } from '../src/languageservice/yamlLanguageService';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { ServiceSetup } from './utils/serviceSetup';
+import {
+  caretPosition,
+  SCHEMA_ID,
+  setupLanguageService,
+  setupSchemaIDTextDocument,
+  TestCustomSchemaProvider,
+  toFsPath,
+} from './utils/testHelper';
 
 describe('Default Snippet Tests', () => {
+  let languageSettingsSetup: ServiceSetup;
+  let languageService: LanguageService;
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
+  let schemaProvider: TestCustomSchemaProvider;
 
   before(() => {
     const uri = toFsPath(path.join(__dirname, './fixtures/defaultSnippets.json'));
     const fileMatch = ['*.yml', '*.yaml'];
-    const languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
+    languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
       fileMatch,
       uri,
     });
-    const { languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
+    const {
+      languageService: langService,
+      languageHandler: langHandler,
+      yamlSettings: settings,
+      schemaProvider: testSchemaProvider,
+    } = setupLanguageService(languageSettingsSetup.languageSettings);
+    languageService = langService;
     languageHandler = langHandler;
     yamlSettings = settings;
+    schemaProvider = testSchemaProvider;
   });
+
+  afterEach(() => {
+    schemaProvider.deleteSchema(SCHEMA_ID);
+    languageService.configure(languageSettingsSetup.languageSettings);
+  });
+
+  /**
+   * Generates a completion list for the given document and caret (cursor) position.
+   * @param content The content of the document.
+   * The caret is located in the content using `|` bookends.
+   * For example, `content = 'ab|c|d'` places the caret over the `'c'`, at `position = 2`
+   * @returns A list of valid completions.
+   */
+  function parseCaret(content: string): Promise<CompletionList> {
+    const { position, content: content2 } = caretPosition(content);
+
+    const testTextDocument = setupSchemaIDTextDocument(content2);
+    yamlSettings.documents = new TextDocumentTestManager();
+    (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+    return languageHandler.completionHandler({
+      position: testTextDocument.positionAt(position),
+      textDocument: testTextDocument,
+    });
+  }
 
   describe('Snippet Tests', function () {
     /**
@@ -446,4 +489,657 @@ describe('Default Snippet Tests', () => {
       expect(item.textEdit.newText).to.be.equal('name: some');
     });
   });
+
+  describe('variations of defaultSnippets', () => {
+    const getNestedSchema = (schema: JSONSchema['properties']): JSONSchema => {
+      return {
+        type: 'object',
+        properties: {
+          snippets: {
+            type: 'object',
+            properties: {
+              ...schema,
+            },
+          },
+        },
+      };
+    };
+
+    // STRING
+    describe('defaultSnippet for string property', () => {
+      const schema = getNestedSchema({
+        snippetString: {
+          type: 'string',
+          defaultSnippets: [
+            {
+              label: 'labelSnippetString',
+              body: 'value',
+            },
+          ],
+        },
+      });
+
+      it('should suggest defaultSnippet for STRING property - unfinished property', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `
+snippets:
+  snippetStr|\n|
+`;
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['snippetString: value']);
+      });
+
+      it('should suggest defaultSnippet for STRING property - value after colon', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `
+snippets:
+  snippetString: |\n|
+`;
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['value']);
+      });
+    }); // STRING
+
+    // OBJECT
+    describe('defaultSnippet for OBJECT property', () => {
+      const schema = getNestedSchema({
+        snippetObject: {
+          type: 'object',
+          properties: {
+            item1: { type: 'string' },
+          },
+          required: ['item1'],
+          defaultSnippets: [
+            {
+              label: 'labelSnippetObject',
+              body: {
+                item1: 'value',
+                item2: {
+                  item3: 'value nested',
+                },
+              },
+            },
+          ],
+        },
+      });
+
+      it('should suggest defaultSnippet for OBJECT property - unfinished property, snippet replaces autogenerated props', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `
+snippets:
+  snippetOb|\n|
+`;
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([
+          {
+            label: 'snippetObject',
+            insertText: `snippetObject:
+  item1: value
+  item2:
+    item3: value nested`,
+          },
+        ]);
+      });
+      it('should suggest defaultSnippet for OBJECT property - unfinished property, should keep all snippet properties', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `
+snippets:
+  item1: value
+  snippetOb|\n|
+`;
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([
+          {
+            label: 'snippetObject',
+            insertText: `snippetObject:
+  item1: value
+  item2:
+    item3: value nested`,
+          },
+        ]);
+      });
+
+      it('should suggest defaultSnippet for OBJECT property - value after colon', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `
+snippets:
+  snippetObject: |\n|
+`;
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([
+          {
+            label: 'labelSnippetObject', // snippet intellisense
+            insertText: `
+  item1: value
+  item2:
+    item3: value nested`,
+          },
+          // jigx
+          {
+            label: 'item1', // key intellisense
+            insertText: '\n  item1: ',
+          },
+          {
+            label: 'object', // parent intellisense
+            insertText: '\n  item1: ',
+          },
+        ]);
+      });
+
+      it('should suggest defaultSnippet for OBJECT property - value with indent', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `
+snippets:
+  snippetObject:
+    |\n|
+`;
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([
+          {
+            label: 'labelSnippetObject', // snippet intellisense
+            insertText: `item1: value
+item2:
+  item3: value nested`,
+          },
+          {
+            label: 'item1', // key intellisense
+            insertText: 'item1: ',
+          },
+          {
+            label: 'object', // parent intellisense
+            insertText: 'item1: ',
+          },
+        ]);
+      });
+
+      it('should suggest partial defaultSnippet for OBJECT property - subset of items already there', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `
+snippets:
+  snippetObject:
+    item1: val
+    |\n|
+`;
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([
+          {
+            label: 'labelSnippetObject',
+            insertText: `item2:
+  item3: value nested`,
+          },
+        ]);
+      });
+
+      it('should suggest no defaultSnippet for OBJECT property - all items already there', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `
+snippets:
+  snippetObject:
+    item1: val
+    item2: val
+    |\n|
+`;
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([]);
+      });
+    }); // OBJECT
+
+    // OBJECT - Snippet nested
+    describe('defaultSnippet for OBJECT property', () => {
+      const schema = getNestedSchema({
+        snippetObject: {
+          type: 'object',
+          properties: {
+            item1: {
+              type: 'object',
+              defaultSnippets: [
+                {
+                  label: 'labelSnippetObject',
+                  body: {
+                    item1_1: 'value',
+                    item1_2: {
+                      item1_2_1: 'value nested',
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          required: ['item1'],
+        },
+      });
+
+      it('should suggest defaultSnippet for nested OBJECT property - unfinished property, snippet extends autogenerated props', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `
+snippets:
+  snippetOb|\n|
+`;
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([
+          {
+            label: 'snippetObject',
+            insertText: `snippetObject:
+  item1:
+    item1_1: value
+    item1_2:
+      item1_2_1: value nested`,
+          },
+        ]);
+      });
+    }); // OBJECT - Snippet nested
+
+    // ARRAY
+    describe('defaultSnippet for ARRAY property', () => {
+      describe('defaultSnippets on the property level as an object value', () => {
+        const schema = getNestedSchema({
+          snippetArray: {
+            type: 'array',
+            $comment:
+              'property - Not implemented, OK value, OK value nested, OK value nested with -, OK on 2nd index without or with -',
+            items: {
+              type: 'object',
+              properties: {
+                item1: { type: 'string' },
+              },
+            },
+            defaultSnippets: [
+              {
+                label: 'labelSnippetArray',
+                body: {
+                  item1: 'value',
+                  item2: 'value2',
+                },
+              },
+            ],
+          },
+        });
+
+        it('should suggest defaultSnippet for ARRAY property - unfinished property (not implemented)', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetAr|\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([
+            {
+              label: 'snippetArray',
+              insertText: 'snippetArray:\n  - ',
+            },
+          ]);
+        });
+
+        it('should suggest defaultSnippet for ARRAY property - value after colon', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetArray: |\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([
+            {
+              label: 'labelSnippetArray',
+              insertText: `
+  - item1: value
+    item2: value2`,
+            },
+          ]);
+        });
+
+        it('should suggest defaultSnippet for ARRAY property - value with indent (without hyphen)', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetArray:
+    |\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([
+            {
+              label: 'labelSnippetArray',
+              insertText: `- item1: value
+  item2: value2`,
+            },
+          ]);
+        });
+        it('should suggest defaultSnippet for ARRAY property - value with indent (with hyphen)', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetArray:
+    - |\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([
+            {
+              label: 'item1',
+              insertText: 'item1: ',
+            },
+            {
+              label: 'labelSnippetArray',
+              insertText: `item1: value
+  item2: value2`,
+            },
+          ]);
+        });
+        it('should suggest defaultSnippet for ARRAY property - value on 2nd position', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetArray:
+    - item1: test
+    - |\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([
+            {
+              label: 'item1',
+              insertText: 'item1: ',
+            },
+            {
+              label: 'labelSnippetArray',
+              insertText: `item1: value
+  item2: value2`,
+            },
+          ]);
+        });
+      });
+      describe('defaultSnippets on the items level as an object value', () => {
+        const schema = getNestedSchema({
+          snippetArray2: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: true,
+              defaultSnippets: [
+                {
+                  label: 'labelSnippetArray',
+                  body: {
+                    item1: 'value',
+                    item2: 'value2',
+                  },
+                },
+              ],
+            },
+          },
+        });
+
+        it('should suggest defaultSnippet for ARRAY property - unfinished property', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetAr|\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal([
+            'snippetArray2:\n  - item1: value\n    item2: value2',
+          ]);
+        });
+
+        it('should suggest defaultSnippet for ARRAY property - value after colon', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetArray2: |\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal([
+            `
+  - item1: value
+    item2: value2`,
+          ]);
+        });
+
+        it('should suggest defaultSnippet for ARRAY property - value with indent (with hyphen)', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetArray2:
+    - |\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal([
+            `item1: value
+  item2: value2`,
+          ]);
+        });
+        it('should suggest defaultSnippet for ARRAY property - value on 2nd position', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetArray2:
+    - item1: test
+    - |\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal([
+            `item1: value
+  item2: value2`,
+          ]);
+        });
+      }); // ARRAY - Snippet on items level
+
+      describe('defaultSnippets on the items level, ARRAY - Body is array of primitives', () => {
+        const schema = getNestedSchema({
+          snippetArrayPrimitives: {
+            type: 'array',
+            items: {
+              type: ['string', 'boolean', 'number', 'null'],
+              defaultSnippets: [
+                {
+                  body: ['value', 5, null, false],
+                },
+              ],
+            },
+          },
+        });
+
+        // fix if needed
+        // it('should suggest defaultSnippet for ARRAY property with primitives - unfinished property', async () => {
+        //   schemaProvider.addSchema(SCHEMA_ID, schema);
+        //   const content = `
+        // snippets:
+        //   snippetArrayPrimitives|\n|
+        // `;
+        //   const completion = await parseCaret(content);
+
+        //   expect(completion.items.map((i) => i.insertText)).to.be.deep.equal([
+        //     'snippetArrayPrimitives:\n  - value\n  - 5\n  - null\n  - false',
+        //   ]);
+        // });
+
+        it('should suggest defaultSnippet for ARRAY property with primitives - value after colon', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetArrayPrimitives: |\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['\n  - value\n  - 5\n  - null\n  - false']);
+        });
+
+        it('should suggest defaultSnippet for ARRAY property with primitives - value with indent (with hyphen)', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+        snippets:
+          snippetArrayPrimitives:
+            - |\n|
+        `;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['value\n- 5\n- null\n- false']);
+        });
+        it('should suggest defaultSnippet for ARRAY property with primitives - value on 2nd position', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+        snippets:
+          snippetArrayPrimitives:
+            - some other value
+            - |\n|
+        `;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['value\n- 5\n- null\n- false']);
+        });
+      }); // ARRAY - Body is array of primitives
+
+      describe('defaultSnippets on the items level, ARRAY - Body is array of objects', () => {
+        const schema = getNestedSchema({
+          snippetArrayObjects: {
+            type: 'array',
+            items: {
+              type: 'object',
+              defaultSnippets: [
+                {
+                  body: [
+                    {
+                      item1: 'value',
+                      item2: 'value2',
+                    },
+                    {
+                      item3: 'value',
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        });
+
+        it('should suggest defaultSnippet for ARRAY property with objects - unfinished property', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+        snippets:
+          snippetArrayObjects|\n|
+        `;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal([
+            'snippetArrayObjects:\n  - item1: value\n    item2: value2\n  - item3: value',
+          ]);
+        });
+
+        it('should suggest defaultSnippet for ARRAY property with objects - value after colon', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetArrayObjects: |\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal([
+            '\n  - item1: value\n    item2: value2\n  - item3: value',
+          ]);
+        });
+
+        it('should suggest defaultSnippet for ARRAY property with objects - value with indent (with hyphen)', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+        snippets:
+          snippetArrayObjects:
+            - |\n|
+        `;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['item1: value\n  item2: value2\n- item3: value']);
+        });
+        it('should suggest defaultSnippet for ARRAY property with objects - value on 2nd position', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+        snippets:
+          snippetArrayObjects:
+            - 1st: 1
+            - |\n|
+        `;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['item1: value\n  item2: value2\n- item3: value']);
+        });
+      }); // ARRAY - Body is array of objects
+
+      describe('defaultSnippets on the items level, ARRAY - Body is string', () => {
+        const schema = getNestedSchema({
+          snippetArrayString: {
+            type: 'array',
+            items: {
+              type: 'string',
+              defaultSnippets: [
+                {
+                  body: 'value',
+                },
+              ],
+            },
+          },
+        });
+
+        it('should suggest defaultSnippet for ARRAY property with string - unfinished property', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetArrayString|\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['snippetArrayString:\n  - ${1}']);
+          // better to suggest, fix if needed
+          // expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['snippetArrayString:\n  - value']);
+        });
+
+        it('should suggest defaultSnippet for ARRAY property with string - value after colon', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetArrayString: |\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['\n  - value']);
+        });
+
+        it('should suggest defaultSnippet for ARRAY property with string - value with indent (with hyphen)', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+        snippets:
+          snippetArrayString:
+            - |\n|
+        `;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['value']);
+        });
+        it('should suggest defaultSnippet for ARRAY property with string - value on 2nd position', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+        snippets:
+          snippetArrayString:
+            - some other value
+            - |\n|
+        `;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['value']);
+        });
+      }); // ARRAY - Body is simple string
+    }); // ARRAY
+  }); // variations of defaultSnippets
 });
