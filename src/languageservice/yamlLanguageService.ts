@@ -227,7 +227,7 @@ export function getLanguageService(params: {
       }
       yamlValidation.configure(settings);
       hover.configure(settings);
-      completer.configure(settings);
+      completer.configure(settings, params.yamlSettings);
       formatter.configure(settings);
       hoverDetail.configure(settings);
       yamlCodeActions.configure(settings);

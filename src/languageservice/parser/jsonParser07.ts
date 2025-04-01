@@ -27,6 +27,7 @@ import { isArrayEqual } from '../utils/arrUtils';
 import { Node, Pair } from 'yaml';
 import { safeCreateUnicodeRegExp } from '../utils/strings';
 import { FilePatternAssociation } from '../services/yamlSchemaService';
+import { floatSafeRemainder } from '../utils/math';
 
 // jigx custom
 import * as path from 'path';
@@ -177,10 +178,12 @@ export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
 export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
   public type: 'boolean' = 'boolean' as const;
   public value: boolean;
+  public source: string;
 
-  constructor(parent: ASTNode, internalNode: Node, boolValue: boolean, offset: number, length?: number) {
+  constructor(parent: ASTNode, internalNode: Node, boolValue: boolean, boolSource: string, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
     this.value = boolValue;
+    this.source = boolSource;
   }
 }
 
@@ -510,8 +513,9 @@ export function getNodeValue(node: ASTNode): any {
     case 'null':
     case 'string':
     case 'number':
-    case 'boolean':
       return node.value;
+    case 'boolean':
+      return node.source;
     default:
       return undefined;
   }
@@ -992,7 +996,7 @@ function validate(
       const val = getNodeValue(node);
       let enumValueMatch = false;
       for (const e of schema.enum) {
-        if (equals(val, e) || isAutoCompleteEqualMaybe(callFromAutoComplete, node, val, e)) {
+        if (val === e || isAutoCompleteEqualMaybe(callFromAutoComplete, node, val, e)) {
           enumValueMatch = true;
           break;
         }
@@ -1058,7 +1062,7 @@ function validate(
     const val = node.value;
 
     if (isNumber(schema.multipleOf)) {
-      if (val % schema.multipleOf !== 0) {
+      if (floatSafeRemainder(val, schema.multipleOf) !== 0) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,

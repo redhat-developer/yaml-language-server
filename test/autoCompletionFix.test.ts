@@ -2377,4 +2377,22 @@ test1:
       expect(completion.items[0].label).equal('item1');
     });
   });
+  it('should suggest enum based on type', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        test: {
+          type: 'string',
+          enum: ['YES', 'NO'],
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = 'test: ';
+    const completion = await parseSetup(content, 0, content.length);
+    expect(completion.items.length).equal(2);
+    expect(completion.items[0].insertText).to.be.equal('"YES"');
+    expect(completion.items[1].insertText).to.be.equal('"NO"');
+  });
 });
