@@ -67,7 +67,7 @@ export function stringifyObject(
       for (let i = 0; i < keys.length; i++) {
         const key = keys[i];
 
-        if (depth === 0 && settings.existingProps.includes(key)) {
+        if (depth === 0 && settings.existingProps.includes(key.replace(/^[-\s]+/, ''))) {
           // Don't add existing properties to the YAML
           continue;
         }
