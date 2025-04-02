@@ -1552,20 +1552,21 @@ export class YamlCompletion {
             continue;
           }
 
-          if ((arrayDepth === 0 && type === 'array') || isArray) {
+          // postprocess of the array snippet that needs special handling based on the position in the yaml
+          if ((arrayDepth === 0 && type === 'array') || isArray || Array.isArray(value)) {
             // add extra hyphen if we are in array, but the hyphen is missing on current line
             // but don't add it for array value because it's already there from getInsertTextForSnippetValue
             const addHyphen = !collector.context.hasHyphen && !Array.isArray(value) ? '- ' : '';
             // add new line if the cursor is after the colon
             const addNewLine = collector.context.hasColon ? `\n${this.indentation}` : '';
+            const addIndent = isArray || collector.context.hasColon || addHyphen ? this.indentation : '';
             // add extra indent if new line and hyphen are added
-            const addIndent = isArray && addNewLine && addHyphen ? this.indentation : '';
-            // const addIndent = addHyphen && addNewLine ? this.indentation : '';
+            const addExtraIndent = isArray && addNewLine && addHyphen ? this.indentation : '';
 
             insertText = addIndentationToMultilineString(
               insertText.trimStart(),
               `${addNewLine}${addHyphen}`,
-              `${addIndent}${this.indentation}`
+              `${addExtraIndent}${addIndent}`
             );
           }
 
