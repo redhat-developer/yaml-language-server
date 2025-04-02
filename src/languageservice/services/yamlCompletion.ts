@@ -217,6 +217,7 @@ export class YamlCompletion {
       { range: Range.create(position, position), text: modificationForInvoke },
     ]);
     const resultLocal = await this.doCompleteWithDisabledAdditionalProps(newDocument, newPosition, isKubernetes, doComplete);
+
     resultLocal.items.map((item) => {
       let firstPrefixLocal = firstPrefix;
       // if there is single space (space after colon) and insert text already starts with \n (it's a object), don't add space
@@ -224,11 +225,22 @@ export class YamlCompletion {
       if (item.insertText.startsWith('\n') && firstPrefix === ' ') {
         firstPrefixLocal = '';
       }
-      if (item.insertText) {
-        item.insertText = firstPrefixLocal + item.insertText.replace(/\n/g, '\n' + eachLinePrefix);
+
+      let insertText = item.insertText || item.textEdit?.newText;
+      if (!insertText) {
+        return item;
       }
+
+      insertText = addIndentationToMultilineString(insertText, '', eachLinePrefix);
+      insertText = firstPrefixLocal + insertText;
+
+      if (item.insertText) {
+        item.insertText = insertText;
+      }
+
       if (item.textEdit) {
-        item.textEdit.newText = firstPrefixLocal + item.textEdit.newText.replace(/\n/g, '\n' + eachLinePrefix);
+        item.textEdit.newText = insertText;
+
         if (TextEdit.is(item.textEdit)) {
           item.textEdit.range = Range.create(position, position);
         }
