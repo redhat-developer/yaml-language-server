@@ -1764,7 +1764,7 @@ export class YamlCompletion {
             const addHyphen = !collector.context.hasHyphen && !Array.isArray(value) ? '- ' : '';
             // add new line if the cursor is after the colon
             const addNewLine = collector.context.hasColon ? `\n${this.indentation}` : '';
-            const addIndent = isArray || collector.context.hasColon || addHyphen ? this.indentation : '';
+            const addIndent = collector.context.hasColon || addHyphen ? this.indentation : '';
             // add extra indent if new line and hyphen are added
             const addExtraIndent = isArray && addNewLine && addHyphen ? this.indentation : '';
 

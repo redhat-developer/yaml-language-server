@@ -856,6 +856,29 @@ snippets:
             },
           ]);
         });
+
+        it('should suggest defaultSnippet(snippetArray) for ARRAY property - value on 2nd position', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetArray:
+    - item1: test
+    |\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map(({ label, insertText }) => ({ label, insertText }))).to.be.deep.equal([
+            {
+              label: 'labelSnippetArray',
+              insertText: `- item1: value
+  item2: value2`,
+            },
+            {
+              label: '- (array item) object',
+              insertText: '- ',
+            },
+          ]);
+        });
       });
       describe('defaultSnippets(snippetArray2) on the items level as an object value', () => {
         const schema = getNestedSchema({
@@ -932,6 +955,27 @@ snippets:
           expect(completion.items.map((i) => i.insertText)).to.be.deep.equal([
             `item1: value
   item2: value2`,
+          ]);
+        });
+        it('should suggest defaultSnippet(snippetArray2) for ARRAY property - value on 2nd position (no hyphen)', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+snippets:
+  snippetArray2:
+    - item1: test
+    |\n|
+`;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => ({ label: i.label, insertText: i.insertText }))).to.be.deep.equal([
+            {
+              insertText: '- item1: value\n  item2: value2',
+              label: 'labelSnippetArray',
+            },
+            {
+              insertText: '- item1: value\n  item2: value2',
+              label: '- (array item) object',
+            },
           ]);
         });
       }); // ARRAY - Snippet on items level
@@ -1013,6 +1057,7 @@ snippets:
             },
             defaultSnippets: [
               {
+                label: 'snippetArray2Objects',
                 body: [
                   {
                     item1: 'value',
@@ -1089,6 +1134,27 @@ snippets:
 
           expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['item1: value\n  item2: value2\n- item3: value']);
         });
+        it('should suggest defaultSnippet(snippetArray2Objects) for ARRAY property with objects - value on 2nd position (no hyphen)', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+        snippets:
+          snippetArray2Objects:
+            - 1st: 1
+            |\n|
+        `;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => ({ label: i.label, insertText: i.insertText }))).to.be.deep.equal([
+            {
+              insertText: '- item1: value\n  item2: value2\n- item3: value',
+              label: 'snippetArray2Objects',
+            },
+            {
+              insertText: '- $1\n',
+              label: '- (array item) object',
+            },
+          ]);
+        });
       }); // ARRAY outside items - Body is array of objects
 
       describe('defaultSnippets(snippetArrayObjects) on the items level, ARRAY - Body is array of objects', () => {
@@ -1163,6 +1229,21 @@ snippets:
 
           expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['item1: value\n  item2: value2\n- item3: value']);
         });
+        it('should suggest defaultSnippet(snippetArrayObjects) for ARRAY property with objects - value on 2nd position (no hyphen)', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+        snippets:
+          snippetArrayObjects:
+            - 1st: 1
+            |\n|
+        `;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => i.insertText)).to.be.deep.equal([
+            '- item1: value\n  item2: value2\n- item3: value', // array item snippet from getInsertTextForObject
+            '- item1: value\n  item2: value2\n- item3: value', // from collectDefaultSnippets
+          ]);
+        });
       }); // ARRAY - Body is array of objects
 
       describe('defaultSnippets(snippetArrayString) on the items level, ARRAY - Body is string', () => {
@@ -1226,6 +1307,27 @@ snippets:
           const completion = await parseCaret(content);
 
           expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['value']);
+        });
+        it('should suggest defaultSnippet(snippetArrayString) for ARRAY property with string - value on 2nd position (no hyphen)', async () => {
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const content = `
+        snippets:
+          snippetArrayString:
+            - some other value
+            |\n|
+        `;
+          const completion = await parseCaret(content);
+
+          expect(completion.items.map((i) => ({ label: i.label, insertText: i.insertText }))).to.be.deep.equal([
+            {
+              insertText: '- value',
+              label: '"value"',
+            },
+            {
+              insertText: '- value',
+              label: '- (array item) string',
+            },
+          ]);
         });
       }); // ARRAY - Body is simple string
     }); // ARRAY
@@ -1309,6 +1411,24 @@ snippets:
         const completion = await parseCaret(content);
 
         expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['item1: value\n  item2: value2\n- item3: value']);
+      });
+
+      it('should suggest defaultSnippet(snippetAnyOfArray) for ARRAY property with objects - value on 2nd position (no hyphen)', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `
+        snippets:
+          snippetAnyOfArray:
+            - 1st: 1
+            |\n|
+        `;
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map((i) => ({ label: i.label, insertText: i.insertText }))).to.be.deep.equal([
+          {
+            insertText: '- $1\n', // could be better to suggest snippet - todo
+            label: '- (array item) object',
+          },
+        ]);
       });
     }); // anyOf - Body is array of objects
   }); // variations of defaultSnippets
