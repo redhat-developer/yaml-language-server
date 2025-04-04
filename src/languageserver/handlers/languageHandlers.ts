@@ -156,7 +156,7 @@ export class LanguageHandlers {
    * Called when auto-complete is triggered in an editor
    * Returns a list of valid completion items
    */
-  completionHandler(textDocumentPosition: TextDocumentPositionParams): Promise<CompletionList> {
+  completionHandler(textDocumentPosition: TextDocumentPositionParams, gracefulMatches = false): Promise<CompletionList> {
     const textDocument = this.yamlSettings.documents.get(textDocumentPosition.textDocument.uri);
 
     const result: CompletionList = {
@@ -170,7 +170,9 @@ export class LanguageHandlers {
     return this.languageService.doComplete(
       textDocument,
       textDocumentPosition.position,
-      isKubernetesAssociatedDocument(textDocument, this.yamlSettings.specificValidatorPaths)
+      isKubernetesAssociatedDocument(textDocument, this.yamlSettings.specificValidatorPaths),
+      true,
+      gracefulMatches
     );
   }
 

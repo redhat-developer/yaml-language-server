@@ -99,7 +99,13 @@ export class YamlCompletion {
     this.parentSkeletonSelectedFirst = languageSettings.parentSkeletonSelectedFirst;
   }
 
-  async doComplete(document: TextDocument, position: Position, isKubernetes = false, doComplete = true): Promise<CompletionList> {
+  async doComplete(
+    document: TextDocument,
+    position: Position,
+    isKubernetes = false,
+    doComplete = true,
+    gracefulMatches = false
+  ): Promise<CompletionList> {
     const result = CompletionList.create([], false);
     if (!this.completionEnabled) {
       return result;
@@ -534,7 +540,8 @@ export class YamlCompletion {
           collector,
           textBuffer,
           overwriteRange,
-          doComplete
+          doComplete,
+          gracefulMatches
         );
 
         if (!schema && currentWord.length > 0 && text.charAt(offset - currentWord.length - 1) !== '"') {
@@ -549,7 +556,7 @@ export class YamlCompletion {
 
       // proposals for values
       const types: { [type: string]: boolean } = {};
-      this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types, doComplete);
+      this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types, doComplete, gracefulMatches);
     } catch (err) {
       this.telemetry?.sendError('yaml.completion.error', err);
     }
@@ -689,9 +696,10 @@ export class YamlCompletion {
     collector: CompletionsCollector,
     textBuffer: TextBuffer,
     overwriteRange: Range,
-    doComplete: boolean
+    doComplete: boolean,
+    gracefulMatches: boolean
   ): void {
-    const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
+    const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete, gracefulMatches);
     const existingKey = textBuffer.getText(overwriteRange);
     const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
     const hasOnlyWhitespace = lineContent.trim().length === 0;
@@ -891,7 +899,8 @@ export class YamlCompletion {
     document: TextDocument,
     collector: CompletionsCollector,
     types: { [type: string]: boolean },
-    doComplete: boolean
+    doComplete: boolean,
+    gracefulMatches: boolean
   ): void {
     let parentKey: string = null;
 
@@ -915,7 +924,7 @@ export class YamlCompletion {
 
     if (node && (parentKey !== null || isSeq(node))) {
       const separatorAfter = '';
-      const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
+      const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete, gracefulMatches);
       for (const s of matchingSchemas) {
         if (s.node.internalNode === node && !s.inverted && s.schema) {
           if (s.schema.items) {
