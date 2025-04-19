@@ -167,9 +167,7 @@ describe('YAML Schema Service', () => {
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
       await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
 
-      expect(requestServiceMock).calledWithExactly(
-        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json'
-      );
+      expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
       expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
 
       expect(requestServiceMock).calledWithExactly(
@@ -202,14 +200,10 @@ describe('YAML Schema Service', () => {
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
       await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
 
-      expect(requestServiceMock).calledWithExactly(
-        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json'
-      );
+      expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
       expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
 
-      expect(requestServiceMock).calledWithExactly(
-        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json'
-      );
+      expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
       expect(requestServiceMock).calledThrice;
     });
   });
