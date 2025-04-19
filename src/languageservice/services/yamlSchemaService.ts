@@ -488,7 +488,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     if (this.yamlSettings?.autoDetectKubernetesSchema) {
       for (const entry of this.filePatternAssociations) {
         if (entry.uris && entry.uris[0] == KUBERNETES_SCHEMA_URL && entry.matchesPattern(resource)) {
-          resolveSchemaForResource([KUBERNETES_SCHEMA_URL]).then((schema) => {
+          return resolveSchemaForResource([KUBERNETES_SCHEMA_URL]).then((schema) => {
             const kubeSchema = autoDetectKubernetesSchemaFromDocument(
               doc,
               this.yamlSettings.crdCatalogURI ?? CRD_CATALOG_URL,
