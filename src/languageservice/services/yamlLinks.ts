@@ -7,7 +7,6 @@ import { DocumentLink } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Telemetry } from '../telemetry';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { convertErrorToTelemetryMsg } from '../utils/objects';
 
 export class YamlLinks {
   constructor(private readonly telemetry?: Telemetry) {}
@@ -23,7 +22,7 @@ export class YamlLinks {
       // Wait for all the promises to return and then flatten them into one DocumentLink array
       return Promise.all(linkPromises).then((yamlLinkArray) => [].concat(...yamlLinkArray));
     } catch (err) {
-      this.telemetry?.sendError('yaml.documentLink.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.documentLink.error', err);
     }
   }
 }

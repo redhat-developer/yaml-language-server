@@ -17,7 +17,6 @@ import { JSONSchema } from '../jsonSchema';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
 import { Telemetry } from '../telemetry';
-import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { ASTNode } from 'vscode-json-languageservice';
 import { stringify as stringifyYAML } from 'yaml';
 
@@ -58,7 +57,7 @@ export class YAMLHover {
       currentDoc.currentDocIndex = currentDocIndex;
       return this.getHover(document, position, currentDoc);
     } catch (error) {
-      this.telemetry?.sendError('yaml.hover.error', { error: convertErrorToTelemetryMsg(error) });
+      this.telemetry?.sendError('yaml.hover.error', error);
     }
   }
 
@@ -103,7 +102,7 @@ export class YAMLHover {
     };
 
     const removePipe = (value: string): string => {
-      return value.replace(/\|\|\s*$/, '');
+      return value.replace(/\s\|\|\s*$/, '');
     };
 
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
@@ -132,16 +131,19 @@ export class YAMLHover {
                 if (typeof enumValue !== 'string') {
                   enumValue = JSON.stringify(enumValue);
                 }
-                markdownEnums.push({
-                  value: enumValue,
-                  description: markdownEnumDescriptions[idx],
-                });
+                //insert only if the value is not present yet (avoiding duplicates)
+                if (!markdownEnums.some((me) => me.value === enumValue)) {
+                  markdownEnums.push({
+                    value: enumValue,
+                    description: markdownEnumDescriptions[idx],
+                  });
+                }
               });
             }
             if (s.schema.anyOf && isAllSchemasMatched(node, matchingSchemas, s.schema)) {
               //if append title and description of all matched schemas on hover
               title = '';
-              markdownDescription = '';
+              markdownDescription = s.schema.description ? s.schema.description + '\n' : '';
               s.schema.anyOf.forEach((childSchema: JSONSchema, index: number) => {
                 title += childSchema.title || s.schema.closestTitle || '';
                 markdownDescription += childSchema.markdownDescription || this.toMarkdown(childSchema.description) || '';

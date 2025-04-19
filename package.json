@@ -1,17 +1,13 @@
 {
   "name": "yaml-language-server",
   "description": "YAML language server",
-  "version": "1.15.0",
-  "author": "Gorkem Ercan (Red Hat)",
+  "version": "1.18.0",
+  "author": "Red Hat",
   "license": "MIT",
   "contributors": [
     {
-      "name": "Joshua Pinkney",
-      "email": "joshpinkney@gmail.com"
-    },
-    {
-      "name": "Yevhen Vydolob",
-      "email": "yvydolob@redhat.com"
+      "name": "Muthurajan Sivasubramanian",
+      "email": "msivasub@redhat.com"
     },
     {
       "name": "Google LLC"

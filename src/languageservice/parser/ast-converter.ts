@@ -137,7 +137,7 @@ function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
       return result;
     }
     case 'boolean':
-      return new BooleanASTNodeImpl(parent, node, node.value, ...toOffsetLength(node.range));
+      return new BooleanASTNodeImpl(parent, node, node.value, node.source, ...toOffsetLength(node.range));
     case 'number': {
       const result = new NumberASTNodeImpl(parent, node, ...toOffsetLength(node.range));
       result.value = node.value;

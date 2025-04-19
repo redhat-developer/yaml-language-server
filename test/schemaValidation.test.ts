@@ -2027,4 +2027,31 @@ obj:
       ['Missing property "form".'] // not inclide provider error
     );
   });
+
+  it('URL-encoded characters in $ref', async () => {
+    // note that 'missing form property' is necessary to trigger the bug (there has to be some problem in both subSchemas)
+    // order of the object in `anyOf` is also important
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        myProperty: {
+          $ref: '#/definitions/Interface%3Ctype%3E',
+        },
+      },
+      definitions: {
+        'Interface<type>': {
+          type: 'object',
+          properties: {
+            foo: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = `myProperty:\n  foo: bar`;
+    const result = await parseSetup(content);
+    assert.equal(result.length, 0);
+  });
 });

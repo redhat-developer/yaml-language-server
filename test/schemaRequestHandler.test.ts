@@ -28,7 +28,7 @@ describe('Schema Request Handler Tests', () => {
       sandbox.restore();
     });
     it('Should care Win URI', async () => {
-      const connection = <Connection>{};
+      const connection = {} as Connection;
       const resultPromise = schemaRequestHandler(
         connection,
         'c:\\some\\window\\path\\scheme.json',
@@ -43,14 +43,14 @@ describe('Schema Request Handler Tests', () => {
     });
 
     it('UNIX URI should works', async () => {
-      const connection = <Connection>{};
+      const connection = {} as Connection;
       const resultPromise = schemaRequestHandler(connection, '/some/unix/path/', [], URI.parse(''), false, testFileSystem);
       const result = await resultPromise;
       expect(result).to.be.equal('{some: "json"}');
     });
 
     it('should handle not valid Windows path', async () => {
-      const connection = <Connection>{};
+      const connection = {} as Connection;
       const resultPromise = schemaRequestHandler(
         connection,
         'A:/some/window/path/scheme.json',

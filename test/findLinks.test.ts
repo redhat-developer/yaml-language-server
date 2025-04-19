@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { setupLanguageService, setupTextDocument } from './utils/testHelper';
-import assert = require('assert');
+import * as assert from 'assert';
 import { ServiceSetup } from './utils/serviceSetup';
 import { DocumentLink } from 'vscode-languageserver-types';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
