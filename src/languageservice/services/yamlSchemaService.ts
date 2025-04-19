@@ -33,7 +33,7 @@ import Ajv4 from 'ajv-draft-04';
 import Ajv2019 from 'ajv/dist/2019';
 import Ajv2020 from 'ajv/dist/2020';
 import { autoDetectKubernetesSchemaFromDocument } from './crdUtil';
-import { KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
+import { CRD_CATALOG_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
 
 const ajv4 = new Ajv4({ allErrors: true });
 const ajv7 = new Ajv({ allErrors: true });
@@ -487,11 +487,17 @@ export class YAMLSchemaService extends JSONSchemaService {
     }
     if (this.yamlSettings?.autoDetectKubernetesSchema) {
       for (const entry of this.filePatternAssociations) {
-        if (entry.schemas[0] == KUBERNETES_SCHEMA_URL && entry.matchesPattern(resource)) {
-          const kubeSchema = autoDetectKubernetesSchemaFromDocument(doc, this.yamlSettings.crdCatalogURI);
-          if (kubeSchema) {
-            return resolveSchemaForResource([kubeSchema]);
-          }
+        if (entry.uris && entry.uris[0] == KUBERNETES_SCHEMA_URL && entry.matchesPattern(resource)) {
+          resolveSchemaForResource([KUBERNETES_SCHEMA_URL]).then((schema) => {
+            const kubeSchema = autoDetectKubernetesSchemaFromDocument(
+              doc,
+              this.yamlSettings.crdCatalogURI ?? CRD_CATALOG_URL,
+              schema
+            );
+            if (kubeSchema) {
+              return resolveSchemaForResource([kubeSchema]);
+            }
+          });
         }
       }
     }

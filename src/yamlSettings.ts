@@ -4,7 +4,7 @@ import { ISchemaAssociations } from './requestTypes';
 import { URI } from 'vscode-uri';
 import { JSONSchema } from './languageservice/jsonSchema';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
+import { CRD_CATALOG_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 import { YamlVersion } from './languageservice/parser/yamlParser07';
 
 // Client settings interface to grab settings relevant for the language server
@@ -93,7 +93,7 @@ export class SettingsState {
   keyOrdering = false;
   maxItemsComputed = 5000;
   autoDetectKubernetesSchema = false;
-  crdCatalogURI = 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main';
+  crdCatalogURI = CRD_CATALOG_URL;
 
   // File validation helpers
   pendingValidationRequests: { [uri: string]: NodeJS.Timeout } = {};
