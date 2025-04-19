@@ -8,6 +8,8 @@ import * as sinonChai from 'sinon-chai';
 import * as path from 'path';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import { parse } from '../src/languageservice/parser/yamlParser07';
+import { SettingsState } from '../src/yamlSettings';
+import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -139,6 +141,25 @@ describe('YAML Schema Service', () => {
       service.getSchemaForResource('', yamlDock.documents[0]);
 
       expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
+    });
+
+    it('should handle crd catalog', () => {
+      const documentContent = 'apiVersion: argoproj.io/v1alpha1\nkind: Application';
+      const content = `${documentContent}`;
+      const yamlDock = parse(content);
+
+      const settings = new SettingsState();
+      settings.schemaAssociations = {
+        kubernetes: ['*.yaml'],
+      };
+      settings.autoDetectKubernetesSchema = true;
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
+      service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
+      service.getSchemaForResource('', yamlDock.documents[0]);
+
+      expect(requestServiceMock).calledOnceWith(
+        'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/argoproj.io/application_v1alpha1.json'
+      );
     });
   });
 });
