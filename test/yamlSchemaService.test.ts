@@ -143,7 +143,7 @@ describe('YAML Schema Service', () => {
       expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
     });
 
-    it('should handle crd catalog', () => {
+    it('should handle crd catalog for crd', async () => {
       const documentContent = 'apiVersion: argoproj.io/v1alpha1\nkind: Application';
       const content = `${documentContent}`;
       const yamlDock = parse(content);
@@ -153,13 +153,64 @@ describe('YAML Schema Service', () => {
         kubernetes: ['*.yaml'],
       };
       settings.autoDetectKubernetesSchema = true;
+      requestServiceMock = sandbox.fake.resolves(
+        `
+        {
+          "oneOf": [ {
+              "$ref": "_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingWebhook"
+            },
+          ]
+        }
+        `
+      );
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
-      service.getSchemaForResource('', yamlDock.documents[0]);
+      await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
 
-      expect(requestServiceMock).calledOnceWith(
+      expect(requestServiceMock).calledWithExactly(
+        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json'
+      );
+      expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
+
+      expect(requestServiceMock).calledWithExactly(
         'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/argoproj.io/application_v1alpha1.json'
       );
+      expect(requestServiceMock).calledThrice;
+    });
+
+    it('should not get schema from crd catalog if definition in kubernetes schema', async () => {
+      const documentContent = 'apiVersion: admissionregistration.k8s.io/v1\nkind: MutatingWebhook';
+      const content = `${documentContent}`;
+      const yamlDock = parse(content);
+
+      const settings = new SettingsState();
+      settings.schemaAssociations = {
+        kubernetes: ['*.yaml'],
+      };
+      settings.autoDetectKubernetesSchema = true;
+      requestServiceMock = sandbox.fake.resolves(
+        `
+        {
+          "oneOf": [ {
+              "$ref": "_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingWebhook"
+            },
+          ]
+        }
+        `
+      );
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
+      service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
+      await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+
+      expect(requestServiceMock).calledWithExactly(
+        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json'
+      );
+      expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
+
+      expect(requestServiceMock).calledWithExactly(
+        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json'
+      );
+      expect(requestServiceMock).calledThrice;
     });
   });
 });

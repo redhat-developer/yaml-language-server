@@ -31,7 +31,7 @@ import { SchemaVersions } from '../yamlTypes';
 import Ajv, { DefinedError } from 'ajv';
 import { getSchemaTitle } from '../utils/schemaUtils';
 import { autoDetectKubernetesSchemaFromDocument } from './crdUtil';
-import { KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
+import { CRD_CATALOG_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
 
 const localize = nls.loadMessageBundle();
 
@@ -468,11 +468,17 @@ export class YAMLSchemaService extends JSONSchemaService {
     }
     if (this.yamlSettings?.autoDetectKubernetesSchema) {
       for (const entry of this.filePatternAssociations) {
-        if (entry.schemas[0] == KUBERNETES_SCHEMA_URL && entry.matchesPattern(resource)) {
-          const kubeSchema = autoDetectKubernetesSchemaFromDocument(doc, this.yamlSettings.crdCatalogURI);
-          if (kubeSchema) {
-            return resolveSchemaForResource([kubeSchema]);
-          }
+        if (entry.uris && entry.uris[0] == KUBERNETES_SCHEMA_URL && entry.matchesPattern(resource)) {
+          resolveSchemaForResource([KUBERNETES_SCHEMA_URL]).then((schema) => {
+            const kubeSchema = autoDetectKubernetesSchemaFromDocument(
+              doc,
+              this.yamlSettings.crdCatalogURI ?? CRD_CATALOG_URL,
+              schema
+            );
+            if (kubeSchema) {
+              return resolveSchemaForResource([kubeSchema]);
+            }
+          });
         }
       }
     }
