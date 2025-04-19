@@ -33,6 +33,7 @@ export interface Settings {
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
     autoDetectKubernetesSchema: boolean;
+    crdCatalogURI: string;
   };
   http: {
     proxy: string;
@@ -92,6 +93,7 @@ export class SettingsState {
   keyOrdering = false;
   maxItemsComputed = 5000;
   autoDetectKubernetesSchema = false;
+  crdCatalogURI = 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main';
 
   // File validation helpers
   pendingValidationRequests: { [uri: string]: NodeJS.Timeout } = {};

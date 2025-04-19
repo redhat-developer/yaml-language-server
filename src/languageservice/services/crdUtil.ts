@@ -1,15 +1,16 @@
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonParser07';
 
-const CRD_URI = 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main';
-
 /**
  * Retrieve schema by auto-detecting the Kubernetes GroupVersionKind (GVK) from the document.
  * The matching schema is then retrieved from the CRD catalog.
  * Public for testing purpose, not part of the API.
  * @param doc
  */
-export function autoDetectKubernetesSchemaFromDocument(doc: SingleYAMLDocument | JSONDocument): string | undefined {
+export function autoDetectKubernetesSchemaFromDocument(
+  doc: SingleYAMLDocument | JSONDocument,
+  crdCatalogURI: string
+): string | undefined {
   const res = getGroupVersionKindFromDocument(doc);
   if (!res) {
     return undefined;
@@ -20,7 +21,7 @@ export function autoDetectKubernetesSchemaFromDocument(doc: SingleYAMLDocument |
     return undefined;
   }
 
-  const schemaURL = `${CRD_URI}/${group.toLowerCase()}/${kind.toLowerCase()}_${version.toLowerCase()}.json`;
+  const schemaURL = `${crdCatalogURI}/${group.toLowerCase()}/${kind.toLowerCase()}_${version.toLowerCase()}.json`;
   return schemaURL;
 }
 

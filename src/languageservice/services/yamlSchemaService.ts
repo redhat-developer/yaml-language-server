@@ -33,6 +33,7 @@ import Ajv4 from 'ajv-draft-04';
 import Ajv2019 from 'ajv/dist/2019';
 import Ajv2020 from 'ajv/dist/2020';
 import { autoDetectKubernetesSchemaFromDocument } from './crdUtil';
+import { KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
 
 const ajv4 = new Ajv4({ allErrors: true });
 const ajv7 = new Ajv({ allErrors: true });
@@ -441,13 +442,6 @@ export class YAMLSchemaService extends JSONSchemaService {
       return resolveSchemaForResource([modelineSchema]);
     }
 
-    if (this.yamlSettings && this.yamlSettings.autoDetectKubernetesSchema) {
-      const kubeSchema = autoDetectKubernetesSchemaFromDocument(doc);
-      if (kubeSchema) {
-        return resolveSchemaForResource([kubeSchema]);
-      }
-    }
-
     if (this.customSchemaProvider) {
       return this.customSchemaProvider(resource)
         .then((schemaUri) => {
@@ -490,9 +484,18 @@ export class YAMLSchemaService extends JSONSchemaService {
             return resolveSchema();
           }
         );
-    } else {
-      return resolveSchema();
     }
+    if (this.yamlSettings?.autoDetectKubernetesSchema) {
+      for (const entry of this.filePatternAssociations) {
+        if (entry.schemas[0] == KUBERNETES_SCHEMA_URL && entry.matchesPattern(resource)) {
+          const kubeSchema = autoDetectKubernetesSchemaFromDocument(doc, this.yamlSettings.crdCatalogURI);
+          if (kubeSchema) {
+            return resolveSchemaForResource([kubeSchema]);
+          }
+        }
+      }
+    }
+    return resolveSchema();
   }
 
   // Set the priority of a schema in the schema service
