@@ -152,7 +152,7 @@ describe('YAML Schema Service', () => {
       settings.schemaAssociations = {
         kubernetes: ['*.yaml'],
       };
-      settings.autoDetectKubernetesSchema = true;
+      settings.kubernetesCRDStoreEnabled = true;
       requestServiceMock = sandbox.fake.resolves(
         `
         {
@@ -185,7 +185,7 @@ describe('YAML Schema Service', () => {
       settings.schemaAssociations = {
         kubernetes: ['*.yaml'],
       };
-      settings.autoDetectKubernetesSchema = true;
+      settings.kubernetesCRDStoreEnabled = true;
       requestServiceMock = sandbox.fake.resolves(
         `
         {
