@@ -20,6 +20,10 @@ export interface Settings {
       url: string;
       enable: boolean;
     };
+    kubernetesCRDStore: {
+      url: string;
+      enable: boolean;
+    };
     disableDefaultProperties: boolean;
     disableAdditionalProperties: boolean;
     suggest: {
@@ -32,8 +36,6 @@ export interface Settings {
     keyOrdering: boolean;
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
-    autoDetectKubernetesSchema: boolean;
-    crdCatalogURI: string;
   };
   http: {
     proxy: string;
@@ -80,6 +82,8 @@ export class SettingsState {
   customTags = [];
   schemaStoreEnabled = true;
   schemaStoreUrl = JSON_SCHEMASTORE_URL;
+  kubernetesCRDStoreEnabled = true;
+  kubernetesCRDStoreUrl = CRD_CATALOG_URL;
   indentation: string | undefined = undefined;
   disableAdditionalProperties = false;
   disableDefaultProperties = false;
@@ -92,8 +96,6 @@ export class SettingsState {
   };
   keyOrdering = false;
   maxItemsComputed = 5000;
-  autoDetectKubernetesSchema = false;
-  crdCatalogURI = CRD_CATALOG_URL;
 
   // File validation helpers
   pendingValidationRequests: { [uri: string]: NodeJS.Timeout } = {};

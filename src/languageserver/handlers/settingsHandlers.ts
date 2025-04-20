@@ -77,8 +77,6 @@ export class SettingsHandler {
       this.yamlSettings.customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
 
       this.yamlSettings.maxItemsComputed = Math.trunc(Math.max(0, Number(settings.yaml.maxItemsComputed))) || 5000;
-      this.yamlSettings.autoDetectKubernetesSchema = settings.yaml.autoDetectKubernetesSchema;
-      this.yamlSettings.crdCatalogURI = settings.yaml.crdCatalogURI;
 
       if (settings.yaml.schemaStore) {
         this.yamlSettings.schemaStoreEnabled = settings.yaml.schemaStore.enable;
@@ -86,6 +84,14 @@ export class SettingsHandler {
           this.yamlSettings.schemaStoreUrl = settings.yaml.schemaStore.url;
         }
       }
+
+      if (settings.yaml.kubernetesCRDStore) {
+        this.yamlSettings.kubernetesCRDStoreEnabled = settings.yaml.kubernetesCRDStore.enable;
+        if (settings.yaml.kubernetesCRDStore.url?.length !== 0) {
+          this.yamlSettings.kubernetesCRDStoreUrl = settings.yaml.kubernetesCRDStore.url;
+        }
+      }
+
       if (settings.files?.associations) {
         for (const [ext, languageId] of Object.entries(settings.files.associations)) {
           if (languageId === 'yaml') {

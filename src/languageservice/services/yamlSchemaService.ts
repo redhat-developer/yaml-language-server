@@ -485,13 +485,13 @@ export class YAMLSchemaService extends JSONSchemaService {
           }
         );
     }
-    if (this.yamlSettings?.autoDetectKubernetesSchema) {
+    if (this.yamlSettings?.kubernetesCRDStoreEnabled) {
       for (const entry of this.filePatternAssociations) {
         if (entry.uris && entry.uris[0] == KUBERNETES_SCHEMA_URL && entry.matchesPattern(resource)) {
           return resolveSchemaForResource([KUBERNETES_SCHEMA_URL]).then((schema) => {
             const kubeSchema = autoDetectKubernetesSchemaFromDocument(
               doc,
-              this.yamlSettings.crdCatalogURI ?? CRD_CATALOG_URL,
+              this.yamlSettings.kubernetesCRDStoreUrl ?? CRD_CATALOG_URL,
               schema
             );
             if (kubeSchema) {
