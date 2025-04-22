@@ -614,13 +614,15 @@ export class JSONDocument {
    * @param focusOffset  offsetValue
    * @param exclude excluded Node
    * @param didCallFromAutoComplete true if method called from AutoComplete
+   * @param gracefulMatches true if graceful matching should be done, meaning that if at least one property is validated in a sub schema, it's kept as a candidate
    * @returns array of applicable schemas
    */
   public getMatchingSchemas(
     schema: JSONSchema,
     focusOffset = -1,
     exclude: ASTNode = null,
-    didCallFromAutoComplete?: boolean
+    didCallFromAutoComplete?: boolean,
+    gracefulMatches?: boolean
   ): IApplicableSchema[] {
     const matchingSchemas = new SchemaCollector(focusOffset, exclude);
     if (this.root && schema) {
@@ -629,6 +631,7 @@ export class JSONDocument {
         disableAdditionalProperties: this.disableAdditionalProperties,
         uri: this.uri,
         callFromAutoComplete: didCallFromAutoComplete,
+        gracefulMatches: gracefulMatches,
       });
     }
     return matchingSchemas.schemas;
@@ -639,6 +642,7 @@ interface Options {
   disableAdditionalProperties: boolean;
   uri: string;
   callFromAutoComplete?: boolean;
+  gracefulMatches?: boolean;
 }
 function validate(
   node: ASTNode,
@@ -649,7 +653,7 @@ function validate(
   options: Options
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
-  const { isKubernetes, callFromAutoComplete } = options;
+  const { isKubernetes, callFromAutoComplete, gracefulMatches } = options;
   if (!node) {
     return;
   }
@@ -870,7 +874,7 @@ function validate(
       const val = getNodeValue(node);
       let enumValueMatch = false;
       for (const e of schema.enum) {
-        if (val === e || (callFromAutoComplete && isString(val) && isString(e) && val && e.startsWith(val))) {
+        if (val === e || (callFromAutoComplete && (val === null || (isString(val) && isString(e) && val && e.startsWith(val))))) {
           enumValueMatch = true;
           break;
         }
@@ -904,7 +908,7 @@ function validate(
       const val = getNodeValue(node);
       if (
         !equals(val, schema.const) &&
-        !(callFromAutoComplete && isString(val) && isString(schema.const) && schema.const.startsWith(val))
+        !(callFromAutoComplete && (val === null || (isString(val) && isString(schema.const) && schema.const.startsWith(val))))
       ) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
@@ -1503,10 +1507,14 @@ function validate(
     return bestMatch;
   }
 
+  function gracefulMatchFilter(maxOneMatch: boolean, propertiesValueMatches: number): boolean {
+    return gracefulMatches && !maxOneMatch && callFromAutoComplete && propertiesValueMatches > 0;
+  }
+
   //genericComparison tries to find the best matching schema using a generic comparison
   function genericComparison(
     node: ASTNode,
-    maxOneMatch,
+    maxOneMatch: boolean,
     subValidationResult: ValidationResult,
     bestMatch: {
       schema: JSONSchema;
@@ -1520,11 +1528,7 @@ function validate(
     validationResult: ValidationResult;
     matchingSchemas: ISchemaCollector;
   } {
-    if (
-      !maxOneMatch &&
-      !subValidationResult.hasProblems() &&
-      (!bestMatch.validationResult.hasProblems() || callFromAutoComplete)
-    ) {
+    if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
       bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
@@ -1545,7 +1549,11 @@ function validate(
           validationResult: subValidationResult,
           matchingSchemas: subMatchingSchemas,
         };
-      } else if (compareResult === 0) {
+      } else if (
+        compareResult === 0 ||
+        ((node.value === null || node.type === 'null') && node.length === 0) ||
+        gracefulMatchFilter(maxOneMatch, subValidationResult.propertiesValueMatches)
+      ) {
         // there's already a best matching but we are as good
         bestMatch.matchingSchemas.merge(subMatchingSchemas);
         bestMatch.validationResult.mergeEnumValues(subValidationResult);
