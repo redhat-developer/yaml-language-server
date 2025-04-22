@@ -243,12 +243,29 @@ export class YamlCompletion {
           }
         }
 
-        // trim $1 from end of completion
-        if (completionItem.insertText.endsWith('$1') && !isForParentCompletion) {
-          completionItem.insertText = completionItem.insertText.substr(0, completionItem.insertText.length - 2);
-        }
-        if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
-          completionItem.textEdit = TextEdit.replace(overwriteRange, completionItem.insertText);
+        if (completionItem.label.toLowerCase() === 'regular expression') {
+          const docObject = completionItem.documentation as MarkupContent;
+          const splitValues = docObject.value.split(':');
+          label =
+            splitValues.length > 0 ? `${this.getQuote()}\\${JSON.parse(splitValues[1])}${this.getQuote()}` : completionItem.label;
+          completionItem.insertText = label;
+          completionItem.textEdit = TextEdit.replace(overwriteRange, label);
+        } else {
+          let mdText = completionItem.insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
+          const splitMDText = mdText.split(':');
+          let value = splitMDText.length > 1 ? splitMDText[1].trim() : mdText;
+          if (value && /^(['\\"\\])$/.test(value)) {
+            value = `${this.getQuote()}\\${value}${this.getQuote()}`;
+            mdText = splitMDText.length > 1 ? splitMDText[0] + ': ' + value : value;
+            completionItem.insertText = mdText;
+          }
+          // trim $1 from end of completion
+          if (completionItem.insertText.endsWith('$1') && !isForParentCompletion) {
+            completionItem.insertText = completionItem.insertText.substr(0, completionItem.insertText.length - 2);
+          }
+          if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
+            completionItem.textEdit = TextEdit.replace(overwriteRange, completionItem.insertText);
+          }
         }
 
         completionItem.label = label;
@@ -1678,8 +1695,9 @@ export class YamlCompletion {
     let value: string;
     if (typeof param === 'string') {
       //support YAML spec 1.1 boolean values
-      const quote = this.isSingleQuote ? `'` : `"`;
-      value = ['on', 'off', 'true', 'false', 'yes', 'no'].includes(param.toLowerCase()) ? `${quote}${param}${quote}` : param;
+      value = ['on', 'off', 'true', 'false', 'yes', 'no'].includes(param.toLowerCase())
+        ? `${this.getQuote()}${param}${this.getQuote()}`
+        : param;
     } else {
       value = '' + param;
     }
@@ -1723,6 +1741,10 @@ export class YamlCompletion {
     }
 
     return value;
+  }
+
+  getQuote(): string {
+    return this.isSingleQuote ? `'` : `"`;
   }
 
   /**
