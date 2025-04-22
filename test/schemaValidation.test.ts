@@ -1690,16 +1690,20 @@ obj:
         const schema = {
           type: 'object',
           properties: {
+            // prop0 is missing, should be added as a possible prop
             prop0: {
               type: 'string',
             },
+            // prop1 is already defined in the yaml
             prop1: {
               type: 'string',
             },
+            // prop2 is not suggested
             prop2: {
               type: 'string',
               doNotSuggest: true,
             },
+            // prop3 is deprecated
             prop3: {
               type: 'string',
               deprecationMessage: 'prop3 is deprecated',

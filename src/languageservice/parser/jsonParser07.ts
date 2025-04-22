@@ -1382,7 +1382,7 @@ function validate(
               if (seenKeys[key]) {
                 return false;
               }
-              // don't include properties that are not suggested
+              // don't include properties that are not suggested in completion
               if (property && typeof property === 'object' && (property.doNotSuggest || property.deprecationMessage)) {
                 return false;
               }
