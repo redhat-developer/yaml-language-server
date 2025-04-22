@@ -1374,7 +1374,21 @@ function validate(
       (schema.type === 'object' && schema.additionalProperties === undefined && options.disableAdditionalProperties === true)
     ) {
       if (unprocessedProperties.length > 0) {
-        const possibleProperties = schema.properties && Object.keys(schema.properties).filter((prop) => !seenKeys[prop]);
+        const possibleProperties =
+          schema.properties &&
+          Object.entries(schema.properties)
+            .filter(([key, property]) => {
+              // don't include existing properties
+              if (seenKeys[key]) {
+                return false;
+              }
+              // don't include properties that are not suggested
+              if (property && typeof property === 'object' && (property.doNotSuggest || property.deprecationMessage)) {
+                return false;
+              }
+              return true;
+            })
+            .map(([key]) => key);
 
         for (const propertyName of unprocessedProperties) {
           const child = seenKeys[propertyName];
