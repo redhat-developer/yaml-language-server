@@ -780,7 +780,20 @@ function validate(
         matchingSchemas: ISchemaCollector;
       } = null;
 
-      let alternativesFiltered = alternatives;
+      // flatten nested anyOf/oneOf schemas
+      // fix nested types problem (jig.default children - type:)
+      let alternativesFiltered = alternatives.reduce((acc, subSchemaRef) => {
+        const subSchema = asSchema(subSchemaRef);
+        if (!maxOneMatch && subSchema.anyOf) {
+          acc.push(...subSchema.anyOf);
+        } else if (maxOneMatch && subSchema.oneOf) {
+          acc.push(...subSchema.oneOf);
+        } else {
+          acc.push(subSchemaRef);
+        }
+        return acc;
+      }, []);
+
       // jigx custom: remove subSchemas if the mustMatchProps (`type`, `provider`) is different
       // another idea is to add some attribute to schema, so type will have `mustMatch` attribute - this could work in general not only for jigx
       const mustMatchProps = ['type', 'provider'];
@@ -796,18 +809,34 @@ function validate(
         }
 
         // take only subSchemas that have the same mustMatch property in yaml and in schema
-        alternativesFiltered = alternatives.filter((subSchemaRef) => {
+        alternativesFiltered = alternativesFiltered.reduce((acc, subSchemaRef) => {
           const subSchema = asSchema(subSchemaRef);
+          if (!subSchema.properties) {
+            acc.push(subSchemaRef);
+            return acc;
+          }
 
-          const typeSchemaProp = subSchema.properties?.[mustMatch];
+          const typeSchemaProp = subSchema.properties[mustMatch];
 
           if (typeof typeSchemaProp !== 'object') {
             // jig.list has anyOf in the root, so no `type` prop directly in that schema, so jig.list will be excluded in the next iteration
-            return true;
+            acc.push(subSchemaRef);
+            return acc;
           }
           const subValidationResult = new ValidationResult(isKubernetes);
           const subMatchingSchemas = matchingSchemas.newSub();
           validate(mustMatchYamlProp, typeSchemaProp, subSchema, subValidationResult, subMatchingSchemas, options);
+          // console.log('-- mustMatchSchemas test --', {
+          //   mustMatchProp: mustMatch,
+          //   result: {
+          //     enumValues: subValidationResult.enumValues,
+          //     enumValueMatch: subValidationResult.enumValueMatch,
+          //     hasProblems: subValidationResult.hasProblems(),
+          //   },
+          //   yaml: { propKey: mustMatchYamlProp.keyNode.value, propValue: mustMatchYamlProp.valueNode.value },
+          //   mustMatchSchemasCount: mustMatchSchemas.length,
+          //   subSchema,
+          // });
           if (
             !subValidationResult.hasProblems() ||
             // allows some of the other errors like: patterns validations
@@ -817,11 +846,22 @@ function validate(
             // check previous commits for more details
           ) {
             // we have enum/const match on mustMatch prop
-            // so we want to use this schema forcely in genericComparison mechanism
+            // so we want to use this schema forcedly in genericComparison mechanism
+            let mustMatchSchema = subSchema;
             if (subValidationResult.enumValueMatch && subValidationResult.enumValues?.length) {
-              mustMatchSchemas.push(subSchema);
+              if (!subValidationResult.enumValues.includes(mustMatchYamlProp.valueNode.value)) {
+                // fix component.list vs component.list-item problem.
+                // there is a difference when we want to suggestion for `type: component.list` (should suggest also `component.list-item`)
+                // but when the node is nested in options, we don't want to suggest schema related to `component.list-item`
+                // so if we don't have strict match, lets add only subset with `type` property
+                //  - so intellisense on type will contains all possible types
+                //  - but when the node is nested, the rest properties are trimmed
+                mustMatchSchema = { ...subSchema, properties: { [mustMatch]: subSchema.properties[mustMatch] } };
+              }
+              mustMatchSchemas.push(mustMatchSchema);
             }
-            return true;
+            acc.push(mustMatchSchema);
+            return acc;
           }
           if (!validationData[mustMatch]) {
             validationData[mustMatch] = { node: mustMatchYamlProp.valueNode, values: [] };
@@ -829,9 +869,8 @@ function validate(
           if (subValidationResult.enumValues?.length) {
             validationData[mustMatch].values.push(...subValidationResult.enumValues);
           }
-          return false;
-        });
-
+          return acc;
+        }, []);
         // if no match, just return
         // example is jig.list with anyOf in the root... so types are in anyOf[0]
         if (!alternativesFiltered.length) {

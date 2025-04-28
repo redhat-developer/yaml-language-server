@@ -590,6 +590,102 @@ describe('Auto Completion Tests Extended', () => {
         expect(completion2.items.map((i) => i.label)).deep.equal(['dataProp', 'object(specific)'], 'inside data');
       });
     });
+    describe('Distinguish between component.list and component.list-item', () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            type: 'object',
+            properties: {
+              type: { type: 'string', const: 'component.list' },
+              options: {
+                properties: { listProp: { type: 'string' } },
+              },
+            },
+            required: ['type'],
+          },
+
+          {
+            type: 'object',
+            properties: {
+              type: { type: 'string', const: 'component.list-item' },
+              options: {
+                properties: { itemProp: { type: 'string' } },
+              },
+            },
+            required: ['type'],
+          },
+        ],
+      };
+      it('Should suggest both alternatives of mustMatch property', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = 'type: component.list|\n|';
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map((i) => i.label)).deep.equal(['component.list', 'component.list-item']);
+      });
+      it('Should suggest both alternatives of mustMatch property', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = 'type: component.list|\n|options:\n  another: test\n';
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map((i) => i.label)).deep.equal(['component.list', 'component.list-item']);
+      });
+      it('Should suggest only props from strict match of mustMatch property', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = 'type: component.list\noptions:\n  another: test\n  |\n|';
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map((i) => i.label)).deep.equal(['listProp']);
+      });
+    });
+    describe('Nested anyOf - component.section, component.list, component.list-item', () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            anyOf: [
+              {
+                type: 'object',
+                properties: {
+                  type: { type: 'string', const: 'component.list' },
+                  options: { properties: { listProp: { type: 'string' } } },
+                },
+                required: ['type'],
+              },
+              {
+                type: 'object',
+                properties: {
+                  type: { type: 'string', const: 'component.list-item' },
+                  options: { properties: { itemProp: { type: 'string' } } },
+                },
+                required: ['type'],
+              },
+            ],
+          },
+          {
+            type: 'object',
+            properties: {
+              type: { type: 'string', const: 'component.section' },
+              options: { properties: { sectionProp: { type: 'string' } } },
+            },
+            required: ['type'],
+          },
+        ],
+      };
+      it('Should suggest all types - when nested', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = 'type: component.|\n|';
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map((i) => i.label)).deep.equal(['component.list', 'component.list-item', 'component.section']);
+      });
+      it('Should suggest all types - when nested - different order', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, { anyOf: [schema.anyOf[1], schema.anyOf[0]] });
+        const content = 'type: component.|\n|';
+        const completion = await parseCaret(content);
+
+        expect(completion.items.map((i) => i.label)).deep.equal(['component.section', 'component.list', 'component.list-item']);
+      });
+    });
   });
   describe('Chain of single properties', () => {
     const schema: JSONSchema = {
