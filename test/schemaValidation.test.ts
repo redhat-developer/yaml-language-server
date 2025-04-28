@@ -1686,6 +1686,46 @@ obj:
         ]);
       });
 
+      it('should return error with possible props', async () => {
+        const schema = {
+          type: 'object',
+          properties: {
+            // prop0 is missing, should be added as a possible prop
+            prop0: {
+              type: 'string',
+            },
+            // prop1 is already defined in the yaml
+            prop1: {
+              type: 'string',
+            },
+            // prop2 is not suggested
+            prop2: {
+              type: 'string',
+              doNotSuggest: true,
+            },
+            // prop3 is deprecated
+            prop3: {
+              type: 'string',
+              deprecationMessage: 'prop3 is deprecated',
+            },
+          },
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `prop1: value1\npropX: you should not be there 'propX'`;
+        const result = await parseSetup(content);
+        expect(
+          result.map((r) => ({
+            message: r.message,
+            properties: (r.data as { properties: unknown })?.properties,
+          }))
+        ).to.deep.eq([
+          {
+            message: 'Property propX is not allowed.',
+            properties: ['prop0'],
+          },
+        ]);
+      });
+
       it('should allow additional props on object when additionalProp is true on object', async () => {
         const schema = {
           type: 'object',
