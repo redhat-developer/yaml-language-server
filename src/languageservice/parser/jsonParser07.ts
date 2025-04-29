@@ -537,6 +537,12 @@ export function findNodeAtOffset(node: ASTNode, offset: number, includeRightBoun
   return undefined;
 }
 
+interface IValidationMatch {
+  schema: JSONSchema;
+  validationResult: ValidationResult;
+  matchingSchemas: ISchemaCollector;
+}
+
 export class JSONDocument {
   public isKubernetes: boolean;
   public disableAdditionalProperties: boolean;
@@ -870,7 +876,7 @@ function validate(
       const val = getNodeValue(node);
       let enumValueMatch = false;
       for (const e of schema.enum) {
-        if (val === e || (callFromAutoComplete && isString(val) && isString(e) && val && e.startsWith(val))) {
+        if (val === e || isAutoCompleteEqualMaybe(callFromAutoComplete, node, val, e)) {
           enumValueMatch = true;
           break;
         }
@@ -902,10 +908,7 @@ function validate(
 
     if (isDefined(schema.const)) {
       const val = getNodeValue(node);
-      if (
-        !equals(val, schema.const) &&
-        !(callFromAutoComplete && isString(val) && isString(schema.const) && schema.const.startsWith(val))
-      ) {
+      if (!equals(val, schema.const) && !isAutoCompleteEqualMaybe(callFromAutoComplete, node, val, schema.const)) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
@@ -1374,7 +1377,21 @@ function validate(
       (schema.type === 'object' && schema.additionalProperties === undefined && options.disableAdditionalProperties === true)
     ) {
       if (unprocessedProperties.length > 0) {
-        const possibleProperties = schema.properties && Object.keys(schema.properties).filter((prop) => !seenKeys[prop]);
+        const possibleProperties =
+          schema.properties &&
+          Object.entries(schema.properties)
+            .filter(([key, property]) => {
+              // don't include existing properties
+              if (seenKeys[key]) {
+                return false;
+              }
+              // don't include properties that are not suggested in completion
+              if (property && typeof property === 'object' && (property.doNotSuggest || property.deprecationMessage)) {
+                return false;
+              }
+              return true;
+            })
+            .map(([key]) => key);
 
         for (const propertyName of unprocessedProperties) {
           const child = seenKeys[propertyName];
@@ -1508,23 +1525,11 @@ function validate(
     node: ASTNode,
     maxOneMatch,
     subValidationResult: ValidationResult,
-    bestMatch: {
-      schema: JSONSchema;
-      validationResult: ValidationResult;
-      matchingSchemas: ISchemaCollector;
-    },
+    bestMatch: IValidationMatch,
     subSchema,
     subMatchingSchemas
-  ): {
-    schema: JSONSchema;
-    validationResult: ValidationResult;
-    matchingSchemas: ISchemaCollector;
-  } {
-    if (
-      !maxOneMatch &&
-      !subValidationResult.hasProblems() &&
-      (!bestMatch.validationResult.hasProblems() || callFromAutoComplete)
-    ) {
+  ): IValidationMatch {
+    if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
       bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
@@ -1545,18 +1550,29 @@ function validate(
           validationResult: subValidationResult,
           matchingSchemas: subMatchingSchemas,
         };
-      } else if (compareResult === 0) {
+      } else if (
+        compareResult === 0 ||
+        ((node.value === null || node.type === 'null') && node.length === 0) // node with no value can match any schema potentially
+      ) {
         // there's already a best matching but we are as good
-        bestMatch.matchingSchemas.merge(subMatchingSchemas);
-        bestMatch.validationResult.mergeEnumValues(subValidationResult);
-        bestMatch.validationResult.mergeWarningGeneric(subValidationResult, [
-          ProblemType.missingRequiredPropWarning,
-          ProblemType.typeMismatchWarning,
-          ProblemType.constWarning,
-        ]);
+        mergeValidationMatches(bestMatch, subMatchingSchemas, subValidationResult);
       }
     }
     return bestMatch;
+  }
+
+  function mergeValidationMatches(
+    bestMatch: IValidationMatch,
+    subMatchingSchemas: ISchemaCollector,
+    subValidationResult: ValidationResult
+  ): void {
+    bestMatch.matchingSchemas.merge(subMatchingSchemas);
+    bestMatch.validationResult.mergeEnumValues(subValidationResult);
+    bestMatch.validationResult.mergeWarningGeneric(subValidationResult, [
+      ProblemType.missingRequiredPropWarning,
+      ProblemType.typeMismatchWarning,
+      ProblemType.constWarning,
+    ]);
   }
 }
 
@@ -1594,4 +1610,27 @@ function getSchemaUri(schema: JSONSchema, originalSchema: JSONSchema): string[] 
 
 function getWarningMessage(problemType: ProblemType, args: string[]): string {
   return localize(problemType, ProblemTypeMessages[problemType], args.join(' | '));
+}
+
+/**
+ * if callFromAutoComplete than compare value from yaml and value from schema (s.const | s.enum[i])
+ * allows partial match for autocompletion
+ */
+function isAutoCompleteEqualMaybe(
+  callFromAutoComplete: boolean,
+  node: ASTNode,
+  nodeValue: unknown,
+  schemaValue: unknown
+): boolean {
+  if (!callFromAutoComplete) {
+    return false;
+  }
+
+  // if autocompletion property doesn't have value, then it could be a match
+  const isWithoutValue = nodeValue === null && node.length === 0; // allows `prop: ` but ignore `prop: null`
+  if (isWithoutValue) {
+    return true;
+  }
+
+  return isString(nodeValue) && isString(schemaValue) && schemaValue.startsWith(nodeValue);
 }

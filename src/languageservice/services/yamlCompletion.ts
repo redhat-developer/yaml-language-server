@@ -862,14 +862,16 @@ export class YamlCompletion {
 
         if (schema.schema.propertyNames && schema.schema.additionalProperties && schema.schema.type === 'object') {
           const propertyNameSchema = asSchema(schema.schema.propertyNames);
-          const label = propertyNameSchema.title || 'property';
-          collector.add({
-            kind: CompletionItemKind.Property,
-            label,
-            insertText: '$' + `{1:${label}}: `,
-            insertTextFormat: InsertTextFormat.Snippet,
-            documentation: this.fromMarkup(propertyNameSchema.markdownDescription) || propertyNameSchema.description || '',
-          });
+          if (!propertyNameSchema.deprecationMessage && !propertyNameSchema.doNotSuggest) {
+            const label = propertyNameSchema.title || 'property';
+            collector.add({
+              kind: CompletionItemKind.Property,
+              label,
+              insertText: '$' + `{1:${label}}: `,
+              insertTextFormat: InsertTextFormat.Snippet,
+              documentation: this.fromMarkup(propertyNameSchema.markdownDescription) || propertyNameSchema.description || '',
+            });
+          }
         }
       }
 
