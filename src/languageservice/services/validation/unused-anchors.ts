@@ -44,7 +44,12 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
             document.positionAt(aToken.offset),
             document.positionAt(aToken.offset + aToken.source.length)
           );
-          const warningDiagnostic = Diagnostic.create(range, `Unused anchor "${aToken.source}"`, DiagnosticSeverity.Hint, 0);
+          const warningDiagnostic = Diagnostic.create(
+            range,
+            `Unused anchor "${aToken.source}"`,
+            DiagnosticSeverity.Information,
+            0
+          );
           warningDiagnostic.tags = [DiagnosticTag.Unnecessary];
           result.push(warningDiagnostic);
         }
@@ -57,7 +62,7 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
         const startOffset = nodeRange[0];
         const endOffset = nodeRange[1];
         const range = Range.create(document.positionAt(startOffset), document.positionAt(endOffset));
-        const warningDiagnostic = Diagnostic.create(range, `Unresolved alias "${node}"`, DiagnosticSeverity.Hint, 0);
+        const warningDiagnostic = Diagnostic.create(range, `Unresolved alias "${node}"`, DiagnosticSeverity.Information, 0);
         warningDiagnostic.tags = [DiagnosticTag.Unnecessary];
         result.push(warningDiagnostic);
       }
