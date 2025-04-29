@@ -6,6 +6,7 @@
 
 import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
 import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
+import { SettingsState } from '../../yamlSettings';
 import {
   UnresolvedSchema,
   ResolvedSchema,
@@ -29,6 +30,7 @@ import { SchemaVersions } from '../yamlTypes';
 
 import Ajv, { DefinedError } from 'ajv';
 import { getSchemaTitle } from '../utils/schemaUtils';
+import { autoDetectKubernetesSchemaFromDocument } from './crdUtil';
 
 const ajv = new Ajv();
 
@@ -108,6 +110,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   private filePatternAssociations: JSONSchemaService.FilePatternAssociation[];
   private contextService: WorkspaceContextService;
   private requestService: SchemaRequestService;
+  private yamlSettings: SettingsState;
   public schemaPriorityMapping: Map<string, Set<SchemaPriority>>;
 
   private schemaUriToNameAndDescription = new Map<string, SchemaStoreSchema>();
@@ -115,12 +118,14 @@ export class YAMLSchemaService extends JSONSchemaService {
   constructor(
     requestService: SchemaRequestService,
     contextService?: WorkspaceContextService,
-    promiseConstructor?: PromiseConstructor
+    promiseConstructor?: PromiseConstructor,
+    yamlSettings?: SettingsState
   ) {
     super(requestService, contextService, promiseConstructor);
     this.customSchemaProvider = undefined;
     this.requestService = requestService;
     this.schemaPriorityMapping = new Map();
+    this.yamlSettings = yamlSettings;
   }
 
   registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider): void {
@@ -416,6 +421,14 @@ export class YAMLSchemaService extends JSONSchemaService {
     if (modelineSchema) {
       return resolveSchemaForResource([modelineSchema]);
     }
+
+    if (this.yamlSettings && this.yamlSettings.autoDetectKubernetesSchema) {
+      const kubeSchema = autoDetectKubernetesSchemaFromDocument(doc);
+      if (kubeSchema) {
+        return resolveSchemaForResource([kubeSchema]);
+      }
+    }
+
     if (this.customSchemaProvider) {
       return this.customSchemaProvider(resource)
         .then((schemaUri) => {
