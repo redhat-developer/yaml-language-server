@@ -1,3 +1,16 @@
+### 1.18.0
+- Feat: Do not suggest propertyNames if doNotSuggest is true [#1045](https://github.com/redhat-developer/yaml-language-server/pull/1045)
+- Feat: Exclude not suggest properties from possible properties error [#1051](https://github.com/redhat-developer/yaml-language-server/pull/1051)
+- Feat: Fix enum values to be unique [#1028](https://github.com/redhat-developer/yaml-language-server/pull/1028)
+- Fix: URL-encoded characters in $ref paths break schema resolution [#1082](https://github.com/redhat-developer/vscode-yaml/issues/1082)
+- Fix: Tests fail with Node.JS 23.7.x [#1018](https://github.com/redhat-developer/yaml-language-server/issues/1018)
+- Fix: Autocompletion problem when value is null inside anyOf object [#684](https://github.com/redhat-developer/yaml-language-server/issues/684)
+- Fix: Enum strings YES / NO are converted to boolean incorrectly [#1036](https://github.com/redhat-developer/yaml-language-server/issues/1036)
+- Fix: Autocompletion with escape sequence chars [#1040](https://github.com/redhat-developer/yaml-language-server/pull/1040)
+- Fix: multipleOf does not work for floats [#985](https://github.com/redhat-developer/yaml-language-server/issues/985)
+
+Thanks to [Petr Spacek](https://github.com/p-spacek), [Kosta](https://github.com/Kosta-Github) and [Willem Jan](https://github.com/Willem-J-an) for your contributions.
+
 ### 1.17.0
 - Feat: Supported docker arm64 image [#1027](https://github.com/redhat-developer/yaml-language-server/pull/1027)
 - Fix: Reverted ajv-draft04 as it not support HTTPS [#1026](https://github.com/redhat-developer/yaml-language-server/pull/1026)
