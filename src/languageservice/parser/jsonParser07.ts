@@ -884,6 +884,7 @@ function validate(
             message: 'Must match property: `' + mustMatch + '`', // with values: ' + values.map((value) => '`' + value + '`').join(', '),
             source: getSchemaSource(schema, originalSchema),
             schemaUri: getSchemaUri(schema, originalSchema),
+            problemArgs: [],
             // data: { values }, // not reliable problem with `list: anyOf: []`
           });
           validationResult.enumValueMatch = false;
