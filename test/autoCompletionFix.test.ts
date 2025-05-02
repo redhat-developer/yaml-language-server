@@ -759,6 +759,157 @@ objB:
       expect(completion.items[0].label).to.be.equal('prop');
       expect(completion.items[0].insertText).to.be.equal('prop: ${1|const value,null|}');
     });
+    it('should take all sub-schemas when value has not been set (cursor in the middle of the empty space)', async () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              prop: { type: 'null' },
+            },
+          },
+          {
+            properties: {
+              prop: { const: 'const value' },
+            },
+          },
+          {
+            properties: {
+              prop: { const: 5 },
+            },
+          },
+        ],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'prop: | | ';
+      const completion = await parseCaret(content);
+      expect(completion.items.map((i) => i.label)).to.be.deep.eq(['const value', '5', 'null']);
+    });
+    it('should take only null sub-schema when value is "null"', async () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              prop: { type: 'null' },
+            },
+          },
+          {
+            properties: {
+              prop: { const: 'const value' },
+            },
+          },
+        ],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'prop: null';
+      const completion = await parseSetup(content, 0, content.length);
+      expect(completion.items.map((i) => i.label)).to.be.deep.eq(['null']);
+    });
+    it('should take only one sub-schema because first sub-schema does not match', async () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              prop: { const: 'const value' },
+            },
+          },
+          {
+            properties: {
+              prop: { const: 'const value2' },
+            },
+          },
+        ],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'prop: const value2';
+      const completion = await parseSetup(content, 0, content.length);
+      expect(completion.items.map((i) => i.label)).to.be.deep.eq(['const value2']);
+    });
+    it('should match only second sub-schema because the first one does not match', async () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              prop: {
+                const: 'typeA',
+              },
+              propA: {},
+            },
+          },
+          {
+            properties: {
+              prop: {
+                const: 'typeB',
+              },
+              propB: {},
+            },
+          },
+        ],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'prop: typeB\n|\n|';
+      const completion = await parseCaret(content);
+      expect(completion.items.map((i) => i.label)).to.be.deep.eq(['propB']);
+    });
+    it('should suggest from all sub-schemas even if nodes properties match better other schema', async () => {
+      // this is a case when we have a better match in the second schema but we should still suggest from the first one
+      // it works because `prop: ` will evaluate to `enumValueMatch = true` for both schemas
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              prop: {
+                const: 'typeA',
+              },
+            },
+          },
+          {
+            properties: {
+              prop: {
+                const: 'typeB',
+              },
+              propB: {},
+            },
+          },
+        ],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'prop: |\n|\npropB: B';
+      const completion = await parseCaret(content);
+      expect(completion.items.map((i) => i.label)).to.be.deep.eq(['typeA', 'typeB'], 'with null value');
+
+      const content2 = 'prop: typ|\n|\npropB: B';
+      const completion2 = await parseCaret(content2);
+      expect(completion2.items.map((i) => i.label)).to.be.deep.eq(['typeA', 'typeB'], 'with prefix value');
+    });
+
+    it('should suggest both sub-schemas for anyof array', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          entities: {
+            type: 'array',
+            items: {
+              anyOf: [
+                {
+                  enum: ['enum1'],
+                },
+                {
+                  type: 'object',
+                  title: 'entity object',
+                  properties: {
+                    entityProp: { type: 'string' },
+                  },
+                  required: ['entityProp'],
+                },
+              ],
+            },
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'entities:\n  - |\n|';
+      const completion = await parseCaret(content);
+      expect(completion.items.map((i) => i.label)).to.be.deep.eq(['enum1', 'entityProp', 'entity object']);
+    });
   });
 
   describe('extra space after cursor', () => {
@@ -1329,6 +1480,22 @@ test1:
     expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
     expect(completion.items[0].documentation).to.be.equal('Property Description');
   });
+  it('should not suggest propertyNames with doNotSuggest', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: true,
+      propertyNames: {
+        title: 'property',
+        doNotSuggest: true,
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = '';
+    const completion = await parseSetup(content, 0, content.length);
+
+    expect(completion.items.length).equal(0);
+  });
+
   it('should suggest enum based on type', async () => {
     const schema: JSONSchema = {
       type: 'object',
