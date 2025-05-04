@@ -153,7 +153,7 @@ describe('Settings Handlers Tests', () => {
       workspaceStub.getConfiguration.resolves([{}, {}, {}, {}, { associations: { '*.bu': 'yaml' } }]);
 
       await settingsHandler.pullConfiguration();
-      expect(settingsState.fileExtensions).to.include('*.bu');
+      expect(settingsState.fileExtensions).to.include('.bu');
       expect(settingsState.fileExtensions).to.include('.yml');
       expect(settingsState.fileExtensions).to.include('.yaml');
     });
@@ -166,7 +166,7 @@ describe('Settings Handlers Tests', () => {
           "name": "Butane config schema",
           "description": "Schema to validate butane files for Fedora CoreOS",
           "fileMatch": [
-            "*.bu"
+            "test.bu"
           ],
           "url": "https://raw.githubusercontent.com/Relativ-IT/Butane-Schemas/Release/Butane-Schema.json"
         }]}`,
@@ -179,13 +179,23 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      workspaceStub.getConfiguration.resolves([
+        {},
+        {},
+        {},
+        {},
+        {
+          associations: {
+            '*.bu': 'yaml',
+          },
+        },
+      ]);
       const configureSpy = sinon.stub(languageService, 'configure');
       await settingsHandler.pullConfiguration();
       configureSpy.restore();
       expect(settingsState.schemaStoreSettings).deep.include({
         uri: 'https://raw.githubusercontent.com/Relativ-IT/Butane-Schemas/Release/Butane-Schema.json',
-        fileMatch: ['*.bu'],
+        fileMatch: ['test.bu'],
         priority: SchemaPriority.SchemaStore,
         name: 'Butane config schema',
         description: 'Schema to validate butane files for Fedora CoreOS',
