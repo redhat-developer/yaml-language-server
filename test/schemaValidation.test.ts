@@ -1890,6 +1890,24 @@ obj:
     });
   });
 
+  describe('Skip json schema validation with enabled skipSchemaValidation', () => {
+    before(() => {
+      languageSettingsSetup.languageSettings.skipSchemaValidation = true;
+      languageService.configure(languageSettingsSetup.languageSettings);
+    });
+    after(() => {
+      languageSettingsSetup.languageSettings.skipSchemaValidation = false;
+    });
+    it('should handle not valid schema object', async () => {
+      const schema = 'Foo';
+      schemaProvider.addSchema(SCHEMA_ID, schema as JSONSchema);
+      const content = `foo: bar`;
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+      expect(telemetry.messages).to.be.empty;
+    });
+  });
+
   describe('Enum tests', () => {
     afterEach(() => {
       schemaProvider.deleteSchema(SCHEMA_ID);
