@@ -107,6 +107,10 @@ export class SettingsHandler {
           this.yamlSettings.yamlFormatterSettings.bracketSpacing = settings.yaml.format.bracketSpacing;
         }
 
+        if (settings.yaml.format.trailingComma !== undefined) {
+          this.yamlSettings.yamlFormatterSettings.trailingComma = settings.yaml.format.trailingComma;
+        }
+
         if (settings.yaml.format.enable !== undefined) {
           this.yamlSettings.yamlFormatterSettings.enable = settings.yaml.format.enable;
         }
