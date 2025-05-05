@@ -2151,4 +2151,66 @@ obj:
     result = await parseSetup(content);
     expect(result.length).to.eq(0);
   });
+
+  it('draft-04 schema', async () => {
+    const schema: JSONSchema = {
+      $schema: 'http://json-schema.org/draft-04/schema#',
+      type: 'object',
+      properties: {
+        myProperty: {
+          $ref: '#/definitions/Interface%3Ctype%3E',
+        },
+      },
+      definitions: {
+        'Interface<type>': {
+          type: 'object',
+          properties: {
+            foo: {
+              type: 'string',
+            },
+            multipleOf: {
+              type: 'number',
+              minimum: 0,
+              exclusiveMinimum: true,
+            },
+          },
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = `myProperty:\n  foo: bar\n  multipleOf: 1`;
+    const result = await parseSetup(content);
+    assert.equal(result.length, 0);
+  });
+
+  it('draft-04 schema with https in metaschema URI', async () => {
+    const schema: JSONSchema = {
+      $schema: 'https://json-schema.org/draft-04/schema#',
+      type: 'object',
+      properties: {
+        myProperty: {
+          $ref: '#/definitions/Interface%3Ctype%3E',
+        },
+      },
+      definitions: {
+        'Interface<type>': {
+          type: 'object',
+          properties: {
+            foo: {
+              type: 'string',
+            },
+            multipleOf: {
+              type: 'number',
+              minimum: 0,
+              exclusiveMinimum: true,
+            },
+          },
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = `myProperty:\n  foo: bar\n  multipleOf: 1`;
+    const result = await parseSetup(content);
+    assert.equal(result.length, 0);
+  });
 });
