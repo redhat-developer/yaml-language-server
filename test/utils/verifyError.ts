@@ -69,7 +69,7 @@ export function createUnusedAnchorDiagnostic(
     startCharacter,
     endLine,
     endCharacter,
-    DiagnosticSeverity.Hint,
+    DiagnosticSeverity.Information,
     'YAML'
   );
   diagnostic.tags = [DiagnosticTag.Unnecessary];

@@ -16,6 +16,7 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
     const result = [];
     const anchors = new Set<Scalar | YAMLMap | YAMLSeq>();
     const usedAnchors = new Set<Node>();
+    const unIdentifiedAlias = new Set<Node>();
     const anchorParent = new Map<Scalar | YAMLMap | YAMLSeq, Node | Pair>();
 
     visit(yamlDoc.internalDocument, (key, node, path) => {
@@ -27,7 +28,11 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
         anchorParent.set(node, path[path.length - 1] as Node);
       }
       if (isAlias(node)) {
-        usedAnchors.add(node.resolve(yamlDoc.internalDocument));
+        if (!node.resolve(yamlDoc.internalDocument)) {
+          unIdentifiedAlias.add(node);
+        } else {
+          usedAnchors.add(node.resolve(yamlDoc.internalDocument));
+        }
       }
     });
 
@@ -39,13 +44,29 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
             document.positionAt(aToken.offset),
             document.positionAt(aToken.offset + aToken.source.length)
           );
-          const warningDiagnostic = Diagnostic.create(range, `Unused anchor "${aToken.source}"`, DiagnosticSeverity.Hint, 0);
+          const warningDiagnostic = Diagnostic.create(
+            range,
+            `Unused anchor "${aToken.source}"`,
+            DiagnosticSeverity.Information,
+            0
+          );
           warningDiagnostic.tags = [DiagnosticTag.Unnecessary];
           result.push(warningDiagnostic);
         }
       }
     }
 
+    unIdentifiedAlias.forEach((node) => {
+      const nodeRange = node.range;
+      if (nodeRange) {
+        const startOffset = nodeRange[0];
+        const endOffset = nodeRange[1];
+        const range = Range.create(document.positionAt(startOffset), document.positionAt(endOffset));
+        const warningDiagnostic = Diagnostic.create(range, `Unresolved alias "${node}"`, DiagnosticSeverity.Information, 0);
+        warningDiagnostic.tags = [DiagnosticTag.Unnecessary];
+        result.push(warningDiagnostic);
+      }
+    });
     return result;
   }
   private getAnchorNode(parentNode: YamlNode, node: Node): CST.SourceToken | undefined {
