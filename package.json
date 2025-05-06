@@ -26,7 +26,7 @@
     "url": "https://github.com/redhat-developer/yaml-language-server.git"
   },
   "dependencies": {
-    "ajv": "^8.11.0",
+    "ajv": "^8.17.1",
     "lodash": "4.17.21",
     "prettier": "^3.5.0",
     "request-light": "^0.5.7",
