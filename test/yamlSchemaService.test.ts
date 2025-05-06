@@ -33,7 +33,8 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       service.getSchemaForResource('', yamlDock.documents[0]);
 
-      expect(requestServiceMock).calledOnceWith('http://json-schema.org/draft-07/schema#');
+      // vscode-json-languageserver converts the http to https for all json schema URIs
+      expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
     });
 
     it('should handle inline schema https url', () => {

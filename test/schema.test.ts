@@ -337,7 +337,7 @@ describe('JSON Schema', () => {
       },
     };
 
-    service.registerExternalSchema(id, ['*.json'], schema);
+    service.registerExternalSchema({ uri: id, fileMatch: ['*.json'], schema });
 
     service
       .getSchemaForResource('test.json', undefined)
@@ -373,7 +373,7 @@ describe('JSON Schema', () => {
       },
     };
 
-    service.registerExternalSchema(id, ['*.json'], schema);
+    service.registerExternalSchema({ uri: id, fileMatch: ['*.json'], schema });
 
     const result = await service.getSchemaForResource('test.json', undefined);
 
@@ -419,11 +419,15 @@ describe('JSON Schema', () => {
   it('Schema with non uri registers correctly', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     const non_uri = 'non_uri';
-    service.registerExternalSchema(non_uri, ['*.yml', '*.yaml'], {
-      properties: {
-        test_node: {
-          description: 'my test_node description',
-          enum: ['test 1', 'test 2'],
+    service.registerExternalSchema({
+      uri: non_uri,
+      fileMatch: ['*.yml', '*.yaml'],
+      schema: {
+        properties: {
+          test_node: {
+            description: 'my test_node description',
+            enum: ['test 1', 'test 2'],
+          },
         },
       },
     });
@@ -529,7 +533,7 @@ describe('JSON Schema', () => {
 
   it('Modifying schema works with kubernetes resolution', async () => {
     const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
-    service.registerExternalSchema(KUBERNETES_SCHEMA_URL);
+    service.registerExternalSchema({ uri: KUBERNETES_SCHEMA_URL });
 
     await service.addContent({
       action: MODIFICATION_ACTIONS.add,
@@ -545,7 +549,7 @@ describe('JSON Schema', () => {
 
   it('Deleting schema works with Kubernetes resolution', async () => {
     const service = new SchemaService.YAMLSchemaService(schemaRequestServiceForURL, workspaceContext);
-    service.registerExternalSchema(KUBERNETES_SCHEMA_URL);
+    service.registerExternalSchema({ uri: KUBERNETES_SCHEMA_URL });
 
     await service.deleteContent({
       action: MODIFICATION_ACTIONS.delete,
