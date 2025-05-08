@@ -69,6 +69,7 @@ export class SettingsState {
     bracketSpacing: true,
     proseWrap: 'preserve',
     printWidth: 80,
+    trailingComma: true,
     enable: true,
   } as CustomFormatterOptions;
   yamlShouldHover = true;

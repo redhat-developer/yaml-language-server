@@ -107,7 +107,7 @@ describe('CodeActions Tests', () => {
   describe('Convert TAB to Spaces', () => {
     it('should add "Convert TAB to Spaces" CodeAction', () => {
       const doc = setupTextDocument('foo:\n\t- bar');
-      const diagnostics = [createExpectedError('Using tabs can lead to unpredictable results', 1, 0, 1, 1, 1, JSON_SCHEMA_LOCAL)];
+      const diagnostics = [createExpectedError('Tabs are not allowed as indentation', 1, 0, 1, 1, 1, JSON_SCHEMA_LOCAL)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
         range: undefined,
@@ -123,7 +123,7 @@ describe('CodeActions Tests', () => {
 
     it('should support current indentation chars settings', () => {
       const doc = setupTextDocument('foo:\n\t- bar');
-      const diagnostics = [createExpectedError('Using tabs can lead to unpredictable results', 1, 0, 1, 1, 1, JSON_SCHEMA_LOCAL)];
+      const diagnostics = [createExpectedError('Tabs are not allowed as indentation', 1, 0, 1, 1, 1, JSON_SCHEMA_LOCAL)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
         range: undefined,
@@ -139,7 +139,7 @@ describe('CodeActions Tests', () => {
 
     it('should provide "Convert all Tabs to Spaces"', () => {
       const doc = setupTextDocument('foo:\n\t\t\t- bar\n\t\t');
-      const diagnostics = [createExpectedError('Using tabs can lead to unpredictable results', 1, 0, 1, 3, 1, JSON_SCHEMA_LOCAL)];
+      const diagnostics = [createExpectedError('Tabs are not allowed as indentation', 1, 0, 1, 3, 1, JSON_SCHEMA_LOCAL)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
         range: undefined,
@@ -188,8 +188,8 @@ describe('CodeActions Tests', () => {
 
   describe('Convert to Block Style', () => {
     it(' should generate action to convert flow map to block map ', () => {
-      const yaml = `host: phl-42  
-datacenter: {location: canada , cab: 15}  
+      const yaml = `host: phl-42
+datacenter: {location: canada , cab: 15}
 animals: [dog , cat , mouse]  `;
       const doc = setupTextDocument(yaml);
       const diagnostics = [

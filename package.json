@@ -26,9 +26,9 @@
     "url": "https://github.com/redhat-developer/yaml-language-server.git"
   },
   "dependencies": {
-    "ajv": "^8.11.0",
+    "ajv": "^8.17.1",
     "lodash": "4.17.21",
-    "prettier": "^3.0.0",
+    "prettier": "^3.5.0",
     "request-light": "^0.5.7",
     "vscode-json-languageservice": "4.1.8",
     "vscode-languageserver": "^9.0.0",
@@ -36,7 +36,7 @@
     "vscode-languageserver-types": "^3.16.0",
     "vscode-nls": "^5.0.0",
     "vscode-uri": "^3.0.2",
-    "yaml": "2.2.2"
+    "yaml": "2.7.1"
   },
   "devDependencies": {
     "@microsoft/eslint-formatter-sarif": "3.0.0",

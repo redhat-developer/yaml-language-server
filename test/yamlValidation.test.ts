@@ -53,6 +53,12 @@ describe('YAML Validation Tests', () => {
       expect(result.length).to.be.equal(1);
       expect(result[0]).deep.equal(createExpectedError('Tabs are not allowed as indentation', 1, 1, 1, 10));
     });
+
+    it('Should allow proper space indentation followed by tab', async () => {
+      const yaml = 'foo:\n  \tbar';
+      const result = await parseSetup(yaml);
+      expect(result).to.be.empty;
+    });
   });
 
   describe('Unused anchors diagnostics', () => {
