@@ -7,7 +7,7 @@ import { setupTextDocument, TEST_URI } from './utils/testHelper';
 import { expect } from 'chai';
 import { YamlDefinition } from '../src/languageservice/services/yamlDefinition';
 import { LocationLink, Position, Range } from 'vscode-languageserver-types';
-import { Telemetry } from '../src/languageservice/telemetry';
+import { Telemetry } from '../src/languageservice/yamlLanguageService';
 
 describe('YAML Definition', () => {
   it('should not provide definition for non anchor node', () => {
