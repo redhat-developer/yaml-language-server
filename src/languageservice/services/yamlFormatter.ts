@@ -7,7 +7,8 @@
 import { Range, Position, TextEdit, FormattingOptions } from 'vscode-languageserver-types';
 import { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
 import { Options } from 'prettier';
-import * as parser from 'prettier/plugins/yaml';
+import * as yamlPlugin from 'prettier/plugins/yaml';
+import * as estreePlugin from 'prettier/plugins/estree';
 import { format } from 'prettier/standalone';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
@@ -33,7 +34,7 @@ export class YAMLFormatter {
 
       const prettierOptions: Options = {
         parser: 'yaml',
-        plugins: [parser],
+        plugins: [yamlPlugin, estreePlugin],
 
         // --- FormattingOptions ---
         tabWidth: (options.tabWidth as number) || options.tabSize,
@@ -44,6 +45,7 @@ export class YAMLFormatter {
         // 'preserve' is the default for Options.proseWrap. See also server.ts
         proseWrap: 'always' === options.proseWrap ? 'always' : 'never' === options.proseWrap ? 'never' : 'preserve',
         printWidth: options.printWidth,
+        trailingComma: options.trailingComma === false ? 'none' : 'all',
       };
 
       const formatted = await format(text, prettierOptions);

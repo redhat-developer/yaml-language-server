@@ -78,8 +78,8 @@ export class YAMLServerInit {
     );
     this.yamlSettings.clientDynamicRegisterSupport = !!(
       this.yamlSettings.capabilities.textDocument &&
-      this.yamlSettings.capabilities.textDocument.rangeFormatting &&
-      this.yamlSettings.capabilities.textDocument.rangeFormatting.dynamicRegistration
+      this.yamlSettings.capabilities.textDocument.formatting &&
+      this.yamlSettings.capabilities.textDocument.formatting.dynamicRegistration
     );
     this.yamlSettings.hasWorkspaceFolderCapability =
       this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.workspaceFolders;
@@ -102,7 +102,7 @@ export class YAMLServerInit {
         completionProvider: { resolveProvider: false },
         hoverProvider: true,
         documentSymbolProvider: true,
-        documentFormattingProvider: false,
+        documentFormattingProvider: !this.yamlSettings.clientDynamicRegisterSupport,
         documentOnTypeFormattingProvider: {
           firstTriggerCharacter: '\n',
         },

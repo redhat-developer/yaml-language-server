@@ -97,7 +97,7 @@ export class YamlCodeActions {
     const textBuff = new TextBuffer(document);
     const processedLine: number[] = [];
     for (const diag of diagnostics) {
-      if (diag.message === 'Using tabs can lead to unpredictable results') {
+      if (diag.message === 'Tabs are not allowed as indentation') {
         if (processedLine.includes(diag.range.start.line)) {
           continue;
         }
