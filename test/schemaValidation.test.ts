@@ -2094,4 +2094,20 @@ obj:
     const result = await parseSetup(content);
     assert.equal(result.length, 0);
   });
+
+  it('value should match as per schema const on boolean', async () => {
+    schemaProvider.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        prop: {
+          const: true,
+          type: 'boolean',
+        },
+      },
+    });
+    const content = `prop: false`;
+    const result = await parseSetup(content);
+    expect(result.length).to.eq(1);
+    expect(result[0].message).to.eq('Value must be true.');
+  });
 });
