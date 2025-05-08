@@ -2105,9 +2105,14 @@ obj:
         },
       },
     });
-    const content = `prop: false`;
-    const result = await parseSetup(content);
+
+    let content = `prop: false`;
+    let result = await parseSetup(content);
     expect(result.length).to.eq(1);
     expect(result[0].message).to.eq('Value must be true.');
+
+    content = `prop: true`;
+    result = await parseSetup(content);
+    expect(result.length).to.eq(0);
   });
 });
