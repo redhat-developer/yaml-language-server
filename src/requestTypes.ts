@@ -80,6 +80,10 @@ export namespace RevalidateRequest {
   export const type: RequestType<string, unknown, unknown> = new RequestType('custom/revalidate');
 }
 
+export namespace GetDiagnosticRequest {
+  export const type: RequestType<string, unknown, unknown> = new RequestType('custom/getDiagnostic');
+}
+
 export namespace RevalidateBySchemaRequest {
   export const type: RequestType<{ yaml: string; schema: unknown }, unknown, unknown> = new RequestType(
     'custom/revalidateBySchema'

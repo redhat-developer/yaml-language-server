@@ -13,11 +13,13 @@ import {
 import { LanguageService } from '../../languageservice/yamlLanguageService';
 import {
   CompletionYamlRequest,
+  GetDiagnosticRequest,
   HoverDetailRequest,
   HoverYamlRequest,
   RevalidateBySchemaRequest,
   RevalidateRequest,
   SchemaModificationNotification,
+  VSCodeContentRequest,
 } from '../../requestTypes';
 import { SettingsState } from '../../yamlSettings';
 import { ValidationHandler } from './validationHandlers';
@@ -57,6 +59,25 @@ export class RequestHandlers {
         console.log('Revalidate: No document found for uri: ' + uri);
       }
       await this.validationHandler.validate(document);
+    });
+
+    /**
+     * Received request from the client that the diagnostic is needed.
+     * If the file hasn't been opened yet, we need to get the content from the client.
+     * It's used fot the builder solution diagnostic.
+     */
+    this.connection.onRequest(GetDiagnosticRequest.type, async (uri: string) => {
+      let document = this.yamlSettings.documents.get(uri);
+      if (!document) {
+        const content = await this.connection.sendRequest(VSCodeContentRequest.type, uri);
+        if (typeof content !== 'string') {
+          console.log('Revalidate: No content found for uri: ' + uri);
+          return;
+        }
+        document = TextDocument.create(uri, 'yaml', 0, content);
+      }
+      const result = await this.languageService.doValidation(document, false);
+      return result;
     });
 
     /**
