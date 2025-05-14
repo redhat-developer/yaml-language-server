@@ -634,7 +634,12 @@ export class YAMLSchemaService extends JSONSchemaService {
     const requestService = this.requestService;
     return super.loadSchema(schemaUri).then((unresolvedJsonSchema: UnresolvedSchema) => {
       // If json-language-server failed to parse the schema, attempt to parse it as YAML instead.
-      if (unresolvedJsonSchema.errors && unresolvedJsonSchema.schema === undefined) {
+      // If the YAML file starts with %YAML 1.x or contains a comment with a number the schema will
+      // contain a number instead of being undefined, so we need to check for that too.
+      if (
+        unresolvedJsonSchema.errors &&
+        (unresolvedJsonSchema.schema === undefined || typeof unresolvedJsonSchema.schema === 'number')
+      ) {
         return requestService(schemaUri).then(
           (content) => {
             if (!content) {
