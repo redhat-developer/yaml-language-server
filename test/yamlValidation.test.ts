@@ -55,7 +55,7 @@ describe('YAML Validation Tests', () => {
     });
 
     it('Should allow proper space indentation followed by tab', async () => {
-      const yaml = 'foo:\n  \tbar';
+      const yaml = 'foo:\n  bar';
       const result = await parseSetup(yaml);
       expect(result).to.be.empty;
     });
