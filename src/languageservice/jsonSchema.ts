@@ -49,6 +49,7 @@ export interface JSONSchema {
   not?: JSONSchemaRef;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   enum?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   enumMarkdown?: any[];
   format?: string;
 
