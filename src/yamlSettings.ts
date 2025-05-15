@@ -32,6 +32,7 @@ export interface Settings {
     keyOrdering: boolean;
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
+    shouldIgnoreModelineSchema: boolean;
   };
   http: {
     proxy: string;
@@ -112,6 +113,7 @@ export class SettingsState {
   useSchemaSelectionRequests = false;
   hasWsChangeWatchedFileDynamicRegistration = false;
   fileExtensions: string[] = ['.yml', '.yaml'];
+  shouldIgnoreModelineSchema = false;
 }
 
 export class TextDocumentTestManager extends TextDocuments<TextDocument> {

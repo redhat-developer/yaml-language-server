@@ -108,6 +108,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   private filePatternAssociations: JSONSchemaService.FilePatternAssociation[];
   private contextService: WorkspaceContextService;
   private requestService: SchemaRequestService;
+  private shouldIgnoreModelineSchema: boolean | undefined;
   public schemaPriorityMapping: Map<string, Set<SchemaPriority>>;
 
   private schemaUriToNameAndDescription = new Map<string, SchemaStoreSchema>();
@@ -115,12 +116,14 @@ export class YAMLSchemaService extends JSONSchemaService {
   constructor(
     requestService: SchemaRequestService,
     contextService?: WorkspaceContextService,
-    promiseConstructor?: PromiseConstructor
+    promiseConstructor?: PromiseConstructor,
+    shouldIgnoreModelineSchema?: boolean
   ) {
     super(requestService, contextService, promiseConstructor);
     this.customSchemaProvider = undefined;
     this.requestService = requestService;
     this.schemaPriorityMapping = new Map();
+    this.shouldIgnoreModelineSchema = shouldIgnoreModelineSchema;
   }
 
   registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider): void {
@@ -412,7 +415,7 @@ export class YAMLSchemaService extends JSONSchemaService {
 
       return Promise.resolve(null);
     };
-    const modelineSchema = resolveModelineSchema();
+    const modelineSchema = !this.shouldIgnoreModelineSchema && resolveModelineSchema();
     if (modelineSchema) {
       return resolveSchemaForResource([modelineSchema]);
     }
