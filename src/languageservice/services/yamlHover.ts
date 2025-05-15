@@ -12,7 +12,7 @@ import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { IApplicableSchema } from '../parser/jsonParser07';
+import { getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
 import { JSONSchema } from '../jsonSchema';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
@@ -114,14 +114,17 @@ export class YAMLHover {
         let markdownEnumDescriptions: string[] = [];
         const markdownExamples: string[] = [];
         const markdownEnums: markdownEnum[] = [];
-
+        let enumIdx: number | undefined = undefined;
         matchingSchemas.every((s) => {
           if ((s.node === node || (node.type === 'property' && node.valueNode === s.node)) && !s.inverted && s.schema) {
             title = title || s.schema.title || s.schema.closestTitle;
             markdownDescription = markdownDescription || s.schema.markdownDescription || this.toMarkdown(s.schema.description);
             if (s.schema.enum) {
+              enumIdx = s.schema.enum.indexOf(getNodeValue(node));
               if (s.schema.markdownEnumDescriptions) {
                 markdownEnumDescriptions = s.schema.markdownEnumDescriptions;
+              } else if (s.schema.enumMarkdown) {
+                markdownEnumDescriptions = s.schema.enumMarkdown;
               } else if (s.schema.enumDescriptions) {
                 markdownEnumDescriptions = s.schema.enumDescriptions.map(this.toMarkdown, this);
               } else {
@@ -174,6 +177,9 @@ export class YAMLHover {
         if (markdownEnums.length !== 0) {
           result = ensureLineBreak(result);
           result += 'Allowed Values:\n\n';
+          if (enumIdx) {
+            markdownEnums.unshift(markdownEnums.splice(enumIdx, 1)[0]);
+          }
           markdownEnums.forEach((me) => {
             if (me.description) {
               result += `* \`${toMarkdownCodeBlock(me.value)}\`: ${me.description}\n`;

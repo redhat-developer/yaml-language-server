@@ -617,9 +617,9 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
 
 Allowed Values:
 
+* \`non\`
 * \`cat\`
 * \`dog\`: Canis familiaris
-* \`non\`
 * \`bird\`
 * \`fish\`: Special fish
 
