@@ -5,7 +5,7 @@
 import * as assert from 'assert';
 import { expect } from 'chai';
 import { ArrayASTNode, ObjectASTNode, PropertyASTNode } from '../src/languageservice/jsonASTTypes';
-import { parse } from './../src/languageservice/parser/yamlParser07';
+import { parse, YAMLDocument } from './../src/languageservice/parser/yamlParser07';
 import { aliasDepth } from '../src/languageservice/parser/ast-converter';
 
 describe('YAML parser', () => {
@@ -248,8 +248,10 @@ describe('YAML parser', () => {
     it('parse aliases up to a depth', () => {
       // If maxRefCount is set to 1, it will only resolve one layer of aliases, which means
       // `b` below will inherit `a`, but `c` will not inherit `a`.
-      aliasDepth.maxRefCount = 1;
-      const parsedDocument = parse(`
+      let parsedDocument: YAMLDocument;
+      try {
+        aliasDepth.maxRefCount = 1;
+        parsedDocument = parse(`
 a: &a
   foo: "web"
 b: &b
@@ -257,7 +259,9 @@ b: &b
 c: &c
   <<: *b
 `);
-      aliasDepth.maxRefCount = 1000;
+      } finally {
+        aliasDepth.maxRefCount = 1000;
+      }
 
       const anode: ObjectASTNode = (parsedDocument.documents[0].root.children[0] as PropertyASTNode).valueNode as ObjectASTNode;
       const aval = anode.properties[0].valueNode;
@@ -278,8 +282,10 @@ c: &c
     it('parse aliases up to a depth for multiple objects', () => {
       // In the below configuration, `c` will not inherit `a` because of depth issues
       // but the following object `o` will still resolve correctly.
-      aliasDepth.maxRefCount = 1;
-      const parsedDocument = parse(`
+      let parsedDocument: YAMLDocument;
+      try {
+        aliasDepth.maxRefCount = 1;
+        parsedDocument = parse(`
 a: &a
   foo: "web"
 b: &b
@@ -290,7 +296,9 @@ c: &c
 o: &o
   <<: *a
 `);
-      aliasDepth.maxRefCount = 1000;
+      } finally {
+        aliasDepth.maxRefCount = 1000;
+      }
 
       const onode: ObjectASTNode = (parsedDocument.documents[0].root.children[3] as PropertyASTNode).valueNode as ObjectASTNode;
       const ovalprops: PropertyASTNode = (onode.properties[0].valueNode as ObjectASTNode).properties[0];
