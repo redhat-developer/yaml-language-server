@@ -32,6 +32,7 @@ export interface Settings {
     keyOrdering: boolean;
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
+    autoDetectKubernetesSchema: boolean;
   };
   http: {
     proxy: string;
@@ -90,6 +91,7 @@ export class SettingsState {
   };
   keyOrdering = false;
   maxItemsComputed = 5000;
+  autoDetectKubernetesSchema = false;
 
   // File validation helpers
   pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
