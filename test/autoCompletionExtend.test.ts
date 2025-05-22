@@ -652,12 +652,24 @@ describe('Auto Completion Tests Extended', () => {
                 required: ['type'],
               },
               {
-                type: 'object',
-                properties: {
-                  type: { type: 'string', const: 'component.list-item' },
-                  options: { properties: { itemProp: { type: 'string' } } },
-                },
-                required: ['type'],
+                anyOf: [
+                  {
+                    type: 'object',
+                    properties: {
+                      type: { type: 'string', const: 'component.avatar' },
+                      options: { properties: { avatarProp: { type: 'string' } } },
+                    },
+                    required: ['type', 'options'],
+                  },
+                  {
+                    type: 'object',
+                    properties: {
+                      type: { type: 'string', const: 'component.list-item' },
+                      options: { properties: { itemProp: { type: 'string' } } },
+                    },
+                    required: ['type'],
+                  },
+                ],
               },
             ],
           },
@@ -676,14 +688,24 @@ describe('Auto Completion Tests Extended', () => {
         const content = 'type: component.|\n|';
         const completion = await parseCaret(content);
 
-        expect(completion.items.map((i) => i.label)).deep.equal(['component.list', 'component.list-item', 'component.section']);
+        expect(completion.items.map((i) => i.label)).deep.equal([
+          'component.list',
+          'component.avatar',
+          'component.list-item',
+          'component.section',
+        ]);
       });
       it('Should suggest all types - when nested - different order', async () => {
         schemaProvider.addSchema(SCHEMA_ID, { anyOf: [schema.anyOf[1], schema.anyOf[0]] });
         const content = 'type: component.|\n|';
         const completion = await parseCaret(content);
 
-        expect(completion.items.map((i) => i.label)).deep.equal(['component.section', 'component.list', 'component.list-item']);
+        expect(completion.items.map((i) => i.label)).deep.equal([
+          'component.section',
+          'component.list',
+          'component.avatar',
+          'component.list-item',
+        ]);
       });
     });
   });

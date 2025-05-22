@@ -781,18 +781,22 @@ function validate(
       } = null;
 
       // flatten nested anyOf/oneOf schemas
-      // fix nested types problem (jig.default children - type:)
-      let alternativesFiltered = alternatives.reduce((acc, subSchemaRef) => {
-        const subSchema = asSchema(subSchemaRef);
-        if (!maxOneMatch && subSchema.anyOf) {
-          acc.push(...subSchema.anyOf);
-        } else if (maxOneMatch && subSchema.oneOf) {
-          acc.push(...subSchema.oneOf);
-        } else {
-          acc.push(subSchemaRef);
+      const flatSchema = (subSchemas: JSONSchemaRef[], maxOneMatch: boolean): JSONSchemaRef[] => {
+        const flatSchemas: JSONSchemaRef[] = [];
+        for (const subSchemaRef of subSchemas) {
+          const subSchema = asSchema(subSchemaRef);
+          if (maxOneMatch && subSchema.oneOf) {
+            flatSchemas.push(...flatSchema(subSchema.oneOf, maxOneMatch));
+          } else if (!maxOneMatch && subSchema.anyOf) {
+            flatSchemas.push(...flatSchema(subSchema.anyOf, maxOneMatch));
+          } else {
+            flatSchemas.push(subSchemaRef);
+          }
         }
-        return acc;
-      }, []);
+        return flatSchemas;
+      };
+      // fix nested types problem (jig.default children - type:)
+      let alternativesFiltered = flatSchema(alternatives, maxOneMatch);
 
       // jigx custom: remove subSchemas if the mustMatchProps (`type`, `provider`) is different
       // another idea is to add some attribute to schema, so type will have `mustMatch` attribute - this could work in general not only for jigx
