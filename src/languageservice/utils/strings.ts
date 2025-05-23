@@ -87,3 +87,18 @@ export function getFirstNonWhitespaceCharacterAfterOffset(str: string, offset: n
   }
   return offset;
 }
+
+export function addIndentationToMultilineString(text: string, firstIndent: string, nextIndent: string): string {
+  let wasFirstLineIndented = false;
+  return text.replace(/^.*$/gm, (match) => {
+    if (!match) {
+      return match;
+    }
+    // Add fistIndent to first line or if the previous line was empty
+    if (!wasFirstLineIndented) {
+      wasFirstLineIndented = true;
+      return firstIndent + match;
+    }
+    return nextIndent + match; // Add indent to other lines
+  });
+}

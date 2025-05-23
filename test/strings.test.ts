@@ -2,7 +2,13 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { startsWith, endsWith, convertSimple2RegExp, safeCreateUnicodeRegExp } from '../src/languageservice/utils/strings';
+import {
+  startsWith,
+  endsWith,
+  convertSimple2RegExp,
+  safeCreateUnicodeRegExp,
+  addIndentationToMultilineString,
+} from '../src/languageservice/utils/strings';
 import * as assert from 'assert';
 import { expect } from 'chai';
 
@@ -105,6 +111,81 @@ describe('String Tests', () => {
       // eslint-disable-next-line prettier/prettier
       const result = safeCreateUnicodeRegExp('^[\\w\\-_]+$');
       expect(result).is.not.undefined;
+    });
+
+    describe('addIndentationToMultilineString', () => {
+      it('should add indentation to a single line string', () => {
+        const text = 'hello';
+        const firstIndent = '  ';
+        const nextIndent = '    ';
+
+        const result = addIndentationToMultilineString(text, firstIndent, nextIndent);
+        assert.equal(result, '  hello');
+      });
+
+      it('should add indentation to a multiline string', () => {
+        const text = 'hello\nworld';
+        const firstIndent = '  ';
+        const nextIndent = '    ';
+
+        const result = addIndentationToMultilineString(text, firstIndent, nextIndent);
+        assert.equal(result, '  hello\n    world');
+      });
+
+      it('should not indent empty string', () => {
+        const text = '';
+        const firstIndent = '  ';
+        const nextIndent = '    ';
+
+        const result = addIndentationToMultilineString(text, firstIndent, nextIndent);
+        assert.equal(result, '');
+      });
+
+      it('should not indent string with only newlines', () => {
+        const text = '\n\n';
+        const firstIndent = '  ';
+        const nextIndent = '    ';
+
+        const result = addIndentationToMultilineString(text, firstIndent, nextIndent);
+        assert.equal(result, '\n\n');
+      });
+      it('should not indent empty lines', () => {
+        const text = '\ntest\n';
+        const firstIndent = '  ';
+        const nextIndent = '  ';
+
+        const result = addIndentationToMultilineString(text, firstIndent, nextIndent);
+        assert.equal(result, '\n  test\n');
+      });
+
+      it('should handle string with multiple lines', () => {
+        const text = 'line1\nline2\nline3';
+        const firstIndent = '  ';
+        const nextIndent = '    ';
+
+        const result = addIndentationToMultilineString(text, firstIndent, nextIndent);
+        assert.equal(result, '  line1\n    line2\n    line3');
+      });
+
+      it('should handle string with multiple lines and tabs', () => {
+        const text = 'line1\nline2\nline3';
+        const firstIndent = '\t';
+        const nextIndent = '		';
+
+        const result = addIndentationToMultilineString(text, firstIndent, nextIndent);
+        assert.equal(result, '	line1\n		line2\n		line3');
+      });
+
+      it('should prepare text for array snippet', () => {
+        const text = `obj:
+  prop1: value1
+  prop2: value2`;
+        const firstIndent = '\n- ';
+        const nextIndent = '  ';
+
+        const result = addIndentationToMultilineString(text, firstIndent, nextIndent);
+        assert.equal(result, '\n- obj:\n    prop1: value1\n    prop2: value2');
+      });
     });
   });
 });
