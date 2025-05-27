@@ -8,6 +8,7 @@ import { isRelativePath, relativeToAbsolutePath } from './paths';
 export const KUBERNETES_SCHEMA_URL =
   'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.1-standalone-strict/all.json';
 export const JSON_SCHEMASTORE_URL = 'https://www.schemastore.org/api/json/catalog.json';
+export const CRD_CATALOG_URL = 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main';
 
 export function checkSchemaURI(
   workspaceFolders: WorkspaceFolder[],
