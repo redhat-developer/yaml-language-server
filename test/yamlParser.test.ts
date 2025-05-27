@@ -5,7 +5,8 @@
 import * as assert from 'assert';
 import { expect } from 'chai';
 import { ArrayASTNode, ObjectASTNode, PropertyASTNode } from '../src/languageservice/jsonASTTypes';
-import { parse } from './../src/languageservice/parser/yamlParser07';
+import { parse, YAMLDocument } from './../src/languageservice/parser/yamlParser07';
+import { aliasDepth } from '../src/languageservice/parser/ast-converter';
 
 describe('YAML parser', () => {
   describe('YAML parser', function () {
@@ -242,6 +243,73 @@ describe('YAML parser', () => {
         `1 document should be available but there are ${parsedDocument.documents.length}`
       );
       assert(parsedDocument.documents[0].errors.length === 0, JSON.stringify(parsedDocument.documents[0].errors));
+    });
+
+    it('parse aliases up to a depth', () => {
+      // If maxRefCount is set to 1, it will only resolve one layer of aliases, which means
+      // `b` below will inherit `a`, but `c` will not inherit `a`.
+      let parsedDocument: YAMLDocument;
+      try {
+        aliasDepth.maxRefCount = 1;
+        parsedDocument = parse(`
+a: &a
+  foo: "web"
+b: &b
+  <<: *a
+c: &c
+  <<: *b
+`);
+      } finally {
+        aliasDepth.maxRefCount = 1000;
+      }
+
+      const anode: ObjectASTNode = (parsedDocument.documents[0].root.children[0] as PropertyASTNode).valueNode as ObjectASTNode;
+      const aval = anode.properties[0].valueNode;
+
+      const bnode: ObjectASTNode = (parsedDocument.documents[0].root.children[1] as PropertyASTNode).valueNode as ObjectASTNode;
+      const bvalprops: PropertyASTNode = (bnode.properties[0].valueNode as ObjectASTNode).properties[0];
+      const bval = bvalprops.valueNode;
+
+      const cnode: ObjectASTNode = (parsedDocument.documents[0].root.children[2] as PropertyASTNode).valueNode as ObjectASTNode;
+      const cvalprops: PropertyASTNode = (cnode.properties[0].valueNode as ObjectASTNode).properties[0];
+      const cval = cvalprops.valueNode;
+
+      assert(aval?.value === 'web');
+      assert(bval?.value === 'web');
+      assert(cval?.value === undefined);
+    });
+
+    it('parse aliases up to a depth for multiple objects', () => {
+      // In the below configuration, `c` will not inherit `a` because of depth issues
+      // but the following object `o` will still resolve correctly.
+      let parsedDocument: YAMLDocument;
+      try {
+        aliasDepth.maxRefCount = 1;
+        parsedDocument = parse(`
+a: &a
+  foo: "web"
+b: &b
+  <<: *a
+c: &c
+  <<: *b
+
+o: &o
+  <<: *a
+`);
+      } finally {
+        aliasDepth.maxRefCount = 1000;
+      }
+
+      const onode: ObjectASTNode = (parsedDocument.documents[0].root.children[3] as PropertyASTNode).valueNode as ObjectASTNode;
+      const ovalprops: PropertyASTNode = (onode.properties[0].valueNode as ObjectASTNode).properties[0];
+      const oval = ovalprops.valueNode;
+
+      const cnode: ObjectASTNode = (parsedDocument.documents[0].root.children[2] as PropertyASTNode).valueNode as ObjectASTNode;
+      const cvalprops: PropertyASTNode = (cnode.properties[0].valueNode as ObjectASTNode).properties[0];
+      const cval = cvalprops.valueNode;
+
+      assert(cval?.value === undefined);
+      assert(oval?.value === 'web');
     });
   });
 
