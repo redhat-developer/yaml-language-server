@@ -67,12 +67,48 @@ describe('Hover Tests Detail', () => {
 ----
 ##
 \`\`\`
-test: \`const1\` | object | Expression | string | obj1
+test: const1 | object | Expression | string | obj1
 \`\`\``
     );
     // related to test 'Hover on null property in nested object'
     assert.notStrictEqual((hover2.contents as MarkupContent).value, '', 'hover does not work with new line');
     assert.strictEqual((hover.contents as MarkupContent).value, (hover2.contents as MarkupContent).value);
+  });
+  describe('Hover array', () => {
+    it('should suggest "Array<>" for Array - anyOf', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            type: 'array',
+            items: {
+              type: ['string', 'number'],
+            },
+          },
+        },
+      });
+      const content = 'test:';
+      const hover = await parseSetup(content, content.length - 2);
+      expect((hover.contents as MarkupContent).value).includes('test: Array<string | number>');
+    });
+    it('should suggest "Fruit[]" for Array - object', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            type: 'array',
+            items: {
+              type: 'object',
+              title: 'Fruit',
+              properties: {},
+            },
+          },
+        },
+      });
+      const content = 'test:';
+      const hover = await parseSetup(content, content.length - 2);
+      expect((hover.contents as MarkupContent).value).includes('test: Fruit[]');
+    });
   });
   it('Source command', async () => {
     schemaProvider.addSchema('dynamic-schema://schema.json', {

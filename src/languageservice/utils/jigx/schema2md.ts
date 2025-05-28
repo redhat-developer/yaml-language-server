@@ -186,10 +186,11 @@ export class Schema2Md {
       if (!this.hideText.enum) {
         text.push(offset + 'This element must be one of the following enum values:');
       }
+      const orderedEnum = schema.enum.sort();
       if (schema.enum.length > 50) {
-        text.push(offset + '`' + schema.enum.join(' | ') + '`');
+        text.push(offset + '`' + orderedEnum.join(' | ') + '`');
       } else {
-        text.push(schema.enum.map((enumItem) => '* `' + enumItem + '`').join('\n'));
+        text.push(orderedEnum.map((enumItem) => '* `' + enumItem + '`').join('\n'));
       }
     } else if (schema.const) {
       // const is already in text from the beginning

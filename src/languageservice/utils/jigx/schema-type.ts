@@ -196,7 +196,8 @@ export class Schema_Enum extends Schema_TypeBase {
   type: S_SimpleType;
   enum: string[];
   getTypeStr(): string {
-    const enumList = (this.enum?.slice(0, 5).join(', ') || this.type) + (this.enum?.length > 5 ? ', ...' : '');
+    const orderedEnum = this.enum?.sort();
+    const enumList = (orderedEnum?.slice(0, 5).join(', ') || this.type) + (orderedEnum?.length > 5 ? ', ...' : '');
     return `Enum${char_lt}${enumList}${char_gt}`;
   }
 }
@@ -204,7 +205,7 @@ export class Schema_Const extends Schema_TypeBase {
   type: 'const';
   const: string;
   getTypeStr(): string {
-    return `\`${this.const}\``;
+    return this.const;
   }
 }
 
@@ -214,7 +215,7 @@ export class Schema_ArrayTyped extends Schema_TypeBase {
   getTypeStr(subSchemas: []): string {
     const item = SchemaTypeFactory.CreatePropTypeInstance(this.items);
     const subType = item.getTypeStr(subSchemas);
-    return `${subType}[]`;
+    return this.finalizeType(item, subType);
   }
   getTypeMD(subSchemas: [], isForElementTitle = false): string {
     const item = SchemaTypeFactory.CreatePropTypeInstance(
@@ -223,6 +224,13 @@ export class Schema_ArrayTyped extends Schema_TypeBase {
       this.isPropRequired /* jc-line-chart:series(object[])required */
     );
     const subType = item.getTypeMD(subSchemas, isForElementTitle);
+    return this.finalizeType(item, subType);
+  }
+
+  finalizeType(item: Schema_AnyType, subType: string): string {
+    if (item instanceof Schema_AnyOf || item instanceof Schema_SimpleAnyOf) {
+      return `Array<${subType}>`;
+    }
     return `${subType}[]`;
   }
 }
