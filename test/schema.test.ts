@@ -615,10 +615,18 @@ describe('JSON Schema', () => {
         });
       languageService.configure(languageSettingsSetup.languageSettings);
       languageService.registerCustomSchemaProvider((uri: string) => Promise.resolve(uri));
-      const testTextDocument = setupTextDocument(`# yaml-language-server: $schema=${schemaModelineSample}\n\n`);
-      const result = await languageService.doComplete(testTextDocument, Position.create(1, 0), false);
-      assert.strictEqual(result.items.length, 1);
-      assert.strictEqual(result.items[0].label, 'modeline');
+      {
+        const testTextDocument = setupTextDocument(`# yaml-language-server: $schema=${schemaModelineSample}\n\n`);
+        const result = await languageService.doComplete(testTextDocument, Position.create(1, 0), false);
+        assert.strictEqual(result.items.length, 1);
+        assert.strictEqual(result.items[0].label, 'modeline');
+      }
+      {
+        const testTextDocument = setupTextDocument(`# $schema: ${schemaModelineSample}\n\n`);
+        const result = await languageService.doComplete(testTextDocument, Position.create(1, 0), false);
+        assert.strictEqual(result.items.length, 1);
+        assert.strictEqual(result.items[0].label, 'modeline');
+      }
     });
 
     it('Manually setting schema takes precendence over all other lower priority schemas', async () => {
@@ -704,10 +712,12 @@ describe('JSON Schema', () => {
   describe('Test getSchemaFromModeline', function () {
     it('simple case', async () => {
       checkReturnSchemaUrl('# yaml-language-server: $schema=expectedUrl', 'expectedUrl');
+      checkReturnSchemaUrl('# $schema:expectedUrl', 'expectedUrl');
     });
 
     it('with several spaces between # and yaml-language-server', async () => {
       checkReturnSchemaUrl('#    yaml-language-server: $schema=expectedUrl', 'expectedUrl');
+      checkReturnSchemaUrl('#    $schema:expectedUrl', 'expectedUrl');
     });
 
     it('with several spaces between yaml-language-server and :', async () => {
@@ -716,14 +726,17 @@ describe('JSON Schema', () => {
 
     it('with several spaces between : and $schema', async () => {
       checkReturnSchemaUrl('# yaml-language-server:    $schema=expectedUrl', 'expectedUrl');
+      checkReturnSchemaUrl('# $schema:   expectedUrl', 'expectedUrl');
     });
 
     it('with several spaces at the end', async () => {
       checkReturnSchemaUrl('# yaml-language-server: $schema=expectedUrl   ', 'expectedUrl');
+      checkReturnSchemaUrl('# $schema: expectedUrl   ', 'expectedUrl');
     });
 
     it('with several spaces at several places', async () => {
       checkReturnSchemaUrl('#   yaml-language-server  :   $schema=expectedUrl   ', 'expectedUrl');
+      checkReturnSchemaUrl('#   $schema:   expectedUrl   ', 'expectedUrl');
     });
 
     it('with several attributes', async () => {
@@ -731,22 +744,39 @@ describe('JSON Schema', () => {
         '# yaml-language-server: anotherAttribute=test $schema=expectedUrl aSecondAttribtute=avalue',
         'expectedUrl'
       );
+      checkReturnSchemaUrl('# $schema: expectedUrl aSecondAttribtute=avalue anotherAttribute=test', 'expectedUrl');
     });
 
     it('with tabs', async () => {
       checkReturnSchemaUrl('#\tyaml-language-server:\t$schema=expectedUrl', 'expectedUrl');
+      checkReturnSchemaUrl('#\t$schema:\texpectedUrl', 'expectedUrl');
     });
 
     it('with several $schema - pick the first', async () => {
       checkReturnSchemaUrl('# yaml-language-server: $schema=url1 $schema=url2', 'url1');
+      checkReturnSchemaUrl('# $schema: url1 $schema: url2', 'url1');
     });
 
     it('no schema returned if not yaml-language-server', async () => {
       checkReturnSchemaUrl('# somethingelse: $schema=url1', undefined);
+      checkReturnSchemaUrl('# somethingelse: $schema:url1', undefined);
     });
 
     it('no schema returned if not $schema', async () => {
       checkReturnSchemaUrl('# yaml-language-server: $notschema=url1', undefined);
+      checkReturnSchemaUrl('# $notschema: url1', undefined);
+    });
+
+    it('no schema returned if spaces/tabs before colon', async () => {
+      checkReturnSchemaUrl('# $schema :url1', undefined);
+      checkReturnSchemaUrl('# $schema   :url1', undefined);
+      checkReturnSchemaUrl('# $schema\t:url1', undefined);
+    });
+
+    it('no schema returned if there is no colon', async () => {
+      checkReturnSchemaUrl('# $schema url1', undefined);
+      checkReturnSchemaUrl('# $schema?url1', undefined);
+      checkReturnSchemaUrl('# $schema+ url1', undefined);
     });
 
     function checkReturnSchemaUrl(modeline: string, expectedResult: string): void {

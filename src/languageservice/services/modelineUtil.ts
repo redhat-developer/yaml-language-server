@@ -11,20 +11,21 @@ import { JSONDocument } from '../parser/jsonParser07';
  * Public for testing purpose, not part of the API.
  * @param doc
  */
-export function getSchemaFromModeline(doc: SingleYAMLDocument | JSONDocument): string {
+export function getSchemaFromModeline(doc: SingleYAMLDocument | JSONDocument): string | undefined {
   if (doc instanceof SingleYAMLDocument) {
     const yamlLanguageServerModeline = doc.lineComments.find((lineComment) => {
       return isModeline(lineComment);
     });
     if (yamlLanguageServerModeline != undefined) {
-      const schemaMatchs = yamlLanguageServerModeline.match(/\$schema=\S+/g);
-      if (schemaMatchs !== null && schemaMatchs.length >= 1) {
-        if (schemaMatchs.length >= 2) {
+      const schemaMatchs = yamlLanguageServerModeline.matchAll(/\$schema(?:=|:\s*)(\S+)/g);
+      const { value: schemaMatch, done } = schemaMatchs.next();
+      if (!done) {
+        if (!schemaMatchs.next().done) {
           console.log(
             'Several $schema attributes have been found on the yaml-language-server modeline. The first one will be picked.'
           );
         }
-        return schemaMatchs[0].substring('$schema='.length);
+        return schemaMatch[1];
       }
     }
   }
@@ -32,6 +33,6 @@ export function getSchemaFromModeline(doc: SingleYAMLDocument | JSONDocument): s
 }
 
 export function isModeline(lineText: string): boolean {
-  const matchModeline = lineText.match(/^#\s+yaml-language-server\s*:/g);
+  const matchModeline = lineText.match(/^#\s+(?:yaml-language-server|\$schema)\s*:/g);
   return matchModeline !== null && matchModeline.length === 1;
 }
