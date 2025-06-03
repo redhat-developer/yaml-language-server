@@ -119,6 +119,10 @@ export interface LanguageSettings {
    * If set enforce alphabetical ordering of keys in mappings.
    */
   keyOrdering?: boolean;
+  /**
+   * If set skip json schema validation. Allows to not use unsafe-eval rule
+   */
+  skipSchemaValidation?: boolean;
 }
 
 export interface WorkspaceContextService {
@@ -205,6 +209,7 @@ export function getLanguageService(params: {
 
   return {
     configure: (settings) => {
+      schemaService.configure(settings);
       schemaService.clearExternalSchemas();
       if (settings.schemas) {
         schemaService.schemaPriorityMapping = new Map();
