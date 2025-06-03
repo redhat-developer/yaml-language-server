@@ -52,9 +52,10 @@ describe('Auto Completion Tests', () => {
    * @param position The position of the caret in the document.
    * Alternatively, `position` can be omitted if the caret is located in the content using `|` bookends.
    * For example, `content = 'ab|c|d'` places the caret over the `'c'`, at `position = 2`
+   * @param gracefulMatches are worse matches allowed
    * @returns A list of valid completions.
    */
-  function parseSetup(content: string, position?: number): Promise<CompletionList> {
+  function parseSetup(content: string, position?: number, gracefulMatches?: boolean): Promise<CompletionList> {
     if (typeof position === 'undefined') {
       ({ content, position } = caretPosition(content));
     }
@@ -62,10 +63,13 @@ describe('Auto Completion Tests', () => {
     const testTextDocument = setupSchemaIDTextDocument(content);
     yamlSettings.documents = new TextDocumentTestManager();
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
-    return languageHandler.completionHandler({
-      position: testTextDocument.positionAt(position),
-      textDocument: testTextDocument,
-    });
+    return languageHandler.completionHandler(
+      {
+        position: testTextDocument.positionAt(position),
+        textDocument: testTextDocument,
+      },
+      gracefulMatches
+    );
   }
 
   afterEach(() => {
@@ -2215,6 +2219,69 @@ describe('Auto Completion Tests', () => {
       expect(completion.items).lengthOf(1);
       expect(completion.items[0].label).eq('fooBar');
       expect(completion.items[0].insertText).eq('fooBar:\n    name: $1\n    aaa:\n      - $2');
+    });
+
+    it('graceful matching should give multiple matches with anyOf where at least one property is matching', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        anyOf: [
+          {
+            type: 'object',
+            properties: {
+              type: {
+                const: 'a.a',
+              },
+              maybeProp: {
+                type: 'string',
+              },
+            },
+            required: ['type'],
+          },
+          {
+            type: 'object',
+            properties: {
+              type: {
+                const: 'a.b',
+              },
+              field: {
+                type: 'string',
+              },
+            },
+            required: ['type', 'field'],
+          },
+          {
+            type: 'object',
+            properties: {
+              type: {
+                const: 'a.c',
+              },
+              mandatoryProp: {
+                type: 'string',
+              },
+            },
+            required: ['type', 'mandatoryProp'],
+          },
+        ],
+      });
+
+      async function expectCompletionsOrAll(
+        content: string,
+        gracefulMatches: boolean,
+        expectedCompletions = ['a.a', 'a.b', 'a.c']
+      ): Promise<void> {
+        const completion = await parseSetup(content, undefined, gracefulMatches);
+        expect(completion.items).lengthOf(expectedCompletions.length);
+        expect(completion.items.map(({ label }) => label)).eql(expectedCompletions);
+      }
+
+      await expectCompletionsOrAll('type: |\n|', false, ['a.a']);
+      await expectCompletionsOrAll('type: a.|\n|', false, ['a.a']);
+      await expectCompletionsOrAll('type: |\n|field: "a"', false, ['a.a', 'a.b']);
+      await expectCompletionsOrAll('type: |\n|mandatoryProp: "a"', false, ['a.a', 'a.c']);
+
+      await expectCompletionsOrAll('type: |\n|', true);
+      await expectCompletionsOrAll('type: a.|\n|', true);
+      await expectCompletionsOrAll('type: |\n|field: "a"', true);
+      await expectCompletionsOrAll('type: |\n|mandatoryProp: "a"', true);
     });
 
     it('auto completion based on the list indentation', async () => {

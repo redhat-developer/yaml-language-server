@@ -84,6 +84,7 @@ export const ProblemTypeMessages: Record<ProblemType, string> = {
   [ProblemType.typeMismatchWarning]: 'Incorrect type. Expected "{0}".',
   [ProblemType.constWarning]: 'Value must be {0}.',
 };
+
 export interface IProblem {
   location: IRange;
   severity: DiagnosticSeverity;
@@ -161,6 +162,7 @@ export abstract class ASTNodeImpl {
 export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
   public type: 'null' = 'null' as const;
   public value = null;
+
   constructor(parent: ASTNode, internalNode: Node, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
   }
@@ -281,27 +283,36 @@ export enum EnumMatch {
 
 export interface ISchemaCollector {
   schemas: IApplicableSchema[];
+
   add(schema: IApplicableSchema): void;
+
   merge(other: ISchemaCollector): void;
+
   include(node: ASTNode): boolean;
+
   newSub(): ISchemaCollector;
 }
 
 class SchemaCollector implements ISchemaCollector {
   schemas: IApplicableSchema[] = [];
+
   constructor(
     private focusOffset = -1,
     private exclude: ASTNode = null
   ) {}
+
   add(schema: IApplicableSchema): void {
     this.schemas.push(schema);
   }
+
   merge(other: ISchemaCollector): void {
     this.schemas.push(...other.schemas);
   }
+
   include(node: ASTNode): boolean {
     return (this.focusOffset === -1 || contains(node, this.focusOffset)) && node !== this.exclude;
   }
+
   newSub(): ISchemaCollector {
     return new SchemaCollector(-1, this.exclude);
   }
@@ -311,22 +322,27 @@ class NoOpSchemaCollector implements ISchemaCollector {
   private constructor() {
     // ignore
   }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get schemas(): any[] {
     return [];
   }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   add(schema: IApplicableSchema): void {
     // ignore
   }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   merge(other: ISchemaCollector): void {
     // ignore
   }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   include(node: ASTNode): boolean {
     return true;
   }
+
   newSub(): ISchemaCollector {
     return this;
   }
@@ -620,13 +636,15 @@ export class JSONDocument {
    * @param focusOffset  offsetValue
    * @param exclude excluded Node
    * @param didCallFromAutoComplete true if method called from AutoComplete
+   * @param gracefulMatches true if graceful matching should be done, meaning that if at least one property is validated in a sub schema, it's kept as a candidate
    * @returns array of applicable schemas
    */
   public getMatchingSchemas(
     schema: JSONSchema,
     focusOffset = -1,
     exclude: ASTNode = null,
-    didCallFromAutoComplete?: boolean
+    didCallFromAutoComplete?: boolean,
+    gracefulMatches?: boolean
   ): IApplicableSchema[] {
     const matchingSchemas = new SchemaCollector(focusOffset, exclude);
     if (this.root && schema) {
@@ -635,17 +653,21 @@ export class JSONDocument {
         disableAdditionalProperties: this.disableAdditionalProperties,
         uri: this.uri,
         callFromAutoComplete: didCallFromAutoComplete,
+        gracefulMatches: gracefulMatches,
       });
     }
     return matchingSchemas.schemas;
   }
 }
+
 interface Options {
   isKubernetes: boolean;
   disableAdditionalProperties: boolean;
   uri: string;
   callFromAutoComplete?: boolean;
+  gracefulMatches?: boolean;
 }
+
 function validate(
   node: ASTNode,
   schema: JSONSchema,
@@ -655,7 +677,7 @@ function validate(
   options: Options
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
-  const { isKubernetes, callFromAutoComplete } = options;
+  const { isKubernetes, callFromAutoComplete, gracefulMatches } = options;
   if (!node) {
     return;
   }
@@ -952,6 +974,7 @@ function validate(
         });
       }
     }
+
     function getExclusiveLimit(limit: number | undefined, exclusive: boolean | number | undefined): number | undefined {
       if (isNumber(exclusive)) {
         return exclusive;
@@ -961,12 +984,14 @@ function validate(
       }
       return undefined;
     }
+
     function getLimit(limit: number | undefined, exclusive: boolean | number | undefined): number | undefined {
       if (!isBoolean(exclusive) || !exclusive) {
         return limit;
       }
       return undefined;
     }
+
     const exclusiveMinimum = getExclusiveLimit(schema.minimum, schema.exclusiveMinimum);
     if (isNumber(exclusiveMinimum) && val <= exclusiveMinimum) {
       validationResult.problems.push({
@@ -1102,6 +1127,7 @@ function validate(
       }
     }
   }
+
   function _validateArrayNode(
     node: ArrayASTNode,
     schema: JSONSchema,
@@ -1267,7 +1293,12 @@ function validate(
       for (const propertyName of schema.required) {
         if (seenKeys[propertyName] === undefined) {
           const keyNode = node.parent && node.parent.type === 'property' && node.parent.keyNode;
-          const location = keyNode ? { offset: keyNode.offset, length: keyNode.length } : { offset: node.offset, length: 1 };
+          const location = keyNode
+            ? { offset: keyNode.offset, length: keyNode.length }
+            : {
+                offset: node.offset,
+                length: 1,
+              };
           validationResult.problems.push({
             location: location,
             severity: DiagnosticSeverity.Warning,
@@ -1520,10 +1551,14 @@ function validate(
     return bestMatch;
   }
 
+  function gracefulMatchFilter(maxOneMatch: boolean, propertiesValueMatches: number): boolean {
+    return gracefulMatches && !maxOneMatch && callFromAutoComplete && propertiesValueMatches > 0;
+  }
+
   //genericComparison tries to find the best matching schema using a generic comparison
   function genericComparison(
     node: ASTNode,
-    maxOneMatch,
+    maxOneMatch: boolean,
     subValidationResult: ValidationResult,
     bestMatch: IValidationMatch,
     subSchema,
@@ -1552,7 +1587,8 @@ function validate(
         };
       } else if (
         compareResult === 0 ||
-        ((node.value === null || node.type === 'null') && node.length === 0) // node with no value can match any schema potentially
+        ((node.value === null || node.type === 'null') && node.length === 0) || // node with no value can match any schema potentially
+        gracefulMatchFilter(maxOneMatch, subValidationResult.propertiesValueMatches)
       ) {
         // there's already a best matching but we are as good
         mergeValidationMatches(bestMatch, subMatchingSchemas, subValidationResult);
