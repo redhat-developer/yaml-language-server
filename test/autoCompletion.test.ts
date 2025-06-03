@@ -786,7 +786,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Insert required attributes at correct level', (done) => {
-        const schema = require(path.join(__dirname, './fixtures/testRequiredProperties.json'));
+        const schema = require('./fixtures/testRequiredProperties.json');
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- top:\n    prop1: demo\n- ';
         const completion = parseSetup(content, content.length);
@@ -804,7 +804,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Insert required attributes at correct level even on first element', (done) => {
-        const schema = require(path.join(__dirname, './fixtures/testRequiredProperties.json'));
+        const schema = require('./fixtures/testRequiredProperties.json');
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- ';
         const completion = parseSetup(content, content.length);
@@ -822,7 +822,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide the 3 types when none provided', (done) => {
-        const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
+        const schema = require('./fixtures/testArrayMaxProperties.json');
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- ';
         const completion = parseSetup(content, content.length);
@@ -852,7 +852,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide the 2 types when one is provided', (done) => {
-        const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
+        const schema = require('./fixtures/testArrayMaxProperties.json');
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  ';
         const completion = parseSetup(content, content.length);
@@ -876,7 +876,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide the 2 types when one is provided and the second is typed', (done) => {
-        const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
+        const schema = require('./fixtures/testArrayMaxProperties.json');
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  p';
         const completion = parseSetup(content, content.length);
@@ -900,7 +900,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide no completion when maxProperties reached', (done) => {
-        const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
+        const schema = require('./fixtures/testArrayMaxProperties.json');
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  prop2:\n  ';
         const completion = parseSetup(content, content.length);
@@ -1041,7 +1041,7 @@ describe('Auto Completion Tests', () => {
 
     describe('Array Specific Tests', function () {
       it('Should insert empty array item', (done) => {
-        const schema = require(path.join(__dirname, './fixtures/testStringArray.json'));
+        const schema = require('./fixtures/testStringArray.json');
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'fooBa'; // len: 5
         const completion = parseSetup(content, content.lastIndexOf('Ba') + 2); // pos: 3+2
@@ -1842,7 +1842,7 @@ describe('Auto Completion Tests', () => {
 
   describe('Indentation Specific Tests', function () {
     it('Indent should be considered with position relative to slash', (done) => {
-      const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
+      const schema = require('./fixtures/testArrayIndent.json');
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'install:\n  - he'; // len: 15
       const completion = parseSetup(content, content.lastIndexOf('he') + 2); // pos: 13+2
@@ -1860,7 +1860,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Large indent should be considered with position relative to slash', (done) => {
-      const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
+      const schema = require('./fixtures/testArrayIndent.json');
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'install:\n -            he'; // len: 25
       const completion = parseSetup(content, content.lastIndexOf('he') + 2); // pos: 23+2
@@ -1878,7 +1878,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Tab indent should be considered with position relative to slash', (done) => {
-      const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
+      const schema = require('./fixtures/testArrayIndent.json');
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'install:\n -\t             he'; // len: 27
       const completion = parseSetup(content, content.lastIndexOf('he') + 2); // pos: 25+2
@@ -2601,7 +2601,7 @@ describe('Auto Completion Tests', () => {
 
   describe('Array completion', () => {
     it('Simple array object completion with "-" without any item', (done) => {
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      const schema = require('./fixtures/testArrayCompletionSchema.json');
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  -';
       const completion = parseSetup(content, content.length);
@@ -2615,7 +2615,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Simple array object completion without "-" after array item', (done) => {
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      const schema = require('./fixtures/testArrayCompletionSchema.json');
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  ';
       const completion = parseSetup(content, content.length);
@@ -2628,7 +2628,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Simple array object completion with "-" after array item', (done) => {
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      const schema = require('./fixtures/testArrayCompletionSchema.json');
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  -';
       const completion = parseSetup(content, content.length);
@@ -2642,7 +2642,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion with "- " without any item', (done) => {
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      const schema = require('./fixtures/testArrayCompletionSchema.json');
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - ';
       const completion = parseSetup(content, content.length);
@@ -2658,7 +2658,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion with "-" without any item', (done) => {
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      const schema = require('./fixtures/testArrayCompletionSchema.json');
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  -';
       const completion = parseSetup(content, content.length);
@@ -2672,7 +2672,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Simple array object completion without "-" befor array empty item', (done) => {
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      const schema = require('./fixtures/testArrayCompletionSchema.json');
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  |\n|  -'; // len: 30, pos: 26
       const completion = parseSetup(content);
@@ -2685,7 +2685,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion without "-" after array item', (done) => {
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      const schema = require('./fixtures/testArrayCompletionSchema.json');
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  ';
       const completion = parseSetup(content, content.length);
@@ -2697,7 +2697,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array nested anyOf without "-" should return all array items', (done) => {
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      const schema = require('./fixtures/testArrayCompletionSchema.json');
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_nested_anyOf:\n  - obj1:\n    name:1\n  ';
       const completion = parseSetup(content, content.length);
@@ -2709,7 +2709,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion with "-" after array item', (done) => {
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      const schema = require('./fixtures/testArrayCompletionSchema.json');
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  -';
       const completion = parseSetup(content, content.length);
@@ -2723,7 +2723,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion indentation', async () => {
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
+      const schema = require('./fixtures/testArrayCompletionSchema.json');
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj';
       const completion = await parseSetup(content, content.length);
