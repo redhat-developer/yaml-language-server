@@ -189,6 +189,42 @@ describe('Validation Tests', () => {
         })
         .then(done, done);
     });
+
+    it('Test that boolean value can be used in enum', (done) => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          analytics: {
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'analytics: true';
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.deepStrictEqual(result, []);
+        })
+        .then(done, done);
+    });
+
+    it('Test that boolean value can be used in const', (done) => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          analytics: {
+            const: true,
+          },
+        },
+      });
+      const content = 'analytics: true';
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.deepStrictEqual(result, []);
+        })
+        .then(done, done);
+    });
   });
 
   describe('String tests', () => {
