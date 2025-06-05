@@ -876,7 +876,7 @@ function validate(
       const val = getNodeValue(node);
       let enumValueMatch = false;
       for (const e of schema.enum) {
-        if (val === e || isAutoCompleteEqualMaybe(callFromAutoComplete, node, val, e)) {
+        if (equals(val, e, node.type) || isAutoCompleteEqualMaybe(callFromAutoComplete, node, val, e)) {
           enumValueMatch = true;
           break;
         }
