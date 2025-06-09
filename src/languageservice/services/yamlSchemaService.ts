@@ -77,6 +77,16 @@ export class FilePatternAssociation {
       // JIGX custom - if pattern includes 'jigx' then don't escape some special chars
       // we need to keep `|` and `$` in the pattern
       if (pattern.includes('jigx')) {
+        if (pattern.startsWith('^(?:(?!')) {
+          // special case for negative lookahead
+          // don't try to escape the pattern
+          try {
+            this.patternRegExp = new RegExp(pattern);
+          } catch {
+            this.patternRegExp = undefined;
+          }
+          return;
+        }
         pattern = pattern.endsWith('$') ? pattern : pattern + '$';
         pattern = pattern.replace(/[-\\{}+?^.,[\]()#]/g, '\\$&');
         this.patternRegExp = new RegExp(pattern.replace(/[*]/g, '.*'));
