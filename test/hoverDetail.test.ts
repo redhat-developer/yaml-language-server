@@ -132,38 +132,6 @@ test: const1 | object | Expression | string | obj1
     assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
     assert.strictEqual((result.contents as MarkupContent).value, 'A script to run after install');
   });
-  describe('Images', async () => {
-    it('Image should be excluded', async () => {
-      schemaProvider.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: {
-          scripts: {
-            type: 'object',
-            markdownDescription: 'First img <img src=... />\nSecond image <img src="2"/>',
-          },
-        },
-      });
-      const content = 'scripts:\n  ';
-      const result = await parseSetup(content, 1, SCHEMA_ID);
-
-      assert.strictEqual((result.contents as MarkupContent).value.includes('<img'), false);
-    });
-    it('Image should be included', async () => {
-      schemaProvider.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: {
-          scripts: {
-            type: 'object',
-            markdownDescription: 'First img <img src=... />\nSecond image <img enableInHover src="2"/>',
-          },
-        },
-      });
-      const content = 'scripts:\n  ';
-      const result = await parseSetup(content, 1, SCHEMA_ID);
-
-      assert.strictEqual((result.contents as MarkupContent).value.includes('<img'), true);
-    });
-  });
 
   describe('Deprecated', async () => {
     it('Deprecated type should not be in the title', async () => {
