@@ -7,6 +7,15 @@
 export function equals(one: any, other: any, type?: any): boolean {
   if (type === 'boolean') {
     one = JSON.parse(one);
+    if (Array.isArray(other)) {
+      let i: number;
+      for (i = 0; i < other.length; i++) {
+        if (equals(one, other[i], type)) {
+          return true;
+        }
+      }
+      return false;
+    }
   }
   if (one === other) {
     return true;
