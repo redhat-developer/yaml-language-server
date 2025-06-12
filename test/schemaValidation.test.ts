@@ -2115,4 +2115,24 @@ obj:
     result = await parseSetup(content);
     expect(result.length).to.eq(0);
   });
+
+  it('value should match as per schema enum on boolean', async () => {
+    schemaProvider.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        prop: {
+          enum: [true],
+        },
+      },
+    });
+
+    let content = `prop: false`;
+    let result = await parseSetup(content);
+    expect(result.length).to.eq(1);
+    expect(result[0].message).to.eq('Value is not accepted. Valid values: true.');
+
+    content = `prop: true`;
+    result = await parseSetup(content);
+    expect(result.length).to.eq(0);
+  });
 });

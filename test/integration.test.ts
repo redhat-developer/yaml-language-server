@@ -86,7 +86,7 @@ describe('Kubernetes Integration Tests', () => {
         const validator = parseSetup(content);
         validator
           .then(function (result) {
-            assert.equal(result.length, 0);
+            assert.equal(result.length, 1);
           })
           .then(done, done);
       });
