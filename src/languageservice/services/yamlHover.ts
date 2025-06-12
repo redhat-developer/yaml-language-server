@@ -123,8 +123,6 @@ export class YAMLHover {
               enumIdx = s.schema.enum.indexOf(getNodeValue(node));
               if (s.schema.markdownEnumDescriptions) {
                 markdownEnumDescriptions = s.schema.markdownEnumDescriptions;
-              } else if (s.schema.enumMarkdown) {
-                markdownEnumDescriptions = s.schema.enumMarkdown;
               } else if (s.schema.enumDescriptions) {
                 markdownEnumDescriptions = s.schema.enumDescriptions.map(this.toMarkdown, this);
               } else {
