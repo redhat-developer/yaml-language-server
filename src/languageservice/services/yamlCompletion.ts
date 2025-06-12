@@ -497,20 +497,6 @@ export class YamlCompletion {
                 node = pair.value;
               }
             }
-          } else if (isSeq(node)) {
-            if (lineContent.charAt(position.character - 1) !== '-') {
-              const map = this.createTempObjNode(currentWord, node, currentDoc);
-              map.items = [];
-              currentDoc.updateFromInternalDocument();
-              for (const pair of node.items) {
-                if (isMap(pair)) {
-                  pair.items.forEach((value) => {
-                    map.items.push(value);
-                  });
-                }
-              }
-              node = map;
-            }
           }
         }
       }
@@ -712,9 +698,7 @@ export class YamlCompletion {
     }
     for (const schema of matchingSchemas) {
       if (
-        ((schema.node.internalNode === node && !matchOriginal) ||
-          (schema.node.internalNode === originalNode && !hasColon) ||
-          (schema.node.parent?.internalNode === originalNode && !hasColon)) &&
+        ((schema.node.internalNode === node && !matchOriginal) || (schema.node.internalNode === originalNode && !hasColon)) &&
         !schema.inverted
       ) {
         this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
