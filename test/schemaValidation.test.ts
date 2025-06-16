@@ -26,6 +26,7 @@ import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 import { IProblem } from '../src/languageservice/parser/jsonParser07';
 import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { TestTelemetry } from './utils/testsTypes';
+import { ErrorCode } from 'vscode-json-languageservice';
 
 describe('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -185,6 +186,42 @@ describe('Validation Tests', () => {
               `file:///${SCHEMA_ID}`
             )
           );
+        })
+        .then(done, done);
+    });
+
+    it('Test that boolean value can be used in enum', (done) => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          analytics: {
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'analytics: true';
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.deepStrictEqual(result, []);
+        })
+        .then(done, done);
+    });
+
+    it('Test that boolean value can be used in const', (done) => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          analytics: {
+            const: true,
+          },
+        },
+      });
+      const content = 'analytics: true';
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.deepStrictEqual(result, []);
         })
         .then(done, done);
     });
@@ -396,7 +433,8 @@ describe('Validation Tests', () => {
               4,
               DiagnosticSeverity.Error,
               `yaml-schema: file:///${SCHEMA_ID}`,
-              `file:///${SCHEMA_ID}`
+              `file:///${SCHEMA_ID}`,
+              ErrorCode.PropertyExpected
             )
           );
         })
@@ -1289,7 +1327,7 @@ obj:
           4,
           18,
           DiagnosticSeverity.Error,
-          'yaml-schema: Package',
+          'yaml-schema: Composer Package',
           'https://raw.githubusercontent.com/composer/composer/master/res/composer-schema.json'
         )
       );
@@ -1312,6 +1350,7 @@ obj:
           DiagnosticSeverity.Error,
           'yaml-schema: Drone CI configuration file',
           'https://json.schemastore.org/drone',
+          ErrorCode.PropertyExpected,
           {
             properties: [
               'type',
@@ -1683,6 +1722,46 @@ obj:
         ]);
       });
 
+      it('should return error with possible props', async () => {
+        const schema = {
+          type: 'object',
+          properties: {
+            // prop0 is missing, should be added as a possible prop
+            prop0: {
+              type: 'string',
+            },
+            // prop1 is already defined in the yaml
+            prop1: {
+              type: 'string',
+            },
+            // prop2 is not suggested
+            prop2: {
+              type: 'string',
+              doNotSuggest: true,
+            },
+            // prop3 is deprecated
+            prop3: {
+              type: 'string',
+              deprecationMessage: 'prop3 is deprecated',
+            },
+          },
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `prop1: value1\npropX: you should not be there 'propX'`;
+        const result = await parseSetup(content);
+        expect(
+          result.map((r) => ({
+            message: r.message,
+            properties: (r.data as { properties: unknown })?.properties,
+          }))
+        ).to.deep.eq([
+          {
+            message: 'Property propX is not allowed.',
+            properties: ['prop0'],
+          },
+        ]);
+      });
+
       it('should allow additional props on object when additionalProp is true on object', async () => {
         const schema = {
           type: 'object',
@@ -2023,5 +2102,53 @@ obj:
       result.map((e) => e.message),
       ['Missing property "form".'] // not inclide provider error
     );
+  });
+
+  it('URL-encoded characters in $ref', async () => {
+    // note that 'missing form property' is necessary to trigger the bug (there has to be some problem in both subSchemas)
+    // order of the object in `anyOf` is also important
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        myProperty: {
+          $ref: '#/definitions/Interface%3Ctype%3E',
+        },
+      },
+      definitions: {
+        'Interface<type>': {
+          type: 'object',
+          properties: {
+            foo: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = `myProperty:\n  foo: bar`;
+    const result = await parseSetup(content);
+    assert.equal(result.length, 0);
+  });
+
+  it('value should match as per schema const on boolean', async () => {
+    schemaProvider.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        prop: {
+          const: true,
+          type: 'boolean',
+        },
+      },
+    });
+
+    let content = `prop: false`;
+    let result = await parseSetup(content);
+    expect(result.length).to.eq(1);
+    expect(result[0].message).to.eq('Value must be true.');
+
+    content = `prop: true`;
+    result = await parseSetup(content);
+    expect(result.length).to.eq(0);
   });
 });

@@ -29,14 +29,15 @@ describe('YAML Schema', () => {
   });
 
   it('Loading yaml scheme', async () => {
-    requestServiceStub.resolves(`
-    properties:
-      fooBar:
-        items:
-          type: string
-        type: array
-    type: object
-    `);
+    requestServiceStub.resolves(`%YAML 1.2
+---
+properties:
+  fooBar:
+    items:
+      type: string
+    type: array
+type: object
+`);
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('fooScheme.yaml');
     expect(requestServiceStub.calledOnceWith('fooScheme.yaml'));

@@ -22,6 +22,7 @@ import { setupTextDocument, TEST_URI } from './utils/testHelper';
 import { createDiagnosticWithData, createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
 import { YamlCommands } from '../src/commands';
 import { LanguageSettings } from '../src';
+import { ErrorCode } from 'vscode-json-languageservice';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -106,7 +107,7 @@ describe('CodeActions Tests', () => {
   describe('Convert TAB to Spaces', () => {
     it('should add "Convert TAB to Spaces" CodeAction', () => {
       const doc = setupTextDocument('foo:\n\t- bar');
-      const diagnostics = [createExpectedError('Using tabs can lead to unpredictable results', 1, 0, 1, 1, 1, JSON_SCHEMA_LOCAL)];
+      const diagnostics = [createExpectedError('Tabs are not allowed as indentation', 1, 0, 1, 1, 1, JSON_SCHEMA_LOCAL)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
         range: undefined,
@@ -122,7 +123,7 @@ describe('CodeActions Tests', () => {
 
     it('should support current indentation chars settings', () => {
       const doc = setupTextDocument('foo:\n\t- bar');
-      const diagnostics = [createExpectedError('Using tabs can lead to unpredictable results', 1, 0, 1, 1, 1, JSON_SCHEMA_LOCAL)];
+      const diagnostics = [createExpectedError('Tabs are not allowed as indentation', 1, 0, 1, 1, 1, JSON_SCHEMA_LOCAL)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
         range: undefined,
@@ -138,7 +139,7 @@ describe('CodeActions Tests', () => {
 
     it('should provide "Convert all Tabs to Spaces"', () => {
       const doc = setupTextDocument('foo:\n\t\t\t- bar\n\t\t');
-      const diagnostics = [createExpectedError('Using tabs can lead to unpredictable results', 1, 0, 1, 3, 1, JSON_SCHEMA_LOCAL)];
+      const diagnostics = [createExpectedError('Tabs are not allowed as indentation', 1, 0, 1, 3, 1, JSON_SCHEMA_LOCAL)];
       const params: CodeActionParams = {
         context: CodeActionContext.create(diagnostics),
         range: undefined,
@@ -187,8 +188,8 @@ describe('CodeActions Tests', () => {
 
   describe('Convert to Block Style', () => {
     it(' should generate action to convert flow map to block map ', () => {
-      const yaml = `host: phl-42  
-datacenter: {location: canada , cab: 15}  
+      const yaml = `host: phl-42
+datacenter: {location: canada , cab: 15}
 animals: [dog , cat , mouse]  `;
       const doc = setupTextDocument(yaml);
       const diagnostics = [
@@ -375,6 +376,60 @@ animals: [dog , cat , mouse]  `;
       expect(result[0].edit.changes[TEST_URI]).deep.equal([
         TextEdit.replace(Range.create(0, 2, 2, 7), `aa: 1\n  cc: 1\n  gg: 2  #a comment`),
       ]);
+    });
+  });
+
+  describe('Enum value or property mismatch quick fix', () => {
+    it('should generate proper action for enum mismatch', () => {
+      const doc = setupTextDocument('foo: value1');
+      const diagnostic = createDiagnosticWithData(
+        'message',
+        0,
+        5,
+        0,
+        11,
+        DiagnosticSeverity.Hint,
+        'YAML',
+        'schemaUri',
+        ErrorCode.EnumValueMismatch,
+        { values: ['valueX', 'valueY'] }
+      );
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([diagnostic]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result.map((r) => r.title)).deep.equal(['valueX', 'valueY']);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(0, 5, 0, 11), 'valueX')]);
+    });
+
+    it('should generate proper action for wrong property', () => {
+      const doc = setupTextDocument('foo: value1');
+      const diagnostic = createDiagnosticWithData(
+        'message',
+        0,
+        0,
+        0,
+        3,
+        DiagnosticSeverity.Hint,
+        'YAML',
+        'schemaUri',
+        ErrorCode.PropertyExpected,
+        {
+          properties: ['fooX', 'fooY'],
+        }
+      );
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([diagnostic]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result.map((r) => r.title)).deep.equal(['fooX', 'fooY']);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(0, 0, 0, 3), 'fooX')]);
     });
   });
 });

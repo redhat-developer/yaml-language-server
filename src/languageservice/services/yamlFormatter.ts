@@ -6,9 +6,10 @@
 
 import { Range, Position, TextEdit, FormattingOptions } from 'vscode-languageserver-types';
 import { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
-import * as prettier from 'prettier';
 import { Options } from 'prettier';
-import * as parser from 'prettier/parser-yaml';
+import * as yamlPlugin from 'prettier/plugins/yaml';
+import * as estreePlugin from 'prettier/plugins/estree';
+import { format } from 'prettier/standalone';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 export class YAMLFormatter {
@@ -20,7 +21,10 @@ export class YAMLFormatter {
     }
   }
 
-  public format(document: TextDocument, options: Partial<FormattingOptions> & CustomFormatterOptions = {}): TextEdit[] {
+  public async format(
+    document: TextDocument,
+    options: Partial<FormattingOptions> & CustomFormatterOptions = {}
+  ): Promise<TextEdit[]> {
     if (!this.formatterEnabled) {
       return [];
     }
@@ -30,7 +34,7 @@ export class YAMLFormatter {
 
       const prettierOptions: Options = {
         parser: 'yaml',
-        plugins: [parser],
+        plugins: [yamlPlugin, estreePlugin],
 
         // --- FormattingOptions ---
         tabWidth: (options.tabWidth as number) || options.tabSize,
@@ -41,9 +45,10 @@ export class YAMLFormatter {
         // 'preserve' is the default for Options.proseWrap. See also server.ts
         proseWrap: 'always' === options.proseWrap ? 'always' : 'never' === options.proseWrap ? 'never' : 'preserve',
         printWidth: options.printWidth,
+        trailingComma: options.trailingComma === false ? 'none' : 'all',
       };
 
-      const formatted = prettier.format(text, prettierOptions);
+      const formatted = await format(text, prettierOptions);
 
       return [TextEdit.replace(Range.create(Position.create(0, 0), document.positionAt(text.length)), formatted)];
     } catch (error) {

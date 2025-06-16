@@ -27,6 +27,7 @@ import { isArrayEqual } from '../utils/arrUtils';
 import { Node, Pair } from 'yaml';
 import { safeCreateUnicodeRegExp } from '../utils/strings';
 import { FilePatternAssociation } from '../services/yamlSchemaService';
+import { floatSafeRemainder } from '../utils/math';
 
 const localize = nls.loadMessageBundle();
 const MSG_PROPERTY_NOT_ALLOWED = 'Property {0} is not allowed.';
@@ -168,10 +169,12 @@ export class NullASTNodeImpl extends ASTNodeImpl implements NullASTNode {
 export class BooleanASTNodeImpl extends ASTNodeImpl implements BooleanASTNode {
   public type: 'boolean' = 'boolean' as const;
   public value: boolean;
+  public source: string;
 
-  constructor(parent: ASTNode, internalNode: Node, boolValue: boolean, offset: number, length?: number) {
+  constructor(parent: ASTNode, internalNode: Node, boolValue: boolean, boolSource: string, offset: number, length?: number) {
     super(parent, internalNode, offset, length);
     this.value = boolValue;
+    this.source = boolSource;
   }
 }
 
@@ -286,7 +289,10 @@ export interface ISchemaCollector {
 
 class SchemaCollector implements ISchemaCollector {
   schemas: IApplicableSchema[] = [];
-  constructor(private focusOffset = -1, private exclude: ASTNode = null) {}
+  constructor(
+    private focusOffset = -1,
+    private exclude: ASTNode = null
+  ) {}
   add(schema: IApplicableSchema): void {
     this.schemas.push(schema);
   }
@@ -498,8 +504,9 @@ export function getNodeValue(node: ASTNode): any {
     case 'null':
     case 'string':
     case 'number':
-    case 'boolean':
       return node.value;
+    case 'boolean':
+      return node.source;
     default:
       return undefined;
   }
@@ -528,6 +535,12 @@ export function findNodeAtOffset(node: ASTNode, offset: number, includeRightBoun
     return node;
   }
   return undefined;
+}
+
+interface IValidationMatch {
+  schema: JSONSchema;
+  validationResult: ValidationResult;
+  matchingSchemas: ISchemaCollector;
 }
 
 export class JSONDocument {
@@ -863,7 +876,7 @@ function validate(
       const val = getNodeValue(node);
       let enumValueMatch = false;
       for (const e of schema.enum) {
-        if (equals(val, e) || (callFromAutoComplete && isString(val) && isString(e) && val && e.startsWith(val))) {
+        if (equals(val, e, node.type) || isAutoCompleteEqualMaybe(callFromAutoComplete, node, val, e)) {
           enumValueMatch = true;
           break;
         }
@@ -888,16 +901,14 @@ function validate(
             ),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
+          data: { values: schema.enum },
         });
       }
     }
 
     if (isDefined(schema.const)) {
       const val = getNodeValue(node);
-      if (
-        !equals(val, schema.const) &&
-        !(callFromAutoComplete && isString(val) && isString(schema.const) && schema.const.startsWith(val))
-      ) {
+      if (!equals(val, schema.const, node.type) && !isAutoCompleteEqualMaybe(callFromAutoComplete, node, val, schema.const)) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
@@ -907,6 +918,7 @@ function validate(
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
           problemArgs: [JSON.stringify(schema.const)],
+          data: { values: [schema.const] },
         });
         validationResult.enumValueMatch = false;
       } else {
@@ -930,7 +942,7 @@ function validate(
     const val = node.value;
 
     if (isNumber(schema.multipleOf)) {
-      if (val % schema.multipleOf !== 0) {
+      if (floatSafeRemainder(val, schema.multipleOf) !== 0) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
@@ -1365,7 +1377,21 @@ function validate(
       (schema.type === 'object' && schema.additionalProperties === undefined && options.disableAdditionalProperties === true)
     ) {
       if (unprocessedProperties.length > 0) {
-        const possibleProperties = schema.properties && Object.keys(schema.properties).filter((prop) => !seenKeys[prop]);
+        const possibleProperties =
+          schema.properties &&
+          Object.entries(schema.properties)
+            .filter(([key, property]) => {
+              // don't include existing properties
+              if (seenKeys[key]) {
+                return false;
+              }
+              // don't include properties that are not suggested in completion
+              if (property && typeof property === 'object' && (property.doNotSuggest || property.deprecationMessage)) {
+                return false;
+              }
+              return true;
+            })
+            .map(([key]) => key);
 
         for (const propertyName of unprocessedProperties) {
           const child = seenKeys[propertyName];
@@ -1385,6 +1411,7 @@ function validate(
                 length: propertyNode.keyNode.length,
               },
               severity: DiagnosticSeverity.Warning,
+              code: ErrorCode.PropertyExpected,
               message: schema.errorMessage || localize('DisallowedExtraPropWarning', MSG_PROPERTY_NOT_ALLOWED, propertyName),
               source: getSchemaSource(schema, originalSchema),
               schemaUri: getSchemaUri(schema, originalSchema),
@@ -1498,23 +1525,11 @@ function validate(
     node: ASTNode,
     maxOneMatch,
     subValidationResult: ValidationResult,
-    bestMatch: {
-      schema: JSONSchema;
-      validationResult: ValidationResult;
-      matchingSchemas: ISchemaCollector;
-    },
+    bestMatch: IValidationMatch,
     subSchema,
     subMatchingSchemas
-  ): {
-    schema: JSONSchema;
-    validationResult: ValidationResult;
-    matchingSchemas: ISchemaCollector;
-  } {
-    if (
-      !maxOneMatch &&
-      !subValidationResult.hasProblems() &&
-      (!bestMatch.validationResult.hasProblems() || callFromAutoComplete)
-    ) {
+  ): IValidationMatch {
+    if (!maxOneMatch && !subValidationResult.hasProblems() && !bestMatch.validationResult.hasProblems()) {
       // no errors, both are equally good matches
       bestMatch.matchingSchemas.merge(subMatchingSchemas);
       bestMatch.validationResult.propertiesMatches += subValidationResult.propertiesMatches;
@@ -1535,18 +1550,29 @@ function validate(
           validationResult: subValidationResult,
           matchingSchemas: subMatchingSchemas,
         };
-      } else if (compareResult === 0) {
+      } else if (
+        compareResult === 0 ||
+        ((node.value === null || node.type === 'null') && node.length === 0) // node with no value can match any schema potentially
+      ) {
         // there's already a best matching but we are as good
-        bestMatch.matchingSchemas.merge(subMatchingSchemas);
-        bestMatch.validationResult.mergeEnumValues(subValidationResult);
-        bestMatch.validationResult.mergeWarningGeneric(subValidationResult, [
-          ProblemType.missingRequiredPropWarning,
-          ProblemType.typeMismatchWarning,
-          ProblemType.constWarning,
-        ]);
+        mergeValidationMatches(bestMatch, subMatchingSchemas, subValidationResult);
       }
     }
     return bestMatch;
+  }
+
+  function mergeValidationMatches(
+    bestMatch: IValidationMatch,
+    subMatchingSchemas: ISchemaCollector,
+    subValidationResult: ValidationResult
+  ): void {
+    bestMatch.matchingSchemas.merge(subMatchingSchemas);
+    bestMatch.validationResult.mergeEnumValues(subValidationResult);
+    bestMatch.validationResult.mergeWarningGeneric(subValidationResult, [
+      ProblemType.missingRequiredPropWarning,
+      ProblemType.typeMismatchWarning,
+      ProblemType.constWarning,
+    ]);
   }
 }
 
@@ -1584,4 +1610,27 @@ function getSchemaUri(schema: JSONSchema, originalSchema: JSONSchema): string[] 
 
 function getWarningMessage(problemType: ProblemType, args: string[]): string {
   return localize(problemType, ProblemTypeMessages[problemType], args.join(' | '));
+}
+
+/**
+ * if callFromAutoComplete than compare value from yaml and value from schema (s.const | s.enum[i])
+ * allows partial match for autocompletion
+ */
+function isAutoCompleteEqualMaybe(
+  callFromAutoComplete: boolean,
+  node: ASTNode,
+  nodeValue: unknown,
+  schemaValue: unknown
+): boolean {
+  if (!callFromAutoComplete) {
+    return false;
+  }
+
+  // if autocompletion property doesn't have value, then it could be a match
+  const isWithoutValue = nodeValue === null && node.length === 0; // allows `prop: ` but ignore `prop: null`
+  if (isWithoutValue) {
+    return true;
+  }
+
+  return isString(nodeValue) && isString(schemaValue) && schemaValue.startsWith(nodeValue);
 }

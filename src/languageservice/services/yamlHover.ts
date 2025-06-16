@@ -12,12 +12,11 @@ import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { IApplicableSchema } from '../parser/jsonParser07';
+import { getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
 import { JSONSchema } from '../jsonSchema';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
 import { Telemetry } from '../telemetry';
-import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { ASTNode } from 'vscode-json-languageservice';
 import { Scalar, stringify as stringifyYAML } from 'yaml';
 import { SettingsState } from '../../yamlSettings';
@@ -61,7 +60,7 @@ export class YAMLHover {
       currentDoc.currentDocIndex = currentDocIndex;
       return this.getHover(document, position, currentDoc);
     } catch (error) {
-      this.telemetry?.sendError('yaml.hover.error', { error: convertErrorToTelemetryMsg(error) });
+      this.telemetry?.sendError('yaml.hover.error', error);
     }
   }
 
@@ -129,7 +128,7 @@ export class YAMLHover {
     };
 
     const removePipe = (value: string): string => {
-      return value.replace(/\|\|\s*$/, '');
+      return value.replace(/\s\|\|\s*$/, '');
     };
 
     return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
@@ -141,12 +140,13 @@ export class YAMLHover {
         let markdownEnumDescriptions: string[] = [];
         const markdownExamples: string[] = [];
         const markdownEnums: markdownEnum[] = [];
-
+        let enumIdx: number | undefined = undefined;
         matchingSchemas.every((s) => {
           if ((s.node === node || (node.type === 'property' && node.valueNode === s.node)) && !s.inverted && s.schema) {
             title = title || s.schema.title || s.schema.closestTitle;
             markdownDescription = markdownDescription || s.schema.markdownDescription || this.toMarkdown(s.schema.description);
             if (s.schema.enum) {
+              enumIdx = s.schema.enum.indexOf(getNodeValue(node));
               if (s.schema.markdownEnumDescriptions) {
                 markdownEnumDescriptions = s.schema.markdownEnumDescriptions;
               } else if (s.schema.enumDescriptions) {
@@ -158,16 +158,19 @@ export class YAMLHover {
                 if (typeof enumValue !== 'string') {
                   enumValue = JSON.stringify(enumValue);
                 }
-                markdownEnums.push({
-                  value: enumValue,
-                  description: markdownEnumDescriptions[idx],
-                });
+                //insert only if the value is not present yet (avoiding duplicates)
+                if (!markdownEnums.some((me) => me.value === enumValue)) {
+                  markdownEnums.push({
+                    value: enumValue,
+                    description: markdownEnumDescriptions[idx],
+                  });
+                }
               });
             }
             if (s.schema.anyOf && isAllSchemasMatched(node, matchingSchemas, s.schema)) {
               //if append title and description of all matched schemas on hover
               title = '';
-              markdownDescription = '';
+              markdownDescription = s.schema.description ? s.schema.description + '\n' : '';
               s.schema.anyOf.forEach((childSchema: JSONSchema, index: number) => {
                 title += childSchema.title || s.schema.closestTitle || '';
                 markdownDescription += childSchema.markdownDescription || this.toMarkdown(childSchema.description) || '';
@@ -198,6 +201,9 @@ export class YAMLHover {
         if (markdownEnums.length !== 0) {
           result = ensureLineBreak(result);
           result += 'Allowed Values:\n\n';
+          if (enumIdx) {
+            markdownEnums.unshift(markdownEnums.splice(enumIdx, 1)[0]);
+          }
           markdownEnums.forEach((me) => {
             if (me.description) {
               result += `* \`${toMarkdownCodeBlock(me.value)}\`: ${me.description}\n`;

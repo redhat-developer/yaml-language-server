@@ -3,7 +3,7 @@ import * as parser from '../src/languageservice/parser/yamlParser07';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import * as JsonSchema from '../src/languageservice/jsonSchema';
 import * as url from 'url';
-import path = require('path');
+import * as path from 'path';
 import { XHRResponse, xhr } from 'request-light';
 import { MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
@@ -533,14 +533,14 @@ describe('JSON Schema', () => {
 
     await service.addContent({
       action: MODIFICATION_ACTIONS.add,
-      path: 'oneOf/1/properties/kind',
-      key: 'enum',
-      content: ['v2', 'v3'],
+      path: '/oneOf/1/properties',
+      key: 'foobar',
+      content: ['hello', 'world'],
       schema: KUBERNETES_SCHEMA_URL,
     });
 
     const fs = await service.getResolvedSchema(KUBERNETES_SCHEMA_URL);
-    assert.deepEqual(fs.schema.oneOf[1].properties['kind']['enum'], ['v2', 'v3']);
+    assert.deepEqual(fs.schema.oneOf[1].properties['foobar'], ['hello', 'world']);
   });
 
   it('Deleting schema works with Kubernetes resolution', async () => {
@@ -549,13 +549,13 @@ describe('JSON Schema', () => {
 
     await service.deleteContent({
       action: MODIFICATION_ACTIONS.delete,
-      path: 'oneOf/1/properties/kind',
-      key: 'enum',
+      path: 'oneOf/1',
+      key: 'properties',
       schema: KUBERNETES_SCHEMA_URL,
     });
 
     const fs = await service.getResolvedSchema(KUBERNETES_SCHEMA_URL);
-    assert.equal(fs.schema.oneOf[1].properties['kind']['enum'], undefined);
+    assert.equal(fs.schema.oneOf[1].properties, undefined);
   });
 
   it('Adding a brand new schema', async () => {
