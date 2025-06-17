@@ -36,14 +36,14 @@ type NodeRange = [number, number, number];
 export const aliasDepth = {
   maxRefCount: 1000,
   currentRefDepth: 0,
+  aliasResolutionCache: new Map<Alias, ASTNode>(),
 };
-
-const seenAlias = new Set<Alias>();
 
 export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineCounter: LineCounter): ASTNode | undefined {
   if (!parent) {
     // first invocation
     aliasDepth.currentRefDepth = 0;
+    aliasDepth.aliasResolutionCache = new Map();
   }
 
   if (!node) {
@@ -61,11 +61,8 @@ export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineC
   if (isScalar(node)) {
     return convertScalar(node, parent);
   }
-  if (isAlias(node) && !seenAlias.has(node) && aliasDepth.currentRefDepth < aliasDepth.maxRefCount) {
-    seenAlias.add(node);
-    const converted = convertAlias(node, parent, doc, lineCounter);
-    seenAlias.delete(node);
-    return converted;
+  if (isAlias(node) && aliasDepth.currentRefDepth < aliasDepth.maxRefCount) {
+    return convertAlias(node, parent, doc, lineCounter);
   } else {
     return;
   }
@@ -158,6 +155,10 @@ function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
 }
 
 function convertAlias(node: Alias, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
+  if (aliasDepth.aliasResolutionCache.has(node)) {
+    return aliasDepth.aliasResolutionCache.get(node);
+  }
+
   aliasDepth.currentRefDepth++;
   const resolvedNode = node.resolve(doc);
   let ans: ASTNode;
@@ -169,6 +170,7 @@ function convertAlias(node: Alias, parent: ASTNode, doc: Document, lineCounter: 
     ans = resultNode;
   }
   aliasDepth.currentRefDepth--;
+  aliasDepth.aliasResolutionCache.set(node, ans);
   return ans;
 }
 
