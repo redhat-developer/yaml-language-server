@@ -28,9 +28,11 @@ import { JSONSchemaDescriptionExt } from '../../requestTypes';
 import { SchemaVersions } from '../yamlTypes';
 
 import Ajv, { DefinedError } from 'ajv';
+import Ajv4 from 'ajv-draft-04';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
 const ajv = new Ajv();
+const ajv4 = new Ajv4();
 
 const localize = nls.loadMessageBundle();
 
@@ -38,6 +40,11 @@ const localize = nls.loadMessageBundle();
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
 const schema07Validator = ajv.compile(jsonSchema07);
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const jsonSchema04 = require('ajv-draft-04/dist/refs/json-schema-draft-04.json');
+const schema04Validator = ajv4.compile(jsonSchema04);
+const SCHEMA_04_URI_WITH_HTTPS = ajv4.defaultMeta().replace('http://', 'https://');
 
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
@@ -164,9 +171,13 @@ export class YAMLSchemaService extends JSONSchemaService {
     let schema: JSONSchema = schemaToResolve.schema;
     const contextService = this.contextService;
 
-    if (!schema07Validator(schema)) {
+    const validator =
+      this.normalizeId(schema.$schema) === ajv4.defaultMeta() || this.normalizeId(schema.$schema) === SCHEMA_04_URI_WITH_HTTPS
+        ? schema04Validator
+        : schema07Validator;
+    if (!validator(schema)) {
       const errs: string[] = [];
-      for (const err of schema07Validator.errors as DefinedError[]) {
+      for (const err of validator.errors as DefinedError[]) {
         errs.push(`${err.instancePath} : ${err.message}`);
       }
       resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
