@@ -32,14 +32,18 @@ import {
 
 type NodeRange = [number, number, number];
 
-const maxRefCount = 1000;
-let refDepth = 0;
-const seenAlias = new Set<Alias>();
+// Exported for tests
+export const aliasDepth = {
+  maxRefCount: 1000,
+  currentRefDepth: 0,
+  aliasResolutionCache: new Map<Alias, ASTNode>(),
+};
 
 export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineCounter: LineCounter): ASTNode | undefined {
   if (!parent) {
     // first invocation
-    refDepth = 0;
+    aliasDepth.currentRefDepth = 0;
+    aliasDepth.aliasResolutionCache = new Map();
   }
 
   if (!node) {
@@ -57,11 +61,8 @@ export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineC
   if (isScalar(node)) {
     return convertScalar(node, parent);
   }
-  if (isAlias(node) && !seenAlias.has(node) && refDepth < maxRefCount) {
-    seenAlias.add(node);
-    const converted = convertAlias(node, parent, doc, lineCounter);
-    seenAlias.delete(node);
-    return converted;
+  if (isAlias(node) && aliasDepth.currentRefDepth < aliasDepth.maxRefCount) {
+    return convertAlias(node, parent, doc, lineCounter);
   } else {
     return;
   }
@@ -154,15 +155,23 @@ function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
 }
 
 function convertAlias(node: Alias, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
-  refDepth++;
+  if (aliasDepth.aliasResolutionCache.has(node)) {
+    return aliasDepth.aliasResolutionCache.get(node);
+  }
+
+  aliasDepth.currentRefDepth++;
   const resolvedNode = node.resolve(doc);
+  let ans: ASTNode;
   if (resolvedNode) {
-    return convertAST(parent, resolvedNode, doc, lineCounter);
+    ans = convertAST(parent, resolvedNode, doc, lineCounter);
   } else {
     const resultNode = new StringASTNodeImpl(parent, node, ...toOffsetLength(node.range));
     resultNode.value = node.source;
-    return resultNode;
+    ans = resultNode;
   }
+  aliasDepth.currentRefDepth--;
+  aliasDepth.aliasResolutionCache.set(node, ans);
+  return ans;
 }
 
 export function toOffsetLength(range: NodeRange): [number, number] {
