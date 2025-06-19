@@ -260,7 +260,11 @@ export class YamlHoverDetail {
           results = [''];
         }
 
-        return createHover(results.join('\n\n'), resSchemas, decycleNode);
+        let content = results.join('\n\n');
+
+        content = descriptionImageResize(content);
+
+        return createHover(content, resSchemas, decycleNode);
       }
       return null;
     });
@@ -336,4 +340,8 @@ function toMarkdownCodeBlock(content: string): string {
     return '`` ' + content + ' ``';
   }
   return content;
+}
+
+function descriptionImageResize(markdownString: string): string {
+  return markdownString.replace(/width="100%"/g, 'width="300px"');
 }
