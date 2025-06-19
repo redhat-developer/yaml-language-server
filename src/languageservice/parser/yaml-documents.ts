@@ -262,6 +262,7 @@ interface YamlCachedDocument {
 export class YamlDocuments {
   // a mapping of URIs to cached documents
   private cache = new Map<string, YamlCachedDocument>();
+  private textDocumentMapping = new Map<string, TextDocument>();
 
   /**
    * Get cached YAMLDocument
@@ -272,7 +273,17 @@ export class YamlDocuments {
    */
   getYamlDocument(document: TextDocument, parserOptions?: ParserOptions, addRootObject = false): YAMLDocument {
     this.ensureCache(document, parserOptions ?? defaultOptions, addRootObject);
+    this.textDocumentMapping.set(document.uri, document);
     return this.cache.get(document.uri).document;
+  }
+
+  getAllDocuments(): [string, YAMLDocument, TextDocument][] {
+    const documents: [string, YAMLDocument, TextDocument][] = [];
+    for (const [uri, doc] of this.cache.entries()) {
+      const txtdoc = this.textDocumentMapping.get(uri);
+      documents.push([uri, doc.document, txtdoc]);
+    }
+    return documents;
   }
 
   /**

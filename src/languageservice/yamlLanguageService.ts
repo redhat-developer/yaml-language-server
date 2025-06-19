@@ -71,6 +71,11 @@ export interface SchemasSettings {
   versions?: SchemaVersions;
 }
 
+export interface GitlabciSettings {
+  enabled?: boolean;
+  codelensEnabled?: boolean;
+}
+
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
   hover?: boolean; //Setting for whether we want to have hover results
@@ -119,6 +124,10 @@ export interface LanguageSettings {
    * If set enforce alphabetical ordering of keys in mappings.
    */
   keyOrdering?: boolean;
+  /**
+   * If set will enable gitlab-ci add-ons.
+   */
+  gitlabci?: GitlabciSettings;
 }
 
 export interface WorkspaceContextService {
@@ -192,14 +201,14 @@ export function getLanguageService(params: {
 }): LanguageService {
   const schemaService = new YAMLSchemaService(params.schemaRequestService, params.workspaceContext);
   const completer = new YamlCompletion(schemaService, params.clientCapabilities, yamlDocumentsCache, params.telemetry);
-  const hover = new YAMLHover(schemaService, params.telemetry);
+  const hover = new YAMLHover(schemaService, params.telemetry, params.yamlSettings);
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService, params.telemetry);
   const yamlValidation = new YAMLValidation(schemaService, params.telemetry);
   const formatter = new YAMLFormatter();
   const yamlCodeActions = new YamlCodeActions(params.clientCapabilities);
-  const yamlCodeLens = new YamlCodeLens(schemaService, params.telemetry);
+  const yamlCodeLens = new YamlCodeLens(schemaService, params.telemetry, params.yamlSettings);
   const yamlLinks = new YamlLinks(params.telemetry);
-  const yamlDefinition = new YamlDefinition(params.telemetry);
+  const yamlDefinition = new YamlDefinition(params.telemetry, params.yamlSettings);
 
   new JSONSchemaSelection(schemaService, params.yamlSettings, params.connection);
 

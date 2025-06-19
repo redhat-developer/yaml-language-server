@@ -18,7 +18,9 @@ import { URI } from 'vscode-uri';
 import * as path from 'path';
 import { Telemetry } from '../telemetry';
 import { ASTNode } from 'vscode-json-languageservice';
-import { stringify as stringifyYAML } from 'yaml';
+import { Scalar, stringify as stringifyYAML } from 'yaml';
+import { SettingsState } from '../../yamlSettings';
+import { findNodeFromPathRecursive } from './gitlabciUtils';
 
 export class YAMLHover {
   private shouldHover: boolean;
@@ -27,7 +29,8 @@ export class YAMLHover {
 
   constructor(
     schemaService: YAMLSchemaService,
-    private readonly telemetry?: Telemetry
+    private readonly telemetry?: Telemetry,
+    private readonly settings?: SettingsState
   ) {
     this.shouldHover = true;
     this.schemaService = schemaService;
@@ -88,6 +91,29 @@ export class YAMLHover {
       document.positionAt(hoverRangeNode.offset),
       document.positionAt(hoverRangeNode.offset + hoverRangeNode.length)
     );
+
+    if (this.settings?.gitlabci.enabled) {
+      const allDocuments = yamlDocumentsCache.getAllDocuments();
+
+      // Job title hover : Show hierarchy
+      // hoverRangeNode = job name, parent = key value pair, grandparent = full document, great grandparent = null
+      if (hoverRangeNode && hoverRangeNode.parent && hoverRangeNode.parent.parent && !hoverRangeNode.parent.parent.parent) {
+        const jobName = hoverRangeNode.value as string;
+        const hierarchy = findNodeFromPathRecursive(allDocuments, [jobName]);
+        if (hierarchy.length >= 2) {
+          const names = [];
+          for (const [, target, ,] of hierarchy) {
+            names.push((('`' + (target.key as Scalar).value) as string) + '`');
+          }
+
+          const result: Hover = {
+            contents: '### Gitlab Hierarchy\n' + names.join(' > '),
+            range: hoverRange,
+          };
+          return Promise.resolve(result);
+        }
+      }
+    }
 
     const createHover = (contents: string): Hover => {
       const markupContent: MarkupContent = {

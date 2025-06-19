@@ -8,10 +8,13 @@ import { expect } from 'chai';
 import { YamlDefinition } from '../src/languageservice/services/yamlDefinition';
 import { LocationLink, Position, Range } from 'vscode-languageserver-types';
 import { Telemetry } from '../src/languageservice/telemetry';
+import { TextDocumentTestManager } from '../src/yamlSettings';
 
 describe('YAML Definition', () => {
   it('should not provide definition for non anchor node', () => {
     const doc = setupTextDocument('foo: &bar some\naaa: *bar');
+    const documents = new TextDocumentTestManager();
+    (documents as TextDocumentTestManager).set(doc);
     const result = new YamlDefinition({} as Telemetry).getDefinition(doc, {
       position: Position.create(1, 2),
       textDocument: { uri: TEST_URI },
@@ -21,6 +24,8 @@ describe('YAML Definition', () => {
 
   it('should provide definition for anchor', () => {
     const doc = setupTextDocument('foo: &bar some\naaa: *bar');
+    const documents = new TextDocumentTestManager();
+    (documents as TextDocumentTestManager).set(doc);
     const result = new YamlDefinition({} as Telemetry).getDefinition(doc, {
       position: Position.create(1, 7),
       textDocument: { uri: TEST_URI },

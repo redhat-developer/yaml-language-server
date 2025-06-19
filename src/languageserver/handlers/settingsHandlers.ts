@@ -126,6 +126,10 @@ export class SettingsHandler {
         flowSequence: settings.yaml.style?.flowSequence ?? 'allow',
       };
       this.yamlSettings.keyOrdering = settings.yaml.keyOrdering ?? false;
+      if (settings.yaml.gitlabci) {
+        this.yamlSettings.gitlabci.enabled = settings.yaml.gitlabci.enabled ?? true;
+        this.yamlSettings.gitlabci.codelensEnabled = settings.yaml.gitlabci.codelensEnabled ?? true;
+      }
     }
 
     this.yamlSettings.schemaConfigurationSettings = [];
@@ -267,6 +271,7 @@ export class SettingsHandler {
       flowSequence: this.yamlSettings.style?.flowSequence,
       yamlVersion: this.yamlSettings.yamlVersion,
       keyOrdering: this.yamlSettings.keyOrdering,
+      gitlabci: this.yamlSettings.gitlabci,
     };
 
     if (this.yamlSettings.schemaAssociations) {
