@@ -1,6 +1,6 @@
 import { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
-import { Telemetry } from '../telemetry';
+import { Telemetry } from '../yamlLanguageService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isBoolean } from './objects';
 import { isRelativePath, relativeToAbsolutePath } from './paths';

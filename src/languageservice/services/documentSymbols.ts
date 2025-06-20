@@ -10,7 +10,7 @@ import { JSONDocumentSymbols } from 'vscode-json-languageservice/lib/umd/service
 import { DocumentSymbolsContext } from 'vscode-json-languageservice/lib/umd/jsonLanguageTypes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { Telemetry } from '../telemetry';
+import { Telemetry } from '../yamlLanguageService';
 import { isMap, isSeq, Node } from 'yaml';
 
 export class YAMLDocumentSymbols {

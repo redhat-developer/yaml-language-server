@@ -6,7 +6,7 @@
 
 import { Hover, MarkupContent, MarkupKind, Position, Range } from 'vscode-languageserver-types';
 import { matchOffsetToDocument } from '../utils/arrUtils';
-import { LanguageSettings } from '../yamlLanguageService';
+import { LanguageSettings, Telemetry } from '../yamlLanguageService';
 import { YAMLSchemaService } from './yamlSchemaService';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -16,7 +16,6 @@ import { getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
 import { JSONSchema } from '../jsonSchema';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
-import { Telemetry } from '../telemetry';
 import { ASTNode } from 'vscode-json-languageservice';
 import { stringify as stringifyYAML } from 'yaml';
 
