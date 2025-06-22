@@ -133,11 +133,15 @@ export class YAMLHover {
                   enumValue = JSON.stringify(enumValue);
                 }
                 //insert only if the value is not present yet (avoiding duplicates)
-                if (!markdownEnums.some((me) => me.value === enumValue)) {
+                //but it also adds or keeps the description of the enum value
+                const foundIdx = markdownEnums.findIndex((me) => me.value === enumValue);
+                if (foundIdx < 0) {
                   markdownEnums.push({
                     value: enumValue,
                     description: markdownEnumDescriptions[idx],
                   });
+                } else {
+                  markdownEnums[foundIdx].description ||= markdownEnumDescriptions[idx];
                 }
               });
             }
