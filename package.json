@@ -43,7 +43,7 @@
     "@microsoft/eslint-formatter-sarif": "3.0.0",
     "@types/chai": "^4.2.12",
     "@types/mocha": "8.2.2",
-    "@types/node": "16.x",
+    "@types/node": "18.x",
     "@types/sinon": "^9.0.5",
     "@types/sinon-chai": "^3.2.5",
     "@typescript-eslint/eslint-plugin": "^5.38.0",
