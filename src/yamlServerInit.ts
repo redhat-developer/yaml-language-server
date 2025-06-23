@@ -18,6 +18,8 @@ import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
 import { commandExecutor } from './languageserver/commandExecutor';
 import { Telemetry } from './languageservice/telemetry';
 import { registerCommands } from './languageservice/services/yamlCommands';
+import * as l10n from '@vscode/l10n';
+import * as path from 'path';
 
 export class YAMLServerInit {
   languageService: LanguageService;
@@ -38,9 +40,23 @@ export class YAMLServerInit {
      * Run when the client connects to the server after it is activated.
      * The server receives the root path(s) of the workspace and the client capabilities.
      */
-    this.connection.onInitialize((params: InitializeParams): InitializeResult => {
+    this.connection.onInitialize(async (params: InitializeParams): Promise<InitializeResult> => {
+      const l10nPath: string = params.initializationOptions?.l10nPath;
+      const locale: string = params.initializationOptions?.locale;
+      if (l10nPath) {
+        const bundleFile = locale === 'en' ? `bundle.l10n.json` : `bundle.l10n.${locale}.json`;
+        const baseBundleFile = path.join(l10nPath, bundleFile);
+        process.env.VSCODE_NLS_CONFIG = JSON.stringify({
+          locale: locale,
+          _languagePackSupport: true,
+        });
+        await l10n.config({
+          uri: URI.file(baseBundleFile).toString(),
+        });
+      }
       return this.connectionInitialized(params);
     });
+
     this.connection.onInitialized(() => {
       if (this.yamlSettings.hasWsChangeWatchedFileDynamicRegistration) {
         this.connection.workspace.onDidChangeWorkspaceFolders((changedFolders) => {
@@ -54,7 +70,7 @@ export class YAMLServerInit {
   }
 
   // public for test setup
-  connectionInitialized(params: InitializeParams): InitializeResult {
+  async connectionInitialized(params: InitializeParams): Promise<InitializeResult> {
     this.yamlSettings.capabilities = params.capabilities;
     this.languageService = getCustomLanguageService({
       schemaRequestService: this.schemaRequestService,

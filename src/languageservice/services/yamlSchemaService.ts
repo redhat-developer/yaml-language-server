@@ -16,8 +16,7 @@ import {
 } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 
 import { URI } from 'vscode-uri';
-
-import * as nls from 'vscode-nls';
+import * as l10n from '@vscode/l10n';
 import { convertSimple2RegExpPattern } from '../utils/strings';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonParser07';
@@ -33,8 +32,6 @@ import { getSchemaTitle } from '../utils/schemaUtils';
 
 const ajv = new Ajv();
 const ajv4 = new Ajv4();
-
-const localize = nls.loadMessageBundle();
 
 // load JSON Schema 07 def to validate loaded schemas
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -208,7 +205,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           }
         }
       } else {
-        resolveErrors.push(localize('json.schema.invalidref', "$ref '{0}' in '{1}' can not be resolved.", path, sourceURI));
+        resolveErrors.push(l10n.t('json.schema.invalidref', path, sourceURI));
       }
     };
 
@@ -229,9 +226,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         parentSchemaDependencies[uri] = true;
         if (unresolvedSchema.errors.length) {
           const loc = linkPath ? uri + '#' + linkPath : uri;
-          resolveErrors.push(
-            localize('json.schema.problemloadingref', "Problems loading reference '{0}': {1}", loc, unresolvedSchema.errors[0])
-          );
+          resolveErrors.push(l10n.t('json.schema.problemloadingref', loc, unresolvedSchema.errors[0]));
         }
         merge(node, unresolvedSchema.schema, uri, linkPath);
         node.url = uri;
@@ -654,12 +649,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         return requestService(schemaUri).then(
           (content) => {
             if (!content) {
-              const errorMessage = localize(
-                'json.schema.nocontent',
-                "Unable to load schema from '{0}': No content. {1}",
-                toDisplayString(schemaUri),
-                unresolvedJsonSchema.errors
-              );
+              const errorMessage = l10n.t('json.schema.nocontent', toDisplayString(schemaUri), unresolvedJsonSchema.errors);
               return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
             }
 
@@ -667,12 +657,7 @@ export class YAMLSchemaService extends JSONSchemaService {
               const schemaContent = parse(content);
               return new UnresolvedSchema(schemaContent, []);
             } catch (yamlError) {
-              const errorMessage = localize(
-                'json.schema.invalidFormat',
-                "Unable to parse content from '{0}': {1}.",
-                toDisplayString(schemaUri),
-                yamlError
-              );
+              const errorMessage = l10n.t('json.schema.invalidFormat', toDisplayString(schemaUri), yamlError);
               return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
             }
           },

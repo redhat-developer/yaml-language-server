@@ -5,6 +5,7 @@ import { FlowCollection } from 'yaml/dist/parse/cst';
 import { SingleYAMLDocument } from '../../parser/yaml-documents';
 import { LanguageSettings } from '../../yamlLanguageService';
 import { AdditionalValidator } from './types';
+import * as l10n from '@vscode/l10n';
 
 export class YAMLStyleValidator implements AdditionalValidator {
   private forbidSequence: boolean;
@@ -21,7 +22,7 @@ export class YAMLStyleValidator implements AdditionalValidator {
         result.push(
           Diagnostic.create(
             this.getRangeOf(document, node.srcToken),
-            'Flow style mapping is forbidden',
+            l10n.t('flowStyleMapForbidden', 'Flow style mapping is forbidden'),
             DiagnosticSeverity.Error,
             'flowMap'
           )
@@ -31,7 +32,7 @@ export class YAMLStyleValidator implements AdditionalValidator {
         result.push(
           Diagnostic.create(
             this.getRangeOf(document, node.srcToken),
-            'Flow style sequence is forbidden',
+            l10n.t('flowStyleSeqForbidden'),
             DiagnosticSeverity.Error,
             'flowSeq'
           )
