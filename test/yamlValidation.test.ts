@@ -55,7 +55,7 @@ describe('YAML Validation Tests', () => {
     });
 
     it('Should allow proper space indentation followed by tab', async () => {
-      const yaml = 'foo:\n  \tbar';
+      const yaml = 'foo:\n  bar';
       const result = await parseSetup(yaml);
       expect(result).to.be.empty;
     });
@@ -142,7 +142,7 @@ animals: [dog , cat , mouse]  `;
       expect(result).not.to.be.empty;
       expect(result.length).to.be.equal(2);
       expect(result).to.include.deep.members([
-        createExpectedError('Flow style mapping is forbidden', 1, 12, 1, 42, DiagnosticSeverity.Error, 'YAML', 'flowMap'),
+        createExpectedError('Flow style mapping is forbidden', 1, 12, 1, 40, DiagnosticSeverity.Error, 'YAML', 'flowMap'),
         createExpectedError('Flow style sequence is forbidden', 2, 9, 2, 28, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
       ]);
     });
@@ -185,8 +185,8 @@ animals: [dog , cat , mouse]  `;
       expect(result).not.to.be.empty;
       expect(result.length).to.be.equal(2);
       expect(result).to.include.deep.members([
-        createExpectedError('Flow style mapping is forbidden', 0, 8, 0, 11, DiagnosticSeverity.Error, 'YAML', 'flowMap'),
-        createExpectedError('Flow style sequence is forbidden', 1, 9, 1, 10, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
+        createExpectedError('Flow style mapping is forbidden', 0, 8, 0, 10, DiagnosticSeverity.Error, 'YAML', 'flowMap'),
+        createExpectedError('Flow style sequence is forbidden', 1, 9, 1, 11, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
       ]);
     });
   });

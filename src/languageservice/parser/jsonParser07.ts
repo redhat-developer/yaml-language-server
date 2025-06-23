@@ -876,7 +876,7 @@ function validate(
       const val = getNodeValue(node);
       let enumValueMatch = false;
       for (const e of schema.enum) {
-        if (val === e || isAutoCompleteEqualMaybe(callFromAutoComplete, node, val, e)) {
+        if (equals(val, e, node.type) || isAutoCompleteEqualMaybe(callFromAutoComplete, node, val, e)) {
           enumValueMatch = true;
           break;
         }
@@ -908,7 +908,7 @@ function validate(
 
     if (isDefined(schema.const)) {
       const val = getNodeValue(node);
-      if (!equals(val, schema.const) && !isAutoCompleteEqualMaybe(callFromAutoComplete, node, val, schema.const)) {
+      if (!equals(val, schema.const, node.type) && !isAutoCompleteEqualMaybe(callFromAutoComplete, node, val, schema.const)) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,

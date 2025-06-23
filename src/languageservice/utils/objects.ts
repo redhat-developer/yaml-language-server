@@ -4,7 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
-export function equals(one: any, other: any): boolean {
+export function equals(one: any, other: any, type?: any): boolean {
+  if (type === 'boolean') {
+    one = JSON.parse(one);
+  }
   if (one === other) {
     return true;
   }

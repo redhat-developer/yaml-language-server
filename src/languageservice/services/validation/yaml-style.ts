@@ -42,6 +42,9 @@ export class YAMLStyleValidator implements AdditionalValidator {
   }
 
   private getRangeOf(document: TextDocument, node: FlowCollection): Range {
-    return Range.create(document.positionAt(node.start.offset), document.positionAt(node.end.pop().offset));
+    const endOffset = node.end[0].offset;
+    let endPosition = document.positionAt(endOffset);
+    endPosition = { character: endPosition.character + 1, line: endPosition.line };
+    return Range.create(document.positionAt(node.start.offset), endPosition);
   }
 }

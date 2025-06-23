@@ -189,6 +189,42 @@ describe('Validation Tests', () => {
         })
         .then(done, done);
     });
+
+    it('Test that boolean value can be used in enum', (done) => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          analytics: {
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'analytics: true';
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.deepStrictEqual(result, []);
+        })
+        .then(done, done);
+    });
+
+    it('Test that boolean value can be used in const', (done) => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          analytics: {
+            const: true,
+          },
+        },
+      });
+      const content = 'analytics: true';
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.deepStrictEqual(result, []);
+        })
+        .then(done, done);
+    });
   });
 
   describe('String tests', () => {
@@ -2091,6 +2127,89 @@ obj:
     };
     schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = `myProperty:\n  foo: bar`;
+    const result = await parseSetup(content);
+    assert.equal(result.length, 0);
+  });
+
+  it('value should match as per schema const on boolean', async () => {
+    schemaProvider.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        prop: {
+          const: true,
+          type: 'boolean',
+        },
+      },
+    });
+
+    let content = `prop: false`;
+    let result = await parseSetup(content);
+    expect(result.length).to.eq(1);
+    expect(result[0].message).to.eq('Value must be true.');
+
+    content = `prop: true`;
+    result = await parseSetup(content);
+    expect(result.length).to.eq(0);
+  });
+
+  it('draft-04 schema', async () => {
+    const schema: JSONSchema = {
+      $schema: 'http://json-schema.org/draft-04/schema#',
+      type: 'object',
+      properties: {
+        myProperty: {
+          $ref: '#/definitions/Interface%3Ctype%3E',
+        },
+      },
+      definitions: {
+        'Interface<type>': {
+          type: 'object',
+          properties: {
+            foo: {
+              type: 'string',
+            },
+            multipleOf: {
+              type: 'number',
+              minimum: 0,
+              exclusiveMinimum: true,
+            },
+          },
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = `myProperty:\n  foo: bar\n  multipleOf: 1`;
+    const result = await parseSetup(content);
+    assert.equal(result.length, 0);
+  });
+
+  it('draft-04 schema with https in metaschema URI', async () => {
+    const schema: JSONSchema = {
+      $schema: 'https://json-schema.org/draft-04/schema#',
+      type: 'object',
+      properties: {
+        myProperty: {
+          $ref: '#/definitions/Interface%3Ctype%3E',
+        },
+      },
+      definitions: {
+        'Interface<type>': {
+          type: 'object',
+          properties: {
+            foo: {
+              type: 'string',
+            },
+            multipleOf: {
+              type: 'number',
+              minimum: 0,
+              exclusiveMinimum: true,
+            },
+          },
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = `myProperty:\n  foo: bar\n  multipleOf: 1`;
     const result = await parseSetup(content);
     assert.equal(result.length, 0);
   });
