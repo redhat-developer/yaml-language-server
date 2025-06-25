@@ -8,6 +8,8 @@ import * as sinonChai from 'sinon-chai';
 import * as path from 'path';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import { parse } from '../src/languageservice/parser/yamlParser07';
+import { SettingsState } from '../src/yamlSettings';
+import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -139,6 +141,70 @@ describe('YAML Schema Service', () => {
       service.getSchemaForResource('', yamlDock.documents[0]);
 
       expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
+    });
+
+    it('should handle crd catalog for crd', async () => {
+      const documentContent = 'apiVersion: argoproj.io/v1alpha1\nkind: Application';
+      const content = `${documentContent}`;
+      const yamlDock = parse(content);
+
+      const settings = new SettingsState();
+      settings.schemaAssociations = {
+        kubernetes: ['*.yaml'],
+      };
+      settings.kubernetesCRDStoreEnabled = true;
+      requestServiceMock = sandbox.fake.resolves(
+        `
+        {
+          "oneOf": [ {
+              "$ref": "_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingWebhook"
+            },
+          ]
+        }
+        `
+      );
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
+      service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
+      await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+
+      expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
+      expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
+
+      expect(requestServiceMock).calledWithExactly(
+        'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/argoproj.io/application_v1alpha1.json'
+      );
+      expect(requestServiceMock).calledThrice;
+    });
+
+    it('should not get schema from crd catalog if definition in kubernetes schema', async () => {
+      const documentContent = 'apiVersion: admissionregistration.k8s.io/v1\nkind: MutatingWebhook';
+      const content = `${documentContent}`;
+      const yamlDock = parse(content);
+
+      const settings = new SettingsState();
+      settings.schemaAssociations = {
+        kubernetes: ['*.yaml'],
+      };
+      settings.kubernetesCRDStoreEnabled = true;
+      requestServiceMock = sandbox.fake.resolves(
+        `
+        {
+          "oneOf": [ {
+              "$ref": "_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingWebhook"
+            },
+          ]
+        }
+        `
+      );
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
+      service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
+      await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+
+      expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
+      expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
+
+      expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
+      expect(requestServiceMock).calledThrice;
     });
   });
 });

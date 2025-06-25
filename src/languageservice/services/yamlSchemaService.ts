@@ -6,6 +6,7 @@
 
 import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
 import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
+import { SettingsState } from '../../yamlSettings';
 import {
   UnresolvedSchema,
   ResolvedSchema,
@@ -30,6 +31,8 @@ import { SchemaVersions } from '../yamlTypes';
 import Ajv, { DefinedError } from 'ajv';
 import Ajv4 from 'ajv-draft-04';
 import { getSchemaTitle } from '../utils/schemaUtils';
+import { autoDetectKubernetesSchemaFromDocument } from './crdUtil';
+import { CRD_CATALOG_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
 
 const ajv = new Ajv();
 const ajv4 = new Ajv4();
@@ -115,6 +118,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   private filePatternAssociations: JSONSchemaService.FilePatternAssociation[];
   private contextService: WorkspaceContextService;
   private requestService: SchemaRequestService;
+  private yamlSettings: SettingsState;
   public schemaPriorityMapping: Map<string, Set<SchemaPriority>>;
 
   private schemaUriToNameAndDescription = new Map<string, SchemaStoreSchema>();
@@ -122,12 +126,14 @@ export class YAMLSchemaService extends JSONSchemaService {
   constructor(
     requestService: SchemaRequestService,
     contextService?: WorkspaceContextService,
-    promiseConstructor?: PromiseConstructor
+    promiseConstructor?: PromiseConstructor,
+    yamlSettings?: SettingsState
   ) {
     super(requestService, contextService, promiseConstructor);
     this.customSchemaProvider = undefined;
     this.requestService = requestService;
     this.schemaPriorityMapping = new Map();
+    this.yamlSettings = yamlSettings;
   }
 
   registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider): void {
@@ -427,6 +433,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     if (modelineSchema) {
       return resolveSchemaForResource([modelineSchema]);
     }
+
     if (this.customSchemaProvider) {
       return this.customSchemaProvider(resource)
         .then((schemaUri) => {
@@ -469,9 +476,24 @@ export class YAMLSchemaService extends JSONSchemaService {
             return resolveSchema();
           }
         );
-    } else {
-      return resolveSchema();
     }
+    if (this.yamlSettings?.kubernetesCRDStoreEnabled) {
+      for (const entry of this.filePatternAssociations) {
+        if (entry.uris && entry.uris[0] == KUBERNETES_SCHEMA_URL && entry.matchesPattern(resource)) {
+          return resolveSchemaForResource([KUBERNETES_SCHEMA_URL]).then((schema) => {
+            const kubeSchema = autoDetectKubernetesSchemaFromDocument(
+              doc,
+              this.yamlSettings.kubernetesCRDStoreUrl ?? CRD_CATALOG_URL,
+              schema
+            );
+            if (kubeSchema) {
+              return resolveSchemaForResource([kubeSchema]);
+            }
+          });
+        }
+      }
+    }
+    return resolveSchema();
   }
 
   // Set the priority of a schema in the schema service
