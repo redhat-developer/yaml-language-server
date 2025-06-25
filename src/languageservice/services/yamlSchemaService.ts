@@ -162,11 +162,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     return result;
   }
 
-  async resolveSchemaContent(
-    schemaToResolve: UnresolvedSchema,
-    schemaURL: string,
-    dependencies: SchemaDependencies
-  ): Promise<ResolvedSchema> {
+  async resolveSchemaContent(schemaToResolve: UnresolvedSchema, schemaHandle: SchemaHandle): Promise<ResolvedSchema> {
     const resolveErrors: string[] = schemaToResolve.errors.slice(0);
     let schema: JSONSchema = schemaToResolve.schema;
     const contextService = this.contextService;
@@ -180,7 +176,9 @@ export class YAMLSchemaService extends JSONSchemaService {
       for (const err of validator.errors as DefinedError[]) {
         errs.push(`${err.instancePath} : ${err.message}`);
       }
-      resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
+      resolveErrors.push(
+        `Schema '${getSchemaTitle(schemaToResolve.schema, schemaHandle.uri)}' is not valid:\n${errs.join('\n')}`
+      );
     }
 
     const findSection = (schema: JSONSchema, path: string): JSONSchema => {
@@ -216,17 +214,16 @@ export class YAMLSchemaService extends JSONSchemaService {
       node: JSONSchema,
       uri: string,
       linkPath: string,
-      parentSchemaURL: string,
-      parentSchemaDependencies: SchemaDependencies
+      parentSchemaHandle: SchemaHandle
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any> => {
       if (contextService && !/^\w+:\/\/.*/.test(uri)) {
-        uri = contextService.resolveRelativePath(uri, parentSchemaURL);
+        uri = contextService.resolveRelativePath(uri, parentSchemaHandle.uri);
       }
       uri = this.normalizeId(uri);
       const referencedHandle = this.getOrAddSchemaHandle(uri);
       return referencedHandle.getUnresolvedSchema().then((unresolvedSchema) => {
-        parentSchemaDependencies[uri] = true;
+        parentSchemaHandle.dependencies[uri] = true;
         if (unresolvedSchema.errors.length) {
           const loc = linkPath ? uri + '#' + linkPath : uri;
           resolveErrors.push(
@@ -236,15 +233,14 @@ export class YAMLSchemaService extends JSONSchemaService {
         merge(node, unresolvedSchema.schema, uri, linkPath);
         node.url = uri;
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        return resolveRefs(node, unresolvedSchema.schema, uri, referencedHandle.dependencies);
+        return resolveRefs(node, unresolvedSchema.schema, referencedHandle);
       });
     };
 
     const resolveRefs = async (
       node: JSONSchema,
       parentSchema: JSONSchema,
-      parentSchemaURL: string,
-      parentSchemaDependencies: SchemaDependencies
+      parentSchemaHandle: SchemaHandle
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any> => {
       if (!node || typeof node !== 'object') {
@@ -296,11 +292,11 @@ export class YAMLSchemaService extends JSONSchemaService {
           next._$ref = next.$ref;
           delete next.$ref;
           if (segments[0].length > 0) {
-            openPromises.push(resolveExternalLink(next, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies));
+            openPromises.push(resolveExternalLink(next, segments[0], segments[1], parentSchemaHandle));
             return;
           } else {
             if (!seenRefs.has(ref)) {
-              merge(next, parentSchema, parentSchemaURL, segments[1]); // can set next.$ref again, use seenRefs to avoid circle
+              merge(next, parentSchema, parentSchemaHandle.uri, segments[1]); // can set next.$ref again, use seenRefs to avoid circle
               seenRefs.add(ref);
             }
           }
@@ -321,11 +317,11 @@ export class YAMLSchemaService extends JSONSchemaService {
         collectArrayEntries(next.anyOf, next.allOf, next.oneOf, <JSONSchema[]>next.items, next.schemaSequence);
       };
 
-      if (parentSchemaURL.indexOf('#') > 0) {
-        const segments = parentSchemaURL.split('#', 2);
+      if (parentSchemaHandle.uri.indexOf('#') > 0) {
+        const segments = parentSchemaHandle.uri.split('#', 2);
         if (segments[0].length > 0 && segments[1].length > 0) {
           const newSchema = {};
-          await resolveExternalLink(newSchema, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies);
+          await resolveExternalLink(newSchema, segments[0], segments[1], parentSchemaHandle);
           for (const key in schema) {
             if (key === 'required') {
               continue;
@@ -349,7 +345,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       return Promise.all(openPromises);
     };
 
-    await resolveRefs(schema, schema, schemaURL, dependencies);
+    await resolveRefs(schema, schema, schemaHandle);
     return new ResolvedSchema(schema, resolveErrors);
   }
 
@@ -512,9 +508,10 @@ export class YAMLSchemaService extends JSONSchemaService {
     return priorityMapping.get(highestPrio) || [];
   }
 
-  private async resolveCustomSchema(schemaUri, doc): ResolvedSchema {
+  private async resolveCustomSchema(schemaUri: string, doc): ResolvedSchema {
     const unresolvedSchema = await this.loadSchema(schemaUri);
-    const schema = await this.resolveSchemaContent(unresolvedSchema, schemaUri, []);
+    const schemaHandle = this.getOrAddSchemaHandle(schemaUri);
+    const schema = await this.resolveSchemaContent(unresolvedSchema, schemaHandle);
     if (schema.schema && typeof schema.schema === 'object') {
       schema.schema.url = schemaUri;
     }
