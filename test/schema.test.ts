@@ -205,6 +205,37 @@ describe('JSON Schema', () => {
       );
   });
 
+  it('Resolving $refs 4', function (testDone) {
+    const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+    service.setSchemaContributions({
+      schemas: {
+        'https://myschemastore/refs': {
+          id: 'https://myschemastore/refs',
+          type: 'object',
+          properties: {
+            A: { $id: '#A', type: 'string' },
+            B: { $ref: '#A' },
+          },
+        },
+      },
+    });
+
+    service
+      .getResolvedSchema('https://myschemastore/refs')
+      .then((fs) => {
+        assert.deepEqual(fs.schema.properties['A'], { $id: '#A', type: 'string' });
+        assert.deepEqual(fs.schema.properties['B'], { $id: '#A', type: 'string' });
+      })
+      .then(
+        () => {
+          return testDone();
+        },
+        (error) => {
+          testDone(error);
+        }
+      );
+  });
+
   it('FileSchema', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
