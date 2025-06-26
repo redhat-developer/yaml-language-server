@@ -3,7 +3,7 @@
   "json.schema.invalidref": "$ref '{0}' dans '{1}' ne peut pas être résolu",
   "json.schema.problemloadingref": "Problèmes de chargement de la référence '{0}' : {1}",
   "json.schema.noContent": "Impossible de charger le schéma à partir de {0}: aucun contenu.",
-  "json.schema.invalidFormat": "Impossible d’analyser le contenu de {0}: erreur d’analyse à la ligne {1}, colonne {2}",
+  "json.schema.invalidFormat": "Impossible d’analyser le contenu de {0}: erreur d’analyse à la ligne:{1}, colonne:{2}",
   "colorHexFormatWarning": "Format de couleur non valide. Utilisez #RGB, #RGBA, #RRGGBB ou #RRGGBBAA.",
   "dateTimeFormatWarning": "La chaîne n'est pas une date-heure RFC3339.",
   "dateFormatWarning": "La chaîne n'est pas une date RFC3339.",

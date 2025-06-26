@@ -42,7 +42,7 @@ export class YAMLServerInit {
      */
     this.connection.onInitialize(async (params: InitializeParams): Promise<InitializeResult> => {
       const l10nPath: string = params.initializationOptions?.l10nPath;
-      const locale: string = params.initializationOptions?.locale;
+      const locale: string = params.locale;
       if (l10nPath) {
         const bundleFile = locale === 'en' ? `bundle.l10n.json` : `bundle.l10n.${locale}.json`;
         const baseBundleFile = path.join(l10nPath, bundleFile);
