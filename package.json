@@ -32,7 +32,7 @@
     "lodash": "4.17.21",
     "prettier": "^3.5.0",
     "request-light": "^0.5.7",
-    "vscode-json-languageservice": "5.6.0",
+    "vscode-json-languageservice": "4.1.8",
     "vscode-languageserver": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.1",
     "vscode-languageserver-types": "^3.16.0",
