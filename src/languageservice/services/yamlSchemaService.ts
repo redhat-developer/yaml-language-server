@@ -20,12 +20,12 @@ import * as l10n from '@vscode/l10n';
 import { convertSimple2RegExpPattern } from '../utils/strings';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonParser07';
-import { parse } from 'yaml';
 import * as path from 'path';
 import { getSchemaFromModeline } from './modelineUtil';
 import { JSONSchemaDescriptionExt } from '../../requestTypes';
 import { SchemaVersions } from '../yamlTypes';
 
+import * as Json from 'jsonc-parser';
 import Ajv, { DefinedError } from 'ajv';
 import Ajv4 from 'ajv-draft-04';
 import { getSchemaTitle } from '../utils/schemaUtils';
@@ -643,31 +643,33 @@ export class YAMLSchemaService extends JSONSchemaService {
       // If the YAML file starts with %YAML 1.x or contains a comment with a number the schema will
       // contain a number instead of being undefined, so we need to check for that too.
       if (
-        unresolvedJsonSchema.errors &&
-        (unresolvedJsonSchema.schema === undefined || typeof unresolvedJsonSchema.schema === 'number')
+        unresolvedJsonSchema.errors ||
+        unresolvedJsonSchema.schema === undefined ||
+        typeof unresolvedJsonSchema.schema === 'number'
       ) {
         return requestService(schemaUri).then(
           (content) => {
             if (!content) {
-              const errorMessage = l10n.t('json.schema.nocontent', toDisplayString(schemaUri), unresolvedJsonSchema.errors);
+              const errorMessage = l10n.t('json.schema.noContent', toDisplayString(schemaUri), unresolvedJsonSchema.errors);
               return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
             }
-
-            try {
-              const schemaContent = parse(content);
-              return new UnresolvedSchema(schemaContent, []);
-            } catch (yamlError) {
-              const errorMessage = l10n.t('json.schema.invalidFormat', toDisplayString(schemaUri), yamlError);
-              return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
+            const jsonErrors: Json.ParseError[] = [];
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const schemaContent = Json.parse(content, jsonErrors);
+            let errorMessage = '';
+            if (jsonErrors.length) {
+              const { offset } = jsonErrors[0];
+              const { line, column } = getLineAndColumnFromOffset(content, offset);
+              errorMessage = l10n.t('json.schema.invalidFormat', toDisplayString(schemaUri), line, column);
             }
+            return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
           },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (error: any) => {
+          (error: unknown) => {
             let errorMessage = error.toString();
-            const errorSplit = error.toString().split('Error: ');
+            const errorSplit = error.toString().split('vscode/content');
             if (errorSplit.length > 1) {
               // more concise error message, URL and context are attached by caller anyways
-              errorMessage = errorSplit[1];
+              errorMessage = l10n.t('json.schema.noContent', toDisplayString(schemaUri));
             }
             return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
           }
@@ -730,4 +732,11 @@ function toDisplayString(url: string): string {
     // ignore
   }
   return url;
+}
+
+function getLineAndColumnFromOffset(text: string, offset: number): { line: number; column: number } {
+  const lines = text.slice(0, offset).split(/\r?\n/);
+  const line = lines.length; // 1-based line number
+  const column = lines[lines.length - 1].length + 1; // 1-based column number
+  return { line, column };
 }
