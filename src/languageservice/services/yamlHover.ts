@@ -16,6 +16,7 @@ import { getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
 import { JSONSchema } from '../jsonSchema';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
+import * as l10n from '@vscode/l10n';
 import { Telemetry } from '../telemetry';
 import { ASTNode } from 'vscode-json-languageservice';
 import { stringify as stringifyYAML } from 'yaml';
@@ -174,7 +175,7 @@ export class YAMLHover {
         }
         if (markdownEnums.length !== 0) {
           result = ensureLineBreak(result);
-          result += 'Allowed Values:\n\n';
+          result += l10n.t('allowedValues') + '\n\n';
           if (enumIdx) {
             markdownEnums.unshift(markdownEnums.splice(enumIdx, 1)[0]);
           }
@@ -189,13 +190,13 @@ export class YAMLHover {
         if (markdownExamples.length !== 0) {
           markdownExamples.forEach((example) => {
             result = ensureLineBreak(result);
-            result += 'Example:\n\n';
+            result += l10n.t('example') + '\n\n';
             result += `\`\`\`yaml\n${example}\`\`\`\n`;
           });
         }
         if (result.length > 0 && schema.schema.url) {
           result = ensureLineBreak(result);
-          result += `Source: [${getSchemaName(schema.schema)}](${schema.schema.url})`;
+          result += l10n.t('source', getSchemaName(schema.schema), schema.schema.url);
         }
         return createHover(result);
       }

@@ -19,7 +19,7 @@ import {
   YamlNode,
 } from '../jsonASTTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
-import * as nls from 'vscode-nls';
+import * as l10n from '@vscode/l10n';
 import { URI } from 'vscode-uri';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -29,9 +29,6 @@ import { safeCreateUnicodeRegExp } from '../utils/strings';
 import { FilePatternAssociation } from '../services/yamlSchemaService';
 import { floatSafeRemainder } from '../utils/math';
 
-const localize = nls.loadMessageBundle();
-const MSG_PROPERTY_NOT_ALLOWED = 'Property {0} is not allowed.';
-
 export interface IRange {
   offset: number;
   length: number;
@@ -39,33 +36,33 @@ export interface IRange {
 
 export const formats = {
   'color-hex': {
-    errorMessage: localize('colorHexFormatWarning', 'Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.'),
+    errorMessage: l10n.t('colorHexFormatWarning'),
     pattern: /^#([0-9A-Fa-f]{3,4}|([0-9A-Fa-f]{2}){3,4})$/,
   },
   'date-time': {
-    errorMessage: localize('dateTimeFormatWarning', 'String is not a RFC3339 date-time.'),
+    errorMessage: l10n.t('dateTimeFormatWarning'),
     pattern:
       /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i,
   },
   date: {
-    errorMessage: localize('dateFormatWarning', 'String is not a RFC3339 date.'),
+    errorMessage: l10n.t('dateFormatWarning'),
     pattern: /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/i,
   },
   time: {
-    errorMessage: localize('timeFormatWarning', 'String is not a RFC3339 time.'),
+    errorMessage: l10n.t('timeFormatWarning'),
     pattern: /^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i,
   },
   email: {
-    errorMessage: localize('emailFormatWarning', 'String is not an e-mail address.'),
+    errorMessage: l10n.t('emailFormatWarning'),
     pattern:
       /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
   },
   ipv4: {
-    errorMessage: localize('ipv4FormatWarning', 'String does not match IPv4 format.'),
+    errorMessage: l10n.t('ipv4FormatWarning'),
     pattern: /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/,
   },
   ipv6: {
-    errorMessage: localize('ipv6FormatWarning', 'String does not match IPv6 format.'),
+    errorMessage: l10n.t('ipv6FormatWarning'),
     pattern: /^([0-9a-f]|:){1,4}(:([0-9a-f]{0,4})*){1,7}$/i,
   },
 };
@@ -376,9 +373,8 @@ export class ValidationResult {
       this.enumValues = this.enumValues.concat(validationResult.enumValues);
       for (const error of this.problems) {
         if (error.code === ErrorCode.EnumValueMismatch) {
-          error.message = localize(
+          error.message = l10n.t(
             'enumWarning',
-            'Value is not accepted. Valid values: {0}.',
             [...new Set(this.enumValues)]
               .map((v) => {
                 return JSON.stringify(v);
@@ -701,9 +697,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message:
-            schema.errorMessage ||
-            localize('typeArrayMismatchWarning', 'Incorrect type. Expected one of {0}.', (<string[]>schema.type).join(', ')),
+          message: schema.errorMessage || l10n.t('typeArrayMismatchWarning', (<string[]>schema.type).join(', ')),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -737,7 +731,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: localize('notSchemaWarning', 'Matches a schema that is not allowed.'),
+          message: l10n.t('notSchemaWarning'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -790,7 +784,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
-          message: localize('oneOfWarning', 'Matches multiple schemas when only one must validate.'),
+          message: l10n.t('oneOfWarning'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -846,10 +840,7 @@ function validate(
           subValidationResult.problems.push({
             location: { offset: node.offset, length: node.length },
             severity: DiagnosticSeverity.Warning,
-            message: localize(
-              'ifFilePatternAssociation',
-              `filePatternAssociation '${filePatternAssociation}' does not match with doc uri '${options.uri}'.`
-            ),
+            message: l10n.t('ifFilePatternAssociation', filePatternAssociation, options.uri),
             source: getSchemaSource(schema, originalSchema),
             schemaUri: getSchemaUri(schema, originalSchema),
           });
@@ -890,9 +881,8 @@ function validate(
           code: ErrorCode.EnumValueMismatch,
           message:
             schema.errorMessage ||
-            localize(
+            l10n.t(
               'enumWarning',
-              'Value is not accepted. Valid values: {0}.',
               schema.enum
                 .map((v) => {
                   return JSON.stringify(v);
@@ -946,7 +936,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: localize('multipleOfWarning', 'Value is not divisible by {0}.', schema.multipleOf),
+          message: l10n.t('multipleOfWarning', schema.multipleOf),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -972,7 +962,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize('exclusiveMinimumWarning', 'Value is below the exclusive minimum of {0}.', exclusiveMinimum),
+        message: l10n.t('exclusiveMinimumWarning', exclusiveMinimum),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -982,7 +972,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize('exclusiveMaximumWarning', 'Value is above the exclusive maximum of {0}.', exclusiveMaximum),
+        message: l10n.t('exclusiveMaximumWarning', exclusiveMaximum),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -992,7 +982,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize('minimumWarning', 'Value is below the minimum of {0}.', minimum),
+        message: l10n.t('minimumWarning', minimum),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -1002,7 +992,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize('maximumWarning', 'Value is above the maximum of {0}.', maximum),
+        message: l10n.t('maximumWarning', maximum),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -1014,7 +1004,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize('minLengthWarning', 'String is shorter than the minimum length of {0}.', schema.minLength),
+        message: l10n.t('minLengthWarning', schema.minLength),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -1024,7 +1014,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize('maxLengthWarning', 'String is longer than the maximum length of {0}.', schema.maxLength),
+        message: l10n.t('maxLengthWarning', schema.maxLength),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -1036,10 +1026,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message:
-            schema.patternErrorMessage ||
-            schema.errorMessage ||
-            localize('patternWarning', 'String does not match the pattern of "{0}".', schema.pattern),
+          message: schema.patternErrorMessage || schema.errorMessage || l10n.t('patternWarning', schema.pattern),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -1053,12 +1040,12 @@ function validate(
           {
             let errorMessage;
             if (!node.value) {
-              errorMessage = localize('uriEmpty', 'URI expected.');
+              errorMessage = l10n.t('uriEmpty');
             } else {
               try {
                 const uri = URI.parse(node.value);
                 if (!uri.scheme && schema.format === 'uri') {
-                  errorMessage = localize('uriSchemeMissing', 'URI with a scheme is expected.');
+                  errorMessage = l10n.t('uriSchemeMissing');
                 }
               } catch (e) {
                 errorMessage = e.message;
@@ -1068,10 +1055,7 @@ function validate(
               validationResult.problems.push({
                 location: { offset: node.offset, length: node.length },
                 severity: DiagnosticSeverity.Warning,
-                message:
-                  schema.patternErrorMessage ||
-                  schema.errorMessage ||
-                  localize('uriFormatWarning', 'String is not a URI: {0}', errorMessage),
+                message: schema.patternErrorMessage || schema.errorMessage || l10n.t('uriFormatWarning', errorMessage),
                 source: getSchemaSource(schema, originalSchema),
                 schemaUri: getSchemaUri(schema, originalSchema),
               });
@@ -1136,11 +1120,7 @@ function validate(
           validationResult.problems.push({
             location: { offset: node.offset, length: node.length },
             severity: DiagnosticSeverity.Warning,
-            message: localize(
-              'additionalItemsWarning',
-              'Array has too many items according to schema. Expected {0} or fewer.',
-              subSchemas.length
-            ),
+            message: l10n.t('additionalItemsWarning', subSchemas.length),
             source: getSchemaSource(schema, originalSchema),
             schemaUri: getSchemaUri(schema, originalSchema),
           });
@@ -1180,7 +1160,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: schema.errorMessage || localize('requiredItemMissingWarning', 'Array does not contain required item.'),
+          message: schema.errorMessage || l10n.t('requiredItemMissingWarning'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -1191,7 +1171,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize('minItemsWarning', 'Array has too few items. Expected {0} or more.', schema.minItems),
+        message: l10n.t('minItemsWarning', schema.minItems),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -1201,7 +1181,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: localize('maxItemsWarning', 'Array has too many items. Expected {0} or fewer.', schema.maxItems),
+        message: l10n.t('maxItemsWarning', schema.maxItems),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -1216,7 +1196,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: localize('uniqueItemsWarning', 'Array has duplicate items.'),
+          message: l10n.t('uniqueItemsWarning'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -1304,7 +1284,7 @@ function validate(
                   length: propertyNode.keyNode.length,
                 },
                 severity: DiagnosticSeverity.Warning,
-                message: schema.errorMessage || localize('DisallowedExtraPropWarning', MSG_PROPERTY_NOT_ALLOWED, propertyName),
+                message: schema.errorMessage || l10n.t('DisallowedExtraPropWarning', propertyName),
                 source: getSchemaSource(schema, originalSchema),
                 schemaUri: getSchemaUri(schema, originalSchema),
               });
@@ -1341,8 +1321,7 @@ function validate(
                       length: propertyNode.keyNode.length,
                     },
                     severity: DiagnosticSeverity.Warning,
-                    message:
-                      schema.errorMessage || localize('DisallowedExtraPropWarning', MSG_PROPERTY_NOT_ALLOWED, propertyName),
+                    message: schema.errorMessage || l10n.t('DisallowedExtraPropWarning', propertyName),
                     source: getSchemaSource(schema, originalSchema),
                     schemaUri: getSchemaUri(schema, originalSchema),
                   });
@@ -1412,7 +1391,7 @@ function validate(
               },
               severity: DiagnosticSeverity.Warning,
               code: ErrorCode.PropertyExpected,
-              message: schema.errorMessage || localize('DisallowedExtraPropWarning', MSG_PROPERTY_NOT_ALLOWED, propertyName),
+              message: schema.errorMessage || l10n.t('DisallowedExtraPropWarning', propertyName),
               source: getSchemaSource(schema, originalSchema),
               schemaUri: getSchemaUri(schema, originalSchema),
             };
@@ -1430,7 +1409,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: localize('MaxPropWarning', 'Object has more properties than limit of {0}.', schema.maxProperties),
+          message: l10n.t('MaxPropWarning', schema.maxProperties),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -1442,11 +1421,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: localize(
-            'MinPropWarning',
-            'Object has fewer properties than the required number of {0}',
-            schema.minProperties
-          ),
+          message: l10n.t('MinPropWarning', schema.minProperties),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -1464,12 +1439,7 @@ function validate(
                 validationResult.problems.push({
                   location: { offset: node.offset, length: node.length },
                   severity: DiagnosticSeverity.Warning,
-                  message: localize(
-                    'RequiredDependentPropWarning',
-                    'Object is missing property {0} required by property {1}.',
-                    requiredProp,
-                    key
-                  ),
+                  message: l10n.t('RequiredDependentPropWarning', requiredProp, key),
                   source: getSchemaSource(schema, originalSchema),
                   schemaUri: getSchemaUri(schema, originalSchema),
                 });
@@ -1609,7 +1579,7 @@ function getSchemaUri(schema: JSONSchema, originalSchema: JSONSchema): string[] 
 }
 
 function getWarningMessage(problemType: ProblemType, args: string[]): string {
-  return localize(problemType, ProblemTypeMessages[problemType], args.join(' | '));
+  return l10n.t(ProblemTypeMessages[problemType], args.join(' | '));
 }
 
 /**
