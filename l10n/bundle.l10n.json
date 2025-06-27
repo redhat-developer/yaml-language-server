@@ -52,5 +52,5 @@
   "flowStyleMapForbidden": "Flow style mapping is forbidden",
   "flowStyleSeqForbidden": "Flow style sequence is forbidden",
   "unUsedAnchor": "Unused anchor \"{0}\"",
-  "unUsedAlias": "Unresolved alias \"{0}\""  
+  "unUsedAlias": "Unresolved alias \"{0}\""
 }
