@@ -17,6 +17,7 @@
     "yaml-language-server": "./bin/yaml-language-server"
   },
   "main": "./out/server/src/index.js",
+  "l10n": "./l10n",
   "keywords": [
     "yaml",
     "LSP"
@@ -35,7 +36,6 @@
     "vscode-languageserver": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.1",
     "vscode-languageserver-types": "^3.16.0",
-    "vscode-nls": "^5.0.0",
     "vscode-uri": "^3.0.2",
     "yaml": "2.7.1"
   },
@@ -43,11 +43,13 @@
     "@microsoft/eslint-formatter-sarif": "3.0.0",
     "@types/chai": "^4.2.12",
     "@types/mocha": "8.2.2",
-    "@types/node": "16.x",
+    "@types/node": "18.x",
     "@types/sinon": "^9.0.5",
     "@types/sinon-chai": "^3.2.5",
     "@typescript-eslint/eslint-plugin": "^5.38.0",
     "@typescript-eslint/parser": "^5.38.0",
+    "@vscode/l10n": "^0.0.9",
+    "@vscode/l10n-dev": "^0.0.35",
     "chai": "^4.2.0",
     "coveralls": "3.1.1",
     "eslint": "^8.24.0",
@@ -70,9 +72,9 @@
     "clean": "rimraf out/server && rimraf lib",
     "compile": "tsc -p .",
     "watch": "tsc --watch -p .",
-    "test": "mocha --require ts-node/register --timeout 5000 --ui bdd ./test/*.test.ts",
+    "test": "mocha --require ts-node/register --require ./scripts/setup-l10n.mjs --timeout 5000 --ui bdd ./test/*.test.ts",
     "coverage": "nyc mocha --require ts-node/register --timeout 5000 --require source-map-support/register --recursive --ui bdd ./test/*.test.ts",
-    "coveralls": "nyc --reporter=lcov --reporter=text mocha --timeout 5000 --require ts-node/register --require source-map-support/register --recursive --ui bdd ./test/*.test.ts",
+    "coveralls": "nyc --reporter=lcov --reporter=text mocha --timeout 5000 --require ts-node/register --require ./scripts/setup-l10n.mjs --require source-map-support/register --recursive --ui bdd ./test/*.test.ts",
     "lint": "eslint --max-warnings 0 -c .eslintrc.js --ext .ts src test",
     "lint-ci": "eslint --max-warnings 0 -c .eslintrc.js -f @microsoft/eslint-formatter-sarif -o eslint-result.sarif --ext .ts src test",
     "prettier-fix": "yarn prettier --write .",
