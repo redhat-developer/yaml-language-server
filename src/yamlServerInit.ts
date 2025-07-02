@@ -20,6 +20,7 @@ import { Telemetry } from './languageservice/telemetry';
 import { registerCommands } from './languageservice/services/yamlCommands';
 import * as l10n from '@vscode/l10n';
 import * as path from 'path';
+import * as fs from 'fs';
 
 export class YAMLServerInit {
   languageService: LanguageService;
@@ -41,19 +42,6 @@ export class YAMLServerInit {
      * The server receives the root path(s) of the workspace and the client capabilities.
      */
     this.connection.onInitialize(async (params: InitializeParams): Promise<InitializeResult> => {
-      const l10nPath: string = params.initializationOptions?.l10nPath;
-      const locale: string = params.locale;
-      if (l10nPath) {
-        const bundleFile = locale === 'en' ? `bundle.l10n.json` : `bundle.l10n.${locale}.json`;
-        const baseBundleFile = path.join(l10nPath, bundleFile);
-        process.env.VSCODE_NLS_CONFIG = JSON.stringify({
-          locale: locale,
-          _languagePackSupport: true,
-        });
-        await l10n.config({
-          uri: URI.file(baseBundleFile).toString(),
-        });
-      }
       return this.connectionInitialized(params);
     });
 
@@ -67,6 +55,25 @@ export class YAMLServerInit {
       this.settingsHandler.registerHandlers();
       this.settingsHandler.pullConfiguration();
     });
+  }
+
+  public async setupl10nBundle(params: InitializeParams): Promise<void> {
+    const __dirname = path.dirname(__filename);
+    const l10nPath: string = params.initializationOptions?.l10nPath || path.join(__dirname, '../l10n');
+    const locale: string = params.locale || 'en';
+    if (l10nPath) {
+      const bundleFile = !fs.existsSync(path.join(l10nPath, `bundle.l10n.${locale}.json`))
+        ? `bundle.l10n.json`
+        : `bundle.l10n.${locale}.json`;
+      const baseBundleFile = path.join(l10nPath, bundleFile);
+      process.env.VSCODE_NLS_CONFIG = JSON.stringify({
+        locale,
+        _languagePackSupport: true,
+      });
+      await l10n.config({
+        uri: URI.file(baseBundleFile).toString(),
+      });
+    }
   }
 
   // public for test setup
@@ -111,7 +118,7 @@ export class YAMLServerInit {
     );
     this.registerHandlers();
     registerCommands(commandExecutor, this.connection);
-
+    await this.setupl10nBundle(params);
     return {
       capabilities: {
         textDocumentSync: TextDocumentSyncKind.Incremental,

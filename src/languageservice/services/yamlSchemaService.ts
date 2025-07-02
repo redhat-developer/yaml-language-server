@@ -650,12 +650,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         return requestService(schemaUri).then(
           (content) => {
             if (!content) {
-              const errorMessage = l10n.t(
-                'json.schema.nocontent',
-                "Unable to load schema from '{0}': No content. {1}",
-                toDisplayString(schemaUri),
-                unresolvedJsonSchema.errors
-              );
+              const errorMessage = l10n.t('json.schema.nocontent', toDisplayString(schemaUri), unresolvedJsonSchema.errors);
               return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
             }
 
@@ -663,12 +658,7 @@ export class YAMLSchemaService extends JSONSchemaService {
               const schemaContent = parse(content);
               return new UnresolvedSchema(schemaContent, []);
             } catch (yamlError) {
-              const errorMessage = l10n.t(
-                'json.schema.invalidFormat',
-                "Unable to parse content from '{0}': {1}.",
-                toDisplayString(schemaUri),
-                yamlError
-              );
+              const errorMessage = l10n.t('json.schema.invalidFormat', toDisplayString(schemaUri), yamlError);
               return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
             }
           },

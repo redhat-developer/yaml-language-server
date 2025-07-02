@@ -1075,7 +1075,7 @@ function validate(
               validationResult.problems.push({
                 location: { offset: node.offset, length: node.length },
                 severity: DiagnosticSeverity.Warning,
-                message: schema.patternErrorMessage || schema.errorMessage || format.errorMessage,
+                message: schema.patternErrorMessage || schema.errorMessage || l10n.t(format.errorMessage),
                 source: getSchemaSource(schema, originalSchema),
                 schemaUri: getSchemaUri(schema, originalSchema),
               });

@@ -82,11 +82,16 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
   const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
   const telemetry = new TestTelemetry(connection);
   const serverInit = new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService, telemetry);
+  const __dirname = path.resolve(path.dirname(__filename), '..');
   serverInit.connectionInitialized({
     processId: null,
     capabilities: ClientCapabilities.LATEST as LSPClientCapabilities,
     rootUri: null,
     workspaceFolders: null,
+    initializationOptions: {
+      l10nPath: path.join(__dirname, '../l10n'),
+    },
+    locale: 'en',
   });
   const languageService = serverInit.languageService;
   const validationHandler = serverInit.validationHandler;
