@@ -165,7 +165,7 @@ export function createExpectedCompletion(
   endCharacter: number,
   kind: CompletionItemKind,
   insertTextFormat: InsertTextFormat = 2,
-  extra = {}
+  extra: Partial<CompletionItem> = {}
 ): CompletionItem {
   return {
     ...{
