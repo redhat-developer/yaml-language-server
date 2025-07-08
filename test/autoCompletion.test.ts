@@ -1747,6 +1747,37 @@ describe('Auto Completion Tests', () => {
             })
           );
         });
+        it('Next line const with : but array level completion', async () => {
+          const content = 'test:\n  - constProp:\n  ';
+          const result = await parseSetup(content, content.length);
+          expect(result.items.length).to.be.equal(0);
+        });
+        it('Next line const with : & |- but array level completion', async () => {
+          const content = 'test:\n  - constProp: |-\n  ';
+          const result = await parseSetup(content, content.length);
+          expect(result.items.length).to.be.equal(1);
+          expect(result.items[0]).contain;
+          // TODO: Ideally, this would not be a deep equal, it'd be does real contain expected
+          assert.deepEqual(
+            result.items[0],
+            createExpectedCompletion(
+              '- (array item) object',
+              '- ',
+              2,
+              2,
+              2,
+              2,
+              CompletionItemKind.Module,
+              InsertTextFormat.Snippet,
+              {
+                documentation: {
+                  kind: 'markdown',
+                  value: 'Create an item of an array type `object`\n ```\n- \n```',
+                },
+              }
+            )
+          );
+        });
       });
     });
 
