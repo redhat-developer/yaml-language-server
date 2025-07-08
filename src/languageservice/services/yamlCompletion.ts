@@ -513,6 +513,12 @@ export class YamlCompletion {
         }
       }
 
+      const ignoreScalars =
+        textBuffer.getLineContent(overwriteRange.start.line).trim().length === 0 &&
+        originalNode &&
+        isScalar(originalNode) &&
+        originalNode.value === null;
+
       // completion for object keys
       if (node && isMap(node)) {
         // don't suggest properties that are already present
@@ -534,7 +540,8 @@ export class YamlCompletion {
           collector,
           textBuffer,
           overwriteRange,
-          doComplete
+          doComplete,
+          ignoreScalars
         );
 
         if (!schema && currentWord.length > 0 && text.charAt(offset - currentWord.length - 1) !== '"') {
@@ -549,7 +556,7 @@ export class YamlCompletion {
 
       // proposals for values
       const types: { [type: string]: boolean } = {};
-      this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types, doComplete);
+      this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types, doComplete, ignoreScalars);
     } catch (err) {
       this.telemetry?.sendError('yaml.completion.error', err);
     }
@@ -689,7 +696,8 @@ export class YamlCompletion {
     collector: CompletionsCollector,
     textBuffer: TextBuffer,
     overwriteRange: Range,
-    doComplete: boolean
+    doComplete: boolean,
+    ignoreScalars: boolean
   ): void {
     const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
     const existingKey = textBuffer.getText(overwriteRange);
@@ -708,7 +716,6 @@ export class YamlCompletion {
         }
       });
     }
-    const ignoreScalars = lineContent.trim() === '' && originalNode && isScalar(originalNode) && originalNode.value === null;
 
     for (const schema of matchingSchemas) {
       if (
@@ -886,7 +893,8 @@ export class YamlCompletion {
     document: TextDocument,
     collector: CompletionsCollector,
     types: { [type: string]: boolean },
-    doComplete: boolean
+    doComplete: boolean,
+    ignoreScalars: boolean
   ): void {
     let parentKey: string = null;
 
@@ -941,11 +949,11 @@ export class YamlCompletion {
           if (s.schema.properties) {
             const propertySchema = s.schema.properties[parentKey];
             if (propertySchema) {
-              this.addSchemaValueCompletions(propertySchema, separatorAfter, collector, types, false);
+              this.addSchemaValueCompletions(propertySchema, separatorAfter, collector, types, ignoreScalars);
             }
           }
           if (s.schema.additionalProperties) {
-            this.addSchemaValueCompletions(s.schema.additionalProperties, separatorAfter, collector, types, false);
+            this.addSchemaValueCompletions(s.schema.additionalProperties, separatorAfter, collector, types, ignoreScalars);
           }
         }
       }
