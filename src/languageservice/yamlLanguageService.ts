@@ -160,7 +160,13 @@ export interface CustomFormatterOptions {
 export interface LanguageService {
   configure: (settings: LanguageSettings) => void;
   registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => void;
-  doComplete: (document: TextDocument, position: Position, isKubernetes: boolean) => Promise<CompletionList>;
+  doComplete: (
+    document: TextDocument,
+    position: Position,
+    isKubernetes: boolean,
+    doComplete?: boolean,
+    gracefulMatches?: boolean
+  ) => Promise<CompletionList>;
   doValidation: (document: TextDocument, isKubernetes: boolean) => Promise<Diagnostic[]>;
   doHover: (document: TextDocument, position: Position) => Promise<Hover | null>;
   findDocumentSymbols: (document: TextDocument, context?: DocumentSymbolsContext) => SymbolInformation[];
