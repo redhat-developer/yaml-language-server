@@ -570,6 +570,39 @@ objB:
       'thing1:\n    array2:\n      - type: $1\n        thing2:\n          item1: $2\n          item2: $3'
     );
   });
+  it('Autocomplete with snippet without hypen (-) inside an array', async () => {
+    languageService.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        array1: {
+          type: 'array',
+          items: {
+            type: 'object',
+            defaultSnippets: [
+              {
+                label: 'My array item',
+                body: { item1: '$1' },
+              },
+            ],
+            required: ['thing1'],
+            properties: {
+              thing1: {
+                type: 'object',
+                required: ['item1'],
+                properties: {
+                  item1: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const content = 'array1:\n  - thing1:\n    item1: $1\n  | |';
+    const completion = await parseCaret(content);
+
+    expect(completion.items[0].insertText).to.be.equal('- item1: ');
+  });
   describe('array indent on different index position', () => {
     const schema = {
       type: 'object',
