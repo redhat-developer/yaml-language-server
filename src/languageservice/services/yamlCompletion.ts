@@ -516,8 +516,7 @@ export class YamlCompletion {
       const ignoreScalars =
         textBuffer.getLineContent(overwriteRange.start.line).trim().length === 0 &&
         originalNode &&
-        isScalar(originalNode) &&
-        originalNode.value === null;
+        ((isScalar(originalNode) && originalNode.value === null) || isSeq(originalNode));
 
       // completion for object keys
       if (node && isMap(node)) {
@@ -939,7 +938,7 @@ export class YamlCompletion {
                   separatorAfter,
                   collector,
                   types,
-                  false,
+                  ignoreScalars,
                   typeof s.schema.items === 'object' &&
                     (s.schema.items.type === 'object' || isAnyOfAllOfOneOfType(s.schema.items))
                 );
