@@ -15,8 +15,10 @@
 - Fix: Using bool values in enum and const generates a validation error for valid values [#1078](https://github.com/redhat-developer/yaml-language-server/issues/1078)
 - Fix: Error for missing anchor (unidentified alias) broken since 1.0 [#1098](https://github.com/redhat-developer/vscode-yaml/issues/1098)
 - Fix: QuickFix for "flow sequence forbidden" leaves in trailing `]` [#1060](https://github.com/redhat-developer/yaml-language-server/issues/1060)
+- Fix: Array of const completion [#1092](https://github.com/redhat-developer/yaml-language-server/pull/1092)
 
-Thanks to [Trevor Dixon](https://github.com/trevordixon), [David Lechner](https://github.com/dlech), [pjsk-stripe](https://github.com/pjsk-stripe) and [Kosta](https://github.com/Kosta-Github) for your contributions.
+Thanks to [Trevor Dixon](https://github.com/trevordixon), [David Lechner](https://github.com/dlech), [pjsk-stripe](https://github.com/pjsk-stripe), [Lucy Dryaeva
+](https://github.com/ShadiestGoat) and [Kosta](https://github.com/Kosta-Github) for your contributions.
 
 ### 1.18.0
 - Feat: Do not suggest propertyNames if doNotSuggest is true [#1045](https://github.com/redhat-developer/yaml-language-server/pull/1045)
