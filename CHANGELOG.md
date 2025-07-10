@@ -1,3 +1,23 @@
+### 1.19.0
+- Feat: redhat.vscode-yaml should be able to format docker-compose.yml by default [#1071](https://github.com/redhat-developer/yaml-language-server/issues/1071)
+- Feat: Support statically registering format support [#1062](https://github.com/redhat-developer/yaml-language-server/pull/1062)
+- Feat: Support localization in vscode YAML extension [#1081](https://github.com/redhat-developer/yaml-language-server/issues/1081)
+- Bump: ajv version [#1067](https://github.com/redhat-developer/yaml-language-server/pull/1067)
+- Fix: Invalid tab indentation error [#1110](https://github.com/redhat-developer/vscode-yaml/issues/1110)
+- Fix: Remove Trailing Comma [#1112](https://github.com/redhat-developer/vscode-yaml/issues/1112)
+- Fix: Numbers in comments [#922](https://github.com/redhat-developer/yaml-language-server/issues/922)
+- Fix: Validation shows false negative errors if using boolean with const [#1116](https://github.com/redhat-developer/vscode-yaml/issues/1116)
+- Fix: OpenAPI 3.0.0 specification is treated as invalid [#752](https://github.com/redhat-developer/yaml-language-server/issues/752)
+- Fix: YAML Language Server checks against JSON Schema Draft 7 instead of the defined one [#780](https://github.com/redhat-developer/yaml-language-server/issues/780)
+- Fix: Make "Show all Enum on Hover" Optional [#982](https://github.com/redhat-developer/yaml-language-server/issues/982)
+- Fix: Fix enum values to be unique [#1028](https://github.com/redhat-developer/yaml-language-server/pull/1028)
+- Fix: yaml conversion does not resolve aliases correctly [#1075](https://github.com/redhat-developer/yaml-language-server/issues/1075)
+- Fix: Using bool values in enum and const generates a validation error for valid values [#1078](https://github.com/redhat-developer/yaml-language-server/issues/1078)
+- Fix: Error for missing anchor (unidentified alias) broken since 1.0 [#1098](https://github.com/redhat-developer/vscode-yaml/issues/1098)
+- Fix: QuickFix for "flow sequence forbidden" leaves in trailing `]` [#1060](https://github.com/redhat-developer/yaml-language-server/issues/1060)
+
+Thanks to [Trevor Dixon](https://github.com/trevordixon), [David Lechner](https://github.com/dlech), [pjsk-stripe](https://github.com/pjsk-stripe) and [Kosta](https://github.com/Kosta-Github) for your contributions.
+
 ### 1.18.0
 - Feat: Do not suggest propertyNames if doNotSuggest is true [#1045](https://github.com/redhat-developer/yaml-language-server/pull/1045)
 - Feat: Exclude not suggest properties from possible properties error [#1051](https://github.com/redhat-developer/yaml-language-server/pull/1051)
