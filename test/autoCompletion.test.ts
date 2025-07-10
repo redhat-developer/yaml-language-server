@@ -16,7 +16,14 @@ import * as assert from 'assert';
 import * as path from 'path';
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList, InsertTextFormat, MarkupContent, MarkupKind, Position } from 'vscode-languageserver-types';
+import {
+  CompletionItemKind,
+  CompletionList,
+  InsertTextFormat,
+  MarkupContent,
+  MarkupKind,
+  Position,
+} from 'vscode-languageserver-types';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageService } from '../src';
@@ -1539,133 +1546,239 @@ describe('Auto Completion Tests', () => {
           )
         );
       });
-    });
 
-    it('Array of objects autocomplete with 2 space indentation check', async () => {
-      const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('  ');
-      languageService.configure(languageSettingsSetup.languageSettings);
-      schemaProvider.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: {
-          metadata: {
-            type: 'object',
-            properties: {
-              ownerReferences: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    apiVersion: {
-                      type: 'string',
-                    },
-                    kind: {
-                      type: 'string',
-                    },
-                    name: {
-                      type: 'string',
-                    },
-                    uid: {
-                      type: 'string',
-                    },
+      it('Array of const autocomplete', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            test: {
+              type: 'array',
+              items: {
+                anyOf: [
+                  {
+                    const: 'value1',
+                    description: 'desc1',
                   },
-                  required: ['apiVersion', 'kind', 'name', 'uid'],
-                },
+                  {
+                    const: 'value2',
+                    description: 'desc2',
+                  },
+                ],
               },
             },
           },
-        },
+        });
+        const content = 'test:\n  - ';
+        const result = await parseSetup(content, content.length);
+        expect(result.items.length).to.be.equal(2);
+        assert.deepEqual(
+          result.items[0],
+          createExpectedCompletion('value1', 'value1', 1, 4, 1, 4, CompletionItemKind.Value, 2, {
+            documentation: 'desc1',
+          })
+        );
+        assert.deepEqual(
+          result.items[1],
+          createExpectedCompletion('value2', 'value2', 1, 4, 1, 4, CompletionItemKind.Value, 2, {
+            documentation: 'desc2',
+          })
+        );
       });
 
-      const content = 'metadata:\n  ownerReferences'; // len: 27
-      const completion = await parseSetup(content, 27);
-      expect(completion.items[0]).deep.eq(
-        createExpectedCompletion(
-          'ownerReferences',
-          'ownerReferences:\n  - apiVersion: $1\n    kind: $2\n    name: $3\n    uid: $4',
-          1,
-          2,
-          1,
-          17,
-          10,
-          2,
-          { documentation: '' }
-        )
-      );
-    });
-
-    it('Array of objects autocomplete with 3 space indentation check', async () => {
-      const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('   ');
-      languageService.configure(languageSettingsSetup.languageSettings);
-      schemaProvider.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: {
-          metadata: {
-            type: 'object',
-            properties: {
-              ownerReferences: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    apiVersion: {
-                      type: 'string',
-                    },
-                    kind: {
-                      type: 'string',
-                    },
-                    name: {
-                      type: 'string',
-                    },
-                    uid: {
-                      type: 'string',
-                    },
-                  },
-                  required: ['apiVersion', 'kind', 'name', 'uid'],
-                },
-              },
-            },
-          },
-        },
-      });
-
-      const content = 'metadata:\n   ownerReference|s|'; // len: 28, pos: 27
-      const completion = await parseSetup(content);
-      expect(completion.items[0]).deep.eq(
-        createExpectedCompletion(
-          'ownerReferences',
-          'ownerReferences:\n   - apiVersion: $1\n     kind: $2\n     name: $3\n     uid: $4',
-          1,
-          3,
-          1,
-          18,
-          10,
-          2,
-          { documentation: '' }
-        )
-      );
-    });
-
-    it('Array completion - should not suggest const', async () => {
-      languageService.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: {
-          test: {
-            type: 'array',
-            items: {
+      it('Array of objects autocomplete with 2 space indentation check', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('  ');
+        languageService.configure(languageSettingsSetup.languageSettings);
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            metadata: {
               type: 'object',
               properties: {
-                constProp: {
-                  type: 'string',
-                  const: 'const1',
+                ownerReferences: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      apiVersion: {
+                        type: 'string',
+                      },
+                      kind: {
+                        type: 'string',
+                      },
+                      name: {
+                        type: 'string',
+                      },
+                      uid: {
+                        type: 'string',
+                      },
+                    },
+                    required: ['apiVersion', 'kind', 'name', 'uid'],
+                  },
                 },
               },
             },
           },
-        },
+        });
+
+        const content = 'metadata:\n  ownerReferences'; // len: 27
+        const completion = await parseSetup(content, 27);
+        expect(completion.items[0]).deep.eq(
+          createExpectedCompletion(
+            'ownerReferences',
+            'ownerReferences:\n  - apiVersion: $1\n    kind: $2\n    name: $3\n    uid: $4',
+            1,
+            2,
+            1,
+            17,
+            10,
+            2,
+            { documentation: '' }
+          )
+        );
       });
-      const content = 'test:\n  - constProp:\n    ';
-      const result = await parseSetup(content, content.length);
-      expect(result.items.length).to.be.equal(0);
+
+      it('Array of objects autocomplete with 3 space indentation check', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('   ');
+        languageService.configure(languageSettingsSetup.languageSettings);
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            metadata: {
+              type: 'object',
+              properties: {
+                ownerReferences: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      apiVersion: {
+                        type: 'string',
+                      },
+                      kind: {
+                        type: 'string',
+                      },
+                      name: {
+                        type: 'string',
+                      },
+                      uid: {
+                        type: 'string',
+                      },
+                    },
+                    required: ['apiVersion', 'kind', 'name', 'uid'],
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const content = 'metadata:\n   ownerReference|s|'; // len: 28, pos: 27
+        const completion = await parseSetup(content);
+        expect(completion.items[0]).deep.eq(
+          createExpectedCompletion(
+            'ownerReferences',
+            'ownerReferences:\n   - apiVersion: $1\n     kind: $2\n     name: $3\n     uid: $4',
+            1,
+            3,
+            1,
+            18,
+            10,
+            2,
+            { documentation: '' }
+          )
+        );
+      });
+
+      describe('Map const in the next line', async () => {
+        beforeEach(() => {
+          schemaProvider.addSchema(SCHEMA_ID, {
+            type: 'object',
+            properties: {
+              test: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    constProp: {
+                      type: 'string',
+                      const: 'const1',
+                      description: 'test desc',
+                    },
+                  },
+                },
+              },
+            },
+          });
+        });
+
+        it('Next line const with :', async () => {
+          const content = 'test:\n  - constProp:\n    ';
+          const result = await parseSetup(content, content.length);
+          expect(result.items.length).to.be.equal(0);
+        });
+        // For some reason, this gets inserted at the cursor (char 4)
+        // It should be inserted at char 2
+        xit('Next line const no :', async () => {
+          const content = 'test:\n  - constProp\n    ';
+          const result = await parseSetup(content, content.length);
+          expect(result.items.length).to.be.equal(1);
+          assert.deepEqual(
+            result.items[0],
+            createExpectedCompletion(
+              '- (array item) object',
+              '- ',
+              2,
+              2,
+              2,
+              2,
+              CompletionItemKind.Module,
+              InsertTextFormat.Snippet
+            )
+          );
+        });
+        it('Next line const with |-', async () => {
+          const content = 'test:\n  - constProp: |-\n      ';
+          const result = await parseSetup(content, content.length);
+          expect(result.items.length).to.be.equal(1);
+          assert.deepEqual(
+            result.items[0],
+            createExpectedCompletion('const1', 'const1', 2, 6, 2, 6, CompletionItemKind.Value, InsertTextFormat.Snippet, {
+              documentation: 'test desc',
+            })
+          );
+        });
+        it('Next line const with : but array level completion', async () => {
+          const content = 'test:\n  - constProp:\n  ';
+          const result = await parseSetup(content, content.length);
+          expect(result.items.length).to.be.equal(0);
+        });
+        it('Next line const with : & |- but array level completion', async () => {
+          const content = 'test:\n  - constProp: |-\n  ';
+          const result = await parseSetup(content, content.length);
+          expect(result.items.length).to.be.equal(1);
+          expect(result.items[0]).contain;
+          // TODO: Ideally, this would not be a deep equal, it'd be does real contain expected
+          assert.deepEqual(
+            result.items[0],
+            createExpectedCompletion(
+              '- (array item) object',
+              '- ',
+              2,
+              2,
+              2,
+              2,
+              CompletionItemKind.Module,
+              InsertTextFormat.Snippet,
+              {
+                documentation: {
+                  kind: 'markdown',
+                  value: 'Create an item of an array type `object`\n ```\n- \n```',
+                },
+              }
+            )
+          );
+        });
+      });
     });
 
     it('Object in array with 4 space indentation check', async () => {
