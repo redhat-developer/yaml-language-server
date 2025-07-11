@@ -5,9 +5,8 @@ name: Release to NPM
 # Controls when the action will run. Triggers the workflow on new tag
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    tags:
+      - '*'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
