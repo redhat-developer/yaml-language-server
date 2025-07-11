@@ -27,7 +27,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 20
-        registry-url: https://registry.npmjs.org
         
       # Run install dependencies
     - name: Install dependencies
@@ -46,7 +45,7 @@ jobs:
         yarn check-dependencies
         yarn publish --access public
       env:
-        NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+        NPM_TOKEN: ${{secrets.NPM_TOKEN}}
 
       # Get the current package.json version so we can tag the image correctly
     - name: Get current package.json version
