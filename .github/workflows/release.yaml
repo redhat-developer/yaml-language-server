@@ -30,11 +30,11 @@ jobs:
 
     - name: Check if token is present
       run: |
-            if [ -z "$NODE_AUTH_TOKEN" ]; then
-              echo "NODE_AUTH_TOKEN is empty"
+            if [ -z "$NPM_TOKEN" ]; then
+              echo "NPM_TOKEN is empty"
               exit 1
             else
-              echo "NODE_AUTH_TOKEN is set (but not printing it)"
+              echo "NPM_TOKEN is set (but not printing it)"
             fi
         
       # Run install dependencies
@@ -54,7 +54,7 @@ jobs:
         yarn check-dependencies
         yarn publish --access public
       env:
-        NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+        NPM_TOKEN: ${{secrets.NPM_TOKEN}}
 
       # Get the current package.json version so we can tag the image correctly
     - name: Get current package.json version
