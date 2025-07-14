@@ -45,7 +45,7 @@ jobs:
         yarn check-dependencies
         yarn publish --access public
       env:
-        NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+        YARN_NPM_AUTH_TOKEN: ${{secrets.YARN_NPM_AUTH_TOKEN}}
 
       # Get the current package.json version so we can tag the image correctly
     - name: Get current package.json version
