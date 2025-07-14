@@ -44,6 +44,14 @@ jobs:
     - run: |
         yarn check-dependencies
         yarn publish --access public
+    - name: Check if token is present
+      run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "NODE_AUTH_TOKEN is empty"
+            exit 1
+          else
+            echo "NODE_AUTH_TOKEN is set (but not printing it)"
+          fi
       env:
         NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
 
