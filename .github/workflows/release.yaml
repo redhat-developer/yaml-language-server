@@ -31,20 +31,20 @@ jobs:
 
       # Run install dependencies
     - name: Install dependencies
-      run: yarn
+      run: npm ci
 
       # Build extension
     - name: Run build
-      run: yarn build
+      run: npm build
 
       # Run tests
     - name: Run Test
-      run: yarn test
+      run: npm test
 
       # Publish to npm
     - run: |
-        yarn check-dependencies
-        yarn publish --access public
+        npm check-dependencies
+        npm publish --access public
       env:
         NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
