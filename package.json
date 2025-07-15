@@ -14,7 +14,7 @@
     }
   ],
   "bin": {
-    "yaml-language-server": "./bin/yaml-language-server"
+    "yaml-language-server": "bin/yaml-language-server"
   },
   "main": "./out/server/src/index.js",
   "l10n": "./l10n",
@@ -24,7 +24,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/redhat-developer/yaml-language-server.git"
+    "url": "git+https://github.com/redhat-developer/yaml-language-server.git"
   },
   "dependencies": {
     "@vscode/l10n": "^0.0.9",
