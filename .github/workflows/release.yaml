@@ -27,32 +27,27 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 20
-        
+        registry-url: 'https://registry.npmjs.org'
+
       # Run install dependencies
     - name: Install dependencies
-      run: yarn
+      run: npm ci
 
       # Build extension
     - name: Run build
-      run: yarn build
+      run: npm run build
 
       # Run tests
     - name: Run Test
-      run: yarn test
+      run: npm test
 
-      # Check dependencies
-    - name: Run Check-Dependencies
-      run: yarn check-dependencies
+      # Check Dependencies
+    - name: Run Check Dependencies
+      run: npm run check-dependencies
 
-    - name: Set Publish Auth
-      run: |
-        yarn config set npmRegistryServer "https://registry.npmjs.org"
-        yarn config set npmAlwaysAuth true
-        yarn config set npmAuthToken ${{ secrets.NPM_TOKEN }}
-
-      #Publish to npm
+    # Publish to npm
     - name: Publish to npm
-      run: yarn publish --access public
+      run: npm publish --access public
       env:
         NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 

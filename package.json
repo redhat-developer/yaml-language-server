@@ -14,7 +14,7 @@
     }
   ],
   "bin": {
-    "yaml-language-server": "./bin/yaml-language-server"
+    "yaml-language-server": "bin/yaml-language-server"
   },
   "main": "./out/server/src/index.js",
   "l10n": "./l10n",
@@ -24,7 +24,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/redhat-developer/yaml-language-server.git"
+    "url": "git+https://github.com/redhat-developer/yaml-language-server.git"
   },
   "dependencies": {
     "@vscode/l10n": "^0.0.9",
@@ -77,9 +77,9 @@
     "coveralls": "nyc --reporter=lcov --reporter=text mocha --timeout 5000 --require ts-node/register --require source-map-support/register --recursive --ui bdd ./test/*.test.ts",
     "lint": "eslint --max-warnings 0 -c .eslintrc.js --ext .ts src test",
     "lint-ci": "eslint --max-warnings 0 -c .eslintrc.js -f @microsoft/eslint-formatter-sarif -o eslint-result.sarif --ext .ts src test",
-    "prettier-fix": "yarn prettier --write .",
-    "build": "yarn clean && yarn lint && yarn compile && yarn build:libs",
-    "build:libs": "yarn compile:umd && yarn compile:esm",
+    "prettier-fix": "npm run prettier --write .",
+    "build": "npm run clean && npm run lint && npm run compile && npm run build:libs",
+    "build:libs": "npm run compile:umd && npm run compile:esm",
     "compile:umd": "tsc -p ./tsconfig.umd.json",
     "compile:esm": "tsc -p ./tsconfig.esm.json",
     "check-dependencies": "node ./scripts/check-dependencies.js",

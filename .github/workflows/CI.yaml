@@ -41,15 +41,15 @@ jobs:
 
       # Run install dependencies
       - name: Install dependencies
-        run: yarn
+        run: npm ci
 
       # Build extension
       - name: Run build
-        run: yarn build
+        run: npm run build
 
       - name: Generate SARIF
         if: matrix.os == 'ubuntu-latest'
-        run: yarn lint-ci
+        run: npm run lint-ci
 
       - name: Upload SARIF file
         if: matrix.os == 'ubuntu-latest'
@@ -65,7 +65,7 @@ jobs:
       - name: Run Test
         uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3 # v1.0.1
         with:
-          run: yarn coveralls
+          run: npm run coveralls
 
         # Run Coveralls
       - name: Coveralls
@@ -75,11 +75,7 @@ jobs:
 
       - name: Publish
         if: ${{ success() && runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/main'}}
-        run: |
-          yarn config set npmRegistryServer "https://registry.npmjs.org"
-          yarn config set npmAlwaysAuth true
-          yarn config set npmAuthToken ${{ secrets.NPM_TOKEN }}
-          yarn publish --tag next --no-git-tag-version --prepatch --preid "$(git rev-parse --short HEAD)"
+        run: npm publish --tag next --no-git-tag-version --prepatch --preid "$(git rev-parse --short HEAD)"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
