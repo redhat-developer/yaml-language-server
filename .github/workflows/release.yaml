@@ -41,10 +41,13 @@ jobs:
     - name: Run Test
       run: npm test
 
-      # Publish to npm
-    - run: |
-        npm run check-dependencies
-        npm publish --access public
+      # Check Dependencies
+    - name: Run Check Dependencies
+      run: npm run check-dependencies
+
+    # Publish to npm
+    - name: Publish to npm
+      run: npm publish --access public
       env:
         NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 

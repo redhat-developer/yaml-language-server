@@ -45,11 +45,11 @@ jobs:
 
       # Build extension
       - name: Run build
-        run: npm build
+        run: npm run build
 
       - name: Generate SARIF
         if: matrix.os == 'ubuntu-latest'
-        run: npm lint-ci
+        run: npm run lint-ci
 
       - name: Upload SARIF file
         if: matrix.os == 'ubuntu-latest'
@@ -65,7 +65,7 @@ jobs:
       - name: Run Test
         uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3 # v1.0.1
         with:
-          run: npm coveralls
+          run: npm run coveralls
 
         # Run Coveralls
       - name: Coveralls
