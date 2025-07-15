@@ -70,7 +70,6 @@
   },
   "scripts": {
     "clean": "rimraf out/server && rimraf lib",
-    "install": "rimraf node_modules && npm run install",
     "compile": "tsc -p .",
     "watch": "tsc --watch -p .",
     "test": "mocha --require ts-node/register --timeout 5000 --ui bdd ./test/*.test.ts",
