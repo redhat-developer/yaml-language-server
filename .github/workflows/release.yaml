@@ -43,7 +43,7 @@ jobs:
 
       # Publish to npm
     - run: |
-        npm check-dependencies
+        npm run check-dependencies
         npm publish --access public
       env:
         NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
