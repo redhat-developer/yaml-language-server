@@ -45,7 +45,10 @@ jobs:
       run: yarn check-dependencies
 
     - name: Set Publish Auth
-      run: yarn config set npmAuthToken $NODE_AUTH_TOKEN
+      run: |
+        yarn config set npmRegistryServer "https://registry.npmjs.org"
+        yarn config set npmAlwaysAuth true
+        yarn config set npmAuthToken ${{ secrets.NPM_TOKEN }}
 
       #Publish to npm
     - name: Publish to npm
