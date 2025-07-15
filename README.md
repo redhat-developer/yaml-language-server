@@ -400,7 +400,7 @@ This repository only contains the server implementation. Here are some known cli
 3. Install the dependencies
    ```bash
    cd yaml-language-server
-   $ npm run install
+   $ npm install
    ```
 4. Build the language server
    ```bash

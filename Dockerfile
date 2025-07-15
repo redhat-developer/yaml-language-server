@@ -4,7 +4,7 @@ WORKDIR /yaml-language-server
 
 COPY . .
 
-RUN npm run install && \
+RUN npm install && \
     npm run build
 
 ENTRYPOINT [ "node", "./out/server/src/server.js" ]

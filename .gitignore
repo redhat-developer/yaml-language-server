@@ -9,3 +9,4 @@ yarn-error.log
 coverage
 lib/
 eslint-result.sarif
+yarn.lock
