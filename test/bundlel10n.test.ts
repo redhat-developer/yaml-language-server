@@ -10,6 +10,7 @@ import { schemaRequestHandler, workspaceContext } from '../src/languageservice/s
 import { TestTelemetry } from './utils/testsTypes';
 import { YAMLServerInit } from '../src/yamlServerInit';
 import * as l10n from '@vscode/l10n';
+import * as path from 'path';
 
 describe('Bundle l10n Test', () => {
   let serverInit: YAMLServerInit;
@@ -44,6 +45,9 @@ describe('Bundle l10n Test', () => {
       processId: 0,
       rootUri: '',
       capabilities: undefined,
+      initializationOptions: {
+        l10nPath: path.join(__dirname, '../l10n'),
+      },
     });
   });
 
@@ -54,6 +58,9 @@ describe('Bundle l10n Test', () => {
         processId: 0,
         rootUri: '',
         capabilities: undefined,
+        initializationOptions: {
+          l10nPath: path.join(__dirname, '../l10n'),
+        },
       });
       assert.equal(l10n.t('Default Value'), 'Valeur par défaut');
     });
@@ -64,6 +71,9 @@ describe('Bundle l10n Test', () => {
         processId: 0,
         rootUri: '',
         capabilities: undefined,
+        initializationOptions: {
+          l10nPath: path.join(__dirname, '../l10n'),
+        },
       });
       assert.equal(l10n.t('Default Value'), 'Default value');
     });
