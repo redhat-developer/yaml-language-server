@@ -45,11 +45,19 @@ jobs:
     - name: Run Check Dependencies
       run: npm run check-dependencies
 
+      # Config .npmrc
+    - name: Config .npmrc
+      run: |
+        {
+          echo "registry=https://registry.npmjs.com"
+          echo "//registry.npmjs.com/:_authToken=${NPM_TOKEN}"
+        } > .npmrc
+
     # Publish to npm
     - name: Publish to npm
       run: npm publish --access public
       env:
-        NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+        NPM_TOKEN: ${{secrets.NPM_TOKEN}}
 
       # Get the current package.json version so we can tag the image correctly
     - name: Get current package.json version
