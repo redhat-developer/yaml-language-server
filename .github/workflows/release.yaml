@@ -40,10 +40,24 @@ jobs:
     - name: Run Test
       run: yarn test
 
-      # Publish to npm
-    - run: |
-        yarn check-dependencies
-        yarn publish --access public
+      # Check dependencies
+    - name: Run Check-Dependencies
+      run: yarn check-dependencies
+
+    - name: Check if NODE_AUTH_TOKEN is present
+      run: |
+        if [ -z "$NODE_AUTH_TOKEN" ]; then
+          echo "NODE_AUTH_TOKEN is empty"
+          exit 1
+        else
+          echo "NODE_AUTH_TOKEN is set (but not printing it)"
+        fi
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN}}
+
+      #Publish to npm
+    - name: Publish to npm
+      run: yarn publish --access public
       env:
         NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
