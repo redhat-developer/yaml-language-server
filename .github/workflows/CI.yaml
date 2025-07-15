@@ -76,7 +76,9 @@ jobs:
       - name: Publish
         if: ${{ success() && runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/main'}}
         run: |
-          yarn config set npmAuthToken $NODE_AUTH_TOKEN
+          yarn config set npmRegistryServer "https://registry.npmjs.org"
+          yarn config set npmAlwaysAuth true
+          yarn config set npmAuthToken ${{ secrets.NPM_TOKEN }}
           yarn publish --tag next --no-git-tag-version --prepatch --preid "$(git rev-parse --short HEAD)"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
