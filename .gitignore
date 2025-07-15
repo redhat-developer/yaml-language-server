@@ -8,5 +8,4 @@ out/server
 yarn-error.log
 coverage
 lib/
-package-lock.json
 eslint-result.sarif
