@@ -51,7 +51,6 @@
     "@typescript-eslint/parser": "^5.38.0",
     "@vscode/l10n-dev": "^0.0.35",
     "chai": "^4.2.0",
-    "coveralls": "3.1.1",
     "eslint": "^8.24.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.26.0",
