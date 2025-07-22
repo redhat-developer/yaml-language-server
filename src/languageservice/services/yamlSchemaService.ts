@@ -27,22 +27,7 @@ import { SchemaVersions } from '../yamlTypes';
 
 import { parse } from 'yaml';
 import * as Json from 'jsonc-parser';
-import Ajv, { DefinedError } from 'ajv';
-import Ajv4 from 'ajv-draft-04';
 import { getSchemaTitle } from '../utils/schemaUtils';
-
-const ajv = new Ajv();
-const ajv4 = new Ajv4();
-
-// load JSON Schema 07 def to validate loaded schemas
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
-const schema07Validator = ajv.compile(jsonSchema07);
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const jsonSchema04 = require('ajv-draft-04/dist/refs/json-schema-draft-04.json');
-const schema04Validator = ajv4.compile(jsonSchema04);
-const SCHEMA_04_URI_WITH_HTTPS = ajv4.defaultMeta().replace('http://', 'https://');
 
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
@@ -169,16 +154,12 @@ export class YAMLSchemaService extends JSONSchemaService {
     let schema: JSONSchema = schemaToResolve.schema;
     const contextService = this.contextService;
 
-    const validator =
-      this.normalizeId(schema.$schema) === ajv4.defaultMeta() || this.normalizeId(schema.$schema) === SCHEMA_04_URI_WITH_HTTPS
-        ? schema04Validator
-        : schema07Validator;
-    if (!validator(schema)) {
-      const errs: string[] = [];
-      for (const err of validator.errors as DefinedError[]) {
-        errs.push(`${err.instancePath} : ${err.message}`);
-      }
-      resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
+    // Basic schema validation - check if schema is a valid object
+    if (typeof schema !== 'object' || schema === null || Array.isArray(schema)) {
+      const invalidSchemaType = Array.isArray(schema) ? 'array' : typeof schema;
+      resolveErrors.push(
+        `Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\nWrong schema: "${invalidSchemaType}", it MUST be an Object or Boolean`
+      );
     }
 
     const findSection = (schema: JSONSchema, path: string): JSONSchema => {
