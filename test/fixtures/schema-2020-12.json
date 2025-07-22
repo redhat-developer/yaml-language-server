@@ -1,0 +1,67 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://example.com/product.schema.json",
+    "title": "Product Schema 2020-12",
+    "type": "object",
+    "properties": {
+        "productId": {
+            "type": "integer",
+            "description": "The unique identifier for a product"
+        },
+        "productName": {
+            "type": "string",
+            "description": "Name of the product"
+        },
+        "price": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMinimum": true
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+        },
+        "dimensions": {
+            "$ref": "#/$defs/dimensions"
+        },
+        "category": {
+            "enum": [
+                "electronics",
+                "clothing",
+                "books",
+                "home"
+            ]
+        }
+    },
+    "required": [
+        "productId",
+        "productName",
+        "price"
+    ],
+    "$defs": {
+        "dimensions": {
+            "type": "object",
+            "properties": {
+                "length": {
+                    "type": "number"
+                },
+                "width": {
+                    "type": "number"
+                },
+                "height": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "length",
+                "width",
+                "height"
+            ]
+        }
+    },
+    "unevaluatedProperties": false
+}

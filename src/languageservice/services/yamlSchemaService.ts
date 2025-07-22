@@ -29,6 +29,12 @@ import { parse } from 'yaml';
 import * as Json from 'jsonc-parser';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
+import * as Draft04 from '@hyperjump/json-schema/draft-04';
+import * as Draft07 from '@hyperjump/json-schema/draft-07';
+import * as Draft201909 from '@hyperjump/json-schema/draft-2019-09';
+import * as Draft202012 from '@hyperjump/json-schema/draft-2020-12';
+
+type SupportedSchemaVersions = '2020-12' | '2019-09' | 'draft-07' | 'draft-04';
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
 export enum MODIFICATION_ACTIONS {
@@ -154,12 +160,34 @@ export class YAMLSchemaService extends JSONSchemaService {
     let schema: JSONSchema = schemaToResolve.schema;
     const contextService = this.contextService;
 
-    // Basic schema validation - check if schema is a valid object
     if (typeof schema !== 'object' || schema === null || Array.isArray(schema)) {
       const invalidSchemaType = Array.isArray(schema) ? 'array' : typeof schema;
       resolveErrors.push(
         `Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\nWrong schema: "${invalidSchemaType}", it MUST be an Object or Boolean`
       );
+    } else {
+      try {
+        const schemaVersion = this.detectSchemaVersion(schema);
+        const validator = this.getValidatorForVersion(schemaVersion);
+        const metaSchemaUrl = this.getSchemaMetaSchema(schemaVersion);
+
+        // Validate the schema against its meta-schema using the URL directly
+        const result = await validator.validate(metaSchemaUrl, schema, 'BASIC');
+        if (!result.valid && result.errors) {
+          const errs: string[] = [];
+          for (const error of result.errors) {
+            if (error.instanceLocation && error.keyword) {
+              errs.push(`${error.instanceLocation}: ${this.extractKeywordName(error.keyword)} constraint violation`);
+            }
+          }
+          if (errs.length > 0) {
+            resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
+          }
+        }
+      } catch (error) {
+        // If meta-schema validation fails, log but don't block schema loading
+        console.error(`Failed to validate schema meta-schema: ${error.message}`);
+      }
     }
 
     const findSection = (schema: JSONSchema, path: string): JSONSchema => {
@@ -724,6 +752,79 @@ export class YAMLSchemaService extends JSONSchemaService {
 
   onResourceChange(uri: string): boolean {
     return super.onResourceChange(uri);
+  }
+
+  /**
+   * Detect the JSON Schema version from the $schema property
+   */
+  private detectSchemaVersion(schema: JSONSchema): SupportedSchemaVersions {
+    const schemaProperty = schema.$schema;
+    if (typeof schemaProperty === 'string') {
+      if (schemaProperty.includes('2020-12')) {
+        return '2020-12';
+      } else if (schemaProperty.includes('2019-09')) {
+        return '2019-09';
+      } else if (schemaProperty.includes('draft-07') || schemaProperty.includes('draft/7')) {
+        return 'draft-07';
+      } else if (schemaProperty.includes('draft-04') || schemaProperty.includes('draft/4')) {
+        return 'draft-04';
+      }
+    }
+    return 'draft-07';
+  }
+
+  /**
+   * Get the appropriate validator module for a schema version
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private getValidatorForVersion(version: SupportedSchemaVersions): any {
+    switch (version) {
+      case '2020-12':
+        return Draft202012;
+      case '2019-09':
+        return Draft201909;
+      case 'draft-07':
+        return Draft07;
+      case 'draft-04':
+      default:
+        return Draft04;
+    }
+  }
+
+  /**
+   * Get the correct schema meta URI for a given version
+   */
+  private getSchemaMetaSchema(version: SupportedSchemaVersions): string {
+    switch (version) {
+      case '2020-12':
+        return 'https://json-schema.org/draft/2020-12/schema';
+      case '2019-09':
+        return 'https://json-schema.org/draft/2019-09/schema';
+      case 'draft-07':
+        return 'http://json-schema.org/draft-07/schema';
+      case 'draft-04':
+        return 'http://json-schema.org/draft-04/schema';
+      default:
+        return 'http://json-schema.org/draft-07/schema';
+    }
+  }
+
+  /**
+   * Extract a human-readable keyword name from a keyword URI
+   */
+  private extractKeywordName(keywordUri: string): string {
+    if (typeof keywordUri !== 'string') {
+      return 'validation';
+    }
+
+    const parts = keywordUri.split('/');
+    const lastPart = parts[parts.length - 1];
+
+    if (lastPart === 'validate') {
+      return 'schema validation';
+    }
+
+    return lastPart || 'validation';
   }
 }
 

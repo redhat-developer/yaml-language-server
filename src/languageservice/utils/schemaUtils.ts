@@ -49,6 +49,12 @@ export function getSchemaTitle(schema: JSONSchema, url: string): string {
   if (!path.extname(uri.fsPath)) {
     baseName += '.json';
   }
+
+  // Handle null or undefined schemas
+  if (!schema || typeof schema !== 'object') {
+    return baseName;
+  }
+
   if (Object.getOwnPropertyDescriptor(schema, 'name')) {
     return Object.getOwnPropertyDescriptor(schema, 'name').value + ` (${baseName})`;
   } else if (schema.title) {

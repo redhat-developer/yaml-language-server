@@ -1,0 +1,54 @@
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "$id": "https://example.com/person.schema.json",
+    "title": "Person Schema 2019-09",
+    "type": "object",
+    "properties": {
+        "firstName": {
+            "type": "string",
+            "description": "The person's first name."
+        },
+        "lastName": {
+            "type": "string",
+            "description": "The person's last name."
+        },
+        "age": {
+            "description": "Age in years which must be equal to or greater than zero.",
+            "type": "integer",
+            "minimum": 0
+        },
+        "email": {
+            "type": "string",
+            "format": "email"
+        },
+        "address": {
+            "$ref": "#/$defs/address"
+        }
+    },
+    "required": [
+        "firstName",
+        "lastName"
+    ],
+    "$defs": {
+        "address": {
+            "type": "object",
+            "properties": {
+                "street": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "street",
+                "city",
+                "country"
+            ]
+        }
+    },
+    "unevaluatedProperties": false
+}
