@@ -170,6 +170,9 @@ export class YAMLSchemaService extends JSONSchemaService {
         const schemaVersion = this.detectSchemaVersion(schema);
         const validator = this.getValidatorForVersion(schemaVersion);
         const metaSchemaUrl = this.getSchemaMetaSchema(schemaVersion);
+        if (!validator.hasSchema(schema)) {
+          validator.registerSchema({ $schema: metaSchemaUrl, type: 'string' }, schema);
+        }
 
         // Validate the schema against its meta-schema using the URL directly
         const result = await validator.validate(metaSchemaUrl, schema, 'BASIC');
