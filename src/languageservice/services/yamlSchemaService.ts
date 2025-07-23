@@ -34,7 +34,7 @@ import * as Draft07 from '@hyperjump/json-schema/draft-07';
 import * as Draft201909 from '@hyperjump/json-schema/draft-2019-09';
 import * as Draft202012 from '@hyperjump/json-schema/draft-2020-12';
 
-type SupportedSchemaVersions = '2020-12' | '2019-09' | 'draft-07' | 'draft-04';
+type SupportedSchemaVersion = '2020-12' | '2019-09' | 'draft-07' | 'draft-04';
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
 export enum MODIFICATION_ACTIONS {
@@ -757,7 +757,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   /**
    * Detect the JSON Schema version from the $schema property
    */
-  private detectSchemaVersion(schema: JSONSchema): SupportedSchemaVersions {
+  private detectSchemaVersion(schema: JSONSchema): SupportedSchemaVersion {
     const schemaProperty = schema.$schema;
     if (typeof schemaProperty === 'string') {
       if (schemaProperty.includes('2020-12')) {
@@ -777,7 +777,7 @@ export class YAMLSchemaService extends JSONSchemaService {
    * Get the appropriate validator module for a schema version
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getValidatorForVersion(version: SupportedSchemaVersions): any {
+  private getValidatorForVersion(version: SupportedSchemaVersion): any {
     switch (version) {
       case '2020-12':
         return Draft202012;
@@ -794,7 +794,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   /**
    * Get the correct schema meta URI for a given version
    */
-  private getSchemaMetaSchema(version: SupportedSchemaVersions): string {
+  private getSchemaMetaSchema(version: SupportedSchemaVersion): string {
     switch (version) {
       case '2020-12':
         return 'https://json-schema.org/draft/2020-12/schema';
