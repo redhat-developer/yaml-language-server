@@ -1,0 +1,59 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "https://example.com/product-draft-04.schema.json",
+    "title": "Product Schema Draft 04",
+    "type": "object",
+    "properties": {
+        "productId": {
+            "type": "integer",
+            "description": "The unique identifier for a product"
+        },
+        "productName": {
+            "type": "string",
+            "description": "Name of the product"
+        },
+        "price": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "The price of the product"
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+        },
+        "dimensions": {
+            "$ref": "#/definitions/dimensions"
+        }
+    },
+    "required": [
+        "productId",
+        "productName",
+        "price"
+    ],
+    "definitions": {
+        "dimensions": {
+            "type": "object",
+            "properties": {
+                "length": {
+                    "type": "number"
+                },
+                "width": {
+                    "type": "number"
+                },
+                "height": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "length",
+                "width",
+                "height"
+            ]
+        }
+    }
+}
