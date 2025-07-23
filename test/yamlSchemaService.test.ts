@@ -956,7 +956,7 @@ price: 0`;
         sandbox.stub(yamlSchemaService as any, 'detectSchemaVersion').returns('draft-07');
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         sandbox.stub(yamlSchemaService as any, 'getValidatorForVersion').returns({
-          registerSchema: sandbox.stub().throws(new Error('Validation failed')),
+          validate: sandbox.stub().throws(new Error('Validation failed')),
         });
 
         const schema: JSONSchema = {

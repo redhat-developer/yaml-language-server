@@ -160,21 +160,41 @@ export class YAMLSchemaService extends JSONSchemaService {
     let schema: JSONSchema = schemaToResolve.schema;
     const contextService = this.contextService;
 
-    if (typeof schema !== 'object' || schema === null || Array.isArray(schema)) {
-      const invalidSchemaType = Array.isArray(schema) ? 'array' : typeof schema;
-      resolveErrors.push(
-        `Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\nWrong schema: "${invalidSchemaType}", it MUST be an Object or Boolean`
-      );
-    } else {
-      try {
-        const schemaVersion = this.detectSchemaVersion(schema);
-        const validator = this.getValidatorForVersion(schemaVersion);
-        const metaSchemaUrl = this.getSchemaMetaSchema(schemaVersion);
-        if (!validator.hasSchema(schema)) {
-          validator.registerSchema({ $schema: metaSchemaUrl, type: 'string' }, schema);
-        }
+    // Validate schema type before processing
+    if (schema === null) {
+      resolveErrors.push(`Wrong schema: "null", it MUST be an Object or Boolean`);
+      return new ResolvedSchema({}, resolveErrors);
+    }
 
-        // Validate the schema against its meta-schema using the URL directly
+    if (Array.isArray(schema)) {
+      resolveErrors.push(`Wrong schema: "array", it MUST be an Object or Boolean`);
+      return new ResolvedSchema({}, resolveErrors);
+    }
+
+    if (typeof schema === 'string') {
+      resolveErrors.push(`Wrong schema: "string", it MUST be an Object or Boolean`);
+      return new ResolvedSchema({}, resolveErrors);
+    }
+
+    if (typeof schema === 'number') {
+      resolveErrors.push(`Wrong schema: "number", it MUST be an Object or Boolean`);
+      return new ResolvedSchema({}, resolveErrors);
+    }
+
+    // Only proceed if schema is an object or boolean
+    if (typeof schema !== 'object' && typeof schema !== 'boolean') {
+      resolveErrors.push(`Wrong schema: "${typeof schema}", it MUST be an Object or Boolean`);
+      return new ResolvedSchema({}, resolveErrors);
+    }
+
+    const schemaVersion = this.detectSchemaVersion(schema);
+    const validator = this.getValidatorForVersion(schemaVersion);
+    const metaSchemaUrl = this.getSchemaMetaSchema(schemaVersion);
+
+    // Only validate object schemas against their meta-schema
+    // Boolean schemas (true/false) are valid by definition and don't need meta-schema validation
+    if (typeof schema === 'object' && schema !== null) {
+      try {
         const result = await validator.validate(metaSchemaUrl, schema, 'BASIC');
         if (!result.valid && result.errors) {
           const errs: string[] = [];
@@ -187,9 +207,11 @@ export class YAMLSchemaService extends JSONSchemaService {
             resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
           }
         }
-      } catch (error) {
-        // If meta-schema validation fails, log but don't block schema loading
-        console.error(`Failed to validate schema meta-schema: ${error.message}`);
+      } catch (validationError) {
+        // If validation fails due to incompatible data, add a generic error
+        resolveErrors.push(
+          `Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' validation failed: ${validationError.message}`
+        );
       }
     }
 
@@ -761,6 +783,9 @@ export class YAMLSchemaService extends JSONSchemaService {
    * Detect the JSON Schema version from the $schema property
    */
   private detectSchemaVersion(schema: JSONSchema): SupportedSchemaVersion {
+    if (!schema || typeof schema !== 'object') {
+      return 'draft-07';
+    }
     const schemaProperty = schema.$schema;
     if (typeof schemaProperty === 'string') {
       if (schemaProperty.includes('2020-12')) {
