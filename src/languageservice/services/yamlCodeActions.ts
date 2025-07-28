@@ -351,7 +351,7 @@ export class YamlCodeActions {
       for (const value of values) {
         results.push(
           CodeAction.create(
-            value,
+            String(value),
             createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, value)]),
             CodeActionKind.QuickFix
           )
