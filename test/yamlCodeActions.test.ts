@@ -454,6 +454,7 @@ animals: [dog , cat , mouse]  `;
       const actions = new YamlCodeActions(clientCapabilities);
       const result = actions.getCodeAction(doc, params);
       expect(result.map((r) => r.title)).deep.equal(['5', '10']);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(0, 5, 0, 11), '5')]);
     });
   });
 });
