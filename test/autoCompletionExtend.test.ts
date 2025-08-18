@@ -746,4 +746,38 @@ describe('Auto Completion Tests Extended', () => {
       expect(completion.items[0].insertText).equal('prop2:\n  prop3:\n    prop4:\n      ');
     });
   });
+  describe('Value completion with schema condition', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        value: {
+          type: 'string',
+          allOf: [
+            {
+              if: {
+                filePatternAssociation: SCHEMA_ID,
+              },
+              then: {
+                enum: ['value1', 'value2'],
+              },
+            },
+            {
+              if: {
+                filePatternAssociation: 'other-schema.yaml',
+              },
+              then: {
+                enum: ['otherValue1', 'otherValue2'],
+              },
+            },
+          ],
+        },
+      },
+    };
+    it('should suggest enums from filePatter match', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'value: | |';
+      const completion = await parseCaret(content, SCHEMA_ID);
+      expect(completion.items.map((i) => i.label)).deep.eq(['value1', 'value2']);
+    });
+  });
 });
