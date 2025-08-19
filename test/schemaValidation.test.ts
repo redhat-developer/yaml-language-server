@@ -16,7 +16,6 @@ import {
   MissingRequiredPropWarning,
 } from './utils/errorMessages';
 import * as assert from 'assert';
-import * as path from 'path';
 import { Diagnostic, DiagnosticSeverity, Position } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
@@ -1525,7 +1524,7 @@ obj:
     });
     it('should distinguish types in error "Incorrect type (Expected "type1 | type2 | type3")"', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+      const schema = require('./fixtures/testMultipleSimilarSchema.json');
       schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', schema.sharedSchema);
       schemaProvider.addSchema(SCHEMA_ID, schema.schema);
       const content = 'test_anyOf_objects:\n  ';
@@ -1541,7 +1540,7 @@ obj:
     });
     it('should combine types in "Incorrect type error"', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+      const schema = require('./fixtures/testMultipleSimilarSchema.json');
 
       schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', schema.sharedSchema);
       schemaProvider.addSchema(SCHEMA_ID, schema.schema);
@@ -1554,7 +1553,7 @@ obj:
     });
     it('should combine const value', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+      const schema = require('./fixtures/testMultipleSimilarSchema.json');
 
       schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', schema.sharedSchema);
       schemaProvider.addSchema(SCHEMA_ID, schema.schema);
@@ -1567,7 +1566,7 @@ obj:
     });
     it('should distinguish types in error: "Missing property from multiple schemas"', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
+      const schema = require('./fixtures/testMultipleSimilarSchema.json');
 
       schemaProvider.addSchemaWithUri(sharedSchemaId, 'file:///sharedSchema.json', schema.sharedSchema);
       schemaProvider.addSchema(SCHEMA_ID, schema.schema);
