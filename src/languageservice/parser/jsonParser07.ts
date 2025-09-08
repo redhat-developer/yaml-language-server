@@ -1370,7 +1370,8 @@ function validate(
               }
               return true;
             })
-            .map(([key]) => key);
+            .map(([key]) => key)
+            .sort();
 
         for (const propertyName of unprocessedProperties) {
           const child = seenKeys[propertyName];
@@ -1391,7 +1392,10 @@ function validate(
               },
               severity: DiagnosticSeverity.Warning,
               code: ErrorCode.PropertyExpected,
-              message: schema.errorMessage || l10n.t('DisallowedExtraPropWarning', propertyName),
+              message:
+                schema.errorMessage || possibleProperties?.length
+                  ? l10n.t('DisallowedExtraPropWarningWithExpected', propertyName, possibleProperties.join(' | '))
+                  : l10n.t('DisallowedExtraPropWarning', propertyName),
               source: getSchemaSource(schema, originalSchema),
               schemaUri: getSchemaUri(schema, originalSchema),
             };

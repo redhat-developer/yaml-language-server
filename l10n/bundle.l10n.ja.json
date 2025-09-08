@@ -33,6 +33,7 @@
   "maxItemsWarning": "配列の項目数が多すぎます。{0} 項目以下にしてください。",
   "uniqueItemsWarning": "配列に重複する項目があります。",
   "DisallowedExtraPropWarning": "プロパティ {0} は許可されていません。",
+  "DisallowedExtraPropWarningWithExpected": "プロパティ {0} は許可されていません。期待される値: {1}。",
   "MaxPropWarning": "オブジェクトのプロパティ数が制限値 {0} を超えています。",
   "MinPropWarning": "オブジェクトのプロパティ数が必要数 {0} に満たないです。",
   "RequiredDependentPropWarning": "プロパティ {1} によって必要とされるプロパティ {0} が存在しません。",

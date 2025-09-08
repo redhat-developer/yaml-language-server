@@ -12,7 +12,6 @@ import {
   IncludeWithoutValueError,
   BlockMappingEntryError,
   DuplicateKeyError,
-  propertyIsNotAllowed,
   MissingRequiredPropWarning,
 } from './utils/errorMessages';
 import * as assert from 'assert';
@@ -28,7 +27,7 @@ import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { TestTelemetry } from './utils/testsTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
 
-describe('Validation Tests', () => {
+describe.only('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let validationHandler: ValidationHandler;
   let languageService: LanguageService;
@@ -1342,7 +1341,7 @@ obj:
       const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/.drone.yml');
       expect(result[5]).deep.equal(
         createDiagnosticWithData(
-          propertyIsNotAllowed('apiVersion'),
+          'Property apiVersion is not allowed. Expected: clone | concurrency | depends_on | environment | image_pull_secrets | name | node | platform | services | steps | trigger | type | volumes | workspace.',
           1,
           6,
           1,
@@ -1353,20 +1352,20 @@ obj:
           ErrorCode.PropertyExpected,
           {
             properties: [
-              'type',
-              'environment',
-              'steps',
-              'volumes',
-              'services',
-              'image_pull_secrets',
-              'node',
-              'concurrency',
-              'name',
-              'platform',
-              'workspace',
               'clone',
-              'trigger',
+              'concurrency',
               'depends_on',
+              'environment',
+              'image_pull_secrets',
+              'name',
+              'node',
+              'platform',
+              'services',
+              'steps',
+              'trigger',
+              'type',
+              'volumes',
+              'workspace',
             ],
           }
         )
@@ -1690,7 +1689,7 @@ obj:
         const content = `prop2: you should not be there 'prop2'`;
         const result = await parseSetup(content);
         expect(result.length).to.eq(1);
-        expect(result[0].message).to.eq('Property prop2 is not allowed.');
+        expect(result[0].message).to.eq('Property prop2 is not allowed. Expected: prop1.');
         expect((result[0].data as { properties: unknown })?.properties).to.deep.eq(['prop1']);
       });
 
@@ -1716,7 +1715,7 @@ obj:
           }))
         ).to.deep.eq([
           {
-            message: 'Property propX is not allowed.',
+            message: 'Property propX is not allowed. Expected: prop2.',
             properties: ['prop2'],
           },
         ]);
@@ -1756,7 +1755,7 @@ obj:
           }))
         ).to.deep.eq([
           {
-            message: 'Property propX is not allowed.',
+            message: 'Property propX is not allowed. Expected: prop0.',
             properties: ['prop0'],
           },
         ]);

@@ -33,6 +33,7 @@
   "maxItemsWarning": "배열 항목 수가 너무 많습니다. 최대 {0}개 허용됩니다.",
   "uniqueItemsWarning": "배열에 중복된 항목이 있습니다.",
   "DisallowedExtraPropWarning": "속성 {0}은(는) 허용되지 않습니다.",
+  "DisallowedExtraPropWarningWithExpected": "속성 {0}은(는) 허용되지 않습니다. 예상: {1}.",
   "MaxPropWarning": "객체에 허용된 속성 수 {0}을 초과했습니다.",
   "MinPropWarning": "객체에 필요한 최소 속성 수 {0}보다 적습니다.",
   "RequiredDependentPropWarning": "속성 {1}에 필요한 속성 {0}이 누락되었습니다.",
