@@ -683,13 +683,119 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
 
 Allowed Values:
 
+* \`non\`
 * \`cat\`
 * \`dog\`: Canis familiaris
-* \`non\`
 * \`bird\`
 * \`fish\`: Special fish
 
 Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
+    it('Hover displays unique enum values with prroper description (1st case)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            description: 'should return this description',
+            anyOf: [
+              {
+                enum: ['cat', 'dog', 'fish'],
+                enumDescriptions: ['1st cat', '1st dog', '1st fish'], // should use this description for "fish"
+              },
+              {
+                enum: ['bird', 'fish', 'ant'],
+              },
+            ],
+          },
+        },
+      });
+      const content = 'animal:\n  fis|n|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+----
+##
+\`\`\`
+animal: Enum<cat, dog, fish> | Enum<ant, bird, fish>
+\`\`\``
+      );
+    });
+
+    it('Hover displays unique enum values with prroper description (2nd case)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            description: 'should return this description',
+            anyOf: [
+              {
+                enum: ['cat', 'dog', 'fish'],
+              },
+              {
+                enum: ['bird', 'fish', 'ant'],
+                enumDescriptions: ['2nd bird', '2nd fish', '2nd ant'], // should use this description for "fish"
+              },
+            ],
+          },
+        },
+      });
+      const content = 'animal:\n  fis|n|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+----
+##
+\`\`\`
+animal: Enum<cat, dog, fish> | Enum<ant, bird, fish>
+\`\`\``
+      );
+    });
+
+    it('Hover displays unique enum values with prroper description (3rd case)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            description: 'should return this description',
+            anyOf: [
+              {
+                enum: ['cat', 'dog', 'fish'],
+                enumDescriptions: ['1st cat', '1st dog', '1st fish'], // should use this description for "fish"
+              },
+              {
+                enum: ['bird', 'fish', 'ant'],
+                enumDescriptions: ['2nd bird', '2nd fish', '2nd ant'],
+              },
+            ],
+          },
+        },
+      });
+      const content = 'animal:\n  fis|n|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+----
+##
+\`\`\`
+animal: Enum<cat, dog, fish> | Enum<ant, bird, fish>
+\`\`\``
       );
     });
 

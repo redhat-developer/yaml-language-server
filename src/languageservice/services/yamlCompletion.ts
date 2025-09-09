@@ -30,7 +30,6 @@ import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jso
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { stringifyObject, StringifySettings } from '../utils/json';
 import { isDefined, isString } from '../utils/objects';
-import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { asSchema } from '../parser/jsonParser07';
 import { indexOf, isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
@@ -39,8 +38,7 @@ import { getSchemaTypeName, isAnyOfAllOfOneOfType, isPrimitiveType } from '../ut
 import { YamlNode } from '../jsonASTTypes';
 import { SettingsState } from '../../yamlSettings';
 import { addIndentationToMultilineString } from '../utils/strings';
-
-const localize = nls.loadMessageBundle();
+import * as l10n from '@vscode/l10n';
 
 const doubleQuotesEscapeRegExp = /[\\]+"/g;
 
@@ -525,7 +523,7 @@ export class YamlCompletion {
         if (position.line === 0 && position.character === 0 && !isModeline(lineContent)) {
           const inlineSchemaCompletion = {
             kind: CompletionItemKind.Text,
-            label: 'Inline schema',
+            label: l10n.t('Inline schema'),
             insertText: '# yaml-language-server: $schema=',
             insertTextFormat: InsertTextFormat.PlainText,
           };
@@ -918,6 +916,7 @@ export class YamlCompletion {
         }
       });
     }
+
     for (const schema of matchingSchemas) {
       if (schema.schema.deprecationMessage || schema.schema.doNotSuggest) {
         continue;
@@ -1197,12 +1196,12 @@ export class YamlCompletion {
     const schemaTypeTitle = schemaType ? ' type `' + schemaType + '`' : '';
     const schemaDescription = schema.description ? ' (' + schema.description + ')' : '';
     const documentation = this.getDocumentationWithMarkdownText(
-      `Create an item of an array${schemaTypeTitle}${schemaDescription}`,
+      l10n.t('create.item.array', schemaTypeTitle, schemaDescription),
       insertText
     );
     collector.add({
       kind: this.getSuggestionKind(schema.type),
-      label: '- (array item) ' + ((schemaType || index) ?? ''),
+      label: l10n.t('array.item') + ((schemaType || index) ?? ''),
       documentation: documentation,
       insertText: insertText,
       insertTextFormat: InsertTextFormat.Snippet,
@@ -1655,7 +1654,7 @@ export class YamlCompletion {
       }
       let label;
       if (typeof value == 'object') {
-        label = 'Default value';
+        label = l10n.t('Default Value');
       } else {
         label = (value as unknown).toString().replace(doubleQuotesEscapeRegExp, '"');
       }
@@ -1664,7 +1663,7 @@ export class YamlCompletion {
         label,
         insertText: this.getInsertTextForValue(value, separatorAfter, type),
         insertTextFormat: InsertTextFormat.Snippet,
-        detail: localize('json.suggest.default', 'Default value'),
+        detail: l10n.t('Default Value'),
       });
       hasProposals = true;
     }

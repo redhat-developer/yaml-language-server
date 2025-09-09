@@ -6,16 +6,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { createConnection, Connection, ProposedFeatures } from 'vscode-languageserver/node';
-import * as nls from 'vscode-nls';
 import { schemaRequestHandler, workspaceContext } from './languageservice/services/schemaRequestHandler';
 import { YAMLServerInit } from './yamlServerInit';
 import { SettingsState } from './yamlSettings';
 import { promises as fs } from 'fs';
 import { convertErrorToTelemetryMsg } from './languageservice/utils/objects';
 import { TelemetryImpl } from './languageserver/telemetry';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-nls.config(process.env['VSCODE_NLS_CONFIG'] as any);
 
 // Create a connection for the server.
 let connection: Connection = null;

@@ -153,6 +153,7 @@ export interface SchemaConfiguration {
 export interface CustomFormatterOptions {
   singleQuote?: boolean;
   bracketSpacing?: boolean;
+  trailingComma?: boolean;
   proseWrap?: string;
   printWidth?: number;
   enable?: boolean;

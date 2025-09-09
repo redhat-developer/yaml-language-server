@@ -1,3 +1,28 @@
+### 1.19.0
+- Feat: Feat: Support formatting docker-compose.yml by default [#1071](https://github.com/redhat-developer/yaml-language-server/issues/1071)
+- Feat: Support statically registering format support [#1062](https://github.com/redhat-developer/yaml-language-server/pull/1062)
+- Feat: Support localization in the YAML language server [#1081](https://github.com/redhat-developer/yaml-language-server/issues/1081)
+- Feat: Migrated to NPM [#1097](https://github.com/redhat-developer/yaml-language-server/issues/1097)
+- Feat: Add formatting option to remove trailing comma [#1112](https://github.com/redhat-developer/vscode-yaml/issues/1112)
+- Fix: OpenAPI 3.0.0 specification is treated as invalid [#752](https://github.com/redhat-developer/yaml-language-server/issues/752)
+- Fix: YAML Language Server checks against JSON Schema Draft 7 instead of the defined one [#780](https://github.com/redhat-developer/yaml-language-server/issues/780)
+- Fix: Numbers in comments should not break schema validation [#922](https://github.com/redhat-developer/yaml-language-server/issues/922)
+- Fix: Make enum values easier to read on hover [#982](https://github.com/redhat-developer/yaml-language-server/issues/982)
+- Fix: No more quickfix for indent with tab [#1052](https://github.com/redhat-developer/yaml-language-server/issues/1052)
+- Fix: QuickFix for "flow sequence forbidden" leaves in trailing `]` [#1060](https://github.com/redhat-developer/yaml-language-server/issues/1060)
+- Fix: YAML conversion does not resolve aliases correctly [#1075](https://github.com/redhat-developer/yaml-language-server/issues/1075)
+- Fix: Fix enum values to be unique [#1028](https://github.com/redhat-developer/yaml-language-server/pull/1028)
+- Fix: Using bool values in enum and const generates a validation error for valid values [#1078](https://github.com/redhat-developer/yaml-language-server/issues/1078)
+- Fix: improve enum value descriptions for merged enum lists [#1085](https://github.com/redhat-developer/yaml-language-server/pull/1085)
+- Fix: Array of const completion [#1092](https://github.com/redhat-developer/yaml-language-server/pull/1092)
+- Fix: Error for missing anchor (unidentified alias) broken since 1.0 [#1098](https://github.com/redhat-developer/vscode-yaml/issues/1098)
+- Fix: Invalid tab indentation error [#1110](https://github.com/redhat-developer/vscode-yaml/issues/1110)
+- Fix: Validation shows false negative errors if using boolean with const [#1116](https://github.com/redhat-developer/vscode-yaml/issues/1116)
+- Bump: ajv version [#1067](https://github.com/redhat-developer/yaml-language-server/pull/1067)
+
+Thanks to [Trevor Dixon](https://github.com/trevordixon), [David Lechner](https://github.com/dlech), [pjsk-stripe](https://github.com/pjsk-stripe), [Lucy Dryaeva
+](https://github.com/ShadiestGoat) and [Kosta](https://github.com/Kosta-Github) for your contributions.
+
 ### 1.18.0
 - Feat: Do not suggest propertyNames if doNotSuggest is true [#1045](https://github.com/redhat-developer/yaml-language-server/pull/1045)
 - Feat: Exclude not suggest properties from possible properties error [#1051](https://github.com/redhat-developer/yaml-language-server/pull/1051)

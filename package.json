@@ -1,7 +1,7 @@
 {
   "name": "yaml-language-server",
   "description": "YAML language server",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "author": "Red Hat",
   "license": "MIT",
   "contributors": [
@@ -14,49 +14,50 @@
     }
   ],
   "bin": {
-    "yaml-language-server": "./bin/yaml-language-server"
+    "yaml-language-server": "bin/yaml-language-server"
   },
   "main": "./out/server/src/index.js",
+  "l10n": "./l10n",
   "keywords": [
     "yaml",
     "LSP"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/redhat-developer/yaml-language-server.git"
+    "url": "git+https://github.com/redhat-developer/yaml-language-server.git"
   },
   "dependencies": {
-    "ajv": "^8.11.0",
+    "@vscode/l10n": "^0.0.18",
+    "ajv": "^8.17.1",
+    "ajv-draft-04": "^1.0.0",
     "fast-uri": "^3.0.6",
     "lodash": "4.17.21",
-    "prettier": "^3.0.0",
+    "prettier": "^3.5.0",
     "request-light": "^0.5.7",
     "vscode-json-languageservice": "4.1.8",
     "vscode-languageserver": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.1",
     "vscode-languageserver-types": "^3.16.0",
-    "vscode-nls": "^5.0.0",
     "vscode-uri": "^3.0.2",
-    "yaml": "2.2.2"
+    "yaml": "2.7.1"
   },
   "devDependencies": {
     "@microsoft/eslint-formatter-sarif": "3.0.0",
     "@types/chai": "^4.2.12",
     "@types/mocha": "8.2.2",
-    "@types/node": "16.x",
+    "@types/node": "18.x",
     "@types/sinon": "^9.0.5",
     "@types/sinon-chai": "^3.2.5",
     "@typescript-eslint/eslint-plugin": "^5.38.0",
     "@typescript-eslint/parser": "^5.38.0",
     "chai": "^4.2.0",
-    "coveralls": "3.1.1",
     "eslint": "^8.24.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-prettier": "^5.0.0",
     "http-proxy-agent": "^5.0.0",
     "https-proxy-agent": "^5.0.0",
-    "mocha": "9.2.2",
+    "mocha": "11.7.1",
     "mocha-lcov-reporter": "^1.3.0",
     "nyc": "^15.1.0",
     "rimraf": "^3.0.2",
@@ -75,9 +76,9 @@
     "coveralls": "nyc --reporter=lcov --reporter=text mocha --timeout 5000 --require ts-node/register --require source-map-support/register --recursive --ui bdd ./test/*.test.ts",
     "lint": "eslint --max-warnings 0 -c .eslintrc.js --ext .ts src test",
     "lint-ci": "eslint --max-warnings 0 -c .eslintrc.js -f @microsoft/eslint-formatter-sarif -o eslint-result.sarif --ext .ts src test",
-    "prettier-fix": "yarn prettier --write .",
-    "build": "yarn clean && yarn lint && yarn compile && yarn build:libs",
-    "build:libs": "yarn compile:umd && yarn compile:esm",
+    "prettier-fix": "npm run prettier --write .",
+    "build": "npm run clean && npm run lint && npm run compile && npm run build:libs",
+    "build:libs": "npm run compile:umd && npm run compile:esm",
     "compile:umd": "tsc -p ./tsconfig.umd.json",
     "compile:esm": "tsc -p ./tsconfig.esm.json",
     "check-dependencies": "node ./scripts/check-dependencies.js",

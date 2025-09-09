@@ -12,10 +12,11 @@ import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { IApplicableSchema } from '../parser/jsonParser07';
+import { getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
 import { JSONSchema } from '../jsonSchema';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
+import * as l10n from '@vscode/l10n';
 import { Telemetry } from '../telemetry';
 import { ASTNode } from 'vscode-json-languageservice';
 import { stringify as stringifyYAML } from 'yaml';
@@ -114,12 +115,13 @@ export class YAMLHover {
         let markdownEnumDescriptions: string[] = [];
         const markdownExamples: string[] = [];
         const markdownEnums: markdownEnum[] = [];
-
+        let enumIdx: number | undefined = undefined;
         matchingSchemas.every((s) => {
           if ((s.node === node || (node.type === 'property' && node.valueNode === s.node)) && !s.inverted && s.schema) {
             title = title || s.schema.title || s.schema.closestTitle;
             markdownDescription = markdownDescription || s.schema.markdownDescription || this.toMarkdown(s.schema.description);
             if (s.schema.enum) {
+              enumIdx = s.schema.enum.indexOf(getNodeValue(node));
               if (s.schema.markdownEnumDescriptions) {
                 markdownEnumDescriptions = s.schema.markdownEnumDescriptions;
               } else if (s.schema.enumDescriptions) {
@@ -132,11 +134,15 @@ export class YAMLHover {
                   enumValue = JSON.stringify(enumValue);
                 }
                 //insert only if the value is not present yet (avoiding duplicates)
-                if (!markdownEnums.some((me) => me.value === enumValue)) {
+                //but it also adds or keeps the description of the enum value
+                const foundIdx = markdownEnums.findIndex((me) => me.value === enumValue);
+                if (foundIdx < 0) {
                   markdownEnums.push({
                     value: enumValue,
                     description: markdownEnumDescriptions[idx],
                   });
+                } else {
+                  markdownEnums[foundIdx].description ||= markdownEnumDescriptions[idx];
                 }
               });
             }
@@ -173,7 +179,10 @@ export class YAMLHover {
         }
         if (markdownEnums.length !== 0) {
           result = ensureLineBreak(result);
-          result += 'Allowed Values:\n\n';
+          result += l10n.t('allowedValues') + '\n\n';
+          if (enumIdx) {
+            markdownEnums.unshift(markdownEnums.splice(enumIdx, 1)[0]);
+          }
           markdownEnums.forEach((me) => {
             if (me.description) {
               result += `* \`${toMarkdownCodeBlock(me.value)}\`: ${me.description}\n`;
@@ -185,13 +194,13 @@ export class YAMLHover {
         if (markdownExamples.length !== 0) {
           markdownExamples.forEach((example) => {
             result = ensureLineBreak(result);
-            result += 'Example:\n\n';
+            result += l10n.t('example') + '\n\n';
             result += `\`\`\`yaml\n${example}\`\`\`\n`;
           });
         }
         if (result.length > 0 && schema.schema.url) {
           result = ensureLineBreak(result);
-          result += `Source: [${getSchemaName(schema.schema)}](${schema.schema.url})`;
+          result += l10n.t('source', getSchemaName(schema.schema), schema.schema.url);
         }
         return createHover(result);
       }

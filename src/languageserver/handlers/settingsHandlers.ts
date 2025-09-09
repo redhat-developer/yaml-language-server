@@ -39,7 +39,12 @@ export class SettingsHandler {
   }
 
   private getDocumentSelectors(settings: Settings): DocumentSelector {
-    let docSelector: DocumentSelector = [{ language: 'yaml' }];
+    let docSelector: DocumentSelector = [
+      { language: 'yaml' },
+      { language: 'dockercompose' },
+      { language: 'github-actions-workflow' },
+      { pattern: '*.y(a)ml' },
+    ];
     if (settings.yaml.extraLanguage) {
       docSelector = docSelector.concat(
         settings.yaml.extraLanguage.map((l) => {
@@ -122,6 +127,10 @@ export class SettingsHandler {
 
         if (settings.yaml.format.bracketSpacing !== undefined) {
           this.yamlSettings.yamlFormatterSettings.bracketSpacing = settings.yaml.format.bracketSpacing;
+        }
+
+        if (settings.yaml.format.trailingComma !== undefined) {
+          this.yamlSettings.yamlFormatterSettings.trailingComma = settings.yaml.format.trailingComma;
         }
 
         if (settings.yaml.format.enable !== undefined) {

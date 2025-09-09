@@ -73,7 +73,7 @@ export function createUnusedAnchorDiagnostic(
     startCharacter,
     endLine,
     endCharacter,
-    DiagnosticSeverity.Hint,
+    DiagnosticSeverity.Information,
     'YAML'
   );
   diagnostic.tags = [DiagnosticTag.Unnecessary];
@@ -169,7 +169,7 @@ export function createExpectedCompletion(
   endCharacter: number,
   kind: CompletionItemKind,
   insertTextFormat: InsertTextFormat = 2,
-  extra = {}
+  extra: Partial<CompletionItem> = {}
 ): CompletionItem {
   if (jigxBranchTest) {
     // remove $1 from snippets, where is no other $2
