@@ -191,7 +191,7 @@ function toFixedOffsetLength(range: NodeRange, lineCounter: LineCounter): [numbe
   const result: [number, number] = [range[0], range[1] - range[0]];
   // -1 as range may include '\n'
   if (start.line !== end.line && (lineCounter.lineStarts.length !== end.line || end.col === 1)) {
-    result[1]--;
+    // result[1]--;
   }
 
   return result;

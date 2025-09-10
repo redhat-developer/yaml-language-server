@@ -5,7 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
-import { isNumber, equals, isString, isDefined, isBoolean, isIterable } from '../utils/objects';
+import { isNumber, equals, isString, isDefined, isBoolean, isIterable, pushIfNotExist } from '../utils/objects';
 import { getSchemaTypeName } from '../utils/schemaUtils';
 import {
   ASTNode,
@@ -28,6 +28,11 @@ import { Node, Pair } from 'yaml';
 import { safeCreateUnicodeRegExp } from '../utils/strings';
 import { FilePatternAssociation } from '../services/yamlSchemaService';
 import { floatSafeRemainder } from '../utils/math';
+
+// jigx custom
+import * as path from 'path';
+import { prepareInlineCompletion } from '../utils/jigx/prepareInlineCompletion';
+// end
 
 export interface IRange {
   offset: number;
@@ -91,6 +96,10 @@ export interface IProblem {
   problemArgs?: string[];
   schemaUri?: string[];
   data?: Record<string, unknown>;
+}
+
+export interface JSONSchemaWithProblems extends JSONSchema {
+  problems: IProblem[];
 }
 
 export abstract class ASTNodeImpl {
@@ -661,6 +670,8 @@ function validate(
     return;
   }
 
+  (<JSONSchemaWithProblems>schema).problems = undefined; //clear previous problems
+
   if (!schema.url) {
     schema.url = originalSchema.url;
   }
@@ -688,7 +699,17 @@ function validate(
   matchingSchemas.add({ node: node, schema: schema });
 
   function _validateNode(): void {
+    function isExpression(type: string): boolean {
+      return (
+        type === 'object' && node.type === 'string' && node.value.startsWith('=') && getSchemaTypeName(schema) === 'Expression'
+      );
+    }
+
     function matchesType(type: string): boolean {
+      // expression customization
+      if (isExpression(type)) {
+        return true;
+      }
       return node.type === type || (type === 'integer' && node.type === 'number' && node.isInteger);
     }
 
@@ -752,8 +773,138 @@ function validate(
         validationResult: ValidationResult;
         matchingSchemas: ISchemaCollector;
       } = null;
+
+      // flatten nested anyOf/oneOf schemas
+      const flatSchema = (subSchemas: JSONSchemaRef[], maxOneMatch: boolean): JSONSchemaRef[] => {
+        const flatSchemas: JSONSchemaRef[] = [];
+        for (const subSchemaRef of subSchemas) {
+          const subSchema = asSchema(subSchemaRef);
+          if (maxOneMatch && subSchema.oneOf) {
+            flatSchemas.push(...flatSchema(subSchema.oneOf, maxOneMatch));
+          } else if (!maxOneMatch && subSchema.anyOf) {
+            flatSchemas.push(...flatSchema(subSchema.anyOf, maxOneMatch));
+          } else {
+            flatSchemas.push(subSchemaRef);
+          }
+        }
+        return flatSchemas;
+      };
+      // fix nested types problem (jig.default children - type:)
+      let alternativesFiltered = flatSchema(alternatives, maxOneMatch);
+
+      // jigx custom: remove subSchemas if the mustMatchProps (`type`, `provider`) is different
+      // another idea is to add some attribute to schema, so type will have `mustMatch` attribute - this could work in general not only for jigx
+      const mustMatchProps = ['type', 'provider'];
+      const mustMatchSchemas: JSONSchema[] = [];
+      const validationData: Record<(typeof mustMatchProps)[number], { node: IRange; values: string[] }> = {};
+      for (const mustMatch of mustMatchProps) {
+        const mustMatchYamlProp = node.children.find(
+          (ch): ch is PropertyASTNode => ch.type === 'property' && ch.keyNode.value === mustMatch // && ch.valueNode.value !== null
+        );
+        // must match property is not in yaml, so continue as usual
+        if (!mustMatchYamlProp) {
+          continue;
+        }
+
+        // take only subSchemas that have the same mustMatch property in yaml and in schema
+        alternativesFiltered = alternativesFiltered.reduce((acc, subSchemaRef) => {
+          const subSchema = asSchema(subSchemaRef);
+          if (!subSchema.properties) {
+            acc.push(subSchemaRef);
+            return acc;
+          }
+
+          const typeSchemaProp = subSchema.properties[mustMatch];
+
+          if (typeof typeSchemaProp !== 'object') {
+            // jig.list has anyOf in the root, so no `type` prop directly in that schema, so jig.list will be excluded in the next iteration
+            acc.push(subSchemaRef);
+            return acc;
+          }
+          const subValidationResult = new ValidationResult(isKubernetes);
+          const subMatchingSchemas = matchingSchemas.newSub();
+          validate(mustMatchYamlProp, typeSchemaProp, subSchema, subValidationResult, subMatchingSchemas, options);
+          // console.log('-- mustMatchSchemas test --', {
+          //   mustMatchProp: mustMatch,
+          //   result: {
+          //     enumValues: subValidationResult.enumValues,
+          //     enumValueMatch: subValidationResult.enumValueMatch,
+          //     hasProblems: subValidationResult.hasProblems(),
+          //   },
+          //   yaml: { propKey: mustMatchYamlProp.keyNode.value, propValue: mustMatchYamlProp.valueNode.value },
+          //   mustMatchSchemasCount: mustMatchSchemas.length,
+          //   subSchema,
+          // });
+          if (
+            !subValidationResult.hasProblems() ||
+            // allows some of the other errors like: patterns validations
+            subValidationResult.enumValueMatch
+            // note that there was a special hack for type: `provider: { anyOf: [{enum: ['pr1', 'pr2']}, {type: 'string', title: 'expression'}] }`
+            // seems that we don't need it anymore, caused more troubles
+            // check previous commits for more details
+          ) {
+            // we have enum/const match on mustMatch prop
+            // so we want to use this schema forcedly in genericComparison mechanism
+            let mustMatchSchema = subSchema;
+            if (subValidationResult.enumValueMatch && subValidationResult.enumValues?.length) {
+              if (!subValidationResult.enumValues.includes(mustMatchYamlProp.valueNode.value)) {
+                // fix component.list vs component.list-item problem.
+                // there is a difference when we want to suggestion for `type: component.list` (should suggest also `component.list-item`)
+                // but when the node is nested in options, we don't want to suggest schema related to `component.list-item`
+                // so if we don't have strict match, lets add only subset with `type` property
+                //  - so intellisense on type will contains all possible types
+                //  - but when the node is nested, the rest properties are trimmed
+                mustMatchSchema = { ...subSchema, properties: { [mustMatch]: subSchema.properties[mustMatch] } };
+              }
+              mustMatchSchemas.push(mustMatchSchema);
+            }
+            acc.push(mustMatchSchema);
+            return acc;
+          }
+          if (!validationData[mustMatch]) {
+            validationData[mustMatch] = { node: mustMatchYamlProp.valueNode, values: [] };
+          }
+          if (subValidationResult.enumValues?.length) {
+            validationData[mustMatch].values.push(...subValidationResult.enumValues);
+          }
+          return acc;
+        }, []);
+        // if no match, just return
+        // example is jig.list with anyOf in the root... so types are in anyOf[0]
+        if (!alternativesFiltered.length) {
+          const data = validationData[mustMatch];
+          // const values = [...new Set(data.values)];
+          validationResult.problems.push({
+            location: { offset: data.node.offset, length: data.node.length },
+            severity: DiagnosticSeverity.Warning,
+            code: ErrorCode.EnumValueMismatch,
+            problemType: ProblemType.constWarning,
+            message: 'Must match property: `' + mustMatch + '`', // with values: ' + values.map((value) => '`' + value + '`').join(', '),
+            source: getSchemaSource(schema, originalSchema),
+            schemaUri: getSchemaUri(schema, originalSchema),
+            problemArgs: [],
+            // data: { values }, // not reliable problem with `list: anyOf: []`
+          });
+          validationResult.enumValueMatch = false;
+          // if there is no match in schemas, return all alternatives so the hover can display all possibilities
+          break;
+        }
+        // don't need to check other mustMatchProps (`type` => `provider`)
+        break;
+      }
+
+      // if there is no match in schemas, return all alternatives so the hover can display all possibilities
+      alternatives = alternativesFiltered.length ? alternativesFiltered : alternatives;
+      // end jigx custom
+
       for (const subSchemaRef of alternatives) {
+        /* jigx custom: creating new instance of schema doesn't make much sense
+         * it loosing some props that are set inside validate
+         * hoverDetail is missing `url` by this
+         * so let's revert this back to previous functionality in jigx branch.
         const subSchema = { ...asSchema(subSchemaRef) };
+        */
+        const subSchema = asSchema(subSchemaRef);
         const subValidationResult = new ValidationResult(isKubernetes);
         const subMatchingSchemas = matchingSchemas.newSub();
         validate(node, subSchema, schema, subValidationResult, subMatchingSchemas, options);
@@ -776,7 +927,16 @@ function validate(
         } else if (isKubernetes) {
           bestMatch = alternativeComparison(subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         } else {
-          bestMatch = genericComparison(node, maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
+          bestMatch = genericComparisonJigx(
+            node,
+            maxOneMatch,
+            subValidationResult,
+            bestMatch,
+            subSchema,
+            subMatchingSchemas,
+            mustMatchSchemas
+          );
+          // bestMatch = genericComparison(node, maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
         }
       }
 
@@ -813,7 +973,9 @@ function validate(
       const subMatchingSchemas = matchingSchemas.newSub();
 
       validate(node, asSchema(schema), originalSchema, subValidationResult, subMatchingSchemas, options);
-
+      // jigx custom: mark schema as condition
+      subMatchingSchemas.schemas.forEach((s) => (s.schema.$comment = 'then/else'));
+      // end
       validationResult.merge(subValidationResult);
       validationResult.propertiesMatches += subValidationResult.propertiesMatches;
       validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
@@ -831,7 +993,9 @@ function validate(
       const subMatchingSchemas = matchingSchemas.newSub();
 
       validate(node, subSchema, originalSchema, subValidationResult, subMatchingSchemas, options);
-      matchingSchemas.merge(subMatchingSchemas);
+      // jigx custom: don't want to put `if schema` into regular valid schemas
+      // matchingSchemas.merge(subMatchingSchemas);
+      // end
 
       const { filePatternAssociation } = subSchema;
       if (filePatternAssociation) {
@@ -1030,6 +1194,21 @@ function validate(
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
+      }
+    }
+
+    if (Array.isArray(schema.patterns)) {
+      for (const pattern of schema.patterns) {
+        const regex = safeCreateUnicodeRegExp(pattern.pattern);
+        if (!regex.test(node.value)) {
+          validationResult.problems.push({
+            location: { offset: node.offset, length: node.length },
+            severity: pattern.severity || DiagnosticSeverity.Warning,
+            message: pattern.message || l10n.t('patternWarning', pattern.pattern),
+            source: getSchemaSource(schema, originalSchema),
+            schemaUri: getSchemaUri(schema, originalSchema),
+          });
+        }
       }
     }
 
@@ -1248,15 +1427,17 @@ function validate(
         if (seenKeys[propertyName] === undefined) {
           const keyNode = node.parent && node.parent.type === 'property' && node.parent.keyNode;
           const location = keyNode ? { offset: keyNode.offset, length: keyNode.length } : { offset: node.offset, length: 1 };
-          validationResult.problems.push({
+          const problem = {
             location: location,
             severity: DiagnosticSeverity.Warning,
             message: getWarningMessage(ProblemType.missingRequiredPropWarning, [propertyName]),
             source: getSchemaSource(schema, originalSchema),
+            propertyName: propertyName,
             schemaUri: getSchemaUri(schema, originalSchema),
             problemArgs: [propertyName],
             problemType: ProblemType.missingRequiredPropWarning,
-          });
+          };
+          pushProblemToValidationResultAndSchema(schema, validationResult, problem);
         }
       }
     }
@@ -1273,7 +1454,7 @@ function validate(
       for (const propertyName of Object.keys(schema.properties)) {
         propertyProcessed(propertyName);
         const propertySchema = schema.properties[propertyName];
-        const child = seenKeys[propertyName];
+        let child = seenKeys[propertyName];
         if (child) {
           if (isBoolean(propertySchema)) {
             if (!propertySchema) {
@@ -1293,6 +1474,10 @@ function validate(
               validationResult.propertiesValueMatches++;
             }
           } else {
+            if (propertySchema.inlineObject) {
+              const newParams = prepareInlineCompletion(child.value?.toString() || '');
+              child = newParams.node;
+            }
             propertySchema.url = schema.url ?? originalSchema.url;
             const propertyValidationResult = new ValidationResult(isKubernetes);
             validate(child, propertySchema, schema, propertyValidationResult, matchingSchemas, options);
@@ -1494,6 +1679,43 @@ function validate(
     return bestMatch;
   }
 
+  // jigx custom - some extra check instead of genericComparison
+  function genericComparisonJigx(
+    node: ASTNode,
+    maxOneMatch,
+    subValidationResult: ValidationResult,
+    bestMatch: IValidationMatch,
+    subSchema,
+    subMatchingSchemas: ISchemaCollector,
+    mustMatchSchemas: JSONSchema[]
+  ): IValidationMatch {
+    // if schema is in mustMatchSchemas to allows all types, providers in autocomplete
+    // it allows to suggest any type/provider regardless of the anyOf schemas validation
+    if (callFromAutoComplete && mustMatchSchemas.includes(subSchema)) {
+      if (!mustMatchSchemas.includes(bestMatch.schema)) {
+        bestMatch = {
+          schema: subSchema,
+          validationResult: subValidationResult,
+          matchingSchemas: subMatchingSchemas,
+        };
+      } else {
+        mergeValidationMatches(bestMatch, subMatchingSchemas, subValidationResult);
+        // could be inside mergeValidationMatches fn but better to avoid conflicts
+        bestMatch.validationResult.primaryValueMatches = Math.max(
+          bestMatch.validationResult.primaryValueMatches,
+          subValidationResult.primaryValueMatches
+        );
+        bestMatch.validationResult.propertiesMatches = Math.max(
+          bestMatch.validationResult.propertiesMatches,
+          subValidationResult.propertiesMatches
+        );
+      }
+      return bestMatch;
+    }
+    return genericComparison(node, maxOneMatch, subValidationResult, bestMatch, subSchema, subMatchingSchemas);
+  }
+  // end jigx custom
+
   //genericComparison tries to find the best matching schema using a generic comparison
   function genericComparison(
     node: ASTNode,
@@ -1548,6 +1770,18 @@ function validate(
       ProblemType.constWarning,
     ]);
   }
+
+  function pushProblemToValidationResultAndSchema(
+    schema: JSONSchema,
+    validationResult: ValidationResult,
+    problem: IProblem
+  ): void {
+    validationResult.problems.push(problem);
+    (<JSONSchemaWithProblems>schema).problems = (<JSONSchemaWithProblems>schema).problems || [];
+    pushIfNotExist((<JSONSchemaWithProblems>schema).problems, problem, (val, index, arr) => {
+      return arr.some((i) => isArrayEqual(i.problemArgs, val.problemArgs));
+    });
+  }
 }
 
 function getSchemaSource(schema: JSONSchema, originalSchema: JSONSchema): string | undefined {
@@ -1564,9 +1798,11 @@ function getSchemaSource(schema: JSONSchema, originalSchema: JSONSchema): string
       if (uriString) {
         const url = URI.parse(uriString);
         if (url.scheme === 'file') {
-          label = url.fsPath;
+          // label = url.fsPath; //don't want to show full path
+          label = path.basename(url.fsPath);
+        } else {
+          label = url.toString();
         }
-        label = url.toString();
       }
     }
     if (label) {

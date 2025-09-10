@@ -570,6 +570,43 @@ objB:
       'thing1:\n    array2:\n      - type: $1\n        thing2:\n          item1: $2\n          item2: $3'
     );
   });
+  it('Autocomplete with snippet without hypen (-) inside an array', async () => {
+    schemaProvider.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        array1: {
+          type: 'array',
+          items: {
+            type: 'object',
+            defaultSnippets: [
+              {
+                label: 'My array item',
+                body: { item1: '$1' },
+              },
+            ],
+            required: ['thing1'],
+            properties: {
+              thing1: {
+                type: 'object',
+                required: ['item1'],
+                properties: {
+                  item1: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const content = 'array1:\n  - thing1:\n      item1: $1\n  |\n|';
+    const completion = await parseCaret(content);
+
+    // expect(completion.items.map((i) => ({ label: i.label, insertText: i.insertText }))).to.be.deep.eq([
+    //   { label: 'My array item', insertText: '- item1: ' },
+    //   { label: '- (array item) object', insertText: '- thing1:\n    item1: ' },
+    // ]);
+    expect(completion.items[0].insertText).to.be.equal('- item1: ');
+  });
   describe('array indent on different index position', () => {
     const schema = {
       type: 'object',
@@ -1016,6 +1053,30 @@ objB:
         })
       );
     });
+    it('indent compensation for partial key with trailing spaces', async () => {
+      const schema: JSONSchema = {
+        type: 'object',
+        properties: {
+          array: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                obj1: {
+                  type: 'object',
+                },
+              },
+            },
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'array:\n  - obj| |  ';
+      const completion = await parseCaret(content);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0].insertText).eql('obj1:\n    ');
+    });
 
     describe('partial value with trailing spaces', () => {
       it('partial value with trailing spaces', async () => {
@@ -1236,6 +1297,77 @@ objB:
       expect(result.items.length).to.be.equal(1);
       expect(result.items[0].insertText).to.be.equal('objA:\n    itemA: ');
     });
+
+    it('array completion - should suggest correct indent when extra spaces after cursor followed by with different array item', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                objA: {
+                  type: 'object',
+                  required: ['itemA'],
+                  properties: {
+                    itemA: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = `
+test:
+  - | |    
+  - objA:
+      itemA: test`;
+      const result = await parseCaret(content);
+
+      expect(result.items.length).to.be.equal(1);
+      expect(result.items[0].insertText).to.be.equal('objA:\n    itemA: ');
+    });
+
+    it('array completion - should suggest correct indent when cursor is just after hyphen with trailing spaces', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          test: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                objA: {
+                  type: 'object',
+                  required: ['itemA'],
+                  properties: {
+                    itemA: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const content = `
+test:
+  -| |    
+`;
+      const result = await parseCaret(content);
+
+      expect(result.items.length).to.be.equal(1);
+      expect(result.items[0].textEdit).to.deep.equal({
+        newText: ' objA:\n    itemA: ',
+        // range should contains all the trailing spaces
+        range: Range.create(2, 3, 2, 9),
+      });
+    });
     it('array of arrays completion - should suggest correct indent when extra spaces after cursor', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
@@ -1311,6 +1443,44 @@ objB:
 
       expect(result.items.length).to.be.equal(1);
       expect(result.items[0].insertText).to.be.equal('objA:\n    itemA: ');
+    });
+
+    describe('array item with existing property', () => {
+      const schema: JSONSchema = {
+        type: 'object',
+        properties: {
+          array1: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                objA: {
+                  type: 'object',
+                },
+                propB: {
+                  const: 'test',
+                },
+              },
+            },
+          },
+        },
+      };
+      it('should get extra space compensation for the 1st prop in array object item', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = 'array1:\n  - |\n|    propB: test';
+        const result = await parseCaret(content);
+
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0].insertText).to.be.equal('objA:\n    ');
+      });
+      it('should get extra space compensation for the 1st prop in array object item - extra spaces', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = 'array1:\n  - | |   \n    propB: test';
+        const result = await parseCaret(content);
+
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0].insertText).to.be.equal('objA:\n    ');
+      });
     });
   }); //'extra space after cursor'
 
@@ -1480,6 +1650,7 @@ test1:
     expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
     expect(completion.items[0].documentation).to.be.equal('Property Description');
   });
+
   it('should not suggest propertyNames with doNotSuggest', async () => {
     const schema: JSONSchema = {
       type: 'object',
@@ -1496,6 +1667,137 @@ test1:
     expect(completion.items.length).equal(0);
   });
 
+  describe('Deprecated schema', () => {
+    it('should not autocomplete deprecated schema - property completion', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          prop1: { type: 'string' },
+        },
+        deprecationMessage: 'Deprecated',
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const completion = await parseSetup(content, 0, 1);
+
+      expect(completion.items.length).equal(0);
+    });
+    it('should not autocomplete deprecated schema - value completion', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          prop1: {
+            anyOf: [
+              {
+                type: 'string',
+                default: 'value_default',
+                deprecationMessage: 'Deprecated default',
+              },
+              {
+                type: 'object',
+                defaultSnippets: [
+                  {
+                    label: 'snippet',
+                    body: {
+                      value1: 'value_snippet',
+                    },
+                  },
+                ],
+                deprecationMessage: 'Deprecated snippet',
+              },
+            ],
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'prop1: ';
+      const completion = await parseSetup(content, 0, content.length);
+
+      expect(completion.items.length).equal(0);
+    });
+    it('should autocomplete inside deprecated schema', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          obj1: {
+            properties: {
+              item1: { type: 'string' },
+            },
+          },
+        },
+        deprecationMessage: 'Deprecated',
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'obj1:\n | |';
+      const completion = await parseCaret(content);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0].label).equal('item1');
+    });
+  });
+
+  describe('doNotSuggest schema', () => {
+    it('should not autocomplete schema with doNotSuggest - property completion', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          prop1: { type: 'string' },
+        },
+        doNotSuggest: true,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = '';
+      const completion = await parseSetup(content, 0, 1);
+
+      expect(completion.items.length).equal(0);
+    });
+    it('should not autocomplete schema with doNotSuggest - value completion', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          prop1: {
+            anyOf: [
+              {
+                type: 'string',
+                default: 'value_default',
+                doNotSuggest: true,
+              },
+              {
+                type: 'object',
+                defaultSnippets: [
+                  {
+                    label: 'snippet',
+                    body: {
+                      value1: 'value_snippet',
+                    },
+                  },
+                ],
+                doNotSuggest: true,
+              },
+            ],
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'prop1: ';
+      const completion = await parseSetup(content, 0, content.length);
+
+      expect(completion.items.length).equal(0);
+    });
+    it('should autocomplete inside schema in doNotSuggest', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          obj1: {
+            properties: {
+              item1: { type: 'string' },
+            },
+          },
+        },
+        doNotSuggest: true,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'obj1:\n | |';
+      const completion = await parseCaret(content);
+
+      expect(completion.items.length).equal(1);
+      expect(completion.items[0].label).equal('item1');
+    });
+  });
   it('should suggest enum based on type', async () => {
     const schema: JSONSchema = {
       type: 'object',

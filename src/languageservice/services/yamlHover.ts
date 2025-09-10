@@ -43,7 +43,7 @@ export class YAMLHover {
 
   doHover(document: TextDocument, position: Position, isKubernetes = false): Promise<Hover | null> {
     try {
-      if (!this.shouldHover || !document) {
+      if (/*!this.shouldHover ||*/ !document) {
         return Promise.resolve(undefined);
       }
       const doc = yamlDocumentsCache.getYamlDocument(document);

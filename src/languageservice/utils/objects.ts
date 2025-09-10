@@ -77,7 +77,30 @@ export function isString(val: unknown): val is string {
 }
 
 /**
- * Check that provided value is Iterable
+ * adds an element to the array if it does not already exist using a comparer
+ * @param array will be created if undefined
+ * @param element element to add
+ * @param comparer Compare function or property name used to check if item exists inside array.
+ */
+export function pushIfNotExist<T>(
+  array: T[],
+  element: T | undefined,
+  comparer?: string | ((value: T, index: number, array: T[]) => boolean)
+): void {
+  if (element !== undefined) {
+    let exists = true;
+    if (typeof element === 'object') {
+      exists = typeof comparer === 'string' ? array.some((i) => i[comparer] === element[comparer]) : array.some(comparer);
+    } else {
+      exists = comparer === undefined || typeof comparer === 'string' ? array.includes(element) : array.some(comparer);
+    }
+    if (!exists) {
+      array.push(element);
+    }
+  }
+}
+
+/* Check that provided value is Iterable
  * @param val the value to check
  * @returns true if val is iterable, false otherwise
  */
