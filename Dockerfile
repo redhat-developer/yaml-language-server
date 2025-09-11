@@ -7,5 +7,5 @@ COPY . .
 RUN npm install && \
     npm run build
 
-ENTRYPOINT [ "node", "./out/server/src/server.js" ]
+ENTRYPOINT [ "node", "./lib/cjs/server.js" ]
 CMD [ "--stdio" ]
