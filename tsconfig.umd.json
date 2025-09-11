@@ -7,7 +7,6 @@
   },
   "exclude": [
     "node_modules",
-    "out",
     "lib",
     "test"
   ]

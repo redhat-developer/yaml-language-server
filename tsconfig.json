@@ -3,15 +3,24 @@
     "alwaysStrict": true,
     "declaration": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["es2020", "WebWorker"],
+    "lib": [
+      "es2020",
+      "WebWorker"
+    ],
     "module": "commonjs",
     "moduleResolution": "node",
-    "outDir": "./out/server",
+    "outDir": "./lib/cjs",
     "sourceMap": true,
     "target": "es2020",
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true
   },
-  "include": [ "src", "test" ],
-  "exclude": ["node_modules", "out"]
+  "include": [
+    "src",
+  ],
+  "exclude": [
+    "node_modules",
+    "test",
+    "lib"
+  ]
 }

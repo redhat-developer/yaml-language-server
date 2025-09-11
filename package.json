@@ -1,7 +1,7 @@
 {
   "name": "yaml-language-server",
   "description": "YAML language server",
-  "version": "1.19.0",
+  "version": "2.0.0",
   "author": "Red Hat",
   "license": "MIT",
   "contributors": [
@@ -16,7 +16,7 @@
   "bin": {
     "yaml-language-server": "bin/yaml-language-server"
   },
-  "main": "./out/server/src/index.js",
+  "main": "./lib/cjs/index.js",
   "l10n": "./l10n",
   "keywords": [
     "yaml",
