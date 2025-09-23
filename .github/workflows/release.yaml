@@ -24,7 +24,7 @@ jobs:
 
       # Set up Node
     - name: Use Node 20
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
         node-version: 20
         registry-url: 'https://registry.npmjs.org'
@@ -45,19 +45,11 @@ jobs:
     - name: Run Check Dependencies
       run: npm run check-dependencies
 
-      # Config .npmrc
-    - name: Config .npmrc
-      run: |
-        {
-          echo "registry=https://registry.npmjs.com"
-          echo "//registry.npmjs.com/:_authToken=${NPM_TOKEN}"
-        } > .npmrc
-
     # Publish to npm
     - name: Publish to npm
       run: npm publish --access public
       env:
-        NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+        NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
       # Get the current package.json version so we can tag the image correctly
     - name: Get current package.json version

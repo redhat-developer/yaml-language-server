@@ -35,9 +35,10 @@ jobs:
 
       # Set up Node
       - name: Use Node 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
+          registry-url: 'https://registry.npmjs.org'
 
       # Run install dependencies
       - name: Install dependencies
@@ -69,6 +70,7 @@ jobs:
 
         # Run Coveralls
       - name: Coveralls
+        if: matrix.os == 'ubuntu-latest'
         uses: coverallsapp/github-action@c7885c00cb7ec0b8f9f5ff3f53cddb980f7a4412 # v2.2.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -76,13 +78,9 @@ jobs:
       - name: Publish
         if: ${{ success() && runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/main'}}
         run: |
-          {
-            echo "registry=https://registry.npmjs.com"
-            echo "//registry.npmjs.com/:_authToken=${NPM_TOKEN}"
-          } > .npmrc
           npm publish --tag next --no-git-tag-version --prepatch --preid "$(git rev-parse --short HEAD)"
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
         # Setup QEMU as requirement for docker
       - name: Set up QEMU
