@@ -38,6 +38,7 @@ import { ResultLimitReachedNotification } from '../../requestTypes';
 import * as path from 'path';
 
 export class LanguageHandlers {
+  public isTest = false;
   private languageService: LanguageService;
   private yamlSettings: SettingsState;
   private validationHandler: ValidationHandler;
@@ -84,6 +85,31 @@ export class LanguageHandlers {
     return this.languageService.findLinks(document);
   }
 
+  previousCall: { uri?: string; time?: number; request?: DocumentSymbol[] | SymbolInformation[] } = {};
+  documentSymbolHandlerFix(documentSymbolParams: DocumentSymbolParams): DocumentSymbol[] | SymbolInformation[] {
+    /**
+     * I had to combine server and client DocumentSymbol
+     * And if I use only client DocumentSymbol, outline doesn't work.
+     * So this is a prevent for double call.
+     */
+    if (
+      !this.isTest && //don't use cache when testing
+      this.previousCall.request &&
+      this.previousCall.time &&
+      this.previousCall.uri === documentSymbolParams.textDocument.uri &&
+      new Date().getTime() - this.previousCall.time < 100
+    ) {
+      return this.previousCall.request;
+    }
+
+    const res = this.documentSymbolHandler(documentSymbolParams);
+    this.previousCall = {
+      time: new Date().getTime(),
+      uri: documentSymbolParams.textDocument.uri,
+      request: res,
+    };
+  }
+
   /**
    * Called when the code outline in an editor needs to be populated
    * Returns a list of symbols that is then shown in the code outline
@@ -101,7 +127,10 @@ export class LanguageHandlers {
       'document symbols'
     );
 
-    const context = { resultLimit: this.yamlSettings.maxItemsComputed, onResultLimitExceeded };
+    const context = {
+      resultLimit: this.yamlSettings.maxItemsComputed,
+      onResultLimitExceeded,
+    };
 
     if (this.yamlSettings.hierarchicalDocumentSymbolSupport) {
       return this.languageService.findDocumentSymbols2(document, context);
@@ -149,7 +178,8 @@ export class LanguageHandlers {
       return Promise.resolve(undefined);
     }
 
-    return this.languageService.doHover(document, textDocumentPositionParams.position);
+    return this.languageService.doHoverDetail(document, textDocumentPositionParams.position);
+    // return this.languageService.doHover(document, textDocumentPositionParams.position);
   }
 
   /**

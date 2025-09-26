@@ -33,6 +33,7 @@
   "maxItemsWarning": "Array has too many items. Expected {0} or fewer.",
   "uniqueItemsWarning": "Array has duplicate items.",
   "DisallowedExtraPropWarning": "Property {0} is not allowed.",
+  "DisallowedExtraPropWarningWithExpected": "Property {0} is not allowed. Expected: {1}.",
   "MaxPropWarning": "Object has more properties than limit of {0}.",
   "MinPropWarning": "Object has fewer properties than the required number of {0}",
   "RequiredDependentPropWarning": "Object is missing property {0} required by property {1}.",
@@ -52,5 +53,5 @@
   "flowStyleMapForbidden": "Flow style mapping is forbidden",
   "flowStyleSeqForbidden": "Flow style sequence is forbidden",
   "unUsedAnchor": "Unused anchor \"{0}\"",
-  "unUsedAlias": "Unresolved alias \"{0}\""  
+  "unUsedAlias": "Unresolved alias \"{0}\""
 }

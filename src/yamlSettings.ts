@@ -4,6 +4,7 @@ import { ISchemaAssociations } from './requestTypes';
 import { URI } from 'vscode-uri';
 import { JSONSchema } from './languageservice/jsonSchema';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { YamlHoverDetailPropTableStyle } from './languageservice/services/yamlHoverDetail';
 import { JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 import { YamlVersion } from './languageservice/parser/yamlParser07';
 
@@ -20,6 +21,8 @@ export interface Settings {
       url: string;
       enable: boolean;
     };
+    propTableStyle: YamlHoverDetailPropTableStyle;
+    extraLanguage: string[];
     disableDefaultProperties: boolean;
     disableAdditionalProperties: boolean;
     suggest: {
@@ -72,13 +75,14 @@ export class SettingsState {
     trailingComma: true,
     enable: true,
   } as CustomFormatterOptions;
-  yamlShouldHover = true;
+  yamlShouldHover = false;
   yamlShouldCompletion = true;
   schemaStoreSettings = [];
   customTags = [];
   schemaStoreEnabled = true;
   schemaStoreUrl = JSON_SCHEMASTORE_URL;
   indentation: string | undefined = undefined;
+  propTableStyle: YamlHoverDetailPropTableStyle = 'table';
   disableAdditionalProperties = false;
   disableDefaultProperties = false;
   suggest = {

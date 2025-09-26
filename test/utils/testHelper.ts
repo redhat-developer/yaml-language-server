@@ -96,6 +96,7 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
   const languageService = serverInit.languageService;
   const validationHandler = serverInit.validationHandler;
   const languageHandler = serverInit.languageHandler;
+  languageHandler.isTest = true;
   languageService.configure(languageSettings);
   const schemaProvider = TestCustomSchemaProvider.instance();
   languageService.registerCustomSchemaProvider(schemaItSelfCustomSchemaProvider);

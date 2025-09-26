@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CompletionItemKind } from 'vscode-json-languageservice';
+import { CompletionItemKind, DiagnosticSeverity } from 'vscode-json-languageservice';
 import { SchemaVersions } from './yamlTypes';
 
 export type JSONSchemaRef = JSONSchema | boolean;
@@ -50,6 +50,7 @@ export interface JSONSchema {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   enum?: any[];
   format?: string;
+  inlineObject?: boolean;
 
   // schema draft 06
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -81,6 +82,7 @@ export interface JSONSchema {
 
   errorMessage?: string; // VSCode extension
   patternErrorMessage?: string; // VSCode extension
+  patterns?: Pattern[]; // VSCode extension
   deprecationMessage?: string; // VSCode extension
   enumDescriptions?: string[]; // VSCode extension
   markdownEnumDescriptions?: string[]; // VSCode extension
@@ -91,6 +93,12 @@ export interface JSONSchema {
   schemaSequence?: JSONSchema[]; // extension for multiple schemas related to multiple documents in single yaml file
 
   filePatternAssociation?: string; // extension for if condition to be able compare doc yaml uri with this file pattern association
+}
+
+export interface Pattern {
+  pattern: string;
+  message: string;
+  severity?: DiagnosticSeverity;
 }
 
 export interface JSONSchemaMap {

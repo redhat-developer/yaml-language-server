@@ -16,6 +16,7 @@ import {
   SymbolInformation,
 } from 'vscode-languageserver-types';
 import { ErrorCode } from 'vscode-json-languageservice';
+import { jigxBranchTest } from './testHelperJigx';
 
 export function createExpectedError(
   message: string,
@@ -42,6 +43,9 @@ export function createDiagnosticWithData(
   code: string | number = ErrorCode.Undefined,
   data: Record<string, unknown> = {}
 ): Diagnostic {
+  if (jigxBranchTest) {
+    source = source.replace('yaml-schema: file:///', 'yaml-schema: ');
+  }
   const diagnostic: Diagnostic = createExpectedError(
     message,
     startLine,
@@ -167,6 +171,12 @@ export function createExpectedCompletion(
   insertTextFormat: InsertTextFormat = 2,
   extra: Partial<CompletionItem> = {}
 ): CompletionItem {
+  if (jigxBranchTest) {
+    // remove $1 from snippets, where is no other $2
+    if (insertText.includes('$1') && !insertText.includes('$2')) {
+      insertText = insertText.replace('$1', '');
+    }
+  }
   return {
     ...{
       insertText,

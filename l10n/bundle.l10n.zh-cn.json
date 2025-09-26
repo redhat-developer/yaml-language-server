@@ -33,6 +33,7 @@
   "maxItemsWarning": "数组项数过多。应为 {0} 项或更少。",
   "uniqueItemsWarning": "数组中包含重复项。",
   "DisallowedExtraPropWarning": "属性 {0} 不被允许。",
+  "DisallowedExtraPropWarningWithExpected": "属性 {0} 不被允许。预期：{1}。",
   "MaxPropWarning": "对象的属性数超过了限制 {0}。",
   "MinPropWarning": "对象的属性数少于所需数量 {0}。",
   "RequiredDependentPropWarning": "属性 {1} 依赖的属性 {0} 缺失。",

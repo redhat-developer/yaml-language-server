@@ -28,7 +28,10 @@ import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageService } from '../src';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { jigxBranchTest } from './utils/testHelperJigx';
+import { convertObjectToArrayItem } from '../src/languageservice/services/yamlCompletion';
 
+//TODO Petr fix merge
 describe('Auto Completion Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageService: LanguageService;
@@ -325,6 +328,27 @@ describe('Auto Completion Tests', () => {
           expect(result.items[0].insertText).equal('validation:\n  \\"null\\": ${1:false}');
         });
       });
+      it('Autocomplete key object with special chars', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            $validation: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                $prop$1: {
+                  type: 'string',
+                  default: '$value$1',
+                },
+              },
+            },
+          },
+        });
+        const content = ''; // len: 0
+        const result = await parseSetup(content, 0);
+        expect(result.items.length).equal(1);
+        expect(result.items[0].insertText).equals('\\$validation:\n  \\$prop\\$1: ${1:\\$value\\$1}');
+      });
 
       it('Autocomplete on boolean value (with value content)', (done) => {
         schemaProvider.addSchema(SCHEMA_ID, {
@@ -480,6 +504,97 @@ describe('Auto Completion Tests', () => {
                   type: 'string',
                   default: 'test',
                 },
+              },
+            },
+          },
+        });
+        const content = '';
+        const result = await parseSetup(content, 0);
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0]).to.deep.equal(
+          createExpectedCompletion('scripts', 'scripts:\n  $1', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+      it('Autocomplete without default value - required', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion();
+        languageSettingsSetup.languageSettings.disableDefaultProperties = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'string',
+                  default: 'test',
+                },
+              },
+              required: ['sample'],
+            },
+          },
+        });
+        const content = '';
+        const result = await parseSetup(content, 0);
+        expect(result.items.length).to.be.equal(1);
+        expect(result.items[0]).to.deep.equal(
+          createExpectedCompletion('scripts', 'scripts:\n  sample: ${1:test}', 0, 0, 0, 0, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
+      // not sure when this test failed, not sure which fix fixed this
+      it('Autocomplete key with default value in middle of file - nested object', (done) => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'object',
+                  properties: {
+                    detail: {
+                      type: 'string',
+                      default: 'test',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+        const content = 'scripts:\n  sample:\n    det';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.deepEqual(
+              result.items[0],
+              createExpectedCompletion('detail', 'detail: ${1:test}', 2, 4, 2, 7, 10, 2, {
+                documentation: '',
+              })
+            );
+          })
+          .then(done, done);
+      });
+      it('Autocomplete without default value - not required', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion();
+        languageSettingsSetup.languageSettings.disableDefaultProperties = true;
+        languageService.configure(languageSettingsSetup.languageSettings);
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'string',
+                  default: 'test',
+                },
                 objectSample: {
                   type: 'object',
                 },
@@ -562,7 +677,8 @@ describe('Auto Completion Tests', () => {
           .then(done, done);
       });
 
-      it('Autocomplete does not happen right after key object', (done) => {
+      // Jigx: we are supporting this - extended by on of the next test
+      it('Autocomplete does happen right after key object', (done) => {
         schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -576,12 +692,13 @@ describe('Auto Completion Tests', () => {
         const completion = parseSetup(content, 9);
         completion
           .then(function (result) {
-            assert.equal(result.items.length, 0);
+            assert.equal(result.items.length, jigxBranchTest ? 1 : 0);
           })
           .then(done, done);
       });
 
-      it('Autocomplete does not happen right after : under an object', (done) => {
+      // Jigx: we are supporting this - extended by on of the next test
+      it('Autocomplete does happen right after : under an object', (done) => {
         schemaProvider.addSchema(SCHEMA_ID, {
           type: 'object',
           properties: {
@@ -604,7 +721,119 @@ describe('Auto Completion Tests', () => {
         const completion = parseSetup(content, 21);
         completion
           .then(function (result) {
-            assert.equal(result.items.length, 0);
+            assert.equal(result.items.length, jigxBranchTest ? 1 : 0);
+          })
+          .then(done, done);
+      });
+      it('Autocomplete does happen right after : under an object and with defaultSnippet', (done) => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {},
+              defaultSnippets: [
+                {
+                  label: 'myOther2Sample snippet',
+                  body: { myOther2Sample: {} },
+                  markdownDescription: 'snippet\n```yaml\nmyOther2Sample:\n```\n',
+                },
+              ],
+            },
+          },
+        });
+        const content = 'scripts:';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.equal(result.items[0].insertText, '\n  myOther2Sample:');
+          })
+          .then(done, done);
+      });
+
+      it('Autocomplete does happen right after key object', (done) => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            timeout: {
+              type: 'number',
+              default: 60000,
+            },
+          },
+        });
+        const content = 'timeout:';
+        const completion = parseSetup(content, 9);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.deepEqual(
+              result.items[0],
+              createExpectedCompletion('60000', ' 60000', 0, 8, 0, 8, 12, 2, {
+                detail: 'Default value',
+              })
+            );
+          })
+          .then(done, done);
+      });
+
+      it('Autocomplete does happen right after : under an object', (done) => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {
+                sample: {
+                  type: 'string',
+                  enum: ['test'],
+                },
+                myOtherSample: {
+                  type: 'string',
+                  enum: ['test'],
+                },
+              },
+            },
+          },
+        });
+        const content = 'scripts:';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 2);
+            assert.deepEqual(
+              result.items[0],
+              createExpectedCompletion('sample', '\n  sample: ${1:test}', 0, 8, 0, 8, 10, 2, {
+                documentation: '',
+              })
+            );
+          })
+          .then(done, done);
+      });
+
+      it('Autocomplete does happen right after : under an object and with defaultSnippet', (done) => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            scripts: {
+              type: 'object',
+              properties: {},
+              defaultSnippets: [
+                {
+                  label: 'myOther2Sample snippet',
+                  body: { myOther2Sample: {} },
+                  markdownDescription: 'snippet\n```yaml\nmyOther2Sample:\n```\n',
+                },
+              ],
+            },
+          },
+        });
+        const content = 'scripts:';
+        const completion = parseSetup(content, content.length);
+        completion
+          .then(function (result) {
+            assert.equal(result.items.length, 1);
+            assert.equal(result.items[0].insertText, '\n  myOther2Sample:');
           })
           .then(done, done);
       });
@@ -936,6 +1165,131 @@ describe('Auto Completion Tests', () => {
             documentation: '',
           })
         );
+      });
+
+      it('Autocompletion should escape $ in defaultValue in anyOf', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            car: {
+              type: 'object',
+              required: ['engine'],
+              properties: {
+                engine: {
+                  anyOf: [
+                    {
+                      type: 'object',
+                    },
+                    {
+                      type: 'string',
+                    },
+                  ],
+                  default: 'type$1234',
+                },
+              },
+            },
+          },
+        });
+        const content = '';
+        const completion = await parseSetup(content, 0);
+        expect(completion.items.map((i) => i.insertText)).to.deep.equal(['car:\n  engine: ${1:type\\$1234}']);
+      });
+
+      it('Autocompletion with default value as an object', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            car: {
+              type: 'object',
+              default: {
+                engine: {
+                  fuel: 'gasoline',
+                },
+                wheel: 4,
+              },
+            },
+          },
+        });
+        const content = 'car: |\n|';
+        const completion = await parseSetup(content);
+        expect(completion.items.map((i) => i.insertText)).to.deep.equal([
+          '\n  ${1:engine}:\n    ${2:fuel}: ${3:gasoline}\n  ${4:wheel}: ${5:4}\n',
+        ]);
+      });
+
+      it('Autocompletion with default value as an array', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            garage: {
+              type: 'array',
+              items: {
+                type: 'object',
+              },
+              default: [
+                {
+                  car: {
+                    engine: { fuel: 'gasoline' },
+                    wheel: [1, 2],
+                  },
+                },
+                {
+                  car: {
+                    engine: { fuel: 'diesel' },
+                  },
+                },
+              ],
+            },
+          },
+        });
+        const content = 'garage: |\n|';
+        const completion = await parseSetup(content);
+        const expected = `
+  - \${1:car}:
+      \${2:engine}:
+        \${3:fuel}: \${4:gasoline}
+      \${5:wheel}:
+        - \${6:1}
+        - \${7:2}
+  - \${1:car}:
+      \${2:engine}:
+        \${3:fuel}: \${4:diesel}
+`;
+        expect(completion.items.map((i) => i.insertText)).to.deep.equal([expected]);
+      });
+
+      it('should convert object to array item', () => {
+        const objectText = `
+  car:
+    engine:
+      fuel: gasoline
+    wheel:
+      - 1
+      - 2
+`;
+        const expectedArrayItem = `  - car:
+      engine:
+        fuel: gasoline
+      wheel:
+        - 1
+        - 2
+`;
+        const arrayItem = convertObjectToArrayItem(objectText, '  ');
+        expect(arrayItem).to.equal(expectedArrayItem);
+      });
+      it('Autocompletion should escape $ in property', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            $prop$1: {
+              type: 'string',
+            },
+          },
+          required: ['$prop$1'],
+        });
+        const content = '';
+        const completion = await parseSetup(content, 0);
+        expect(completion.items.map((i) => i.insertText)).includes('\\$prop\\$1: ');
       });
 
       it('Autocompletion should escape colon when indicating map', async () => {
@@ -1390,6 +1744,7 @@ describe('Auto Completion Tests', () => {
                         default: 'test',
                       },
                     },
+                    required: ['name'],
                   },
                 },
                 include: {
@@ -1490,6 +1845,39 @@ describe('Auto Completion Tests', () => {
               createExpectedCompletion('Test', 'Test', 1, 4, 1, 5, 12, 2, {
                 documentation: undefined,
               })
+            );
+          })
+          .then(done, done);
+      });
+
+      it('Array of enum autocomplete on 2nd position without `-` should auto add `-` and `- (array item)`', (done) => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            references: {
+              type: 'array',
+              items: {
+                enum: ['Test'],
+              },
+            },
+          },
+        });
+        const content = 'references:\n  - Test\n  |\n|';
+        const completion = parseSetup(content);
+        completion
+          .then(function (result) {
+            assert.deepEqual(
+              result.items.map((i) => ({ label: i.label, insertText: i.insertText })),
+              [
+                {
+                  insertText: '- Test', // auto added `- `
+                  label: 'Test',
+                },
+                {
+                  insertText: '- $1\n',
+                  label: '- (array item) ',
+                },
+              ]
             );
           })
           .then(done, done);
@@ -1747,7 +2135,9 @@ describe('Auto Completion Tests', () => {
             })
           );
         });
-        it('Next line const with : but array level completion', async () => {
+        // too complicated implementation that brakes other things
+        // most of the changes from that PR (https://github.com/redhat-developer/yaml-language-server/pull/1092) were reverted in this commit
+        it.skip('Next line const with : but array level completion', async () => {
           const content = 'test:\n  - constProp:\n  ';
           const result = await parseSetup(content, content.length);
           expect(result.items.length).to.be.equal(0);
@@ -2039,7 +2429,8 @@ describe('Auto Completion Tests', () => {
       assert.equal(result.items.length, 3, `Expecting 3 items in completion but found ${result.items.length}`);
 
       const resultDoc2 = await parseSetup(content, content.length);
-      assert.equal(resultDoc2.items.length, 0, `Expecting no items in completion but found ${resultDoc2.items.length}`);
+      assert.equal(resultDoc2.items.length, 1, `Expecting 1 item in completion but found ${resultDoc2.items.length}`);
+      assert.equal(resultDoc2.items[0].label, '- (array item) ');
     });
 
     it('should handle absolute path', async () => {
@@ -2979,7 +3370,12 @@ describe('Auto Completion Tests', () => {
 
       expect(result.items.length).equal(5);
       expect(result.items[0]).to.deep.equal(
-        createExpectedCompletion('type', 'type: ${1|typeObj1,typeObj2|}', 0, 0, 0, 0, 10, 2, { documentation: '' })
+        createExpectedCompletion('type', 'type: ${1|typeObj1,typeObj2|}', 0, 0, 0, 0, 10, 2, {
+          documentation: '',
+          data: {
+            schemaTitle: 'Object1',
+          },
+        })
       );
       expect(result.items[1]).to.deep.equal(
         createExpectedCompletion('Object1', 'type: typeObj1\noptions:\n  label: ', 0, 0, 0, 0, 7, 2, {
@@ -2991,7 +3387,12 @@ describe('Auto Completion Tests', () => {
         })
       );
       expect(result.items[2]).to.deep.equal(
-        createExpectedCompletion('options', 'options:\n  label: ', 0, 0, 0, 0, 10, 2, { documentation: '' })
+        createExpectedCompletion('options', 'options:\n  label: ', 0, 0, 0, 0, 10, 2, {
+          documentation: '',
+          data: {
+            schemaTitle: 'Object1',
+          },
+        })
       );
       expect(result.items[3]).to.deep.equal(
         createExpectedCompletion('obj2', 'type: typeObj2\noptions:\n  description: ', 0, 0, 0, 0, 7, 2, {
@@ -3028,7 +3429,12 @@ describe('Auto Completion Tests', () => {
 
       expect(result.items.length).equal(5);
       expect(result.items[0]).to.deep.equal(
-        createExpectedCompletion('type', 'type: ${1|typeObj1,typeObj2|}', 0, 2, 0, 2, 10, 2, { documentation: '' })
+        createExpectedCompletion('type', 'type: ${1|typeObj1,typeObj2|}', 0, 2, 0, 2, 10, 2, {
+          documentation: '',
+          data: {
+            schemaTitle: 'Object1',
+          },
+        })
       );
       expect(result.items[1]).to.deep.equal(
         createExpectedCompletion('Object1', 'type: typeObj1\n  options:\n    label: ', 0, 2, 0, 2, 7, 2, {
@@ -3040,7 +3446,10 @@ describe('Auto Completion Tests', () => {
         })
       );
       expect(result.items[2]).to.deep.equal(
-        createExpectedCompletion('options', 'options:\n    label: ', 0, 2, 0, 2, 10, 2, { documentation: '' })
+        createExpectedCompletion('options', 'options:\n    label: ', 0, 2, 0, 2, 10, 2, {
+          documentation: '',
+          data: { schemaTitle: 'Object1' },
+        })
       );
       expect(result.items[3]).to.deep.equal(
         createExpectedCompletion('obj2', 'type: typeObj2\n  options:\n    description: ', 0, 2, 0, 2, 7, 2, {
@@ -3101,6 +3510,27 @@ describe('Auto Completion Tests', () => {
           sortText: '_Object1',
         })
       );
+    });
+    // jigx custom
+    // it's quick fix for bug in YLS
+    // this test fails if schemaValidation parameter didCallFromAutoComplete is set to true
+    it('Should not suggested props from different schema when const match', async () => {
+      const schema = {
+        definitions: { obj1, obj2 },
+        anyOf: [
+          {
+            $ref: '#/definitions/obj1',
+          },
+          {
+            $ref: '#/definitions/obj2',
+          },
+        ],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'type: typeObj2\noptions:\n  description: desc\n`  ';
+      const result = await parseSetup(content, content.length);
+
+      expect(result.items.map((i) => i.label)).deep.eq([]);
     });
     it('Should reindex $x', async () => {
       const schema = {
@@ -3237,6 +3667,33 @@ describe('Auto Completion Tests', () => {
         const result = await parseSetup(content, content.length);
 
         expect(result.items.map((i) => i.label)).to.have.members(['fruit', 'vegetable']);
+      });
+      it('Should escape insert text with special chars but do not escape it in documenation', async () => {
+        const schema = {
+          properties: {
+            $prop1: {
+              properties: {
+                $prop2: {
+                  type: 'string',
+                },
+              },
+              required: ['$prop2'],
+            },
+          },
+          required: ['$prop1'],
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = '';
+        const result = await parseSetup(content, content.length);
+
+        expect(
+          result.items.map((i) => ({ inserText: i.insertText, documentation: (i.documentation as MarkupContent).value }))
+        ).to.deep.equal([
+          {
+            inserText: '\\$prop1:\n  \\$prop2: ',
+            documentation: '```yaml\n$prop1:\n  $prop2: \n```',
+          },
+        ]);
       });
     });
     it('Should function when settings are undefined', async () => {

@@ -1,0 +1,149 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Expression": {
+      "type": "object",
+      "description": "Expression abcd",
+      "properties": {
+        "=@ctx": {
+          "properties": {
+            "user": {
+              "properties": {}
+            },
+            "data": {
+              "properties": {}
+            }
+          }
+        }
+      }
+    },
+    "obj1": {
+      "properties": {
+        "objA": {
+          "type": "object",
+          "title": "Object A",
+          "description": "description of the parent prop",
+          "properties": {
+            "propI": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "propI"
+          ]
+        }
+      },
+      "required": [
+        "objA"
+      ],
+      "type": "object",
+      "description": "description of obj1"
+    }
+  },
+  "properties": {
+    "value": {
+      "$ref": "#/definitions/Expression"
+    },
+    "value1": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "prop1": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/Expression"
+        }
+      ]
+    },
+    "value2": {
+      "anyOf": [
+        {
+          "type": "string",
+          "const": "const1"
+        },
+        {
+          "type": "string",
+          "const": "const2"
+        },
+        {
+          "$ref": "#/definitions/Expression"
+        }
+      ]
+    },
+    "nested": {
+      "type": "object",
+      "properties": {
+        "scripts": {
+          "type": "object",
+          "properties": {
+            "sample": {
+              "type": "object",
+              "description": "description of sample",
+              "properties": {
+                "test": {
+                  "description": "description of test",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "const": "const1"
+                    },
+                    {
+                      "type": "object",
+                      "description": "description of object with prop list and parent",
+                      "properties": {
+                        "list": {
+                          "type": "string"
+                        },
+                        "parent": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/definitions/Expression"
+                    },
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/obj1"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "arraySimpleExpr": {
+      "type": "array",
+      "items": [
+        {
+          "$ref": "#/definitions/Expression"
+        }
+      ]
+    },
+    "arrayObjExpr": {
+      "type": "array",
+      "items": [
+        {
+          "properties": {
+            "data": {
+              "$ref": "#/definitions/Expression"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "type": "object"
+}

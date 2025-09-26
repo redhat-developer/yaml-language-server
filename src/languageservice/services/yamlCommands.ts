@@ -7,12 +7,23 @@ import { Connection } from 'vscode-languageserver';
 import { YamlCommands } from '../../commands';
 import { CommandExecutor } from '../../languageserver/commandExecutor';
 import { URI } from 'vscode-uri';
+import { Globals } from '../utils/jigx/globals';
 
 export function registerCommands(commandExecutor: CommandExecutor, connection: Connection): void {
   commandExecutor.registerCommand(YamlCommands.JUMP_TO_SCHEMA, async (uri: string) => {
     if (!uri) {
       return;
     }
+    // jigx custom
+    if (uri.startsWith(Globals.dynamicSchema)) {
+      const result = await connection.window.showDocument({ uri, external: false, takeFocus: true });
+      if (!result) {
+        connection.window.showErrorMessage(`Cannot open ${uri}`);
+      }
+      return;
+    }
+    // end
+
     // if uri points to local file of its a windows path
     if (!uri.startsWith('file') && !/^[a-z]:[\\/]/i.test(uri)) {
       const origUri = URI.parse(uri);

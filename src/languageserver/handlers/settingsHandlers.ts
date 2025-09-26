@@ -3,7 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { configure as configureHttpRequests, xhr } from 'request-light';
-import { Connection, DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
+import {
+  Connection,
+  DidChangeConfigurationNotification,
+  DocumentFormattingRequest,
+  DocumentSelector, // jigx
+} from 'vscode-languageserver';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
@@ -31,6 +36,23 @@ export class SettingsHandler {
       }
     }
     this.connection.onDidChangeConfiguration(() => this.pullConfiguration());
+  }
+
+  private getDocumentSelectors(settings: Settings): DocumentSelector {
+    let docSelector: DocumentSelector = [
+      { language: 'yaml' },
+      { language: 'dockercompose' },
+      { language: 'github-actions-workflow' },
+      { pattern: '*.y(a)ml' },
+    ];
+    if (settings.yaml.extraLanguage) {
+      docSelector = docSelector.concat(
+        settings.yaml.extraLanguage.map((l) => {
+          return { language: l };
+        })
+      );
+    }
+    return docSelector;
   }
 
   /**
@@ -69,7 +91,7 @@ export class SettingsHandler {
         this.yamlSettings.yamlShouldValidate = settings.yaml.validate;
       }
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hover')) {
-        this.yamlSettings.yamlShouldHover = settings.yaml.hover;
+        this.yamlSettings.yamlShouldHover = false; //settings.yaml.hover;
       }
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'completion')) {
         this.yamlSettings.yamlShouldCompletion = settings.yaml.completion;
@@ -114,6 +136,9 @@ export class SettingsHandler {
         if (settings.yaml.format.enable !== undefined) {
           this.yamlSettings.yamlFormatterSettings.enable = settings.yaml.format.enable;
         }
+      }
+      if (settings.yaml.propTableStyle) {
+        this.yamlSettings.propTableStyle = settings.yaml.propTableStyle;
       }
       this.yamlSettings.disableAdditionalProperties = settings.yaml.disableAdditionalProperties;
       this.yamlSettings.disableDefaultProperties = settings.yaml.disableDefaultProperties;
@@ -163,12 +188,7 @@ export class SettingsHandler {
       if (enableFormatter) {
         if (!this.yamlSettings.formatterRegistration) {
           this.yamlSettings.formatterRegistration = this.connection.client.register(DocumentFormattingRequest.type, {
-            documentSelector: [
-              { language: 'yaml' },
-              { language: 'dockercompose' },
-              { language: 'github-actions-workflow' },
-              { pattern: '*.y(a)ml' },
-            ],
+            documentSelector: this.getDocumentSelectors(settings),
           });
         }
       } else if (this.yamlSettings.formatterRegistration) {
@@ -260,6 +280,7 @@ export class SettingsHandler {
       customTags: this.yamlSettings.customTags,
       format: this.yamlSettings.yamlFormatterSettings.enable,
       indentation: this.yamlSettings.indentation,
+      propTableStyle: this.yamlSettings.propTableStyle,
       disableAdditionalProperties: this.yamlSettings.disableAdditionalProperties,
       disableDefaultProperties: this.yamlSettings.disableDefaultProperties,
       parentSkeletonSelectedFirst: this.yamlSettings.suggest.parentSkeletonSelectedFirst,

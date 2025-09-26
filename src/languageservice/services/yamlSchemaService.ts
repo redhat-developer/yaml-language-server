@@ -79,6 +79,27 @@ export class FilePatternAssociation {
 
   constructor(pattern: string) {
     try {
+      // JIGX custom - if pattern includes 'jigx' then don't escape some special chars
+      // we need to keep `|` and `$` in the pattern
+      if (pattern.includes('jigx')) {
+        if (pattern.startsWith('^(?:(?!')) {
+          // special case for negative lookahead
+          // don't try to escape the pattern
+          try {
+            this.patternRegExp = new RegExp(pattern);
+          } catch {
+            this.patternRegExp = undefined;
+          }
+          return;
+        }
+        pattern = pattern.endsWith('$') ? pattern : pattern + '$';
+        pattern = pattern.replace(/[-\\{}+?^.,[\]()#]/g, '\\$&');
+        this.patternRegExp = new RegExp(pattern.replace(/[*]/g, '.*'));
+        this.schemas = [];
+        return;
+      }
+      // END
+
       this.patternRegExp = new RegExp(convertSimple2RegExpPattern(pattern) + '$');
     } catch (e) {
       // invalid pattern
@@ -410,6 +431,18 @@ export class YAMLSchemaService extends JSONSchemaService {
           }
         }
       }
+      // jigx custom - revert back this original hack, because we use this for a expression validation
+      /**
+       * If this resource matches a schemaID directly then use that schema.
+       * This will be used in the case where the yaml language server is being used as a library
+       * and clients want to save a schema with a particular ID and also use that schema
+       * in language features
+       */
+      const normalizedResourceID = this.normalizeId(resource);
+      if (this.schemasById[normalizedResourceID]) {
+        schemas.push(normalizedResourceID);
+      }
+      // end
 
       if (schemas.length > 0) {
         // Join all schemas with the highest priority.

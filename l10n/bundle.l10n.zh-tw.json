@@ -33,6 +33,7 @@
   "maxItemsWarning": "陣列項目數太多。應為 {0} 項或更少。",
   "uniqueItemsWarning": "陣列中有重複項目。",
   "DisallowedExtraPropWarning": "不允許的屬性 {0}。",
+  "DisallowedExtraPropWarningWithExpected": "不允許的屬性 {0}。預期：{1}。",
   "MaxPropWarning": "物件的屬性數量超過限制 {0}。",
   "MinPropWarning": "物件的屬性數量少於所需的 {0}。",
   "RequiredDependentPropWarning": "缺少由屬性 {1} 所需的屬性 {0}。",

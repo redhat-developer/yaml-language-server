@@ -33,6 +33,7 @@
   "maxItemsWarning": "Array hat zu viele Elemente. Erwartet: {0} oder weniger.",
   "uniqueItemsWarning": "Array enthält doppelte Elemente.",
   "DisallowedExtraPropWarning": "Eigenschaft {0} ist nicht erlaubt.",
+  "DisallowedExtraPropWarningWithExpected": "Eigenschaft {0} ist nicht erlaubt. Erwartet: {1}.",
   "MaxPropWarning": "Objekt hat mehr Eigenschaften als das Limit von {0}.",
   "MinPropWarning": "Objekt hat weniger Eigenschaften als die erforderliche Anzahl von {0}.",
   "RequiredDependentPropWarning": "Objekt fehlt die Eigenschaft {0}, die von Eigenschaft {1} benötigt wird.",

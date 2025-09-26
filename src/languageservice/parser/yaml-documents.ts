@@ -282,6 +282,13 @@ export class YamlDocuments {
     this.cache.clear();
   }
 
+  delete(document: TextDocument): void {
+    const key = document.uri;
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    }
+  }
+
   private ensureCache(document: TextDocument, parserOptions: ParserOptions, addRootObject: boolean): void {
     const key = document.uri;
     if (!this.cache.has(key)) {
