@@ -431,5 +431,30 @@ animals: [dog , cat , mouse]  `;
       expect(result.map((r) => r.title)).deep.equal(['fooX', 'fooY']);
       expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(0, 0, 0, 3), 'fooX')]);
     });
+
+    it('should generate proper action for enum mismatch, title converted to string value', () => {
+      const doc = setupTextDocument('foo: value1');
+      const diagnostic = createDiagnosticWithData(
+        'message',
+        0,
+        5,
+        0,
+        11,
+        DiagnosticSeverity.Hint,
+        'YAML',
+        'schemaUri',
+        ErrorCode.EnumValueMismatch,
+        { values: [5, 10] }
+      );
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([diagnostic]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result.map((r) => r.title)).deep.equal(['5', '10']);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(0, 5, 0, 11), '5')]);
+    });
   });
 });
