@@ -52,5 +52,7 @@
   "flowStyleMapForbidden": "禁止使用 Flow 風格的對應",
   "flowStyleSeqForbidden": "禁止使用 Flow 風格的序列",
   "unUsedAnchor": "未使用的錨點 \"{0}\"",
-  "unUsedAlias": "未解析的別名 \"{0}\""
+  "unUsedAlias": "未解析的別名 \"{0}\"",
+  "convertToFoldedBlockString": "將字串轉換為折疊塊字串",
+  "convertToLiteralBlockString": "將字串轉換為文字區塊字串"
 }
