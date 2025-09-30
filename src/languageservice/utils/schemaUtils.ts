@@ -1,6 +1,7 @@
 import { URI } from 'vscode-uri';
 import { JSONSchema } from '../jsonSchema';
 import * as path from 'path';
+import { Globals } from './jigx/globals';
 
 export function getSchemaTypeName(schema: JSONSchema): string {
   const closestTitleWithType = schema.type && schema.closestTitle;
@@ -44,6 +45,12 @@ export function getSchemaRefTypeTitle($ref: string): string {
 }
 
 export function getSchemaTitle(schema: JSONSchema, url: string): string {
+  // jigx custom
+  if (url.startsWith(Globals.dynamicSchema)) {
+    const name = getSchemaTypeName(schema);
+    return name;
+  }
+  // end
   const uri = URI.parse(url);
   let baseName = path.basename(uri.fsPath);
   if (!path.extname(uri.fsPath)) {

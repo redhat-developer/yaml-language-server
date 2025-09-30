@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { NotificationType, RequestType } from 'vscode-languageserver';
+import { NotificationType, RequestType, TextDocumentPositionParams } from 'vscode-languageserver';
 import { SchemaAdditions, SchemaDeletions } from './languageservice/services/yamlSchemaService';
 import { SchemaConfiguration } from './languageservice/yamlLanguageService';
 import { SchemaVersions } from './languageservice/yamlTypes';
@@ -70,6 +70,40 @@ export namespace ColorSymbolRequest {
 
 export namespace SchemaModificationNotification {
   export const type: RequestType<SchemaAdditions | SchemaDeletions, void, unknown> = new RequestType('json/schema/modify');
+}
+
+export namespace HoverDetailRequest {
+  export const type: RequestType<TextDocumentPositionParams, unknown, unknown> = new RequestType('custom/hoverDetailRequest');
+}
+
+export namespace RevalidateRequest {
+  export const type: RequestType<string, unknown, unknown> = new RequestType('custom/revalidate');
+}
+
+export namespace GetDiagnosticRequest {
+  export const type: RequestType<string, unknown, unknown> = new RequestType('custom/getDiagnostic');
+}
+
+export namespace RevalidateBySchemaRequest {
+  export const type: RequestType<{ yaml: string; schema: unknown }, unknown, unknown> = new RequestType(
+    'custom/revalidateBySchema'
+  );
+}
+
+export namespace CompletionYamlRequest {
+  export const type: RequestType<
+    { yaml: string; position: TextDocumentPositionParams['position']; fileName: string },
+    unknown,
+    unknown
+  > = new RequestType('custom/completionYaml');
+}
+
+export namespace HoverYamlRequest {
+  export const type: RequestType<
+    { yaml: string; position: TextDocumentPositionParams['position']; fileName: string },
+    unknown,
+    unknown
+  > = new RequestType('custom/hoverYaml');
 }
 
 export namespace SchemaSelectionRequests {

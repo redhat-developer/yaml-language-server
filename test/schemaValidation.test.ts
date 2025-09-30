@@ -12,7 +12,6 @@ import {
   IncludeWithoutValueError,
   BlockMappingEntryError,
   DuplicateKeyError,
-  propertyIsNotAllowed,
   MissingRequiredPropWarning,
 } from './utils/errorMessages';
 import * as assert from 'assert';
@@ -28,7 +27,7 @@ import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { TestTelemetry } from './utils/testsTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
 
-describe('Validation Tests', () => {
+describe.only('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let validationHandler: ValidationHandler;
   let languageService: LanguageService;
@@ -439,6 +438,43 @@ describe('Validation Tests', () => {
           );
         })
         .then(done, done);
+    });
+    it('Test patterns', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          prop: {
+            type: 'string',
+            patterns: [
+              {
+                pattern: '^[^\\d]',
+                message: 'Can not start with numeric',
+                severity: 3,
+              },
+              {
+                pattern: '^[^A-Z]',
+                message: 'Can not start with capital letter',
+                severity: 4,
+              },
+            ],
+          },
+        },
+      });
+      const result = await parseSetup('prop: "1-test"');
+      assert.equal(result.length, 1);
+      assert.deepEqual(
+        { message: result[0].message, severity: result[0].severity },
+        { message: 'Can not start with numeric', severity: 3 },
+        'pattern 1'
+      );
+
+      const result2 = await parseSetup('prop: "A-test"');
+      assert.equal(result2.length, 1);
+      assert.deepEqual(
+        { message: result2[0].message, severity: result2[0].severity },
+        { message: 'Can not start with capital letter', severity: 4 },
+        'pattern 2'
+      );
     });
   });
 
@@ -1342,7 +1378,7 @@ obj:
       const result = await parseSetup(content, 'file://~/Desktop/vscode-yaml/.drone.yml');
       expect(result[5]).deep.equal(
         createDiagnosticWithData(
-          propertyIsNotAllowed('apiVersion'),
+          'Property apiVersion is not allowed. Expected: clone | concurrency | depends_on | environment | image_pull_secrets | name | node | platform | services | steps | trigger | type | volumes | workspace.',
           1,
           6,
           1,
@@ -1353,20 +1389,20 @@ obj:
           ErrorCode.PropertyExpected,
           {
             properties: [
-              'type',
-              'environment',
-              'steps',
-              'volumes',
-              'services',
-              'image_pull_secrets',
-              'node',
-              'concurrency',
-              'name',
-              'platform',
-              'workspace',
               'clone',
-              'trigger',
+              'concurrency',
               'depends_on',
+              'environment',
+              'image_pull_secrets',
+              'name',
+              'node',
+              'platform',
+              'services',
+              'steps',
+              'trigger',
+              'type',
+              'volumes',
+              'workspace',
             ],
           }
         )
@@ -1533,7 +1569,7 @@ obj:
 
       assert.strictEqual(result.length, 1);
       assert.strictEqual(result[0].message, 'Incorrect type. Expected "type1 | type2 | type3".');
-      assert.strictEqual(result[0].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.strictEqual(result[0].source, 'yaml-schema: sharedSchema.json | default_schema_id.yaml');
       assert.deepStrictEqual((result[0].data as IProblem).schemaUri, [
         'file:///sharedSchema.json',
         'file:///default_schema_id.yaml',
@@ -1550,7 +1586,7 @@ obj:
 
       assert.strictEqual(result.length, 3);
       assert.strictEqual(result[2].message, 'Incorrect type. Expected "string".');
-      assert.strictEqual(result[2].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.strictEqual(result[2].source, 'yaml-schema: sharedSchema.json | default_schema_id.yaml');
     });
     it('should combine const value', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -1563,7 +1599,7 @@ obj:
 
       assert.strictEqual(result.length, 4);
       assert.strictEqual(result[3].message, 'Value must be "constForType1" | "constForType3".');
-      assert.strictEqual(result[3].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.strictEqual(result[3].source, 'yaml-schema: sharedSchema.json | default_schema_id.yaml');
     });
     it('should distinguish types in error: "Missing property from multiple schemas"', async () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -1576,19 +1612,19 @@ obj:
 
       assert.strictEqual(result.length, 3);
       assert.strictEqual(result[0].message, 'Missing property "objA".');
-      assert.strictEqual(result[0].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.strictEqual(result[0].source, 'yaml-schema: sharedSchema.json | default_schema_id.yaml');
       assert.deepStrictEqual((result[0].data as IProblem).schemaUri, [
         'file:///sharedSchema.json',
         'file:///default_schema_id.yaml',
       ]);
       assert.strictEqual(result[1].message, 'Missing property "propA".');
-      assert.strictEqual(result[1].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.strictEqual(result[1].source, 'yaml-schema: sharedSchema.json | default_schema_id.yaml');
       assert.deepStrictEqual((result[1].data as IProblem).schemaUri, [
         'file:///sharedSchema.json',
         'file:///default_schema_id.yaml',
       ]);
       assert.strictEqual(result[2].message, 'Missing property "constA".');
-      assert.strictEqual(result[2].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
+      assert.strictEqual(result[2].source, 'yaml-schema: sharedSchema.json | default_schema_id.yaml');
       assert.deepStrictEqual((result[2].data as IProblem).schemaUri, [
         'file:///sharedSchema.json',
         'file:///default_schema_id.yaml',
@@ -1690,7 +1726,7 @@ obj:
         const content = `prop2: you should not be there 'prop2'`;
         const result = await parseSetup(content);
         expect(result.length).to.eq(1);
-        expect(result[0].message).to.eq('Property prop2 is not allowed.');
+        expect(result[0].message).to.eq('Property prop2 is not allowed. Expected: prop1.');
         expect((result[0].data as { properties: unknown })?.properties).to.deep.eq(['prop1']);
       });
 
@@ -1716,7 +1752,7 @@ obj:
           }))
         ).to.deep.eq([
           {
-            message: 'Property propX is not allowed.',
+            message: 'Property propX is not allowed. Expected: prop2.',
             properties: ['prop2'],
           },
         ]);
@@ -1756,7 +1792,7 @@ obj:
           }))
         ).to.deep.eq([
           {
-            message: 'Property propX is not allowed.',
+            message: 'Property propX is not allowed. Expected: prop0.',
             properties: ['prop0'],
           },
         ]);
@@ -1923,6 +1959,132 @@ obj:
       await languageService.doComplete(testTextDocument, Position.create(6, 8), false);
       const result = await validationHandler.validateTextDocument(testTextDocument);
       expect(result).to.be.empty;
+    });
+  });
+
+  describe('Jigx', () => {
+    describe('Provider anyOf test', () => {
+      it('should choose correct provider1 based on mustMatch properties even the second option has more propertiesValueMatches', async () => {
+        const schema = {
+          anyOf: [
+            {
+              properties: {
+                provider: {
+                  const: 'provider1',
+                },
+                entity: {
+                  type: 'string',
+                },
+                data: {
+                  type: 'object',
+                  additionalProperties: true,
+                  properties: {
+                    b: {
+                      type: 'string',
+                    },
+                  },
+                  required: ['b'],
+                },
+              },
+              required: ['provider', 'entity', 'data'],
+            },
+            {
+              properties: {
+                provider: {
+                  anyOf: [{ const: 'provider2' }, { const: 'provider3' }],
+                },
+                entity: {
+                  enum: ['entity1', 'entity2'],
+                },
+                data: {
+                  type: 'object',
+                  additionalProperties: true,
+                  properties: {
+                    a: {
+                      type: 'string',
+                    },
+                  },
+                  required: ['a'],
+                },
+              },
+              required: ['provider', 'entity', 'data'],
+            },
+          ],
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = `
+provider: provider1
+entity: entity1
+data:
+  a: val
+`;
+        const result = await parseSetup(content);
+        expect(result?.map((r) => r.message)).deep.equals(['Missing property "b".']);
+      });
+
+      it('should allow provider with invalid value and propagate inner pattern error', async () => {
+        const schema = {
+          anyOf: [
+            {
+              properties: {
+                provider: {
+                  const: 'provider1',
+                  pattern: '^$',
+                  patternErrorMessage: 'Try to avoid provider1',
+                },
+              },
+              required: ['provider'],
+            },
+            {
+              properties: {
+                provider: {
+                  const: 'provider2',
+                },
+              },
+              required: ['provider'],
+            },
+          ],
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = 'provider: provider1';
+        const result = await parseSetup(content);
+        expect(result?.map((r) => r.message)).deep.equals(['Try to avoid provider1']);
+      });
+    });
+
+    it('Expression is valid inline object', async function () {
+      const schema = {
+        id: 'test://schemas/main',
+        definitions: {
+          Expression: {
+            type: 'object',
+            description: 'Expression',
+            properties: {
+              '=@ctx': {
+                type: 'object',
+              },
+            },
+          },
+        },
+        properties: {
+          expr: {
+            $ref: '#/definitions/Expression',
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+
+      const result = await parseSetup('expr: =@ctx');
+      assert.strictEqual(result.length, 0);
+
+      const result2 = await parseSetup('expr: =(@ctx)');
+      assert.strictEqual(result2.length, 0);
+
+      const result3 = await parseSetup('expr: =$random()');
+      assert.strictEqual(result3.length, 0);
+
+      const result4 = await parseSetup('expr: $random()');
+      assert.strictEqual(result4.length, 1);
     });
   });
 

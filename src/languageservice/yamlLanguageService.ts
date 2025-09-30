@@ -33,6 +33,7 @@ import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
 import { DocumentSymbolsContext } from 'vscode-json-languageservice';
 import { YamlLinks } from './services/yamlLinks';
+import { YamlHoverDetail, YamlHoverDetailPropTableStyle } from './services/yamlHoverDetail';
 import {
   ClientCapabilities,
   CodeActionParams,
@@ -85,6 +86,7 @@ export interface LanguageSettings {
    */
   indentation?: string;
 
+  propTableStyle?: YamlHoverDetailPropTableStyle;
   /**
    * Globally set additionalProperties to false if additionalProperties is not set and if schema.type is object.
    * So if its true, no extra properties are allowed inside yaml.
@@ -180,6 +182,8 @@ export interface LanguageService {
   getCodeAction: (document: TextDocument, params: CodeActionParams) => CodeAction[] | undefined;
   getCodeLens: (document: TextDocument) => PromiseLike<CodeLens[] | undefined> | CodeLens[] | undefined;
   resolveCodeLens: (param: CodeLens) => PromiseLike<CodeLens> | CodeLens;
+  // jigx custom
+  doHoverDetail: (document: TextDocument, position: Position) => Promise<Hover | null>;
 }
 
 export function getLanguageService(params: {
@@ -196,6 +200,7 @@ export function getLanguageService(params: {
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService, params.telemetry);
   const yamlValidation = new YAMLValidation(schemaService, params.telemetry);
   const formatter = new YAMLFormatter();
+  const hoverDetail = new YamlHoverDetail(schemaService, params.telemetry);
   const yamlCodeActions = new YamlCodeActions(params.clientCapabilities);
   const yamlCodeLens = new YamlCodeLens(schemaService, params.telemetry);
   const yamlLinks = new YamlLinks(params.telemetry);
@@ -225,6 +230,7 @@ export function getLanguageService(params: {
       hover.configure(settings);
       completer.configure(settings, params.yamlSettings);
       formatter.configure(settings);
+      hoverDetail.configure(settings);
       yamlCodeActions.configure(settings);
     },
     registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
@@ -257,6 +263,7 @@ export function getLanguageService(params: {
     deleteSchemasWhole: (schemaDeletions: SchemaDeletionsAll) => {
       return schemaService.deleteSchemas(schemaDeletions);
     },
+    doHoverDetail: hoverDetail.doHoverDetail.bind(hoverDetail),
     getFoldingRanges,
     getSelectionRanges,
     getCodeAction: (document, params) => {
