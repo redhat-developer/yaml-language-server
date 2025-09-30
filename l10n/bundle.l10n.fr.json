@@ -52,5 +52,7 @@
   "flowStyleMapForbidden": "Le mappage de style de flux est interdit",
   "flowStyleSeqForbidden": "La séquence de style Flow est interdite",
   "unUsedAnchor": "Ancre inutilisée '{0}'",
-  "unUsedAlias": "Alias ​​non résolu '{0}'"
+  "unUsedAlias": "Alias non résolu '{0}'",
+  "convertToFoldedBlockString": "Convertir la chaîne en style de bloc pliée",
+  "convertToLiteralBlockString": "Convertir la chaîne en style de bloc littérale"
 }

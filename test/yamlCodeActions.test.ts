@@ -12,6 +12,7 @@ import {
   CodeActionContext,
   Command,
   DiagnosticSeverity,
+  Position,
   Range,
   TextDocumentIdentifier,
   TextEdit,
@@ -130,7 +131,7 @@ describe('CodeActions Tests', () => {
         textDocument: TextDocumentIdentifier.create(TEST_URI),
       };
       const actions = new YamlCodeActions(clientCapabilities);
-      actions.configure({ indentation: '   ' } as LanguageSettings);
+      actions.configure({ indentation: '   ' } as LanguageSettings, 80);
       const result = actions.getCodeAction(doc, params);
 
       expect(result[0].title).to.be.equal('Convert Tab to Spaces');
@@ -455,6 +456,387 @@ animals: [dog , cat , mouse]  `;
       const result = actions.getCodeAction(doc, params);
       expect(result.map((r) => r.title)).deep.equal(['5', '10']);
       expect(result[0].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(0, 5, 0, 11), '5')]);
+    });
+  });
+
+  describe('Change string to block string', function () {
+    it('should split up double quoted text with newlines', function () {
+      const doc = setupTextDocument('foo: "line 1\\nline 2\\nline 3"');
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.have.length(2);
+      expect(result[0].title).to.equal('Convert string to folded block string');
+      const edit0: WorkspaceEdit = {
+        changes: {},
+      };
+      edit0.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(0, 5), Position.create(0, 29)), '>-\n  line 1\n\n  line 2\n\n  line 3'),
+      ];
+      expect(result[0].edit).to.deep.equal(edit0);
+
+      expect(result[1].title).to.equal('Convert string to literal block string');
+      const edit1: WorkspaceEdit = {
+        changes: {},
+      };
+      edit1.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(0, 5), Position.create(0, 29)), '|-\n  line 1\n  line 2\n  line 3'),
+      ];
+      expect(result[1].edit).to.deep.equal(edit1);
+    });
+    it('should split up double quoted text with newlines and trailing newline', function () {
+      const doc = setupTextDocument('foo: "line 1\\nline 2\\nline 3\\n"');
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.have.length(2);
+      expect(result[0].title).to.equal('Convert string to folded block string');
+      const edit0: WorkspaceEdit = {
+        changes: {},
+      };
+      edit0.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(0, 5), Position.create(0, 31)), '>\n  line 1\n\n  line 2\n\n  line 3'),
+      ];
+      expect(result[0].edit).to.deep.equal(edit0);
+
+      expect(result[1].title).to.equal('Convert string to literal block string');
+      const edit1: WorkspaceEdit = {
+        changes: {},
+      };
+      edit1.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(0, 5), Position.create(0, 31)), '|\n  line 1\n  line 2\n  line 3'),
+      ];
+      expect(result[1].edit).to.deep.equal(edit1);
+    });
+    it('should split up double quoted text with newlines and double trailing newline', function () {
+      const doc = setupTextDocument('foo: "line 1\\nline 2\\nline 3\\n\\n"');
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.have.length(2);
+      expect(result[0].title).to.equal('Convert string to folded block string');
+      const edit0: WorkspaceEdit = {
+        changes: {},
+      };
+      edit0.changes[TEST_URI] = [
+        TextEdit.replace(
+          Range.create(Position.create(0, 5), Position.create(0, 33)),
+          '>+\n  line 1\n\n  line 2\n\n  line 3\n\n\n\n'
+        ),
+      ];
+      expect(result[0].edit).to.deep.equal(edit0);
+
+      expect(result[1].title).to.equal('Convert string to literal block string');
+      const edit1: WorkspaceEdit = {
+        changes: {},
+      };
+      edit1.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(0, 5), Position.create(0, 33)), '|+\n  line 1\n  line 2\n  line 3\n\n'),
+      ];
+      expect(result[1].edit).to.deep.equal(edit1);
+    });
+    it('should split up long lines of double quoted text', function () {
+      let docContent = 'foo: "';
+      for (let i = 0; i < 80 / 4 + 1; i++) {
+        docContent += 'cat ';
+      }
+      docContent += 'cat"';
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.have.length(1);
+      expect(result[0].title).to.equal('Convert string to folded block string');
+      const edit0: WorkspaceEdit = {
+        changes: {},
+      };
+      let resultText = '>-\n ';
+      for (let i = 0; i < 80 / 4; i++) {
+        resultText += ' cat';
+      }
+      resultText += ' cat\n  cat';
+      edit0.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(0, 5), Position.create(0, 5 + 80 + 8 + 1)), resultText),
+      ];
+      expect(result[0].edit).to.deep.equal(edit0);
+    });
+    it('should split up long lines of double quoted text using configured width', function () {
+      let docContent = 'foo: "';
+      for (let i = 0; i < 40 / 4 + 1; i++) {
+        docContent += 'cat ';
+      }
+      docContent += 'cat"';
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      actions.configure({ indentation: '  ' }, 40);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.have.length(1);
+      expect(result[0].title).to.equal('Convert string to folded block string');
+      const edit0: WorkspaceEdit = {
+        changes: {},
+      };
+      let resultText = '>-\n ';
+      for (let i = 0; i < 40 / 4; i++) {
+        resultText += ' cat';
+      }
+      resultText += ' cat\n  cat';
+      edit0.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(0, 5), Position.create(0, 5 + 40 + 8 + 1)), resultText),
+      ];
+      expect(result[0].edit).to.deep.equal(edit0);
+    });
+    it('should convert single quote text with newline', function () {
+      const docContent = `root: 'aaa
+  aaa
+
+  bbb
+  bbb'`;
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.have.length(2);
+      expect(result[0].title).to.equal('Convert string to folded block string');
+      const edit0: WorkspaceEdit = {
+        changes: {},
+      };
+      edit0.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(0, 6), Position.create(4, 6)), '>-\n  aaa aaa\n\n  bbb bbb'),
+      ];
+      expect(result[0].edit).to.deep.equal(edit0);
+
+      expect(result[1].title).to.equal('Convert string to literal block string');
+      const edit1: WorkspaceEdit = {
+        changes: {},
+      };
+      edit1.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(0, 6), Position.create(4, 6)), '|-\n  aaa aaa\n  bbb bbb'),
+      ];
+      expect(result[1].edit).to.deep.equal(edit1);
+    });
+    it('should convert single quote text with leading whitespace', function () {
+      const docContent = `root: '    aaa
+  aaa
+
+  bbb
+  bbb'`;
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.have.length(2);
+      expect(result[0].title).to.equal('Convert string to folded block string');
+      const edit0: WorkspaceEdit = {
+        changes: {},
+      };
+      edit0.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(0, 6), Position.create(4, 6)), '>-2\n      aaa aaa\n\n  bbb bbb'),
+      ];
+      expect(result[0].edit).to.deep.equal(edit0);
+
+      expect(result[1].title).to.equal('Convert string to literal block string');
+      const edit1: WorkspaceEdit = {
+        changes: {},
+      };
+      edit1.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(0, 6), Position.create(4, 6)), '|-2\n      aaa aaa\n  bbb bbb'),
+      ];
+      expect(result[1].edit).to.deep.equal(edit1);
+    });
+    it('should leave the whitespace at the end of the line when folding a double quoted string', function () {
+      const docContent =
+        'root: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa       aaaa"';
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.have.length(1);
+      expect(result[0].title).to.equal('Convert string to folded block string');
+      const edit0: WorkspaceEdit = {
+        changes: {},
+      };
+      edit0.changes[TEST_URI] = [
+        TextEdit.replace(
+          Range.create(Position.create(0, 6), Position.create(0, 138)),
+          '>-\n  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa      \n  aaaa'
+        ),
+      ];
+      expect(result[0].edit).to.deep.equal(edit0);
+    });
+    it("should use the '+' block chomping indicator when there are trailing newlines", function () {
+      const docContent = 'root: "aaaa\\n\\n\\n"';
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.have.length(2);
+      expect(result[0].title).to.equal('Convert string to folded block string');
+      const edit0: WorkspaceEdit = {
+        changes: {},
+      };
+      edit0.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(0, 6), Position.create(0, 18)), '>+\n  aaaa\n\n\n\n\n\n'),
+      ];
+      expect(result[0].edit).to.deep.equal(edit0);
+      expect(result[1].title).to.equal('Convert string to literal block string');
+      const edit1: WorkspaceEdit = {
+        changes: {},
+      };
+      edit1.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(0, 6), Position.create(0, 18)), '|+\n  aaaa\n\n\n'),
+      ];
+      expect(result[1].edit).to.deep.equal(edit1);
+    });
+    it('should handle nested indentation', function () {
+      const docContent = 'root:\n  toot:\n    boot: "aaaa\\naaaa"';
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.have.length(2);
+      expect(result[0].title).to.equal('Convert string to folded block string');
+      const edit0: WorkspaceEdit = {
+        changes: {},
+      };
+      edit0.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(2, 10), Position.create(2, 22)), '>-\n      aaaa\n\n      aaaa'),
+      ];
+      expect(result[0].edit).to.deep.equal(edit0);
+      expect(result[1].title).to.equal('Convert string to literal block string');
+      const edit1: WorkspaceEdit = {
+        changes: {},
+      };
+      edit1.changes[TEST_URI] = [
+        TextEdit.replace(Range.create(Position.create(2, 10), Position.create(2, 22)), '|-\n      aaaa\n      aaaa'),
+      ];
+      expect(result[1].edit).to.deep.equal(edit1);
+    });
+    it('should give up on folded block string if there is trailing whitespace', function () {
+      const docContent = 'root: "           "';
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      // cannot be represented as folded stinrg
+      // a block string makes no sense since it's one line long
+      expect(result).to.have.length(0);
+    });
+    it('should not give out of range string conversion suggestions when cursor is placed in string', function () {
+      const docContent = 'foo: "bar\\nbar bar"\n\n\nnope: "bar\\nbar bar"\n\n\nbro: "bar\\nbar bar"\n\n\n';
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        // nope: "|bar ...
+        range: Range.create(Position.create(3, 7), Position.create(3, 7)),
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      // 2 results for converting the value of the key 'nope'
+      expect(result).to.have.length(2);
+    });
+    it('should not give out of range string conversion suggestions when selecting part of the string', function () {
+      const docContent = 'foo: "bar\\nbar bar"\n\n\nnope: "bar\\nbar bar"\n\n\nbro: "bar\\nbar bar"\n\n\n';
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        // nope: "b|ar| ...
+        range: Range.create(Position.create(3, 8), Position.create(3, 10)),
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      // 2 results for converting the value of the key 'nope'
+      expect(result).to.have.length(2);
+    });
+    it('should not give out of range string conversion suggestions when selecting all of the string', function () {
+      const docContent = 'foo: "bar\\nbar bar"\n\n\nnope: "bar\\nbar bar"\n\n\nbro: "bar\\nbar bar"\n\n\n';
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        // |nope: "bar ...
+        // |
+        range: Range.create(Position.create(3, 0), Position.create(4, 0)),
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      // 2 results for converting the value of the key 'nope'
+      expect(result).to.have.length(2);
+    });
+    it('should not give any string conversion suggestions when cursor not in a string', function () {
+      const docContent = 'foo: "bar\\nbar bar"\n\n\nnope: "bar\\nbar bar"\n\n\nbro: "bar\\nbar bar"\n\n\n';
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        // |
+        // nope: "bar ...
+        range: Range.create(Position.create(2, 0), Position.create(2, 0)),
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.have.length(0);
+    });
+    it("should not give any string conversion suggestions when selection doesn't cover a string", function () {
+      const docContent = 'foo: "bar\\nbar bar"\n\n\nnope: "bar\\nbar bar"\n\n\nbro: "bar\\nbar bar"\n\n\n';
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        // |
+        // |
+        // nope: "bar ...
+        range: Range.create(Position.create(1, 0), Position.create(2, 0)),
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.have.length(0);
     });
   });
 });
