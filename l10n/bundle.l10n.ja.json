@@ -52,5 +52,7 @@
   "flowStyleMapForbidden": "フロースタイルのマッピングは禁止されています",
   "flowStyleSeqForbidden": "フロースタイルのシーケンスは禁止されています",
   "unUsedAnchor": "未使用のアンカー \"{0}\"",
-  "unUsedAlias": "未解決のエイリアス \"{0}\""
+  "unUsedAlias": "未解決のエイリアス \"{0}\"",
+  "convertToFoldedBlockString": "文字列を折り畳みブロック文字列に変換する",
+  "convertToLiteralBlockString": "文字列をリテラルブロック文字列に変換する"
 }
