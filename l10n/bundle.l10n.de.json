@@ -52,5 +52,7 @@
   "flowStyleMapForbidden": "Flow-Stil-Mapping ist verboten",
   "flowStyleSeqForbidden": "Flow-Stil-Sequenz ist verboten",
   "unUsedAnchor": "Nicht verwendeter Anker \"{0}\"",
-  "unUsedAlias": "Nicht aufgelöstes Alias \"{0}\""
+  "unUsedAlias": "Nicht aufgelöstes Alias \"{0}\"",
+  "convertToFoldedBlockString": "Konvertieren Sie die Zeichenfolge in eine gefaltete Blockzeichenfolge",
+  "convertToLiteralBlockString": "Konvertieren Sie die Zeichenfolge in eine wörtliche Blockzeichenfolge"
 }
