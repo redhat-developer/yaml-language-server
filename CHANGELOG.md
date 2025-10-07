@@ -1,3 +1,12 @@
+### 1.19.2
+- Fix: QuickFix to replace value with integer/number appears blank and doesn't work [#1116](https://github.com/redhat-developer/yaml-language-server/issues/1116)
+- Fix: Support `yaml-textmate` and `yaml-tmlanguage` languages [#1132](https://github.com/redhat-developer/yaml-language-server/pull/1132)
+- Docs: Remove '\n' in README.md [#1068](https://github.com/redhat-developer/yaml-language-server/pull/1068)
+- Docs: Mention Kate as client [#1122](https://github.com/redhat-developer/yaml-language-server/pull/1122)
+
+Thanks to [roc](https://github.com/imroc), [Arunvenmany](https://github.com/arunvenmany-ibm),
+[Niels Thykier](https://github.com/nthykier), and [RedCMD](https://github.com/RedCMD) for your contributions.
+
 ### 1.19.1
 - Feat: Support formatting docker-compose.yml by default [#1071](https://github.com/redhat-developer/yaml-language-server/issues/1071)
 - Feat: Support statically registering format support [#1062](https://github.com/redhat-developer/yaml-language-server/pull/1062)
