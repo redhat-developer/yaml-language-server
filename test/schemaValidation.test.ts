@@ -1868,7 +1868,7 @@ obj:
       const content = `foo: bar`;
       const result = await parseSetup(content);
       expect(result).to.have.length(1);
-      expect(result[0].message).to.include("Schema 'default_schema_id.yaml' is not valid");
+      expect(result[0].message).to.include('Wrong schema: "string", it MUST be an Object or Boolean');
       expect(telemetry.messages).to.be.empty;
     });
 
