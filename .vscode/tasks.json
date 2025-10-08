@@ -6,7 +6,7 @@
     {
       "label": "watch typescript",
       "type": "shell",
-      "command": "yarn run watch",
+      "command": "npm run watch",
       "presentation": {
         "reveal": "never"
       },
