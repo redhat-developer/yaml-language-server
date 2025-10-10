@@ -1409,6 +1409,46 @@ obj:
       const result = await parseSetup(content);
       expect(result[0].message).to.eq('Missing property "pineapple".');
     });
+    it('should add errorMessage from schema when the property is missing', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          icon: {
+            type: 'string',
+          },
+        },
+        required: ['title'],
+        errorMessage: 'Custom message',
+      });
+      const content = '';
+      const result = await parseSetup(content);
+      expect(result[0].message).to.eq('Missing property "title".' + ' ' + 'Custom message');
+    });
+    it('should add errorMessage from sub-schema when the property is missing', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          icon: {
+            type: 'string',
+          },
+          title: {
+            type: 'string',
+          },
+        },
+        anyOf: [
+          {
+            required: ['title'],
+            errorMessage: 'At least one of `title` or `icon` must be defined.',
+          },
+          {
+            required: ['icon'],
+          },
+        ],
+      });
+      const content = '';
+      const result = await parseSetup(content);
+      expect(result[0].message).to.eq('Missing property "title".' + ' ' + 'At least one of `title` or `icon` must be defined.');
+    });
 
     describe('filePatternAssociation', () => {
       const schema = {
