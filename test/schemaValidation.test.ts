@@ -1422,7 +1422,7 @@ obj:
       });
       const content = '';
       const result = await parseSetup(content);
-      expect(result[0].message).to.eq('Missing property "title".' + ' ' + 'Custom message');
+      expect(result[0].message).to.eq('Custom message');
     });
     it('should add errorMessage from sub-schema when the property is missing', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
@@ -1447,7 +1447,7 @@ obj:
       });
       const content = '';
       const result = await parseSetup(content);
-      expect(result[0].message).to.eq('Missing property "title".' + ' ' + 'At least one of `title` or `icon` must be defined.');
+      expect(result[0].message).to.eq('At least one of `title` or `icon` must be defined.');
     });
 
     describe('filePatternAssociation', () => {
