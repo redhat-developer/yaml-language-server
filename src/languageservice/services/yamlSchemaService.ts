@@ -30,6 +30,7 @@ import * as Json from 'jsonc-parser';
 import Ajv, { DefinedError } from 'ajv';
 import Ajv4 from 'ajv-draft-04';
 import { getSchemaTitle } from '../utils/schemaUtils';
+import { getDollarSchema } from './dollarUtils';
 
 const ajv = new Ajv();
 const ajv4 = new Ajv4();
@@ -350,30 +351,43 @@ export class YAMLSchemaService extends JSONSchemaService {
   }
 
   public getSchemaForResource(resource: string, doc: JSONDocument): Promise<ResolvedSchema> {
+    const normalizeSchemaRef = (schemaRef: string): string | undefined => {
+      if (!schemaRef.startsWith('file:') && !schemaRef.startsWith('http')) {
+        // If path contains a fragment and it is left intact, "#" will be
+        // considered part of the filename and converted to "%23" by
+        // path.resolve() -> take it out and add back after path.resolve
+        let appendix = '';
+        if (schemaRef.indexOf('#') > 0) {
+          const segments = schemaRef.split('#', 2);
+          schemaRef = segments[0];
+          appendix = segments[1];
+        }
+        if (!path.isAbsolute(schemaRef)) {
+          const resUri = URI.parse(resource);
+          schemaRef = URI.file(path.resolve(path.parse(resUri.fsPath).dir, schemaRef)).toString();
+        } else {
+          schemaRef = URI.file(schemaRef).toString();
+        }
+        if (appendix.length > 0) {
+          schemaRef += '#' + appendix;
+        }
+      }
+      return schemaRef;
+    };
+
     const resolveModelineSchema = (): string | undefined => {
       let schemaFromModeline = getSchemaFromModeline(doc);
       if (schemaFromModeline !== undefined) {
-        if (!schemaFromModeline.startsWith('file:') && !schemaFromModeline.startsWith('http')) {
-          // If path contains a fragment and it is left intact, "#" will be
-          // considered part of the filename and converted to "%23" by
-          // path.resolve() -> take it out and add back after path.resolve
-          let appendix = '';
-          if (schemaFromModeline.indexOf('#') > 0) {
-            const segments = schemaFromModeline.split('#', 2);
-            schemaFromModeline = segments[0];
-            appendix = segments[1];
-          }
-          if (!path.isAbsolute(schemaFromModeline)) {
-            const resUri = URI.parse(resource);
-            schemaFromModeline = URI.file(path.resolve(path.parse(resUri.fsPath).dir, schemaFromModeline)).toString();
-          } else {
-            schemaFromModeline = URI.file(schemaFromModeline).toString();
-          }
-          if (appendix.length > 0) {
-            schemaFromModeline += '#' + appendix;
-          }
-        }
+        schemaFromModeline = normalizeSchemaRef(schemaFromModeline);
         return schemaFromModeline;
+      }
+    };
+
+    const resolveDollarSchema = (): string | undefined => {
+      let dollarSchema = getDollarSchema(doc);
+      if (dollarSchema !== undefined) {
+        dollarSchema = normalizeSchemaRef(dollarSchema);
+        return dollarSchema;
       }
     };
 
@@ -422,6 +436,10 @@ export class YAMLSchemaService extends JSONSchemaService {
     const modelineSchema = resolveModelineSchema();
     if (modelineSchema) {
       return resolveSchemaForResource([modelineSchema]);
+    }
+    const dollarSchema = resolveDollarSchema();
+    if (dollarSchema) {
+      return resolveSchemaForResource([dollarSchema]);
     }
     if (this.customSchemaProvider) {
       return this.customSchemaProvider(resource)
