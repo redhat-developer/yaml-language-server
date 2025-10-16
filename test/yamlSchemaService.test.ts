@@ -140,5 +140,16 @@ describe('YAML Schema Service', () => {
 
       expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
     });
+
+    it('should ignore modeline schema', () => {
+      const documentContent = `foo:\n  bar\n#first comment\n# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#\naa:bbb\n`;
+      const content = `${documentContent}`;
+      const yamlDock = parse(content);
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, true);
+      service.getSchemaForResource('', yamlDock.documents[0]);
+
+      expect(requestServiceMock).callCount(0)
+    });
   });
 });
