@@ -52,5 +52,7 @@
   "flowStyleMapForbidden": "Flow 스타일 맵 사용이 금지됨",
   "flowStyleSeqForbidden": "Flow 스타일 시퀀스 사용이 금지됨",
   "unUsedAnchor": "사용되지 않은 앵커 \"{0}\"",
-  "unUsedAlias": "해결되지 않은 별칭 \"{0}\""
+  "unUsedAlias": "해결되지 않은 별칭 \"{0}\"",
+  "convertToFoldedBlockString": "문자열을 접힌 블록 문자열로 변환합니다.",
+  "convertToLiteralBlockString": "문자열을 리터럴 블록 문자열로 변환합니다."
 }
