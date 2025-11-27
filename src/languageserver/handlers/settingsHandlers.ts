@@ -169,7 +169,7 @@ export class SettingsHandler {
               { language: 'github-actions-workflow' },
               { language: 'yaml-textmate' },
               { language: 'yaml-tmlanguage' },
-              { pattern: '*.y(a)ml' },
+              { pattern: '**/*.{yaml,yml}' },
             ],
           });
         }
