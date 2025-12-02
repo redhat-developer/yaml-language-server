@@ -52,5 +52,7 @@
   "flowStyleMapForbidden": "禁止使用 flow 样式的映射",
   "flowStyleSeqForbidden": "禁止使用 flow 样式的序列",
   "unUsedAnchor": "未使用的锚点 \"{0}\"",
-  "unUsedAlias": "未解析的别名 \"{0}\""
+  "unUsedAlias": "未解析的别名 \"{0}\"",
+  "convertToFoldedBlockString": "将字符串转换为折叠块字符串",
+  "convertToLiteralBlockString": "将字符串转换为文字块字符串"
 }
