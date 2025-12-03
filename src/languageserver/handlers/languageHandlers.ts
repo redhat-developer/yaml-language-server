@@ -16,6 +16,8 @@ import {
   TextDocumentPositionParams,
   CodeLensParams,
   DefinitionParams,
+  PrepareRenameParams,
+  RenameParams,
 } from 'vscode-languageserver-protocol';
 import {
   CodeAction,
@@ -26,9 +28,11 @@ import {
   DocumentSymbol,
   Hover,
   FoldingRange,
+  Range,
   SelectionRange,
   SymbolInformation,
   TextEdit,
+  WorkspaceEdit,
 } from 'vscode-languageserver-types';
 import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
 import { LanguageService } from '../../languageservice/yamlLanguageService';
@@ -70,6 +74,8 @@ export class LanguageHandlers {
     this.connection.onCodeLens((params) => this.codeLensHandler(params));
     this.connection.onCodeLensResolve((params) => this.codeLensResolveHandler(params));
     this.connection.onDefinition((params) => this.definitionHandler(params));
+    this.connection.onPrepareRename((params) => this.prepareRenameHandler(params));
+    this.connection.onRenameRequest((params) => this.renameHandler(params));
 
     this.yamlSettings.documents.onDidChangeContent((change) => this.cancelLimitExceededWarnings(change.document.uri));
     this.yamlSettings.documents.onDidClose((event) => this.cancelLimitExceededWarnings(event.document.uri));
@@ -248,6 +254,24 @@ export class LanguageHandlers {
     }
 
     return this.languageService.doDefinition(textDocument, params);
+  }
+
+  prepareRenameHandler(params: PrepareRenameParams): Range | null {
+    const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
+    if (!textDocument) {
+      return null;
+    }
+
+    return this.languageService.prepareRename(textDocument, params);
+  }
+
+  renameHandler(params: RenameParams): WorkspaceEdit | null {
+    const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
+    if (!textDocument) {
+      return null;
+    }
+
+    return this.languageService.doRename(textDocument, params);
   }
 
   // Adapted from:
