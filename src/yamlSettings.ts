@@ -14,6 +14,7 @@ export interface Settings {
     schemas: JSONSchemaSettings[];
     validate: boolean;
     hover: boolean;
+    hoverAnchor: boolean;
     completion: boolean;
     customTags: Array<string>;
     schemaStore: {
@@ -77,6 +78,7 @@ export class SettingsState {
     enable: true,
   } as CustomFormatterOptions;
   yamlShouldHover = true;
+  yamlShouldHoverAnchor = false;
   yamlShouldCompletion = true;
   schemaStoreSettings = [];
   customTags = [];
