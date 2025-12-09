@@ -1029,4 +1029,115 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       expect(result).to.be.null;
     });
   });
+
+  describe('YAML 1.1 boolean hover', () => {
+    let yaml11LanguageHandler: LanguageHandlers;
+    let yaml11Settings: SettingsState;
+    let yaml11SchemaProvider: TestCustomSchemaProvider;
+
+    before(() => {
+      const yaml11Setup = new ServiceSetup().withHover().withYamlVersion('1.1');
+      const {
+        languageHandler: langHandler,
+        yamlSettings: settings,
+        schemaProvider: testSchemaProvider,
+      } = setupLanguageService(yaml11Setup.languageSettings);
+      yaml11LanguageHandler = langHandler;
+      yaml11Settings = settings;
+      yaml11SchemaProvider = testSchemaProvider;
+    });
+
+    afterEach(() => {
+      yaml11SchemaProvider.deleteSchema(SCHEMA_ID);
+    });
+
+    function parseSetupYaml11(content: string, position?: number): Promise<Hover> {
+      if (typeof position === 'undefined') {
+        ({ content, position } = caretPosition(content));
+      }
+      const testTextDocument = setupSchemaIDTextDocument(content);
+      yaml11Settings.documents = new TextDocumentTestManager();
+      (yaml11Settings.documents as TextDocumentTestManager).set(testTextDocument);
+      return yaml11LanguageHandler.hoverHandler({
+        position: testTextDocument.positionAt(position),
+        textDocument: testTextDocument,
+      });
+    }
+
+    it('Hover on YAML 1.1 boolean value "True" with enum schema', async () => {
+      yaml11SchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          enabled: {
+            type: 'boolean',
+            description: 'Enable or disable the feature',
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'enabled: |T|rue';
+      const result = await parseSetupYaml11(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.notStrictEqual((result.contents as MarkupContent).value, '');
+      expect((result.contents as MarkupContent).value).to.include('Enable or disable the feature');
+    });
+
+    it('Hover on YAML 1.1 boolean value "False" with enum schema', async () => {
+      yaml11SchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          enabled: {
+            type: 'boolean',
+            description: 'Enable or disable the feature',
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'enabled: |F|alse';
+      const result = await parseSetupYaml11(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.notStrictEqual((result.contents as MarkupContent).value, '');
+      expect((result.contents as MarkupContent).value).to.include('Enable or disable the feature');
+    });
+
+    it('Hover on YAML 1.1 boolean value "yes" with const schema', async () => {
+      yaml11SchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          confirmed: {
+            type: 'boolean',
+            description: 'Confirmation flag',
+            const: true,
+          },
+        },
+      });
+      const content = 'confirmed: |y|es';
+      const result = await parseSetupYaml11(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.notStrictEqual((result.contents as MarkupContent).value, '');
+      expect((result.contents as MarkupContent).value).to.include('Confirmation flag');
+    });
+
+    it('Hover on YAML 1.1 boolean value "no" with const schema', async () => {
+      yaml11SchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          disabled: {
+            type: 'boolean',
+            description: 'Disabled flag',
+            const: false,
+          },
+        },
+      });
+      const content = 'disabled: |n|o';
+      const result = await parseSetupYaml11(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.notStrictEqual((result.contents as MarkupContent).value, '');
+      expect((result.contents as MarkupContent).value).to.include('Disabled flag');
+    });
+  });
 });
