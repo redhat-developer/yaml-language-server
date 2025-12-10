@@ -78,7 +78,7 @@ export class SettingsState {
     enable: true,
   } as CustomFormatterOptions;
   yamlShouldHover = true;
-  yamlShouldHoverAnchor = false;
+  yamlShouldHoverAnchor = true;
   yamlShouldCompletion = true;
   schemaStoreSettings = [];
   customTags = [];
