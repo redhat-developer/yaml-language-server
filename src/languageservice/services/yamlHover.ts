@@ -9,7 +9,7 @@ import * as path from 'path';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Hover, MarkupContent, MarkupKind, Position, Range } from 'vscode-languageserver-types';
 import { URI } from 'vscode-uri';
-import { isAlias, isMap, isSeq, Node, stringify as stringifyYAML, YAMLMap } from 'yaml';
+import { isAlias, isMap, isSeq, Node, stringify as stringifyYAML } from 'yaml';
 import { ASTNode, ObjectASTNode, PropertyASTNode } from '../jsonASTTypes';
 import { JSONSchema } from '../jsonSchema';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
@@ -221,12 +221,12 @@ export class YAMLHover {
    * Resolves merge keys (<<) and anchors recursively in an object node
    * @param node The object AST node to resolve
    * @param doc The YAML document for resolving anchors
+   * @param currentRecursionLevel Current recursion level (default: 0)
    * @returns A plain JavaScript object with all merges resolved
    */
-  private resolveMergeKeys(node: ObjectASTNode, doc: SingleYAMLDocument): Record<string, unknown> {
+  private resolveMergeKeys(node: ObjectASTNode, doc: SingleYAMLDocument, currentRecursionLevel = 0): Record<string, unknown> {
     const result: Record<string, unknown> = {};
     const unprocessedProperties: PropertyASTNode[] = [...node.properties];
-    const seenKeys = new Set<string>();
 
     while (unprocessedProperties.length > 0) {
       const propertyNode = unprocessedProperties.pop();
@@ -234,23 +234,17 @@ export class YAMLHover {
 
       if (key === '<<' && propertyNode.valueNode) {
         // Handle merge key
-        const mergeValue = this.resolveMergeValue(propertyNode.valueNode, doc);
+        const mergeValue = this.resolveMergeValue(propertyNode.valueNode, doc, currentRecursionLevel + 1);
         if (mergeValue && typeof mergeValue === 'object' && !Array.isArray(mergeValue)) {
           // Merge properties from the resolved value
           const mergeKeys = Object.keys(mergeValue);
           for (const mergeKey of mergeKeys) {
-            if (!seenKeys.has(mergeKey)) {
-              result[mergeKey] = mergeValue[mergeKey];
-              seenKeys.add(mergeKey);
-            }
+            result[mergeKey] = mergeValue[mergeKey];
           }
         }
       } else {
         // Regular property
-        if (!seenKeys.has(key)) {
-          result[key] = this.astNodeToValue(propertyNode.valueNode, doc);
-          seenKeys.add(key);
-        }
+        result[key] = this.astNodeToValue(propertyNode.valueNode, doc, currentRecursionLevel);
       }
     }
 
@@ -261,94 +255,44 @@ export class YAMLHover {
    * Resolves a merge value (which might be an alias) and recursively resolves its merge keys
    * @param node The AST node that might be an alias or object
    * @param doc The YAML document for resolving anchors
+   * @param currentRecursionLevel Current recursion level
    * @returns The resolved value
    */
-  private resolveMergeValue(node: ASTNode, doc: SingleYAMLDocument): unknown {
-    const internalNode = node.internalNode as Node;
+  private resolveMergeValue(node: ASTNode, doc: SingleYAMLDocument, currentRecursionLevel: number): unknown {
+    const MAX_MERGE_RECURSION_LEVEL = 10;
 
-    // If it's an alias, resolve it first
-    if (isAlias(internalNode)) {
-      const resolved = internalNode.resolve(doc.internalDocument);
-      if (resolved) {
-        // Convert resolved node back to object structure to handle merge keys
-        if (isMap(resolved)) {
-          return this.resolveYamlMapMergeKeys(resolved, doc);
-        } else {
-          return this.nodeToValue(resolved);
-        }
-      }
+    // Check if we've exceeded max recursion level
+    if (currentRecursionLevel >= MAX_MERGE_RECURSION_LEVEL) {
+      return { '<<': node.parent.internalNode['value'] + ' (recursion limit reached)' };
     }
 
     // If it's an object node, resolve its merge keys
     if (node.type === 'object') {
-      return this.resolveMergeKeys(node as ObjectASTNode, doc);
+      return this.resolveMergeKeys(node as ObjectASTNode, doc, currentRecursionLevel);
     }
 
     // Otherwise, convert to value
-    return this.astNodeToValue(node, doc);
-  }
-
-  /**
-   * Resolves merge keys in a YAML Map node recursively
-   * @param mapNode The YAML Map node
-   * @param doc The YAML document for resolving anchors
-   * @returns The resolved object
-   */
-  private resolveYamlMapMergeKeys(mapNode: YAMLMap, doc: SingleYAMLDocument): Record<string, unknown> {
-    const result: Record<string, unknown> = {};
-    const seenKeys = new Set<string>();
-
-    for (const pair of mapNode.items) {
-      if (pair.key && pair.value) {
-        const keyNode = pair.key as Node;
-        const valueNode = pair.value as Node;
-        const key = this.nodeToValue(keyNode);
-
-        if (typeof key === 'string' && key === '<<') {
-          // Handle merge key - resolve the value (which might be an alias)
-          const resolvedValue = isAlias(valueNode) ? valueNode.resolve(doc.internalDocument) : valueNode;
-          if (resolvedValue) {
-            if (isMap(resolvedValue)) {
-              // Recursively resolve merge keys in the resolved map
-              const merged = this.resolveYamlMapMergeKeys(resolvedValue, doc);
-              Object.assign(result, merged);
-            } else {
-              const value = this.nodeToValue(resolvedValue);
-              if (value && typeof value === 'object' && !Array.isArray(value)) {
-                Object.assign(result, value);
-              }
-            }
-          }
-        } else if (typeof key === 'string') {
-          // Regular property
-          if (!seenKeys.has(key)) {
-            result[key] = this.nodeToValue(valueNode);
-            seenKeys.add(key);
-          }
-        }
-      }
-    }
-
-    return result;
+    return this.astNodeToValue(node, doc, currentRecursionLevel);
   }
 
   /**
    * Converts an AST node to a plain JavaScript value
    * @param node The AST node to convert
    * @param doc The YAML document for resolving anchors
+   * @param currentRecursionLevel Current recursion level
    * @returns The converted value
    */
-  private astNodeToValue(node: ASTNode | undefined, doc: SingleYAMLDocument): unknown {
+  private astNodeToValue(node: ASTNode | undefined, doc: SingleYAMLDocument, currentRecursionLevel: number): unknown {
     if (!node) {
       return null;
     }
 
     switch (node.type) {
       case 'object': {
-        return this.resolveMergeKeys(node as ObjectASTNode, doc);
+        return this.resolveMergeKeys(node as ObjectASTNode, doc, currentRecursionLevel);
       }
       case 'array': {
-        return node.children.map((child) => this.astNodeToValue(child, doc));
+        return node.children.map((child) => this.astNodeToValue(child, doc, currentRecursionLevel));
       }
       case 'string':
       case 'number':
