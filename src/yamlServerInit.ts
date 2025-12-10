@@ -128,6 +128,7 @@ export class YAMLServerInit {
         documentFormattingProvider: !this.yamlSettings.clientDynamicRegisterSupport,
         documentOnTypeFormattingProvider: {
           firstTriggerCharacter: '\n',
+          moreTriggerCharacter: ['\t'],
         },
         documentRangeFormattingProvider: false,
         definitionProvider: true,
