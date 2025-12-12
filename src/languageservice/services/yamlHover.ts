@@ -18,11 +18,12 @@ import { URI } from 'vscode-uri';
 import * as path from 'path';
 import * as l10n from '@vscode/l10n';
 import { Telemetry } from '../telemetry';
-import { ASTNode } from 'vscode-json-languageservice';
-import { stringify as stringifyYAML } from 'yaml';
+import { ASTNode, ObjectASTNode, PropertyASTNode } from '../jsonASTTypes';
+import { stringify as stringifyYAML, isAlias, isMap, isSeq, Node } from 'yaml';
 
 export class YAMLHover {
   private shouldHover: boolean;
+  private shouldHoverAnchor: boolean;
   private indentation: string;
   private schemaService: YAMLSchemaService;
 
@@ -37,6 +38,7 @@ export class YAMLHover {
   configure(languageSettings: LanguageSettings): void {
     if (languageSettings) {
       this.shouldHover = languageSettings.hover;
+      this.shouldHoverAnchor = languageSettings.hoverAnchor;
       this.indentation = languageSettings.indentation;
     }
   }
@@ -101,6 +103,14 @@ export class YAMLHover {
       };
       return result;
     };
+
+    if (this.shouldHoverAnchor && node.type === 'property' && node.valueNode) {
+      if (node.valueNode.type === 'object') {
+        const resolved = this.resolveMergeKeys(node.valueNode as ObjectASTNode, doc);
+        const contents = '```yaml\n' + stringifyYAML(resolved, null, 2) + '\n```';
+        return Promise.resolve(createHover(contents));
+      }
+    }
 
     const removePipe = (value: string): string => {
       return value.replace(/\s\|\|\s*$/, '');
@@ -206,6 +216,123 @@ export class YAMLHover {
       }
       return null;
     });
+  }
+
+  /**
+   * Resolves merge keys (<<) and anchors recursively in an object node
+   * @param node The object AST node to resolve
+   * @param doc The YAML document for resolving anchors
+   * @param currentRecursionLevel Current recursion level (default: 0)
+   * @returns A plain JavaScript object with all merges resolved
+   */
+  private resolveMergeKeys(node: ObjectASTNode, doc: SingleYAMLDocument, currentRecursionLevel = 0): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    const unprocessedProperties: PropertyASTNode[] = [...node.properties];
+
+    while (unprocessedProperties.length > 0) {
+      const propertyNode = unprocessedProperties.pop();
+      const key = propertyNode.keyNode.value;
+
+      if (key === '<<' && propertyNode.valueNode) {
+        // Handle merge key
+        const mergeValue = this.resolveMergeValue(propertyNode.valueNode, doc, currentRecursionLevel + 1);
+        if (mergeValue && typeof mergeValue === 'object' && !Array.isArray(mergeValue)) {
+          // Merge properties from the resolved value
+          const mergeKeys = Object.keys(mergeValue);
+          for (const mergeKey of mergeKeys) {
+            result[mergeKey] = mergeValue[mergeKey];
+          }
+        }
+      } else {
+        // Regular property
+        result[key] = this.astNodeToValue(propertyNode.valueNode, doc, currentRecursionLevel);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Resolves a merge value (which might be an alias) and recursively resolves its merge keys
+   * @param node The AST node that might be an alias or object
+   * @param doc The YAML document for resolving anchors
+   * @param currentRecursionLevel Current recursion level
+   * @returns The resolved value
+   */
+  private resolveMergeValue(node: ASTNode, doc: SingleYAMLDocument, currentRecursionLevel: number): unknown {
+    const MAX_MERGE_RECURSION_LEVEL = 10;
+
+    // Check if we've exceeded max recursion level
+    if (currentRecursionLevel >= MAX_MERGE_RECURSION_LEVEL) {
+      return { '<<': node.parent.internalNode['value'] + ' (recursion limit reached)' };
+    }
+
+    // If it's an object node, resolve its merge keys
+    if (node.type === 'object') {
+      return this.resolveMergeKeys(node as ObjectASTNode, doc, currentRecursionLevel);
+    }
+
+    // Otherwise, convert to value
+    return this.astNodeToValue(node, doc, currentRecursionLevel);
+  }
+
+  /**
+   * Converts an AST node to a plain JavaScript value
+   * @param node The AST node to convert
+   * @param doc The YAML document for resolving anchors
+   * @param currentRecursionLevel Current recursion level
+   * @returns The converted value
+   */
+  private astNodeToValue(node: ASTNode | undefined, doc: SingleYAMLDocument, currentRecursionLevel: number): unknown {
+    if (!node) {
+      return null;
+    }
+
+    switch (node.type) {
+      case 'object': {
+        return this.resolveMergeKeys(node as ObjectASTNode, doc, currentRecursionLevel);
+      }
+      case 'array': {
+        return node.children.map((child) => this.astNodeToValue(child, doc, currentRecursionLevel));
+      }
+      case 'string':
+      case 'number':
+      case 'boolean':
+      case 'null': {
+        return node.value;
+      }
+      default: {
+        return this.nodeToValue(node.internalNode as Node);
+      }
+    }
+  }
+
+  /**
+   * Converts a YAML Node to a plain JavaScript value
+   * @param node The YAML node to convert
+   * @returns The converted value
+   */
+  private nodeToValue(node: Node): unknown {
+    if (isAlias(node)) {
+      return node.source;
+    }
+    if (isMap(node)) {
+      const result: Record<string, unknown> = {};
+      for (const pair of node.items) {
+        if (pair.key && pair.value) {
+          const key = this.nodeToValue(pair.key as Node);
+          const value = this.nodeToValue(pair.value as Node);
+          if (typeof key === 'string') {
+            result[key] = value;
+          }
+        }
+      }
+      return result;
+    }
+    if (isSeq(node)) {
+      return node.items.map((item) => this.nodeToValue(item as Node));
+    }
+    return (node as { value?: unknown }).value;
   }
 
   // copied from https://github.com/microsoft/vscode-json-languageservice/blob/2ea5ad3d2ffbbe40dea11cfe764a502becf113ce/src/services/jsonHover.ts#L112
