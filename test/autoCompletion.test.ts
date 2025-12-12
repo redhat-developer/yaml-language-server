@@ -2751,9 +2751,7 @@ describe('Auto Completion Tests', () => {
       expect(zero, 'Expected enum option 0').to.not.be.undefined;
       expect(one, 'Expected enum option 1').to.not.be.undefined;
 
-      expect(zero).eql(
-        createExpectedCompletion('0', '0', 0, 6, 0, 6, 12, 2, { documentation: undefined  })
-      );
+      expect(zero).eql(createExpectedCompletion('0', '0', 0, 6, 0, 6, 12, 2, { documentation: undefined }));
       expect(one).eql(
         createExpectedCompletion('1', '1', 0, 6, 0, 6, 12, 2, {
           documentation: undefined,
