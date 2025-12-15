@@ -225,6 +225,72 @@ describe('Validation Tests', () => {
         })
         .then(done, done);
     });
+
+    it('Test that YAML 1.1 boolean "True" can be used in enum', async () => {
+      // This test requires YAML 1.1 mode where "True" is parsed as a boolean
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.1').languageSettings);
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          enabled: {
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'enabled: True';
+      const result = await parseSetup(content);
+      assert.deepStrictEqual(result, []);
+      // Reset to default YAML version
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.2').languageSettings);
+    });
+
+    it('Test that YAML 1.1 boolean "False" can be used in enum', async () => {
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.1').languageSettings);
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          enabled: {
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'enabled: False';
+      const result = await parseSetup(content);
+      assert.deepStrictEqual(result, []);
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.2').languageSettings);
+    });
+
+    it('Test that YAML 1.1 boolean "yes" can be used with const', async () => {
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.1').languageSettings);
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          confirmed: {
+            const: true,
+          },
+        },
+      });
+      const content = 'confirmed: yes';
+      const result = await parseSetup(content);
+      assert.deepStrictEqual(result, []);
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.2').languageSettings);
+    });
+
+    it('Test that YAML 1.1 boolean "no" can be used with const', async () => {
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.1').languageSettings);
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          disabled: {
+            const: false,
+          },
+        },
+      });
+      const content = 'disabled: no';
+      const result = await parseSetup(content);
+      assert.deepStrictEqual(result, []);
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.2').languageSettings);
+    });
   });
 
   describe('String tests', () => {

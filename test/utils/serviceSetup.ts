@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { LanguageSettings, SchemasSettings } from '../../src/languageservice/yamlLanguageService';
+import { YamlVersion } from '../../src/languageservice/parser/yamlParser07';
 
 export class ServiceSetup {
   /*
@@ -73,6 +74,11 @@ export class ServiceSetup {
   }
   withKeyOrdering(order = true): ServiceSetup {
     this.languageSettings.keyOrdering = order;
+    return this;
+  }
+
+  withYamlVersion(version: YamlVersion): ServiceSetup {
+    this.languageSettings.yamlVersion = version;
     return this;
   }
 }
