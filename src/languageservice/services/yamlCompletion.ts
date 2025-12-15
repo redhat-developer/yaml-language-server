@@ -297,6 +297,9 @@ export class YamlCompletion {
         if (existing && !existing.documentation && completionItem.documentation) {
           existing.documentation = completionItem.documentation;
         }
+        if (existing && !existing.detail && completionItem.detail) {
+          existing.detail = completionItem.detail;
+        }
       },
       error: (message: string) => {
         this.telemetry?.sendError('yaml.completion.error', message);
@@ -781,12 +784,14 @@ export class YamlCompletion {
                   }
 
                   let insertText = key;
+                  const isRequiredProp = Array.isArray(schema.schema.required) ? schema.schema.required.includes(key) : false;
                   if (!key.startsWith(existingKey) || !hasColon) {
                     insertText = this.getInsertTextForProperty(
                       key,
                       propertySchema,
                       separatorAfter,
-                      identCompensation + this.indentation
+                      identCompensation + this.indentation,
+                      isRequiredProp
                     );
                   }
                   const isNodeNull =
@@ -813,7 +818,8 @@ export class YamlCompletion {
                         key,
                         propertySchema,
                         separatorAfter,
-                        identCompensation + this.indentation
+                        identCompensation + this.indentation,
+                        true
                       ),
                       insertTextFormat: InsertTextFormat.Snippet,
                       documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
@@ -995,10 +1001,12 @@ export class YamlCompletion {
     key: string,
     propertySchema: JSONSchema,
     separatorAfter: string,
-    indent = this.indentation
+    indent = this.indentation,
+    isRequired = false
   ): string {
     const propertyText = this.getInsertTextForValue(key, '', 'string');
     const resultText = propertyText + ':';
+    const hasRequiredDefault = propertySchema && isRequired && isDefined(propertySchema.default);
 
     let value: string;
     let nValueProposals = 0;
@@ -1053,8 +1061,12 @@ export class YamlCompletion {
       }
 
       if (isDefined(propertySchema.default)) {
-        if (!value) {
-          value = ' ' + this.getInsertTextForGuessedValue(propertySchema.default, '', type);
+        if (!value || hasRequiredDefault) {
+          let defText = this.getInsertTextForGuessedValue(propertySchema.default, '', type);
+          if (hasRequiredDefault) {
+            defText = this.evaluateTab1Symbol(defText);
+          }
+          value = ' ' + defText;
         }
         nValueProposals++;
       }
@@ -1074,9 +1086,8 @@ export class YamlCompletion {
       if (nValueProposals === 0) {
         switch (type) {
           case 'boolean':
-            value = ' $1';
-            break;
           case 'string':
+          case 'anyOf':
             value = ' $1';
             break;
           case 'object':
@@ -1092,15 +1103,12 @@ export class YamlCompletion {
           case 'null':
             value = ' ${1:null}';
             break;
-          case 'anyOf':
-            value = ' $1';
-            break;
           default:
             return propertyText;
         }
       }
     }
-    if (!value || nValueProposals > 1) {
+    if (!value || (nValueProposals > 1 && !hasRequiredDefault)) {
       value = ' $1';
     }
     return resultText + value + separatorAfter;
