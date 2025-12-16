@@ -77,8 +77,7 @@ export function toYamlStringScalar(s: string, preferSingleQuote = false): string
   }
 
   // newlines, tabs, or carriage return
-  // eslint-disable-next-line no-control-regex
-  if (/[\u0000-\u001F\u007F]/.test(s)) {
+  if (/[\n\t\r]/.test(s)) {
     return JSON.stringify(s);
   }
 
