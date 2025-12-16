@@ -30,9 +30,9 @@ export function toYamlStringScalar(s: string, preferSingleQuote = false): string
     }
   }
 
-  // unescape strings with double quotes if they were escaped
-  if (s.indexOf('"') !== -1) {
-    s = s.replace(/\\+"/g, '"');
+  // strings containing quotes or backslashes
+  if (/["\\]/.test(s)) {
+    return JSON.stringify(s);
   }
 
   // support YAML spec 1.1 boolean values and null
@@ -76,8 +76,9 @@ export function toYamlStringScalar(s: string, preferSingleQuote = false): string
     return preferSingleQuote ? `'${s.replace(/'/g, "''")}'` : JSON.stringify(s);
   }
 
-  // newlines or tabs or carriage return
-  if (/[\r\n\t]/.test(s)) {
+  // newlines, tabs, or carriage return
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001F\u007F]/.test(s)) {
     return JSON.stringify(s);
   }
 

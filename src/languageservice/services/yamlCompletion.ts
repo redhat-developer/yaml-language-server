@@ -231,39 +231,7 @@ export class YamlCompletion {
         if (!isString(label)) {
           label = String(label);
         }
-        const isQuoted = label.length >= 2 && (label[0] === '"' || label[0] === "'") && label[0] === label[label.length - 1];
-        if (isQuoted) {
-          // for quoted strings, only replace escape sequences (\\n, \\t, \\r)
-          const quote = label[0];
-          const inner = label.slice(1, -1);
-          const replaced = inner.replace(/\\[ntr]/g, (match) => {
-            switch (match) {
-              case '\\n':
-                return '↵';
-              case '\\t':
-                return '↹';
-              case '\\r':
-                return '␍';
-              default:
-                return match;
-            }
-          });
-          label = quote + replaced + quote;
-        } else {
-          // For unquoted strings, replace actual special characters
-          label = label.replace(/[\n\t\r]/g, (match) => {
-            switch (match) {
-              case '\n':
-                return '↵';
-              case '\t':
-                return '↹';
-              case '\r':
-                return '␍';
-              default:
-                return match;
-            }
-          });
-        }
+        label = label.replace(/\n|\\n/g, '↵');
         if (label.length > 60) {
           const shortendedLabel = label.substr(0, 57).trim() + '...';
           if (!proposed[shortendedLabel]) {
@@ -281,7 +249,7 @@ export class YamlCompletion {
         } else {
           const mdText = completionItem.insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
           // handle single special characters that need escaping: ', ", \
-          const singleCharMatch = mdText.match(/^([^:]+):\s*(['\\"\\])$/);
+          const singleCharMatch = mdText.match(/^([^:"]+):\s*(['\\"\\])$/);
           if (singleCharMatch) {
             const key = singleCharMatch[1];
             const char = singleCharMatch[2];
@@ -1081,7 +1049,7 @@ export class YamlCompletion {
         nValueProposals += propertySchema.enum.length;
       }
 
-      if (propertySchema.const) {
+      if (isDefined(propertySchema.const)) {
         if (!value) {
           value = this.getInsertTextForGuessedValue(propertySchema.const, '', type);
           value = this.evaluateTab1Symbol(value); // prevent const being selected after snippet insert

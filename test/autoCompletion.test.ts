@@ -1946,7 +1946,7 @@ describe('Auto Completion Tests', () => {
 
       expect(completion.items.length).equal(1);
       expect(completion.items[0]).to.deep.equal(
-        createExpectedCompletion('@test', '"@test"', 0, 6, 0, 6, 12, 2, {
+        createExpectedCompletion('"@test"', '"@test"', 0, 6, 0, 6, 12, 2, {
           documentation: undefined,
         })
       );
@@ -2409,11 +2409,11 @@ describe('Auto Completion Tests', () => {
       expect(testItem).to.not.undefined;
       expect(testItem.textEdit.newText).equal('test');
 
-      const oneItem = completion.items.find((i) => i.label === '1');
+      const oneItem = completion.items.find((i) => i.label === '"1"');
       expect(oneItem).to.not.undefined;
       expect(oneItem.textEdit.newText).equal('"1"');
 
-      const trueItem = completion.items.find((i) => i.label === 'true');
+      const trueItem = completion.items.find((i) => i.label === '"true"');
       expect(trueItem).to.not.undefined;
       expect(trueItem.textEdit.newText).equal('"true"');
     });
