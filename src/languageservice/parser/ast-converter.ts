@@ -145,6 +145,19 @@ function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
       result.isInteger = Number.isInteger(result.value);
       return result;
     }
+    case 'bigint': {
+      const numberValue = Number(node.value);
+      if (Number.isSafeInteger(numberValue)) {
+        const result = new NumberASTNodeImpl(parent, node, ...toOffsetLength(node.range));
+        result.value = numberValue;
+        result.isInteger = true;
+        return result;
+      }
+
+      const result = new StringASTNodeImpl(parent, node, ...toOffsetLength(node.range));
+      result.value = node.value.toString();
+      return result;
+    }
     default: {
       // fail safe converting, we need to return some node anyway
       const result = new StringASTNodeImpl(parent, node, ...toOffsetLength(node.range));
