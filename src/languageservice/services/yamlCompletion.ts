@@ -37,9 +37,8 @@ import { isModeline } from './modelineUtil';
 import { getSchemaTypeName, isAnyOfAllOfOneOfType, isPrimitiveType } from '../utils/schemaUtils';
 import { YamlNode } from '../jsonASTTypes';
 import { SettingsState } from '../../yamlSettings';
+import { toYamlStringScalar } from '../utils/yamlScalar';
 import * as l10n from '@vscode/l10n';
-
-const doubleQuotesEscapeRegExp = /[\\]+"/g;
 
 const parentCompletionKind = CompletionItemKind.Class;
 
@@ -232,8 +231,7 @@ export class YamlCompletion {
         if (!isString(label)) {
           label = String(label);
         }
-
-        label = label.replace(/[\n]/g, '↵');
+        label = label.replace(/\n|\\n/g, '↵');
         if (label.length > 60) {
           const shortendedLabel = label.substr(0, 57).trim() + '...';
           if (!proposed[shortendedLabel]) {
@@ -249,13 +247,13 @@ export class YamlCompletion {
           completionItem.insertText = label;
           completionItem.textEdit = TextEdit.replace(overwriteRange, label);
         } else {
-          let mdText = completionItem.insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
-          const splitMDText = mdText.split(':');
-          let value = splitMDText.length > 1 ? splitMDText[1].trim() : mdText;
-          if (value && /^(['\\"\\])$/.test(value)) {
-            value = `${this.getQuote()}\\${value}${this.getQuote()}`;
-            mdText = splitMDText.length > 1 ? splitMDText[0] + ': ' + value : value;
-            completionItem.insertText = mdText;
+          const mdText = completionItem.insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
+          // handle single special characters that need escaping: ', ", \
+          const singleCharMatch = mdText.match(/^([^:"]+):\s*(['\\"\\])$/);
+          if (singleCharMatch) {
+            const key = singleCharMatch[1];
+            const char = singleCharMatch[2];
+            completionItem.insertText = `${key}: ${this.getQuote()}\\${char}${this.getQuote()}`;
           }
           // trim $1 from end of completion
           if (completionItem.insertText.endsWith('$1') && !isForParentCompletion) {
@@ -1051,7 +1049,7 @@ export class YamlCompletion {
         nValueProposals += propertySchema.enum.length;
       }
 
-      if (propertySchema.const) {
+      if (isDefined(propertySchema.const)) {
         if (!value) {
           value = this.getInsertTextForGuessedValue(propertySchema.const, '', type);
           value = this.evaluateTab1Symbol(value); // prevent const being selected after snippet insert
@@ -1150,7 +1148,7 @@ export class YamlCompletion {
             let value = propertySchema.default || propertySchema.const;
             if (value) {
               if (type === 'string') {
-                value = this.convertToStringValue(value);
+                value = toYamlStringScalar(value);
               }
               insertText += `${indent}${key}: \${${insertIndex++}:${value}}\n`;
             } else {
@@ -1198,7 +1196,7 @@ export class YamlCompletion {
             }: \${${insertIndex++}:${propertySchema.default}}\n`;
             break;
           case 'string':
-            insertText += `${indent}${key}: \${${insertIndex++}:${this.convertToStringValue(propertySchema.default)}}\n`;
+            insertText += `${indent}${key}: \${${insertIndex++}:${toYamlStringScalar(propertySchema.default)}}\n`;
             break;
           case 'array':
           case 'object':
@@ -1261,12 +1259,10 @@ export class YamlCompletion {
         }
         return this.getInsertTextForValue(value, separatorAfter, type);
       case 'string': {
-        let snippetValue = JSON.stringify(value);
-        snippetValue = snippetValue.substr(1, snippetValue.length - 2); // remove quotes
-        snippetValue = this.getInsertTextForPlainText(snippetValue); // escape \ and }
-        if (type === 'string') {
-          snippetValue = this.convertToStringValue(snippetValue);
+        if (type === 'number' || type === 'integer') {
+          return '${1:' + value + '}' + separatorAfter;
         }
+        const snippetValue = this.getInsertTextForPlainText(toYamlStringScalar(value));
         return '${1:' + snippetValue + '}' + separatorAfter;
       }
       case 'number':
@@ -1277,7 +1273,7 @@ export class YamlCompletion {
   }
 
   private getInsertTextForPlainText(text: string): string {
-    return text.replace(/[\\$}]/g, '\\$&'); // escape $, \ and }
+    return text.replace(/\\(?=[$}\\])/g, '\\\\').replace(/[$}]/g, '\\$&');
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1296,7 +1292,7 @@ export class YamlCompletion {
     }
     type = Array.isArray(type) ? type[0] : type;
     if (type === 'string') {
-      value = this.convertToStringValue(value);
+      value = toYamlStringScalar(String(value), this.isSingleQuote);
     }
     return this.getInsertTextForPlainText(value + separatorAfter);
   }
@@ -1397,10 +1393,10 @@ export class YamlCompletion {
         type = 'array';
       }
       let label;
-      if (typeof value == 'object') {
+      if (typeof value === 'object') {
         label = l10n.t('Default Value');
       } else {
-        label = (value as unknown).toString().replace(doubleQuotesEscapeRegExp, '"');
+        label = this.getLabelForValue(value);
       }
       collector.add({
         kind: this.getSuggestionKind(type),
@@ -1485,7 +1481,10 @@ export class YamlCompletion {
     if (Array.isArray(value)) {
       return JSON.stringify(value);
     }
-    return '' + value;
+    if (typeof value === 'string') {
+      return toYamlStringScalar(value, this.isSingleQuote);
+    }
+    return String(value);
   }
 
   private collectDefaultSnippets(
@@ -1703,59 +1702,6 @@ export class YamlCompletion {
     }
 
     return 0;
-  }
-
-  isNumberExp = /^\d+$/;
-  convertToStringValue(param: unknown): string {
-    let value: string;
-    if (typeof param === 'string') {
-      //support YAML spec 1.1 boolean values
-      value = ['on', 'off', 'true', 'false', 'yes', 'no'].includes(param.toLowerCase())
-        ? `${this.getQuote()}${param}${this.getQuote()}`
-        : param;
-    } else {
-      value = '' + param;
-    }
-    if (value.length === 0) {
-      return value;
-    }
-
-    if (value === 'true' || value === 'false' || value === 'null' || this.isNumberExp.test(value)) {
-      return `"${value}"`;
-    }
-
-    if (value.indexOf('"') !== -1) {
-      value = value.replace(doubleQuotesEscapeRegExp, '"');
-    }
-
-    let doQuote = !isNaN(parseInt(value)) || value.charAt(0) === '@';
-
-    if (!doQuote) {
-      // need to quote value if in `foo: bar`, `foo : bar` (mapping) or `foo:` (partial map) format
-      // but `foo:bar` and `:bar` (colon without white-space after it) are just plain string
-      let idx = value.indexOf(':', 0);
-      for (; idx > 0 && idx < value.length; idx = value.indexOf(':', idx + 1)) {
-        if (idx === value.length - 1) {
-          // `foo:` (partial map) format
-          doQuote = true;
-          break;
-        }
-
-        // there are only two valid kinds of white-space in yaml: space or tab
-        // ref: https://yaml.org/spec/1.2.1/#id2775170
-        const nextChar = value.charAt(idx + 1);
-        if (nextChar === '\t' || nextChar === ' ') {
-          doQuote = true;
-          break;
-        }
-      }
-    }
-
-    if (doQuote) {
-      value = `"${value}"`;
-    }
-
-    return value;
   }
 
   getQuote(): string {

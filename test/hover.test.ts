@@ -744,6 +744,35 @@ Allowed Values:
 Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
+    it('Hover displays escaped quote strings correctly in enum', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          value: {
+            type: 'string',
+            description: 'Test enum with special quote strings',
+            enum: ['', '""', "''"],
+          },
+        },
+      });
+      const content = 'value: |\n|'; // len: 8, pos: 7
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `Test enum with special quote strings
+
+Allowed Values:
+
+* \`"''"\`
+* \`""\`
+* \`"\\"\\""\`
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
 
     it('Hover works on examples', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {

@@ -20,6 +20,7 @@ import * as l10n from '@vscode/l10n';
 import { Telemetry } from '../telemetry';
 import { ASTNode } from 'vscode-json-languageservice';
 import { stringify as stringifyYAML } from 'yaml';
+import { toYamlStringScalar } from '../utils/yamlScalar';
 
 export class YAMLHover {
   private shouldHover: boolean;
@@ -130,9 +131,7 @@ export class YAMLHover {
                 markdownEnumDescriptions = [];
               }
               s.schema.enum.forEach((enumValue, idx) => {
-                if (typeof enumValue !== 'string') {
-                  enumValue = JSON.stringify(enumValue);
-                }
+                enumValue = typeof enumValue === 'string' ? toYamlStringScalar(enumValue, false) : JSON.stringify(enumValue);
                 //insert only if the value is not present yet (avoiding duplicates)
                 //but it also adds or keeps the description of the enum value
                 const foundIdx = markdownEnums.findIndex((me) => me.value === enumValue);

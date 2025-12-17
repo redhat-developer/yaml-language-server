@@ -18,6 +18,7 @@ import { ClientCapabilities, CodeActionParams } from 'vscode-languageserver-prot
 import { YamlCommands } from '../../commands';
 import * as path from 'path';
 import { TextBuffer } from '../utils/textBuffer';
+import { toYamlStringScalar } from '../utils/yamlScalar';
 import { LanguageSettings } from '../yamlLanguageService';
 import { YAML_SOURCE } from '../parser/jsonParser07';
 import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings';
@@ -349,10 +350,11 @@ export class YamlCodeActions {
         continue;
       }
       for (const value of values) {
+        const scalar = typeof value === 'string' ? toYamlStringScalar(value) : String(value);
         results.push(
           CodeAction.create(
-            String(value),
-            createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, String(value))]),
+            scalar,
+            createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, scalar)]),
             CodeActionKind.QuickFix
           )
         );
