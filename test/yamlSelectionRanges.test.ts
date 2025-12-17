@@ -145,8 +145,8 @@ key:
     const ranges = getSelectionRanges(document, positions);
     expect(ranges.length).equal(positions.length);
     expectSelections(ranges[0], [
+      { start: { line: 2, character: 4 }, end: { line: 2, character: 5 } },
       { start: { line: 2, character: 2 }, end: { line: 3, character: 9 } },
-      { start: { line: 1, character: 0 }, end: { line: 3, character: 9 } },
     ]);
   });
 

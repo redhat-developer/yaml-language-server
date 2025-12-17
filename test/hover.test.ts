@@ -617,11 +617,158 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
 
 Allowed Values:
 
+* \`non\`
 * \`cat\`
 * \`dog\`: Canis familiaris
-* \`non\`
 * \`bird\`
 * \`fish\`: Special fish
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
+    it('Hover displays unique enum values with prroper description (1st case)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            description: 'should return this description',
+            anyOf: [
+              {
+                enum: ['cat', 'dog', 'fish'],
+                enumDescriptions: ['1st cat', '1st dog', '1st fish'], // should use this description for "fish"
+              },
+              {
+                enum: ['bird', 'fish', 'ant'],
+              },
+            ],
+          },
+        },
+      });
+      const content = 'animal:\n  fis|n|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+Allowed Values:
+
+* \`ant\`
+* \`cat\`: 1st cat
+* \`dog\`: 1st dog
+* \`fish\`: 1st fish
+* \`bird\`
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
+    it('Hover displays unique enum values with prroper description (2nd case)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            description: 'should return this description',
+            anyOf: [
+              {
+                enum: ['cat', 'dog', 'fish'],
+              },
+              {
+                enum: ['bird', 'fish', 'ant'],
+                enumDescriptions: ['2nd bird', '2nd fish', '2nd ant'], // should use this description for "fish"
+              },
+            ],
+          },
+        },
+      });
+      const content = 'animal:\n  fis|n|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+Allowed Values:
+
+* \`ant\`: 2nd ant
+* \`cat\`
+* \`dog\`
+* \`fish\`: 2nd fish
+* \`bird\`: 2nd bird
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
+    it('Hover displays unique enum values with prroper description (3rd case)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            description: 'should return this description',
+            anyOf: [
+              {
+                enum: ['cat', 'dog', 'fish'],
+                enumDescriptions: ['1st cat', '1st dog', '1st fish'], // should use this description for "fish"
+              },
+              {
+                enum: ['bird', 'fish', 'ant'],
+                enumDescriptions: ['2nd bird', '2nd fish', '2nd ant'],
+              },
+            ],
+          },
+        },
+      });
+      const content = 'animal:\n  fis|n|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+Allowed Values:
+
+* \`ant\`: 2nd ant
+* \`cat\`: 1st cat
+* \`dog\`: 1st dog
+* \`fish\`: 1st fish
+* \`bird\`: 2nd bird
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+    it('Hover displays escaped quote strings correctly in enum', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          value: {
+            type: 'string',
+            description: 'Test enum with special quote strings',
+            enum: ['', '""', "''"],
+          },
+        },
+      });
+      const content = 'value: |\n|'; // len: 8, pos: 7
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `Test enum with special quote strings
+
+Allowed Values:
+
+* \`"''"\`
+* \`""\`
+* \`"\\"\\""\`
 
 Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
@@ -909,6 +1056,117 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       const result = await parseSetup(content);
       expect(telemetry.messages).to.be.empty;
       expect(result).to.be.null;
+    });
+  });
+
+  describe('YAML 1.1 boolean hover', () => {
+    let yaml11LanguageHandler: LanguageHandlers;
+    let yaml11Settings: SettingsState;
+    let yaml11SchemaProvider: TestCustomSchemaProvider;
+
+    before(() => {
+      const yaml11Setup = new ServiceSetup().withHover().withYamlVersion('1.1');
+      const {
+        languageHandler: langHandler,
+        yamlSettings: settings,
+        schemaProvider: testSchemaProvider,
+      } = setupLanguageService(yaml11Setup.languageSettings);
+      yaml11LanguageHandler = langHandler;
+      yaml11Settings = settings;
+      yaml11SchemaProvider = testSchemaProvider;
+    });
+
+    afterEach(() => {
+      yaml11SchemaProvider.deleteSchema(SCHEMA_ID);
+    });
+
+    function parseSetupYaml11(content: string, position?: number): Promise<Hover> {
+      if (typeof position === 'undefined') {
+        ({ content, position } = caretPosition(content));
+      }
+      const testTextDocument = setupSchemaIDTextDocument(content);
+      yaml11Settings.documents = new TextDocumentTestManager();
+      (yaml11Settings.documents as TextDocumentTestManager).set(testTextDocument);
+      return yaml11LanguageHandler.hoverHandler({
+        position: testTextDocument.positionAt(position),
+        textDocument: testTextDocument,
+      });
+    }
+
+    it('Hover on YAML 1.1 boolean value "True" with enum schema', async () => {
+      yaml11SchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          enabled: {
+            type: 'boolean',
+            description: 'Enable or disable the feature',
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'enabled: |T|rue';
+      const result = await parseSetupYaml11(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.notStrictEqual((result.contents as MarkupContent).value, '');
+      expect((result.contents as MarkupContent).value).to.include('Enable or disable the feature');
+    });
+
+    it('Hover on YAML 1.1 boolean value "False" with enum schema', async () => {
+      yaml11SchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          enabled: {
+            type: 'boolean',
+            description: 'Enable or disable the feature',
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'enabled: |F|alse';
+      const result = await parseSetupYaml11(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.notStrictEqual((result.contents as MarkupContent).value, '');
+      expect((result.contents as MarkupContent).value).to.include('Enable or disable the feature');
+    });
+
+    it('Hover on YAML 1.1 boolean value "yes" with const schema', async () => {
+      yaml11SchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          confirmed: {
+            type: 'boolean',
+            description: 'Confirmation flag',
+            const: true,
+          },
+        },
+      });
+      const content = 'confirmed: |y|es';
+      const result = await parseSetupYaml11(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.notStrictEqual((result.contents as MarkupContent).value, '');
+      expect((result.contents as MarkupContent).value).to.include('Confirmation flag');
+    });
+
+    it('Hover on YAML 1.1 boolean value "no" with const schema', async () => {
+      yaml11SchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          disabled: {
+            type: 'boolean',
+            description: 'Disabled flag',
+            const: false,
+          },
+        },
+      });
+      const content = 'disabled: |n|o';
+      const result = await parseSetupYaml11(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.notStrictEqual((result.contents as MarkupContent).value, '');
+      expect((result.contents as MarkupContent).value).to.include('Disabled flag');
     });
   });
 });

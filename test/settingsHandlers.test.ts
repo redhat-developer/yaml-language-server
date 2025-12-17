@@ -369,7 +369,7 @@ describe('Settings Handlers Tests', () => {
       expect(workspaceStub.getConfiguration).calledOnceWith([
         { section: 'yaml' },
         { section: 'http' },
-        { section: '[yaml]' },
+        { section: '[yaml]', scopeUri: 'null' },
         { section: 'editor' },
         { section: 'files' },
       ]);
@@ -409,7 +409,7 @@ describe('Settings Handlers Tests', () => {
       expect(workspaceStub.getConfiguration).calledOnceWith([
         { section: 'yaml' },
         { section: 'http' },
-        { section: '[yaml]' },
+        { section: '[yaml]', scopeUri: 'null' },
         { section: 'editor' },
         { section: 'files' },
       ]);
