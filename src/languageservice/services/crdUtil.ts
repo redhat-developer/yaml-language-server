@@ -29,13 +29,12 @@ export function autoDetectKubernetesSchemaFromDocument(
   }
 
   const k8sSchema: JSONSchema = kubernetesSchema.schema;
-  let kubernetesBuildIns: string[] = k8sSchema.oneOf
+  const kubernetesBuildIns: string[] = k8sSchema.oneOf
     .map((s) => {
       if (typeof s === 'boolean') {
         return undefined;
       }
-      // @ts-ignore
-      return s._$ref;
+      return s.$ref;
     })
     .filter((ref) => ref)
     .map((ref) => ref.replace('_definitions.json#/definitions/', '').toLowerCase());
