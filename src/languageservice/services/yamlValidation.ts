@@ -4,21 +4,23 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Diagnostic, Position } from 'vscode-languageserver-types';
-import { LanguageSettings } from '../yamlLanguageService';
-import { YAMLDocument, YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07';
-import { YAMLSchemaService } from './yamlSchemaService';
-import { YAMLDocDiagnostic } from '../utils/parseUtils';
+import { OutputUnit, validate } from '@hyperjump/json-schema/draft-07';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
+import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver-types';
+import { parse } from 'yaml';
+import { ArrayASTNode, PropertyASTNode } from '../jsonASTTypes';
 import { YAML_SOURCE } from '../parser/jsonParser07';
-import { TextBuffer } from '../utils/textBuffer';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
+import { SingleYAMLDocument, YAMLDocument, YamlVersion } from '../parser/yamlParser07';
 import { Telemetry } from '../telemetry';
+import { YAMLDocDiagnostic } from '../utils/parseUtils';
+import { TextBuffer } from '../utils/textBuffer';
+import { LanguageSettings } from '../yamlLanguageService';
+import { MapKeyOrderValidator } from './validation/map-key-order';
 import { AdditionalValidator } from './validation/types';
 import { UnusedAnchorsValidator } from './validation/unused-anchors';
 import { YAMLStyleValidator } from './validation/yaml-style';
-import { MapKeyOrderValidator } from './validation/map-key-order';
+import { YAMLSchemaService } from './yamlSchemaService';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -44,6 +46,7 @@ export class YAMLValidation {
   private disableAdditionalProperties: boolean;
   private yamlVersion: YamlVersion;
   private validators: AdditionalValidator[] = [];
+  private schemaService: YAMLSchemaService;
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
@@ -52,7 +55,8 @@ export class YAMLValidation {
     private readonly telemetry?: Telemetry
   ) {
     this.validationEnabled = true;
-    this.jsonValidation = new JSONValidation(schemaService, Promise);
+    this.schemaService = schemaService;
+    // this.jsonValidation = new JSONValidation(schemaService, Promise);
   }
 
   public configure(settings: LanguageSettings): void {
@@ -93,7 +97,38 @@ export class YAMLValidation {
         currentYAMLDoc.disableAdditionalProperties = this.disableAdditionalProperties;
         currentYAMLDoc.uri = textDocument.uri;
 
-        const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
+        const schema = await this.schemaService.getSchemaForResource(textDocument.uri, currentYAMLDoc);
+        const hyperschemaResult = await validate(schema.schema.url, parse(textDocument.getText()), 'BASIC');
+        const validation: Diagnostic[] = [];
+        if (!hyperschemaResult.valid) {
+          const errors = (hyperschemaResult as { errors: OutputUnit[] }).errors;
+          for (const error of errors) {
+            const segments = error.instanceLocation.split('/');
+            let pointer = currentYAMLDoc.root;
+            // skip leading `#`
+            for (let i = 1; i < segments.length; i++) {
+              const toGet = segments[i];
+              const toGetNumber = parseInt(toGet);
+              if (!isNaN(toGetNumber)) {
+                pointer = ((pointer as PropertyASTNode).valueNode as ArrayASTNode).items[toGetNumber];
+              } else {
+                pointer = pointer.children.find((child) => (child as PropertyASTNode).keyNode.value === toGet);
+              }
+            }
+            pointer = pointer.type === 'property' ? (pointer as PropertyASTNode).valueNode : pointer;
+            validation.push({
+              message: error.keyword,
+              range: Range.create(
+                textDocument.positionAt(pointer.offset),
+                textDocument.positionAt(pointer.offset + pointer.length)
+              ),
+              severity: DiagnosticSeverity.Error,
+              code: error.keyword,
+            });
+          }
+        }
+
+        // const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
 
         const syd = currentYAMLDoc as unknown as SingleYAMLDocument;
         if (syd.errors.length > 0) {
