@@ -25,6 +25,8 @@ import {
   CodeLens,
   DefinitionLink,
   SelectionRange,
+  Range,
+  WorkspaceEdit,
 } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
@@ -39,6 +41,8 @@ import {
   Connection,
   DocumentOnTypeFormattingParams,
   DefinitionParams,
+  PrepareRenameParams,
+  RenameParams,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getFoldingRanges } from './services/yamlFolding';
@@ -54,6 +58,7 @@ import { SettingsState } from '../yamlSettings';
 import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers';
 import { YamlDefinition } from './services/yamlDefinition';
 import { getSelectionRanges } from './services/yamlSelectionRanges';
+import { YamlRename } from './services/yamlRename';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -180,6 +185,8 @@ export interface LanguageService {
   getCodeAction: (document: TextDocument, params: CodeActionParams) => CodeAction[] | undefined;
   getCodeLens: (document: TextDocument) => PromiseLike<CodeLens[] | undefined> | CodeLens[] | undefined;
   resolveCodeLens: (param: CodeLens) => PromiseLike<CodeLens> | CodeLens;
+  prepareRename: (document: TextDocument, params: PrepareRenameParams) => Range | null;
+  doRename: (document: TextDocument, params: RenameParams) => WorkspaceEdit | null;
 }
 
 export function getLanguageService(params: {
@@ -200,6 +207,7 @@ export function getLanguageService(params: {
   const yamlCodeLens = new YamlCodeLens(schemaService, params.telemetry);
   const yamlLinks = new YamlLinks(params.telemetry);
   const yamlDefinition = new YamlDefinition(params.telemetry);
+  const yamlRename = new YamlRename(params.telemetry);
 
   new JSONSchemaSelection(schemaService, params.yamlSettings, params.connection);
 
@@ -266,5 +274,7 @@ export function getLanguageService(params: {
       return yamlCodeLens.getCodeLens(document);
     },
     resolveCodeLens: (param) => yamlCodeLens.resolveCodeLens(param),
+    prepareRename: (document, params) => yamlRename.prepareRename(document, params),
+    doRename: (document, params) => yamlRename.doRename(document, params),
   };
 }
