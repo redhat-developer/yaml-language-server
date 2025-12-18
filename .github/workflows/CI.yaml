@@ -34,23 +34,23 @@ jobs:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       # Set up Node
-      - name: Use Node 16
-        uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2.5.2
+      - name: Use Node 20
+        uses: actions/setup-node@v5
         with:
-          node-version: 16
-          registry-url: "https://registry.npmjs.org"
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
 
       # Run install dependencies
       - name: Install dependencies
-        run: yarn
+        run: npm ci
 
       # Build extension
       - name: Run build
-        run: yarn build
+        run: npm run build
 
       - name: Generate SARIF
         if: matrix.os == 'ubuntu-latest'
-        run: yarn lint-ci
+        run: npm run lint-ci
 
       - name: Upload SARIF file
         if: matrix.os == 'ubuntu-latest'
@@ -66,17 +66,20 @@ jobs:
       - name: Run Test
         uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3 # v1.0.1
         with:
-          run: yarn coveralls
+          run: npm run coveralls
 
         # Run Coveralls
       - name: Coveralls
+        if: matrix.os == 'ubuntu-latest'
         uses: coverallsapp/github-action@c7885c00cb7ec0b8f9f5ff3f53cddb980f7a4412 # v2.2.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish
         if: ${{ success() && runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/main'}}
-        run: yarn publish --tag next --no-git-tag-version --prepatch --preid "$(git rev-parse --short HEAD)"
+        run: |
+          npm version prerelease --preid $(git rev-parse --short HEAD) --no-git-tag-version
+          npm publish --tag next
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

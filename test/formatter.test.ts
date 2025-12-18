@@ -2,12 +2,12 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { setupLanguageService, setupTextDocument } from './utils/testHelper';
-import { ServiceSetup } from './utils/serviceSetup';
 import * as assert from 'assert';
 import { TextEdit } from 'vscode-languageserver-types';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { ServiceSetup } from './utils/serviceSetup';
+import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 
 describe('Formatter Tests', () => {
   let languageHandler: LanguageHandlers;
@@ -58,6 +58,42 @@ describe('Formatter Tests', () => {
           proseWrap: 'always',
         });
         assert.equal(edits[0].newText, 'comments: >\n  test test test\n  test test test\n  test test test\n  test test test\n');
+      });
+
+      it('Formatting handles trailing commas (enabled)', async () => {
+        const content = `{
+  key: 'value',
+  food: 'raisins',
+  airport: 'YYZ',
+  lightened_bulb: 'illuminating',
+}
+`;
+        const edits = await parseSetup(content, { singleQuote: true });
+        assert.equal(edits[0].newText, content);
+      });
+
+      it('Formatting handles trailing commas (disabled)', async () => {
+        const content = `{
+  key: 'value',
+  food: 'raisins',
+  airport: 'YYZ',
+  lightened_bulb: 'illuminating',
+}
+`;
+        const edits = await parseSetup(content, {
+          singleQuote: true,
+          trailingComma: false,
+        });
+        assert.equal(
+          edits[0].newText,
+          `{
+  key: 'value',
+  food: 'raisins',
+  airport: 'YYZ',
+  lightened_bulb: 'illuminating'
+}
+`
+        );
       });
 
       it('Formatting uses tabSize', async () => {

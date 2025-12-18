@@ -73,6 +73,7 @@ export class SettingsState {
     bracketSpacing: true,
     proseWrap: 'preserve',
     printWidth: 80,
+    trailingComma: true,
     enable: true,
   } as CustomFormatterOptions;
   yamlShouldHover = true;
@@ -97,7 +98,7 @@ export class SettingsState {
   maxItemsComputed = 5000;
 
   // File validation helpers
-  pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
+  pendingValidationRequests: { [uri: string]: NodeJS.Timeout } = {};
   validationDelayMs = 200;
 
   // Create a simple text document manager. The text document manager

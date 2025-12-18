@@ -5,6 +5,7 @@ import { FlowCollection } from 'yaml/dist/parse/cst';
 import { SingleYAMLDocument } from '../../parser/yaml-documents';
 import { LanguageSettings } from '../../yamlLanguageService';
 import { AdditionalValidator } from './types';
+import * as l10n from '@vscode/l10n';
 
 export class YAMLStyleValidator implements AdditionalValidator {
   private forbidSequence: boolean;
@@ -21,7 +22,7 @@ export class YAMLStyleValidator implements AdditionalValidator {
         result.push(
           Diagnostic.create(
             this.getRangeOf(document, node.srcToken),
-            'Flow style mapping is forbidden',
+            l10n.t('flowStyleMapForbidden', 'Flow style mapping is forbidden'),
             DiagnosticSeverity.Error,
             'flowMap'
           )
@@ -31,7 +32,7 @@ export class YAMLStyleValidator implements AdditionalValidator {
         result.push(
           Diagnostic.create(
             this.getRangeOf(document, node.srcToken),
-            'Flow style sequence is forbidden',
+            l10n.t('flowStyleSeqForbidden'),
             DiagnosticSeverity.Error,
             'flowSeq'
           )
@@ -42,6 +43,9 @@ export class YAMLStyleValidator implements AdditionalValidator {
   }
 
   private getRangeOf(document: TextDocument, node: FlowCollection): Range {
-    return Range.create(document.positionAt(node.start.offset), document.positionAt(node.end.pop().offset));
+    const endOffset = node.end[0].offset;
+    let endPosition = document.positionAt(endOffset);
+    endPosition = { character: endPosition.character + 1, line: endPosition.line };
+    return Range.create(document.positionAt(node.start.offset), endPosition);
   }
 }

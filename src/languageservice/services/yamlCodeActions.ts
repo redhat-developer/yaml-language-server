@@ -18,6 +18,7 @@ import { ClientCapabilities, CodeActionParams } from 'vscode-languageserver-prot
 import { YamlCommands } from '../../commands';
 import * as path from 'path';
 import { TextBuffer } from '../utils/textBuffer';
+import { toYamlStringScalar } from '../utils/yamlScalar';
 import { LanguageSettings } from '../yamlLanguageService';
 import { YAML_SOURCE } from '../parser/jsonParser07';
 import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings';
@@ -29,6 +30,7 @@ import { ASTNode } from '../jsonASTTypes';
 import * as _ from 'lodash';
 import { SourceToken } from 'yaml/dist/parse/cst';
 import { ErrorCode } from 'vscode-json-languageservice';
+import * as l10n from '@vscode/l10n';
 
 interface YamlDiagnosticData {
   schemaUri: string[];
@@ -82,7 +84,7 @@ export class YamlCodeActions {
     const result = [];
     for (const schemaUri of schemaUriToDiagnostic.keys()) {
       const action = CodeAction.create(
-        `Jump to schema location (${path.basename(schemaUri)})`,
+        l10n.t('jumpToSchema', path.basename(schemaUri)),
         Command.create('JumpToSchema', YamlCommands.JUMP_TO_SCHEMA, schemaUri)
       );
       action.diagnostics = schemaUriToDiagnostic.get(schemaUri);
@@ -97,7 +99,7 @@ export class YamlCodeActions {
     const textBuff = new TextBuffer(document);
     const processedLine: number[] = [];
     for (const diag of diagnostics) {
-      if (diag.message === 'Using tabs can lead to unpredictable results') {
+      if (diag.message === 'Tabs are not allowed as indentation') {
         if (processedLine.includes(diag.range.start.line)) {
           continue;
         }
@@ -123,7 +125,7 @@ export class YamlCodeActions {
         }
         result.push(
           CodeAction.create(
-            'Convert Tab to Spaces',
+            l10n.t('convertToSpace'),
             createWorkspaceEdit(document.uri, [TextEdit.replace(resultRange, newText)]),
             CodeActionKind.QuickFix
           )
@@ -168,7 +170,7 @@ export class YamlCodeActions {
       if (replaceEdits.length > 0) {
         result.push(
           CodeAction.create(
-            'Convert all Tabs to Spaces',
+            l10n.t('convertAllSpaceToTab'),
             createWorkspaceEdit(document.uri, replaceEdits),
             CodeActionKind.QuickFix
           )
@@ -190,7 +192,7 @@ export class YamlCodeActions {
         const lastWhitespaceChar = getFirstNonWhitespaceCharacterAfterOffset(lineContent, range.end.character);
         range.end.character = lastWhitespaceChar;
         const action = CodeAction.create(
-          `Delete unused anchor: ${actual}`,
+          l10n.t('deleteUnusedAnchor', actual),
           createWorkspaceEdit(document.uri, [TextEdit.del(range)]),
           CodeActionKind.QuickFix
         );
@@ -210,7 +212,7 @@ export class YamlCodeActions {
           const newValue = value.includes('true') ? 'true' : 'false';
           results.push(
             CodeAction.create(
-              'Convert to boolean',
+              l10n.t('convertToBoolean'),
               createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, newValue)]),
               CodeActionKind.QuickFix
             )
@@ -231,7 +233,7 @@ export class YamlCodeActions {
           const rewriter = new FlowStyleRewriter(this.indentation);
           results.push(
             CodeAction.create(
-              `Convert to block style ${blockTypeDescription}`,
+              l10n.t('convertToBlockStyle', 'Convert to block style {0}', blockTypeDescription),
               createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, rewriter.write(node))]),
               CodeActionKind.QuickFix
             )
@@ -306,7 +308,7 @@ export class YamlCodeActions {
           const replaceRange = Range.create(document.positionAt(node.offset), document.positionAt(node.offset + node.length));
           results.push(
             CodeAction.create(
-              'Fix key order for this map',
+              l10n.t('fixKeyOrderToMap'),
               createWorkspaceEdit(document.uri, [TextEdit.replace(replaceRange, CST.stringify(sorted.srcToken))]),
               CodeActionKind.QuickFix
             )
@@ -348,10 +350,11 @@ export class YamlCodeActions {
         continue;
       }
       for (const value of values) {
+        const scalar = typeof value === 'string' ? toYamlStringScalar(value) : String(value);
         results.push(
           CodeAction.create(
-            value,
-            createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, value)]),
+            scalar,
+            createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, scalar)]),
             CodeActionKind.QuickFix
           )
         );

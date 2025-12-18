@@ -18,6 +18,9 @@ import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
 import { commandExecutor } from './languageserver/commandExecutor';
 import { Telemetry } from './languageservice/telemetry';
 import { registerCommands } from './languageservice/services/yamlCommands';
+import * as l10n from '@vscode/l10n';
+import * as path from 'path';
+import * as fs from 'fs';
 
 export class YAMLServerInit {
   languageService: LanguageService;
@@ -38,9 +41,10 @@ export class YAMLServerInit {
      * Run when the client connects to the server after it is activated.
      * The server receives the root path(s) of the workspace and the client capabilities.
      */
-    this.connection.onInitialize((params: InitializeParams): InitializeResult => {
+    this.connection.onInitialize(async (params: InitializeParams): Promise<InitializeResult> => {
       return this.connectionInitialized(params);
     });
+
     this.connection.onInitialized(() => {
       if (this.yamlSettings.hasWsChangeWatchedFileDynamicRegistration) {
         this.connection.workspace.onDidChangeWorkspaceFolders((changedFolders) => {
@@ -53,8 +57,27 @@ export class YAMLServerInit {
     });
   }
 
+  public async setupl10nBundle(params: InitializeParams): Promise<void> {
+    const __dirname = path.dirname(__filename);
+    const l10nPath: string = params.initializationOptions?.l10nPath || path.join(__dirname, '../../../l10n');
+    const locale: string = params.locale || 'en';
+    if (l10nPath) {
+      const bundleFile = !fs.existsSync(path.join(l10nPath, `bundle.l10n.${locale}.json`))
+        ? `bundle.l10n.json`
+        : `bundle.l10n.${locale}.json`;
+      const baseBundleFile = path.join(l10nPath, bundleFile);
+      process.env.VSCODE_NLS_CONFIG = JSON.stringify({
+        locale,
+        _languagePackSupport: true,
+      });
+      await l10n.config({
+        uri: URI.file(baseBundleFile).toString(),
+      });
+    }
+  }
+
   // public for test setup
-  connectionInitialized(params: InitializeParams): InitializeResult {
+  async connectionInitialized(params: InitializeParams): Promise<InitializeResult> {
     this.yamlSettings.capabilities = params.capabilities;
     this.languageService = getCustomLanguageService({
       schemaRequestService: this.schemaRequestService,
@@ -78,8 +101,8 @@ export class YAMLServerInit {
     );
     this.yamlSettings.clientDynamicRegisterSupport = !!(
       this.yamlSettings.capabilities.textDocument &&
-      this.yamlSettings.capabilities.textDocument.rangeFormatting &&
-      this.yamlSettings.capabilities.textDocument.rangeFormatting.dynamicRegistration
+      this.yamlSettings.capabilities.textDocument.formatting &&
+      this.yamlSettings.capabilities.textDocument.formatting.dynamicRegistration
     );
     this.yamlSettings.hasWorkspaceFolderCapability =
       this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.workspaceFolders;
@@ -95,14 +118,14 @@ export class YAMLServerInit {
     );
     this.registerHandlers();
     registerCommands(commandExecutor, this.connection);
-
+    await this.setupl10nBundle(params);
     return {
       capabilities: {
         textDocumentSync: TextDocumentSyncKind.Incremental,
         completionProvider: { resolveProvider: false },
         hoverProvider: true,
         documentSymbolProvider: true,
-        documentFormattingProvider: false,
+        documentFormattingProvider: !this.yamlSettings.clientDynamicRegisterSupport,
         documentOnTypeFormattingProvider: {
           firstTriggerCharacter: '\n',
         },
