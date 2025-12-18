@@ -14,6 +14,7 @@ import { LanguageService, SchemaPriority } from '../src';
 import { MarkupContent, Position } from 'vscode-languageserver-types';
 import { LineCounter } from 'yaml';
 import { getSchemaFromModeline } from '../src/languageservice/services/modelineUtil';
+import { getGroupVersionKindFromDocument } from '../src/languageservice/services/crdUtil';
 
 const requestServiceMock = function (uri: string): Promise<string> {
   return Promise.reject<string>(`Resource ${uri} not found.`);
@@ -699,6 +700,60 @@ describe('JSON Schema', () => {
       assert.strictEqual((result.items[0].documentation as MarkupContent).value, '# FooBar\n```Foo Bar```');
       assert.strictEqual((result.items[1].documentation as MarkupContent).value, '# FooBaz\n```Foo Baz```');
     });
+  });
+
+  describe('Test getGroupVersionKindFromDocument', function () {
+    it('builtin kubernetes resource group should not get resolved', async () => {
+      checkReturnGroupVersionKind('apiVersion: v1\nkind: Pod', true, undefined, 'v1', 'Pod');
+    });
+
+    it('custom argo application CRD should get resolved', async () => {
+      checkReturnGroupVersionKind(
+        'apiVersion: argoproj.io/v1alpha1\nkind: Application',
+        false,
+        'argoproj.io',
+        'v1alpha1',
+        'Application'
+      );
+    });
+
+    it('custom argo application CRD with whitespace should get resolved', async () => {
+      checkReturnGroupVersionKind(
+        'apiVersion: argoproj.io/v1alpha1\nkind: Application ',
+        false,
+        'argoproj.io',
+        'v1alpha1',
+        'Application'
+      );
+    });
+
+    it('custom argo application CRD with other fields should get resolved', async () => {
+      checkReturnGroupVersionKind(
+        'someOtherVal: test\napiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: my-app',
+        false,
+        'argoproj.io',
+        'v1alpha1',
+        'Application'
+      );
+    });
+
+    function checkReturnGroupVersionKind(
+      content: string,
+      error: boolean,
+      expectedGroup: string,
+      expectedVersion: string,
+      expectedKind: string
+    ): void {
+      const yamlDoc = parser.parse(content);
+      const res = getGroupVersionKindFromDocument(yamlDoc.documents[0]);
+      if (error) {
+        assert.strictEqual(res, undefined);
+      } else {
+        assert.strictEqual(res.group, expectedGroup);
+        assert.strictEqual(res.version, expectedVersion);
+        assert.strictEqual(res.kind, expectedKind);
+      }
+    }
   });
 
   describe('Test getSchemaFromModeline', function () {

@@ -77,6 +77,7 @@ export class SettingsHandler {
       this.yamlSettings.customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
 
       this.yamlSettings.maxItemsComputed = Math.trunc(Math.max(0, Number(settings.yaml.maxItemsComputed))) || 5000;
+      this.yamlSettings.autoDetectKubernetesSchema = settings.yaml.autoDetectKubernetesSchema;
 
       if (settings.yaml.schemaStore) {
         this.yamlSettings.schemaStoreEnabled = settings.yaml.schemaStore.enable;
