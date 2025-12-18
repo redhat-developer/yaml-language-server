@@ -906,21 +906,21 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
-          registry: {
+          repo: {
             type: 'string',
             description: 'The YAML Language Server at https://github.com/redhat-developer/yaml-language-server',
           },
         },
       });
 
-      const content = 'regi|s|try: x';
+      const content = 'rep|o|: x';
       const hover = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(hover.contents), true);
       assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
       assert.strictEqual(
         (hover.contents as MarkupContent).value,
-        `The YAML Language Server at https://github.com/redhat-developer/yaml-language-server\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `The YAML Language Server at https://github.com/redhat\\-developer/yaml\\-language\\-server\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -928,21 +928,21 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
-          registry2: {
+          repo: {
             type: 'string',
             description: 'Yaml Language Server (https://github.com/redhat-developer/yaml-language-server)',
           },
         },
       });
 
-      const content = 'regis|t|ry2: x';
+      const content = 'rep|o|: x';
       const hover = await parseSetup(content);
 
       assert.strictEqual(MarkupContent.is(hover.contents), true);
       assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
       assert.strictEqual(
         (hover.contents as MarkupContent).value,
-        `Yaml Language Server (https://github.com/redhat-developer/yaml-language-server)\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `Yaml Language Server (https://github.com/redhat\\-developer/yaml\\-language\\-server)\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
   });
