@@ -158,7 +158,7 @@ describe('YAML Schema Service', () => {
         {
           "oneOf": [ {
               "$ref": "_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingWebhook"
-            },
+            }
           ]
         }
         `
@@ -191,7 +191,7 @@ describe('YAML Schema Service', () => {
         {
           "oneOf": [ {
               "$ref": "_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingWebhook"
-            },
+            }
           ]
         }
         `
