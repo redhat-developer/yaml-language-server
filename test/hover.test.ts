@@ -86,7 +86,7 @@ describe('Hover Tests', () => {
       assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
       assert.strictEqual(
         (hover.contents as MarkupContent).value,
-        `The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `The directory from which bower should run. All relative paths will be calculated according to this setting.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -108,7 +108,7 @@ describe('Hover Tests', () => {
       assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `The directory from which bower should run. All relative paths will be calculated according to this setting.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -303,7 +303,7 @@ describe('Hover Tests', () => {
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `Full name of the author\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `Full name of the author.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -335,7 +335,7 @@ describe('Hover Tests', () => {
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `Email address of the author\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `Email address of the author.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -425,7 +425,7 @@ storage:
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `#### no\\_proxy \\(list of strings\\):\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `#### no\\_proxy (list of strings):\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
 
       const content2 = `ignition:
@@ -444,7 +444,7 @@ storage:
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `#### devices \\(list of strings\\):\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `#### devices (list of strings):\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -552,7 +552,7 @@ users:
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `#### Person\n\nAt the top level my\\_var is shown properly\\.\n\n&emsp;&emsp;Issue with my\\_var2\n\n&emsp;&emsp;&emsp;here my\\_var3\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `#### Person\n\nAt the top level my\\_var is shown properly.\n\n&emsp;&emsp;Issue with my\\_var2\n\n&emsp;&emsp;&emsp;here my\\_var3\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -859,6 +859,91 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       });
 
       expect(result).to.be.null;
+    });
+    it('Hover preserves literal parentheses', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          parentheses: {
+            type: 'string',
+            description: 'Parentheses should be literal: (abc)(1).',
+          },
+        },
+      });
+
+      const content = 'parenth|e|ses: x';
+      const hover = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (hover.contents as MarkupContent).value,
+        `Parentheses should be literal: (abc)(1).\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+    it('Hover preserves literal dots', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          dotInText: {
+            type: 'string',
+            description: 'Dots should be literal in normal text: v1.2.3, 3.14159, example.com.',
+          },
+        },
+      });
+
+      const content = 'dot|I|nText: x';
+      const hover = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (hover.contents as MarkupContent).value,
+        `Dots should be literal in normal text: v1.2.3, 3.14159, example.com.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+    it('Hover preserves bare URL in description (no escaping)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          registry: {
+            type: 'string',
+            description: 'The YAML Language Server at https://github.com/redhat-developer/yaml-language-server',
+          },
+        },
+      });
+
+      const content = 'regi|s|try: x';
+      const hover = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (hover.contents as MarkupContent).value,
+        `The YAML Language Server at https://github.com/redhat-developer/yaml-language-server\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
+    it('Hover preserves URL wrapped in parentheses in description (no escaping)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          registry2: {
+            type: 'string',
+            description: 'Yaml Language Server (https://github.com/redhat-developer/yaml-language-server)',
+          },
+        },
+      });
+
+      const content = 'regis|t|ry2: x';
+      const hover = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (hover.contents as MarkupContent).value,
+        `Yaml Language Server (https://github.com/redhat-developer/yaml-language-server)\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
     });
   });
 
