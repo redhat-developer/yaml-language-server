@@ -34,8 +34,8 @@ export function autoDetectKubernetesSchemaFromDocument(
       if (typeof s === 'boolean') {
         return undefined;
       }
-      // @ts-ignore
-      return s._$ref;
+      // @ts-ignore (only $ref is defined in the ts definition but it seems like it's actually _$ref)
+      return s._$ref || s.$ref;
     })
     .filter((ref) => ref)
     .map((ref) => ref.replace('_definitions.json#/definitions/', '').toLowerCase());
