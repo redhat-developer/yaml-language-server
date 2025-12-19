@@ -165,7 +165,11 @@ describe('YAML Schema Service', () => {
       );
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
-      await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+      const resolvedeSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+
+      expect(resolvedeSchema.schema.url).eqls(
+        'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/argoproj.io/application_v1alpha1.json'
+      );
 
       expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
       expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
@@ -198,13 +202,46 @@ describe('YAML Schema Service', () => {
       );
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
-      await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+      const resolvedSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+      expect(resolvedSchema.schema.url).eqls(KUBERNETES_SCHEMA_URL);
 
       expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
       expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
+      expect(requestServiceMock).calledTwice;
+    });
+
+    it('should not get schema from crd catalog if definition in kubernetes schema (multiple oneOf)', async () => {
+      const documentContent = 'apiVersion: apps/v1\nkind: Deployment';
+      const content = `${documentContent}`;
+      const yamlDock = parse(content);
+
+      const settings = new SettingsState();
+      settings.schemaAssociations = {
+        kubernetes: ['*.yaml'],
+      };
+      settings.kubernetesCRDStoreEnabled = true;
+      requestServiceMock = sandbox.fake.resolves(
+        `
+        {
+          "oneOf": [
+            {
+              "$ref": "_definitions.json#/definitions/io.k8s.api.apps.v1.Deployment"
+            },
+            {
+              "$ref": "_definitions.json#/definitions/io.k8s.api.apps.v1.DeploymentCondition"
+            }
+          ]
+        }
+        `
+      );
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
+      service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
+      const resolvedSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+      expect(resolvedSchema.schema.url).eqls(KUBERNETES_SCHEMA_URL);
 
       expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
-      expect(requestServiceMock).calledThrice;
+      expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
+      expect(requestServiceMock).calledTwice;
     });
   });
 });

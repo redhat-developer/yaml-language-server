@@ -34,11 +34,13 @@ export function autoDetectKubernetesSchemaFromDocument(
       if (typeof s === 'boolean') {
         return undefined;
       }
-      return s.$ref;
+      // @ts-ignore
+      return s._$ref;
     })
     .filter((ref) => ref)
     .map((ref) => ref.replace('_definitions.json#/definitions/', '').toLowerCase());
-  const k8sTypeName = `io.k8s.api.${group.toLowerCase()}.${version.toLowerCase()}.${kind.toLowerCase()}`;
+  const groupWithoutK8sIO = group.replace('.k8s.io', '');
+  const k8sTypeName = `io.k8s.api.${groupWithoutK8sIO.toLowerCase()}.${version.toLowerCase()}.${kind.toLowerCase()}`;
 
   if (kubernetesBuildIns.includes(k8sTypeName)) {
     return KUBERNETES_SCHEMA_URL;
