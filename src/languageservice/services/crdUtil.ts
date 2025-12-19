@@ -29,7 +29,7 @@ export function autoDetectKubernetesSchemaFromDocument(
   }
 
   const k8sSchema: JSONSchema = kubernetesSchema.schema;
-  const kubernetesBuildIns: string[] = k8sSchema.oneOf
+  const kubernetesBuildIns: string[] = (k8sSchema.oneOf || [])
     .map((s) => {
       if (typeof s === 'boolean') {
         return undefined;
