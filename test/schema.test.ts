@@ -707,6 +707,16 @@ describe('JSON Schema', () => {
       checkReturnGroupVersionKind('apiVersion: v1\nkind: Pod', true, undefined, 'v1', 'Pod');
     });
 
+    it('builtin kubernetes resource with complex apiVersion should get resolved ', async () => {
+      checkReturnGroupVersionKind(
+        'apiVersion: admissionregistration.k8s.io/v1\nkind: MutatingWebhook',
+        false,
+        'admissionregistration.k8s.io',
+        'v1',
+        'MutatingWebhook'
+      );
+    });
+
     it('custom argo application CRD should get resolved', async () => {
       checkReturnGroupVersionKind(
         'apiVersion: argoproj.io/v1alpha1\nkind: Application',
