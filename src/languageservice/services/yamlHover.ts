@@ -211,7 +211,7 @@ export class YAMLHover {
   private toMarkdown(plain: string | undefined): string | undefined {
     if (plain) {
       let escaped = plain.replace(/([^\n\r])(\r?\n)([^\n\r])/gm, '$1\n\n$3'); // single new lines to \n\n (Markdown paragraph)
-      escaped = escaped.replace(/[\\`*_{}[\]()#+\-.!]/g, '\\$&'); // escape markdown syntax tokens: http://daringfireball.net/projects/markdown/syntax#backslash
+      escaped = escaped.replace(/[\\`*_{}[\]#+\-!]/g, '\\$&'); // escape some of the markdown syntax tokens http://daringfireball.net/projects/markdown/syntax#backslash to avoid unintended formatting
       if (this.indentation !== undefined) {
         // escape indentation whitespace to prevent it from being converted to markdown code blocks.
         const indentationMatchRegex = new RegExp(` {${this.indentation.length}}`, 'g');
