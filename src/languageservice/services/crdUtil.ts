@@ -2,7 +2,7 @@ import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonParser07';
 
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
-import { JSONSchema } from 'vscode-json-languageservice/lib/umd/jsonSchema';
+import { JSONSchema } from '../jsonSchema';
 import { KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
 
 /**
@@ -34,7 +34,6 @@ export function autoDetectKubernetesSchemaFromDocument(
       if (typeof s === 'boolean') {
         return undefined;
       }
-      // @ts-ignore (only $ref is defined in the ts definition but it seems like it's actually _$ref)
       return s._$ref || s.$ref;
     })
     .filter((ref) => ref)
