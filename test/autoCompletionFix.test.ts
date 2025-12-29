@@ -17,7 +17,6 @@ import {
 } from './utils/testHelper';
 import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
-import * as path from 'path';
 import { JSONSchema } from './../src/languageservice/jsonSchema';
 
 describe('Auto Completion Fix Tests', () => {
@@ -200,7 +199,7 @@ spec:
 
   it('should complete  array', async () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const schema = require(path.join(__dirname, './fixtures/test-nested-object-array.json'));
+    const schema = require('./fixtures/test-nested-object-array.json');
     schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = `objA:
   - name: nameA1
@@ -215,7 +214,7 @@ objB:
 
   it('should complete array item for "oneOf" schema', async () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const schema = require(path.join(__dirname, './fixtures/test-completion-oneOf.json'));
+    const schema = require('./fixtures/test-completion-oneOf.json');
     schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = `metadata:
   Selector:
