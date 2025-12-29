@@ -1421,6 +1421,7 @@ describe('JSON Parser', () => {
 
   it('items as array', function () {
     const schema: JsonSchema.JSONSchema = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
       type: 'array',
       items: [
         {
@@ -1456,6 +1457,7 @@ describe('JSON Parser', () => {
 
   it('additionalItems', function () {
     let schema: JsonSchema.JSONSchema = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
       type: 'array',
       items: [
         {
@@ -1483,6 +1485,7 @@ describe('JSON Parser', () => {
       assert.strictEqual(semanticErrors.length, 1);
     }
     schema = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
       type: 'array',
       items: [
         {

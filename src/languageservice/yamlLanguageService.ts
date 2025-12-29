@@ -212,9 +212,11 @@ export function getLanguageService(params: {
           const currPriority = settings.priority ? settings.priority : 0;
           schemaService.addSchemaPriority(settings.uri, currPriority);
           schemaService.registerExternalSchema(
-            settings.uri,
-            settings.fileMatch,
-            settings.schema,
+            {
+              uri: settings.uri,
+              fileMatch: settings.fileMatch,
+              schema: settings.schema,
+            },
             settings.name,
             settings.description,
             settings.versions

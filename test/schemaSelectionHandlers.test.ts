@@ -40,7 +40,11 @@ describe('Schema Selection Handlers', () => {
   });
 
   it('getAllSchemas should return all schemas', async () => {
-    service.registerExternalSchema('https://some.com/some.json', ['foo.yaml'], undefined, 'Schema name', 'Schema description');
+    service.registerExternalSchema(
+      { uri: 'https://some.com/some.json', fileMatch: ['foo.yaml'] },
+      'Schema name',
+      'Schema description'
+    );
     const settings = new SettingsState();
     const testTextDocument = setupSchemaIDTextDocument('');
     settings.documents = new TextDocumentTestManager();
@@ -61,7 +65,11 @@ describe('Schema Selection Handlers', () => {
   });
 
   it('getAllSchemas should return all schemas and mark used for current file', async () => {
-    service.registerExternalSchema('https://some.com/some.json', [SCHEMA_ID], undefined, 'Schema name', 'Schema description');
+    service.registerExternalSchema(
+      { uri: 'https://some.com/some.json', fileMatch: [SCHEMA_ID] },
+      'Schema name',
+      'Schema description'
+    );
     const settings = new SettingsState();
     const testTextDocument = setupSchemaIDTextDocument('');
     settings.documents = new TextDocumentTestManager();
@@ -82,7 +90,11 @@ describe('Schema Selection Handlers', () => {
   });
 
   it('getSchemas should return all schemas', async () => {
-    service.registerExternalSchema('https://some.com/some.json', [SCHEMA_ID], undefined, 'Schema name', 'Schema description');
+    service.registerExternalSchema(
+      { uri: 'https://some.com/some.json', fileMatch: [SCHEMA_ID] },
+      'Schema name',
+      'Schema description'
+    );
     const settings = new SettingsState();
     const testTextDocument = setupSchemaIDTextDocument('');
     settings.documents = new TextDocumentTestManager();
