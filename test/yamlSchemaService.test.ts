@@ -180,6 +180,49 @@ describe('YAML Schema Service', () => {
       expect(requestServiceMock).calledThrice;
     });
 
+    it('should handle nonstandard location for OpenShift crd', async () => {
+      const documentContent = `apiVersion: route.openshift.io/v1
+kind: Route
+spec:
+  to:
+    kind: Service
+    name: MyFirstService
+    weight: 100`;
+      const content = `${documentContent}`;
+      const yamlDock = parse(content);
+
+      const settings = new SettingsState();
+      settings.schemaAssociations = {
+        kubernetes: ['*.yaml'],
+      };
+      settings.kubernetesCRDStoreEnabled = true;
+      requestServiceMock = sandbox.fake.resolves(
+        `
+        {
+          "oneOf": [ {
+              "$ref": "_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingWebhook"
+            }
+          ]
+        }
+        `
+      );
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
+      service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
+      const resolvedeSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+
+      expect(resolvedeSchema.schema.url).eqls(
+        'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/openshift/v4.15-strict/route_route.openshift.io_v1.json'
+      );
+
+      expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
+      expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
+
+      expect(requestServiceMock).calledWithExactly(
+        'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/openshift/v4.15-strict/route_route.openshift.io_v1.json'
+      );
+      expect(requestServiceMock).calledThrice;
+    });
+
     it('should not get schema from crd catalog if definition in kubernetes schema', async () => {
       const documentContent = 'apiVersion: admissionregistration.k8s.io/v1\nkind: MutatingWebhook';
       const content = `${documentContent}`;
