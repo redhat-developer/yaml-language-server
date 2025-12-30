@@ -3,7 +3,6 @@ import { JSONDocument } from '../parser/jsonParser07';
 
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 import { JSONSchema } from '../jsonSchema';
-import { KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
 
 /**
  * Retrieve schema by auto-detecting the Kubernetes GroupVersionKind (GVK) from the document.
@@ -42,7 +41,11 @@ export function autoDetectKubernetesSchemaFromDocument(
   const k8sTypeName = `io.k8s.api.${groupWithoutK8sIO.toLowerCase()}.${version.toLowerCase()}.${kind.toLowerCase()}`;
 
   if (kubernetesBuildIns.includes(k8sTypeName)) {
-    return KUBERNETES_SCHEMA_URL;
+    return undefined;
+  }
+
+  if (k8sTypeName.includes('openshift.io')) {
+    return `${crdCatalogURI}/openshift/v4.15-strict/${kind.toLowerCase()}_${group.toLowerCase()}_${version.toLowerCase()}.json`;
   }
 
   const schemaURL = `${crdCatalogURI}/${group.toLowerCase()}/${kind.toLowerCase()}_${version.toLowerCase()}.json`;
