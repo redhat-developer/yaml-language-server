@@ -414,16 +414,35 @@ export class YAMLSchemaService extends JSONSchemaService {
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const resolveSchema = (): any => {
+    const resolveSchema = async (): Promise<any> => {
       const seen: { [schemaId: string]: boolean } = Object.create(null);
       const schemas: string[] = [];
+      let k8sAllSchema: ResolvedSchema = undefined;
 
       for (const entry of this.filePatternAssociations) {
         if (entry.matchesPattern(resource)) {
           for (const schemaId of entry.getURIs()) {
             if (!seen[schemaId]) {
-              schemas.push(schemaId);
-              seen[schemaId] = true;
+              if (this.yamlSettings?.kubernetesCRDStoreEnabled && schemaId === KUBERNETES_SCHEMA_URL) {
+                if (!k8sAllSchema) {
+                  k8sAllSchema = await this.getResolvedSchema(KUBERNETES_SCHEMA_URL);
+                }
+                const kubeSchema = autoDetectKubernetesSchemaFromDocument(
+                  doc,
+                  this.yamlSettings.kubernetesCRDStoreUrl ?? CRD_CATALOG_URL,
+                  k8sAllSchema
+                );
+                if (kubeSchema) {
+                  schemas.push(kubeSchema);
+                  seen[schemaId] = true;
+                } else {
+                  schemas.push(schemaId);
+                  seen[schemaId] = true;
+                }
+              } else {
+                schemas.push(schemaId);
+                seen[schemaId] = true;
+              }
             }
           }
         }
@@ -484,22 +503,6 @@ export class YAMLSchemaService extends JSONSchemaService {
             return resolveSchema();
           }
         );
-    }
-    if (this.yamlSettings?.kubernetesCRDStoreEnabled) {
-      for (const entry of this.filePatternAssociations) {
-        if (entry.uris && entry.uris[0] == KUBERNETES_SCHEMA_URL && entry.matchesPattern(resource)) {
-          return resolveSchemaForResource([KUBERNETES_SCHEMA_URL]).then((schema) => {
-            const kubeSchema = autoDetectKubernetesSchemaFromDocument(
-              doc,
-              this.yamlSettings.kubernetesCRDStoreUrl ?? CRD_CATALOG_URL,
-              schema
-            );
-            if (kubeSchema) {
-              return resolveSchemaForResource([kubeSchema]);
-            }
-          });
-        }
-      }
     }
     return resolveSchema();
   }
