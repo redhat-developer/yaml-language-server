@@ -1514,26 +1514,147 @@ test1:
     expect(completion.items[0].insertText).to.be.equal('"YES"');
     expect(completion.items[1].insertText).to.be.equal('"NO"');
   });
-  it('should suggest quotes with escapeChars', async () => {
-    const schema: JSONSchema = {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        begin: {
-          type: 'string',
-          default: '\\"',
-        },
-      },
-    };
-    schemaProvider.addSchema(SCHEMA_ID, schema);
-    let content = 'be';
-    let completion = await parseSetup(content, 0, content.length);
-    expect(completion.items.length).equal(1);
-    expect(completion.items[0].insertText).to.be.equal('begin: "\\""');
 
-    content = 'begin: ';
-    completion = await parseSetup(content, 0, content.length);
-    expect(completion.items.length).equal(1);
-    expect(completion.items[0].insertText).to.be.equal('"\\""');
+  describe('String scalar completion comprehensive tests', () => {
+    const STRING_CASES: {
+      value: string;
+      expected: string;
+      description: string;
+      expectedLabel?: string;
+    }[] = [
+      { value: '', expected: '""', description: 'empty string' },
+      { value: '""', expected: '"\\"\\""', description: 'literal double quotes' },
+      { value: "''", expected: `"''"`, description: 'literal single quotes' },
+      { value: '"', expected: '"\\""', description: 'single quote character' },
+      { value: "'", expected: '"\'"', description: 'single apostrophe' },
+      { value: 'a: b', expected: '"a: b"', description: 'string with colon and space' },
+      { value: '# not a comment', expected: '"# not a comment"', description: 'string starting with hash' },
+      { value: '- starts with dash', expected: '"- starts with dash"', description: 'string starting with dash' },
+      {
+        value: '? starts with question',
+        expected: '"? starts with question"',
+        description: 'string starting with question mark',
+      },
+      { value: 'null', expected: '"null"', description: 'string "null"' },
+      { value: '123', expected: '"123"', description: 'numeric string' },
+      { value: '  leading space', expected: '"  leading space"', description: 'string with leading spaces' },
+      { value: 'trailing space ', expected: '"trailing space "', description: 'string with trailing space' },
+      {
+        value: 'line1\n\tline2',
+        expected: '"line1\\n\\tline2"',
+        expectedLabel: '"line1↵\\tline2"',
+        description: 'string with newline and tab',
+      },
+      { value: 'endsWithColon:', expected: '"endsWithColon:"', description: 'string ending with colon' },
+      { value: '0xdeadbeef', expected: '"0xdeadbeef"', description: 'hex-like string' },
+      { value: '01', expected: '"01"', description: 'octal-like string' },
+      { value: '0o12', expected: '"0o12"', description: 'octal-like string with prefix' },
+      { value: '\\"', expected: '"\\\\\\\\\\""', description: 'backslash-quote' },
+    ];
+
+    const addEnumSchema = (value: string): void => {
+      const schema: JSONSchema = {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          testProp: {
+            type: 'string',
+            enum: [value],
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+    };
+    describe('Enum', () => {
+      STRING_CASES.forEach(({ value, expected, description }) => {
+        describe(description, () => {
+          beforeEach(() => addEnumSchema(value));
+
+          it('should handle enum key value', async () => {
+            const content = '';
+            const completion = await parseSetup(content, 0, content.length);
+
+            expect(completion.items.length).to.equal(1);
+            expect(completion.items[0].insertText).to.equal(`testProp: \${1:${expected}}`);
+          });
+
+          it('should handle enum value after property name', async () => {
+            const content = 'testProp: ';
+            const completion = await parseSetup(content, 0, content.length);
+
+            expect(completion.items.length).to.equal(1);
+            expect(completion.items[0].insertText).to.equal(expected);
+          });
+        });
+      });
+    });
+
+    const addConstSchema = (value: string): void => {
+      const schema: JSONSchema = {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          testProp: {
+            type: 'string',
+            const: value,
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+    };
+    describe('Const', () => {
+      STRING_CASES.forEach(({ value, expected, expectedLabel, description }) => {
+        describe(description, () => {
+          beforeEach(() => addConstSchema(value));
+
+          it('should handle const key value', async () => {
+            const content = 'test';
+            const completion = await parseSetup(content, 0, content.length);
+
+            expect(completion.items.length).to.equal(1);
+            expect(completion.items[0].insertText).to.equal(`testProp: ${expected}`);
+          });
+
+          it('should handle const value after property name', async () => {
+            const content = 'testProp: ';
+            const completion = await parseSetup(content, 0, content.length);
+
+            expect(completion.items.length).to.be.greaterThan(0);
+            expect(completion.items[0].insertText).to.equal(expected);
+
+            // Only assert label when we expect it to differ (e.g., newline rendering)
+            if (expectedLabel !== undefined) {
+              expect(completion.items[0].label).to.equal(expectedLabel);
+            }
+          });
+        });
+      });
+    });
+
+    const addPropertyNameSchema = (propName: string): void => {
+      const schema: JSONSchema = {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          [propName]: { type: 'string' },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+    };
+    describe('Property name (key)', () => {
+      STRING_CASES.filter(({ value }) => value !== '').forEach(({ value, expected, description }) => {
+        describe(description, () => {
+          beforeEach(() => addPropertyNameSchema(value));
+
+          it('should handle property name completion', async () => {
+            const content = '';
+            const completion = await parseSetup(content, 0, content.length);
+
+            expect(completion.items.length).to.equal(1);
+            expect(completion.items[0].insertText).to.equal(`${expected}: `);
+          });
+        });
+      });
+    });
   });
 });

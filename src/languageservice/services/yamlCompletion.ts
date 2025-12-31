@@ -30,7 +30,6 @@ import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jso
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { stringifyObject, StringifySettings } from '../utils/json';
 import { isDefined, isString } from '../utils/objects';
-import * as nls from 'vscode-nls';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { asSchema } from '../parser/jsonParser07';
 import { indexOf, isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
@@ -38,10 +37,8 @@ import { isModeline } from './modelineUtil';
 import { getSchemaTypeName, isAnyOfAllOfOneOfType, isPrimitiveType } from '../utils/schemaUtils';
 import { YamlNode } from '../jsonASTTypes';
 import { SettingsState } from '../../yamlSettings';
-
-const localize = nls.loadMessageBundle();
-
-const doubleQuotesEscapeRegExp = /[\\]+"/g;
+import { toYamlStringScalar } from '../utils/yamlScalar';
+import * as l10n from '@vscode/l10n';
 
 const parentCompletionKind = CompletionItemKind.Class;
 
@@ -234,8 +231,7 @@ export class YamlCompletion {
         if (!isString(label)) {
           label = String(label);
         }
-
-        label = label.replace(/[\n]/g, '↵');
+        label = label.replace(/\n|\\n/g, '↵');
         if (label.length > 60) {
           const shortendedLabel = label.substr(0, 57).trim() + '...';
           if (!proposed[shortendedLabel]) {
@@ -251,13 +247,13 @@ export class YamlCompletion {
           completionItem.insertText = label;
           completionItem.textEdit = TextEdit.replace(overwriteRange, label);
         } else {
-          let mdText = completionItem.insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
-          const splitMDText = mdText.split(':');
-          let value = splitMDText.length > 1 ? splitMDText[1].trim() : mdText;
-          if (value && /^(['\\"\\])$/.test(value)) {
-            value = `${this.getQuote()}\\${value}${this.getQuote()}`;
-            mdText = splitMDText.length > 1 ? splitMDText[0] + ': ' + value : value;
-            completionItem.insertText = mdText;
+          const mdText = completionItem.insertText.replace(/\${[0-9]+[:|](.*)}/g, (s, arg) => arg).replace(/\$([0-9]+)/g, '');
+          // handle single special characters that need escaping: ', ", \
+          const singleCharMatch = mdText.match(/^([^:"]+):\s*(['\\"\\])$/);
+          if (singleCharMatch) {
+            const key = singleCharMatch[1];
+            const char = singleCharMatch[2];
+            completionItem.insertText = `${key}: ${this.getQuote()}\\${char}${this.getQuote()}`;
           }
           // trim $1 from end of completion
           if (completionItem.insertText.endsWith('$1') && !isForParentCompletion) {
@@ -299,6 +295,9 @@ export class YamlCompletion {
         if (existing && !existing.documentation && completionItem.documentation) {
           existing.documentation = completionItem.documentation;
         }
+        if (existing && !existing.detail && completionItem.detail) {
+          existing.detail = completionItem.detail;
+        }
       },
       error: (message: string) => {
         this.telemetry?.sendError('yaml.completion.error', message);
@@ -328,7 +327,7 @@ export class YamlCompletion {
         if (position.line === 0 && position.character === 0 && !isModeline(lineContent)) {
           const inlineSchemaCompletion = {
             kind: CompletionItemKind.Text,
-            label: 'Inline schema',
+            label: l10n.t('Inline schema'),
             insertText: '# yaml-language-server: $schema=',
             insertTextFormat: InsertTextFormat.PlainText,
           };
@@ -515,6 +514,11 @@ export class YamlCompletion {
         }
       }
 
+      const ignoreScalars =
+        textBuffer.getLineContent(overwriteRange.start.line).trim().length === 0 &&
+        originalNode &&
+        ((isScalar(originalNode) && originalNode.value === null) || isSeq(originalNode));
+
       // completion for object keys
       if (node && isMap(node)) {
         // don't suggest properties that are already present
@@ -536,7 +540,8 @@ export class YamlCompletion {
           collector,
           textBuffer,
           overwriteRange,
-          doComplete
+          doComplete,
+          ignoreScalars
         );
 
         if (!schema && currentWord.length > 0 && text.charAt(offset - currentWord.length - 1) !== '"') {
@@ -551,7 +556,7 @@ export class YamlCompletion {
 
       // proposals for values
       const types: { [type: string]: boolean } = {};
-      this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types, doComplete);
+      this.getValueCompletions(schema, currentDoc, node, offset, document, collector, types, doComplete, ignoreScalars);
     } catch (err) {
       this.telemetry?.sendError('yaml.completion.error', err);
     }
@@ -691,7 +696,8 @@ export class YamlCompletion {
     collector: CompletionsCollector,
     textBuffer: TextBuffer,
     overwriteRange: Range,
-    doComplete: boolean
+    doComplete: boolean,
+    ignoreScalars: boolean
   ): void {
     const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
     const existingKey = textBuffer.getText(overwriteRange);
@@ -710,6 +716,7 @@ export class YamlCompletion {
         }
       });
     }
+
     for (const schema of matchingSchemas) {
       if (
         ((schema.node.internalNode === node && !matchOriginal) ||
@@ -768,19 +775,21 @@ export class YamlCompletion {
                     pair
                   ) {
                     if (Array.isArray(propertySchema.items)) {
-                      this.addSchemaValueCompletions(propertySchema.items[0], separatorAfter, collector, {}, 'property');
+                      this.addSchemaValueCompletions(propertySchema.items[0], separatorAfter, collector, {}, ignoreScalars, true);
                     } else if (typeof propertySchema.items === 'object' && propertySchema.items.type === 'object') {
                       this.addArrayItemValueCompletion(propertySchema.items, separatorAfter, collector);
                     }
                   }
 
                   let insertText = key;
+                  const isRequiredProp = Array.isArray(schema.schema.required) ? schema.schema.required.includes(key) : false;
                   if (!key.startsWith(existingKey) || !hasColon) {
                     insertText = this.getInsertTextForProperty(
                       key,
                       propertySchema,
                       separatorAfter,
-                      identCompensation + this.indentation
+                      identCompensation + this.indentation,
+                      isRequiredProp
                     );
                   }
                   const isNodeNull =
@@ -807,7 +816,8 @@ export class YamlCompletion {
                         key,
                         propertySchema,
                         separatorAfter,
-                        identCompensation + this.indentation
+                        identCompensation + this.indentation,
+                        true
                       ),
                       insertTextFormat: InsertTextFormat.Snippet,
                       documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
@@ -828,14 +838,7 @@ export class YamlCompletion {
         //    - item1
         // it will treated as a property key since `:` has been appended
         if (nodeParent && isSeq(nodeParent) && isPrimitiveType(schema.schema)) {
-          this.addSchemaValueCompletions(
-            schema.schema,
-            separatorAfter,
-            collector,
-            {},
-            'property',
-            Array.isArray(nodeParent.items)
-          );
+          this.addSchemaValueCompletions(schema.schema, separatorAfter, collector, {}, ignoreScalars);
         }
 
         if (schema.schema.propertyNames && schema.schema.additionalProperties && schema.schema.type === 'object') {
@@ -893,7 +896,8 @@ export class YamlCompletion {
     document: TextDocument,
     collector: CompletionsCollector,
     types: { [type: string]: boolean },
-    doComplete: boolean
+    doComplete: boolean,
+    ignoreScalars: boolean
   ): void {
     let parentKey: string = null;
 
@@ -902,7 +906,7 @@ export class YamlCompletion {
     }
 
     if (!node) {
-      this.addSchemaValueCompletions(schema.schema, '', collector, types, 'value');
+      this.addSchemaValueCompletions(schema.schema, '', collector, types, false);
       return;
     }
 
@@ -930,26 +934,29 @@ export class YamlCompletion {
               if (Array.isArray(s.schema.items)) {
                 const index = this.findItemAtOffset(node, document, offset);
                 if (index < s.schema.items.length) {
-                  this.addSchemaValueCompletions(s.schema.items[index], separatorAfter, collector, types, 'value');
+                  this.addSchemaValueCompletions(s.schema.items[index], separatorAfter, collector, types, false);
                 }
-              } else if (
-                typeof s.schema.items === 'object' &&
-                (s.schema.items.type === 'object' || isAnyOfAllOfOneOfType(s.schema.items))
-              ) {
-                this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types, 'value', true);
               } else {
-                this.addSchemaValueCompletions(s.schema.items, separatorAfter, collector, types, 'value');
+                this.addSchemaValueCompletions(
+                  s.schema.items,
+                  separatorAfter,
+                  collector,
+                  types,
+                  ignoreScalars,
+                  typeof s.schema.items === 'object' &&
+                    (s.schema.items.type === 'object' || isAnyOfAllOfOneOfType(s.schema.items))
+                );
               }
             }
           }
           if (s.schema.properties) {
             const propertySchema = s.schema.properties[parentKey];
             if (propertySchema) {
-              this.addSchemaValueCompletions(propertySchema, separatorAfter, collector, types, 'value');
+              this.addSchemaValueCompletions(propertySchema, separatorAfter, collector, types, ignoreScalars);
             }
           }
           if (s.schema.additionalProperties) {
-            this.addSchemaValueCompletions(s.schema.additionalProperties, separatorAfter, collector, types, 'value');
+            this.addSchemaValueCompletions(s.schema.additionalProperties, separatorAfter, collector, types, ignoreScalars);
           }
         }
       }
@@ -976,12 +983,12 @@ export class YamlCompletion {
     const schemaTypeTitle = schemaType ? ' type `' + schemaType + '`' : '';
     const schemaDescription = schema.description ? ' (' + schema.description + ')' : '';
     const documentation = this.getDocumentationWithMarkdownText(
-      `Create an item of an array${schemaTypeTitle}${schemaDescription}`,
+      l10n.t('create.item.array', schemaTypeTitle, schemaDescription),
       insertText
     );
     collector.add({
       kind: this.getSuggestionKind(schema.type),
-      label: '- (array item) ' + (schemaType || index),
+      label: l10n.t('array.item') + (schemaType || index),
       documentation: documentation,
       insertText: insertText,
       insertTextFormat: InsertTextFormat.Snippet,
@@ -992,10 +999,12 @@ export class YamlCompletion {
     key: string,
     propertySchema: JSONSchema,
     separatorAfter: string,
-    indent = this.indentation
+    indent = this.indentation,
+    isRequired = false
   ): string {
     const propertyText = this.getInsertTextForValue(key, '', 'string');
     const resultText = propertyText + ':';
+    const hasRequiredDefault = propertySchema && isRequired && isDefined(propertySchema.default);
 
     let value: string;
     let nValueProposals = 0;
@@ -1040,7 +1049,7 @@ export class YamlCompletion {
         nValueProposals += propertySchema.enum.length;
       }
 
-      if (propertySchema.const) {
+      if (isDefined(propertySchema.const)) {
         if (!value) {
           value = this.getInsertTextForGuessedValue(propertySchema.const, '', type);
           value = this.evaluateTab1Symbol(value); // prevent const being selected after snippet insert
@@ -1050,8 +1059,12 @@ export class YamlCompletion {
       }
 
       if (isDefined(propertySchema.default)) {
-        if (!value) {
-          value = ' ' + this.getInsertTextForGuessedValue(propertySchema.default, '', type);
+        if (!value || hasRequiredDefault) {
+          let defText = this.getInsertTextForGuessedValue(propertySchema.default, '', type);
+          if (hasRequiredDefault) {
+            defText = this.evaluateTab1Symbol(defText);
+          }
+          value = ' ' + defText;
         }
         nValueProposals++;
       }
@@ -1071,9 +1084,8 @@ export class YamlCompletion {
       if (nValueProposals === 0) {
         switch (type) {
           case 'boolean':
-            value = ' $1';
-            break;
           case 'string':
+          case 'anyOf':
             value = ' $1';
             break;
           case 'object':
@@ -1089,15 +1101,12 @@ export class YamlCompletion {
           case 'null':
             value = ' ${1:null}';
             break;
-          case 'anyOf':
-            value = ' $1';
-            break;
           default:
             return propertyText;
         }
       }
     }
-    if (!value || nValueProposals > 1) {
+    if (!value || (nValueProposals > 1 && !hasRequiredDefault)) {
       value = ' $1';
     }
     return resultText + value + separatorAfter;
@@ -1139,7 +1148,7 @@ export class YamlCompletion {
             let value = propertySchema.default || propertySchema.const;
             if (value) {
               if (type === 'string') {
-                value = this.convertToStringValue(value);
+                value = toYamlStringScalar(value);
               }
               insertText += `${indent}${key}: \${${insertIndex++}:${value}}\n`;
             } else {
@@ -1187,7 +1196,7 @@ export class YamlCompletion {
             }: \${${insertIndex++}:${propertySchema.default}}\n`;
             break;
           case 'string':
-            insertText += `${indent}${key}: \${${insertIndex++}:${this.convertToStringValue(propertySchema.default)}}\n`;
+            insertText += `${indent}${key}: \${${insertIndex++}:${toYamlStringScalar(propertySchema.default)}}\n`;
             break;
           case 'array':
           case 'object':
@@ -1250,12 +1259,10 @@ export class YamlCompletion {
         }
         return this.getInsertTextForValue(value, separatorAfter, type);
       case 'string': {
-        let snippetValue = JSON.stringify(value);
-        snippetValue = snippetValue.substr(1, snippetValue.length - 2); // remove quotes
-        snippetValue = this.getInsertTextForPlainText(snippetValue); // escape \ and }
-        if (type === 'string') {
-          snippetValue = this.convertToStringValue(snippetValue);
+        if (type === 'number' || type === 'integer') {
+          return '${1:' + value + '}' + separatorAfter;
         }
+        const snippetValue = this.getInsertTextForPlainText(toYamlStringScalar(value));
         return '${1:' + snippetValue + '}' + separatorAfter;
       }
       case 'number':
@@ -1266,7 +1273,7 @@ export class YamlCompletion {
   }
 
   private getInsertTextForPlainText(text: string): string {
-    return text.replace(/[\\$}]/g, '\\$&'); // escape $, \ and }
+    return text.replace(/\\(?=[$}\\])/g, '\\\\').replace(/[$}]/g, '\\$&');
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1285,7 +1292,7 @@ export class YamlCompletion {
     }
     type = Array.isArray(type) ? type[0] : type;
     if (type === 'string') {
-      value = this.convertToStringValue(value);
+      value = toYamlStringScalar(String(value), this.isSingleQuote);
     }
     return this.getInsertTextForPlainText(value + separatorAfter);
   }
@@ -1327,32 +1334,31 @@ export class YamlCompletion {
     separatorAfter: string,
     collector: CompletionsCollector,
     types: unknown,
-    completionType: 'property' | 'value',
-    isArray?: boolean
+    ignoreScalars = false,
+    addArrayItem = false
   ): void {
     if (typeof schema === 'object') {
-      this.addEnumValueCompletions(schema, separatorAfter, collector, isArray);
+      this.addEnumValueCompletions(schema, separatorAfter, collector, ignoreScalars);
       this.addDefaultValueCompletions(schema, separatorAfter, collector);
       this.collectTypes(schema, types);
 
-      if (isArray && completionType === 'value' && !isAnyOfAllOfOneOfType(schema)) {
-        // add array only for final types (no anyOf, allOf, oneOf)
+      if (addArrayItem && !isAnyOfAllOfOneOfType(schema)) {
         this.addArrayItemValueCompletion(schema, separatorAfter, collector);
       }
 
       if (Array.isArray(schema.allOf)) {
         schema.allOf.forEach((s) => {
-          return this.addSchemaValueCompletions(s, separatorAfter, collector, types, completionType, isArray);
+          return this.addSchemaValueCompletions(s, separatorAfter, collector, types, ignoreScalars, addArrayItem);
         });
       }
       if (Array.isArray(schema.anyOf)) {
         schema.anyOf.forEach((s) => {
-          return this.addSchemaValueCompletions(s, separatorAfter, collector, types, completionType, isArray);
+          return this.addSchemaValueCompletions(s, separatorAfter, collector, types, ignoreScalars, addArrayItem);
         });
       }
       if (Array.isArray(schema.oneOf)) {
         schema.oneOf.forEach((s) => {
-          return this.addSchemaValueCompletions(s, separatorAfter, collector, types, completionType, isArray);
+          return this.addSchemaValueCompletions(s, separatorAfter, collector, types, ignoreScalars, addArrayItem);
         });
       }
     }
@@ -1387,17 +1393,17 @@ export class YamlCompletion {
         type = 'array';
       }
       let label;
-      if (typeof value == 'object') {
-        label = 'Default value';
+      if (typeof value === 'object') {
+        label = l10n.t('Default Value');
       } else {
-        label = (value as unknown).toString().replace(doubleQuotesEscapeRegExp, '"');
+        label = this.getLabelForValue(value);
       }
       collector.add({
         kind: this.getSuggestionKind(type),
         label,
         insertText: this.getInsertTextForValue(value, separatorAfter, type),
         insertTextFormat: InsertTextFormat.Snippet,
-        detail: localize('json.suggest.default', 'Default value'),
+        detail: l10n.t('Default Value'),
       });
       hasProposals = true;
     }
@@ -1432,20 +1438,25 @@ export class YamlCompletion {
     schema: JSONSchema,
     separatorAfter: string,
     collector: CompletionsCollector,
-    isArray: boolean
+    ignoreScalars: boolean
   ): void {
-    if (isDefined(schema.const) && !isArray) {
-      collector.add({
-        kind: this.getSuggestionKind(schema.type),
-        label: this.getLabelForValue(schema.const),
-        insertText: this.getInsertTextForValue(schema.const, separatorAfter, schema.type),
-        insertTextFormat: InsertTextFormat.Snippet,
-        documentation: this.fromMarkup(schema.markdownDescription) || schema.description,
-      });
+    if (isDefined(schema.const)) {
+      if (!ignoreScalars || typeof schema.const === 'object') {
+        collector.add({
+          kind: this.getSuggestionKind(schema.type),
+          label: this.getLabelForValue(schema.const),
+          insertText: this.getInsertTextForValue(schema.const, separatorAfter, schema.type),
+          insertTextFormat: InsertTextFormat.Snippet,
+          documentation: this.fromMarkup(schema.markdownDescription) || schema.description,
+        });
+      }
     }
+
     if (Array.isArray(schema.enum)) {
       for (let i = 0, length = schema.enum.length; i < length; i++) {
         const enm = schema.enum[i];
+        if (ignoreScalars && typeof enm !== 'object') continue;
+
         let documentation = this.fromMarkup(schema.markdownDescription) || schema.description;
         if (schema.markdownEnumDescriptions && i < schema.markdownEnumDescriptions.length && this.doesSupportMarkdown()) {
           documentation = this.fromMarkup(schema.markdownEnumDescriptions[i]);
@@ -1470,7 +1481,10 @@ export class YamlCompletion {
     if (Array.isArray(value)) {
       return JSON.stringify(value);
     }
-    return '' + value;
+    if (typeof value === 'string') {
+      return toYamlStringScalar(value, this.isSingleQuote);
+    }
+    return String(value);
   }
 
   private collectDefaultSnippets(
@@ -1688,59 +1702,6 @@ export class YamlCompletion {
     }
 
     return 0;
-  }
-
-  isNumberExp = /^\d+$/;
-  convertToStringValue(param: unknown): string {
-    let value: string;
-    if (typeof param === 'string') {
-      //support YAML spec 1.1 boolean values
-      value = ['on', 'off', 'true', 'false', 'yes', 'no'].includes(param.toLowerCase())
-        ? `${this.getQuote()}${param}${this.getQuote()}`
-        : param;
-    } else {
-      value = '' + param;
-    }
-    if (value.length === 0) {
-      return value;
-    }
-
-    if (value === 'true' || value === 'false' || value === 'null' || this.isNumberExp.test(value)) {
-      return `"${value}"`;
-    }
-
-    if (value.indexOf('"') !== -1) {
-      value = value.replace(doubleQuotesEscapeRegExp, '"');
-    }
-
-    let doQuote = !isNaN(parseInt(value)) || value.charAt(0) === '@';
-
-    if (!doQuote) {
-      // need to quote value if in `foo: bar`, `foo : bar` (mapping) or `foo:` (partial map) format
-      // but `foo:bar` and `:bar` (colon without white-space after it) are just plain string
-      let idx = value.indexOf(':', 0);
-      for (; idx > 0 && idx < value.length; idx = value.indexOf(':', idx + 1)) {
-        if (idx === value.length - 1) {
-          // `foo:` (partial map) format
-          doQuote = true;
-          break;
-        }
-
-        // there are only two valid kinds of white-space in yaml: space or tab
-        // ref: https://yaml.org/spec/1.2.1/#id2775170
-        const nextChar = value.charAt(idx + 1);
-        if (nextChar === '\t' || nextChar === ' ') {
-          doQuote = true;
-          break;
-        }
-      }
-    }
-
-    if (doQuote) {
-      value = `"${value}"`;
-    }
-
-    return value;
   }
 
   getQuote(): string {

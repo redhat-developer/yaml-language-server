@@ -12,13 +12,15 @@ import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { IApplicableSchema } from '../parser/jsonParser07';
+import { getNodeValue, IApplicableSchema } from '../parser/jsonParser07';
 import { JSONSchema } from '../jsonSchema';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
+import * as l10n from '@vscode/l10n';
 import { Telemetry } from '../telemetry';
 import { ASTNode } from 'vscode-json-languageservice';
 import { stringify as stringifyYAML } from 'yaml';
+import { toYamlStringScalar } from '../utils/yamlScalar';
 
 export class YAMLHover {
   private shouldHover: boolean;
@@ -114,12 +116,13 @@ export class YAMLHover {
         let markdownEnumDescriptions: string[] = [];
         const markdownExamples: string[] = [];
         const markdownEnums: markdownEnum[] = [];
-
+        let enumIdx: number | undefined = undefined;
         matchingSchemas.every((s) => {
           if ((s.node === node || (node.type === 'property' && node.valueNode === s.node)) && !s.inverted && s.schema) {
             title = title || s.schema.title || s.schema.closestTitle;
             markdownDescription = markdownDescription || s.schema.markdownDescription || this.toMarkdown(s.schema.description);
             if (s.schema.enum) {
+              enumIdx = s.schema.enum.indexOf(getNodeValue(node));
               if (s.schema.markdownEnumDescriptions) {
                 markdownEnumDescriptions = s.schema.markdownEnumDescriptions;
               } else if (s.schema.enumDescriptions) {
@@ -128,15 +131,17 @@ export class YAMLHover {
                 markdownEnumDescriptions = [];
               }
               s.schema.enum.forEach((enumValue, idx) => {
-                if (typeof enumValue !== 'string') {
-                  enumValue = JSON.stringify(enumValue);
-                }
+                enumValue = typeof enumValue === 'string' ? toYamlStringScalar(enumValue, false) : JSON.stringify(enumValue);
                 //insert only if the value is not present yet (avoiding duplicates)
-                if (!markdownEnums.some((me) => me.value === enumValue)) {
+                //but it also adds or keeps the description of the enum value
+                const foundIdx = markdownEnums.findIndex((me) => me.value === enumValue);
+                if (foundIdx < 0) {
                   markdownEnums.push({
                     value: enumValue,
                     description: markdownEnumDescriptions[idx],
                   });
+                } else {
+                  markdownEnums[foundIdx].description ||= markdownEnumDescriptions[idx];
                 }
               });
             }
@@ -173,7 +178,10 @@ export class YAMLHover {
         }
         if (markdownEnums.length !== 0) {
           result = ensureLineBreak(result);
-          result += 'Allowed Values:\n\n';
+          result += l10n.t('allowedValues') + '\n\n';
+          if (enumIdx) {
+            markdownEnums.unshift(markdownEnums.splice(enumIdx, 1)[0]);
+          }
           markdownEnums.forEach((me) => {
             if (me.description) {
               result += `* \`${toMarkdownCodeBlock(me.value)}\`: ${me.description}\n`;
@@ -185,13 +193,13 @@ export class YAMLHover {
         if (markdownExamples.length !== 0) {
           markdownExamples.forEach((example) => {
             result = ensureLineBreak(result);
-            result += 'Example:\n\n';
+            result += l10n.t('example') + '\n\n';
             result += `\`\`\`yaml\n${example}\`\`\`\n`;
           });
         }
         if (result.length > 0 && schema.schema.url) {
           result = ensureLineBreak(result);
-          result += `Source: [${getSchemaName(schema.schema)}](${schema.schema.url})`;
+          result += l10n.t('source', getSchemaName(schema.schema), schema.schema.url);
         }
         return createHover(result);
       }
@@ -203,7 +211,7 @@ export class YAMLHover {
   private toMarkdown(plain: string | undefined): string | undefined {
     if (plain) {
       let escaped = plain.replace(/([^\n\r])(\r?\n)([^\n\r])/gm, '$1\n\n$3'); // single new lines to \n\n (Markdown paragraph)
-      escaped = escaped.replace(/[\\`*_{}[\]()#+\-.!]/g, '\\$&'); // escape markdown syntax tokens: http://daringfireball.net/projects/markdown/syntax#backslash
+      escaped = escaped.replace(/[\\`*_{}[\]#+\-!]/g, '\\$&'); // escape some of the markdown syntax tokens http://daringfireball.net/projects/markdown/syntax#backslash to avoid unintended formatting
       if (this.indentation !== undefined) {
         // escape indentation whitespace to prevent it from being converted to markdown code blocks.
         const indentationMatchRegex = new RegExp(` {${this.indentation.length}}`, 'g');

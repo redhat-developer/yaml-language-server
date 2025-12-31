@@ -40,7 +40,7 @@ export class SettingsHandler {
     const config = await this.connection.workspace.getConfiguration([
       { section: 'yaml' },
       { section: 'http' },
-      { section: '[yaml]' },
+      { section: '[yaml]', scopeUri: 'null' },
       { section: 'editor' },
       { section: 'files' },
     ]);
@@ -107,6 +107,10 @@ export class SettingsHandler {
           this.yamlSettings.yamlFormatterSettings.bracketSpacing = settings.yaml.format.bracketSpacing;
         }
 
+        if (settings.yaml.format.trailingComma !== undefined) {
+          this.yamlSettings.yamlFormatterSettings.trailingComma = settings.yaml.format.trailingComma;
+        }
+
         if (settings.yaml.format.enable !== undefined) {
           this.yamlSettings.yamlFormatterSettings.enable = settings.yaml.format.enable;
         }
@@ -159,7 +163,14 @@ export class SettingsHandler {
       if (enableFormatter) {
         if (!this.yamlSettings.formatterRegistration) {
           this.yamlSettings.formatterRegistration = this.connection.client.register(DocumentFormattingRequest.type, {
-            documentSelector: [{ language: 'yaml' }],
+            documentSelector: [
+              { language: 'yaml' },
+              { language: 'dockercompose' },
+              { language: 'github-actions-workflow' },
+              { language: 'yaml-textmate' },
+              { language: 'yaml-tmlanguage' },
+              { pattern: '**/*.{yaml,yml}' },
+            ],
           });
         }
       } else if (this.yamlSettings.formatterRegistration) {

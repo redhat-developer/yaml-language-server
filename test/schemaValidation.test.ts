@@ -189,6 +189,108 @@ describe('Validation Tests', () => {
         })
         .then(done, done);
     });
+
+    it('Test that boolean value can be used in enum', (done) => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          analytics: {
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'analytics: true';
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.deepStrictEqual(result, []);
+        })
+        .then(done, done);
+    });
+
+    it('Test that boolean value can be used in const', (done) => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          analytics: {
+            const: true,
+          },
+        },
+      });
+      const content = 'analytics: true';
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.deepStrictEqual(result, []);
+        })
+        .then(done, done);
+    });
+
+    it('Test that YAML 1.1 boolean "True" can be used in enum', async () => {
+      // This test requires YAML 1.1 mode where "True" is parsed as a boolean
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.1').languageSettings);
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          enabled: {
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'enabled: True';
+      const result = await parseSetup(content);
+      assert.deepStrictEqual(result, []);
+      // Reset to default YAML version
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.2').languageSettings);
+    });
+
+    it('Test that YAML 1.1 boolean "False" can be used in enum', async () => {
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.1').languageSettings);
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          enabled: {
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'enabled: False';
+      const result = await parseSetup(content);
+      assert.deepStrictEqual(result, []);
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.2').languageSettings);
+    });
+
+    it('Test that YAML 1.1 boolean "yes" can be used with const', async () => {
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.1').languageSettings);
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          confirmed: {
+            const: true,
+          },
+        },
+      });
+      const content = 'confirmed: yes';
+      const result = await parseSetup(content);
+      assert.deepStrictEqual(result, []);
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.2').languageSettings);
+    });
+
+    it('Test that YAML 1.1 boolean "no" can be used with const', async () => {
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.1').languageSettings);
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          disabled: {
+            const: false,
+          },
+        },
+      });
+      const content = 'disabled: no';
+      const result = await parseSetup(content);
+      assert.deepStrictEqual(result, []);
+      languageService.configure(languageSettingsSetup.withYamlVersion('1.2').languageSettings);
+    });
   });
 
   describe('String tests', () => {
@@ -1373,6 +1475,46 @@ obj:
       const result = await parseSetup(content);
       expect(result[0].message).to.eq('Missing property "pineapple".');
     });
+    it('should add errorMessage from schema when the property is missing', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          icon: {
+            type: 'string',
+          },
+        },
+        required: ['title'],
+        errorMessage: 'Custom message',
+      });
+      const content = '';
+      const result = await parseSetup(content);
+      expect(result[0].message).to.eq('Custom message');
+    });
+    it('should add errorMessage from sub-schema when the property is missing', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          icon: {
+            type: 'string',
+          },
+          title: {
+            type: 'string',
+          },
+        },
+        anyOf: [
+          {
+            required: ['title'],
+            errorMessage: 'At least one of `title` or `icon` must be defined.',
+          },
+          {
+            required: ['icon'],
+          },
+        ],
+      });
+      const content = '';
+      const result = await parseSetup(content);
+      expect(result[0].message).to.eq('At least one of `title` or `icon` must be defined.');
+    });
 
     describe('filePatternAssociation', () => {
       const schema = {
@@ -2091,6 +2233,89 @@ obj:
     };
     schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = `myProperty:\n  foo: bar`;
+    const result = await parseSetup(content);
+    assert.equal(result.length, 0);
+  });
+
+  it('value should match as per schema const on boolean', async () => {
+    schemaProvider.addSchema(SCHEMA_ID, {
+      type: 'object',
+      properties: {
+        prop: {
+          const: true,
+          type: 'boolean',
+        },
+      },
+    });
+
+    let content = `prop: false`;
+    let result = await parseSetup(content);
+    expect(result.length).to.eq(1);
+    expect(result[0].message).to.eq('Value must be true.');
+
+    content = `prop: true`;
+    result = await parseSetup(content);
+    expect(result.length).to.eq(0);
+  });
+
+  it('draft-04 schema', async () => {
+    const schema: JSONSchema = {
+      $schema: 'http://json-schema.org/draft-04/schema#',
+      type: 'object',
+      properties: {
+        myProperty: {
+          $ref: '#/definitions/Interface%3Ctype%3E',
+        },
+      },
+      definitions: {
+        'Interface<type>': {
+          type: 'object',
+          properties: {
+            foo: {
+              type: 'string',
+            },
+            multipleOf: {
+              type: 'number',
+              minimum: 0,
+              exclusiveMinimum: true,
+            },
+          },
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = `myProperty:\n  foo: bar\n  multipleOf: 1`;
+    const result = await parseSetup(content);
+    assert.equal(result.length, 0);
+  });
+
+  it('draft-04 schema with https in metaschema URI', async () => {
+    const schema: JSONSchema = {
+      $schema: 'https://json-schema.org/draft-04/schema#',
+      type: 'object',
+      properties: {
+        myProperty: {
+          $ref: '#/definitions/Interface%3Ctype%3E',
+        },
+      },
+      definitions: {
+        'Interface<type>': {
+          type: 'object',
+          properties: {
+            foo: {
+              type: 'string',
+            },
+            multipleOf: {
+              type: 'number',
+              minimum: 0,
+              exclusiveMinimum: true,
+            },
+          },
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = `myProperty:\n  foo: bar\n  multipleOf: 1`;
     const result = await parseSetup(content);
     assert.equal(result.length, 0);
   });

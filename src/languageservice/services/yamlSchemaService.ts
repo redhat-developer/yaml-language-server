@@ -16,29 +16,34 @@ import {
 } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 
 import { URI } from 'vscode-uri';
-
-import * as nls from 'vscode-nls';
+import * as l10n from '@vscode/l10n';
 import { convertSimple2RegExpPattern } from '../utils/strings';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonParser07';
-import { parse } from 'yaml';
 import * as path from 'path';
 import { getSchemaFromModeline } from './modelineUtil';
 import { JSONSchemaDescriptionExt } from '../../requestTypes';
 import { SchemaVersions } from '../yamlTypes';
 
+import { parse } from 'yaml';
+import * as Json from 'jsonc-parser';
 import Ajv, { DefinedError } from 'ajv';
+import Ajv4 from 'ajv-draft-04';
 import { getSchemaTitle } from '../utils/schemaUtils';
 import { getDollarSchema } from './dollarUtils';
 
 const ajv = new Ajv();
-
-const localize = nls.loadMessageBundle();
+const ajv4 = new Ajv4();
 
 // load JSON Schema 07 def to validate loaded schemas
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
 const schema07Validator = ajv.compile(jsonSchema07);
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const jsonSchema04 = require('ajv-draft-04/dist/refs/json-schema-draft-04.json');
+const schema04Validator = ajv4.compile(jsonSchema04);
+const SCHEMA_04_URI_WITH_HTTPS = ajv4.defaultMeta().replace('http://', 'https://');
 
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
@@ -165,9 +170,13 @@ export class YAMLSchemaService extends JSONSchemaService {
     let schema: JSONSchema = schemaToResolve.schema;
     const contextService = this.contextService;
 
-    if (!schema07Validator(schema)) {
+    const validator =
+      this.normalizeId(schema.$schema) === ajv4.defaultMeta() || this.normalizeId(schema.$schema) === SCHEMA_04_URI_WITH_HTTPS
+        ? schema04Validator
+        : schema07Validator;
+    if (!validator(schema)) {
       const errs: string[] = [];
-      for (const err of schema07Validator.errors as DefinedError[]) {
+      for (const err of validator.errors as DefinedError[]) {
         errs.push(`${err.instancePath} : ${err.message}`);
       }
       resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
@@ -198,7 +207,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           }
         }
       } else {
-        resolveErrors.push(localize('json.schema.invalidref', "$ref '{0}' in '{1}' can not be resolved.", path, sourceURI));
+        resolveErrors.push(l10n.t('json.schema.invalidref', path, sourceURI));
       }
     };
 
@@ -219,9 +228,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         parentSchemaDependencies[uri] = true;
         if (unresolvedSchema.errors.length) {
           const loc = linkPath ? uri + '#' + linkPath : uri;
-          resolveErrors.push(
-            localize('json.schema.problemloadingref', "Problems loading reference '{0}': {1}", loc, unresolvedSchema.errors[0])
-          );
+          resolveErrors.push(l10n.t('json.schema.problemloadingref', loc, unresolvedSchema.errors[0]));
         }
         merge(node, unresolvedSchema.schema, uri, linkPath);
         node.url = uri;
@@ -650,13 +657,18 @@ export class YAMLSchemaService extends JSONSchemaService {
 
   loadSchema(schemaUri: string): Promise<UnresolvedSchema> {
     const requestService = this.requestService;
-    return super.loadSchema(schemaUri).then((unresolvedJsonSchema: UnresolvedSchema) => {
+    return super.loadSchema(schemaUri).then(async (unresolvedJsonSchema: UnresolvedSchema) => {
       // If json-language-server failed to parse the schema, attempt to parse it as YAML instead.
-      if (unresolvedJsonSchema.errors && unresolvedJsonSchema.schema === undefined) {
+      // If the YAML file starts with %YAML 1.x or contains a comment with a number the schema will
+      // contain a number instead of being undefined, so we need to check for that too.
+      if (
+        unresolvedJsonSchema.errors &&
+        (unresolvedJsonSchema.schema === undefined || typeof unresolvedJsonSchema.schema === 'number')
+      ) {
         return requestService(schemaUri).then(
           (content) => {
             if (!content) {
-              const errorMessage = localize(
+              const errorMessage = l10n.t(
                 'json.schema.nocontent',
                 "Unable to load schema from '{0}': No content. {1}",
                 toDisplayString(schemaUri),
@@ -669,7 +681,7 @@ export class YAMLSchemaService extends JSONSchemaService {
               const schemaContent = parse(content);
               return new UnresolvedSchema(schemaContent, []);
             } catch (yamlError) {
-              const errorMessage = localize(
+              const errorMessage = l10n.t(
                 'json.schema.invalidFormat',
                 "Unable to parse content from '{0}': {1}.",
                 toDisplayString(schemaUri),
@@ -696,6 +708,21 @@ export class YAMLSchemaService extends JSONSchemaService {
         unresolvedJsonSchema.schema.title = name ?? unresolvedJsonSchema.schema.title;
         unresolvedJsonSchema.schema.description = description ?? unresolvedJsonSchema.schema.description;
         unresolvedJsonSchema.schema.versions = versions ?? unresolvedJsonSchema.schema.versions;
+      } else if (unresolvedJsonSchema.errors && unresolvedJsonSchema.errors.length > 0) {
+        let errorMessage: string = unresolvedJsonSchema.errors[0];
+        if (errorMessage.toLowerCase().indexOf('load') !== -1) {
+          errorMessage = l10n.t('json.schema.noContent', toDisplayString(schemaUri));
+        } else if (errorMessage.toLowerCase().indexOf('parse') !== -1) {
+          const content = await requestService(schemaUri);
+          const jsonErrors: Json.ParseError[] = [];
+          const schemaContent = Json.parse(content, jsonErrors);
+          if (jsonErrors.length && schemaContent) {
+            const { offset } = jsonErrors[0];
+            const { line, column } = getLineAndColumnFromOffset(content, offset);
+            errorMessage = l10n.t('json.schema.invalidFormat', toDisplayString(schemaUri), line, column);
+          }
+        }
+        return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
       }
       return unresolvedJsonSchema;
     });
@@ -747,4 +774,11 @@ function toDisplayString(url: string): string {
     // ignore
   }
   return url;
+}
+
+function getLineAndColumnFromOffset(text: string, offset: number): { line: number; column: number } {
+  const lines = text.slice(0, offset).split(/\r?\n/);
+  const line = lines.length; // 1-based line number
+  const column = lines[lines.length - 1].length + 1; // 1-based column number
+  return { line, column };
 }
