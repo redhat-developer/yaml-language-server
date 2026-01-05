@@ -841,17 +841,47 @@ export class YamlCompletion {
           this.addSchemaValueCompletions(schema.schema, separatorAfter, collector, {}, ignoreScalars);
         }
 
-        if (schema.schema.propertyNames && schema.schema.additionalProperties && schema.schema.type === 'object') {
+        if (schema.schema.type === 'object' && schema.schema.propertyNames && schema.schema.additionalProperties !== false) {
           const propertyNameSchema = asSchema(schema.schema.propertyNames);
           if (!propertyNameSchema.deprecationMessage && !propertyNameSchema.doNotSuggest) {
-            const label = propertyNameSchema.title || 'property';
-            collector.add({
-              kind: CompletionItemKind.Property,
-              label,
-              insertText: '$' + `{1:${label}}: `,
-              insertTextFormat: InsertTextFormat.Snippet,
-              documentation: this.fromMarkup(propertyNameSchema.markdownDescription) || propertyNameSchema.description || '',
-            });
+            const doc = this.fromMarkup(
+              (propertyNameSchema.markdownDescription || propertyNameSchema.description || '') +
+                (propertyNameSchema.pattern ? `\n\n**Pattern:** \`${propertyNameSchema.pattern}\`` : '')
+            );
+            const candidates = (() => {
+              const candidatesSet = new Set<string>();
+              const collect = (s: JSONSchema): void => {
+                if (!s) return;
+                if (typeof s.const === 'string') candidatesSet.add(s.const);
+                s.enum?.forEach((v) => typeof v === 'string' && candidatesSet.add(v));
+                s.anyOf?.forEach(collect);
+                s.allOf?.forEach(collect);
+                s.oneOf?.forEach(collect);
+              };
+              collect(propertyNameSchema);
+              return [...candidatesSet];
+            })();
+
+            if (candidates.length > 0) {
+              for (const key of candidates) {
+                collector.add({
+                  kind: CompletionItemKind.Property,
+                  label: key,
+                  insertText: `${key}: `,
+                  insertTextFormat: InsertTextFormat.PlainText,
+                  documentation: doc,
+                });
+              }
+            } else {
+              const label = propertyNameSchema.title || 'property';
+              collector.add({
+                kind: CompletionItemKind.Property,
+                label,
+                insertText: '$' + `{1:${label}}: `,
+                insertTextFormat: InsertTextFormat.Snippet,
+                documentation: doc,
+              });
+            }
           }
         }
       }

@@ -1478,7 +1478,7 @@ test1:
 
     expect(completion.items.length).equal(1);
     expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
-    expect(completion.items[0].documentation).to.be.equal('Property Description');
+    expect(completion.items[0].documentation).to.deep.equal({ kind: 'markdown', value: 'Property Description' });
   });
   it('should not suggest propertyNames with doNotSuggest', async () => {
     const schema: JSONSchema = {
@@ -1513,6 +1513,54 @@ test1:
     expect(completion.items.length).equal(2);
     expect(completion.items[0].insertText).to.be.equal('"YES"');
     expect(completion.items[1].insertText).to.be.equal('"NO"');
+  });
+
+  it('should suggest propertyNames candidates from const, enum, oneOf, anyOf, allOf', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      propertyNames: {
+        allOf: [
+          { const: 'Event0' },
+          {
+            anyOf: [
+              { const: 'Event1' },
+              { enum: ['Event2', 'Event3'] },
+              {
+                oneOf: [{ const: 'Event4' }, { const: 'Event5' }],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('', 0, 0);
+    expect(completion.items.map((i) => i.label)).to.have.members(['Event0', 'Event1', 'Event2', 'Event3', 'Event4', 'Event5']);
+  });
+
+  it('should suggest propertyNames keys from definitions $ref', async () => {
+    const schema: JSONSchema = {
+      definitions: {
+        EventName: {
+          type: 'string',
+          title: 'EventName',
+          enum: ['None', 'Event1', 'Event2'],
+        },
+      },
+      type: 'object',
+      properties: {
+        events: {
+          type: 'object',
+          propertyNames: { $ref: '#/definitions/EventName' },
+        },
+      },
+      required: ['events'],
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = `events:
+    | |`;
+    const completion = await parseCaret(content);
+    expect(completion.items.map((i) => i.label)).to.have.members(['None', 'Event1', 'Event2']);
   });
 
   describe('String scalar completion comprehensive tests', () => {
