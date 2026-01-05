@@ -8,7 +8,7 @@ if (args.includes('--version') || args.includes('-version')) {
   process.exit(0);
 }
 
-if (args.includes('--help') || args.includes('-h')) {
+if (args.includes('--help') || args.includes('-help') || args.includes('-h')) {
   console.log(`Usage: yaml-language-server [transport]
 
 LSP transport options:
