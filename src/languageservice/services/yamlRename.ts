@@ -13,7 +13,7 @@ import { CST, isAlias, isCollection, isScalar, visit, Node } from 'yaml';
 import { SourceToken, CollectionItem } from 'yaml/dist/parse/cst';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { isCollectionItem } from '../utils/astUtils';
-import { PrepareRenameParams, RenameParams } from 'vscode-languageserver-protocol';
+import { PrepareRenameParams, RenameParams, ResponseError, ErrorCodes } from 'vscode-languageserver-protocol';
 
 interface RenameTarget {
   anchorNode: Node;
@@ -52,20 +52,21 @@ export class YamlRename {
         return null;
       }
 
-      const normalizedNewName = this.normalizeName(params.newName);
+      const newName = params.newName;
+      const invalidChar = this.findInvalidAnchorChar(newName);
+      if (invalidChar !== null) {
+        throw new ResponseError(ErrorCodes.InvalidParams, `Anchor name cannot contain '${invalidChar}'`);
+      }
+
       const edits: TextEdit[] = [];
 
-      edits.push(TextEdit.replace(this.getNameRange(document, anchorToken), normalizedNewName));
+      edits.push(TextEdit.replace(this.getNameRange(document, anchorToken), newName));
 
       visit(target.yamlDoc.internalDocument, (key, node) => {
         if (isAlias(node) && node.srcToken && node.resolve(target.yamlDoc.internalDocument) === target.anchorNode) {
-          edits.push(TextEdit.replace(this.getNameRange(document, node.srcToken as SourceToken), normalizedNewName));
+          edits.push(TextEdit.replace(this.getNameRange(document, node.srcToken as SourceToken), newName));
         }
       });
-
-      if (edits.length === 0) {
-        return null;
-      }
 
       return {
         changes: {
@@ -73,6 +74,9 @@ export class YamlRename {
         },
       };
     } catch (err) {
+      if (err instanceof ResponseError) {
+        throw err;
+      }
       this.telemetry?.sendError('yaml.rename.error', err);
       return null;
     }
@@ -195,7 +199,15 @@ export class YamlRename {
     return offset >= token.offset && offset <= token.offset + token.source.length;
   }
 
-  private normalizeName(name: string): string {
-    return name.replace(/^([*&])/, '');
+  private findInvalidAnchorChar(name: string): string | null {
+    // YAML 1.2.2 spec: anchor names cannot contain flow indicators
+    // https://yaml.org/spec/1.2.2/#rule-ns-anchor-char
+    const invalidChars = ['[', ']', '{', '}', ','];
+    for (const char of invalidChars) {
+      if (name.includes(char)) {
+        return char;
+      }
+    }
+    return null;
   }
 }
