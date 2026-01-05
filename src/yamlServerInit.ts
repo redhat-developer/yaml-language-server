@@ -120,6 +120,10 @@ export class YAMLServerInit {
     registerCommands(commandExecutor, this.connection);
     await this.setupl10nBundle(params);
     return {
+      serverInfo: {
+        name: 'yaml-language-server',
+        version: process.env.YAML_LANGUAGE_SERVER_VERSION || 'unknown',
+      },
       capabilities: {
         textDocumentSync: TextDocumentSyncKind.Incremental,
         completionProvider: { resolveProvider: false },
