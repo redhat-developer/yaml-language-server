@@ -18,7 +18,7 @@ LSP transport options:
 
 Other:
   --version | -version   print product version to the output stream and exit
-  --help | -h            print this help message to the output stream and exit
+  --help | -help | -h    print this help message to the output stream and exit
 `);
   process.exit(0);
 }
