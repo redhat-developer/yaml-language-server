@@ -590,6 +590,8 @@ describe('JSON Schema', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const schemaModelineSample = path.join(__dirname, './fixtures/sample-modeline.json');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const schemaDollarSample = path.join(__dirname, './fixtures/sample-dollar-schema.json');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const schemaDefaultSnippetSample = require(path.join(__dirname, './fixtures/defaultSnippets-const-if-else.json'));
     const languageSettingsSetup = new ServiceSetup().withCompletion();
 
@@ -615,10 +617,40 @@ describe('JSON Schema', () => {
         });
       languageService.configure(languageSettingsSetup.languageSettings);
       languageService.registerCustomSchemaProvider((uri: string) => Promise.resolve(uri));
-      const testTextDocument = setupTextDocument(`# yaml-language-server: $schema=${schemaModelineSample}\n\n`);
+      const testTextDocument = setupTextDocument(
+        `# yaml-language-server: $schema=${schemaModelineSample}\n$schema: ${schemaDollarSample}\n\n`
+      );
       const result = await languageService.doComplete(testTextDocument, Position.create(1, 0), false);
       assert.strictEqual(result.items.length, 1);
       assert.strictEqual(result.items[0].label, 'modeline');
+    });
+
+    it('Explicit $schema takes precedence over all other lower priority schemas', async () => {
+      languageSettingsSetup
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.SchemaStore,
+          schema: schemaStoreSample,
+        })
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.SchemaAssociation,
+          schema: schemaAssociationSample,
+        })
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.Settings,
+          schema: schemaSettingsSample,
+        });
+      languageService.configure(languageSettingsSetup.languageSettings);
+      languageService.registerCustomSchemaProvider((uri: string) => Promise.resolve(uri));
+      const testTextDocument = setupTextDocument(`$schema: ${schemaDollarSample}\n\n`);
+      const result = await languageService.doComplete(testTextDocument, Position.create(1, 0), false);
+      assert.strictEqual(result.items.length, 1);
+      assert.strictEqual(result.items[0].label, 'dollar-schema');
     });
 
     it('Manually setting schema takes precendence over all other lower priority schemas', async () => {
