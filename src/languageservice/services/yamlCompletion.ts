@@ -841,17 +841,36 @@ export class YamlCompletion {
           this.addSchemaValueCompletions(schema.schema, separatorAfter, collector, {}, ignoreScalars);
         }
 
-        if (schema.schema.propertyNames && schema.schema.additionalProperties && schema.schema.type === 'object') {
+        if (schema.schema.type === 'object' && schema.schema.propertyNames && schema.schema.additionalProperties !== false) {
           const propertyNameSchema = asSchema(schema.schema.propertyNames);
           if (!propertyNameSchema.deprecationMessage && !propertyNameSchema.doNotSuggest) {
-            const label = propertyNameSchema.title || 'property';
-            collector.add({
-              kind: CompletionItemKind.Property,
-              label,
-              insertText: '$' + `{1:${label}}: `,
-              insertTextFormat: InsertTextFormat.Snippet,
-              documentation: this.fromMarkup(propertyNameSchema.markdownDescription) || propertyNameSchema.description || '',
-            });
+            const doc = this.fromMarkup(
+              (propertyNameSchema.markdownDescription || propertyNameSchema.description || '') +
+                (propertyNameSchema.pattern ? `\n\n**Pattern:** \`${propertyNameSchema.pattern}\`` : '')
+            );
+            const { candidates, impossible } = this.getPropertyNamesCandidates(propertyNameSchema);
+            if (impossible) {
+              // suggest nothing
+            } else if (candidates.length) {
+              for (const key of candidates) {
+                collector.add({
+                  kind: CompletionItemKind.Property,
+                  label: key,
+                  insertText: `${key}: `,
+                  insertTextFormat: InsertTextFormat.PlainText,
+                  documentation: doc,
+                });
+              }
+            } else {
+              const label = propertyNameSchema.title || 'property';
+              collector.add({
+                kind: CompletionItemKind.Property,
+                label,
+                insertText: '$' + `{1:${label}}: `,
+                insertTextFormat: InsertTextFormat.Snippet,
+                documentation: doc,
+              });
+            }
           }
         }
       }
@@ -1702,6 +1721,39 @@ export class YamlCompletion {
     }
 
     return 0;
+  }
+
+  private getPropertyNamesCandidates(schema: JSONSchemaRef): { candidates: string[]; impossible: boolean } {
+    let impossible = false;
+
+    const collect = (node: JSONSchemaRef): Set<string> | null => {
+      if (!node || typeof node !== 'object') return null;
+
+      if (Array.isArray(node.allOf) && node.allOf.length) {
+        let intersection = null;
+        for (const part of node.allOf) {
+          const partSet = collect(part);
+          if (!partSet) continue;
+          intersection = intersection ? new Set([...intersection].filter((v) => partSet.has(v))) : new Set(partSet);
+          if (intersection.size === 0) {
+            impossible = true;
+            return new Set();
+          }
+        }
+        if (intersection) return intersection;
+      }
+
+      const result = new Set<string>();
+      if (typeof node.const === 'string') result.add(node.const);
+      node.enum?.forEach((val) => typeof val === 'string' && result.add(val));
+      node.anyOf?.forEach((branch) => collect(branch)?.forEach((val) => result.add(val)));
+      node.oneOf?.forEach((branch) => collect(branch)?.forEach((val) => result.add(val)));
+
+      return result.size ? result : null;
+    };
+
+    const set = collect(schema);
+    return { candidates: set ? [...set] : [], impossible };
   }
 
   getQuote(): string {
