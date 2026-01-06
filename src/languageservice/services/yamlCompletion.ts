@@ -848,21 +848,10 @@ export class YamlCompletion {
               (propertyNameSchema.markdownDescription || propertyNameSchema.description || '') +
                 (propertyNameSchema.pattern ? `\n\n**Pattern:** \`${propertyNameSchema.pattern}\`` : '')
             );
-            const candidates = (() => {
-              const candidatesSet = new Set<string>();
-              const collect = (s: JSONSchema): void => {
-                if (!s) return;
-                if (typeof s.const === 'string') candidatesSet.add(s.const);
-                s.enum?.forEach((v) => typeof v === 'string' && candidatesSet.add(v));
-                s.anyOf?.forEach(collect);
-                s.allOf?.forEach(collect);
-                s.oneOf?.forEach(collect);
-              };
-              collect(propertyNameSchema);
-              return [...candidatesSet];
-            })();
-
-            if (candidates.length > 0) {
+            const { candidates, impossible } = this.getPropertyNamesCandidates(propertyNameSchema);
+            if (impossible) {
+              // suggest nothing
+            } else if (candidates.length) {
               for (const key of candidates) {
                 collector.add({
                   kind: CompletionItemKind.Property,
@@ -1732,6 +1721,39 @@ export class YamlCompletion {
     }
 
     return 0;
+  }
+
+  private getPropertyNamesCandidates(schema: JSONSchemaRef): { candidates: string[]; impossible: boolean } {
+    let impossible = false;
+
+    const collect = (node: JSONSchemaRef): Set<string> | null => {
+      if (!node || typeof node !== 'object') return null;
+
+      if (Array.isArray(node.allOf) && node.allOf.length) {
+        let intersection = null;
+        for (const part of node.allOf) {
+          const partSet = collect(part);
+          if (!partSet) continue;
+          intersection = intersection ? new Set([...intersection].filter((v) => partSet.has(v))) : new Set(partSet);
+          if (intersection.size === 0) {
+            impossible = true;
+            return new Set();
+          }
+        }
+        if (intersection) return intersection;
+      }
+
+      const result = new Set<string>();
+      if (typeof node.const === 'string') result.add(node.const);
+      node.enum?.forEach((val) => typeof val === 'string' && result.add(val));
+      node.anyOf?.forEach((branch) => collect(branch)?.forEach((val) => result.add(val)));
+      node.oneOf?.forEach((branch) => collect(branch)?.forEach((val) => result.add(val)));
+
+      return result.size ? result : null;
+    };
+
+    const set = collect(schema);
+    return { candidates: set ? [...set] : [], impossible };
   }
 
   getQuote(): string {
