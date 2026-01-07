@@ -1478,7 +1478,7 @@ test1:
 
     expect(completion.items.length).equal(1);
     expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
-    expect(completion.items[0].documentation).to.be.equal('Property Description');
+    expect(completion.items[0].documentation).to.be.deep.equal({ kind: 'markdown', value: 'Property Description' });
   });
   it('should not suggest propertyNames with doNotSuggest', async () => {
     const schema: JSONSchema = {
@@ -1513,6 +1513,103 @@ test1:
     expect(completion.items.length).equal(2);
     expect(completion.items[0].insertText).to.be.equal('"YES"');
     expect(completion.items[1].insertText).to.be.equal('"NO"');
+  });
+
+  it('should suggest propertyNames keys from definitions $ref', async () => {
+    const schema: JSONSchema = {
+      definitions: {
+        EventName: {
+          type: 'string',
+          title: 'EventName',
+          enum: ['None', 'Event1', 'Event2'],
+        },
+      },
+      type: 'object',
+      properties: {
+        events: {
+          type: 'object',
+          propertyNames: { $ref: '#/definitions/EventName' },
+        },
+      },
+      required: ['events'],
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('events:\n  ', 1, 2);
+    expect(completion.items.map((i) => i.label)).to.have.members(['None', 'Event1', 'Event2']);
+  });
+
+  it('should suggest propertyNames candidates from const', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      propertyNames: {
+        const: 'Event0',
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('', 0, 0);
+    expect(completion.items.map((i) => i.label)).to.have.members(['Event0']);
+  });
+
+  it('should suggest propertyNames candidates from enum', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: true,
+      propertyNames: {
+        enum: ['Event1', 'Event2', 'Event3'],
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('', 0, 0);
+    expect(completion.items.map((i) => i.label)).to.have.members(['Event1', 'Event2', 'Event3']);
+  });
+
+  it('should suggest propertyNames candidates from oneOf', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      propertyNames: {
+        oneOf: [{ const: 'Event1' }, { const: 'Event2' }],
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('', 0, 0);
+    expect(completion.items.map((i) => i.label)).to.have.members(['Event1', 'Event2']);
+  });
+
+  it('should suggest propertyNames candidates from anyOf', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      propertyNames: {
+        anyOf: [{ const: 'Event1' }, { enum: ['Event2', 'Event3'] }],
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('', 0, 0);
+    expect(completion.items.map((i) => i.label)).to.have.members(['Event1', 'Event2', 'Event3']);
+  });
+
+  it('should suggest only the intersected propertyNames candidate from allOf (const + enum)', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      propertyNames: {
+        allOf: [{ const: 'One' }, { enum: ['One', 'Two'] }],
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('', 0, 0);
+    expect(completion.items.map((i) => i.label)).to.have.members(['One']);
+    expect(completion.items.map((i) => i.label)).to.not.include('Two');
+  });
+
+  it('should not suggest any propertyNames when allOf makes keys impossible (const + const)', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      propertyNames: {
+        allOf: [{ const: 'One' }, { const: 'Two' }],
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('', 0, 0);
+    expect(completion.items).to.be.empty;
   });
 
   describe('String scalar completion comprehensive tests', () => {
