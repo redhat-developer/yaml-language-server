@@ -27,23 +27,14 @@ import { SchemaVersions } from '../yamlTypes';
 
 import { parse } from 'yaml';
 import * as Json from 'jsonc-parser';
-import Ajv, { DefinedError } from 'ajv';
-import Ajv4 from 'ajv-draft-04';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
-const ajv = new Ajv();
-const ajv4 = new Ajv4();
+import * as Draft04 from '@hyperjump/json-schema/draft-04';
+import * as Draft07 from '@hyperjump/json-schema/draft-07';
+import * as Draft201909 from '@hyperjump/json-schema/draft-2019-09';
+import * as Draft202012 from '@hyperjump/json-schema/draft-2020-12';
 
-// load JSON Schema 07 def to validate loaded schemas
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
-const schema07Validator = ajv.compile(jsonSchema07);
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const jsonSchema04 = require('ajv-draft-04/dist/refs/json-schema-draft-04.json');
-const schema04Validator = ajv4.compile(jsonSchema04);
-const SCHEMA_04_URI_WITH_HTTPS = ajv4.defaultMeta().replace('http://', 'https://');
-
+type SupportedSchemaVersion = '2020-12' | '2019-09' | 'draft-07' | 'draft-04';
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
 export enum MODIFICATION_ACTIONS {
@@ -169,16 +160,59 @@ export class YAMLSchemaService extends JSONSchemaService {
     let schema: JSONSchema = schemaToResolve.schema;
     const contextService = this.contextService;
 
-    const validator =
-      this.normalizeId(schema.$schema) === ajv4.defaultMeta() || this.normalizeId(schema.$schema) === SCHEMA_04_URI_WITH_HTTPS
-        ? schema04Validator
-        : schema07Validator;
-    if (!validator(schema)) {
-      const errs: string[] = [];
-      for (const err of validator.errors as DefinedError[]) {
-        errs.push(`${err.instancePath} : ${err.message}`);
+    // Validate schema type before processing
+    if (schema === null) {
+      resolveErrors.push(`Wrong schema: "null", it MUST be an Object or Boolean`);
+      return new ResolvedSchema({}, resolveErrors);
+    }
+
+    if (Array.isArray(schema)) {
+      resolveErrors.push(`Wrong schema: "array", it MUST be an Object or Boolean`);
+      return new ResolvedSchema({}, resolveErrors);
+    }
+
+    if (typeof schema === 'string') {
+      resolveErrors.push(`Wrong schema: "string", it MUST be an Object or Boolean`);
+      return new ResolvedSchema({}, resolveErrors);
+    }
+
+    if (typeof schema === 'number') {
+      resolveErrors.push(`Wrong schema: "number", it MUST be an Object or Boolean`);
+      return new ResolvedSchema({}, resolveErrors);
+    }
+
+    // Only proceed if schema is an object or boolean
+    if (typeof schema !== 'object' && typeof schema !== 'boolean') {
+      resolveErrors.push(`Wrong schema: "${typeof schema}", it MUST be an Object or Boolean`);
+      return new ResolvedSchema({}, resolveErrors);
+    }
+
+    const schemaVersion = this.detectSchemaVersion(schema);
+    const validator = this.getValidatorForVersion(schemaVersion);
+    const metaSchemaUrl = this.getSchemaMetaSchema(schemaVersion);
+
+    // Only validate object schemas against their meta-schema
+    // Boolean schemas (true/false) are valid by definition and don't need meta-schema validation
+    if (typeof schema === 'object' && schema !== null) {
+      try {
+        const result = await validator.validate(metaSchemaUrl, schema, 'BASIC');
+        if (!result.valid && result.errors) {
+          const errs: string[] = [];
+          for (const error of result.errors) {
+            if (error.instanceLocation && error.keyword) {
+              errs.push(`${error.instanceLocation}: ${this.extractKeywordName(error.keyword)} constraint violation`);
+            }
+          }
+          if (errs.length > 0) {
+            resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
+          }
+        }
+      } catch (validationError) {
+        // If validation fails due to incompatible data, add a generic error
+        resolveErrors.push(
+          `Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' validation failed: ${validationError.message}`
+        );
       }
-      resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
     }
 
     const findSection = (schema: JSONSchema, path: string): JSONSchema => {
@@ -743,6 +777,82 @@ export class YAMLSchemaService extends JSONSchemaService {
 
   onResourceChange(uri: string): boolean {
     return super.onResourceChange(uri);
+  }
+
+  /**
+   * Detect the JSON Schema version from the $schema property
+   */
+  private detectSchemaVersion(schema: JSONSchema): SupportedSchemaVersion {
+    if (!schema || typeof schema !== 'object') {
+      return 'draft-07';
+    }
+    const schemaProperty = schema.$schema;
+    if (typeof schemaProperty === 'string') {
+      if (schemaProperty.includes('2020-12')) {
+        return '2020-12';
+      } else if (schemaProperty.includes('2019-09')) {
+        return '2019-09';
+      } else if (schemaProperty.includes('draft-07') || schemaProperty.includes('draft/7')) {
+        return 'draft-07';
+      } else if (schemaProperty.includes('draft-04') || schemaProperty.includes('draft/4')) {
+        return 'draft-04';
+      }
+    }
+    return 'draft-07';
+  }
+
+  /**
+   * Get the appropriate validator module for a schema version
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private getValidatorForVersion(version: SupportedSchemaVersion): any {
+    switch (version) {
+      case '2020-12':
+        return Draft202012;
+      case '2019-09':
+        return Draft201909;
+      case 'draft-07':
+        return Draft07;
+      case 'draft-04':
+      default:
+        return Draft04;
+    }
+  }
+
+  /**
+   * Get the correct schema meta URI for a given version
+   */
+  private getSchemaMetaSchema(version: SupportedSchemaVersion): string {
+    switch (version) {
+      case '2020-12':
+        return 'https://json-schema.org/draft/2020-12/schema';
+      case '2019-09':
+        return 'https://json-schema.org/draft/2019-09/schema';
+      case 'draft-07':
+        return 'http://json-schema.org/draft-07/schema';
+      case 'draft-04':
+        return 'http://json-schema.org/draft-04/schema';
+      default:
+        return 'http://json-schema.org/draft-07/schema';
+    }
+  }
+
+  /**
+   * Extract a human-readable keyword name from a keyword URI
+   */
+  private extractKeywordName(keywordUri: string): string {
+    if (typeof keywordUri !== 'string') {
+      return 'validation';
+    }
+
+    const parts = keywordUri.split('/');
+    const lastPart = parts[parts.length - 1];
+
+    if (lastPart === 'validate') {
+      return 'schema validation';
+    }
+
+    return lastPart || 'validation';
   }
 }
 
