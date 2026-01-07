@@ -200,12 +200,12 @@ export class YamlRename {
   }
 
   private findInvalidAnchorChar(name: string): string | null {
-    // YAML 1.2.2 spec: anchor names cannot contain flow indicators
+    // YAML 1.2.2 spec: anchor names cannot contain flow indicators or whitespace
     // https://yaml.org/spec/1.2.2/#rule-ns-anchor-char
-    const invalidChars = ['[', ']', '{', '}', ','];
+    const invalidChars = ['[', ']', '{', '}', ',', ' ', '\t'];
     for (const char of invalidChars) {
       if (name.includes(char)) {
-        return char;
+        return char === ' ' ? 'space' : char === '\t' ? 'tab' : char;
       }
     }
     return null;

@@ -90,10 +90,10 @@ describe('YAML Rename', () => {
     expect(range).to.equal(null);
   });
 
-  it('rejects invalid anchor names with flow indicator characters', () => {
+  it('rejects invalid anchor names with flow indicator or whitespace characters', () => {
     const { languageService } = setupLanguageService({});
     const document = setupTextDocument('foo: &bar value\n');
-    const invalidNames = ['name[0]', 'name]', 'name{key}', 'name}', 'name,other'];
+    const invalidNames = ['name[0]', 'name]', 'name{key}', 'name}', 'name,other', 'has space', 'has\ttab'];
 
     for (const invalidName of invalidNames) {
       expect(() => {
