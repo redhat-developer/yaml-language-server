@@ -229,7 +229,7 @@ export class YAMLHover {
     const unprocessedProperties: PropertyASTNode[] = [...node.properties];
 
     while (unprocessedProperties.length > 0) {
-      const propertyNode = unprocessedProperties.pop();
+      const propertyNode = unprocessedProperties.shift();
       const key = propertyNode.keyNode.value;
 
       if (key === '<<' && propertyNode.valueNode) {
