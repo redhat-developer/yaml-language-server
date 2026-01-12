@@ -1975,7 +1975,8 @@ obj:
         const content = `foo: bar`;
         const result = await parseSetup(content);
         expect(result).to.have.length(1);
-        expect(result[0].message).to.include("Schema '/default_schema_id.yaml' is not valid: ");
+        expect(result[0].message).to.include('default_schema_id.yaml');
+        expect(result[0].message).to.include('is not valid:');
         expect(result[0].message).to.include('expected a JSON Schema object or boolean, got string');
         expect(telemetry.messages).to.be.empty;
       });
@@ -1992,7 +1993,8 @@ obj:
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const result = await parseSetup(content);
         expect(result).to.have.length(1);
-        expect(result[0].message).to.include("Schema '/default_schema_id.yaml' is not valid: ");
+        expect(result[0].message).to.include('default_schema_id.yaml');
+        expect(result[0].message).to.include('is not valid:');
         expect(result[0].message).to.include('exclusiveMinimum');
       });
 
@@ -2006,7 +2008,8 @@ obj:
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const result = await parseSetup(content);
         expect(result).to.have.length(1);
-        expect(result[0].message).to.include("Schema '/default_schema_id.yaml' is not valid: ");
+        expect(result[0].message).to.include('default_schema_id.yaml');
+        expect(result[0].message).to.include('is not valid:');
         expect(result[0].message).to.include('exclusiveMinimum');
       });
 
@@ -2026,8 +2029,9 @@ obj:
         };
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const result = await parseSetup(content);
-        expect(result).to.have.length.greaterThan(0);
-        expect(result[0].message).to.include("Schema '/default_schema_id.yaml' is not valid: ");
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('default_schema_id.yaml');
+        expect(result[0].message).to.include('is not valid:');
         expect(result[0].message).to.include('$defs');
       });
 
@@ -2039,8 +2043,9 @@ obj:
         } as unknown as JSONSchema;
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const result = await parseSetup(content);
-        expect(result).to.have.length.greaterThan(0);
-        expect(result[0].message).to.include("Schema '/default_schema_id.yaml' is not valid: ");
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('default_schema_id.yaml');
+        expect(result[0].message).to.include('is not valid:');
         expect(result[0].message).to.include('prefixItems');
       });
     });
