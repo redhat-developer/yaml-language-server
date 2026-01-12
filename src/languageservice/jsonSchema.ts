@@ -65,6 +65,24 @@ export interface JSONSchema {
   then?: JSONSchemaRef;
   else?: JSONSchemaRef;
 
+  // schema draft 2019-09
+  $anchor?: string;
+  $defs?: { [name: string]: JSONSchema };
+  $recursiveAnchor?: boolean;
+  $recursiveRef?: string;
+  $vocabulary?: Record<string, boolean>;
+  dependentSchemas?: JSONSchemaMap;
+  unevaluatedItems?: boolean | JSONSchemaRef;
+  unevaluatedProperties?: boolean | JSONSchemaRef;
+  dependentRequired?: Record<string, string[]>;
+  minContains?: number;
+  maxContains?: number;
+
+  // schema draft 2020-12
+  prefixItems?: JSONSchemaRef[];
+  $dynamicRef?: string;
+  $dynamicAnchor?: string;
+
   // VSCode extensions
 
   defaultSnippets?: {
