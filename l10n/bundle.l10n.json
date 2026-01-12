@@ -4,6 +4,7 @@
   "json.schema.problemloadingref": "Problems loading reference '{0}': {1}",
   "json.schema.noContent": "Unable to load schema from '{0}': No content.",
   "json.schema.invalidFormat": "Unable to parse content from '{0}': Parse error at line: {1} column: {2}",
+  "json.schema.invalidSchema": "Schema '{0}' is not valid: {1}",
   "colorHexFormatWarning": "Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.",
   "dateTimeFormatWarning": "String is not a RFC3339 date-time.",
   "dateFormatWarning": "String is not a RFC3339 date.",

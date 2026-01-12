@@ -1968,14 +1968,86 @@ obj:
       expect(telemetry.messages).to.be.empty;
     });
 
-    it('should handle not valid schema object', async () => {
-      const schema = 'Foo';
-      schemaProvider.addSchema(SCHEMA_ID, schema as JSONSchema);
-      const content = `foo: bar`;
-      const result = await parseSetup(content);
-      expect(result).to.have.length(1);
-      expect(result[0].message).to.include("Schema 'default_schema_id.yaml' is not valid");
-      expect(telemetry.messages).to.be.empty;
+    describe('Schema meta-validation', () => {
+      it('should handle not valid schema object', async () => {
+        const schema = 'Foo';
+        schemaProvider.addSchema(SCHEMA_ID, schema as JSONSchema);
+        const content = `foo: bar`;
+        const result = await parseSetup(content);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('default_schema_id.yaml');
+        expect(result[0].message).to.include('is not valid:');
+        expect(result[0].message).to.include('expected a JSON Schema object or boolean, got string');
+        expect(telemetry.messages).to.be.empty;
+      });
+
+      const content = '6';
+
+      it('draft-04: exclusiveMinimum must be boolean', async () => {
+        const schema = {
+          $schema: 'http://json-schema.org/draft-04/schema#',
+          type: 'number',
+          minimum: 5,
+          exclusiveMinimum: 5,
+        } as unknown as JSONSchema;
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const result = await parseSetup(content);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('default_schema_id.yaml');
+        expect(result[0].message).to.include('is not valid:');
+        expect(result[0].message).to.include('exclusiveMinimum');
+      });
+
+      it('draft-07: exclusiveMinimum must be number', async () => {
+        const schema: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          type: 'number',
+          minimum: 5,
+          exclusiveMinimum: true,
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const result = await parseSetup(content);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('default_schema_id.yaml');
+        expect(result[0].message).to.include('is not valid:');
+        expect(result[0].message).to.include('exclusiveMinimum');
+      });
+
+      it('draft-2019-09: should handle invalid type in $defs', async () => {
+        const schema: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          $defs: {
+            foo: {
+              type: 'object',
+              properties: {
+                bar: {
+                  type: ['foo', 'bar'],
+                },
+              },
+            },
+          },
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const result = await parseSetup(content);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('default_schema_id.yaml');
+        expect(result[0].message).to.include('is not valid:');
+        expect(result[0].message).to.include('$defs');
+      });
+
+      it('draft-2020-12: prefixItems must be an array', async () => {
+        const schema = {
+          $schema: 'https://json-schema.org/draft/2020-12/schema',
+          type: 'number',
+          prefixItems: 'foo',
+        } as unknown as JSONSchema;
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const result = await parseSetup(content);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('default_schema_id.yaml');
+        expect(result[0].message).to.include('is not valid:');
+        expect(result[0].message).to.include('prefixItems');
+      });
     });
 
     it('should handle bad schema refs', async () => {
