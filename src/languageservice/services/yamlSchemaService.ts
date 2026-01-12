@@ -27,22 +27,29 @@ import { SchemaVersions } from '../yamlTypes';
 
 import { parse } from 'yaml';
 import * as Json from 'jsonc-parser';
-import Ajv, { DefinedError } from 'ajv';
+import Ajv, { DefinedError, type AnySchemaObject, type ValidateFunction } from 'ajv';
 import Ajv4 from 'ajv-draft-04';
-import { getSchemaTitle } from '../utils/schemaUtils';
+import Ajv2019 from 'ajv/dist/2019';
+import Ajv2020 from 'ajv/dist/2020';
 
-const ajv = new Ajv();
-const ajv4 = new Ajv4();
-
-// load JSON Schema 07 def to validate loaded schemas
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
-const schema07Validator = ajv.compile(jsonSchema07);
+const ajv4 = new Ajv4({ allErrors: true });
+const ajv7 = new Ajv({ allErrors: true });
+const ajv2019 = new Ajv2019({ allErrors: true });
+const ajv2020 = new Ajv2020({ allErrors: true });
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const jsonSchema04 = require('ajv-draft-04/dist/refs/json-schema-draft-04.json');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const jsonSchema2019 = require('ajv/dist/refs/json-schema-2019-09/schema.json');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const jsonSchema2020 = require('ajv/dist/refs/json-schema-2020-12/schema.json');
+
 const schema04Validator = ajv4.compile(jsonSchema04);
-const SCHEMA_04_URI_WITH_HTTPS = ajv4.defaultMeta().replace('http://', 'https://');
+const schema07Validator = ajv7.compile(jsonSchema07);
+const schema2019Validator = ajv2019.compile(jsonSchema2019);
+const schema2020Validator = ajv2020.compile(jsonSchema2020);
 
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
@@ -166,19 +173,24 @@ export class YAMLSchemaService extends JSONSchemaService {
     dependencies: SchemaDependencies
   ): Promise<ResolvedSchema> {
     const resolveErrors: string[] = schemaToResolve.errors.slice(0);
-    let schema: JSONSchema = schemaToResolve.schema;
-    const contextService = this.contextService;
+    const loc = toDisplayString(schemaURL);
 
-    const validator =
-      this.normalizeId(schema.$schema) === ajv4.defaultMeta() || this.normalizeId(schema.$schema) === SCHEMA_04_URI_WITH_HTTPS
-        ? schema04Validator
-        : schema07Validator;
-    if (!validator(schema)) {
+    const raw: unknown = schemaToResolve.schema;
+    if (raw === null || Array.isArray(raw) || (typeof raw !== 'object' && typeof raw !== 'boolean')) {
+      const got = raw === null ? 'null' : Array.isArray(raw) ? 'array' : typeof raw;
+      resolveErrors.push(l10n.t('json.schema.invalidSchema', loc, `expected a JSON Schema object or boolean, got ${got}`));
+      return new ResolvedSchema({}, resolveErrors);
+    }
+
+    const contextService = this.contextService;
+    let schema = raw as JSONSchema;
+    const validator = pickMetaValidator(schema.$schema);
+    if (validator && !validator(schema)) {
       const errs: string[] = [];
       for (const err of validator.errors as DefinedError[]) {
         errs.push(`${err.instancePath} : ${err.message}`);
       }
-      resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
+      resolveErrors.push(l10n.t('json.schema.invalidSchema', loc, `\n${errs.join('\n')}`));
     }
 
     const findSection = (schema: JSONSchema, path: string): JSONSchema => {
@@ -763,4 +775,39 @@ function getLineAndColumnFromOffset(text: string, offset: number): { line: numbe
   const line = lines.length; // 1-based line number
   const column = lines[lines.length - 1].length + 1; // 1-based column number
   return { line, column };
+}
+
+function normalizeSchemaUri(uri: string | AnySchemaObject): string {
+  if (!uri) return '';
+
+  let s: string;
+  if (typeof uri === 'string') {
+    s = uri;
+  } else {
+    s = uri.$id || uri.id || '';
+  }
+  s = s.trim();
+
+  // strips fragment (# or #/something)
+  const hash = s.indexOf('#');
+
+  s = hash === -1 ? s : s.slice(0, hash);
+
+  // normalize http to https (don't normalize custom dialects)
+  s = s.replace(/^http:\/\/json-schema\.org\//i, 'https://json-schema.org/');
+
+  // normalize to no trailing slash
+  s = s.replace(/\/+$/g, '');
+  return s;
+}
+
+function pickMetaValidator(schema: string): ValidateFunction | undefined {
+  const s = normalizeSchemaUri(schema);
+  if (s === normalizeSchemaUri(ajv4.defaultMeta())) return schema04Validator;
+  if (s === normalizeSchemaUri(ajv7.defaultMeta())) return schema07Validator;
+  if (s === normalizeSchemaUri(ajv2019.defaultMeta())) return schema2019Validator;
+  if (s === normalizeSchemaUri(ajv2020.defaultMeta())) return schema2020Validator;
+
+  // don't meta-validate unknown schema URI
+  return undefined;
 }

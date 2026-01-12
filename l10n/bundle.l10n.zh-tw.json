@@ -4,6 +4,7 @@
   "json.schema.problemloadingref": "載入參考 '{0}' 時出現問題：{1}",
   "json.schema.nocontent": "無法從「{0}」載入結構描述：沒有內容。",
   "json.schema.invalidFormat": "無法解析來自「{0}」的內容：在第 {1} 行第 {2} 欄發生解析錯誤",
+  "json.schema.invalidSchema": "結構描述 '{0}' 無效：{1}",
   "colorHexFormatWarning": "無效的顏色格式。請使用 #RGB、#RGBA、#RRGGBB 或 #RRGGBBAA。",
   "dateTimeFormatWarning": "字串不是 RFC3339 日期時間格式。",
   "dateFormatWarning": "字串不是 RFC3339 日期格式。",

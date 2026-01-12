@@ -4,6 +4,7 @@
   "json.schema.problemloadingref": "Probleme beim Laden der Referenz '{0}': {1}",
   "json.schema.nocontent": "Schema konnte nicht von '{0}' geladen werden: Kein Inhalt.",
   "json.schema.invalidFormat": "Inhalt von '{0}' konnte nicht analysiert werden: Analysefehler in Zeile:{1}, Spalte:{2}",
+  "json.schema.invalidSchema": "Schema '{0}' ist ungültig: {1}",
   "colorHexFormatWarning": "Ungültiges Farbformat. Verwenden Sie #RGB, #RGBA, #RRGGBB oder #RRGGBBAA.",
   "dateTimeFormatWarning": "Zeichenfolge ist kein RFC3339-Datum-Zeit-Wert.",
   "dateFormatWarning": "Zeichenfolge ist kein RFC3339-Datum.",
