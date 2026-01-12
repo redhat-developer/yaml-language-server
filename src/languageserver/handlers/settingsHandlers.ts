@@ -84,6 +84,14 @@ export class SettingsHandler {
           this.yamlSettings.schemaStoreUrl = settings.yaml.schemaStore.url;
         }
       }
+
+      if (settings.yaml.kubernetesCRDStore) {
+        this.yamlSettings.kubernetesCRDStoreEnabled = settings.yaml.kubernetesCRDStore.enable;
+        if (settings.yaml.kubernetesCRDStore.url?.length !== 0) {
+          this.yamlSettings.kubernetesCRDStoreUrl = settings.yaml.kubernetesCRDStore.url;
+        }
+      }
+
       if (settings.files?.associations) {
         for (const [ext, languageId] of Object.entries(settings.files.associations)) {
           if (languageId === 'yaml') {

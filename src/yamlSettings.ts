@@ -4,7 +4,7 @@ import { ISchemaAssociations } from './requestTypes';
 import { URI } from 'vscode-uri';
 import { JSONSchema } from './languageservice/jsonSchema';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
+import { CRD_CATALOG_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 import { YamlVersion } from './languageservice/parser/yamlParser07';
 
 // Client settings interface to grab settings relevant for the language server
@@ -17,6 +17,10 @@ export interface Settings {
     completion: boolean;
     customTags: Array<string>;
     schemaStore: {
+      url: string;
+      enable: boolean;
+    };
+    kubernetesCRDStore: {
       url: string;
       enable: boolean;
     };
@@ -78,6 +82,8 @@ export class SettingsState {
   customTags = [];
   schemaStoreEnabled = true;
   schemaStoreUrl = JSON_SCHEMASTORE_URL;
+  kubernetesCRDStoreEnabled = true;
+  kubernetesCRDStoreUrl = CRD_CATALOG_URL;
   indentation: string | undefined = undefined;
   disableAdditionalProperties = false;
   disableDefaultProperties = false;
