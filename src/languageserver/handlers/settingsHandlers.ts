@@ -71,6 +71,9 @@ export class SettingsHandler {
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hover')) {
         this.yamlSettings.yamlShouldHover = settings.yaml.hover;
       }
+      if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hoverAnchor')) {
+        this.yamlSettings.yamlShouldHoverAnchor = settings.yaml.hoverAnchor;
+      }
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'completion')) {
         this.yamlSettings.yamlShouldCompletion = settings.yaml.completion;
       }
@@ -265,6 +268,7 @@ export class SettingsHandler {
     let languageSettings: LanguageSettings = {
       validate: this.yamlSettings.yamlShouldValidate,
       hover: this.yamlSettings.yamlShouldHover,
+      hoverAnchor: this.yamlSettings.yamlShouldHoverAnchor,
       completion: this.yamlSettings.yamlShouldCompletion,
       schemas: [],
       customTags: this.yamlSettings.customTags,
