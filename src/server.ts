@@ -5,16 +5,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { promises as fs, existsSync } from 'fs';
-import { Connection, createConnection, InitializeParams, ProposedFeatures } from 'vscode-languageserver/node';
+import { promises as fs } from 'fs';
+import { Connection, createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import { TelemetryImpl } from './languageserver/telemetry';
 import { schemaRequestHandler, workspaceContext } from './languageservice/services/schemaRequestHandler';
 import { convertErrorToTelemetryMsg } from './languageservice/utils/objects';
+import { setupl10nBundle } from './nodeTranslationSetup';
 import { YAMLServerInit } from './yamlServerInit';
 import { SettingsState } from './yamlSettings';
-import * as path from 'path';
-import * as l10n from '@vscode/l10n';
-import { URI } from 'vscode-uri';
 
 // Create a connection for the server.
 let connection: Connection = null;
@@ -68,24 +66,5 @@ const schemaRequestHandlerWrapper = (connection: Connection, uri: string): Promi
 
 const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
 const telemetry = new TelemetryImpl(connection);
-
-async function setupl10nBundle(params: InitializeParams): Promise<void> {
-  const __dirname = path.dirname(__filename);
-  const l10nPath: string = params.initializationOptions?.l10nPath || path.join(__dirname, '../../../l10n');
-  const locale: string = params.locale || 'en';
-  if (l10nPath) {
-    const bundleFile = !existsSync(path.join(l10nPath, `bundle.l10n.${locale}.json`))
-      ? `bundle.l10n.json`
-      : `bundle.l10n.${locale}.json`;
-    const baseBundleFile = path.join(l10nPath, bundleFile);
-    process.env.VSCODE_NLS_CONFIG = JSON.stringify({
-      locale,
-      _languagePackSupport: true,
-    });
-    await l10n.config({
-      uri: URI.file(baseBundleFile).toString(),
-    });
-  }
-}
 
 new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService, telemetry, setupl10nBundle).start();
