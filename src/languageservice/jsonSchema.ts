@@ -7,12 +7,20 @@ import { CompletionItemKind } from 'vscode-json-languageservice';
 import { SchemaVersions } from './yamlTypes';
 
 export type JSONSchemaRef = JSONSchema | boolean;
+export enum SchemaDialect {
+  draft04 = 'draft04',
+  draft07 = 'draft07',
+  draft2019 = 'draft2019-09',
+  draft2020 = 'draft2020-12',
+  unknown = 'unknown'
+}
 
 export interface JSONSchema {
   id?: string;
   $id?: string;
   $schema?: string;
   url?: string;
+  dialect?: SchemaDialect;
   type?: string | string[];
   title?: string;
   closestTitle?: string;

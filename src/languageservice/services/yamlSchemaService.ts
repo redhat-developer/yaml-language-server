@@ -4,7 +4,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
+import { JSONSchema, JSONSchemaMap, JSONSchemaRef, SchemaDialect } from '../jsonSchema';
 import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
 import { SettingsState } from '../../yamlSettings';
 import {
@@ -53,6 +53,9 @@ const schema04Validator = ajv4.compile(jsonSchema04);
 const schema07Validator = ajv7.compile(jsonSchema07);
 const schema2019Validator = ajv2019.compile(jsonSchema2019);
 const schema2020Validator = ajv2020.compile(jsonSchema2020);
+
+const schemaDialectCache = new Map<string, SchemaDialect>();
+const schemaDialectInFlight = new Map<string, Promise<SchemaDialect>>();
 
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
@@ -190,7 +193,8 @@ export class YAMLSchemaService extends JSONSchemaService {
 
     const contextService = this.contextService;
     let schema = raw as JSONSchema;
-    const validator = pickMetaValidator(schema.$schema);
+    const schemaDialect = await pickSchemaDialect(schema.$schema, (uri) => this.loadSchema(uri));
+    const validator = pickMetaValidator(schemaDialect);
     if (validator && !validator(schema)) {
       const errs: string[] = [];
       for (const err of validator.errors as DefinedError[]) {
@@ -364,6 +368,9 @@ export class YAMLSchemaService extends JSONSchemaService {
     };
 
     await resolveRefs(schema, schema, schemaURL, dependencies);
+    if (schema && typeof schema === 'object') {
+      schema.dialect = schemaDialect;
+    }
     return new ResolvedSchema(schema, resolveErrors);
   }
 
@@ -825,13 +832,70 @@ function normalizeSchemaUri(uri: string | AnySchemaObject): string {
   return s;
 }
 
-function pickMetaValidator(schema: string): ValidateFunction | undefined {
-  const s = normalizeSchemaUri(schema);
-  if (s === normalizeSchemaUri(ajv4.defaultMeta())) return schema04Validator;
-  if (s === normalizeSchemaUri(ajv7.defaultMeta())) return schema07Validator;
-  if (s === normalizeSchemaUri(ajv2019.defaultMeta())) return schema2019Validator;
-  if (s === normalizeSchemaUri(ajv2020.defaultMeta())) return schema2020Validator;
+function knownDialectFromSchemaUri(schemaUri?: string): SchemaDialect {
+  if (schemaUri === normalizeSchemaUri(ajv4.defaultMeta())) return SchemaDialect.draft04;
+  if (schemaUri === normalizeSchemaUri(ajv7.defaultMeta())) return SchemaDialect.draft07;
+  if (schemaUri === normalizeSchemaUri(ajv2019.defaultMeta())) return SchemaDialect.draft2019;
+  if (schemaUri === normalizeSchemaUri(ajv2020.defaultMeta())) return SchemaDialect.draft2020;
+  return SchemaDialect.unknown;
+}
 
-  // don't meta-validate unknown schema URI
-  return undefined;
+async function pickSchemaDialect(
+  $schema: string | undefined,
+  loadSchema: (uri: string) => Promise<UnresolvedSchema>
+): Promise<SchemaDialect> {
+  if (!$schema) return SchemaDialect.unknown;
+  const s = normalizeSchemaUri($schema || '');
+
+  const dialect = knownDialectFromSchemaUri(s);
+  if (dialect !== SchemaDialect.unknown) return dialect;
+
+  // cache custom dialect result
+  const cached = schemaDialectCache.get(s);
+  if (cached) {
+    return cached;
+  }
+  const inflight = schemaDialectInFlight.get(s);
+  if (inflight) {
+    return inflight;
+  }
+
+  // resolve custom dialect: load the dialect meta-schema doc and infer base dialect from its $schema
+  const promise = (async () => {
+    const meta = await loadSchema(s);
+    if (meta.errors?.length) {
+      return SchemaDialect.unknown;
+    }
+    const metaSchema = meta.schema;
+    if (!metaSchema || typeof metaSchema !== 'object') {
+      return SchemaDialect.unknown;
+    }
+    const metaDialect = knownDialectFromSchemaUri(metaSchema.$schema);
+    if (metaDialect !== SchemaDialect.unknown) return metaDialect;
+  })();
+
+  schemaDialectInFlight.set(s, promise);
+  try {
+    const result = await promise;
+    schemaDialectCache.set(s, result);
+    return result;
+  } finally {
+    schemaDialectInFlight.delete(s);
+  }
+}
+
+function pickMetaValidator(dialect: SchemaDialect): ValidateFunction | undefined {
+  switch (dialect) {
+    case SchemaDialect.draft04:
+      return schema04Validator;
+    case SchemaDialect.draft07:
+      return schema07Validator;
+    case SchemaDialect.draft2019:
+      return schema2019Validator;
+    case SchemaDialect.draft2020:
+      return schema2020Validator;
+    default:
+      // don't meta-validate unknown schema URI
+      return undefined;
+  }
 }
