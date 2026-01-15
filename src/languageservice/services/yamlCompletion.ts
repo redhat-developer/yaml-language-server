@@ -1002,12 +1002,12 @@ export class YamlCompletion {
     const schemaTypeTitle = schemaType ? ' type `' + schemaType + '`' : '';
     const schemaDescription = schema.description ? ' (' + schema.description + ')' : '';
     const documentation = this.getDocumentationWithMarkdownText(
-      l10n.t('create.item.array', schemaTypeTitle, schemaDescription),
+      l10n.t('Create an item of an array{0}{1}', schemaTypeTitle, schemaDescription),
       insertText
     );
     collector.add({
       kind: this.getSuggestionKind(schema.type),
-      label: l10n.t('array.item') + (schemaType || index),
+      label: l10n.t('- (array item) ') + (schemaType || index),
       documentation: documentation,
       insertText: insertText,
       insertTextFormat: InsertTextFormat.Snippet,
@@ -1413,7 +1413,7 @@ export class YamlCompletion {
       }
       let label;
       if (typeof value === 'object') {
-        label = l10n.t('Default Value');
+        label = l10n.t('Default value');
       } else {
         label = this.getLabelForValue(value);
       }
@@ -1422,7 +1422,7 @@ export class YamlCompletion {
         label,
         insertText: this.getInsertTextForValue(value, separatorAfter, type),
         insertTextFormat: InsertTextFormat.Snippet,
-        detail: l10n.t('Default Value'),
+        detail: l10n.t('Default value'),
       });
       hasProposals = true;
     }

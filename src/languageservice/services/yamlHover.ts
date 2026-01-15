@@ -188,7 +188,7 @@ export class YAMLHover {
         }
         if (markdownEnums.length !== 0) {
           result = ensureLineBreak(result);
-          result += l10n.t('allowedValues') + '\n\n';
+          result += l10n.t('Allowed Values:') + '\n\n';
           if (enumIdx) {
             markdownEnums.unshift(markdownEnums.splice(enumIdx, 1)[0]);
           }
@@ -203,13 +203,13 @@ export class YAMLHover {
         if (markdownExamples.length !== 0) {
           markdownExamples.forEach((example) => {
             result = ensureLineBreak(result);
-            result += l10n.t('example') + '\n\n';
+            result += l10n.t('Example:') + '\n\n';
             result += `\`\`\`yaml\n${example}\`\`\`\n`;
           });
         }
         if (result.length > 0 && schema.schema.url) {
           result = ensureLineBreak(result);
-          result += l10n.t('source', getSchemaName(schema.schema), schema.schema.url);
+          result += l10n.t('Source: [{0}]({1})', getSchemaName(schema.schema), schema.schema.url);
         }
         return createHover(result);
       }

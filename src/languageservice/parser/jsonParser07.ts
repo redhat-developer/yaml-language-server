@@ -36,33 +36,33 @@ export interface IRange {
 
 export const formats = {
   'color-hex': {
-    errorMessage: l10n.t('colorHexFormatWarning'),
+    errorMessage: l10n.t('Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.'),
     pattern: /^#([0-9A-Fa-f]{3,4}|([0-9A-Fa-f]{2}){3,4})$/,
   },
   'date-time': {
-    errorMessage: l10n.t('dateTimeFormatWarning'),
+    errorMessage: l10n.t('String is not a RFC3339 date-time.'),
     pattern:
       /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i,
   },
   date: {
-    errorMessage: l10n.t('dateFormatWarning'),
+    errorMessage: l10n.t('String is not a RFC3339 date.'),
     pattern: /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/i,
   },
   time: {
-    errorMessage: l10n.t('timeFormatWarning'),
+    errorMessage: l10n.t('String is not a RFC3339 time.'),
     pattern: /^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i,
   },
   email: {
-    errorMessage: l10n.t('emailFormatWarning'),
+    errorMessage: l10n.t('String is not an e-mail address.'),
     pattern:
       /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
   },
   ipv4: {
-    errorMessage: l10n.t('ipv4FormatWarning'),
+    errorMessage: l10n.t('String does not match IPv4 format.'),
     pattern: /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/,
   },
   ipv6: {
-    errorMessage: l10n.t('ipv6FormatWarning'),
+    errorMessage: l10n.t('String does not match IPv6 format.'),
     pattern: /^([0-9a-f]|:){1,4}(:([0-9a-f]{0,4})*){1,7}$/i,
   },
 };
@@ -374,7 +374,7 @@ export class ValidationResult {
       for (const error of this.problems) {
         if (error.code === ErrorCode.EnumValueMismatch) {
           error.message = l10n.t(
-            'enumWarning',
+            'Value is not accepted. Valid values: {0}.',
             [...new Set(this.enumValues)]
               .map((v) => {
                 return JSON.stringify(v);
@@ -697,7 +697,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: schema.errorMessage || l10n.t('typeArrayMismatchWarning', (<string[]>schema.type).join(', ')),
+          message: schema.errorMessage || l10n.t('Incorrect type. Expected one of {0}.', (<string[]>schema.type).join(', ')),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -731,7 +731,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: l10n.t('notSchemaWarning'),
+          message: l10n.t('Matches a schema that is not allowed.'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -784,7 +784,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
-          message: l10n.t('oneOfWarning'),
+          message: l10n.t('Matches multiple schemas when only one must validate.'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -840,7 +840,11 @@ function validate(
           subValidationResult.problems.push({
             location: { offset: node.offset, length: node.length },
             severity: DiagnosticSeverity.Warning,
-            message: l10n.t('ifFilePatternAssociation', filePatternAssociation, options.uri),
+            message: l10n.t(
+              "filePatternAssociation '{0}' does not match with doc uri '{1}'",
+              filePatternAssociation,
+              options.uri
+            ),
             source: getSchemaSource(schema, originalSchema),
             schemaUri: getSchemaUri(schema, originalSchema),
           });
@@ -882,7 +886,7 @@ function validate(
           message:
             schema.errorMessage ||
             l10n.t(
-              'enumWarning',
+              'Value is not accepted. Valid values: {0}.',
               schema.enum
                 .map((v) => {
                   return JSON.stringify(v);
@@ -936,7 +940,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: l10n.t('multipleOfWarning', schema.multipleOf),
+          message: l10n.t('Value is not divisible by {0}.', schema.multipleOf),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -962,7 +966,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('exclusiveMinimumWarning', exclusiveMinimum),
+        message: l10n.t('Value is below the exclusive minimum of {0}.', exclusiveMinimum),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -972,7 +976,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('exclusiveMaximumWarning', exclusiveMaximum),
+        message: l10n.t('Value is above the exclusive maximum of {0}.', exclusiveMaximum),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -982,7 +986,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('minimumWarning', minimum),
+        message: l10n.t('Value is below the minimum of {0}.', minimum),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -992,7 +996,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('maximumWarning', maximum),
+        message: l10n.t('Value is above the maximum of {0}.', maximum),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -1004,7 +1008,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('minLengthWarning', schema.minLength),
+        message: l10n.t('String is shorter than the minimum length of {0}.', schema.minLength),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -1014,7 +1018,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('maxLengthWarning', schema.maxLength),
+        message: l10n.t('String is longer than the maximum length of {0}.', schema.maxLength),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -1026,7 +1030,10 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: schema.patternErrorMessage || schema.errorMessage || l10n.t('patternWarning', schema.pattern),
+          message:
+            schema.patternErrorMessage ||
+            schema.errorMessage ||
+            l10n.t('String does not match the pattern of "{0}".', schema.pattern),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -1040,12 +1047,12 @@ function validate(
           {
             let errorMessage;
             if (!node.value) {
-              errorMessage = l10n.t('uriEmpty');
+              errorMessage = l10n.t('URI expected.');
             } else {
               try {
                 const uri = URI.parse(node.value);
                 if (!uri.scheme && schema.format === 'uri') {
-                  errorMessage = l10n.t('uriSchemeMissing');
+                  errorMessage = l10n.t('URI with a scheme is expected.');
                 }
               } catch (e) {
                 errorMessage = e.message;
@@ -1055,7 +1062,7 @@ function validate(
               validationResult.problems.push({
                 location: { offset: node.offset, length: node.length },
                 severity: DiagnosticSeverity.Warning,
-                message: schema.patternErrorMessage || schema.errorMessage || l10n.t('uriFormatWarning', errorMessage),
+                message: schema.patternErrorMessage || schema.errorMessage || l10n.t('String is not a URI: {0}', errorMessage),
                 source: getSchemaSource(schema, originalSchema),
                 schemaUri: getSchemaUri(schema, originalSchema),
               });
@@ -1120,7 +1127,7 @@ function validate(
           validationResult.problems.push({
             location: { offset: node.offset, length: node.length },
             severity: DiagnosticSeverity.Warning,
-            message: l10n.t('additionalItemsWarning', subSchemas.length),
+            message: l10n.t('Array has too many items according to schema. Expected {0} or fewer.', subSchemas.length),
             source: getSchemaSource(schema, originalSchema),
             schemaUri: getSchemaUri(schema, originalSchema),
           });
@@ -1160,7 +1167,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: schema.errorMessage || l10n.t('requiredItemMissingWarning'),
+          message: schema.errorMessage || l10n.t('Array does not contain required item.'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -1171,7 +1178,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('minItemsWarning', schema.minItems),
+        message: l10n.t('Array has too few items. Expected {0} or more.', schema.minItems),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -1181,7 +1188,7 @@ function validate(
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('maxItemsWarning', schema.maxItems),
+        message: l10n.t('Array has too many items. Expected {0} or fewer.', schema.maxItems),
         source: getSchemaSource(schema, originalSchema),
         schemaUri: getSchemaUri(schema, originalSchema),
       });
@@ -1196,7 +1203,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: l10n.t('uniqueItemsWarning'),
+          message: l10n.t('Array has duplicate items.'),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -1284,7 +1291,7 @@ function validate(
                   length: propertyNode.keyNode.length,
                 },
                 severity: DiagnosticSeverity.Warning,
-                message: schema.errorMessage || l10n.t('DisallowedExtraPropWarning', propertyName),
+                message: schema.errorMessage || l10n.t('Property {0} is not allowed.', propertyName),
                 source: getSchemaSource(schema, originalSchema),
                 schemaUri: getSchemaUri(schema, originalSchema),
               });
@@ -1321,7 +1328,7 @@ function validate(
                       length: propertyNode.keyNode.length,
                     },
                     severity: DiagnosticSeverity.Warning,
-                    message: schema.errorMessage || l10n.t('DisallowedExtraPropWarning', propertyName),
+                    message: schema.errorMessage || l10n.t('Property {0} is not allowed.', propertyName),
                     source: getSchemaSource(schema, originalSchema),
                     schemaUri: getSchemaUri(schema, originalSchema),
                   });
@@ -1391,7 +1398,7 @@ function validate(
               },
               severity: DiagnosticSeverity.Warning,
               code: ErrorCode.PropertyExpected,
-              message: schema.errorMessage || l10n.t('DisallowedExtraPropWarning', propertyName),
+              message: schema.errorMessage || l10n.t('Property {0} is not allowed.', propertyName),
               source: getSchemaSource(schema, originalSchema),
               schemaUri: getSchemaUri(schema, originalSchema),
             };
@@ -1409,7 +1416,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: l10n.t('MaxPropWarning', schema.maxProperties),
+          message: l10n.t('Object has more properties than limit of {0}.', schema.maxProperties),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -1421,7 +1428,7 @@ function validate(
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: l10n.t('MinPropWarning', schema.minProperties),
+          message: l10n.t('Object has fewer properties than the required number of {0}', schema.minProperties),
           source: getSchemaSource(schema, originalSchema),
           schemaUri: getSchemaUri(schema, originalSchema),
         });
@@ -1439,7 +1446,7 @@ function validate(
                 validationResult.problems.push({
                   location: { offset: node.offset, length: node.length },
                   severity: DiagnosticSeverity.Warning,
-                  message: l10n.t('RequiredDependentPropWarning', requiredProp, key),
+                  message: l10n.t('Object is missing property {0} required by property {1}.', requiredProp, key),
                   source: getSchemaSource(schema, originalSchema),
                   schemaUri: getSchemaUri(schema, originalSchema),
                 });

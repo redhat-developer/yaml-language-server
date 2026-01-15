@@ -62,7 +62,7 @@ describe('Bundle l10n Test', () => {
           l10nPath: path.join(__dirname, '../l10n'),
         },
       });
-      assert.equal(l10n.t('Default Value'), 'Valeur par défaut');
+      assert.equal(l10n.t('Default value'), 'Valeur par défaut');
     });
 
     it('un configured locale should return in english', async () => {
@@ -75,7 +75,7 @@ describe('Bundle l10n Test', () => {
           l10nPath: path.join(__dirname, '../l10n'),
         },
       });
-      assert.equal(l10n.t('Default Value'), 'Default value');
+      assert.equal(l10n.t('Default value'), 'Default value');
     });
   });
 });

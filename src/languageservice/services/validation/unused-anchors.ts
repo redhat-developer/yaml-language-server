@@ -47,7 +47,7 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
           );
           const warningDiagnostic = Diagnostic.create(
             range,
-            l10n.t('unUsedAnchor', aToken.source),
+            l10n.t('Unused anchor "{0}"', aToken.source),
             DiagnosticSeverity.Information,
             0
           );
@@ -65,7 +65,7 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
         const range = Range.create(document.positionAt(startOffset), document.positionAt(endOffset));
         const warningDiagnostic = Diagnostic.create(
           range,
-          l10n.t('unUsedAlias', node.toString()),
+          l10n.t('Unresolved alias "{0}"', node.toString()),
           DiagnosticSeverity.Information,
           0
         );
