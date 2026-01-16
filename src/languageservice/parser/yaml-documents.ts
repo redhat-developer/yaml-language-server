@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONDocument } from './jsonParser07';
+import { JSONDocument } from './jsonDocument';
 import { Document, isNode, isPair, isScalar, LineCounter, Node, visit, YAMLError } from 'yaml';
 import { ASTNode, YamlNode } from '../jsonASTTypes';
 import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07';
