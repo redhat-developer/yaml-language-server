@@ -33,6 +33,8 @@
   "Array does not contain required item.": "配列に必要な項目が含まれていません。",
   "Array has too few items. Expected {0} or more.": "配列の項目数が少なすぎます。{0} 項目以上必要です。",
   "Array has too many items. Expected {0} or fewer.": "配列の項目数が多すぎます。{0} 項目以下にしてください。",
+  "Array has too few items matching \"contains\". Expected {0} or more.": "配列内で \"contains\" 条件に一致する要素が不足しています。{0} 要素以上が必要です。",
+  "Array has too many items matching \"contains\". Expected {0} or fewer.": "配列内で \"contains\" 条件に一致する要素が多すぎます。{0} 要素以下である必要があります.",
   "Array has duplicate items.": "配列に重複する項目があります。",
   "Property {0} is not allowed.": "プロパティ {0} は許可されていません。",
   "Object has more properties than limit of {0}.": "オブジェクトのプロパティ数が制限値 {0} を超えています。",

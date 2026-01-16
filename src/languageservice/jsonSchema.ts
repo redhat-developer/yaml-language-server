@@ -12,7 +12,7 @@ export enum SchemaDialect {
   draft07 = 'draft07',
   draft2019 = 'draft2019-09',
   draft2020 = 'draft2020-12',
-  unknown = 'unknown'
+  undefined = 'undefined',
 }
 
 export interface JSONSchema {

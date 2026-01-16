@@ -31,7 +31,7 @@ import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { stringifyObject, StringifySettings } from '../utils/json';
 import { isDefined, isString } from '../utils/objects';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
-import { asSchema } from '../parser/jsonParser07';
+import { asSchema } from '../parser/schemaValidation/baseValidator';
 import { indexOf, isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
 import { isModeline } from './modelineUtil';
 import { getSchemaTypeName, isAnyOfAllOfOneOfType, isPrimitiveType } from '../utils/schemaUtils';

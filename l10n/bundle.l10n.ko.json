@@ -33,6 +33,8 @@
   "Array does not contain required item.": "배열에 필수 항목이 없습니다.",
   "Array has too few items. Expected {0} or more.": "배열 항목 수가 너무 적습니다. 최소 {0}개 필요합니다.",
   "Array has too many items. Expected {0} or fewer.": "배열 항목 수가 너무 많습니다. 최대 {0}개 허용됩니다.",
+  "Array has too few items matching \"contains\". Expected {0} or more.": "\"contains\" 조건을 만족하는 요소가 너무 적습니다. 최소 {0}개 필요합니다.",
+  "Array has too many items matching \"contains\". Expected {0} or fewer.": "\"contains\" 조건을 만족하는 요소가 너무 많습니다. 최대 {0}개 허용됩니다.",
   "Array has duplicate items.": "배열에 중복된 항목이 있습니다.",
   "Property {0} is not allowed.": "속성 {0}은(는) 허용되지 않습니다.",
   "Object has more properties than limit of {0}.": "객체에 허용된 속성 수 {0}을 초과했습니다.",
