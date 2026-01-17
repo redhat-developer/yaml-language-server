@@ -324,4 +324,181 @@ describe('Validation Tests', () => {
       expect(result[0].message).to.include('Expected 1 or more.');
     });
   });
+
+  describe('keyword: dependentRequired', () => {
+    beforeEach(() => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        type: 'object',
+        properties: {
+          billing_address: { type: 'string' },
+          credit_card: { type: 'string' },
+        },
+        dependentRequired: {
+          billing_address: ['credit_card'],
+        },
+      } as JSONSchema);
+    });
+    it('requires dependent properties when the trigger property is present', async () => {
+      const content = `billing_address: "123 King St"`;
+      const result = await parseSetup(content);
+
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Object is missing property credit_card required by property billing_address.');
+    });
+    it('passes when required dependent properties are present', async () => {
+      const content = `billing_address: "123 King St"\ncredit_card: "4111-1111"`;
+      const result = await parseSetup(content);
+
+      expect(result).to.be.empty;
+    });
+  });
+
+  describe('keyword: dependentSchemas', () => {
+    it('does not apply when the trigger property is absent', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        type: 'object',
+        properties: {
+          kind: { type: 'string' },
+          port: { type: 'number' },
+        },
+        dependentSchemas: {
+          kind: { required: ['port'] },
+        },
+      } as JSONSchema);
+      const content = `port: 8080`;
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+    it('applies dependent schema when the trigger property is present', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        type: 'object',
+        properties: {
+          kind: { type: 'string' },
+          port: { type: 'number' },
+        },
+        dependentSchemas: {
+          kind: { required: ['port'] },
+        },
+      } as JSONSchema);
+      const content = `kind: service`;
+      const result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Missing property');
+      expect(result[0].message).to.include('port');
+    });
+    it('can enforce additional constraints from the dependent schema', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        type: 'object',
+        properties: {
+          tls: { type: 'boolean' },
+          port: { type: 'number' },
+        },
+        dependentSchemas: {
+          tls: {
+            required: ['port'],
+            properties: {
+              port: { minimum: 1024 },
+            },
+          },
+        },
+      } as JSONSchema);
+      const content = `tls: true\nport: 80`;
+      const result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Value is below the minimum of 1024.');
+    });
+    it('applies multiple dependentSchemas when multiple triggers are present', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        type: 'object',
+        properties: {
+          kind: { type: 'string' },
+          tls: { type: 'boolean' },
+          port: { type: 'number' },
+        },
+        dependentSchemas: {
+          kind: { required: ['port'] },
+          tls: {
+            required: ['port'],
+            properties: { port: { minimum: 1024 } },
+          },
+        },
+      } as JSONSchema);
+      const content = `kind: service\ntls: true\nport: 80`;
+      const result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Value is below the minimum of 1024.');
+    });
+  });
+
+  describe('keyword: dependencies (backward compatibility)', () => {
+    describe('property dependencies tests', () => {
+      beforeEach(() => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          type: 'object',
+          properties: {
+            credit_card: { type: 'string' },
+            billing_address: { type: 'string' },
+          },
+          dependencies: {
+            credit_card: ['billing_address'],
+          },
+        } as JSONSchema);
+      });
+      it('requires dependent properties when the trigger property is present', async () => {
+        const content = `credit_card: "4111-1111-1111-1111"`;
+        const result = await parseSetup(content);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('Object is missing property billing_address required by property credit_card.');
+      });
+      it('does not apply when the trigger property is absent', async () => {
+        const content = `billing_address: "123 Main St"`;
+        const result = await parseSetup(content);
+        expect(result).to.be.empty;
+      });
+    });
+  });
+  describe('schema dependencies tests', () => {
+    beforeEach(() => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
+        properties: {
+          mode: { type: 'string' },
+          port: { type: 'number' },
+        },
+        dependencies: {
+          mode: {
+            required: ['port'],
+            properties: {
+              port: { minimum: 1024 },
+            },
+          },
+        },
+      } as JSONSchema);
+    });
+    it('enforces dependent schema constraints when trigger property is present', async () => {
+      const content = `mode: "server"\nport: 80`;
+      const result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Value is below the minimum of 1024.');
+    });
+    it('enforces dependent schema required properties when trigger property is present', async () => {
+      const content = `mode: "server"`;
+      const result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Missing property');
+      expect(result[0].message).to.include('port');
+    });
+    it('does not apply the dependent schema when trigger property is absent', async () => {
+      const content = `port: 80`;
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+  });
 });
