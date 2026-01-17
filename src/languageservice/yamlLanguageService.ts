@@ -234,7 +234,7 @@ export function getLanguageService(params: {
       hover.configure(settings);
       completer.configure(settings, params.yamlSettings);
       formatter.configure(settings);
-      yamlCodeActions.configure(settings);
+      yamlCodeActions.configure(settings, params?.yamlSettings?.yamlFormatterSettings?.printWidth || 80);
     },
     registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
       schemaService.registerCustomSchemaProvider(schemaProvider);
