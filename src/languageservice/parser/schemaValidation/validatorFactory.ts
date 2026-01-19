@@ -3,6 +3,7 @@ import { BaseValidator } from './baseValidator';
 import { Draft04Validator } from './draft04Validator';
 import { Draft07Validator } from './draft07Validator';
 import { Draft2019Validator } from './draft2019Validator';
+import { Draft2020Validator } from './draft2020Validator';
 
 export function getValidator(dialect: SchemaDialect): BaseValidator {
   switch (dialect) {
@@ -12,6 +13,8 @@ export function getValidator(dialect: SchemaDialect): BaseValidator {
       return new Draft07Validator();
     case SchemaDialect.draft2019:
       return new Draft2019Validator();
+    case SchemaDialect.draft2020:
+      return new Draft2020Validator();
     case SchemaDialect.undefined:
     default:
       return new Draft07Validator(); // fallback

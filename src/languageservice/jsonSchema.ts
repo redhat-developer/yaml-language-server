@@ -31,7 +31,7 @@ export interface JSONSchema {
   description?: string;
   properties?: JSONSchemaMap;
   patternProperties?: JSONSchemaMap;
-  additionalProperties?: boolean | JSONSchemaRef;
+  additionalProperties?: JSONSchemaRef;
   minProperties?: number;
   maxProperties?: number;
   dependencies?: JSONSchemaMap | { [prop: string]: string[] };
@@ -39,7 +39,7 @@ export interface JSONSchema {
   minItems?: number;
   maxItems?: number;
   uniqueItems?: boolean;
-  additionalItems?: boolean | JSONSchemaRef;
+  additionalItems?: JSONSchemaRef;
   pattern?: string;
   minLength?: number;
   maxLength?: number;
@@ -80,8 +80,8 @@ export interface JSONSchema {
   $recursiveRef?: string;
   $vocabulary?: Record<string, boolean>;
   dependentSchemas?: JSONSchemaMap;
-  unevaluatedItems?: boolean | JSONSchemaRef;
-  unevaluatedProperties?: boolean | JSONSchemaRef;
+  unevaluatedItems?: JSONSchemaRef;
+  unevaluatedProperties?: JSONSchemaRef;
   dependentRequired?: Record<string, string[]>;
   minContains?: number;
   maxContains?: number;
