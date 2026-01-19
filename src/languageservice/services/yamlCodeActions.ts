@@ -233,7 +233,7 @@ export class YamlCodeActions {
           const rewriter = new FlowStyleRewriter(this.indentation);
           results.push(
             CodeAction.create(
-              l10n.t('Convert to block style {0}', 'Convert to block style {0}', blockTypeDescription),
+              l10n.t('Convert to block style {0}', blockTypeDescription),
               createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, rewriter.write(node))]),
               CodeActionKind.QuickFix
             )
