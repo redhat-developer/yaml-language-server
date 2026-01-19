@@ -184,7 +184,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     const raw: unknown = schemaToResolve.schema;
     if (raw === null || Array.isArray(raw) || (typeof raw !== 'object' && typeof raw !== 'boolean')) {
       const got = raw === null ? 'null' : Array.isArray(raw) ? 'array' : typeof raw;
-      resolveErrors.push(l10n.t('json.schema.invalidSchema', loc, `expected a JSON Schema object or boolean, got ${got}`));
+      resolveErrors.push(l10n.t("Schema '{0}' is not valid: {1}", loc, `expected a JSON Schema object or boolean, got ${got}`));
       return new ResolvedSchema({}, resolveErrors);
     }
 
@@ -196,7 +196,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       for (const err of validator.errors as DefinedError[]) {
         errs.push(`${err.instancePath} : ${err.message}`);
       }
-      resolveErrors.push(l10n.t('json.schema.invalidSchema', loc, `\n${errs.join('\n')}`));
+      resolveErrors.push(l10n.t("Schema '{0}' is not valid: {1}", loc, `\n${errs.join('\n')}`));
     }
 
     const findSection = (schema: JSONSchema, path: string): JSONSchema => {
@@ -224,7 +224,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           }
         }
       } else {
-        resolveErrors.push(l10n.t('json.schema.invalidref', path, sourceURI));
+        resolveErrors.push(l10n.t("$ref '{0}' in '{1}' cannot be resolved.", path, sourceURI));
       }
     };
 
@@ -245,7 +245,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         parentSchemaDependencies[uri] = true;
         if (unresolvedSchema.errors.length) {
           const loc = linkPath ? uri + '#' + linkPath : uri;
-          resolveErrors.push(l10n.t('json.schema.problemloadingref', loc, unresolvedSchema.errors[0]));
+          resolveErrors.push(l10n.t("Problems loading reference '{0}': {1}", loc, unresolvedSchema.errors[0]));
         }
         merge(node, unresolvedSchema.schema, uri, linkPath);
         node.url = uri;
@@ -688,7 +688,6 @@ export class YAMLSchemaService extends JSONSchemaService {
           (content) => {
             if (!content) {
               const errorMessage = l10n.t(
-                'json.schema.nocontent',
                 "Unable to load schema from '{0}': No content. {1}",
                 toDisplayString(schemaUri),
                 unresolvedJsonSchema.errors
@@ -700,12 +699,7 @@ export class YAMLSchemaService extends JSONSchemaService {
               const schemaContent = parse(content);
               return new UnresolvedSchema(schemaContent, []);
             } catch (yamlError) {
-              const errorMessage = l10n.t(
-                'json.schema.invalidFormat',
-                "Unable to parse content from '{0}': {1}.",
-                toDisplayString(schemaUri),
-                yamlError
-              );
+              const errorMessage = l10n.t("Unable to parse content from '{0}': {1}.", toDisplayString(schemaUri), yamlError);
               return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
             }
           },
@@ -730,7 +724,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       } else if (unresolvedJsonSchema.errors && unresolvedJsonSchema.errors.length > 0) {
         let errorMessage: string = unresolvedJsonSchema.errors[0];
         if (errorMessage.toLowerCase().indexOf('load') !== -1) {
-          errorMessage = l10n.t('json.schema.noContent', toDisplayString(schemaUri));
+          errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(schemaUri));
         } else if (errorMessage.toLowerCase().indexOf('parse') !== -1) {
           const content = await requestService(schemaUri);
           const jsonErrors: Json.ParseError[] = [];
@@ -738,7 +732,12 @@ export class YAMLSchemaService extends JSONSchemaService {
           if (jsonErrors.length && schemaContent) {
             const { offset } = jsonErrors[0];
             const { line, column } = getLineAndColumnFromOffset(content, offset);
-            errorMessage = l10n.t('json.schema.invalidFormat', toDisplayString(schemaUri), line, column);
+            errorMessage = l10n.t(
+              "Unable to parse content from '{0}': Parse error at line: {1} column: {2}",
+              toDisplayString(schemaUri),
+              line,
+              column
+            );
           }
         }
         return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);

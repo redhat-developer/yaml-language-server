@@ -5,13 +5,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { createConnection, Connection, ProposedFeatures } from 'vscode-languageserver/node';
+import { promises as fs } from 'fs';
+import { Connection, createConnection, ProposedFeatures } from 'vscode-languageserver/node';
+import { TelemetryImpl } from './languageserver/telemetry';
 import { schemaRequestHandler, workspaceContext } from './languageservice/services/schemaRequestHandler';
+import { convertErrorToTelemetryMsg } from './languageservice/utils/objects';
+import { setupl10nBundle } from './nodeTranslationSetup';
 import { YAMLServerInit } from './yamlServerInit';
 import { SettingsState } from './yamlSettings';
-import { promises as fs } from 'fs';
-import { convertErrorToTelemetryMsg } from './languageservice/utils/objects';
-import { TelemetryImpl } from './languageserver/telemetry';
 
 // Create a connection for the server.
 let connection: Connection = null;
@@ -66,4 +67,4 @@ const schemaRequestHandlerWrapper = (connection: Connection, uri: string): Promi
 const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
 const telemetry = new TelemetryImpl(connection);
 
-new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService, telemetry).start();
+new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService, telemetry, setupl10nBundle).start();

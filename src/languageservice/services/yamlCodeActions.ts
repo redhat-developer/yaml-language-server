@@ -84,7 +84,7 @@ export class YamlCodeActions {
     const result = [];
     for (const schemaUri of schemaUriToDiagnostic.keys()) {
       const action = CodeAction.create(
-        l10n.t('jumpToSchema', path.basename(schemaUri)),
+        l10n.t('Jump to schema location ({0})', path.basename(schemaUri)),
         Command.create('JumpToSchema', YamlCommands.JUMP_TO_SCHEMA, schemaUri)
       );
       action.diagnostics = schemaUriToDiagnostic.get(schemaUri);
@@ -125,7 +125,7 @@ export class YamlCodeActions {
         }
         result.push(
           CodeAction.create(
-            l10n.t('convertToSpace'),
+            l10n.t('Convert Tab to Spaces'),
             createWorkspaceEdit(document.uri, [TextEdit.replace(resultRange, newText)]),
             CodeActionKind.QuickFix
           )
@@ -170,7 +170,7 @@ export class YamlCodeActions {
       if (replaceEdits.length > 0) {
         result.push(
           CodeAction.create(
-            l10n.t('convertAllSpaceToTab'),
+            l10n.t('Convert all Tabs to Spaces'),
             createWorkspaceEdit(document.uri, replaceEdits),
             CodeActionKind.QuickFix
           )
@@ -192,7 +192,7 @@ export class YamlCodeActions {
         const lastWhitespaceChar = getFirstNonWhitespaceCharacterAfterOffset(lineContent, range.end.character);
         range.end.character = lastWhitespaceChar;
         const action = CodeAction.create(
-          l10n.t('deleteUnusedAnchor', actual),
+          l10n.t('Delete unused anchor: {0}', actual),
           createWorkspaceEdit(document.uri, [TextEdit.del(range)]),
           CodeActionKind.QuickFix
         );
@@ -212,7 +212,7 @@ export class YamlCodeActions {
           const newValue = value.includes('true') ? 'true' : 'false';
           results.push(
             CodeAction.create(
-              l10n.t('convertToBoolean'),
+              l10n.t('Convert to boolean'),
               createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, newValue)]),
               CodeActionKind.QuickFix
             )
@@ -233,7 +233,7 @@ export class YamlCodeActions {
           const rewriter = new FlowStyleRewriter(this.indentation);
           results.push(
             CodeAction.create(
-              l10n.t('convertToBlockStyle', 'Convert to block style {0}', blockTypeDescription),
+              l10n.t('Convert to block style {0}', blockTypeDescription),
               createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, rewriter.write(node))]),
               CodeActionKind.QuickFix
             )
@@ -308,7 +308,7 @@ export class YamlCodeActions {
           const replaceRange = Range.create(document.positionAt(node.offset), document.positionAt(node.offset + node.length));
           results.push(
             CodeAction.create(
-              l10n.t('fixKeyOrderToMap'),
+              l10n.t('Fix key order for this map'),
               createWorkspaceEdit(document.uri, [TextEdit.replace(replaceRange, CST.stringify(sorted.srcToken))]),
               CodeActionKind.QuickFix
             )
