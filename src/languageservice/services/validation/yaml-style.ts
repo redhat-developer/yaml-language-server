@@ -22,7 +22,7 @@ export class YAMLStyleValidator implements AdditionalValidator {
         result.push(
           Diagnostic.create(
             this.getRangeOf(document, node.srcToken),
-            l10n.t('Flow style mapping is forbidden', 'Flow style mapping is forbidden'),
+            l10n.t('Flow style mapping is forbidden'),
             DiagnosticSeverity.Error,
             'flowMap'
           )
