@@ -137,7 +137,7 @@ export class Draft2020Validator extends Draft2019Validator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: schema.errorMessage || l10n.t('minContainsWarning', minContains),
+        message: schema.errorMessage || l10n.t('Array has too few items matching \"contains\". Expected {0} or more.', minContains),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
@@ -147,7 +147,7 @@ export class Draft2020Validator extends Draft2019Validator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: schema.errorMessage || l10n.t('maxContainsWarning', maxContains),
+        message: schema.errorMessage || l10n.t('Array has too many items matching \"contains\". Expected {0} or fewer.', maxContains),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
