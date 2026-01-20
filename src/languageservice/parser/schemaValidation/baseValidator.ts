@@ -3,6 +3,7 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
 import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
 import type { ASTNode, ArrayASTNode, NumberASTNode, ObjectASTNode, PropertyASTNode, StringASTNode } from '../../jsonASTTypes';
 import { equals, isBoolean, isDefined, isIterable, isNumber, isString } from '../../utils/objects';
@@ -133,33 +134,33 @@ class NoOpSchemaCollector implements ISchemaCollector {
 
 export const formats: Record<string, { errorMessage: string; pattern: RegExp }> = {
   'color-hex': {
-    errorMessage: l10n.t('colorHexFormatWarning'),
+    errorMessage: l10n.t('Invalid color format. Use #RGB, #RGBA, #RRGGBB or #RRGGBBAA.'),
     pattern: /^#([0-9A-Fa-f]{3,4}|([0-9A-Fa-f]{2}){3,4})$/,
   },
   'date-time': {
-    errorMessage: l10n.t('dateTimeFormatWarning'),
+    errorMessage: l10n.t('String is not a RFC3339 date-time.'),
     pattern:
       /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i,
   },
   date: {
-    errorMessage: l10n.t('dateFormatWarning'),
+    errorMessage: l10n.t('String is not a RFC3339 date.'),
     pattern: /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/i,
   },
   time: {
-    errorMessage: l10n.t('timeFormatWarning'),
+    errorMessage: l10n.t('String is not a RFC3339 time.'),
     pattern: /^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/i,
   },
   email: {
-    errorMessage: l10n.t('emailFormatWarning'),
+    errorMessage: l10n.t('String is not an e-mail address.'),
     pattern:
       /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
   },
   ipv4: {
-    errorMessage: l10n.t('ipv4FormatWarning'),
+    errorMessage: l10n.t('String does not match IPv4 format.'),
     pattern: /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/,
   },
   ipv6: {
-    errorMessage: l10n.t('ipv6FormatWarning'),
+    errorMessage: l10n.t('String does not match IPv6 format.'),
     pattern: /^([0-9a-f]|:){1,4}(:([0-9a-f]{0,4})*){1,7}$/i,
   },
 };
@@ -209,7 +210,10 @@ export class ValidationResult {
       this.enumValues = this.enumValues.concat(other.enumValues);
       for (const err of this.problems) {
         if (err.code === ErrorCode.EnumValueMismatch) {
-          err.message = l10n.t('enumWarning', [...new Set(this.enumValues)].map((v) => JSON.stringify(v)).join(', '));
+          err.message = l10n.t(
+            'Value is not accepted. Valid values: {0}.',
+            [...new Set(this.enumValues)].map((v) => JSON.stringify(v)).join(', ')
+          );
         }
       }
     }
@@ -502,7 +506,7 @@ export abstract class BaseValidator {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: schema.errorMessage || l10n.t('typeArrayMismatchWarning', (schema.type as string[]).join(', ')),
+          message: schema.errorMessage || l10n.t('Incorrect type. Expected one of {0}.', (<string[]>schema.type).join(', ')),
           source: this.getSchemaSource(schema, originalSchema),
           schemaUri: this.getSchemaUri(schema, originalSchema),
         });
@@ -541,7 +545,7 @@ export abstract class BaseValidator {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: l10n.t('notSchemaWarning'),
+          message: l10n.t('Matches a schema that is not allowed.'),
           source: this.getSchemaSource(schema, originalSchema),
           schemaUri: this.getSchemaUri(schema, originalSchema),
         });
@@ -584,7 +588,7 @@ export abstract class BaseValidator {
         validationResult.problems.push({
           location: { offset: node.offset, length: 1 },
           severity: DiagnosticSeverity.Warning,
-          message: l10n.t('oneOfWarning'),
+          message: l10n.t('Matches multiple schemas when only one must validate.'),
           source: this.getSchemaSource(schema, originalSchema),
           schemaUri: this.getSchemaUri(schema, originalSchema),
         });
@@ -642,7 +646,11 @@ export abstract class BaseValidator {
           subValidationResult.problems.push({
             location: { offset: node.offset, length: node.length },
             severity: DiagnosticSeverity.Warning,
-            message: l10n.t('ifFilePatternAssociation', filePatternAssociation, options.uri),
+            message: l10n.t(
+              "filePatternAssociation '{0}' does not match with doc uri '{1}'",
+              filePatternAssociation,
+              options.uri
+            ),
             source: this.getSchemaSource(schema, originalSchema),
             schemaUri: this.getSchemaUri(schema, originalSchema),
           });
@@ -681,7 +689,9 @@ export abstract class BaseValidator {
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
           code: ErrorCode.EnumValueMismatch,
-          message: schema.errorMessage || l10n.t('enumWarning', (schema.enum ?? []).map((v) => JSON.stringify(v)).join(', ')),
+          message:
+            schema.errorMessage ||
+            l10n.t('Value is not accepted. Valid values: {0}.', (schema.enum ?? []).map((v) => JSON.stringify(v)).join(', ')),
           source: this.getSchemaSource(schema, originalSchema),
           schemaUri: this.getSchemaUri(schema, originalSchema),
           data: { values: schema.enum },
@@ -739,7 +749,7 @@ export abstract class BaseValidator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('minLengthWarning', schema.minLength),
+        message: l10n.t('String is shorter than the minimum length of {0}.', schema.minLength),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
@@ -749,7 +759,7 @@ export abstract class BaseValidator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('maxLengthWarning', schema.maxLength),
+        message: l10n.t('String is longer than the maximum length of {0}.', schema.maxLength),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
@@ -761,7 +771,10 @@ export abstract class BaseValidator {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: schema.patternErrorMessage || schema.errorMessage || l10n.t('patternWarning', schema.pattern),
+          message:
+            schema.patternErrorMessage ||
+            schema.errorMessage ||
+            l10n.t('String does not match the pattern of "{0}".', schema.pattern),
           source: this.getSchemaSource(schema, originalSchema),
           schemaUri: this.getSchemaUri(schema, originalSchema),
         });
@@ -774,12 +787,12 @@ export abstract class BaseValidator {
         case 'uri-reference': {
           let errorMessage: string | undefined;
           if (!value) {
-            errorMessage = l10n.t('uriEmpty');
+            errorMessage = l10n.t('URI expected.');
           } else {
             try {
               const uri = URI.parse(value);
               if (!uri.scheme && schema.format === 'uri') {
-                errorMessage = l10n.t('uriSchemeMissing');
+                errorMessage = l10n.t('URI with a scheme is expected.');
               }
             } catch (e: unknown) {
               errorMessage = e instanceof Error ? e.message : String(e);
@@ -789,7 +802,7 @@ export abstract class BaseValidator {
             validationResult.problems.push({
               location: { offset: node.offset, length: node.length },
               severity: DiagnosticSeverity.Warning,
-              message: schema.patternErrorMessage || schema.errorMessage || l10n.t('uriFormatWarning', errorMessage),
+              message: schema.patternErrorMessage || schema.errorMessage || l10n.t('String is not a URI: {0}', errorMessage),
               source: this.getSchemaSource(schema, originalSchema),
               schemaUri: this.getSchemaUri(schema, originalSchema),
             });
@@ -834,7 +847,7 @@ export abstract class BaseValidator {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: l10n.t('multipleOfWarning', schema.multipleOf),
+          message: l10n.t('Value is not divisible by {0}.', schema.multipleOf),
           source: this.getSchemaSource(schema, originalSchema),
           schemaUri: this.getSchemaUri(schema, originalSchema),
         });
@@ -847,7 +860,7 @@ export abstract class BaseValidator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('exclusiveMinimumWarning', limits.exclusiveMinimum),
+        message: l10n.t('Value is below the exclusive minimum of {0}.', limits.exclusiveMinimum),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
@@ -857,7 +870,7 @@ export abstract class BaseValidator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('exclusiveMaximumWarning', limits.exclusiveMaximum),
+        message: l10n.t('Value is above the exclusive maximum of {0}.', limits.exclusiveMaximum),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
@@ -867,7 +880,7 @@ export abstract class BaseValidator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('minimumWarning', limits.minimum),
+        message: l10n.t('Value is below the minimum of {0}.', limits.minimum),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
@@ -877,7 +890,7 @@ export abstract class BaseValidator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('maximumWarning', limits.maximum),
+        message: l10n.t('Value is above the maximum of {0}.', limits.maximum),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
@@ -939,7 +952,7 @@ export abstract class BaseValidator {
           validationResult.problems.push({
             location: { offset: node.offset, length: node.length },
             severity: DiagnosticSeverity.Warning,
-            message: l10n.t('additionalItemsWarning', subSchemas.length),
+            message: l10n.t('Array has too many items according to schema. Expected {0} or fewer.', subSchemas.length),
             source: this.getSchemaSource(schema, originalSchema),
             schemaUri: this.getSchemaUri(schema, originalSchema),
           });
@@ -1014,7 +1027,7 @@ export abstract class BaseValidator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: schema.errorMessage || l10n.t('requiredItemMissingWarning'),
+        message: schema.errorMessage || l10n.t('Array does not contain required item.'),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
@@ -1033,7 +1046,7 @@ export abstract class BaseValidator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('minItemsWarning', schema.minItems),
+        message: l10n.t('Array has too few items. Expected {0} or more.', schema.minItems),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
@@ -1043,7 +1056,7 @@ export abstract class BaseValidator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('maxItemsWarning', schema.maxItems),
+        message: l10n.t('Array has too many items. Expected {0} or fewer.', schema.maxItems),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
@@ -1063,7 +1076,7 @@ export abstract class BaseValidator {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: l10n.t('uniqueItemsWarning'),
+          message: l10n.t('Array has duplicate items.'),
           source: this.getSchemaSource(schema, originalSchema),
           schemaUri: this.getSchemaUri(schema, originalSchema),
         });
@@ -1218,7 +1231,7 @@ export abstract class BaseValidator {
           validationResult.problems.push({
             location: { offset: propertyNode.keyNode.offset, length: propertyNode.keyNode.length },
             severity: DiagnosticSeverity.Warning,
-            message: schema.errorMessage || l10n.t('DisallowedExtraPropWarning', propertyName),
+            message: schema.errorMessage || l10n.t('Property {0} is not allowed.', propertyName),
             source: this.getSchemaSource(schema, originalSchema),
             schemaUri: this.getSchemaUri(schema, originalSchema),
           });
@@ -1273,7 +1286,7 @@ export abstract class BaseValidator {
             validationResult.problems.push({
               location: { offset: propertyNode.keyNode.offset, length: propertyNode.keyNode.length },
               severity: DiagnosticSeverity.Warning,
-              message: schema.errorMessage || l10n.t('DisallowedExtraPropWarning', propertyName),
+              message: schema.errorMessage || l10n.t('Property {0} is not allowed.', propertyName),
               source: this.getSchemaSource(schema, originalSchema),
               schemaUri: this.getSchemaUri(schema, originalSchema),
             });
@@ -1352,7 +1365,7 @@ export abstract class BaseValidator {
         location: { offset: keyNode.offset, length: keyNode.length },
         severity: DiagnosticSeverity.Warning,
         code: ErrorCode.PropertyExpected,
-        message: schema.errorMessage || l10n.t('DisallowedExtraPropWarning', propertyName),
+        message: schema.errorMessage || l10n.t('Property {0} is not allowed.', propertyName),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       };
@@ -1372,7 +1385,7 @@ export abstract class BaseValidator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('MaxPropWarning', schema.maxProperties),
+        message: l10n.t('Object has more properties than limit of {0}.', schema.maxProperties),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
@@ -1382,7 +1395,7 @@ export abstract class BaseValidator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: l10n.t('MinPropWarning', schema.minProperties),
+        message: l10n.t('Object has fewer properties than the required number of {0}', schema.minProperties),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
@@ -1416,7 +1429,7 @@ export abstract class BaseValidator {
             validationResult.problems.push({
               location: { offset: node.offset, length: node.length },
               severity: DiagnosticSeverity.Warning,
-              message: l10n.t('RequiredDependentPropWarning', requiredProp, key),
+              message: l10n.t('Object is missing property {0} required by property {1}.', requiredProp, key),
               source: this.getSchemaSource(schema, originalSchema),
               schemaUri: this.getSchemaUri(schema, originalSchema),
             });

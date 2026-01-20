@@ -2,6 +2,7 @@
  *  Copyright (c) IBM Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
 import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
 import type { ASTNode, ArrayASTNode, ObjectASTNode } from '../../jsonASTTypes';
 import { isNumber } from '../../utils/objects';
@@ -100,7 +101,7 @@ export class Draft2019Validator extends Draft07Validator {
             validationResult.problems.push({
               location: { offset: node.offset, length: node.length },
               severity: DiagnosticSeverity.Warning,
-              message: l10n.t('RequiredDependentPropWarning', requiredProp, prop),
+              message: l10n.t('Object is missing property {0} required by property {1}.', requiredProp, prop),
               source: this.getSchemaSource(schema, originalSchema),
               schemaUri: this.getSchemaUri(schema, originalSchema),
             });
@@ -166,7 +167,7 @@ export class Draft2019Validator extends Draft07Validator {
           location: { offset: keyNode.offset, length: keyNode.length },
           severity: DiagnosticSeverity.Warning,
           code: ErrorCode.PropertyExpected,
-          message: schema.errorMessage || l10n.t('DisallowedExtraPropWarning', propName),
+          message: schema.errorMessage || l10n.t('Property {0} is not allowed.', propName),
           source: this.getSchemaSource(schema, originalSchema),
           schemaUri: this.getSchemaUri(schema, originalSchema),
         });
@@ -237,7 +238,7 @@ export class Draft2019Validator extends Draft07Validator {
           location: { offset: item.offset, length: item.length || 1 },
           severity: DiagnosticSeverity.Warning,
           code: ErrorCode.PropertyExpected,
-          message: schema.errorMessage || l10n.t('additionalItemsWarning', idx), // ok-ish reuse
+          message: schema.errorMessage || l10n.t('Array has too many items according to schema. Expected {0} or fewer.', idx),
           source: this.getSchemaSource(schema, originalSchema),
           schemaUri: this.getSchemaUri(schema, originalSchema),
         });

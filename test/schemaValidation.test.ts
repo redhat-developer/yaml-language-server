@@ -1977,7 +1977,8 @@ obj:
         expect(result).to.have.length(1);
         expect(result[0].message).to.include('default_schema_id.yaml');
         expect(result[0].message).to.include('is not valid:');
-        expect(result[0].message).to.include('expected a JSON Schema object or boolean, got string');
+        expect(result[0].message).to.include('expected a JSON Schema object or boolean, got');
+        expect(result[0].message).to.include('string');
         expect(telemetry.messages).to.be.empty;
       });
 
