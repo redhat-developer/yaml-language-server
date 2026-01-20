@@ -2,6 +2,7 @@
  *  Copyright (c) IBM Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
 import type { JSONSchema } from '../../jsonSchema';
 import { isNumber } from '../../utils/objects';
 import { BaseValidator } from './baseValidator';

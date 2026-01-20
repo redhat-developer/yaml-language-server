@@ -187,7 +187,9 @@ export class YAMLSchemaService extends JSONSchemaService {
     const raw: unknown = schemaToResolve.schema;
     if (raw === null || Array.isArray(raw) || (typeof raw !== 'object' && typeof raw !== 'boolean')) {
       const got = raw === null ? 'null' : Array.isArray(raw) ? 'array' : typeof raw;
-      resolveErrors.push(l10n.t("Schema '{0}' is not valid: {1}", loc, `expected a JSON Schema object or boolean, got ${got}`));
+      resolveErrors.push(
+        l10n.t("Schema '{0}' is not valid: {1}", loc, `expected a JSON Schema object or boolean, got "${got}".`)
+      );
       return new ResolvedSchema({}, resolveErrors);
     }
 
@@ -272,7 +274,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       return map;
     };
 
-    // collect anchors for the root schema document now
+    // collect anchors for the root schema document
     getAnchorsFor(schema, schemaURL);
 
     const findSection = (schemaRoot: JSONSchema, refPath: string, sourceURI: string): JSONSchema => {
@@ -763,11 +765,6 @@ export class YAMLSchemaService extends JSONSchemaService {
       return id;
     }
   }
-
-  /*
-   * Everything below here is needed because we're importing from vscode-json-languageservice umd and we need
-   * to provide a wrapper around the javascript methods we are calling since they have no type
-   */
 
   getOrAddSchemaHandle(id: string, unresolvedSchemaContent?: JSONSchema): SchemaHandle {
     return super.getOrAddSchemaHandle(id, unresolvedSchemaContent);

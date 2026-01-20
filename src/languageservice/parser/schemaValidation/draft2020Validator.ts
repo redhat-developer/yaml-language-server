@@ -2,6 +2,7 @@
  *  Copyright (c) IBM Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
 import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
 import type { ASTNode, ArrayASTNode } from '../../jsonASTTypes';
 import { isNumber } from '../../utils/objects';
@@ -57,7 +58,7 @@ export class Draft2020Validator extends Draft2019Validator {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
-          message: l10n.t('additionalItemsWarning', prefixLen),
+          message: l10n.t('Array has too many items according to schema. Expected {0} or fewer.', prefixLen),
           source: this.getSchemaSource(schema, originalSchema),
           schemaUri: this.getSchemaUri(schema, originalSchema),
         });
@@ -137,7 +138,7 @@ export class Draft2020Validator extends Draft2019Validator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: schema.errorMessage || l10n.t('Array has too few items matching \"contains\". Expected {0} or more.', minContains),
+        message: schema.errorMessage || l10n.t('Array has too few items matching "contains". Expected {0} or more.', minContains),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
@@ -147,7 +148,8 @@ export class Draft2020Validator extends Draft2019Validator {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
-        message: schema.errorMessage || l10n.t('Array has too many items matching \"contains\". Expected {0} or fewer.', maxContains),
+        message:
+          schema.errorMessage || l10n.t('Array has too many items matching "contains". Expected {0} or fewer.', maxContains),
         source: this.getSchemaSource(schema, originalSchema),
         schemaUri: this.getSchemaUri(schema, originalSchema),
       });
