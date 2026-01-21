@@ -32,6 +32,7 @@ export function parse(text: string, parserOptions: ParserOptions = defaultOption
     customTags: getCustomTags(parserOptions.customTags),
     version: parserOptions.yamlVersion ?? defaultOptions.yamlVersion,
     keepSourceTokens: true,
+    intAsBigInt: true,
   };
   const composer = new Composer(options);
   const lineCounter = new LineCounter();
