@@ -30,7 +30,7 @@
     "@vscode/l10n": "^0.0.18",
     "ajv": "^8.17.1",
     "ajv-draft-04": "^1.0.0",
-    "lodash": "4.17.21",
+    "lodash": "4.17.23",
     "prettier": "^3.5.0",
     "request-light": "^0.5.7",
     "vscode-json-languageservice": "4.1.8",
