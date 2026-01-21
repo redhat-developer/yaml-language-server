@@ -1325,7 +1325,12 @@ export class YamlCompletion {
     if (Array.isArray(value)) {
       let insertText = '\n';
       for (const arrValue of value) {
-        insertText += `${indent}- \${${navOrder.index++}:${arrValue}}\n`;
+        if (typeof arrValue === 'object') {
+          const objectText = this.getInsertTemplateForValue(arrValue, indent, { ...navOrder }, separatorAfter);
+          insertText += convertObjectToArrayItem(objectText, indent);
+        } else {
+          insertText += `${indent}- \${${navOrder.index++}:${arrValue}}\n`;
+        }
       }
       return insertText;
     } else if (typeof value === 'object') {
@@ -1770,4 +1775,12 @@ export class YamlCompletion {
   isParentCompletionItem(item: CompletionItemBase): item is CompletionItem {
     return 'parent' in item;
   }
+}
+
+export function convertObjectToArrayItem(objectText: string, indent: string): string {
+  const objectItem = objectText.replace(/^(\s+)/gm, (match, _, index) => {
+    // first line can contains newLine, so use indent from input parameter
+    return index === 0 ? `${indent}- ` : `${match}  `;
+  });
+  return objectItem;
 }
