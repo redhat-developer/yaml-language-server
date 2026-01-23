@@ -392,14 +392,83 @@ export class YAMLSchemaService extends JSONSchemaService {
         }
       };
 
+      // metadata/keyword that doesn't affect validation
+      const REF_SIBLING_NONCONSTRAINT_KEYS = new Set([
+        '$ref',
+        '_$ref',
+        '$schema',
+        '$id',
+        'id',
+        '$anchor',
+        '$dynamicAnchor',
+        '$recursiveAnchor',
+        'definitions',
+        '$defs',
+        '$comment',
+        'title',
+        'description',
+        '$vocabulary',
+        'examples',
+        'default',
+        'url',
+        'closestTitle',
+      ]);
+
+      const hasRefSiblings = (node: JSONSchema): boolean => {
+        for (const k of Object.keys(node)) {
+          if (REF_SIBLING_NONCONSTRAINT_KEYS.has(k)) {
+            continue;
+          }
+          return true;
+        }
+        return false;
+      };
+
+      /**
+       * For Draft-2019+:
+       *   { $ref: "...", <siblings...> }
+       * becomes
+       *   { allOf: [ { $ref: "..." }, <siblings...> ] }
+       */
+      const rewriteRefWithSiblingsToAllOf = (node: JSONSchema): void => {
+        const siblings: JSONSchema = {};
+        for (const k of Object.keys(node)) {
+          if (!REF_SIBLING_NONCONSTRAINT_KEYS.has(k)) {
+            siblings[k] = node[k];
+            delete node[k];
+          }
+        }
+        node.allOf = [{ $ref: node.$ref }, siblings];
+        delete node.$ref;
+      };
+
+      const stripRefSiblings = (node: JSONSchema): void => {
+        for (const k of Object.keys(node)) {
+          if (!REF_SIBLING_NONCONSTRAINT_KEYS.has(k)) {
+            delete node[k];
+          }
+        }
+      };
+
       const handleRef = (next: JSONSchema): void => {
         const seenRefs = new Set<string>();
         while (next.$ref) {
+          next._$ref = next.$ref;
+
+          if (hasRefSiblings(next)) {
+            // Draft-07 and earlier: ignore siblings
+            if (schemaDialect === SchemaDialect.draft04 || schemaDialect === SchemaDialect.draft07) {
+              stripRefSiblings(next);
+            } else {
+              // Draft-2019+: support sibling keywords
+              rewriteRefWithSiblingsToAllOf(next);
+              collectArrayEntries(next.allOf);
+              return;
+            }
+          }
+
           const ref = decodeURIComponent(next.$ref);
           const segments = ref.split('#', 2);
-
-          // return back removed $ref. We lost info about referenced type without it.
-          next._$ref = next.$ref;
           delete next.$ref;
 
           const baseUri = segments[0];

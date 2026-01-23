@@ -92,7 +92,6 @@ export interface JSONSchema {
   $dynamicAnchor?: string;
 
   // VSCode extensions
-
   defaultSnippets?: {
     label?: string;
     description?: string;

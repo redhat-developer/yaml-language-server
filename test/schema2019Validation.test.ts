@@ -501,4 +501,54 @@ describe('Validation Tests', () => {
       expect(result).to.be.empty;
     });
   });
+
+  describe('$ref resolution should support sibling keywords', () => {
+    it('should apply sibling keywords next to $ref', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        type: 'object',
+        properties: {
+          value: {
+            $ref: '#/$defs/A',
+            type: 'number',
+          },
+        },
+        $defs: {
+          A: { type: 'string' },
+        },
+      } as JSONSchema);
+      // both should fail: must be both string and number
+      expect((await parseSetup(`value: hello`)).length).to.be.greaterThan(0);
+      expect((await parseSetup(`value: 1`)).length).to.be.greaterThan(0);
+    });
+    it('should apply sibling keywords next to $ref (top level)', async () => {
+      const schema = {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        definitions: {
+          obj1: {
+            type: 'object',
+            properties: {
+              value: { type: 'string' },
+            },
+            required: ['value'],
+          },
+        },
+        $ref: '#/definitions/obj1',
+        additionalProperties: false,
+        properties: {
+          value: {},
+          extra: { type: 'number' },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = `value: hello
+extra: notANumber
+unknown: 1
+`;
+      const result = await parseSetup(content);
+      expect(result[0].message).to.include('Incorrect type. Expected');
+      expect(result[0].message).to.include('number');
+      expect(result[1].message).to.include('Property unknown is not allowed.');
+    });
+  });
 });
