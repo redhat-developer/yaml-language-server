@@ -155,6 +155,7 @@ export interface SchemaConfiguration {
 }
 
 export interface CustomFormatterOptions {
+  editorConfig?: boolean;
   singleQuote?: boolean;
   bracketSpacing?: boolean;
   trailingComma?: boolean;
