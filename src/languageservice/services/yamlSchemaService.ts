@@ -207,75 +207,149 @@ export class YAMLSchemaService extends JSONSchemaService {
 
     /**
      * ----------------------------
-     * $anchor support (Draft 2019-09+)
+     * Schema resource and fragment resolution
      * ----------------------------
-     * We cache anchors per schema document URI.
-     * A plain-name fragment like "#port" resolves via $anchor:"port"
-     * A JSON-pointer-ish fragment like "#/properties/foo" keeps existing behavior.
+     * Manages two types of schema identification:
+     * 1. Embedded resources ($id without fragment):
+     *    Creates a new resource scope that can be referenced by other schemas, e.g. "$id": "other.json"
+     * 2. Plain-name fragments/anchors:
+     *    Creates named anchors within a resource for direct reference.
+     *
+     * Cache per resource URI in resourceIndexByUri:
+     * - root: schema node for the resource
+     * - fragments: map of plain-name anchors to their schema nodes
      */
-    type AnchorMap = Map<string, JSONSchema>;
-    const anchorsByUri = new Map<string, AnchorMap>();
+    type PlainNameFragmentMap = Map<string, JSONSchema>;
+    type ResourceIndex = { root?: JSONSchema; fragments: PlainNameFragmentMap };
+    const resourceIndexByUri = new Map<string, ResourceIndex>();
 
-    const collectAnchors = (root: JSONSchema, anchors: AnchorMap, seen = new Set<unknown>()): void => {
-      if (!root || typeof root !== 'object') return;
-      if (seen.has(root)) return;
-      seen.add(root);
+    // remove #fragment from URI
+    const stripFragment = (uri: string): string => {
+      const hashIndex = uri.indexOf('#');
+      return hashIndex === -1 ? uri : uri.slice(0, hashIndex);
+    };
 
-      const a = root.$anchor;
-      if (typeof a === 'string' && a.length > 0) {
-        anchors.set(a, root);
+    // resolve relative URI against base URI
+    // e.g. resolve "foo.json" against "http://example.com/bar.json" or "#Foo" against "http://example.com/bar.json"
+    const resolveAgainstBase = (baseUri: string, ref: string): string => {
+      if (contextService) {
+        return this.normalizeId(contextService.resolveRelativePath(ref, baseUri));
+      }
+      return this.normalizeId(ref);
+    };
+
+    // check if two URIs have the same origin (scheme + authority)
+    const isSameOrigin = (uri1: string, uri2: string): boolean => {
+      try {
+        const parsed1 = URI.parse(uri1);
+        const parsed2 = URI.parse(uri2);
+        return parsed1.scheme === parsed2.scheme && parsed1.authority === parsed2.authority;
+      } catch {
+        return false;
+      }
+    };
+
+    const getResourceIndex = (resourceUri: string): ResourceIndex => {
+      let entry = resourceIndexByUri.get(resourceUri);
+      if (!entry) {
+        entry = { fragments: new Map<string, JSONSchema>() };
+        resourceIndexByUri.set(resourceUri, entry);
+      }
+      return entry;
+    };
+
+    const registerSchemaResource = (resourceUri: string, node: JSONSchema): void => {
+      const entry = getResourceIndex(resourceUri);
+      if (!entry.root) {
+        entry.root = node;
+      }
+    };
+
+    const collectPlainNameFragments = (root: JSONSchema, initialBaseUri: string): void => {
+      type WorkItem = { node: JSONSchema; baseUri: string };
+
+      const seen = new Set<unknown>();
+      const stack: WorkItem[] = [{ node: root, baseUri: initialBaseUri }];
+      if (stripFragment(initialBaseUri) === initialBaseUri) {
+        registerSchemaResource(initialBaseUri, root);
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const push = (v: any): void => {
-        if (!v) return;
-        if (typeof v === 'boolean') return;
-        if (typeof v === 'object') collectAnchors(v as JSONSchema, anchors, seen);
-      };
+      while (stack.length) {
+        const current = stack.pop();
+        if (!current) continue;
 
-      // arrays
-      for (const k of ['allOf', 'anyOf', 'oneOf']) {
-        const arr = root[k];
-        if (Array.isArray(arr)) arr.forEach(push);
-      }
+        const node = current.node;
+        if (!node || typeof node !== 'object') continue;
+        if (seen.has(node)) continue;
+        seen.add(node);
 
-      // singles
-      for (const k of [
-        'not',
-        'if',
-        'then',
-        'else',
-        'contains',
-        'propertyNames',
-        'additionalProperties',
-        'items',
-        'additionalItems',
-      ]) {
-        push(root[k]);
-      }
+        let baseUri = current.baseUri;
+        const id = node.$id || node.id;
+        if (id) {
+          const normalizedId = resolveAgainstBase(baseUri, id);
+          const hashIndex = normalizedId.indexOf('#');
+          if (hashIndex !== -1 && hashIndex < normalizedId.length - 1) {
+            // Draft-07 and earlier: $id with fragment defines a plain-name anchor scoped to the resolved base
+            const frag = normalizedId.slice(hashIndex + 1);
+            getResourceIndex(baseUri).fragments.set(frag, node);
+          } else {
+            // $id without fragment (e.g. $id: "other.json") creates a new resource scope (applies to all draft versions)
+            baseUri = normalizedId;
+            registerSchemaResource(baseUri, node);
+          }
+        }
+        // Draft 2019-09+: $anchor keyword
+        if (node.$anchor) {
+          getResourceIndex(baseUri).fragments.set(node.$anchor, node);
+        }
 
-      // maps
-      for (const k of ['properties', 'patternProperties', 'definitions', '$defs', 'dependentSchemas']) {
-        const map = root[k];
-        if (map && typeof map === 'object') {
-          for (const key of Object.keys(map)) push(map[key]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const push = (v: any): void => {
+          if (!v) return;
+          if (typeof v === 'boolean') return;
+          if (typeof v === 'object') stack.push({ node: v as JSONSchema, baseUri });
+        };
+
+        // arrays
+        for (const k of ['allOf', 'anyOf', 'oneOf']) {
+          const arr = node[k];
+          if (Array.isArray(arr)) arr.forEach(push);
+        }
+
+        // singles
+        for (const k of [
+          'not',
+          'if',
+          'then',
+          'else',
+          'contains',
+          'propertyNames',
+          'additionalProperties',
+          'items',
+          'additionalItems',
+        ]) {
+          push(node[k]);
+        }
+
+        // maps
+        for (const k of ['properties', 'patternProperties', 'definitions', '$defs', 'dependentSchemas']) {
+          const map = node[k];
+          if (map && typeof map === 'object') {
+            for (const key of Object.keys(map)) push(map[key]);
+          }
         }
       }
     };
 
-    const getAnchorsFor = (schemaRoot: JSONSchema, schemaUri: string): AnchorMap => {
-      const norm = this.normalizeId(schemaUri);
-      let map = anchorsByUri.get(norm);
-      if (!map) {
-        map = new Map<string, JSONSchema>();
-        collectAnchors(schemaRoot, map);
-        anchorsByUri.set(norm, map);
+    const getPlainNameFragmentsFor = (schemaRoot: JSONSchema, schemaUri: string): PlainNameFragmentMap => {
+      if (!resourceIndexByUri.has(schemaUri)) {
+        collectPlainNameFragments(schemaRoot, schemaUri);
       }
-      return map;
+      return getResourceIndex(schemaUri).fragments;
     };
 
-    // collect anchors for the root schema document
-    getAnchorsFor(schema, schemaURL);
+    // collect plain-name fragments for the root schema document
+    getPlainNameFragmentsFor(schema, schemaURL);
 
     const findSection = (schemaRoot: JSONSchema, refPath: string, sourceURI: string): JSONSchema => {
       if (!refPath) {
@@ -294,9 +368,9 @@ export class YAMLSchemaService extends JSONSchemaService {
         return current as JSONSchema;
       }
 
-      // plain-name fragment -> $anchor lookup
-      const anchors = getAnchorsFor(schemaRoot, sourceURI);
-      return anchors.get(refPath);
+      // plain-name fragment -> lookup in collected fragments ($anchor or $id#fragment)
+      const fragments = getPlainNameFragmentsFor(schemaRoot, sourceURI);
+      return fragments.get(refPath);
     };
 
     const merge = (target: JSONSchema, sourceRoot: JSONSchema, sourceURI: string, refPath: string): void => {
@@ -320,27 +394,27 @@ export class YAMLSchemaService extends JSONSchemaService {
       parentSchemaDependencies: SchemaDependencies
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any> => {
-      if (contextService && !/^\w+:\/\/.*/.test(uri)) {
-        uri = contextService.resolveRelativePath(uri, parentSchemaURL);
+      const resolvedUri = resolveAgainstBase(parentSchemaURL, uri);
+      const embeddedSchema = resourceIndexByUri.get(resolvedUri)?.root;
+      if (embeddedSchema) {
+        parentSchemaDependencies[resolvedUri] = true;
+        merge(node, embeddedSchema, resolvedUri, linkPath);
+        node.url = resolvedUri;
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return resolveRefs(node, embeddedSchema, resolvedUri, parentSchemaDependencies);
       }
-      uri = this.normalizeId(uri);
-      const referencedHandle = this.getOrAddSchemaHandle(uri);
+
+      const referencedHandle = this.getOrAddSchemaHandle(resolvedUri);
       return referencedHandle.getUnresolvedSchema().then((unresolvedSchema) => {
-        parentSchemaDependencies[uri] = true;
+        parentSchemaDependencies[resolvedUri] = true;
         if (unresolvedSchema.errors.length) {
-          const loc = linkPath ? uri + '#' + linkPath : uri;
+          const loc = linkPath ? resolvedUri + '#' + linkPath : resolvedUri;
           resolveErrors.push(l10n.t("Problems loading reference '{0}': {1}", loc, unresolvedSchema.errors[0]));
         }
-
-        // collect anchors for external schema root too
-        if (unresolvedSchema.schema && typeof unresolvedSchema.schema === 'object') {
-          getAnchorsFor(unresolvedSchema.schema as JSONSchema, uri);
-        }
-
-        merge(node, unresolvedSchema.schema, uri, linkPath);
-        node.url = uri;
+        merge(node, unresolvedSchema.schema, resolvedUri, linkPath);
+        node.url = resolvedUri;
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        return resolveRefs(node, unresolvedSchema.schema, uri, referencedHandle.dependencies);
+        return resolveRefs(node, unresolvedSchema.schema, resolvedUri, referencedHandle.dependencies);
       });
     };
 
@@ -355,37 +429,39 @@ export class YAMLSchemaService extends JSONSchemaService {
         return null;
       }
 
-      const toWalk: JSONSchema[] = [node];
+      // track nodes with their base URL for $id resolution
+      type WalkItem = { node: JSONSchema; baseURL: string; isRoot?: boolean };
+      const toWalk: WalkItem[] = [{ node, baseURL: parentSchemaURL, isRoot: true }];
       const seen: Set<JSONSchema> = new Set();
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const openPromises: Promise<any>[] = [];
 
-      const collectEntries = (...entries: JSONSchemaRef[]): void => {
+      const collectEntries = (baseURL: string, ...entries: JSONSchemaRef[]): void => {
         for (const entry of entries) {
           if (typeof entry === 'object') {
-            toWalk.push(entry);
+            toWalk.push({ node: entry, baseURL });
           }
         }
       };
-      const collectMapEntries = (...maps: Array<JSONSchemaMap | undefined>): void => {
+      const collectMapEntries = (baseURL: string, ...maps: Array<JSONSchemaMap | undefined>): void => {
         for (const map of maps) {
           if (typeof map === 'object') {
             for (const key in map) {
               const entry = map[key];
               if (typeof entry === 'object') {
-                toWalk.push(entry);
+                toWalk.push({ node: entry, baseURL });
               }
             }
           }
         }
       };
-      const collectArrayEntries = (...arrays: JSONSchemaRef[][]): void => {
+      const collectArrayEntries = (baseURL: string, ...arrays: JSONSchemaRef[][]): void => {
         for (const array of arrays) {
           if (Array.isArray(array)) {
             for (const entry of array) {
               if (typeof entry === 'object') {
-                toWalk.push(entry);
+                toWalk.push({ node: entry, baseURL });
               }
             }
           }
@@ -450,7 +526,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         }
       };
 
-      const handleRef = (next: JSONSchema): void => {
+      const handleRef = (next: JSONSchema, nodeBaseURL: string, childBaseURL: string): void => {
         const seenRefs = new Set<string>();
         while (next.$ref) {
           next._$ref = next.$ref;
@@ -462,7 +538,7 @@ export class YAMLSchemaService extends JSONSchemaService {
             } else {
               // Draft-2019+: support sibling keywords
               rewriteRefWithSiblingsToAllOf(next);
-              collectArrayEntries(next.allOf);
+              collectArrayEntries(childBaseURL, next.allOf);
               return;
             }
           }
@@ -475,18 +551,20 @@ export class YAMLSchemaService extends JSONSchemaService {
           const frag = segments.length > 1 ? segments[1] : '';
 
           if (baseUri.length > 0) {
-            openPromises.push(resolveExternalLink(next, baseUri, frag, parentSchemaURL, parentSchemaDependencies));
+            // resolve relative to this node's base URL
+            openPromises.push(resolveExternalLink(next, baseUri, frag, nodeBaseURL, parentSchemaDependencies));
             return;
           } else {
             if (!seenRefs.has(ref)) {
               // frag can be JSON pointer (starts with /) or plain anchor name
-              merge(next, parentSchema, parentSchemaURL, frag);
+              merge(next, parentSchema, nodeBaseURL, frag);
               seenRefs.add(ref);
             }
           }
         }
 
         collectEntries(
+          childBaseURL,
           <JSONSchema>next.items,
           next.additionalItems,
           <JSONSchema>next.additionalProperties,
@@ -498,8 +576,14 @@ export class YAMLSchemaService extends JSONSchemaService {
           next.else
         );
 
-        collectMapEntries(next.definitions, next.properties, next.patternProperties, <JSONSchemaMap>next.dependencies);
-        collectArrayEntries(next.anyOf, next.allOf, next.oneOf, <JSONSchema[]>next.items, next.schemaSequence);
+        collectMapEntries(
+          childBaseURL,
+          next.definitions,
+          next.properties,
+          next.patternProperties,
+          <JSONSchemaMap>next.dependencies
+        );
+        collectArrayEntries(childBaseURL, next.anyOf, next.allOf, next.oneOf, <JSONSchema[]>next.items, next.schemaSequence);
       };
 
       if (parentSchemaURL.indexOf('#') > 0) {
@@ -520,12 +604,32 @@ export class YAMLSchemaService extends JSONSchemaService {
       }
 
       while (toWalk.length) {
-        const next = toWalk.pop();
+        const item = toWalk.pop();
+        const next = item.node;
+        let nodeBaseURL = item.baseURL;
         if (seen.has(next)) {
           continue;
         }
         seen.add(next);
-        handleRef(next);
+
+        // check if this node has $id and update base URL for resolving refs and for children
+        let childBaseURL = nodeBaseURL;
+        const id = next.$id || next.id;
+        if (id) {
+          const normalizedId = resolveAgainstBase(nodeBaseURL, id);
+
+          // For root node with same-origin $id mismatch, keep retrieval URI
+          // Otherwise, use $id as the base URI
+          if (!item.isRoot || !isSameOrigin(nodeBaseURL, normalizedId)) {
+            nodeBaseURL = normalizedId;
+            childBaseURL = normalizedId;
+          }
+        }
+
+        // collect definitions first with child base URL
+        collectMapEntries(childBaseURL, next.definitions, next.$defs);
+
+        handleRef(next, nodeBaseURL, childBaseURL);
       }
       return Promise.all(openPromises);
     };
@@ -568,18 +672,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     const resolveSchemaForResource = (schemas: string[]): Promise<ResolvedSchema> => {
       const schemaHandle = super.createCombinedSchema(resource, schemas);
       return schemaHandle.getResolvedSchema().then((schema) => {
-        if (schema.schema && typeof schema.schema === 'object') {
-          schema.schema.url = schemaHandle.url;
-        }
-
-        if (
-          schema.schema &&
-          schema.schema.schemaSequence &&
-          schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]
-        ) {
-          return new ResolvedSchema(schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]);
-        }
-        return schema;
+        return this.finalizeResolvedSchema(schema, schemaHandle.url, doc, false);
       });
     };
 
@@ -677,6 +770,25 @@ export class YAMLSchemaService extends JSONSchemaService {
     return resolveSchema();
   }
 
+  private finalizeResolvedSchema(
+    schema: ResolvedSchema,
+    schemaUrl: string,
+    doc: JSONDocument,
+    includeErrorsForSequence: boolean
+  ): ResolvedSchema {
+    if (schema.schema && typeof schema.schema === 'object') {
+      schema.schema.url = schemaUrl;
+      if (schema.schema.schemaSequence && schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]) {
+        const selectedSchema = schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex];
+        if (includeErrorsForSequence) {
+          return new ResolvedSchema(selectedSchema, schema.errors);
+        }
+        return new ResolvedSchema(selectedSchema);
+      }
+    }
+    return schema;
+  }
+
   // Set the priority of a schema in the schema service
   public addSchemaPriority(uri: string, priority: number): void {
     let currSchemaArray = this.schemaPriorityMapping.get(uri);
@@ -718,13 +830,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   private async resolveCustomSchema(schemaUri, doc): ResolvedSchema {
     const unresolvedSchema = await this.loadSchema(schemaUri);
     const schema = await this.resolveSchemaContent(unresolvedSchema, schemaUri, []);
-    if (schema.schema && typeof schema.schema === 'object') {
-      schema.schema.url = schemaUri;
-    }
-    if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[doc.currentDocIndex]) {
-      return new ResolvedSchema(schema.schema.schemaSequence[doc.currentDocIndex], schema.errors);
-    }
-    return schema;
+    return this.finalizeResolvedSchema(schema, schemaUri, doc, true);
   }
 
   /**
