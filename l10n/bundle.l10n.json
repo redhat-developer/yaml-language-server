@@ -33,6 +33,8 @@
   "Array does not contain required item.": "Array does not contain required item.",
   "Array has too few items. Expected {0} or more.": "Array has too few items. Expected {0} or more.",
   "Array has too many items. Expected {0} or fewer.": "Array has too many items. Expected {0} or fewer.",
+  "Array has too few items matching \"contains\". Expected {0} or more.": "Array has too few items matching \"contains\". Expected {0} or more.",
+  "Array has too many items matching \"contains\". Expected {0} or fewer.": "Array has too many items matching \"contains\". Expected {0} or fewer.",
   "Array has duplicate items.": "Array has duplicate items.",
   "Property {0} is not allowed.": "Property {0} is not allowed.",
   "Object has more properties than limit of {0}.": "Object has more properties than limit of {0}.",

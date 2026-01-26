@@ -1,5 +1,5 @@
 import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { JSONDocument } from '../parser/jsonParser07';
+import { JSONDocument } from '../parser/jsonDocument';
 
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 import { JSONSchema } from '../jsonSchema';

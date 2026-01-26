@@ -20,7 +20,7 @@ import * as path from 'path';
 import { TextBuffer } from '../utils/textBuffer';
 import { toYamlStringScalar } from '../utils/yamlScalar';
 import { LanguageSettings } from '../yamlLanguageService';
-import { YAML_SOURCE } from '../parser/jsonParser07';
+import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
 import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { CST, isMap, isSeq, YAMLMap } from 'yaml';

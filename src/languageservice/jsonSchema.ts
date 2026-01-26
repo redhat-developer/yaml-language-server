@@ -7,12 +7,20 @@ import { CompletionItemKind } from 'vscode-json-languageservice';
 import { SchemaVersions } from './yamlTypes';
 
 export type JSONSchemaRef = JSONSchema | boolean;
+export enum SchemaDialect {
+  draft04 = 'draft04',
+  draft07 = 'draft07',
+  draft2019 = 'draft2019-09',
+  draft2020 = 'draft2020-12',
+  undefined = 'undefined',
+}
 
 export interface JSONSchema {
   id?: string;
   $id?: string;
   $schema?: string;
   url?: string;
+  dialect?: SchemaDialect;
   type?: string | string[];
   title?: string;
   closestTitle?: string;
@@ -23,7 +31,7 @@ export interface JSONSchema {
   description?: string;
   properties?: JSONSchemaMap;
   patternProperties?: JSONSchemaMap;
-  additionalProperties?: boolean | JSONSchemaRef;
+  additionalProperties?: JSONSchemaRef;
   minProperties?: number;
   maxProperties?: number;
   dependencies?: JSONSchemaMap | { [prop: string]: string[] };
@@ -31,7 +39,7 @@ export interface JSONSchema {
   minItems?: number;
   maxItems?: number;
   uniqueItems?: boolean;
-  additionalItems?: boolean | JSONSchemaRef;
+  additionalItems?: JSONSchemaRef;
   pattern?: string;
   minLength?: number;
   maxLength?: number;
@@ -72,8 +80,8 @@ export interface JSONSchema {
   $recursiveRef?: string;
   $vocabulary?: Record<string, boolean>;
   dependentSchemas?: JSONSchemaMap;
-  unevaluatedItems?: boolean | JSONSchemaRef;
-  unevaluatedProperties?: boolean | JSONSchemaRef;
+  unevaluatedItems?: JSONSchemaRef;
+  unevaluatedProperties?: JSONSchemaRef;
   dependentRequired?: Record<string, string[]>;
   minContains?: number;
   maxContains?: number;
@@ -84,7 +92,6 @@ export interface JSONSchema {
   $dynamicAnchor?: string;
 
   // VSCode extensions
-
   defaultSnippets?: {
     label?: string;
     description?: string;

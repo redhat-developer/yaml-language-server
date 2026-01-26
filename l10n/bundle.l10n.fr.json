@@ -33,6 +33,8 @@
   "Array does not contain required item.": "Le tableau ne contient pas l'élément requis.",
   "Array has too few items. Expected {0} or more.": "Le tableau contient trop peu d'éléments. On attend {0} ou plus.",
   "Array has too many items. Expected {0} or fewer.": "Le tableau contient trop d'éléments. On attend {0} ou moins.",
+  "Array has too few items matching \"contains\". Expected {0} or more.": "Le tableau contient trop peu d'éléments correspondant au critère \"contains\". On attend {0} ou plus.",
+  "Array has too many items matching \"contains\". Expected {0} or fewer.": "Le tableau contient trop d'éléments correspondant au critère \"contains\". On attend {0} ou moins.",
   "Array has duplicate items.": "Le tableau contient des éléments en double.",
   "Property {0} is not allowed.": "La propriété {0} n'est pas autorisée.",
   "Object has more properties than limit of {0}.": "L'objet a plus de propriétés que la limite de {0}.",
