@@ -550,5 +550,66 @@ unknown: 1
       expect(result[0].message).to.include('number');
       expect(result[1].message).to.include('Property unknown is not allowed.');
     });
+
+    describe('Embedded resource $id resolution', () => {
+      it('should resolve embedded resource $id for relative $ref without external load', async () => {
+        const root: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          type: 'object',
+          properties: {
+            x: { $ref: 'other.json#bar' },
+          },
+          required: ['x'],
+          $defs: {
+            B: {
+              $id: 'other.json',
+              $defs: {
+                X: {
+                  $anchor: 'bar',
+                  type: 'string',
+                  minLength: 2,
+                },
+              },
+            },
+          },
+        };
+        schemaProvider.addSchema(SCHEMA_ID, root);
+        const yaml = `x: A`;
+        const result = await parseSetup(yaml);
+        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
+      });
+
+      it('should handle $id changing base URI for nested $anchor resolution', async () => {
+        const root: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          type: 'object',
+          properties: {
+            address: { $ref: 'schemas/address.json#USAddress' },
+          },
+          $defs: {
+            addressSchema: {
+              $id: 'schemas/address.json',
+              $defs: {
+                us: {
+                  $anchor: 'USAddress',
+                  type: 'object',
+                  properties: {
+                    zipCode: { type: 'string', minLength: 5 },
+                  },
+                  required: ['zipCode'],
+                },
+              },
+            },
+          },
+        };
+        schemaProvider.addSchema(SCHEMA_ID, root);
+        const yaml = `address:\n  zipCode: "123"`;
+        const result = await parseSetup(yaml);
+        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result[0].message).to.include('String is shorter than the minimum length of 5.');
+      });
+    });
   });
 });

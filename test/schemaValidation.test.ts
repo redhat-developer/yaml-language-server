@@ -1887,6 +1887,160 @@ obj:
   });
 
   describe('Bug fixes', () => {
+    describe('Base URI + $id resolution', () => {
+      it('should resolve plain-name fragment via subschema $id (fragment form)', async () => {
+        const schema: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          definitions: {
+            Name: {
+              $id: '#Thing',
+              type: 'string',
+              minLength: 2,
+            },
+          },
+          $ref: '#Thing',
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const result = await parseSetup('A');
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
+      });
+
+      it('root $id updates base URI for resolving relative $ref targets', async () => {
+        const other: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          $id: 'http://example.com/other.json',
+          definitions: {
+            X: {
+              $id: '#bar',
+              type: 'string',
+              minLength: 2,
+            },
+          },
+        };
+        const root: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          $id: 'http://example.com/root.json',
+          type: 'object',
+          properties: {
+            x: { $ref: 'other.json#bar' },
+          },
+          required: ['x'],
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://example.com/other.json', other);
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///root.schema.json', root);
+        const yaml = `# yaml-language-server: $schema=file:///root.schema.json
+x: A
+`;
+        const result = await parseSetup(yaml, 'file:///root.schema.json');
+        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
+      });
+
+      it('subschema $id updates base URI for relative $ref inside that subschema', async () => {
+        const nestedTarget: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          type: 'string',
+          minLength: 2,
+        };
+        const root: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          $id: 'http://example.com/root.json',
+          type: 'object',
+          properties: {
+            x: {
+              $id: 'http://example.com/other/',
+              $ref: 'sub.json',
+            },
+          },
+          required: ['x'],
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://example.com/other/sub.json', nestedTarget);
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///nested-base.schema.json', root);
+        const yaml = `# yaml-language-server: $schema=file:///nested-base.schema.json
+x: A
+`;
+        const result = await parseSetup(yaml, 'file:///nested-base.schema.json');
+        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
+      });
+
+      it('should resolve embedded resource $id for relative $ref without external load', async () => {
+        const root: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          type: 'object',
+          properties: {
+            x: { $ref: 'other.json#bar' },
+          },
+          required: ['x'],
+          definitions: {
+            B: {
+              $id: 'other.json',
+              definitions: {
+                X: {
+                  $id: '#bar',
+                  type: 'string',
+                  minLength: 2,
+                },
+              },
+            },
+          },
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///embedded-resource.schema.json', root);
+        const yaml = `# yaml-language-server: $schema=file:///embedded-resource.schema.json
+x: A
+`;
+        const result = await parseSetup(yaml, 'file:///embedded-resource.schema.json');
+        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
+      });
+
+      it('root $id can switch base scheme/host for resolution', async () => {
+        const remotePackageSchema: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          type: 'object',
+        };
+        const baseOk: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          $id: 'https://www.schemastore.org/',
+          type: 'object',
+          properties: {
+            pkg: { $ref: 'package.json' },
+          },
+          required: ['pkg'],
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'https://www.schemastore.org/package.json', remotePackageSchema);
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///baseuri-ok.schema.json', baseOk);
+        const yaml = `# yaml-language-server: $schema=file:///baseuri-ok.schema.json
+pkg: 123
+`;
+        const result = await parseSetup(yaml, 'file:///baseuri-ok.schema.json');
+        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result[0].message).to.include('Incorrect type.');
+      });
+
+      it('without root $id, relative $ref resolves against the retrieval URI and can fail', async () => {
+        const baseFail: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          type: 'object',
+          properties: {
+            pkg: { $ref: 'package.json' },
+          },
+          required: ['pkg'],
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///baseuri-fail.schema.json', baseFail);
+        const yaml = `# yaml-language-server: $schema=file:///baseuri-fail.schema.json
+pkg: 123
+`;
+        const result = await parseSetup(yaml, 'file:///baseuri-fail.schema.json');
+        expect(result).to.not.be.empty;
+        expect(result.some((d) => /Problems loading reference/i.test(d.message) && /No content/i.test(d.message))).to.eq(true);
+      });
+    });
+
     it('Resolving $refs: should ignore sibling keywords next to $ref', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         $schema: 'http://json-schema.org/draft-07/schema#',
