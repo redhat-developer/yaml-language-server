@@ -200,4 +200,101 @@ describe('Validation Tests', () => {
     expect(result).to.not.be.empty;
     expect(result[0].message).to.include('Array has too many items according to schema. Expected 2 or fewer.');
   });
+
+  describe('Mixed dialect subschema instance validation in Compound Schema Document', () => {
+    it('draft-2020 root with draft-04 subschema', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        properties: {
+          age: {
+            allOf: [
+              {
+                $schema: 'http://json-schema.org/draft-04/schema#',
+                type: 'number',
+                minimum: 0,
+                exclusiveMinimum: true,
+              },
+            ],
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const failResult = await parseSetup('age: 0');
+      expect(failResult).to.have.length(1);
+      expect(failResult[0].message).to.include('exclusive minimum of 0');
+      const passResult = await parseSetup('age: 1');
+      expect(passResult).to.be.empty;
+    });
+
+    it('draft-2020 root with draft-07 subschema', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        properties: {
+          score: {
+            anyOf: [
+              {
+                $schema: 'http://json-schema.org/draft-07/schema#',
+                type: 'number',
+                exclusiveMinimum: 0,
+              },
+            ],
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const failResult = await parseSetup('score: 0');
+      expect(failResult).to.have.length(1);
+      expect(failResult[0].message).to.include('exclusive minimum of 0');
+      const passResult = await parseSetup('score: 1');
+      expect(passResult).to.be.empty;
+    });
+
+    it('draft-07 root with draft-2019 subschema', async () => {
+      const schema: JSONSchema = {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
+        required: ['productId'],
+        properties: {
+          productId: { type: 'string' },
+          metadata: {
+            $schema: 'https://json-schema.org/draft/2019-09/schema',
+            type: 'object',
+            properties: {
+              tags: {
+                type: 'array',
+                contains: { type: 'string' },
+                maxContains: 5,
+              },
+            },
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const failContent = `productId: "PROD-123"
+metadata:
+  tags:
+    - "electronics"
+    - "sale"
+    - "featured"
+    - "new"
+    - "popular"
+    - "trending"`;
+      const failResult = await parseSetup(failContent);
+      expect(failResult).to.have.length(1);
+      expect(failResult[0].message).to.include('too many items matching "contains"');
+      expect(failResult[0].message).to.include('5 or fewer');
+      const passContent = `productId: "PROD-123"
+metadata:
+  tags:
+    - "electronics"
+    - "sale"
+    - "featured"
+    - "new"
+    - "popular"`;
+      const passResult = await parseSetup(passContent);
+      expect(passResult).to.be.empty;
+    });
+  });
 });

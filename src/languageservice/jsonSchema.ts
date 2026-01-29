@@ -12,15 +12,18 @@ export enum SchemaDialect {
   draft07 = 'draft07',
   draft2019 = 'draft2019-09',
   draft2020 = 'draft2020-12',
-  undefined = 'undefined',
 }
 
 export interface JSONSchema {
+  // for internal use
+  _dialect?: SchemaDialect;
+  _baseUrl?: string;
+  _$ref?: string;
+
   id?: string;
   $id?: string;
   $schema?: string;
   url?: string;
-  dialect?: SchemaDialect;
   type?: string | string[];
   title?: string;
   closestTitle?: string;
@@ -50,7 +53,6 @@ export interface JSONSchema {
   multipleOf?: number;
   required?: string[];
   $ref?: string;
-  _$ref?: string;
   anyOf?: JSONSchemaRef[];
   allOf?: JSONSchemaRef[];
   oneOf?: JSONSchemaRef[];

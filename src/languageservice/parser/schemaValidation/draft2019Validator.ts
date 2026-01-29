@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
+import { SchemaDialect } from '../../jsonSchema';
 import type { ASTNode, ArrayASTNode, ObjectASTNode } from '../../jsonASTTypes';
 import { isNumber } from '../../utils/objects';
 import * as l10n from '@vscode/l10n';
@@ -14,6 +15,10 @@ import { ValidationResult, asSchema } from './baseValidator';
 import type { ISchemaCollector, Options } from './baseValidator';
 
 export class Draft2019Validator extends Draft07Validator {
+  protected override getCurrentDialect(): SchemaDialect {
+    return SchemaDialect.draft2019;
+  }
+
   /**
    * Keyword: contains + minContains/maxContains
    *

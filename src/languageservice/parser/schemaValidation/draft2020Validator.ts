@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
+import { SchemaDialect } from '../../jsonSchema';
 import type { ASTNode, ArrayASTNode } from '../../jsonASTTypes';
 import { isNumber } from '../../utils/objects';
 import * as l10n from '@vscode/l10n';
@@ -13,6 +14,10 @@ import type { ISchemaCollector, Options } from './baseValidator';
 import { ValidationResult, asSchema } from './baseValidator';
 
 export class Draft2020Validator extends Draft2019Validator {
+  protected override getCurrentDialect(): SchemaDialect {
+    return SchemaDialect.draft2020;
+  }
+
   /**
    * Keyword: prefixItems + items
    */

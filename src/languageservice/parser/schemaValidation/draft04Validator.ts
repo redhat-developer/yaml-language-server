@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { JSONSchema } from '../../jsonSchema';
+import { SchemaDialect } from '../../jsonSchema';
 import { isBoolean, isNumber } from '../../utils/objects';
 import { BaseValidator } from './baseValidator';
 
@@ -13,6 +14,10 @@ import { BaseValidator } from './baseValidator';
  * Booleans that make minimum/maximum exclusive.
  */
 export class Draft04Validator extends BaseValidator {
+  protected override getCurrentDialect(): SchemaDialect {
+    return SchemaDialect.draft04;
+  }
+
   protected override getNumberLimits(schema: JSONSchema): {
     minimum?: number;
     maximum?: number;

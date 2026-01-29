@@ -1888,6 +1888,32 @@ obj:
 
   describe('Bug fixes', () => {
     describe('Base URI + $id resolution', () => {
+      it('$id URI fragments in Draft-07 (plain-name fragment resolution)"', async () => {
+        const schema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          $id: 'https://example.com/schema/root',
+          type: 'object',
+          properties: {
+            phoneLocal: { $ref: '#Phone' },
+            phoneAbsolute: { $ref: 'https://example.com/schema/root#Phone' },
+          },
+          required: ['phoneLocal', 'phoneAbsolute'],
+          $defs: {
+            phoneDef: {
+              $id: 'https://example.com/schema/root#Phone',
+              type: 'string',
+              pattern: '^[0-9]{3}-[0-9]{3}-[0-9]{4}$',
+            },
+          },
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const invalid = `phoneLocal: "4165551234"\nphoneAbsolute: "4165551234"`;
+        const result = await parseSetup(invalid);
+        expect(result).to.have.length(2);
+        expect(result[0].message).to.include('String does not match the pattern');
+        expect(result[1].message).to.include('String does not match the pattern');
+      });
+
       it('should resolve plain-name fragment via subschema $id (fragment form)', async () => {
         const schema: JSONSchema = {
           $schema: 'http://json-schema.org/draft-07/schema#',

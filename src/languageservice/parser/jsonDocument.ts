@@ -225,7 +225,7 @@ export class JSONDocument {
   public validate(textDocument: TextDocument, schema: JSONSchema): Diagnostic[] {
     if (!this.root || !schema) return null;
 
-    const validator = getValidator(schema.dialect);
+    const validator = getValidator(schema._dialect);
     return validator.validateDocument(this.root, textDocument, schema, {
       isKubernetes: this.isKubernetes,
       disableAdditionalProperties: this.disableAdditionalProperties,
@@ -241,7 +241,7 @@ export class JSONDocument {
   ): IApplicableSchema[] {
     if (!this.root || !schema) return [];
 
-    const validator = getValidator(schema.dialect);
+    const validator = getValidator(schema._dialect);
     return validator.getMatchingSchemas(
       this.root,
       schema,

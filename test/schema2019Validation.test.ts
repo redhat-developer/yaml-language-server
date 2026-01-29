@@ -50,7 +50,7 @@ describe('Validation Tests', () => {
     schemaProvider.deleteSchema(SCHEMA_ID);
   });
 
-  describe('keyword: $anchor (resolution)', () => {
+  describe('$anchor resolution', () => {
     it('resolves $ref "#name" via $anchor in same document', async () => {
       const schema: JSONSchema = {
         $schema: 'https://json-schema.org/draft/2019-09/schema',
@@ -462,43 +462,43 @@ describe('Validation Tests', () => {
         expect(result).to.be.empty;
       });
     });
-  });
-  describe('schema dependencies tests', () => {
-    beforeEach(() => {
-      schemaProvider.addSchema(SCHEMA_ID, {
-        $schema: 'http://json-schema.org/draft-07/schema#',
-        type: 'object',
-        properties: {
-          mode: { type: 'string' },
-          port: { type: 'number' },
-        },
-        dependencies: {
-          mode: {
-            required: ['port'],
-            properties: {
-              port: { minimum: 1024 },
+    describe('schema dependencies tests', () => {
+      beforeEach(() => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          type: 'object',
+          properties: {
+            mode: { type: 'string' },
+            port: { type: 'number' },
+          },
+          dependencies: {
+            mode: {
+              required: ['port'],
+              properties: {
+                port: { minimum: 1024 },
+              },
             },
           },
-        },
-      } as JSONSchema);
-    });
-    it('enforces dependent schema constraints when trigger property is present', async () => {
-      const content = `mode: "server"\nport: 80`;
-      const result = await parseSetup(content);
-      expect(result).to.have.length(1);
-      expect(result[0].message).to.include('Value is below the minimum of 1024.');
-    });
-    it('enforces dependent schema required properties when trigger property is present', async () => {
-      const content = `mode: "server"`;
-      const result = await parseSetup(content);
-      expect(result).to.have.length(1);
-      expect(result[0].message).to.include('Missing property');
-      expect(result[0].message).to.include('port');
-    });
-    it('does not apply the dependent schema when trigger property is absent', async () => {
-      const content = `port: 80`;
-      const result = await parseSetup(content);
-      expect(result).to.be.empty;
+        } as JSONSchema);
+      });
+      it('enforces dependent schema constraints when trigger property is present', async () => {
+        const content = `mode: "server"\nport: 80`;
+        const result = await parseSetup(content);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('Value is below the minimum of 1024.');
+      });
+      it('enforces dependent schema required properties when trigger property is present', async () => {
+        const content = `mode: "server"`;
+        const result = await parseSetup(content);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('Missing property');
+        expect(result[0].message).to.include('port');
+      });
+      it('does not apply the dependent schema when trigger property is absent', async () => {
+        const content = `port: 80`;
+        const result = await parseSetup(content);
+        expect(result).to.be.empty;
+      });
     });
   });
 
@@ -550,66 +550,66 @@ unknown: 1
       expect(result[0].message).to.include('number');
       expect(result[1].message).to.include('Property unknown is not allowed.');
     });
+  });
 
-    describe('Embedded resource $id resolution', () => {
-      it('should resolve embedded resource $id for relative $ref without external load', async () => {
-        const root: JSONSchema = {
-          $schema: 'https://json-schema.org/draft/2019-09/schema',
-          type: 'object',
-          properties: {
-            x: { $ref: 'other.json#bar' },
-          },
-          required: ['x'],
-          $defs: {
-            B: {
-              $id: 'other.json',
-              $defs: {
-                X: {
-                  $anchor: 'bar',
-                  type: 'string',
-                  minLength: 2,
-                },
+  describe('$id resolution', () => {
+    it('should resolve embedded resource $id for relative $ref without external load', async () => {
+      const root: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        type: 'object',
+        properties: {
+          x: { $ref: 'other.json#bar' },
+        },
+        required: ['x'],
+        $defs: {
+          B: {
+            $id: 'other.json',
+            $defs: {
+              X: {
+                $anchor: 'bar',
+                type: 'string',
+                minLength: 2,
               },
             },
           },
-        };
-        schemaProvider.addSchema(SCHEMA_ID, root);
-        const yaml = `x: A`;
-        const result = await parseSetup(yaml);
-        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
-        expect(result).to.have.length(1);
-        expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
-      });
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, root);
+      const yaml = `x: A`;
+      const result = await parseSetup(yaml);
+      expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
+    });
 
-      it('should handle $id changing base URI for nested $anchor resolution', async () => {
-        const root: JSONSchema = {
-          $schema: 'https://json-schema.org/draft/2019-09/schema',
-          type: 'object',
-          properties: {
-            address: { $ref: 'schemas/address.json#USAddress' },
-          },
-          $defs: {
-            addressSchema: {
-              $id: 'schemas/address.json',
-              $defs: {
-                us: {
-                  $anchor: 'USAddress',
-                  type: 'object',
-                  properties: {
-                    zipCode: { type: 'string', minLength: 5 },
-                  },
-                  required: ['zipCode'],
+    it('should handle $id changing base URI for nested $anchor resolution', async () => {
+      const root: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        type: 'object',
+        properties: {
+          address: { $ref: 'schemas/address.json#USAddress' },
+        },
+        $defs: {
+          addressSchema: {
+            $id: 'schemas/address.json',
+            $defs: {
+              us: {
+                $anchor: 'USAddress',
+                type: 'object',
+                properties: {
+                  zipCode: { type: 'string', minLength: 5 },
                 },
+                required: ['zipCode'],
               },
             },
           },
-        };
-        schemaProvider.addSchema(SCHEMA_ID, root);
-        const yaml = `address:\n  zipCode: "123"`;
-        const result = await parseSetup(yaml);
-        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
-        expect(result[0].message).to.include('String is shorter than the minimum length of 5.');
-      });
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, root);
+      const yaml = `address:\n  zipCode: "123"`;
+      const result = await parseSetup(yaml);
+      expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+      expect(result[0].message).to.include('String is shorter than the minimum length of 5.');
     });
   });
 });
