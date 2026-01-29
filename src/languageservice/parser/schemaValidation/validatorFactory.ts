@@ -20,7 +20,6 @@ export function getValidator(dialect: SchemaDialect): BaseValidator {
       return new Draft2019Validator();
     case SchemaDialect.draft2020:
       return new Draft2020Validator();
-    case SchemaDialect.undefined:
     default:
       return new Draft07Validator(); // fallback
   }

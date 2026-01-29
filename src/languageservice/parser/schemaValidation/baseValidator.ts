@@ -4,7 +4,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
+import type { JSONSchema, JSONSchemaRef, SchemaDialect } from '../../jsonSchema';
 import type { ASTNode, ArrayASTNode, NumberASTNode, ObjectASTNode, PropertyASTNode, StringASTNode } from '../../jsonASTTypes';
 import { equals, isBoolean, isDefined, isIterable, isNumber, isString } from '../../utils/objects';
 import { getSchemaTypeName } from '../../utils/schemaUtils';
@@ -17,6 +17,7 @@ import { URI } from 'vscode-uri';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { contains, getNodeValue } from '../astUtils';
+import { getValidator } from './validatorFactory';
 
 export const YAML_SOURCE = 'YAML';
 const YAML_SCHEMA_PREFIX = 'yaml-schema: ';
@@ -420,6 +421,11 @@ export abstract class BaseValidator {
     exclusiveMaximum?: number;
   };
 
+  /**
+   * Get the current validator's dialect.
+   */
+  protected abstract getCurrentDialect(): SchemaDialect;
+
   // ---------------- core traversal ----------------
   protected validateNode(
     node: ASTNode,
@@ -431,6 +437,17 @@ export abstract class BaseValidator {
   ): void {
     if (!node) return;
     if (!schema || typeof schema !== 'object') return;
+
+    // Draft 2020-12 Compound Schema Document behavior: check if this node explicitly declares a different dialect
+    if (schema._dialect) {
+      const subDialect = schema._dialect;
+      const currentDialect = this.getCurrentDialect();
+      if (subDialect !== currentDialect) {
+        const subValidator = getValidator(subDialect);
+        subValidator.validateNode(node, schema, originalSchema, validationResult, matchingSchemas, options);
+        return;
+      }
+    }
 
     if (!schema.url) schema.url = originalSchema.url;
     schema.closestTitle = schema.title || originalSchema.closestTitle;
