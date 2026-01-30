@@ -13,8 +13,19 @@ export function registerCommands(commandExecutor: CommandExecutor, connection: C
     if (!uri) {
       return;
     }
-    // if uri points to local file of its a windows path
-    if (!uri.startsWith('file') && !/^[a-z]:[\\/]/i.test(uri)) {
+    const wsFolders = await connection.workspace.getWorkspaceFolders();
+
+    if (uri.indexOf('://') < 0 && !uri.startsWith('/')) {
+      if (wsFolders.length === 1) {
+        const wsUri = URI.parse(wsFolders[0].uri);
+        uri = wsUri.with({ path: wsUri.path + uri }).toString();
+      }
+    } else if (uri.startsWith('file://') && wsFolders.length === 1 && URI.parse(wsFolders[0].uri).scheme != 'file') {
+      const wsUri = URI.parse(wsFolders[0].uri);
+      const pathFromUri = URI.parse(uri).path;
+      uri = wsUri.with({ path: pathFromUri }).toString();
+    } else if (!uri.startsWith('file') && !/^[a-z]:[\\/]/i.test(uri)) {
+      // if uri points to local file of its a windows path
       const origUri = URI.parse(uri);
       const customUri = URI.from({
         scheme: 'json-schema',
