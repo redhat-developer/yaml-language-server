@@ -416,7 +416,8 @@ export class YAMLSchemaService extends JSONSchemaService {
       uri: string,
       linkPath: string,
       parentSchemaURL: string,
-      parentSchemaDependencies: SchemaDependencies
+      parentSchemaDependencies: SchemaDependencies,
+      recursiveAnchorBase?: string
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any> => {
       const _attachResolvedSchema = (
@@ -425,14 +426,15 @@ export class YAMLSchemaService extends JSONSchemaService {
         schemaUri: string,
         linkPath: string,
         parentSchemaDependencies: SchemaDependencies,
-        resolveRefDependencies: SchemaDependencies
+        resolveRefDependencies: SchemaDependencies,
+        recursiveAnchorBase?: string
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ): Promise<any> => {
         parentSchemaDependencies[schemaUri] = true;
         _merge(node, schemaRoot, schemaUri, linkPath);
         node.url = schemaUri;
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        return resolveRefs(node, schemaRoot, schemaUri, resolveRefDependencies);
+        return resolveRefs(node, schemaRoot, schemaUri, resolveRefDependencies, recursiveAnchorBase);
       };
 
       const resolvedUri = _resolveAgainstBase(parentSchemaURL, uri);
@@ -445,7 +447,8 @@ export class YAMLSchemaService extends JSONSchemaService {
           resolvedUri,
           linkPath,
           parentSchemaDependencies,
-          parentSchemaDependencies
+          parentSchemaDependencies,
+          recursiveAnchorBase
         );
       }
 
@@ -463,7 +466,8 @@ export class YAMLSchemaService extends JSONSchemaService {
           resolvedUri,
           linkPath,
           parentSchemaDependencies,
-          referencedHandle.dependencies
+          referencedHandle.dependencies,
+          recursiveAnchorBase
         );
       });
     };
@@ -472,25 +476,35 @@ export class YAMLSchemaService extends JSONSchemaService {
       node: JSONSchema,
       parentSchema: JSONSchema,
       parentSchemaURL: string,
-      parentSchemaDependencies: SchemaDependencies
+      parentSchemaDependencies: SchemaDependencies,
+      recursiveAnchorBase?: string
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any> => {
       if (!node || typeof node !== 'object') {
         return null;
       }
 
+      if (!recursiveAnchorBase && node.$recursiveAnchor) {
+        recursiveAnchorBase = parentSchemaURL.split('#', 2)[0];
+      }
+
       // track nodes with their base URL for $id resolution
-      type WalkItem = { node: JSONSchema; baseURL?: string; dialect?: SchemaDialect };
-      const toWalk: WalkItem[] = [{ node, baseURL: parentSchemaURL }];
+      type WalkItem = { node: JSONSchema; baseURL?: string; dialect?: SchemaDialect; recursiveAnchorBase?: string };
+      const toWalk: WalkItem[] = [{ node, baseURL: parentSchemaURL, recursiveAnchorBase }];
       const seen: Set<JSONSchema> = new Set();
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const openPromises: Promise<any>[] = [];
 
       // handle $ref with siblings based on dialect
-      const _handleRef = (next: JSONSchema, nodeBaseURL: string, nodeDialect: SchemaDialect): void => {
+      const _handleRef = (
+        next: JSONSchema,
+        nodeBaseURL: string,
+        nodeDialect: SchemaDialect,
+        recursiveAnchorBase?: string
+      ): void => {
         this.collectSchemaNodes(
-          (entry) => toWalk.push({ node: entry, baseURL: nodeBaseURL }),
+          (entry) => toWalk.push({ node: entry, baseURL: nodeBaseURL, recursiveAnchorBase }),
           this.schemaMapValues(next.definitions || next.$defs)
         );
 
@@ -504,6 +518,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           '$anchor',
           '$dynamicAnchor',
           '$recursiveAnchor',
+          '$recursiveRef',
           'definitions',
           '$defs',
           '$comment',
@@ -539,7 +554,12 @@ export class YAMLSchemaService extends JSONSchemaService {
               delete node[k];
             }
           }
-          node.allOf = [{ $ref: node.$ref }, siblings];
+
+          const refValue = node.$recursiveRef ?? node.$ref;
+          if (typeof refValue !== 'string') return;
+          node.allOf = [{ [node.$recursiveRef ? '$recursiveRef' : '$ref']: refValue } as JSONSchema, siblings];
+
+          delete node.$recursiveRef;
           delete node.$ref;
         };
 
@@ -550,8 +570,9 @@ export class YAMLSchemaService extends JSONSchemaService {
         };
 
         const seenRefs = new Set<string>();
-        while (next.$ref) {
-          next._$ref = next.$ref;
+        while (next.$recursiveRef || next.$ref) {
+          const rawRef = next.$recursiveRef ?? next.$ref;
+          next._$ref = rawRef;
 
           if (_hasRefSiblings(next)) {
             // Draft-07 and earlier: ignore siblings
@@ -563,7 +584,7 @@ export class YAMLSchemaService extends JSONSchemaService {
               if (Array.isArray(next.allOf)) {
                 for (const entry of next.allOf) {
                   if (entry && typeof entry === 'object') {
-                    toWalk.push({ node: entry as JSONSchema, baseURL: nodeBaseURL });
+                    toWalk.push({ node: entry as JSONSchema, baseURL: nodeBaseURL, recursiveAnchorBase });
                   }
                 }
               }
@@ -571,15 +592,33 @@ export class YAMLSchemaService extends JSONSchemaService {
             }
           }
 
-          const ref = decodeURIComponent(next.$ref);
-          const segments = ref.split('#', 2);
+          const ref = decodeURIComponent(rawRef);
+          delete next.$recursiveRef;
           delete next.$ref;
+
+          if (ref === '#') {
+            const currentResource = nodeBaseURL?.split('#', 2)[0] || '';
+            const targetRoot = resourceIndexByUri.get(currentResource)?.root ?? parentSchema;
+            const dynamicBase = targetRoot?.$recursiveAnchor && recursiveAnchorBase ? recursiveAnchorBase : currentResource;
+
+            if (dynamicBase.length > 0) {
+              openPromises.push(
+                resolveExternalLink(next, dynamicBase, '', nodeBaseURL, parentSchemaDependencies, recursiveAnchorBase)
+              );
+              return;
+            }
+            continue;
+          }
+
+          const segments = ref.split('#', 2);
           const baseUri = segments[0];
           const frag = segments.length > 1 ? segments[1] : '';
 
           if (baseUri.length > 0) {
             // resolve relative to this node's base URL
-            openPromises.push(resolveExternalLink(next, baseUri, frag, nodeBaseURL, parentSchemaDependencies));
+            openPromises.push(
+              resolveExternalLink(next, baseUri, frag, nodeBaseURL, parentSchemaDependencies, recursiveAnchorBase)
+            );
             return;
           } else {
             if (!seenRefs.has(ref)) {
@@ -591,7 +630,8 @@ export class YAMLSchemaService extends JSONSchemaService {
 
         // recursively process children
         this.collectSchemaNodes(
-          (entry) => toWalk.push({ node: entry, baseURL: nodeBaseURL, dialect: nodeDialect }),
+          (entry) =>
+            toWalk.push({ node: entry, baseURL: next._baseUrl || nodeBaseURL, dialect: nodeDialect, recursiveAnchorBase }),
           next.not,
           next.if,
           next.then,
@@ -616,7 +656,14 @@ export class YAMLSchemaService extends JSONSchemaService {
         const segments = parentSchemaURL.split('#', 2);
         if (segments[0].length > 0 && segments[1].length > 0) {
           const newSchema = {};
-          await resolveExternalLink(newSchema, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies);
+          await resolveExternalLink(
+            newSchema,
+            segments[0],
+            segments[1],
+            parentSchemaURL,
+            parentSchemaDependencies,
+            recursiveAnchorBase
+          );
           for (const key in schema) {
             if (key === 'required') {
               continue;
@@ -634,9 +681,10 @@ export class YAMLSchemaService extends JSONSchemaService {
         const next = item.node;
         const nodeBaseURL = next._baseUrl || item.baseURL;
         const nodeDialect = next._dialect || item.dialect;
+        const nodeRecursiveAnchorBase = item.recursiveAnchorBase;
         if (seen.has(next)) continue;
         seen.add(next);
-        _handleRef(next, nodeBaseURL, nodeDialect);
+        _handleRef(next, nodeBaseURL, nodeDialect, nodeRecursiveAnchorBase);
       }
       return Promise.all(openPromises);
     };

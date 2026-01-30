@@ -612,4 +612,327 @@ unknown: 1
       expect(result[0].message).to.include('String is shorter than the minimum length of 5.');
     });
   });
+
+  describe('$recursiveAnchor and $recursiveRef resolution', () => {
+    describe('basic $recursiveRef behavior', () => {
+      it('$recursiveRef without $recursiveAnchor works like $ref', async () => {
+        const schema: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          properties: {
+            foo: { $recursiveRef: '#' },
+          },
+          additionalProperties: false,
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+
+        expect(await parseSetup('foo: false')).to.be.empty;
+
+        expect(await parseSetup(`foo:\n  foo: false`)).to.be.empty;
+
+        const result1 = await parseSetup('bar: false');
+        expect(result1).to.have.length(1);
+        expect(result1[0].message).to.include('Property bar is not allowed.');
+
+        const result2 = await parseSetup(`foo:\n  bar: false`);
+        expect(result2).to.have.length(1);
+        expect(result2[0].message).to.include('Property bar is not allowed.');
+      });
+
+      it('does not infinite loop on self-recursive $recursiveRef', async () => {
+        const schema: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          $id: 'http://localhost:4242/recursive.json',
+          $recursiveAnchor: true,
+          anyOf: [
+            { type: 'string' },
+            {
+              type: 'object',
+              additionalProperties: { $recursiveRef: '#' },
+            },
+          ],
+        };
+
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://localhost:4242/recursive.json', schema);
+        const result = await parseSetup(`# yaml-language-server: $schema=http://localhost:4242/recursive.json
+foo:
+  bar:
+    baz: 1`);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('Incorrect type.');
+        expect(result[0].message).to.include('string | object');
+      });
+
+      it('$recursiveRef without using nesting', async () => {
+        const myobject: JSONSchema = {
+          $id: 'http://localhost:4242/myobject.json',
+          $recursiveAnchor: true,
+          anyOf: [{ type: 'string' }, { type: 'object', additionalProperties: { $recursiveRef: '#' } }],
+        };
+        const schema: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          $id: 'http://localhost:4242/schema.json',
+          $defs: {
+            myobject,
+          },
+          anyOf: [{ type: 'integer' }, { $ref: '#/$defs/myobject' }],
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://localhost:4242/schema.json', schema);
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://localhost:4242/myobject.json', myobject);
+
+        expect(await parseSetup('# yaml-language-server: $schema=http://localhost:4242/schema.json\n1')).to.be.empty;
+
+        expect(await parseSetup('# yaml-language-server: $schema=http://localhost:4242/schema.json\nfoo: hi')).to.be.empty;
+
+        const result1 = await parseSetup('# yaml-language-server: $schema=http://localhost:4242/schema.json\nfoo: 1');
+        expect(result1).to.have.length(1);
+        expect(result1[0].message).to.include('Incorrect type.');
+        expect(result1[0].message).to.include('string | object');
+
+        expect(
+          await parseSetup(`# yaml-language-server: $schema=http://localhost:4242/schema.json
+foo:
+  bar: hi`)
+        ).to.be.empty;
+
+        const result2 = await parseSetup(`# yaml-language-server: $schema=http://localhost:4242/schema.json
+foo:
+  bar: 1`);
+        expect(result2).to.have.length(1);
+        expect(result2[0].message).to.include('Incorrect type.');
+        expect(result2[0].message).to.include('string | object');
+      });
+
+      it('$recursiveRef with nesting', async () => {
+        const myobject: JSONSchema = {
+          $id: 'http://localhost:4242/myobject2.json',
+          $recursiveAnchor: true,
+          anyOf: [{ type: 'string' }, { type: 'object', additionalProperties: { $recursiveRef: '#' } }],
+        };
+        const schema: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          $id: 'http://localhost:4242/schema2.json',
+          $recursiveAnchor: true,
+          $defs: {
+            myobject,
+          },
+          anyOf: [{ type: 'integer' }, { $ref: '#/$defs/myobject' }],
+        };
+
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://localhost:4242/schema2.json', schema);
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://localhost:4242/myobject2.json', myobject);
+
+        expect(await parseSetup('# yaml-language-server: $schema=http://localhost:4242/schema2.json\n1')).to.be.empty;
+
+        expect(await parseSetup('# yaml-language-server: $schema=http://localhost:4242/schema2.json\nfoo: hi')).to.be.empty;
+
+        expect(await parseSetup('# yaml-language-server: $schema=http://localhost:4242/schema2.json\nfoo: 1')).to.be.empty;
+
+        expect(
+          await parseSetup(`# yaml-language-server: $schema=http://localhost:4242/schema2.json
+foo:
+  bar: hi`)
+        ).to.be.empty;
+
+        expect(
+          await parseSetup(`# yaml-language-server: $schema=http://localhost:4242/schema2.json
+foo:
+  bar: 1`)
+        ).to.be.empty;
+      });
+
+      it('$recursiveRef with $recursiveAnchor: false works like $ref', async () => {
+        const myobject: JSONSchema = {
+          $id: 'http://localhost:4242/myobject3.json',
+          $recursiveAnchor: false,
+          anyOf: [{ type: 'string' }, { type: 'object', additionalProperties: { $recursiveRef: '#' } }],
+        };
+        const schema: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          $id: 'http://localhost:4242/schema3.json',
+          $recursiveAnchor: false,
+          $defs: {
+            myobject,
+          },
+          anyOf: [{ type: 'integer' }, { $ref: '#/$defs/myobject' }],
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://localhost:4242/schema3.json', schema);
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://localhost:4242/myobject3.json', myobject);
+
+        expect(await parseSetup('# yaml-language-server: $schema=http://localhost:4242/schema3.json\n1')).to.be.empty;
+
+        expect(await parseSetup('# yaml-language-server: $schema=http://localhost:4242/schema3.json\nfoo: hi')).to.be.empty;
+
+        const result1 = await parseSetup('# yaml-language-server: $schema=http://localhost:4242/schema3.json\nfoo: 1');
+        expect(result1).to.have.length(1);
+        expect(result1[0].message).to.include('Incorrect type.');
+        expect(result1[0].message).to.include('string | object');
+
+        expect(
+          await parseSetup(`# yaml-language-server: $schema=http://localhost:4242/schema3.json
+foo:
+  bar: hi`)
+        ).to.be.empty;
+
+        const result2 = await parseSetup(`# yaml-language-server: $schema=http://localhost:4242/schema3.json
+foo:
+  bar: 1`);
+        expect(result2).to.have.length(1);
+        expect(result2[0].message).to.include('Incorrect type.');
+        expect(result2[0].message).to.include('string | object');
+      });
+
+      it('$recursiveRef with no $recursiveAnchor in the initial target schema resource', async () => {
+        const schema: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          $id: 'http://localhost:4242/base.json',
+          $recursiveAnchor: true,
+          anyOf: [
+            { type: 'boolean' },
+            {
+              type: 'object',
+              additionalProperties: {
+                $id: 'http://localhost:4242/inner.json',
+                $comment: 'there is no $recursiveAnchor: true here, so we do NOT recurse to the base',
+                anyOf: [{ type: 'integer' }, { type: 'object', additionalProperties: { $recursiveRef: '#' } }],
+              },
+            },
+          ],
+        };
+
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://localhost:4242/base.json', schema);
+
+        const result1 = await parseSetup('# yaml-language-server: $schema=http://localhost:4242/base.json\nfoo: true');
+        expect(result1).to.have.length(1);
+        expect(result1[0].message).to.include('Incorrect type.');
+        expect(result1[0].message).to.include('integer | object');
+
+        expect(
+          await parseSetup(`# yaml-language-server: $schema=http://localhost:4242/base.json
+foo:
+  bar: 1`)
+        ).to.be.empty;
+
+        const result2 = await parseSetup(`# yaml-language-server: $schema=http://localhost:4242/base.json
+foo:
+  bar: true`);
+        expect(result2).to.have.length(1);
+        expect(result2[0].message).to.include('Incorrect type.');
+        expect(result2[0].message).to.include('integer | object');
+      });
+
+      it('$recursiveRef with no $recursiveAnchor in the outer schema resource', async () => {
+        const schema: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          $id: 'http://localhost:4242/base2.json',
+          anyOf: [
+            { type: 'boolean' },
+            {
+              type: 'object',
+              additionalProperties: {
+                $id: 'http://localhost:4242/inner2.json',
+                $recursiveAnchor: true,
+                anyOf: [{ type: 'integer' }, { type: 'object', additionalProperties: { $recursiveRef: '#' } }],
+              },
+            },
+          ],
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://localhost:4242/base2.json', schema);
+
+        const result1 = await parseSetup('# yaml-language-server: $schema=http://localhost:4242/base2.json\nfoo: true');
+        expect(result1).to.have.length(1);
+        expect(result1[0].message).to.include('Incorrect type.');
+        expect(result1[0].message).to.include('integer | object');
+
+        expect(
+          await parseSetup(`# yaml-language-server: $schema=http://localhost:4242/base2.json
+foo:
+  bar: 1`)
+        ).to.be.empty;
+
+        const result2 = await parseSetup(`# yaml-language-server: $schema=http://localhost:4242/base2.json
+foo:
+  bar: true`);
+        expect(result2).to.have.length(1);
+        expect(result2[0].message).to.include('Incorrect type.');
+        expect(result2[0].message).to.include('integer | object');
+      });
+    });
+
+    describe('tree schema with unevaluatedProperties', () => {
+      it('$recursiveRef resolves to outermost schema with $recursiveAnchor in dynamic scope', async () => {
+        const treeSchema: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          $id: 'http://example.com/tree.json',
+          $recursiveAnchor: true,
+          type: 'object',
+          properties: {
+            value: { type: 'integer' },
+            children: { type: 'array', items: { $recursiveRef: '#' } },
+          },
+          required: ['value'],
+        };
+
+        const treeWithMetaSchema: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          $id: 'http://example.com/tree-with-meta.json',
+          $recursiveAnchor: true,
+          allOf: [{ $ref: 'http://example.com/tree.json' }],
+          properties: {
+            meta: { type: 'string' },
+          },
+          required: ['meta'],
+          unevaluatedProperties: false,
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://example.com/tree.json', treeSchema);
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://example.com/tree-with-meta.json', treeWithMetaSchema);
+
+        const content = `# yaml-language-server: $schema=http://example.com/tree-with-meta.json
+value: 1
+meta: root
+children:
+  - value: 2
+`;
+        const result = await parseSetup(content);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('Missing property');
+        expect(result[0].message).to.include('meta');
+      });
+
+      it('$recursiveRef with all required properties should pass', async () => {
+        const treeSchema: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          $id: 'http://example.com/tree2.json',
+          $recursiveAnchor: true,
+          type: 'object',
+          properties: {
+            value: { type: 'integer' },
+            children: { type: 'array', items: { $recursiveRef: '#' } },
+          },
+          required: ['value'],
+        };
+        const treeWithMetaSchema: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2019-09/schema',
+          $id: 'http://example.com/tree-with-meta2.json',
+          $recursiveAnchor: true,
+          allOf: [{ $ref: 'http://example.com/tree2.json' }],
+          properties: {
+            meta: { type: 'string' },
+          },
+          required: ['meta'],
+          unevaluatedProperties: false,
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://example.com/tree2.json', treeSchema);
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://example.com/tree-with-meta2.json', treeWithMetaSchema);
+
+        const content = `# yaml-language-server: $schema=http://example.com/tree-with-meta2.json
+value: 1
+meta: root
+children:
+  - value: 2
+    meta: child
+`;
+        expect(await parseSetup(content)).to.be.empty;
+      });
+    });
+  });
 });
