@@ -33,6 +33,8 @@
   "Array does not contain required item.": "Array enthält das erforderliche Element nicht.",
   "Array has too few items. Expected {0} or more.": "Array hat zu wenige Elemente. Erwartet: {0} oder mehr.",
   "Array has too many items. Expected {0} or fewer.": "Array hat zu viele Elemente. Erwartet: {0} oder weniger.",
+  "Array has too few items matching \"contains\". Expected {0} or more.": "Array hat zu wenige Elemente, die dem \"contains\"-Kriterium entsprechen. Erwartet: {0} oder mehr.",
+  "Array has too many items matching \"contains\". Expected {0} or fewer.": "Array hat zu viele Elemente, die dem \"contains\"-Kriterium entsprechen. Erwartet: {0} oder weniger.",
   "Array has duplicate items.": "Array enthält doppelte Elemente.",
   "Property {0} is not allowed.": "Eigenschaft {0} ist nicht erlaubt.",
   "Object has more properties than limit of {0}.": "Objekt hat mehr Eigenschaften als das Limit von {0}.",

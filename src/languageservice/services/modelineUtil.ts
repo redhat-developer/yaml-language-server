@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { JSONDocument } from '../parser/jsonParser07';
+import { JSONDocument } from '../parser/jsonDocument';
 
 /**
  * Retrieve schema if declared as modeline.

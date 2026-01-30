@@ -33,6 +33,8 @@
   "Array does not contain required item.": "陣列中缺少必要項目。",
   "Array has too few items. Expected {0} or more.": "陣列項目數太少。應為 {0} 項或更多。",
   "Array has too many items. Expected {0} or fewer.": "陣列項目數太多。應為 {0} 項或更少。",
+  "Array has too few items matching \"contains\". Expected {0} or more.": "符合 \"contains\" 的陣列項目數過少。應為 {0} 項或更多。",
+  "Array has too many items matching \"contains\". Expected {0} or fewer.": "符合 \"contains\" 的陣列項目數過多。應為 {0} 項或更少。",
   "Array has duplicate items.": "陣列中有重複項目。",
   "Property {0} is not allowed.": "不允許的屬性 {0}。",
   "Object has more properties than limit of {0}.": "物件的屬性數量超過限制 {0}。",

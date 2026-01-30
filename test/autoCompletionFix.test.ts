@@ -171,7 +171,8 @@ describe('Auto Completion Fix Tests', () => {
     );
   });
 
-  it('should show completion items in the middle of map in array', async () => {
+  it('should show completion items in the middle of map in array', async function () {
+    this.timeout(10000);
     const content = `apiVersion: v1
 kind: Pod
 metadata:

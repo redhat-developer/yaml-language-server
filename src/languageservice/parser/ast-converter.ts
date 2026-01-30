@@ -28,7 +28,7 @@ import {
   NumberASTNodeImpl,
   ArrayASTNodeImpl,
   BooleanASTNodeImpl,
-} from './jsonParser07';
+} from './jsonDocument';
 
 type NodeRange = [number, number, number];
 
