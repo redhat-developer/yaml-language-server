@@ -83,7 +83,7 @@ export class SettingsHandler {
 
       if (settings.yaml.schemaStore) {
         this.yamlSettings.schemaStoreEnabled = settings.yaml.schemaStore.enable;
-        if (settings.yaml.schemaStore.url?.length !== 0) {
+        if (settings.yaml.schemaStore.url) {
           this.yamlSettings.schemaStoreUrl = settings.yaml.schemaStore.url;
         }
       }
@@ -200,12 +200,7 @@ export class SettingsHandler {
    */
   private async setSchemaStoreSettingsIfNotSet(): Promise<void> {
     const schemaStoreIsSet = this.yamlSettings.schemaStoreSettings.length !== 0;
-    let schemaStoreUrl = '';
-    if (this.yamlSettings.schemaStoreUrl?.length !== 0) {
-      schemaStoreUrl = this.yamlSettings.schemaStoreUrl;
-    } else {
-      schemaStoreUrl = JSON_SCHEMASTORE_URL;
-    }
+    const schemaStoreUrl = this.yamlSettings.schemaStoreUrl || JSON_SCHEMASTORE_URL;
 
     if (this.yamlSettings.schemaStoreEnabled && !schemaStoreIsSet) {
       try {
