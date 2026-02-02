@@ -18,7 +18,6 @@ import {
 
 import { URI } from 'vscode-uri';
 import * as l10n from '@vscode/l10n';
-import { convertSimple2RegExpPattern } from '../utils/strings';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { JSONDocument } from '../parser/jsonDocument';
 import * as path from 'path';
@@ -86,32 +85,6 @@ export interface SchemaDeletionsAll {
   action: MODIFICATION_ACTIONS.deleteAll;
 }
 
-export class FilePatternAssociation {
-  private schemas: string[];
-  private patternRegExp: RegExp;
-
-  constructor(pattern: string) {
-    try {
-      this.patternRegExp = new RegExp(convertSimple2RegExpPattern(pattern) + '$');
-    } catch (e) {
-      // invalid pattern
-      this.patternRegExp = null;
-    }
-    this.schemas = [];
-  }
-
-  public addSchema(id: string): void {
-    this.schemas.push(id);
-  }
-
-  public matchesPattern(fileName: string): boolean {
-    return this.patternRegExp && this.patternRegExp.test(fileName);
-  }
-
-  public getSchemas(): string[] {
-    return this.schemas;
-  }
-}
 interface SchemaStoreSchema {
   name: string;
   description: string;

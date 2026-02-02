@@ -9,7 +9,8 @@ import type { ASTNode, ArrayASTNode, NumberASTNode, ObjectASTNode, PropertyASTNo
 import { equals, isBoolean, isDefined, isIterable, isNumber, isString } from '../../utils/objects';
 import { getSchemaTypeName } from '../../utils/schemaUtils';
 import { isArrayEqual } from '../../utils/arrUtils';
-import { convertSimple2RegExpPattern, safeCreateUnicodeRegExp } from '../../utils/strings';
+import { safeCreateUnicodeRegExp } from '../../utils/strings';
+import { FilePatternAssociation } from '../../utils/filePatternAssociation';
 import { floatSafeRemainder } from '../../utils/math';
 import { ErrorCode } from 'vscode-json-languageservice';
 import * as l10n from '@vscode/l10n';
@@ -21,26 +22,6 @@ import { getValidator } from './validatorFactory';
 
 export const YAML_SOURCE = 'YAML';
 const YAML_SCHEMA_PREFIX = 'yaml-schema: ';
-
-/**
- * Local copy to avoid a circular dependency:
- * jsonDocument -> baseValidator -> yamlSchemaService -> jsonDocument
- */
-class FilePatternAssociation {
-  private readonly patternRegExp: RegExp | null;
-
-  constructor(pattern: string) {
-    try {
-      this.patternRegExp = new RegExp(convertSimple2RegExpPattern(pattern) + '$');
-    } catch {
-      this.patternRegExp = null;
-    }
-  }
-
-  public matchesPattern(fileName: string): boolean {
-    return !!this.patternRegExp && this.patternRegExp.test(fileName);
-  }
-}
 
 export interface IRange {
   offset: number;
