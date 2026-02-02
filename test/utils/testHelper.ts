@@ -76,7 +76,8 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
       yamlSettings.workspaceFolders,
       yamlSettings.workspaceRoot,
       yamlSettings.useVSCodeContentRequest,
-      testFileSystem
+      testFileSystem,
+      false
     );
   };
   const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);

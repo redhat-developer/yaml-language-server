@@ -35,7 +35,8 @@ describe('Schema Request Handler Tests', () => {
         [],
         URI.parse(''),
         false,
-        testFileSystem
+        testFileSystem,
+        false
       );
       expect(readFileStub).calledOnceWith('c:\\some\\window\\path\\scheme.json');
       const result = await resultPromise;
@@ -44,7 +45,7 @@ describe('Schema Request Handler Tests', () => {
 
     it('UNIX URI should works', async () => {
       const connection = {} as Connection;
-      const resultPromise = schemaRequestHandler(connection, '/some/unix/path/', [], URI.parse(''), false, testFileSystem);
+      const resultPromise = schemaRequestHandler(connection, '/some/unix/path/', [], URI.parse(''), false, testFileSystem, false);
       const result = await resultPromise;
       expect(result).to.be.equal('{some: "json"}');
     });
@@ -57,7 +58,8 @@ describe('Schema Request Handler Tests', () => {
         [],
         URI.parse(''),
         false,
-        testFileSystem
+        testFileSystem,
+        false
       );
       expect(readFileStub).calledOnceWith(URI.file('a:/some/window/path/scheme.json').fsPath);
       const result = await resultPromise;
