@@ -32,7 +32,8 @@ describe('Bundle l10n Test', () => {
         yamlSettings.workspaceFolders,
         yamlSettings.workspaceRoot,
         yamlSettings.useVSCodeContentRequest,
-        testFileSystem
+        testFileSystem,
+        false
       );
     };
     const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);

@@ -41,7 +41,8 @@ self.onmessage = (e) => {
       yamlSettings.workspaceFolders,
       yamlSettings.workspaceRoot,
       yamlSettings.useVSCodeContentRequest,
-      fileSystem
+      fileSystem,
+      true
     );
   };
 

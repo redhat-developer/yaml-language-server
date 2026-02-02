@@ -60,7 +60,8 @@ const schemaRequestHandlerWrapper = (connection: Connection, uri: string): Promi
     yamlSettings.workspaceFolders,
     yamlSettings.workspaceRoot,
     yamlSettings.useVSCodeContentRequest,
-    fileSystem
+    fileSystem,
+    false
   );
 };
 
