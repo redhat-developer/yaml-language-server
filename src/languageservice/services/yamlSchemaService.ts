@@ -214,6 +214,41 @@ export class YAMLSchemaService extends JSONSchemaService {
       return new ResolvedSchema({}, resolveErrors);
     }
 
+    const _cloneSchema = (
+      value: unknown,
+      seen: Map<object, unknown>,
+      stopCondition?: (val: unknown, seenSize: number) => unknown | undefined
+    ): unknown => {
+      // primitives and null
+      if (value === null || typeof value !== 'object') return value;
+
+      if (stopCondition) {
+        const replacement = stopCondition(value, seen.size);
+        if (replacement !== undefined) return replacement;
+      }
+
+      // already cloned
+      if (seen.has(value)) return seen.get(value);
+
+      // clone arrays
+      if (Array.isArray(value)) {
+        const arr = [];
+        seen.set(value, arr);
+        for (const item of value) {
+          arr.push(_cloneSchema(item, seen, stopCondition));
+        }
+        return arr;
+      }
+
+      // clone objects
+      const result = {};
+      seen.set(value, result);
+      for (const prop in value) {
+        result[prop] = _cloneSchema(value[prop], seen, stopCondition);
+      }
+      return result;
+    };
+
     /**
      * ----------------------------
      * Meta-validate a schema node against its dialect's meta-schema
@@ -224,48 +259,14 @@ export class YAMLSchemaService extends JSONSchemaService {
       const dialect = await pickSchemaDialect(node.$schema);
       dialect && (node._dialect = dialect);
 
-      /**
-       * Clone a schema for top level meta-validation when mixed dialects are present.
-       *
-       * Ajv cannot validate mixed-dialect schemas in a single instance (see https://ajv.js.org/json-schema.html#draft-2020-12).
-       * This helper recursively shallow-copies the schema and replaces subschemas at dialect boundaries with empty objects,
-       * allowing top level meta-validation without considering subschema dialects.
-       */
-      function _cloneForMetaValidation(node: JSONSchema, seen: Map<object, unknown>): unknown {
-        // Base case 1: null and primitives
-        if (node === null || typeof node !== 'object') return node;
-
-        // Base case 2: stop at dialect boundaries except for root
-        if (seen.size !== 0 && node.$schema) return {};
-
-        // Base case 3: already seen
-        const key = node;
-        if (seen.has(key)) {
-          return seen.get(key);
-        }
-
-        // Recursive case: arrays
-        if (Array.isArray(node)) {
-          const arr = [];
-          seen.set(key, arr);
-          for (const item of node) {
-            arr.push(_cloneForMetaValidation(item, seen));
-          }
-          return arr;
-        }
-
-        // Recursive case: objects
-        const source = node as Record<string, unknown>;
-        const result = {};
-        seen.set(key, result);
-        for (const keyName of Object.keys(source)) {
-          result[keyName] = _cloneForMetaValidation(source[keyName], seen);
-        }
-        return result;
-      }
-
       const validator = pickMetaValidator(dialect);
-      const pruned = _cloneForMetaValidation(node, new Map()) as JSONSchema;
+
+      // clone for meta-validation: stop at dialect boundaries abd replace with {}
+      const stopAtDialectBoundary = (val: unknown, seenSize: number): JSONSchema | undefined => {
+        if (seenSize !== 0 && val && typeof val === 'object' && '$schema' in val) return {};
+        return undefined;
+      };
+      const pruned = _cloneSchema(node, new Map(), stopAtDialectBoundary) as JSONSchema;
       if (validator && !validator(pruned)) {
         const errs: string[] = [];
         for (const err of validator.errors as DefinedError[]) {
@@ -287,19 +288,53 @@ export class YAMLSchemaService extends JSONSchemaService {
      *
      * Cache per resource URI in resourceIndexByUri:
      * - root: schema node for the resource
-     * - fragments: map of plain-name anchors to their schema nodes
+     * - fragments: map of plain-name anchors to their schema nodes + dynamic flag
      */
-    type PlainNameFragmentMap = Map<string, JSONSchema>;
+    type FragmentEntry = { node: JSONSchema; dynamic?: boolean };
+    type PlainNameFragmentMap = Map<string, FragmentEntry>;
     type ResourceIndex = { root?: JSONSchema; fragments: PlainNameFragmentMap };
     const resourceIndexByUri = new Map<string, ResourceIndex>();
 
     const _getResourceIndex = (resourceUri: string): ResourceIndex => {
       let entry = resourceIndexByUri.get(resourceUri);
       if (!entry) {
-        entry = { fragments: new Map<string, JSONSchema>() };
+        entry = { fragments: new Map<string, FragmentEntry>() };
         resourceIndexByUri.set(resourceUri, entry);
       }
       return entry;
+    };
+
+    const _resourceFromUrl = (url?: string): string => (url ? url.split('#', 2)[0] : '');
+
+    /**
+     * Adds a resource's dynamic anchors to the inherited scope from parent resources
+     *
+     * Draft 2020-12: For $dynamicRef resolution, when schema A references schema B,
+     * B's dynamic anchors are added to A's scope. This builds a chain where $dynamicRef
+     * looks for the outermost (first) matching anchor.
+     */
+    const _addResourceDynamicAnchors = (
+      scope: Map<string, JSONSchema[]> | undefined,
+      resourceUri: string | undefined
+    ): Map<string, JSONSchema[]> | undefined => {
+      const entry = resourceIndexByUri.get(resourceUri);
+      if (!entry || entry.fragments.size === 0) return scope;
+
+      let result = scope;
+      for (const [name, entryItem] of entry.fragments) {
+        if (!entryItem.dynamic) continue;
+
+        const current = result?.get(name) ?? [];
+        const hasResource = current.some((existing) => _resourceFromUrl(existing?._baseUrl) === resourceUri);
+        if (hasResource) continue;
+
+        // clone map on first modification
+        if (result === scope) {
+          result = scope ? new Map(scope) : new Map<string, JSONSchema[]>();
+        }
+        result.set(name, current.concat(entryItem.node));
+      }
+      return result;
     };
 
     // resolve relative URI against base URI
@@ -333,7 +368,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           if (hashIndex !== -1 && hashIndex < normalizedId.length - 1) {
             // Draft-07 and earlier: $id with fragment defines a plain-name anchor scoped to the resolved base
             const frag = normalizedId.slice(hashIndex + 1);
-            _getResourceIndex(baseUri).fragments.set(frag, node);
+            _getResourceIndex(baseUri).fragments.set(frag, { node });
           } else {
             // $id without fragment creates a new embedded resource scope
             baseUri = normalizedId;
@@ -345,7 +380,12 @@ export class YAMLSchemaService extends JSONSchemaService {
         }
         // Draft 2019-09+: $anchor keyword
         if (node.$anchor) {
-          _getResourceIndex(baseUri).fragments.set(node.$anchor, node);
+          _getResourceIndex(baseUri).fragments.set(node.$anchor, { node });
+        }
+        // Draft 2020-12+: $dynamicAnchor keyword
+        if (node.$dynamicAnchor) {
+          node._baseUrl = baseUri;
+          _getResourceIndex(baseUri).fragments.set(node.$dynamicAnchor, { node, dynamic: true });
         }
 
         // collect all child schemas
@@ -388,24 +428,30 @@ export class YAMLSchemaService extends JSONSchemaService {
         const parts = refPath.substr(1).split('/');
         for (const part of parts) {
           current = current?.[part];
-          if (!current) return undefined;
+          if (current === undefined || current === null) return undefined;
         }
         return current as JSONSchema;
       }
 
       // plain-name fragment ($anchor or $id#fragment) -> lookup in collected fragments
       const fragments = _getResourceIndex(sourceURI).fragments;
-      return fragments.get(refPath);
+      return fragments.get(refPath).node;
     };
 
-    const _merge = (target: JSONSchema, sourceRoot: JSONSchema, sourceURI: string, refPath: string): void => {
+    const _merge = (target: JSONSchema, sourceRoot: JSONSchema, sourceURI: string, refPath: string, clone = false): void => {
       const section = _findSection(sourceRoot, refPath, sourceURI);
-      if (section) {
-        for (const key in section) {
-          if (Object.prototype.hasOwnProperty.call(section, key) && !Object.prototype.hasOwnProperty.call(target, key)) {
-            target[key] = section[key];
+      if (typeof section === 'boolean') {
+        if (section === false) target.not = {};
+        return;
+      }
+      if (section && typeof section === 'object') {
+        const source = clone ? (_cloneSchema(section, new Map()) as JSONSchema) : section;
+        for (const key in source) {
+          if (Object.prototype.hasOwnProperty.call(source, key) && !Object.prototype.hasOwnProperty.call(target, key)) {
+            target[key] = source[key];
           }
         }
+        return;
       } else {
         resolveErrors.push(l10n.t("$ref '{0}' in '{1}' cannot be resolved.", refPath, sourceURI));
       }
@@ -417,7 +463,8 @@ export class YAMLSchemaService extends JSONSchemaService {
       linkPath: string,
       parentSchemaURL: string,
       parentSchemaDependencies: SchemaDependencies,
-      recursiveAnchorBase?: string
+      recursiveAnchorBase: string,
+      resolutionStack: Set<string>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any> => {
       const _attachResolvedSchema = (
@@ -427,14 +474,19 @@ export class YAMLSchemaService extends JSONSchemaService {
         linkPath: string,
         parentSchemaDependencies: SchemaDependencies,
         resolveRefDependencies: SchemaDependencies,
-        recursiveAnchorBase?: string
+        recursiveAnchorBase: string,
+        resolutionStack: Set<string>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ): Promise<any> => {
         parentSchemaDependencies[schemaUri] = true;
-        _merge(node, schemaRoot, schemaUri, linkPath);
+        _merge(node, schemaRoot, schemaUri, linkPath, !!node._dynamicAnchors);
+        node._baseUrl = schemaUri;
         node.url = schemaUri;
+
+        const nextStack = new Set(resolutionStack);
+        nextStack.add(schemaUri);
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        return resolveRefs(node, schemaRoot, schemaUri, resolveRefDependencies, recursiveAnchorBase);
+        return resolveRefs(node, schemaRoot, schemaUri, resolveRefDependencies, recursiveAnchorBase, nextStack);
       };
 
       const resolvedUri = _resolveAgainstBase(parentSchemaURL, uri);
@@ -448,7 +500,8 @@ export class YAMLSchemaService extends JSONSchemaService {
           linkPath,
           parentSchemaDependencies,
           parentSchemaDependencies,
-          recursiveAnchorBase
+          recursiveAnchorBase,
+          resolutionStack
         );
       }
 
@@ -467,7 +520,8 @@ export class YAMLSchemaService extends JSONSchemaService {
           linkPath,
           parentSchemaDependencies,
           referencedHandle.dependencies,
-          recursiveAnchorBase
+          recursiveAnchorBase,
+          resolutionStack
         );
       });
     };
@@ -477,7 +531,8 @@ export class YAMLSchemaService extends JSONSchemaService {
       parentSchema: JSONSchema,
       parentSchemaURL: string,
       parentSchemaDependencies: SchemaDependencies,
-      recursiveAnchorBase?: string
+      recursiveAnchorBase: string,
+      resolutionStack: Set<string>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any> => {
       if (!node || typeof node !== 'object') {
@@ -488,9 +543,17 @@ export class YAMLSchemaService extends JSONSchemaService {
         recursiveAnchorBase = parentSchemaURL.split('#', 2)[0];
       }
 
+      const inheritedDynamicScope = node._dynamicAnchors;
+
       // track nodes with their base URL for $id resolution
-      type WalkItem = { node: JSONSchema; baseURL?: string; dialect?: SchemaDialect; recursiveAnchorBase?: string };
-      const toWalk: WalkItem[] = [{ node, baseURL: parentSchemaURL, recursiveAnchorBase }];
+      type WalkItem = {
+        node: JSONSchema;
+        baseURL?: string;
+        dialect?: SchemaDialect;
+        recursiveAnchorBase?: string;
+        inheritedDynamicScope?: Map<string, JSONSchema[]>;
+      };
+      const toWalk: WalkItem[] = [{ node, baseURL: parentSchemaURL, recursiveAnchorBase, inheritedDynamicScope }];
       const seen: Set<JSONSchema> = new Set();
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -501,10 +564,15 @@ export class YAMLSchemaService extends JSONSchemaService {
         next: JSONSchema,
         nodeBaseURL: string,
         nodeDialect: SchemaDialect,
-        recursiveAnchorBase?: string
+        recursiveAnchorBase?: string,
+        inheritedDynamicScope?: Map<string, JSONSchema[]>
       ): void => {
+        const currentDynamicScope = _addResourceDynamicAnchors(inheritedDynamicScope, nodeBaseURL);
+        if (currentDynamicScope) next._dynamicAnchors = currentDynamicScope;
+
         this.collectSchemaNodes(
-          (entry) => toWalk.push({ node: entry, baseURL: nodeBaseURL, recursiveAnchorBase }),
+          (entry) =>
+            toWalk.push({ node: entry, baseURL: nodeBaseURL, recursiveAnchorBase, inheritedDynamicScope: currentDynamicScope }),
           this.schemaMapValues(next.definitions || next.$defs)
         );
 
@@ -515,8 +583,12 @@ export class YAMLSchemaService extends JSONSchemaService {
           '$schema',
           '$id',
           'id',
+          '_baseUrl',
+          '_dialect',
+          '_dynamicAnchors',
           '$anchor',
           '$dynamicAnchor',
+          '$dynamicRef',
           '$recursiveAnchor',
           '$recursiveRef',
           'definitions',
@@ -555,10 +627,13 @@ export class YAMLSchemaService extends JSONSchemaService {
             }
           }
 
-          const refValue = node.$recursiveRef ?? node.$ref;
+          const refValue = node.$dynamicRef ?? node.$recursiveRef ?? node.$ref;
           if (typeof refValue !== 'string') return;
-          node.allOf = [{ [node.$recursiveRef ? '$recursiveRef' : '$ref']: refValue } as JSONSchema, siblings];
-
+          node.allOf = [
+            { [node.$dynamicRef ? '$dynamicRef' : node.$recursiveRef ? '$recursiveRef' : '$ref']: refValue } as JSONSchema,
+            siblings,
+          ];
+          delete node.$dynamicRef;
           delete node.$recursiveRef;
           delete node.$ref;
         };
@@ -570,8 +645,11 @@ export class YAMLSchemaService extends JSONSchemaService {
         };
 
         const seenRefs = new Set<string>();
-        while (next.$recursiveRef || next.$ref) {
-          const rawRef = next.$recursiveRef ?? next.$ref;
+        while (next.$dynamicRef || next.$recursiveRef || next.$ref) {
+          const isDynamicRef = typeof next.$dynamicRef === 'string';
+          const isRecursiveRef = !isDynamicRef && typeof next.$recursiveRef === 'string';
+          const rawRef = next.$dynamicRef ?? next.$recursiveRef ?? next.$ref;
+          if (typeof rawRef !== 'string') break;
           next._$ref = rawRef;
 
           if (_hasRefSiblings(next)) {
@@ -584,7 +662,12 @@ export class YAMLSchemaService extends JSONSchemaService {
               if (Array.isArray(next.allOf)) {
                 for (const entry of next.allOf) {
                   if (entry && typeof entry === 'object') {
-                    toWalk.push({ node: entry as JSONSchema, baseURL: nodeBaseURL, recursiveAnchorBase });
+                    toWalk.push({
+                      node: entry as JSONSchema,
+                      baseURL: nodeBaseURL,
+                      recursiveAnchorBase,
+                      inheritedDynamicScope: currentDynamicScope,
+                    });
                   }
                 }
               }
@@ -593,45 +676,105 @@ export class YAMLSchemaService extends JSONSchemaService {
           }
 
           const ref = decodeURIComponent(rawRef);
+          delete next.$dynamicRef;
           delete next.$recursiveRef;
           delete next.$ref;
 
-          if (ref === '#') {
+          // parse ref into base URI and fragment
+          const segments = ref.split('#', 2);
+          const baseUri = segments[0];
+          const frag = segments.length > 1 ? segments[1] : '';
+
+          // Draft-2019+: $recursiveRef
+          if (isRecursiveRef && (ref === '#' || ref === '')) {
             const currentResource = nodeBaseURL?.split('#', 2)[0] || '';
             const targetRoot = resourceIndexByUri.get(currentResource)?.root ?? parentSchema;
             const dynamicBase = targetRoot?.$recursiveAnchor && recursiveAnchorBase ? recursiveAnchorBase : currentResource;
 
             if (dynamicBase.length > 0) {
               openPromises.push(
-                resolveExternalLink(next, dynamicBase, '', nodeBaseURL, parentSchemaDependencies, recursiveAnchorBase)
+                resolveExternalLink(
+                  next,
+                  dynamicBase,
+                  '',
+                  nodeBaseURL,
+                  parentSchemaDependencies,
+                  recursiveAnchorBase,
+                  resolutionStack
+                )
               );
               return;
             }
             continue;
           }
 
-          const segments = ref.split('#', 2);
-          const baseUri = segments[0];
-          const frag = segments.length > 1 ? segments[1] : '';
+          // Draft-2020+: $dynamicRef
+          else if (isDynamicRef) {
+            const targetResource = baseUri.length > 0 ? _resolveAgainstBase(nodeBaseURL, baseUri) : nodeBaseURL;
+            const targetFragments = resourceIndexByUri.get(targetResource)?.fragments;
+            const targetHasDynamicAnchor = frag.length > 0 && targetFragments?.get(frag)?.dynamic;
 
-          if (baseUri.length > 0) {
+            const dynamicTarget = targetHasDynamicAnchor ? currentDynamicScope?.get(frag)?.[0] : undefined;
+            const resolveResource = dynamicTarget ? dynamicTarget._baseUrl : targetResource;
+
+            if (dynamicTarget && (resolveResource === nodeBaseURL || resolutionStack.has(resolveResource))) {
+              if (!seenRefs.has(ref)) {
+                const sourceRoot = resourceIndexByUri.get(resolveResource).root;
+                _merge(next, sourceRoot, resolveResource, frag, false);
+                seenRefs.add(ref);
+              }
+              continue;
+            }
+
+            if (baseUri.length > 0 || targetHasDynamicAnchor) {
+              openPromises.push(
+                resolveExternalLink(
+                  next,
+                  resolveResource,
+                  frag,
+                  nodeBaseURL,
+                  parentSchemaDependencies,
+                  recursiveAnchorBase,
+                  resolutionStack
+                )
+              );
+              return;
+            }
+          }
+          // normal $ref with external baseUri
+          else if (baseUri.length > 0) {
             // resolve relative to this node's base URL
             openPromises.push(
-              resolveExternalLink(next, baseUri, frag, nodeBaseURL, parentSchemaDependencies, recursiveAnchorBase)
+              resolveExternalLink(
+                next,
+                baseUri,
+                frag,
+                nodeBaseURL,
+                parentSchemaDependencies,
+                recursiveAnchorBase,
+                resolutionStack
+              )
             );
             return;
-          } else {
-            if (!seenRefs.has(ref)) {
-              _merge(next, parentSchema, nodeBaseURL, frag);
-              seenRefs.add(ref);
-            }
+          }
+
+          // local $ref or $dynamicRef
+          if (!seenRefs.has(ref)) {
+            _merge(next, parentSchema, nodeBaseURL, frag, !!currentDynamicScope);
+            seenRefs.add(ref);
           }
         }
 
         // recursively process children
         this.collectSchemaNodes(
           (entry) =>
-            toWalk.push({ node: entry, baseURL: next._baseUrl || nodeBaseURL, dialect: nodeDialect, recursiveAnchorBase }),
+            toWalk.push({
+              node: entry,
+              baseURL: next._baseUrl || nodeBaseURL,
+              dialect: nodeDialect,
+              recursiveAnchorBase,
+              inheritedDynamicScope: currentDynamicScope,
+            }),
           next.not,
           next.if,
           next.then,
@@ -662,7 +805,8 @@ export class YAMLSchemaService extends JSONSchemaService {
             segments[1],
             parentSchemaURL,
             parentSchemaDependencies,
-            recursiveAnchorBase
+            recursiveAnchorBase,
+            resolutionStack
           );
           for (const key in schema) {
             if (key === 'required') {
@@ -684,12 +828,15 @@ export class YAMLSchemaService extends JSONSchemaService {
         const nodeRecursiveAnchorBase = item.recursiveAnchorBase;
         if (seen.has(next)) continue;
         seen.add(next);
-        _handleRef(next, nodeBaseURL, nodeDialect, nodeRecursiveAnchorBase);
+        _handleRef(next, nodeBaseURL, nodeDialect, nodeRecursiveAnchorBase, item.inheritedDynamicScope);
       }
       return Promise.all(openPromises);
     };
 
-    await resolveRefs(schema, schema, schemaURL, dependencies);
+    const resolutionStack = new Set<string>();
+    const rootResource = _resourceFromUrl(schemaURL);
+    if (rootResource) resolutionStack.add(rootResource);
+    await resolveRefs(schema, schema, schemaURL, dependencies, undefined, resolutionStack);
     return new ResolvedSchema(schema, resolveErrors);
   }
 

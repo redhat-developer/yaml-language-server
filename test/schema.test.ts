@@ -191,18 +191,21 @@ describe('JSON Schema', () => {
           type: 'string',
           enum: ['object'],
           _$ref: 'schema2.json#/definitions/hello',
+          _baseUrl: 'https://myschemastore/main/schema2.json',
           url: 'https://myschemastore/main/schema2.json',
         });
         assert.deepEqual(fs.schema.properties['p2'], {
           type: 'string',
           enum: ['object'],
           _$ref: './schema2.json#/definitions/hello',
+          _baseUrl: 'https://myschemastore/main/schema2.json',
           url: 'https://myschemastore/main/schema2.json',
         });
         assert.deepEqual(fs.schema.properties['p3'], {
           type: 'string',
           enum: ['object'],
           _$ref: '/main/schema2.json#/definitions/hello',
+          _baseUrl: 'https://myschemastore/main/schema2.json',
           url: 'https://myschemastore/main/schema2.json',
         });
       })

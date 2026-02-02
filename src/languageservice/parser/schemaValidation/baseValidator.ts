@@ -1185,7 +1185,7 @@ export abstract class BaseValidator {
     );
     this.applyPropertyCount(node, schema, originalSchema, validationResult);
     this.applyDependencies(node, schema, originalSchema, validationResult, matchingSchemas, options, seenKeys);
-    this.applyPropertyNames(node, schema, originalSchema, validationResult, options);
+    this.applyPropertyNames(node, schema, validationResult, options);
   }
 
   protected applyRequired(
@@ -1469,7 +1469,6 @@ export abstract class BaseValidator {
   protected applyPropertyNames(
     node: ObjectASTNode,
     schema: JSONSchema,
-    originalSchema: JSONSchema,
     validationResult: ValidationResult,
     options: Options
   ): void {
