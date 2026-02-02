@@ -35,9 +35,13 @@ describe('Yaml Commands', () => {
 
   it('JumpToSchema handler should call "showDocument"', async () => {
     const showDocumentStub = sandbox.stub();
+    const getWorkspaceFoldersStub = sandbox.stub().returns(Promise.resolve([]));
     const connection = {
       window: {
         showDocument: showDocumentStub,
+      },
+      workspace: {
+        getWorkspaceFolders: getWorkspaceFoldersStub,
       },
     } as unknown as Connection;
     showDocumentStub.resolves(true);
@@ -49,9 +53,13 @@ describe('Yaml Commands', () => {
 
   it('JumpToSchema handler should call "showDocument" with plain win path', async () => {
     const showDocumentStub = sandbox.stub();
+    const getWorkspaceFoldersStub = sandbox.stub().returns(Promise.resolve([]));
     const connection = {
       window: {
         showDocument: showDocumentStub,
+      },
+      workspace: {
+        getWorkspaceFolders: getWorkspaceFoldersStub,
       },
     } as unknown as Connection;
     showDocumentStub.resolves(true);
@@ -60,6 +68,28 @@ describe('Yaml Commands', () => {
     await arg[1]('a:\\some\\path\\to\\schema.json');
     expect(showDocumentStub).to.have.been.calledWith({
       uri: URI.file('a:\\some\\path\\to\\schema.json').toString(),
+      external: false,
+      takeFocus: true,
+    });
+  });
+
+  it('JumpToSchema handler should call "showDocument" with custom web schema', async () => {
+    const showDocumentStub = sandbox.stub();
+    const getWorkspaceFoldersStub = sandbox.stub().returns(Promise.resolve([{ uri: 'vscode-test:///root/' }]));
+    const connection = {
+      window: {
+        showDocument: showDocumentStub,
+      },
+      workspace: {
+        getWorkspaceFolders: getWorkspaceFoldersStub,
+      },
+    } as unknown as Connection;
+    showDocumentStub.resolves(true);
+    registerCommands(commandExecutor, connection);
+    const arg = commandExecutorStub.args[0];
+    await arg[1]('my-file.json');
+    expect(showDocumentStub).to.have.been.calledWith({
+      uri: URI.parse('vscode-test:///root/my-file.json').toString(),
       external: false,
       takeFocus: true,
     });
