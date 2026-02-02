@@ -254,7 +254,7 @@ export class YAMLSchemaService extends JSONSchemaService {
      * Meta-validate a schema node against its dialect's meta-schema
      * ----------------------------
      */
-    async function _metaValidateSchemaNode(node: JSONSchema): Promise<void> {
+    async function _metaValidateSchemaNode(node: JSONSchema, hasNestedSchema: boolean): Promise<void> {
       if (!node || typeof node !== 'object') return;
       const dialect = await pickSchemaDialect(node.$schema);
       dialect && (node._dialect = dialect);
@@ -262,28 +262,8 @@ export class YAMLSchemaService extends JSONSchemaService {
       const validator = pickMetaValidator(dialect);
       if (!validator) return;
 
-      const hasNestedSchema = (value: JSONSchema, seen: Set<JSONSchema>): boolean => {
-        if (!value || typeof value !== 'object') return false;
-        if (seen.has(value)) return false;
-        seen.add(value);
-
-        if (seen.size !== 0 && value.$schema) return true;
-
-        if (Array.isArray(value)) {
-          for (const item of value) {
-            if (hasNestedSchema(item, seen)) return true;
-          }
-          return false;
-        }
-
-        for (const entry of Object.values(value)) {
-          if (hasNestedSchema(entry, seen)) return true;
-        }
-        return false;
-      };
-
       let toValidate = node;
-      if (hasNestedSchema(node, new Set<JSONSchema>())) {
+      if (hasNestedSchema) {
         // clone for meta-validation: stop at dialect boundaries abd replace with {}
         const stopAtDialectBoundary = (val: JSONSchema, seenSize: number): JSONSchema | undefined => {
           if (seenSize !== 0 && val && typeof val === 'object' && val.$schema) return {};
@@ -371,18 +351,18 @@ export class YAMLSchemaService extends JSONSchemaService {
 
     const _indexSchemaResources = async (root: JSONSchema, initialBaseUri: string): Promise<void> => {
       type WorkItem = { node: JSONSchema; baseUri: string };
-      const stack: WorkItem[] = [{ node: root, baseUri: initialBaseUri }];
+      const preOrderStack: WorkItem[] = [{ node: root, baseUri: initialBaseUri }];
+      const postOrderStack: JSONSchema[] = [];
+      const childListByNode = new WeakMap<JSONSchema, JSONSchema[]>();
 
       const seen = new Set<JSONSchema>();
-      while (stack.length) {
-        const current = stack.pop();
+      while (preOrderStack.length) {
+        const current = preOrderStack.pop();
         if (!current) continue;
 
         const node = current.node;
         if (!node || typeof node !== 'object' || seen.has(node)) continue;
         seen.add(node);
-
-        if (node === root || node.$schema) _metaValidateSchemaNode(node);
 
         let baseUri = current.baseUri;
         const id = node.$id || node.id;
@@ -413,9 +393,15 @@ export class YAMLSchemaService extends JSONSchemaService {
           _getResourceIndex(baseUri).fragments.set(node.$dynamicAnchor, { node, dynamic: true });
         }
 
+        const children: JSONSchema[] = [];
+        childListByNode.set(node, children);
+
         // collect all child schemas
         this.collectSchemaNodes(
-          (entry) => stack.push({ node: entry, baseUri }),
+          (entry) => {
+            children.push(entry);
+            preOrderStack.push({ node: entry, baseUri });
+          },
           node.not,
           node.if,
           node.then,
@@ -436,6 +422,22 @@ export class YAMLSchemaService extends JSONSchemaService {
           node.oneOf,
           node.schemaSequence
         );
+        postOrderStack.push(node);
+      }
+
+      const hasNestedSchema = new WeakMap<JSONSchema, boolean>();
+      while (postOrderStack.length) {
+        const node = postOrderStack.pop();
+        let hasNested = false;
+        for (const child of childListByNode.get(node)) {
+          if (child.$schema || hasNestedSchema.get(child)) {
+            hasNested = true;
+            break;
+          }
+        }
+        hasNestedSchema.set(node, hasNested);
+
+        if (node === root || node.$schema) _metaValidateSchemaNode(node, hasNested);
       }
     };
 
