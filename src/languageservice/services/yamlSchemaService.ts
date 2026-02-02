@@ -260,14 +260,39 @@ export class YAMLSchemaService extends JSONSchemaService {
       dialect && (node._dialect = dialect);
 
       const validator = pickMetaValidator(dialect);
+      if (!validator) return;
 
-      // clone for meta-validation: stop at dialect boundaries abd replace with {}
-      const stopAtDialectBoundary = (val: unknown, seenSize: number): JSONSchema | undefined => {
-        if (seenSize !== 0 && val && typeof val === 'object' && '$schema' in val) return {};
-        return undefined;
+      const hasNestedSchema = (value: JSONSchema, seen: Set<JSONSchema>): boolean => {
+        if (!value || typeof value !== 'object') return false;
+        if (seen.has(value)) return false;
+        seen.add(value);
+
+        if (seen.size !== 0 && value.$schema) return true;
+
+        if (Array.isArray(value)) {
+          for (const item of value) {
+            if (hasNestedSchema(item, seen)) return true;
+          }
+          return false;
+        }
+
+        for (const entry of Object.values(value)) {
+          if (hasNestedSchema(entry, seen)) return true;
+        }
+        return false;
       };
-      const pruned = _cloneSchema(node, new Map(), stopAtDialectBoundary) as JSONSchema;
-      if (validator && !validator(pruned)) {
+
+      let toValidate = node;
+      if (hasNestedSchema(node, new Set<JSONSchema>())) {
+        // clone for meta-validation: stop at dialect boundaries abd replace with {}
+        const stopAtDialectBoundary = (val: JSONSchema, seenSize: number): JSONSchema | undefined => {
+          if (seenSize !== 0 && val && typeof val === 'object' && val.$schema) return {};
+          return undefined;
+        };
+        toValidate = _cloneSchema(node, new Map(), stopAtDialectBoundary) as JSONSchema;
+      }
+
+      if (!validator(toValidate)) {
         const errs: string[] = [];
         for (const err of validator.errors as DefinedError[]) {
           errs.push(`${err.instancePath} : ${err.message}`);
