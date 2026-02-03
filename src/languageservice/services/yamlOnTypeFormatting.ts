@@ -50,4 +50,14 @@ export function doDocumentOnTypeFormatting(
       return [TextEdit.insert(position, '  ')];
     }
   }
+
+  if (params.ch === '\t' && params.options.insertSpaces) {
+    return [
+      TextEdit.replace(
+        Range.create(position.line, position.character - 1, position.line, position.character),
+        ' '.repeat(params.options.tabSize)
+      ),
+    ];
+  }
+  return;
 }
