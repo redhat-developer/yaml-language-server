@@ -1901,10 +1901,6 @@ describe('Validation Tests', () => {
   });
 
   describe('keyword: contains + minContains/maxContains', () => {
-    afterEach(() => {
-      schemaProvider.deleteSchema(SCHEMA_ID);
-    });
-
     it('minContains fails when too few items match contains subschema', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         $schema: 'https://json-schema.org/draft/2019-09/schema',
@@ -2837,6 +2833,830 @@ children:
 `;
         expect(await parseSetup(content)).to.be.empty;
       });
+    });
+  });
+
+  describe('keyword: contains', () => {
+    it('contains keyword validation', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: { minimum: 5 },
+      } as JSONSchema);
+
+      // array with item matching schema (5) is valid
+      let content = toContent([3, 4, 5]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // array with item matching schema (6) is valid
+      content = toContent([3, 4, 6]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // array with two items matching schema (5, 6) is valid
+      content = toContent([3, 4, 5, 6]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // array without items matching schema is invalid
+      content = toContent([2, 3, 4]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // empty array is invalid
+      content = toContent([]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // not array is valid
+      content = toContent({});
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('contains keyword with const keyword', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: { const: 5 },
+      } as JSONSchema);
+
+      // array with item 5 is valid
+      let content = toContent([3, 4, 5]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // array with two items 5 is valid
+      content = toContent([3, 4, 5, 5]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // array without item 5 is invalid
+      content = toContent([1, 2, 3, 4]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+    });
+
+    it('contains keyword with boolean schema true', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: true,
+      } as JSONSchema);
+
+      // any non-empty array is valid
+      let content = toContent(['foo']);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // empty array is invalid
+      content = toContent([]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+    });
+
+    it('contains keyword with boolean schema false', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: false,
+      } as JSONSchema);
+
+      // any non-empty array is invalid
+      let content = toContent(['foo']);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // empty array is invalid
+      content = toContent([]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // non-arrays are valid
+      content = toContent('contains does not apply to strings');
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('items + contains', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        items: { multipleOf: 2 },
+        contains: { multipleOf: 3 },
+      } as JSONSchema);
+
+      // matches items, does not match contains
+      let content = toContent([2, 4, 8]);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // does not match items, matches contains
+      content = toContent([3, 6, 9]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(2);
+      expect(result[0].message).to.include('Value is not divisible by 2.');
+      expect(result[1].message).to.include('Value is not divisible by 2.');
+
+      // matches both items and contains
+      content = toContent([6, 12]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // matches neither items nor contains
+      content = toContent([1, 5]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(3);
+      expect(result[0].message).to.include('Value is not divisible by 2.');
+      expect(result[1].message).to.include('Value is not divisible by 2.');
+      expect(result[2].message).to.include('Array has too few items matching');
+    });
+
+    it('contains with false if subschema', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: {
+          if: false,
+          else: true,
+        },
+      } as JSONSchema);
+
+      // any non-empty array is valid
+      let content = toContent(['foo']);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // empty array is invalid
+      content = toContent([]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+    });
+
+    it('contains with null instance elements', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: {
+          type: 'null',
+        },
+      } as JSONSchema);
+
+      // allows null items
+      const content = toContent([null]);
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+  });
+
+  describe('keyword: maxContains', () => {
+    it('maxContains without contains is ignored', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        maxContains: 1,
+      } as JSONSchema);
+
+      // one item valid against lone maxContains
+      let content = toContent([1]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // two items still valid against lone maxContains
+      content = toContent([1, 2]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('maxContains with contains', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: { const: 1 },
+        maxContains: 1,
+      } as JSONSchema);
+
+      // empty data
+      let content = toContent([]);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // all elements match, valid maxContains
+      content = toContent([1]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // all elements match, invalid maxContains
+      content = toContent([1, 1]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items matching');
+
+      // some elements match, valid maxContains
+      content = toContent([1, 2]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // some elements match, invalid maxContains
+      content = toContent([1, 2, 1]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items matching');
+    });
+
+    it('maxContains with contains, value with a decimal', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: { const: 1 },
+        maxContains: 1.0,
+      } as JSONSchema);
+
+      // one element matches, valid maxContains
+      let content = toContent([1]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // too many elements match, invalid maxContains
+      content = toContent([1, 1]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items matching');
+    });
+
+    it('minContains < maxContains', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: { const: 1 },
+        minContains: 1,
+        maxContains: 3,
+      } as JSONSchema);
+
+      // actual < minContains < maxContains
+      let content = toContent([]);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // minContains < actual < maxContains
+      content = toContent([1, 1]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // minContains < maxContains < actual
+      content = toContent([1, 1, 1, 1]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items matching');
+    });
+  });
+
+  describe('keyword: minContains', () => {
+    it('minContains without contains is ignored', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        minContains: 1,
+      } as JSONSchema);
+
+      // one item valid against lone minContains
+      let content = toContent([1]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // zero items still valid against lone minContains
+      content = toContent([]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('minContains=1 with contains', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: { const: 1 },
+        minContains: 1,
+      } as JSONSchema);
+
+      // empty data
+      let content = toContent([]);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // no elements match
+      content = toContent([2]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // single element matches, valid minContains
+      content = toContent([1]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // some elements match, valid minContains
+      content = toContent([1, 2]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // all elements match, valid minContains
+      content = toContent([1, 1]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('minContains=2 with contains', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: { const: 1 },
+        minContains: 2,
+      } as JSONSchema);
+
+      // empty data
+      let content = toContent([]);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // all elements match, invalid minContains
+      content = toContent([1]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // some elements match, invalid minContains
+      content = toContent([1, 2]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // all elements match, valid minContains (exactly as needed)
+      content = toContent([1, 1]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // all elements match, valid minContains (more than needed)
+      content = toContent([1, 1, 1]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // some elements match, valid minContains
+      content = toContent([1, 2, 1]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('minContains=2 with contains with a decimal value', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: { const: 1 },
+        minContains: 2.0,
+      } as JSONSchema);
+
+      // one element matches, invalid minContains
+      let content = toContent([1]);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // both elements match, valid minContains
+      content = toContent([1, 1]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('maxContains = minContains', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: { const: 1 },
+        maxContains: 2,
+        minContains: 2,
+      } as JSONSchema);
+
+      // empty data
+      let content = toContent([]);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // all elements match, invalid minContains
+      content = toContent([1]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // all elements match, invalid maxContains
+      content = toContent([1, 1, 1]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items matching');
+
+      // all elements match, valid maxContains and minContains
+      content = toContent([1, 1]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('maxContains < minContains', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: { const: 1 },
+        maxContains: 1,
+        minContains: 3,
+      } as JSONSchema);
+
+      // empty data
+      let content = toContent([]);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // invalid minContains
+      content = toContent([1]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // invalid maxContains
+      content = toContent([1, 1, 1]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(2);
+      expect(result[0].message).to.include('Array has too few items matching');
+      expect(result[1].message).to.include('Array has too many items matching');
+
+      // invalid maxContains and minContains
+      content = toContent([1, 1]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(2);
+      expect(result[0].message).to.include('Array has too few items matching');
+      expect(result[1].message).to.include('Array has too many items matching');
+    });
+
+    it('minContains = 0 with no maxContains', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: { const: 1 },
+        minContains: 0,
+      } as JSONSchema);
+
+      // empty data
+      let content = toContent([]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // minContains = 0 makes contains always pass
+      content = toContent([2]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('minContains = 0 with maxContains', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        contains: { const: 1 },
+        minContains: 0,
+        maxContains: 1,
+      } as JSONSchema);
+
+      // empty data
+      let content = toContent([]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // not more than maxContains
+      content = toContent([1]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // too many
+      content = toContent([1, 1]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items matching');
+    });
+  });
+
+  describe('keyword: dependentSchemas', () => {
+    it('single dependency', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        dependentSchemas: {
+          bar: {
+            properties: {
+              foo: { type: 'integer' },
+              bar: { type: 'integer' },
+            },
+          },
+        },
+      } as JSONSchema);
+
+      // valid
+      let content = toContent({ foo: 1, bar: 2 });
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // no dependency
+      content = toContent({ foo: 'quux' });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // wrong type
+      content = toContent({ foo: 'quux', bar: 2 });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+
+      // wrong type other
+      content = toContent({ foo: 2, bar: 'quux' });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+
+      // wrong type both
+      content = toContent({ foo: 'quux', bar: 'quux' });
+      result = await parseSetup(content);
+      expect(result).to.have.length(2);
+      expect(result[0].message).to.include('Incorrect type');
+      expect(result[1].message).to.include('Incorrect type');
+
+      // ignores arrays
+      content = toContent(['bar']);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // ignores strings
+      content = toContent('foobar');
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // ignores other non-objects
+      content = toContent(12);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('boolean subschemas', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        dependentSchemas: {
+          foo: true,
+          bar: false,
+        },
+      } as JSONSchema);
+
+      // object with property having schema true is valid
+      let content = toContent({ foo: 1 });
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // object with property having schema false is invalid
+      content = toContent({ bar: 2 });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Matches a schema that is not allowed');
+
+      // object with both properties is invalid
+      content = toContent({ foo: 1, bar: 2 });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Matches a schema that is not allowed');
+
+      // empty object is valid
+      content = toContent({});
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('dependencies with escaped characters', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        dependentSchemas: {
+          'foo\tbar': { minProperties: 4 },
+          "foo'bar": { required: ['foo"bar'] },
+        },
+      } as JSONSchema);
+
+      // quoted tab
+      let content = toContent({
+        'foo\tbar': 1,
+        a: 2,
+        b: 3,
+        c: 4,
+      });
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // quoted quote
+      content = toContent({
+        "foo'bar": { 'foo"bar': 1 },
+      });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Missing property');
+
+      // quoted tab invalid under dependent schema
+      content = toContent({
+        'foo\tbar': 1,
+        a: 2,
+      });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Object has fewer properties than the required number of 4');
+
+      // quoted quote invalid under dependent schema
+      content = toContent({ "foo'bar": 1 });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Missing property');
+    });
+
+    it('dependent subschema incompatible with root', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        properties: {
+          foo: {},
+        },
+        dependentSchemas: {
+          foo: {
+            properties: {
+              bar: {},
+            },
+            additionalProperties: false,
+          },
+        },
+      } as JSONSchema);
+
+      // matches root
+      let content = toContent({ foo: 1 });
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('not allowed');
+
+      // matches dependency
+      content = toContent({ bar: 1 });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // matches both
+      content = toContent({ foo: 1, bar: 2 });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('not allowed');
+
+      // no dependency
+      content = toContent({ baz: 1 });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+  });
+
+  describe('keyword: dependentRequired', () => {
+    it('single dependency', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        dependentRequired: { bar: ['foo'] },
+      } as JSONSchema);
+
+      // neither
+      let content = toContent({});
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // nondependant
+      content = toContent({ foo: 1 });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // with dependency
+      content = toContent({ foo: 1, bar: 2 });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // missing dependency
+      content = toContent({ bar: 2 });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Object is missing property foo required by property bar.');
+
+      // ignores arrays
+      content = toContent(['bar']);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // ignores strings
+      content = toContent('foobar');
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // ignores other non-objects
+      content = toContent(12);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('empty dependents', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        dependentRequired: { bar: [] },
+      } as JSONSchema);
+
+      // empty object
+      let content = toContent({});
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // object with one property
+      content = toContent({ bar: 2 });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // non-object is valid
+      content = toContent(1);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('multiple dependents required', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        dependentRequired: { quux: ['foo', 'bar'] },
+      } as JSONSchema);
+
+      // neither
+      let content = toContent({});
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // nondependants
+      content = toContent({ foo: 1, bar: 2 });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // with dependencies
+      content = toContent({ foo: 1, bar: 2, quux: 3 });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // missing dependency
+      content = toContent({ foo: 1, quux: 2 });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Object is missing property bar required by property quux.');
+
+      // missing other dependency
+      content = toContent({ bar: 1, quux: 2 });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Object is missing property foo required by property quux.');
+
+      // missing both dependencies
+      content = toContent({ quux: 1 });
+      result = await parseSetup(content);
+      expect(result).to.have.length(2);
+      expect(result[0].message).to.include('Object is missing property foo required by property quux.');
+      expect(result[1].message).to.include('Object is missing property bar required by property quux.');
+    });
+
+    it('dependencies with escaped characters', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        dependentRequired: {
+          'foo\nbar': ['foo\rbar'],
+          'foo"bar': ["foo'bar"],
+        },
+      } as JSONSchema);
+
+      // CRLF
+      let content = toContent({
+        'foo\nbar': 1,
+        'foo\rbar': 2,
+      });
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // quoted quotes
+      content = toContent({
+        "foo'bar": 1,
+        'foo"bar': 2,
+      });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // CRLF missing dependent
+      content = toContent({
+        'foo\nbar': 1,
+        foo: 2,
+      });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Object is missing property foo\rbar required by property foo\nbar.');
+
+      // quoted quotes missing dependent
+      content = toContent({
+        'foo"bar': 2,
+      });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Object is missing property foo\'bar required by property foo"bar.');
     });
   });
 });

@@ -130,6 +130,385 @@ describe('Validation Tests', () => {
     });
   });
 
+  describe('keyword: prefixItems', () => {
+    it('a schema given for prefixItems', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [{ type: 'integer' }, { type: 'string' }],
+      } as JSONSchema);
+
+      // correct types
+      let content = toContent([1, 'foo']);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // wrong types
+      content = toContent(['foo', 1]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(2);
+      expect(result[0].message).to.include('Incorrect type');
+      expect(result[1].message).to.include('Incorrect type');
+
+      // incomplete array of items
+      content = toContent([1]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // array with additional items
+      content = toContent([1, 'foo', true]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // empty array
+      content = toContent([]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // JavaScript pseudo-array is valid
+      content = toContent({
+        '0': 'invalid',
+        '1': 'valid',
+        length: 2,
+      });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('prefixItems with boolean schemas', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [true, false],
+      } as JSONSchema);
+
+      // array with one item is valid
+      let content = toContent([1]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // array with two items is invalid
+      content = toContent([1, 'foo']);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Matches a schema that is not allowed');
+
+      // empty array is valid
+      content = toContent([]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('additional items are allowed by default', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [{ type: 'integer' }],
+      } as JSONSchema);
+
+      // only the first item is validated
+      const content = toContent([1, 'foo', false]);
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('prefixItems with null instance elements', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [
+          {
+            type: 'null',
+          },
+        ],
+      } as JSONSchema);
+
+      // allows null elements
+      const content = toContent([null]);
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+  });
+
+  describe('keyword: items', () => {
+    it('a schema given for items', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        items: { type: 'integer' },
+      } as JSONSchema);
+
+      // valid items
+      let content = toContent([1, 2, 3]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // wrong type of items
+      content = toContent([1, 'x']);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+
+      // ignores non-arrays
+      content = toContent({ foo: 'bar' });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // JavaScript pseudo-array is valid
+      content = toContent({
+        '0': 'invalid',
+        length: 1,
+      });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('items with boolean schema (true)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        items: true,
+      } as JSONSchema);
+
+      // any array is valid
+      let content = toContent([1, 'foo', true]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // empty array is valid
+      content = toContent([]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('items with boolean schema (false)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        items: false,
+      } as JSONSchema);
+
+      // any non-empty array is invalid
+      let content = toContent([1, 'foo', true]);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 0 or fewer.');
+
+      // empty array is valid
+      content = toContent([]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('items and subitems', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $defs: {
+          item: {
+            type: 'array',
+            items: false,
+            prefixItems: [{ $ref: '#/$defs/sub-item' }, { $ref: '#/$defs/sub-item' }],
+          },
+          'sub-item': {
+            type: 'object',
+            required: ['foo'],
+          },
+        },
+        type: 'array',
+        items: false,
+        prefixItems: [{ $ref: '#/$defs/item' }, { $ref: '#/$defs/item' }, { $ref: '#/$defs/item' }],
+      } as JSONSchema);
+
+      // valid items
+      let content = toContent([
+        [{ foo: null }, { foo: null }],
+        [{ foo: null }, { foo: null }],
+        [{ foo: null }, { foo: null }],
+      ]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // too many items
+      content = toContent([
+        [{ foo: null }, { foo: null }],
+        [{ foo: null }, { foo: null }],
+        [{ foo: null }, { foo: null }],
+        [{ foo: null }, { foo: null }],
+      ]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items');
+
+      // too many sub-items
+      content = toContent([
+        [{ foo: null }, { foo: null }, { foo: null }],
+        [{ foo: null }, { foo: null }],
+        [{ foo: null }, { foo: null }],
+      ]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items');
+
+      // wrong item
+      content = toContent([{ foo: null }, [{ foo: null }, { foo: null }], [{ foo: null }, { foo: null }]]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+
+      // wrong sub-item
+      content = toContent([
+        [{}, { foo: null }],
+        [{ foo: null }, { foo: null }],
+        [{ foo: null }, { foo: null }],
+      ]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Missing property');
+
+      // fewer items is valid
+      content = toContent([[{ foo: null }], [{ foo: null }]]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('nested items', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'array',
+        items: {
+          type: 'array',
+          items: {
+            type: 'array',
+            items: {
+              type: 'array',
+              items: {
+                type: 'number',
+              },
+            },
+          },
+        },
+      } as JSONSchema);
+
+      // valid nested array
+      let content = toContent([[[[1]], [[2], [3]]], [[[4], [5], [6]]]]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // nested array with invalid type
+      content = toContent([[[['1']], [[2], [3]]], [[[4], [5], [6]]]]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+
+      // not deep enough
+      content = toContent([
+        [[1], [2], [3]],
+        [[4], [5], [6]],
+      ]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(6);
+      expect(result[0].message).to.include('Incorrect type');
+    });
+
+    it('prefixItems with no additional items allowed', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [{}, {}, {}],
+        items: false,
+      } as JSONSchema);
+
+      // empty array
+      let content = toContent([]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // fewer number of items present (1)
+      content = toContent([1]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // fewer number of items present (2)
+      content = toContent([1, 2]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // equal number of items present
+      content = toContent([1, 2, 3]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // additional items are not permitted
+      content = toContent([1, 2, 3, 4]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items');
+    });
+
+    it('items does not look in applicators, valid case', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        allOf: [{ prefixItems: [{ minimum: 3 }] }],
+        items: { minimum: 5 },
+      } as JSONSchema);
+
+      // prefixItems in allOf does not constrain items, invalid case
+      let content = toContent([3, 5]);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Value is below the minimum of 5.');
+
+      // prefixItems in allOf does not constrain items, valid case
+      content = toContent([5, 5]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('prefixItems validation adjusts the starting index for items', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [{ type: 'string' }],
+        items: { type: 'integer' },
+      } as JSONSchema);
+
+      // valid items
+      let content = toContent(['x', 2, 3]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // wrong type of second item
+      content = toContent(['x', 'y']);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+    });
+
+    it('items with heterogeneous array', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [{}],
+        items: false,
+      } as JSONSchema);
+
+      // heterogeneous invalid instance
+      let content = toContent(['foo', 'bar', 37]);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items');
+
+      // valid instance
+      content = toContent([null]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('items with null instance elements', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        items: {
+          type: 'null',
+        },
+      } as JSONSchema);
+
+      // allows null elements
+      const content = toContent([null]);
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+  });
+
   describe('keyword: unevaluatedItems', () => {
     it('unevaluatedItems true', async () => {
       const schema: JSONSchema = {
