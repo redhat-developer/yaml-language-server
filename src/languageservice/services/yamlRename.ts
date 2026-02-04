@@ -12,7 +12,7 @@ import { Telemetry } from '../telemetry';
 import { CST, isAlias, isCollection, isScalar, visit, Node } from 'yaml';
 import { SourceToken, CollectionItem } from 'yaml/dist/parse/cst';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { isCollectionItem } from '../utils/astUtils';
+import { isCollectionItem } from '../utils/yamlAstUtils';
 import { PrepareRenameParams, RenameParams, ResponseError, ErrorCodes } from 'vscode-languageserver-protocol';
 
 interface RenameTarget {

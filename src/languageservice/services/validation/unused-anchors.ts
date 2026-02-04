@@ -9,7 +9,7 @@ import { isAlias, isCollection, isNode, isScalar, Node, Scalar, visit, YAMLMap, 
 import { YamlNode } from '../../jsonASTTypes';
 import { SingleYAMLDocument } from '../../parser/yaml-documents';
 import { AdditionalValidator } from './types';
-import { isCollectionItem } from '../../../languageservice/utils/astUtils';
+import { isCollectionItem } from '../../utils/yamlAstUtils';
 import * as l10n from '@vscode/l10n';
 
 export class UnusedAnchorsValidator implements AdditionalValidator {

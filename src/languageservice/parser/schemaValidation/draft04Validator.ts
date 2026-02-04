@@ -8,16 +8,16 @@ import { SchemaDialect } from '../../jsonSchema';
 import { isBoolean, isNumber } from '../../utils/objects';
 import { BaseValidator } from './baseValidator';
 
-/**
- * Keyword: exclusiveMinimum/exclusiveMaximum
- *
- * Booleans that make minimum/maximum exclusive.
- */
 export class Draft04Validator extends BaseValidator {
   protected override getCurrentDialect(): SchemaDialect {
     return SchemaDialect.draft04;
   }
 
+  /**
+   * Keyword: exclusiveMinimum/exclusiveMaximum
+   *
+   * Booleans that make minimum/maximum exclusive.
+   */
   protected override getNumberLimits(schema: JSONSchema): {
     minimum?: number;
     maximum?: number;
@@ -27,11 +27,8 @@ export class Draft04Validator extends BaseValidator {
     const minimum = isNumber(schema.minimum) ? schema.minimum : undefined;
     const maximum = isNumber(schema.maximum) ? schema.maximum : undefined;
 
-    const exMin = schema.exclusiveMinimum;
-    const exMax = schema.exclusiveMaximum;
-
-    const exclusiveMinimum = isBoolean(exMin) && exMin ? minimum : undefined;
-    const exclusiveMaximum = isBoolean(exMax) && exMax ? maximum : undefined;
+    const exclusiveMinimum = isBoolean(schema.exclusiveMinimum) && schema.exclusiveMinimum ? minimum : undefined;
+    const exclusiveMaximum = isBoolean(schema.exclusiveMaximum) && schema.exclusiveMaximum ? maximum : undefined;
 
     return {
       minimum: exclusiveMinimum === undefined ? minimum : undefined,

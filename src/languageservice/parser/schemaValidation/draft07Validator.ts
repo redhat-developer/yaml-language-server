@@ -8,14 +8,14 @@ import { SchemaDialect } from '../../jsonSchema';
 import { isNumber } from '../../utils/objects';
 import { BaseValidator } from './baseValidator';
 
-/**
- * Keyword: exclusiveMinimum/exclusiveMaximum are treated as numeric bounds
- */
 export class Draft07Validator extends BaseValidator {
   protected override getCurrentDialect(): SchemaDialect {
     return SchemaDialect.draft07;
   }
 
+  /**
+   * Keyword: exclusiveMinimum/exclusiveMaximum are treated as numeric bounds
+   */
   protected getNumberLimits(schema: JSONSchema): {
     minimum?: number;
     maximum?: number;

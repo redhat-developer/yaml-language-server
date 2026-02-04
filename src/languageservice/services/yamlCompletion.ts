@@ -32,7 +32,7 @@ import { stringifyObject, StringifySettings } from '../utils/json';
 import { isDefined, isString } from '../utils/objects';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { asSchema } from '../parser/schemaValidation/baseValidator';
-import { indexOf, isInComment, isMapContainsEmptyPair } from '../utils/astUtils';
+import { indexOf, isInComment, isMapContainsEmptyPair } from '../utils/yamlAstUtils';
 import { isModeline } from './modelineUtil';
 import { getSchemaTypeName, isAnyOfAllOfOneOfType, isPrimitiveType } from '../utils/schemaUtils';
 import { YamlNode } from '../jsonASTTypes';

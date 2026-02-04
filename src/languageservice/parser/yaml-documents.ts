@@ -12,7 +12,7 @@ import { ErrorCode } from 'vscode-json-languageservice';
 import { convertAST } from './ast-converter';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { isArrayEqual } from '../utils/arrUtils';
-import { getParent } from '../utils/astUtils';
+import { getParent } from '../utils/yamlAstUtils';
 import { TextBuffer } from '../utils/textBuffer';
 import { getIndentation } from '../utils/strings';
 import { Token } from 'yaml/dist/parse/cst';

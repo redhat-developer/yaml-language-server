@@ -17,7 +17,7 @@ import * as l10n from '@vscode/l10n';
 import { URI } from 'vscode-uri';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { contains, getNodeValue } from '../astUtils';
+import { contains, getNodeValue } from '../astNodeUtils';
 import { getValidator } from './validatorFactory';
 
 export const YAML_SOURCE = 'YAML';
