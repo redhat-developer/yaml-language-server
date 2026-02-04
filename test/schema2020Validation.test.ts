@@ -17,6 +17,8 @@ describe('Validation Tests', () => {
   let yamlSettings: SettingsState;
   let schemaProvider: TestCustomSchemaProvider;
 
+  const toContent = (data: unknown): string => JSON.stringify(data, null, 2);
+
   before(() => {
     languageSettingsSetup = new ServiceSetup()
       .withValidate()
@@ -128,6 +130,699 @@ describe('Validation Tests', () => {
     });
   });
 
+  describe('keyword: unevaluatedItems', () => {
+    it('unevaluatedItems true', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        unevaluatedItems: true,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent([]))).to.be.empty;
+      expect(await parseSetup(toContent(['foo']))).to.be.empty;
+    });
+
+    it('unevaluatedItems false', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent([]))).to.be.empty;
+      const result = await parseSetup(toContent(['foo']));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 0 or fewer.');
+    });
+
+    it('unevaluatedItems as schema', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        unevaluatedItems: { type: 'string' },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent([]))).to.be.empty;
+      expect(await parseSetup(toContent(['foo']))).to.be.empty;
+      const result = await parseSetup(toContent([42]));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type. Expected');
+      expect(result[0].message).to.include('string');
+    });
+
+    it('unevaluatedItems with uniform items', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        items: { type: 'string' },
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(['foo', 'bar']))).to.be.empty;
+    });
+
+    it('unevaluatedItems with tuple', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [{ type: 'string' }],
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(['foo']))).to.be.empty;
+      const result = await parseSetup(toContent(['foo', 'bar']));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 1 or fewer.');
+    });
+
+    it('unevaluatedItems with items and prefixItems', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [{ type: 'string' }],
+        items: true,
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(['foo', 42]))).to.be.empty;
+    });
+
+    it('unevaluatedItems with items', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        items: { type: 'number' },
+        unevaluatedItems: { type: 'string' },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent([5, 6, 7, 8]))).to.be.empty;
+      const result = await parseSetup(toContent(['foo', 'bar', 'baz']));
+      expect(result).to.have.length(3);
+      expect(result[0].message).to.include('Incorrect type. Expected');
+      expect(result[0].message).to.include('number');
+    });
+
+    it('unevaluatedItems with nested tuple', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [{ type: 'string' }],
+        allOf: [
+          {
+            prefixItems: [true, { type: 'number' }],
+          },
+        ],
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(['foo', 42]))).to.be.empty;
+      const result = await parseSetup(toContent(['foo', 42, true]));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 2 or fewer.');
+    });
+
+    it('unevaluatedItems with nested items', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        unevaluatedItems: { type: 'boolean' },
+        anyOf: [{ items: { type: 'string' } }, true],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent([true, false]))).to.be.empty;
+      expect(await parseSetup(toContent(['yes', 'no']))).to.be.empty;
+      const result = await parseSetup(toContent(['yes', false]));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type. Expected');
+      expect(result[0].message).to.include('boolean');
+    });
+
+    it('unevaluatedItems with nested prefixItems and items', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        allOf: [
+          {
+            prefixItems: [{ type: 'string' }],
+            items: true,
+          },
+        ],
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(['foo']))).to.be.empty;
+      expect(await parseSetup(toContent(['foo', 42, true]))).to.be.empty;
+    });
+
+    it('unevaluatedItems with nested unevaluatedItems', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        allOf: [
+          {
+            prefixItems: [{ type: 'string' }],
+          },
+          { unevaluatedItems: true },
+        ],
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(['foo']))).to.be.empty;
+      expect(await parseSetup(toContent(['foo', 42, true]))).to.be.empty;
+    });
+
+    it('unevaluatedItems with anyOf', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [{ const: 'foo' }],
+        anyOf: [
+          {
+            prefixItems: [true, { const: 'bar' }],
+          },
+          {
+            prefixItems: [true, true, { const: 'baz' }],
+          },
+        ],
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(['foo', 'bar']))).to.be.empty;
+      const result1 = await parseSetup(toContent(['foo', 'bar', 42]));
+      expect(result1).to.have.length(1);
+      expect(result1[0].message).to.include('Array has too many items according to schema. Expected 2 or fewer.');
+
+      expect(await parseSetup(toContent(['foo', 'bar', 'baz']))).to.be.empty;
+
+      const result2 = await parseSetup(toContent(['foo', 'bar', 'baz', 42]));
+      expect(result2).to.have.length(1);
+      expect(result2[0].message).to.include('Array has too many items according to schema. Expected 3 or fewer.');
+    });
+
+    it('unevaluatedItems with oneOf', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [{ const: 'foo' }],
+        oneOf: [
+          {
+            prefixItems: [true, { const: 'bar' }],
+          },
+          {
+            prefixItems: [true, { const: 'baz' }],
+          },
+        ],
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(['foo', 'bar']))).to.be.empty;
+      const result = await parseSetup(toContent(['foo', 'bar', 42]));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 2 or fewer.');
+    });
+
+    it('unevaluatedItems with not', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [{ const: 'foo' }],
+        not: {
+          not: {
+            prefixItems: [true, { const: 'bar' }],
+          },
+        },
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const result = await parseSetup(toContent(['foo', 'bar']));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 1 or fewer.');
+    });
+
+    it('unevaluatedItems with if/then/else', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [{ const: 'foo' }],
+        if: {
+          prefixItems: [true, { const: 'bar' }],
+        },
+        then: {
+          prefixItems: [true, true, { const: 'then' }],
+        },
+        else: {
+          prefixItems: [true, true, true, { const: 'else' }],
+        },
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(['foo', 'bar', 'then']))).to.be.empty;
+      const result1 = await parseSetup(toContent(['foo', 'bar', 'then', 'else']));
+      expect(result1).to.have.length(1);
+      expect(result1[0].message).to.include('Array has too many items according to schema. Expected 3 or fewer.');
+      expect(await parseSetup(toContent(['foo', 42, 42, 'else']))).to.be.empty;
+      const result2 = await parseSetup(toContent(['foo', 42, 42, 'else', 42]));
+      expect(result2).to.have.length(1);
+      expect(result2[0].message).to.include('Array has too many items according to schema. Expected 4 or fewer.');
+    });
+
+    it('unevaluatedItems with boolean schemas', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        allOf: [true],
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent([]))).to.be.empty;
+      const result = await parseSetup(toContent(['foo']));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 0 or fewer.');
+    });
+
+    it('unevaluatedItems with $ref', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $ref: '#/$defs/bar',
+        prefixItems: [{ type: 'string' }],
+        unevaluatedItems: false,
+        $defs: {
+          bar: {
+            prefixItems: [true, { type: 'string' }],
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(['foo', 'bar']))).to.be.empty;
+      const result = await parseSetup(toContent(['foo', 'bar', 'baz']));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 2 or fewer.');
+    });
+
+    it('unevaluatedItems before $ref', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        unevaluatedItems: false,
+        prefixItems: [{ type: 'string' }],
+        $ref: '#/$defs/bar',
+        $defs: {
+          bar: {
+            prefixItems: [true, { type: 'string' }],
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(['foo', 'bar']))).to.be.empty;
+      const result = await parseSetup(toContent(['foo', 'bar', 'baz']));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 2 or fewer.');
+    });
+
+    it('unevaluatedItems with $dynamicRef', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $id: 'https://example.com/unevaluated-items-with-dynamic-ref/derived',
+        $ref: './baseSchema',
+        $defs: {
+          derived: {
+            $dynamicAnchor: 'addons',
+            prefixItems: [true, { type: 'string' }],
+          },
+          baseSchema: {
+            $id: './baseSchema',
+            $comment:
+              "unevaluatedItems comes first so it's more likely to catch bugs with implementations that are sensitive to keyword ordering",
+            unevaluatedItems: false,
+            type: 'array',
+            prefixItems: [{ type: 'string' }],
+            $dynamicRef: '#addons',
+            $defs: {
+              defaultAddons: {
+                $comment: 'Needed to satisfy the bookending requirement',
+                $dynamicAnchor: 'addons',
+              },
+            },
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(['foo', 'bar']))).to.be.empty;
+      const result = await parseSetup(toContent(['foo', 'bar', 'baz']));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 2 or fewer.');
+    });
+
+    it("unevaluatedItems can't see inside cousins", async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        allOf: [
+          {
+            prefixItems: [true],
+          },
+          { unevaluatedItems: false },
+        ],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const result = await parseSetup(toContent([1]));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 0 or fewer.');
+    });
+
+    it('item is evaluated in an uncle schema to unevaluatedItems', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        properties: {
+          foo: {
+            prefixItems: [{ type: 'string' }],
+            unevaluatedItems: false,
+          },
+        },
+        anyOf: [
+          {
+            properties: {
+              foo: {
+                prefixItems: [true, { type: 'string' }],
+              },
+            },
+          },
+        ],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent({ foo: ['test'] }))).to.be.empty;
+      const result = await parseSetup(toContent({ foo: ['test', 'test'] }));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 1 or fewer.');
+    });
+
+    it('unevaluatedItems depends on adjacent contains', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [true],
+        contains: { type: 'string' },
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent([1, 'foo']))).to.be.empty;
+      const result1 = await parseSetup(toContent([1, 2]));
+      expect(result1).to.have.length(2);
+      expect(result1[0].message).to.include('Array has too few items matching');
+      expect(result1[0].message).to.include('Expected 1 or more.');
+      expect(result1[1].message).to.include('Array has too many items according to schema. Expected 1 or fewer.');
+      const result2 = await parseSetup(toContent([1, 2, 'foo']));
+      expect(result2).to.have.length(1);
+      expect(result2[0].message).to.include('Array has too many items according to schema. Expected 1 or fewer.');
+    });
+
+    it('unevaluatedItems depends on multiple nested contains', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        allOf: [{ contains: { multipleOf: 2 } }, { contains: { multipleOf: 3 } }],
+        unevaluatedItems: { multipleOf: 5 },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent([2, 3, 4, 5, 6]))).to.be.empty;
+      const result = await parseSetup(toContent([2, 3, 4, 7, 8]));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Value is not divisible by 5.');
+    });
+
+    it('unevaluatedItems and contains interact to control item dependency relationship', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        if: {
+          contains: { const: 'a' },
+        },
+        then: {
+          if: {
+            contains: { const: 'b' },
+          },
+          then: {
+            if: {
+              contains: { const: 'c' },
+            },
+          },
+        },
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent([]))).to.be.empty;
+      expect(await parseSetup(toContent(['a', 'a']))).to.be.empty;
+      expect(await parseSetup(toContent(['a', 'b', 'a', 'b', 'a']))).to.be.empty;
+      expect(await parseSetup(toContent(['c', 'a', 'c', 'c', 'b', 'a']))).to.be.empty;
+      const result1 = await parseSetup(toContent(['b', 'b']));
+      expect(result1).to.have.length(2);
+      expect(result1[0].message).to.include('Array has too many items according to schema. Expected 0 or fewer.');
+      expect(result1[1].message).to.include('Array has too many items according to schema. Expected 1 or fewer.');
+      const result2 = await parseSetup(toContent(['c', 'c']));
+      expect(result2).to.have.length(2);
+      expect(result2[0].message).to.include('Array has too many items according to schema. Expected 0 or fewer.');
+      expect(result2[1].message).to.include('Array has too many items according to schema. Expected 1 or fewer.');
+      const result3 = await parseSetup(toContent(['c', 'b', 'c', 'b', 'c']));
+      expect(result3).to.have.length(5);
+      expect(result3[0].message).to.include('Array has too many items according to schema. Expected 0 or fewer.');
+      expect(result3[1].message).to.include('Array has too many items according to schema. Expected 1 or fewer.');
+      expect(result3[2].message).to.include('Array has too many items according to schema. Expected 2 or fewer.');
+      expect(result3[3].message).to.include('Array has too many items according to schema. Expected 3 or fewer.');
+      expect(result3[4].message).to.include('Array has too many items according to schema. Expected 4 or fewer.');
+      const result4 = await parseSetup(toContent(['c', 'a', 'c', 'a', 'c']));
+      expect(result4).to.have.length(3);
+      expect(result4[0].message).to.include('Array has too many items according to schema. Expected 0 or fewer.');
+      expect(result4[1].message).to.include('Array has too many items according to schema. Expected 2 or fewer.');
+      expect(result4[2].message).to.include('Array has too many items according to schema. Expected 4 or fewer.');
+    });
+
+    it('unevaluatedItems with minContains = 0', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        contains: { type: 'string' },
+        minContains: 0,
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent([]))).to.be.empty;
+      const result1 = await parseSetup(toContent([0]));
+      expect(result1).to.have.length(1);
+      expect(result1[0].message).to.include('Array has too many items according to schema. Expected 0 or fewer.');
+      const result2 = await parseSetup(toContent(['foo', 0]));
+      expect(result2).to.have.length(1);
+      expect(result2[0].message).to.include('Array has too many items according to schema. Expected 1 or fewer.');
+      expect(await parseSetup(toContent(['foo', 'bar']))).to.be.empty;
+    });
+
+    it('non-array instances are valid', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(true))).to.be.empty;
+      expect(await parseSetup(toContent(123))).to.be.empty;
+      expect(await parseSetup(toContent(1.0))).to.be.empty;
+      expect(await parseSetup(toContent({}))).to.be.empty;
+      expect(await parseSetup(toContent('foo'))).to.be.empty;
+      expect(await parseSetup(toContent(null))).to.be.empty;
+    });
+
+    it('unevaluatedItems with null instance elements', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        unevaluatedItems: { type: 'null' },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent([null]))).to.be.empty;
+    });
+
+    it('unevaluatedItems can see annotations from if without then and else', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        if: {
+          prefixItems: [{ const: 'a' }],
+        },
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      expect(await parseSetup(toContent(['a']))).to.be.empty;
+      const result = await parseSetup(toContent(['b']));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 0 or fewer.');
+    });
+
+    it('Evaluated items collection needs to consider instance location', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        prefixItems: [
+          {
+            prefixItems: [true, { type: 'string' }],
+          },
+        ],
+        unevaluatedItems: false,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const result = await parseSetup(toContent([['foo', 'bar'], 'bar']));
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items according to schema. Expected 1 or fewer.');
+    });
+  });
+
+  describe('keyword: contains', () => {
+    it('contains keyword validation', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        contains: { minimum: 5 },
+      } as JSONSchema);
+
+      // array with item matching schema (5) is valid
+      let content = toContent([3, 4, 5]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // array with item matching schema (6) is valid
+      content = toContent([3, 4, 6]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // array with two items matching schema (5, 6) is valid
+      content = toContent([3, 4, 5, 6]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // array without items matching schema is invalid
+      content = toContent([2, 3, 4]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // empty array is invalid
+      content = toContent([]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // not array is valid
+      content = toContent({});
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('contains keyword with const keyword', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        contains: { const: 5 },
+      } as JSONSchema);
+
+      // array with item 5 is valid
+      let content = toContent([3, 4, 5]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // array with two items 5 is valid
+      content = toContent([3, 4, 5, 5]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // array without item 5 is invalid
+      content = toContent([1, 2, 3, 4]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+    });
+
+    it('contains keyword with boolean schema true', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        contains: true,
+      } as JSONSchema);
+
+      // any non-empty array is valid
+      let content = toContent(['foo']);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // empty array is invalid
+      content = toContent([]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+    });
+
+    it('contains keyword with boolean schema false', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        contains: false,
+      } as JSONSchema);
+
+      // any non-empty array is invalid
+      let content = toContent(['foo']);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // empty array is invalid
+      content = toContent([]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // non-arrays are valid
+      content = toContent('contains does not apply to strings');
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('items + contains', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        items: { multipleOf: 2 },
+        contains: { multipleOf: 3 },
+      } as JSONSchema);
+
+      // matches items, does not match contains
+      let content = toContent([2, 4, 8]);
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+
+      // does not match items, matches contains
+      content = toContent([3, 6, 9]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(2);
+      expect(result[0].message).to.include('Value is not divisible by 2.');
+      expect(result[1].message).to.include('Value is not divisible by 2.');
+
+      // matches both items and contains
+      content = toContent([6, 12]);
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // matches neither items nor contains
+      content = toContent([1, 5]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(3);
+      expect(result[0].message).to.include('Value is not divisible by 2.');
+      expect(result[1].message).to.include('Value is not divisible by 2.');
+      expect(result[2].message).to.include('Array has too few items matching');
+    });
+
+    it('contains with false if subschema', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        contains: {
+          if: false,
+          else: true,
+        },
+      } as JSONSchema);
+
+      // any non-empty array is valid
+      let content = toContent(['foo']);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // empty array is invalid
+      content = toContent([]);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too few items matching');
+    });
+
+    it('contains with null instance elements', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        contains: {
+          type: 'null',
+        },
+      } as JSONSchema);
+
+      // allows null items
+      const content = toContent([null]);
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+  });
+
   describe('contains and unevaluatedItems tests', () => {
     beforeEach(() => {
       schemaProvider.addSchema(SCHEMA_ID, {
@@ -197,7 +892,7 @@ describe('Validation Tests', () => {
 - b
 - ccc`;
     const result = await parseSetup(content);
-    expect(result).to.not.be.empty;
+    expect(result).to.have.length(1);
     expect(result[0].message).to.include('Array has too many items according to schema. Expected 2 or fewer.');
   });
 

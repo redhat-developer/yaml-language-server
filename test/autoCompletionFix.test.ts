@@ -171,8 +171,7 @@ describe('Auto Completion Fix Tests', () => {
     );
   });
 
-  it('should show completion items in the middle of map in array', async function () {
-    this.timeout(10000);
+  it('should show completion items in the middle of map in array', async () => {
     const content = `apiVersion: v1
 kind: Pod
 metadata:
@@ -187,8 +186,7 @@ spec:
     expect(completion.items).length.greaterThan(1);
   });
 
-  it('should show completion on array item on first line', async function () {
-    this.timeout(10000);
+  it('should show completion on array item on first line', async () => {
     const content = '-d'; // len: 2
     const completion = await parseSetup(content, 0, 1);
     expect(completion.items).is.empty;

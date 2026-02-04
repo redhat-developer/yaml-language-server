@@ -31,7 +31,7 @@ export class Draft2020Validator extends Draft2019Validator {
   ): void {
     const items = (node.items ?? []) as ASTNode[];
     // prefixItems/items/contains contribute to evaluatedItems
-    validationResult.evaluatedItems ??= new Set<number>();
+    const evaluatedItems = validationResult.getEvaluatedItems(node);
 
     const prefixItems = schema.prefixItems;
     // validate prefixItems
@@ -40,17 +40,17 @@ export class Draft2020Validator extends Draft2019Validator {
       for (let i = 0; i < limit; i++) {
         const subSchema = asSchema(prefixItems[i]);
         if (!subSchema) {
-          validationResult.evaluatedItems.add(i);
+          evaluatedItems.add(i);
           continue;
         }
         const itemValidationResult = new ValidationResult(options.isKubernetes);
         this.validateNode(items[i], subSchema, schema, itemValidationResult, matchingSchemas, options);
 
-        validationResult.mergePropertyMatch(itemValidationResult);
+        validationResult.mergePropertyMatch(itemValidationResult, false);
         validationResult.mergeEnumValues(itemValidationResult);
 
         // mark as evaluated even if invalid (avoids duplicate unevaluatedItems noise)
-        validationResult.evaluatedItems.add(i);
+        evaluatedItems.add(i);
       }
     }
 
@@ -70,7 +70,7 @@ export class Draft2020Validator extends Draft2019Validator {
 
         // mark these as evaluated by "items": false (so unevaluatedItems doesn't also complain)
         for (let i = prefixLen; i < items.length; i++) {
-          validationResult.evaluatedItems.add(i);
+          evaluatedItems.add(i);
         }
       } else {
         const tailSchema = asSchema(itemsKeyword as JSONSchemaRef);
@@ -80,11 +80,11 @@ export class Draft2020Validator extends Draft2019Validator {
             const itemValidationResult = new ValidationResult(options.isKubernetes);
             this.validateNode(items[i], tailSchema, schema, itemValidationResult, matchingSchemas, options);
 
-            validationResult.mergePropertyMatch(itemValidationResult);
+            validationResult.mergePropertyMatch(itemValidationResult, false);
             validationResult.mergeEnumValues(itemValidationResult);
 
             // mark as evaluated even if invalid (avoids duplicate unevaluatedItems noise)
-            validationResult.evaluatedItems.add(i);
+            evaluatedItems.add(i);
           }
         }
       }
@@ -123,14 +123,14 @@ export class Draft2020Validator extends Draft2019Validator {
     let matchCount = 0;
 
     // ensure evaluatedItems exists
-    validationResult.evaluatedItems ??= new Set<number>();
+    const evaluatedItems = validationResult.getEvaluatedItems(node);
 
     for (let i = 0; i < items.length; i++) {
       const itemValidationResult = new ValidationResult(options.isKubernetes);
       this.validateNode(items[i], containsSchema, schema, itemValidationResult, this.getNoOpCollector(), options);
       if (!itemValidationResult.hasProblems()) {
         // items that match contains are considered evaluated
-        validationResult.evaluatedItems.add(i);
+        evaluatedItems.add(i);
 
         matchCount++;
         if (maxContains !== undefined && matchCount > maxContains) {

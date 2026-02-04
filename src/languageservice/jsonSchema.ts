@@ -19,7 +19,6 @@ export interface JSONSchema {
   _dialect?: SchemaDialect;
   _baseUrl?: string;
   _$ref?: string;
-  _dynamicAnchors?: Map<string, JSONSchema[]>;
 
   id?: string;
   $id?: string;

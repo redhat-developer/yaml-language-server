@@ -228,7 +228,7 @@ export class Draft2019Validator extends Draft07Validator {
     const items = (node.items ?? []) as ASTNode[];
     if (items.length === 0) return;
 
-    const evaluated = validationResult.evaluatedItems ?? new Set<number>();
+    const evaluated = validationResult.getEvaluatedItems(node);
     const remaining: number[] = [];
     for (let i = 0; i < items.length; i++) {
       if (!evaluated.has(i)) remaining.push(i);
@@ -247,16 +247,14 @@ export class Draft2019Validator extends Draft07Validator {
           source: this.getSchemaSource(schema, originalSchema),
           schemaUri: this.getSchemaUri(schema, originalSchema),
         });
-        validationResult.evaluatedItems ??= new Set<number>();
-        validationResult.evaluatedItems.add(idx);
+        evaluated.add(idx);
       }
       return;
     }
 
     // unevaluatedItems: true => allow everything remaining, but mark evaluated
     if (unevaluated === true) {
-      validationResult.evaluatedItems ??= new Set<number>();
-      for (const idx of remaining) validationResult.evaluatedItems.add(idx);
+      for (const idx of remaining) evaluated.add(idx);
       return;
     }
 
@@ -274,8 +272,7 @@ export class Draft2019Validator extends Draft07Validator {
       validationResult.merge(subResult);
       validationResult.mergeEnumValues(subResult);
 
-      validationResult.evaluatedItems ??= new Set<number>();
-      validationResult.evaluatedItems.add(idx);
+      evaluated.add(idx);
     }
   }
 }

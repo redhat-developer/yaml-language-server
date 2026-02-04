@@ -163,10 +163,20 @@ export class ValidationResult {
    * BaseValidator only populates evaluatedProperties conservatively for object keywords it processes directly.
    */
   public evaluatedProperties?: Set<string>;
-  public evaluatedItems?: Set<number>;
+  public evaluatedItemsByNode?: Map<ASTNode, Set<number>>;
 
   constructor(isKubernetes: boolean) {
     if (isKubernetes) this.enumValues = [];
+  }
+
+  public getEvaluatedItems(node: ASTNode): Set<number> {
+    this.evaluatedItemsByNode ??= new Map<ASTNode, Set<number>>();
+    let evaluated = this.evaluatedItemsByNode.get(node);
+    if (!evaluated) {
+      evaluated = new Set<number>();
+      this.evaluatedItemsByNode.set(node, evaluated);
+    }
+    return evaluated;
   }
 
   public hasProblems(): boolean {
@@ -181,9 +191,16 @@ export class ValidationResult {
       this.evaluatedProperties ??= new Set<string>();
       for (const p of other.evaluatedProperties) this.evaluatedProperties.add(p);
     }
-    if (other.evaluatedItems) {
-      this.evaluatedItems ??= new Set<number>();
-      for (const i of other.evaluatedItems) this.evaluatedItems.add(i);
+    if (other.evaluatedItemsByNode) {
+      this.evaluatedItemsByNode ??= new Map<ASTNode, Set<number>>();
+      for (const [node, set] of other.evaluatedItemsByNode) {
+        const target = this.evaluatedItemsByNode.get(node);
+        if (target) {
+          for (const i of set) target.add(i);
+        } else {
+          this.evaluatedItemsByNode.set(node, new Set(set));
+        }
+      }
     }
   }
 
@@ -231,8 +248,12 @@ export class ValidationResult {
     }
   }
 
-  public mergePropertyMatch(propertyValidationResult: ValidationResult): void {
-    this.merge(propertyValidationResult);
+  public mergePropertyMatch(propertyValidationResult: ValidationResult, mergeEvaluated = true): void {
+    if (mergeEvaluated) {
+      this.merge(propertyValidationResult);
+    } else {
+      this.problems = this.problems.concat(propertyValidationResult.problems);
+    }
     this.propertiesMatches++;
 
     if (
@@ -498,6 +519,24 @@ export abstract class BaseValidator {
       return node.type === type || (type === 'integer' && node.type === 'number' && (node as NumberASTNode).isInteger);
     };
 
+    const mergeEvaluated = (target: ValidationResult, source: ValidationResult): void => {
+      if (source.evaluatedProperties) {
+        target.evaluatedProperties ??= new Set<string>();
+        for (const p of source.evaluatedProperties) target.evaluatedProperties.add(p);
+      }
+      if (source.evaluatedItemsByNode) {
+        target.evaluatedItemsByNode ??= new Map<ASTNode, Set<number>>();
+        for (const [nodeRef, set] of source.evaluatedItemsByNode) {
+          const targetSet = target.evaluatedItemsByNode.get(nodeRef);
+          if (targetSet) {
+            for (const i of set) targetSet.add(i);
+          } else {
+            target.evaluatedItemsByNode.set(nodeRef, new Set(set));
+          }
+        }
+      }
+    };
+
     // type
     if (Array.isArray(schema.type)) {
       if (!(schema.type as string[]).some(matchesType)) {
@@ -527,7 +566,16 @@ export abstract class BaseValidator {
     // allOf
     if (Array.isArray(schema.allOf)) {
       for (const subSchemaRef of schema.allOf) {
-        this.validateNode(node, asSchema(subSchemaRef), schema, validationResult, matchingSchemas, options);
+        const subSchema = asSchema(subSchemaRef);
+        const subValidationResult = new ValidationResult(isKubernetes);
+        const subMatchingSchemas = matchingSchemas.newSub();
+
+        this.validateNode(node, subSchema, schema, subValidationResult, subMatchingSchemas, options);
+
+        validationResult.merge(subValidationResult);
+        validationResult.propertiesMatches += subValidationResult.propertiesMatches;
+        validationResult.propertiesValueMatches += subValidationResult.propertiesValueMatches;
+        matchingSchemas.merge(subMatchingSchemas);
       }
     }
 
@@ -558,6 +606,7 @@ export abstract class BaseValidator {
     const testAlternatives = (alternatives: JSONSchemaRef[], maxOneMatch: boolean): void => {
       const subMatches: JSONSchema[] = [];
       const noPropertyMatches: JSONSchema[] = [];
+      const validResults: ValidationResult[] = [];
       let bestMatch: IValidationMatch | null = null;
 
       for (const subSchemaRef of alternatives) {
@@ -571,6 +620,9 @@ export abstract class BaseValidator {
           subMatches.push(subSchema);
           if (subValidationResult.propertiesMatches === 0) noPropertyMatches.push(subSchema);
           if (subSchema.format) subMatches.pop();
+        }
+        if (!subValidationResult.hasProblems()) {
+          validResults.push(subValidationResult);
         }
 
         if (!bestMatch) {
@@ -601,6 +653,12 @@ export abstract class BaseValidator {
           validationResult.enumValues = (validationResult.enumValues || []).concat(bestMatch.validationResult.enumValues);
         }
         matchingSchemas.merge(bestMatch.matchingSchemas);
+      }
+
+      if (validResults.length > 0) {
+        for (const result of validResults) {
+          mergeEvaluated(validationResult, result);
+        }
       }
     };
 
@@ -656,6 +714,7 @@ export abstract class BaseValidator {
       }
 
       if (!subValidationResult.hasProblems()) {
+        mergeEvaluated(validationResult, subValidationResult);
         if (thenSchema) testBranch(thenSchema, original);
       } else if (elseSchema) {
         testBranch(elseSchema, original);
@@ -908,45 +967,28 @@ export abstract class BaseValidator {
     // Draft-07 default: tuple arrays via items: [] and additionalItems
     const { isKubernetes } = options;
 
-    validationResult.evaluatedItems ??= new Set<number>();
     const items = node.items ?? [];
+    const evaluatedItems = schema.items ? validationResult.getEvaluatedItems(node) : undefined;
 
     if (Array.isArray(schema.items)) {
       const subSchemas = schema.items;
       for (let index = 0; index < subSchemas.length; index++) {
         const subSchema = asSchema(subSchemas[index]);
         const itemValidationResult = new ValidationResult(isKubernetes);
-        const item = node.items[index];
-
+        const item = items[index];
         if (item) {
           this.validateNode(item, subSchema, schema, itemValidationResult, matchingSchemas, options);
-
-          if (!itemValidationResult.hasProblems()) {
-            validationResult.evaluatedItems?.add(index);
-          }
-          validationResult.mergePropertyMatch(itemValidationResult);
+          validationResult.mergePropertyMatch(itemValidationResult, false);
           validationResult.mergeEnumValues(itemValidationResult);
-        } else if (node.items.length >= subSchemas.length) {
+          evaluatedItems?.add(index);
+        } else if (items.length >= subSchemas.length) {
           validationResult.propertiesValueMatches++;
         }
       }
 
-      if (node.items.length > subSchemas.length) {
-        if (typeof schema.additionalItems === 'object') {
-          for (let i = subSchemas.length; i < node.items.length; i++) {
-            const itemValidationResult = new ValidationResult(isKubernetes);
-            this.validateNode(
-              node.items[i],
-              schema.additionalItems as JSONSchema,
-              schema,
-              itemValidationResult,
-              matchingSchemas,
-              options
-            );
-            validationResult.mergePropertyMatch(itemValidationResult);
-            validationResult.mergeEnumValues(itemValidationResult);
-          }
-        } else if (schema.additionalItems === false) {
+      if (items.length > subSchemas.length) {
+        const additional = schema.additionalItems;
+        if (additional === false) {
           validationResult.problems.push({
             location: { offset: node.offset, length: node.length },
             severity: DiagnosticSeverity.Warning,
@@ -954,45 +996,37 @@ export abstract class BaseValidator {
             source: this.getSchemaSource(schema, originalSchema),
             schemaUri: this.getSchemaUri(schema, originalSchema),
           });
-        }
-      } else {
-        // additionalItems is true/undefined => allowed by default (treat as {}), so mark remaining as evaluated
-        // additionalItems is object => validate and mark if pass
-        const additional = schema.additionalItems;
-
-        if (typeof additional === 'object') {
           for (let i = subSchemas.length; i < items.length; i++) {
-            const extraResult = new ValidationResult(isKubernetes);
-            this.validateNode(items[i], additional, schema, extraResult, matchingSchemas, options);
-
-            if (!extraResult.hasProblems()) {
-              validationResult.evaluatedItems?.add(i);
-            }
-
-            validationResult.mergePropertyMatch(extraResult);
-            validationResult.mergeEnumValues(extraResult);
+            evaluatedItems?.add(i);
           }
-        } else {
+        } else if (typeof additional === 'object') {
           for (let i = subSchemas.length; i < items.length; i++) {
-            validationResult.evaluatedItems?.add(i);
+            const itemValidationResult = new ValidationResult(isKubernetes);
+            this.validateNode(items[i], additional as JSONSchema, schema, itemValidationResult, matchingSchemas, options);
+            validationResult.mergePropertyMatch(itemValidationResult, false);
+            validationResult.mergeEnumValues(itemValidationResult);
+            evaluatedItems?.add(i);
+          }
+        } else if (additional === true) {
+          // additionalItems is true => allowed by default (treat as {}), so mark remaining as evaluated
+          for (let i = subSchemas.length; i < items.length; i++) {
+            evaluatedItems?.add(i);
           }
         }
       }
     } else {
       const itemSchema = asSchema(schema.items as JSONSchemaRef);
       if (itemSchema) {
+        const currentEvaluatedItems = validationResult.getEvaluatedItems(node);
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
           const itemValidationResult = new ValidationResult(isKubernetes);
 
           this.validateNode(item, itemSchema, schema, itemValidationResult, matchingSchemas, options);
 
-          if (!itemValidationResult.hasProblems()) {
-            validationResult.evaluatedItems?.add(i);
-          }
-
-          validationResult.mergePropertyMatch(itemValidationResult);
+          validationResult.mergePropertyMatch(itemValidationResult, false);
           validationResult.mergeEnumValues(itemValidationResult);
+          currentEvaluatedItems.add(i);
         }
       }
     }
@@ -1241,7 +1275,7 @@ export abstract class BaseValidator {
         (propertySchemaRef as JSONSchema).url = schema.url ?? originalSchema.url;
         const propertyValidationResult = new ValidationResult(isKubernetes);
         this.validateNode(child, propertySchemaRef as JSONSchema, schema, propertyValidationResult, matchingSchemas, options);
-        validationResult.mergePropertyMatch(propertyValidationResult);
+        validationResult.mergePropertyMatch(propertyValidationResult, false);
         validationResult.mergeEnumValues(propertyValidationResult);
       }
     }
@@ -1295,7 +1329,7 @@ export abstract class BaseValidator {
         } else {
           const propertyValidationResult = new ValidationResult(isKubernetes);
           this.validateNode(child, propertySchemaRef as JSONSchema, schema, propertyValidationResult, matchingSchemas, options);
-          validationResult.mergePropertyMatch(propertyValidationResult);
+          validationResult.mergePropertyMatch(propertyValidationResult, false);
           validationResult.mergeEnumValues(propertyValidationResult);
         }
       }
@@ -1326,8 +1360,20 @@ export abstract class BaseValidator {
 
         const propertyValidationResult = new ValidationResult(isKubernetes);
         this.validateNode(child, additional, schema, propertyValidationResult, matchingSchemas, options);
-        validationResult.mergePropertyMatch(propertyValidationResult);
+        validationResult.mergePropertyMatch(propertyValidationResult, false);
         validationResult.mergeEnumValues(propertyValidationResult);
+      }
+      return;
+    }
+
+    if (additional === true) {
+      if (unprocessedProperties.length > 0) {
+        validationResult.evaluatedProperties ??= new Set();
+        for (const propertyName of unprocessedProperties) {
+          if (seenKeys[propertyName]) {
+            validationResult.evaluatedProperties.add(propertyName);
+          }
+        }
       }
       return;
     }
