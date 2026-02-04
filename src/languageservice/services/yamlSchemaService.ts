@@ -451,7 +451,8 @@ export class YAMLSchemaService extends JSONSchemaService {
         let current = schemaRoot;
         const parts = refPath.substr(1).split('/');
         for (const part of parts) {
-          current = current?.[part];
+          // in JSON Pointer: ~ must be escaped as ~0, / must be escaped as ~1
+          current = current?.[part.replace(/~1/g, '/').replace(/~0/g, '~')];
           if (current === null) return undefined;
         }
         return current as JSONSchema;

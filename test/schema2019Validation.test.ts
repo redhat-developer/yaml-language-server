@@ -52,7 +52,380 @@ describe('Validation Tests', () => {
     schemaProvider.deleteSchema(SCHEMA_ID);
   });
 
+  describe('$ref resolution', () => {
+    it('root pointer ref', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        properties: {
+          foo: { $ref: '#' },
+        },
+        additionalProperties: false,
+      } as JSONSchema);
+
+      // match
+      let content = toContent({ foo: false });
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // recursive match
+      content = toContent({ foo: { foo: false } });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // mismatch
+      content = toContent({ bar: false });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('not allowed');
+
+      // recursive mismatch
+      content = toContent({ foo: { bar: false } });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('not allowed');
+    });
+
+    it('relative pointer ref to object', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        properties: {
+          foo: { type: 'integer' },
+          bar: { $ref: '#/properties/foo' },
+        },
+      } as JSONSchema);
+
+      // match
+      let content = toContent({ bar: 3 });
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // mismatch
+      content = toContent({ bar: true });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+    });
+
+    it('relative pointer ref to array', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        items: [{ type: 'integer' }, { $ref: '#/items/0' }],
+      } as JSONSchema);
+
+      // match array
+      let content = toContent([1, 2]);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // mismatch array
+      content = toContent([1, 'foo']);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+    });
+
+    it('escaped pointer ref', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        $defs: {
+          'tilde~field': { type: 'integer' },
+          'slash/field': { type: 'integer' },
+          'percent%field': { type: 'integer' },
+        },
+        properties: {
+          tilde: { $ref: '#/$defs/tilde~0field' },
+          slash: { $ref: '#/$defs/slash~1field' },
+          percent: { $ref: '#/$defs/percent%25field' },
+        },
+      } as JSONSchema);
+
+      // slash invalid
+      let content = toContent({ slash: 'aoeu' });
+      let result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+
+      // tilde invalid
+      content = toContent({ tilde: 'aoeu' });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+
+      // percent invalid
+      content = toContent({ percent: 'aoeu' });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+
+      // slash valid
+      content = toContent({ slash: 123 });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // tilde valid
+      content = toContent({ tilde: 123 });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // percent valid
+      content = toContent({ percent: 123 });
+      result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('nested refs', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        $defs: {
+          a: { type: 'integer' },
+          b: { $ref: '#/$defs/a' },
+          c: { $ref: '#/$defs/b' },
+        },
+        $ref: '#/$defs/c',
+      } as JSONSchema);
+
+      // nested ref valid
+      let content = toContent(5);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // nested ref invalid
+      content = toContent('a');
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+    });
+
+    it('ref applies alongside sibling keywords', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        $defs: {
+          reffed: {
+            type: 'array',
+          },
+        },
+        properties: {
+          foo: {
+            $ref: '#/$defs/reffed',
+            maxItems: 2,
+          },
+        },
+      } as JSONSchema);
+
+      // ref valid, maxItems valid
+      let content = toContent({ foo: [] });
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // ref valid, maxItems invalid
+      content = toContent({ foo: [1, 2, 3] });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Array has too many items');
+
+      // ref invalid
+      content = toContent({ foo: 'string' });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+    });
+
+    it('property named $ref that is not a reference', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        properties: {
+          $ref: { type: 'string' },
+        },
+      } as JSONSchema);
+
+      // property named $ref valid
+      let content = toContent({ $ref: 'a' });
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // property named $ref invalid
+      content = toContent({ $ref: 2 });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+    });
+
+    it('property named $ref, containing an actual $ref', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        properties: {
+          $ref: { $ref: '#/$defs/is-string' },
+        },
+        $defs: {
+          'is-string': {
+            type: 'string',
+          },
+        },
+      } as JSONSchema);
+
+      // property named $ref valid
+      let content = toContent({ $ref: 'a' });
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // property named $ref invalid
+      content = toContent({ $ref: 2 });
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+    });
+
+    it('$ref to boolean schema true', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        $ref: '#/$defs/bool',
+        $defs: {
+          bool: true as unknown as JSONSchema,
+        },
+      } as JSONSchema);
+
+      // any value is valid
+      const content = toContent('foo');
+      const result = await parseSetup(content);
+      expect(result).to.be.empty;
+    });
+
+    it('$ref to boolean schema false', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        $ref: '#/$defs/bool',
+        $defs: {
+          bool: false as unknown as JSONSchema,
+        },
+      } as JSONSchema);
+
+      // any value is invalid
+      const content = toContent('foo');
+      const result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Matches a schema that is not allowed');
+    });
+  });
+
   describe('$anchor resolution', () => {
+    it('Location-independent identifier', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        $ref: '#foo',
+        $defs: {
+          A: {
+            $anchor: 'foo',
+            type: 'integer',
+          },
+        },
+      } as JSONSchema);
+
+      // match
+      let content = toContent(1);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // mismatch
+      content = toContent('a');
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+      expect(result[0].message).to.include('integer');
+    });
+
+    it('Location-independent identifier with absolute URI', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        $ref: 'http://localhost:1234/draft2019-09/bar#foo',
+        $defs: {
+          A: {
+            $id: 'http://localhost:1234/draft2019-09/bar',
+            $anchor: 'foo',
+            type: 'integer',
+          },
+        },
+      } as JSONSchema);
+
+      // match
+      let content = toContent(1);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // mismatch
+      content = toContent('a');
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+      expect(result[0].message).to.include('integer');
+    });
+
+    it('Location-independent identifier with base URI change in subschema', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        $id: 'http://localhost:1234/draft2019-09/root',
+        $ref: 'http://localhost:1234/draft2019-09/nested.json#foo',
+        $defs: {
+          A: {
+            $id: 'nested.json',
+            $defs: {
+              B: {
+                $anchor: 'foo',
+                type: 'integer',
+              },
+            },
+          },
+        },
+      } as JSONSchema);
+
+      // match
+      let content = toContent(1);
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // mismatch
+      content = toContent('a');
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+      expect(result[0].message).to.include('integer');
+    });
+
+    it('same $anchor with different base uri', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        $id: 'http://localhost:1234/draft2019-09/foobar',
+        $defs: {
+          A: {
+            $id: 'child1',
+            allOf: [
+              {
+                $id: 'child2',
+                $anchor: 'my_anchor',
+                type: 'number',
+              },
+              {
+                $anchor: 'my_anchor',
+                type: 'string',
+              },
+            ],
+          },
+        },
+        $ref: 'child1#my_anchor',
+      } as JSONSchema);
+
+      // $ref resolves to /$defs/A/allOf/1
+      let content = toContent('a');
+      let result = await parseSetup(content);
+      expect(result).to.be.empty;
+
+      // $ref does not resolve to /$defs/A/allOf/0
+      content = toContent(1);
+      result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Incorrect type');
+      expect(result[0].message).to.include('string');
+    });
+
     it('resolves $ref "#name" via $anchor in same document', async () => {
       const schema: JSONSchema = {
         $schema: 'https://json-schema.org/draft/2019-09/schema',
@@ -2234,6 +2607,49 @@ unknown: 1
   });
 
   describe('$id resolution', () => {
+    it('$id inside an enum is not a real identifier (the implementation must not be confused by an $id buried in the enum)', async () => {
+      const root: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        $defs: {
+          id_in_enum: {
+            enum: [
+              {
+                $id: 'https://localhost:1234/draft2019-09/id/my_identifier.json',
+                type: 'null',
+              },
+            ],
+          },
+          real_id_in_schema: {
+            $id: 'https://localhost:1234/draft2019-09/id/my_identifier.json',
+            type: 'string',
+          },
+          zzz_id_in_const: {
+            const: {
+              $id: 'https://localhost:1234/draft2019-09/id/my_identifier.json',
+              type: 'null',
+            },
+          },
+        },
+        anyOf: [{ $ref: '#/$defs/id_in_enum' }, { $ref: 'https://localhost:1234/draft2019-09/id/my_identifier.json' }],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, root);
+      // exact match to enum, and type matches
+      expect(
+        await parseSetup(
+          toContent({
+            $id: 'https://localhost:1234/draft2019-09/id/my_identifier.json',
+            type: 'null',
+          })
+        )
+      ).to.be.empty;
+      // match $ref to $id
+      expect(await parseSetup('a string to match #/$defs/id_in_enum')).to.be.empty;
+      // no match on enum or $ref to $id
+      const result = await parseSetup(`1`);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Value is not accepted. Valid values:');
+    });
+
     it('should resolve embedded resource $id for relative $ref without external load', async () => {
       const root: JSONSchema = {
         $schema: 'https://json-schema.org/draft/2019-09/schema',
