@@ -9,7 +9,7 @@ import { isAlias, isCollection, isNode, isScalar, Node, Scalar, visit, YAMLMap, 
 import { YamlNode } from '../../jsonASTTypes';
 import { SingleYAMLDocument } from '../../parser/yaml-documents';
 import { AdditionalValidator } from './types';
-import { isCollectionItem } from '../../../languageservice/utils/astUtils';
+import { isCollectionItem } from '../../utils/yamlAstUtils';
 import * as l10n from '@vscode/l10n';
 
 export class UnusedAnchorsValidator implements AdditionalValidator {
@@ -47,7 +47,7 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
           );
           const warningDiagnostic = Diagnostic.create(
             range,
-            l10n.t('unUsedAnchor', aToken.source),
+            l10n.t('Unused anchor "{0}"', aToken.source),
             DiagnosticSeverity.Information,
             0
           );
@@ -65,7 +65,7 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
         const range = Range.create(document.positionAt(startOffset), document.positionAt(endOffset));
         const warningDiagnostic = Diagnostic.create(
           range,
-          l10n.t('unUsedAlias', node.toString()),
+          l10n.t('Unresolved alias "{0}"', node.toString()),
           DiagnosticSeverity.Information,
           0
         );

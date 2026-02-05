@@ -40,7 +40,7 @@ export class SettingsHandler {
     const config = await this.connection.workspace.getConfiguration([
       { section: 'yaml' },
       { section: 'http' },
-      { section: '[yaml]' },
+      { section: '[yaml]', scopeUri: 'null' },
       { section: 'editor' },
       { section: 'files' },
     ]);
@@ -71,6 +71,9 @@ export class SettingsHandler {
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hover')) {
         this.yamlSettings.yamlShouldHover = settings.yaml.hover;
       }
+      if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hoverAnchor')) {
+        this.yamlSettings.yamlShouldHoverAnchor = settings.yaml.hoverAnchor;
+      }
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'completion')) {
         this.yamlSettings.yamlShouldCompletion = settings.yaml.completion;
       }
@@ -80,10 +83,18 @@ export class SettingsHandler {
 
       if (settings.yaml.schemaStore) {
         this.yamlSettings.schemaStoreEnabled = settings.yaml.schemaStore.enable;
-        if (settings.yaml.schemaStore.url?.length !== 0) {
+        if (settings.yaml.schemaStore.url) {
           this.yamlSettings.schemaStoreUrl = settings.yaml.schemaStore.url;
         }
       }
+
+      if (settings.yaml.kubernetesCRDStore) {
+        this.yamlSettings.kubernetesCRDStoreEnabled = settings.yaml.kubernetesCRDStore.enable;
+        if (settings.yaml.kubernetesCRDStore.url?.length !== 0) {
+          this.yamlSettings.kubernetesCRDStoreUrl = settings.yaml.kubernetesCRDStore.url;
+        }
+      }
+
       if (settings.files?.associations) {
         for (const [ext, languageId] of Object.entries(settings.files.associations)) {
           if (languageId === 'yaml') {
@@ -189,12 +200,7 @@ export class SettingsHandler {
    */
   private async setSchemaStoreSettingsIfNotSet(): Promise<void> {
     const schemaStoreIsSet = this.yamlSettings.schemaStoreSettings.length !== 0;
-    let schemaStoreUrl = '';
-    if (this.yamlSettings.schemaStoreUrl?.length !== 0) {
-      schemaStoreUrl = this.yamlSettings.schemaStoreUrl;
-    } else {
-      schemaStoreUrl = JSON_SCHEMASTORE_URL;
-    }
+    const schemaStoreUrl = this.yamlSettings.schemaStoreUrl || JSON_SCHEMASTORE_URL;
 
     if (this.yamlSettings.schemaStoreEnabled && !schemaStoreIsSet) {
       try {
@@ -257,6 +263,7 @@ export class SettingsHandler {
     let languageSettings: LanguageSettings = {
       validate: this.yamlSettings.yamlShouldValidate,
       hover: this.yamlSettings.yamlShouldHover,
+      hoverAnchor: this.yamlSettings.yamlShouldHoverAnchor,
       completion: this.yamlSettings.yamlShouldCompletion,
       schemas: [],
       customTags: this.yamlSettings.customTags,

@@ -3,10 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { parseYamlBoolean } from '../parser/scalar-type';
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function equals(one: any, other: any, type?: any): boolean {
-  if (type === 'boolean') {
-    one = JSON.parse(one);
+  if (type === 'boolean' && typeof one === 'string') {
+    one = parseYamlBoolean(one);
   }
   if (one === other) {
     return true;

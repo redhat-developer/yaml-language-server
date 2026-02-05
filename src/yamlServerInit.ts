@@ -1,26 +1,23 @@
 import { Connection, InitializeParams, InitializeResult, TextDocumentSyncKind } from 'vscode-languageserver';
+import { URI } from 'vscode-uri';
+import { YamlCommands } from './commands';
+import { commandExecutor } from './languageserver/commandExecutor';
+import { LanguageHandlers } from './languageserver/handlers/languageHandlers';
+import { NotificationHandlers } from './languageserver/handlers/notificationHandlers';
+import { RequestHandlers } from './languageserver/handlers/requestHandlers';
+import { SettingsHandler } from './languageserver/handlers/settingsHandlers';
+import { ValidationHandler } from './languageserver/handlers/validationHandlers';
+import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
+import { registerCommands } from './languageservice/services/yamlCommands';
+import { Telemetry } from './languageservice/telemetry';
+import { workspaceFoldersChanged } from './languageservice/utils/paths';
 import {
   getLanguageService as getCustomLanguageService,
   LanguageService,
   SchemaRequestService,
   WorkspaceContextService,
 } from './languageservice/yamlLanguageService';
-import { workspaceFoldersChanged } from './languageservice/utils/paths';
-import { URI } from 'vscode-uri';
 import { SettingsState } from './yamlSettings';
-import { LanguageHandlers } from './languageserver/handlers/languageHandlers';
-import { NotificationHandlers } from './languageserver/handlers/notificationHandlers';
-import { RequestHandlers } from './languageserver/handlers/requestHandlers';
-import { ValidationHandler } from './languageserver/handlers/validationHandlers';
-import { SettingsHandler } from './languageserver/handlers/settingsHandlers';
-import { YamlCommands } from './commands';
-import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
-import { commandExecutor } from './languageserver/commandExecutor';
-import { Telemetry } from './languageservice/telemetry';
-import { registerCommands } from './languageservice/services/yamlCommands';
-import * as l10n from '@vscode/l10n';
-import * as path from 'path';
-import * as fs from 'fs';
 
 export class YAMLServerInit {
   languageService: LanguageService;
@@ -33,7 +30,8 @@ export class YAMLServerInit {
     private yamlSettings: SettingsState,
     private workspaceContext: WorkspaceContextService,
     private schemaRequestService: SchemaRequestService,
-    private telemetry: Telemetry
+    private telemetry: Telemetry,
+    public setupl10nBundle: (params: InitializeParams) => Promise<void> = () => Promise.resolve()
   ) {
     this.yamlSettings.documents.listen(this.connection);
 
@@ -55,25 +53,6 @@ export class YAMLServerInit {
       this.settingsHandler.registerHandlers();
       this.settingsHandler.pullConfiguration();
     });
-  }
-
-  public async setupl10nBundle(params: InitializeParams): Promise<void> {
-    const __dirname = path.dirname(__filename);
-    const l10nPath: string = params.initializationOptions?.l10nPath || path.join(__dirname, '../../../l10n');
-    const locale: string = params.locale || 'en';
-    if (l10nPath) {
-      const bundleFile = !fs.existsSync(path.join(l10nPath, `bundle.l10n.${locale}.json`))
-        ? `bundle.l10n.json`
-        : `bundle.l10n.${locale}.json`;
-      const baseBundleFile = path.join(l10nPath, bundleFile);
-      process.env.VSCODE_NLS_CONFIG = JSON.stringify({
-        locale,
-        _languagePackSupport: true,
-      });
-      await l10n.config({
-        uri: URI.file(baseBundleFile).toString(),
-      });
-    }
   }
 
   // public for test setup
@@ -120,6 +99,10 @@ export class YAMLServerInit {
     registerCommands(commandExecutor, this.connection);
     await this.setupl10nBundle(params);
     return {
+      serverInfo: {
+        name: 'yaml-language-server',
+        version: process.env.YAML_LANGUAGE_SERVER_VERSION || 'unknown',
+      },
       capabilities: {
         textDocumentSync: TextDocumentSyncKind.Incremental,
         completionProvider: { resolveProvider: false },
@@ -131,6 +114,7 @@ export class YAMLServerInit {
         },
         documentRangeFormattingProvider: false,
         definitionProvider: true,
+        renameProvider: { prepareProvider: true },
         documentLinkProvider: {},
         foldingRangeProvider: true,
         selectionRangeProvider: true,

@@ -25,6 +25,8 @@ import {
   CodeLens,
   DefinitionLink,
   SelectionRange,
+  Range,
+  WorkspaceEdit,
 } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
@@ -39,6 +41,8 @@ import {
   Connection,
   DocumentOnTypeFormattingParams,
   DefinitionParams,
+  PrepareRenameParams,
+  RenameParams,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getFoldingRanges } from './services/yamlFolding';
@@ -54,6 +58,7 @@ import { SettingsState } from '../yamlSettings';
 import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers';
 import { YamlDefinition } from './services/yamlDefinition';
 import { getSelectionRanges } from './services/yamlSelectionRanges';
+import { YamlRename } from './services/yamlRename';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -74,6 +79,7 @@ export interface SchemasSettings {
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
   hover?: boolean; //Setting for whether we want to have hover results
+  hoverAnchor?: boolean; //Setting for whether we want to have hover anchor results
   completion?: boolean; //Setting for whether we want to have completion results
   format?: boolean; //Setting for whether we want to have the formatter or not
   isKubernetes?: boolean; //If true then its validating against kubernetes
@@ -180,6 +186,8 @@ export interface LanguageService {
   getCodeAction: (document: TextDocument, params: CodeActionParams) => CodeAction[] | undefined;
   getCodeLens: (document: TextDocument) => PromiseLike<CodeLens[] | undefined> | CodeLens[] | undefined;
   resolveCodeLens: (param: CodeLens) => PromiseLike<CodeLens> | CodeLens;
+  prepareRename: (document: TextDocument, params: PrepareRenameParams) => Range | null;
+  doRename: (document: TextDocument, params: RenameParams) => WorkspaceEdit | null;
 }
 
 export function getLanguageService(params: {
@@ -190,7 +198,7 @@ export function getLanguageService(params: {
   yamlSettings?: SettingsState;
   clientCapabilities?: ClientCapabilities;
 }): LanguageService {
-  const schemaService = new YAMLSchemaService(params.schemaRequestService, params.workspaceContext);
+  const schemaService = new YAMLSchemaService(params.schemaRequestService, params.workspaceContext, null, params.yamlSettings);
   const completer = new YamlCompletion(schemaService, params.clientCapabilities, yamlDocumentsCache, params.telemetry);
   const hover = new YAMLHover(schemaService, params.telemetry);
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService, params.telemetry);
@@ -200,6 +208,7 @@ export function getLanguageService(params: {
   const yamlCodeLens = new YamlCodeLens(schemaService, params.telemetry);
   const yamlLinks = new YamlLinks(params.telemetry);
   const yamlDefinition = new YamlDefinition(params.telemetry);
+  const yamlRename = new YamlRename(params.telemetry);
 
   new JSONSchemaSelection(schemaService, params.yamlSettings, params.connection);
 
@@ -266,5 +275,7 @@ export function getLanguageService(params: {
       return yamlCodeLens.getCodeLens(document);
     },
     resolveCodeLens: (param) => yamlCodeLens.resolveCodeLens(param),
+    prepareRename: (document, params) => yamlRename.prepareRename(document, params),
+    doRename: (document, params) => yamlRename.doRename(document, params),
   };
 }

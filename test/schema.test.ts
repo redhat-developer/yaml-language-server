@@ -9,11 +9,21 @@ import { MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/se
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 import { expect } from 'chai';
 import { ServiceSetup } from './utils/serviceSetup';
-import { setupLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper';
+import {
+  SCHEMA_ID,
+  TestCustomSchemaProvider,
+  setupLanguageService,
+  setupSchemaIDTextDocument,
+  setupTextDocument,
+  TEST_URI,
+} from './utils/testHelper';
 import { LanguageService, SchemaPriority } from '../src';
-import { MarkupContent, Position } from 'vscode-languageserver-types';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { Diagnostic, MarkupContent, Position } from 'vscode-languageserver-types';
 import { LineCounter } from 'yaml';
 import { getSchemaFromModeline } from '../src/languageservice/services/modelineUtil';
+import { getGroupVersionKindFromDocument } from '../src/languageservice/services/crdUtil';
 
 const requestServiceMock = function (uri: string): Promise<string> {
   return Promise.reject<string>(`Resource ${uri} not found.`);
@@ -83,6 +93,7 @@ describe('JSON Schema', () => {
           description: 'Test description',
           _$ref: 'https://myschemastore/child',
           url: 'https://myschemastore/child',
+          _baseUrl: 'https://myschemastore/child',
         });
       })
       .then(
@@ -147,7 +158,7 @@ describe('JSON Schema', () => {
     service.setSchemaContributions({
       schemas: {
         'https://myschemastore/main/schema1.json': {
-          id: 'https://myschemastore/schema1.json',
+          id: 'https://myschemastore/main/schema1.json',
           type: 'object',
           properties: {
             p1: {
@@ -180,18 +191,21 @@ describe('JSON Schema', () => {
           type: 'string',
           enum: ['object'],
           _$ref: 'schema2.json#/definitions/hello',
+          _baseUrl: 'https://myschemastore/main/schema2.json',
           url: 'https://myschemastore/main/schema2.json',
         });
         assert.deepEqual(fs.schema.properties['p2'], {
           type: 'string',
           enum: ['object'],
           _$ref: './schema2.json#/definitions/hello',
+          _baseUrl: 'https://myschemastore/main/schema2.json',
           url: 'https://myschemastore/main/schema2.json',
         });
         assert.deepEqual(fs.schema.properties['p3'], {
           type: 'string',
           enum: ['object'],
           _$ref: '/main/schema2.json#/definitions/hello',
+          _baseUrl: 'https://myschemastore/main/schema2.json',
           url: 'https://myschemastore/main/schema2.json',
         });
       })
@@ -203,6 +217,289 @@ describe('JSON Schema', () => {
           testDone(error);
         }
       );
+  });
+
+  describe('Compound Schema Documents', () => {
+    let validationHandler: ValidationHandler;
+    let yamlSettings: SettingsState;
+    let schemaProvider: TestCustomSchemaProvider;
+
+    before(() => {
+      const languageSettingsSetup = new ServiceSetup().withValidate();
+      const {
+        validationHandler: valHandler,
+        yamlSettings: settings,
+        schemaProvider: provider,
+      } = setupLanguageService(languageSettingsSetup.languageSettings);
+      validationHandler = valHandler;
+      yamlSettings = settings;
+      schemaProvider = provider;
+    });
+
+    function parseSetup(content: string, customSchemaID?: string): Promise<Diagnostic[]> {
+      const testTextDocument = setupSchemaIDTextDocument(content, customSchemaID);
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      return validationHandler.validateTextDocument(testTextDocument);
+    }
+
+    describe('embedded resources', () => {
+      const ROOT_URI = 'https://example.com/schema/customer';
+      const rootSchema: JsonSchema.JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $id: 'https://example.com/schema/customer',
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          phone: { $ref: '/schema/common#/$defs/phone' },
+          address: { $ref: '/schema/address' },
+        },
+        required: ['name', 'phone', 'address'],
+        additionalProperties: false,
+        $defs: {
+          'https://example.com/schema/address': {
+            $id: 'https://example.com/schema/address',
+            type: 'object',
+            properties: {
+              address: { type: 'string' },
+              city: { type: 'string' },
+              postalCode: { $ref: '/schema/common#USZip' },
+              state: { $ref: '#/$defs/states' },
+            },
+            required: ['address', 'city', 'postalCode', 'state'],
+            additionalProperties: false,
+            $defs: {
+              states: {
+                enum: ['CA', 'NY'],
+              },
+            },
+          },
+          'https://example.com/schema/common': {
+            $schema: 'https://json-schema.org/draft/2019-09/schema',
+            $id: 'https://example.com/schema/common',
+            $defs: {
+              phone: {
+                type: 'string',
+                pattern: '^[+]?[(]?[0-9]{3}[)]?[-s.]?[0-9]{3}[-s.]?[0-9]{4,6}$',
+              },
+              usaPostalCode: {
+                $anchor: 'USZip',
+                type: 'string',
+                pattern: '^[0-9]{5}(?:-[0-9]{4})?$',
+              },
+              unsignedInt: {
+                type: 'integer',
+                minimum: 0,
+              },
+            },
+          },
+        },
+      };
+
+      beforeEach(() => {
+        schemaProvider.addSchemaWithUri(ROOT_URI, ROOT_URI, rootSchema);
+      });
+
+      afterEach(() => {
+        schemaProvider.deleteSchema(ROOT_URI);
+      });
+
+      it('accepts valid instances that reference embedded resources', async () => {
+        const content = `name: "Customer1"
+phone: "123-123-1234"
+address:
+  address: "123 King St"
+  city: "San Francisco"
+  postalCode: "12345-6789"
+  state: "CA"
+`;
+        const result = await parseSetup(content, ROOT_URI);
+        expect(result).to.be.empty;
+      });
+
+      it('reports validation errors across embedded resources', async () => {
+        const content = `name: 123
+phone: "not a phone"
+address:
+  address: "123 King St"
+  city: "Toronto"
+  postalCode: "ABCDE"
+  state: "ZZ"
+`;
+        const result = await parseSetup(content, ROOT_URI);
+        expect(result).to.have.length(4);
+        expect(result[0].message).to.include('Incorrect type.');
+        expect(result[0].message).to.include('string');
+        expect(result[1].message).to.include('String does not match the pattern');
+        expect(result[2].message).to.include('String does not match the pattern');
+        expect(result[3].message).to.include('Value is not accepted. Valid values:');
+        expect(result[3].message).to.include('CA');
+        expect(result[3].message).to.include('NY');
+      });
+    });
+
+    describe('cross-dialect behavior', () => {
+      describe('ref sibling semantics across dialects', () => {
+        const ROOT_URI = 'https://example.com/schema/root';
+
+        describe('draft-07 root with draft-2019-09 embedded resource', () => {
+          const rootSchema: JsonSchema.JSONSchema = {
+            $schema: 'http://json-schema.org/draft-07/schema#',
+            $id: 'https://example.com/schema/root',
+            type: 'object',
+            properties: {
+              code: { $ref: '/schema/embedded' },
+            },
+            required: ['code'],
+            additionalProperties: false,
+            $defs: {
+              'https://example.com/schema/embedded': {
+                $schema: 'https://json-schema.org/draft/2019-09/schema',
+                $id: 'https://example.com/schema/embedded',
+                $defs: {
+                  BaseString: { type: 'string' },
+                },
+                allOf: [
+                  {
+                    $ref: '#/$defs/BaseString',
+                    minLength: 5,
+                    pattern: '^foo',
+                  },
+                ],
+              },
+            },
+          };
+
+          beforeEach(() => {
+            schemaProvider.addSchemaWithUri(ROOT_URI, ROOT_URI, rootSchema);
+          });
+
+          afterEach(() => {
+            schemaProvider.deleteSchema(ROOT_URI);
+          });
+
+          it('applies $ref sibling constraints inside embedded 2019-09 resource', async () => {
+            const content = `code: "bar"`;
+            const result = await parseSetup(content, ROOT_URI);
+            expect(result).to.have.length(2);
+            expect(result[0].message).to.include('String is shorter than the minimum length of 5.');
+            expect(result[1].message).to.include('String does not match the pattern');
+          });
+
+          it('accepts value that satisfies embedded 2019-09 constraints', async () => {
+            const content = `code: "foobar"`;
+            const result = await parseSetup(content, ROOT_URI);
+            expect(result).to.be.empty;
+          });
+        });
+
+        describe('draft-2019-09 root with draft-07 embedded resource', () => {
+          const rootSchema: JsonSchema.JSONSchema = {
+            $schema: 'https://json-schema.org/draft/2019-09/schema',
+            $id: 'https://example.com/schema/root',
+            type: 'object',
+            properties: {
+              code: { $ref: '/schema/embedded' },
+            },
+            required: ['code'],
+            additionalProperties: false,
+            $defs: {
+              'https://example.com/schema/embedded': {
+                $schema: 'http://json-schema.org/draft-07/schema#',
+                $id: 'https://example.com/schema/embedded',
+                $defs: {
+                  BaseString: { type: 'string' },
+                },
+                allOf: [
+                  {
+                    $ref: '#/$defs/BaseString',
+                    minLength: 999,
+                    pattern: '^SHOULD_NOT_APPLY$',
+                  },
+                ],
+              },
+            },
+          };
+
+          beforeEach(() => {
+            schemaProvider.addSchemaWithUri(ROOT_URI, ROOT_URI, rootSchema);
+          });
+
+          afterEach(() => {
+            schemaProvider.deleteSchema(ROOT_URI);
+          });
+
+          it('ignores $ref sibling constraints inside embedded draft-07 resource', async () => {
+            const content = `code: "bar"`;
+            const result = await parseSetup(content, ROOT_URI);
+            expect(result).to.be.empty;
+          });
+
+          it('still enforces the referenced target schema (type string)', async () => {
+            const content = `code: 123`;
+            const result = await parseSetup(content, ROOT_URI);
+            expect(result).to.have.length(1);
+            expect(result[0].message).to.include('Incorrect type.');
+            expect(result[0].message).to.include('string');
+          });
+        });
+      });
+
+      describe('meta validation for mixed-dialect subschemas', () => {
+        afterEach(() => {
+          schemaProvider.deleteSchema(SCHEMA_ID);
+        });
+
+        it('draft-2020 root with draft-04 subschema', async () => {
+          const schema: JsonSchema.JSONSchema = {
+            $schema: 'https://json-schema.org/draft/2020-12/schema',
+            type: 'object',
+            properties: {
+              age: {
+                allOf: [
+                  {
+                    $schema: 'http://json-schema.org/draft-04/schema#',
+                    type: 'number',
+                    minimum: 0,
+                    exclusiveMinimum: 0,
+                  },
+                ],
+              },
+            },
+          };
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const failResult = await parseSetup('age: 0');
+          expect(failResult).to.have.length(1);
+          expect(failResult[0].message).to.include('is not valid:');
+          expect(failResult[0].message).to.include(SCHEMA_ID);
+          expect(failResult[0].message).to.include('exclusiveMinimum : must be boolean');
+        });
+
+        it('draft-2020 root with draft-07 subschema', async () => {
+          const schema: JsonSchema.JSONSchema = {
+            $schema: 'https://json-schema.org/draft/2020-12/schema',
+            type: 'object',
+            properties: {
+              score: {
+                anyOf: [
+                  {
+                    $schema: 'http://json-schema.org/draft-07/schema#',
+                    type: 'number',
+                    exclusiveMinimum: true,
+                  },
+                ],
+              },
+            },
+          };
+          schemaProvider.addSchema(SCHEMA_ID, schema);
+          const failResult = await parseSetup('score: 0');
+          expect(failResult).to.have.length(1);
+          expect(failResult[0].message).to.include('is not valid:');
+          expect(failResult[0].message).to.include(SCHEMA_ID);
+          expect(failResult[0].message).to.include('exclusiveMinimum : must be number');
+        });
+      });
+    });
   });
 
   it('FileSchema', function (testDone) {
@@ -699,6 +996,70 @@ describe('JSON Schema', () => {
       assert.strictEqual((result.items[0].documentation as MarkupContent).value, '# FooBar\n```Foo Bar```');
       assert.strictEqual((result.items[1].documentation as MarkupContent).value, '# FooBaz\n```Foo Baz```');
     });
+  });
+
+  describe('Test getGroupVersionKindFromDocument', function () {
+    it('builtin kubernetes resource group should not get resolved', async () => {
+      checkReturnGroupVersionKind('apiVersion: v1\nkind: Pod', true, undefined, 'v1', 'Pod');
+    });
+
+    it('builtin kubernetes resource with complex apiVersion should get resolved ', async () => {
+      checkReturnGroupVersionKind(
+        'apiVersion: admissionregistration.k8s.io/v1\nkind: MutatingWebhook',
+        false,
+        'admissionregistration.k8s.io',
+        'v1',
+        'MutatingWebhook'
+      );
+    });
+
+    it('custom argo application CRD should get resolved', async () => {
+      checkReturnGroupVersionKind(
+        'apiVersion: argoproj.io/v1alpha1\nkind: Application',
+        false,
+        'argoproj.io',
+        'v1alpha1',
+        'Application'
+      );
+    });
+
+    it('custom argo application CRD with whitespace should get resolved', async () => {
+      checkReturnGroupVersionKind(
+        'apiVersion: argoproj.io/v1alpha1\nkind: Application ',
+        false,
+        'argoproj.io',
+        'v1alpha1',
+        'Application'
+      );
+    });
+
+    it('custom argo application CRD with other fields should get resolved', async () => {
+      checkReturnGroupVersionKind(
+        'someOtherVal: test\napiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: my-app',
+        false,
+        'argoproj.io',
+        'v1alpha1',
+        'Application'
+      );
+    });
+
+    function checkReturnGroupVersionKind(
+      content: string,
+      error: boolean,
+      expectedGroup: string,
+      expectedVersion: string,
+      expectedKind: string
+    ): void {
+      const yamlDoc = parser.parse(content);
+      const res = getGroupVersionKindFromDocument(yamlDoc.documents[0]);
+      if (error) {
+        assert.strictEqual(res, undefined);
+      } else {
+        assert.strictEqual(res.group, expectedGroup);
+        assert.strictEqual(res.version, expectedVersion);
+        assert.strictEqual(res.kind, expectedKind);
+      }
+    }
   });
 
   describe('Test getSchemaFromModeline', function () {
