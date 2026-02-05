@@ -33,6 +33,8 @@
   "Array does not contain required item.": "数组中缺少必需项。",
   "Array has too few items. Expected {0} or more.": "数组项数不足。应为 {0} 项或更多。",
   "Array has too many items. Expected {0} or fewer.": "数组项数过多。应为 {0} 项或更少。",
+  "Array has too few items matching \"contains\". Expected {0} or more.": "匹配 \"contains\" 的数组项数不足。应为 {0} 项或更多。",
+  "Array has too many items matching \"contains\". Expected {0} or fewer.": "匹配 \"contains\" 的数组项数过多。应为 {0} 项或更少。",
   "Array has duplicate items.": "数组中包含重复项。",
   "Property {0} is not allowed.": "属性 {0} 不被允许。",
   "Object has more properties than limit of {0}.": "对象的属性数超过了限制 {0}。",

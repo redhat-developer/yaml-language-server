@@ -2,7 +2,7 @@
 
 # YAML Language Server
 
-Supports JSON Schema 7 and below.
+Supports JSON Schema drafts 04, 07, 2019-09, and 2020-12.
 Starting from `1.0.0` the language server uses [eemeli/yaml](https://github.com/eemeli/yaml) as the new YAML parser, which strictly enforces the specified YAML spec version. Default YAML spec version is `1.2`, it can be changed with `yaml.yamlVersion` setting.
 
 ## Features

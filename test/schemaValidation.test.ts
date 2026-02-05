@@ -23,7 +23,7 @@ import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
-import { IProblem } from '../src/languageservice/parser/jsonParser07';
+import { IProblem } from '../src/languageservice/parser/schemaValidation/baseValidator';
 import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { TestTelemetry } from './utils/testsTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
@@ -1887,6 +1887,207 @@ obj:
   });
 
   describe('Bug fixes', () => {
+    describe('Base URI + $id resolution', () => {
+      it('$id URI fragments in Draft-07 (plain-name fragment resolution)"', async () => {
+        const schema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          $id: 'https://example.com/schema/root',
+          type: 'object',
+          properties: {
+            phoneLocal: { $ref: '#Phone' },
+            phoneAbsolute: { $ref: 'https://example.com/schema/root#Phone' },
+          },
+          required: ['phoneLocal', 'phoneAbsolute'],
+          $defs: {
+            phoneDef: {
+              $id: 'https://example.com/schema/root#Phone',
+              type: 'string',
+              pattern: '^[0-9]{3}-[0-9]{3}-[0-9]{4}$',
+            },
+          },
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const invalid = `phoneLocal: "4165551234"\nphoneAbsolute: "4165551234"`;
+        const result = await parseSetup(invalid);
+        expect(result).to.have.length(2);
+        expect(result[0].message).to.include('String does not match the pattern');
+        expect(result[1].message).to.include('String does not match the pattern');
+      });
+
+      it('should resolve plain-name fragment via subschema $id (fragment form)', async () => {
+        const schema: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          definitions: {
+            Name: {
+              $id: '#Thing',
+              type: 'string',
+              minLength: 2,
+            },
+          },
+          $ref: '#Thing',
+        };
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const result = await parseSetup('A');
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
+      });
+
+      it('root $id updates base URI for resolving relative $ref targets', async () => {
+        const other: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          $id: 'http://example.com/other.json',
+          definitions: {
+            X: {
+              $id: '#bar',
+              type: 'string',
+              minLength: 2,
+            },
+          },
+        };
+        const root: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          $id: 'http://example.com/root.json',
+          type: 'object',
+          properties: {
+            x: { $ref: 'other.json#bar' },
+          },
+          required: ['x'],
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://example.com/other.json', other);
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///root.schema.json', root);
+        const yaml = `# yaml-language-server: $schema=file:///root.schema.json
+x: A
+`;
+        const result = await parseSetup(yaml, 'file:///root.schema.json');
+        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
+      });
+
+      it('subschema $id updates base URI for relative $ref inside that subschema', async () => {
+        const nestedTarget: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          type: 'string',
+          minLength: 2,
+        };
+        const root: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          $id: 'http://example.com/root.json',
+          type: 'object',
+          properties: {
+            x: {
+              $id: 'http://example.com/other/',
+              $ref: 'sub.json',
+            },
+          },
+          required: ['x'],
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'http://example.com/other/sub.json', nestedTarget);
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///nested-base.schema.json', root);
+        const yaml = `# yaml-language-server: $schema=file:///nested-base.schema.json
+x: A
+`;
+        const result = await parseSetup(yaml, 'file:///nested-base.schema.json');
+        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
+      });
+
+      it('should resolve embedded resource $id for relative $ref without external load', async () => {
+        const root: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          type: 'object',
+          properties: {
+            x: { $ref: 'other.json#bar' },
+          },
+          required: ['x'],
+          definitions: {
+            B: {
+              $id: 'other.json',
+              definitions: {
+                X: {
+                  $id: '#bar',
+                  type: 'string',
+                  minLength: 2,
+                },
+              },
+            },
+          },
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///embedded-resource.schema.json', root);
+        const yaml = `# yaml-language-server: $schema=file:///embedded-resource.schema.json
+x: A
+`;
+        const result = await parseSetup(yaml, 'file:///embedded-resource.schema.json');
+        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
+      });
+
+      it('root $id can switch base scheme/host for resolution', async () => {
+        const remotePackageSchema: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          type: 'object',
+        };
+        const baseOk: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          $id: 'https://www.schemastore.org/',
+          type: 'object',
+          properties: {
+            pkg: { $ref: 'package.json' },
+          },
+          required: ['pkg'],
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'https://www.schemastore.org/package.json', remotePackageSchema);
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///baseuri-ok.schema.json', baseOk);
+        const yaml = `# yaml-language-server: $schema=file:///baseuri-ok.schema.json
+pkg: 123
+`;
+        const result = await parseSetup(yaml, 'file:///baseuri-ok.schema.json');
+        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result[0].message).to.include('Incorrect type.');
+      });
+
+      it('without root $id, relative $ref resolves against the retrieval URI and can fail', async () => {
+        const baseFail: JSONSchema = {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          type: 'object',
+          properties: {
+            pkg: { $ref: 'package.json' },
+          },
+          required: ['pkg'],
+        };
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///baseuri-fail.schema.json', baseFail);
+        const yaml = `# yaml-language-server: $schema=file:///baseuri-fail.schema.json
+pkg: 123
+`;
+        const result = await parseSetup(yaml, 'file:///baseuri-fail.schema.json');
+        expect(result).to.not.be.empty;
+        expect(result.some((d) => /Problems loading reference/i.test(d.message) && /No content/i.test(d.message))).to.eq(true);
+      });
+    });
+
+    it('Resolving $refs: should ignore sibling keywords next to $ref', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
+        properties: {
+          value: {
+            $ref: '#/definitions/A',
+            type: 'number',
+          },
+        },
+        definitions: {
+          A: { type: 'string' },
+        },
+      } as JSONSchema);
+
+      expect(await parseSetup(`value: hello`)).to.be.empty;
+      const bad = await parseSetup(`value: 1`);
+      expect(bad[0].message).to.include('Incorrect type. Expected');
+      expect(bad[0].message).to.include('string');
+    });
+
     it('schema should validate additionalProp oneOf', async () => {
       const schema = {
         properties: {
@@ -1966,88 +2167,6 @@ obj:
       const result = await parseSetup(content);
       expect(result).to.be.empty;
       expect(telemetry.messages).to.be.empty;
-    });
-
-    describe('Schema meta-validation', () => {
-      it('should handle not valid schema object', async () => {
-        const schema = 'Foo';
-        schemaProvider.addSchema(SCHEMA_ID, schema as JSONSchema);
-        const content = `foo: bar`;
-        const result = await parseSetup(content);
-        expect(result).to.have.length(1);
-        expect(result[0].message).to.include('default_schema_id.yaml');
-        expect(result[0].message).to.include('is not valid:');
-        expect(result[0].message).to.include('expected a JSON Schema object or boolean, got string');
-        expect(telemetry.messages).to.be.empty;
-      });
-
-      const content = '6';
-
-      it('draft-04: exclusiveMinimum must be boolean', async () => {
-        const schema = {
-          $schema: 'http://json-schema.org/draft-04/schema#',
-          type: 'number',
-          minimum: 5,
-          exclusiveMinimum: 5,
-        } as unknown as JSONSchema;
-        schemaProvider.addSchema(SCHEMA_ID, schema);
-        const result = await parseSetup(content);
-        expect(result).to.have.length(1);
-        expect(result[0].message).to.include('default_schema_id.yaml');
-        expect(result[0].message).to.include('is not valid:');
-        expect(result[0].message).to.include('exclusiveMinimum');
-      });
-
-      it('draft-07: exclusiveMinimum must be number', async () => {
-        const schema: JSONSchema = {
-          $schema: 'http://json-schema.org/draft-07/schema#',
-          type: 'number',
-          minimum: 5,
-          exclusiveMinimum: true,
-        };
-        schemaProvider.addSchema(SCHEMA_ID, schema);
-        const result = await parseSetup(content);
-        expect(result).to.have.length(1);
-        expect(result[0].message).to.include('default_schema_id.yaml');
-        expect(result[0].message).to.include('is not valid:');
-        expect(result[0].message).to.include('exclusiveMinimum');
-      });
-
-      it('draft-2019-09: should handle invalid type in $defs', async () => {
-        const schema: JSONSchema = {
-          $schema: 'https://json-schema.org/draft/2019-09/schema',
-          $defs: {
-            foo: {
-              type: 'object',
-              properties: {
-                bar: {
-                  type: ['foo', 'bar'],
-                },
-              },
-            },
-          },
-        };
-        schemaProvider.addSchema(SCHEMA_ID, schema);
-        const result = await parseSetup(content);
-        expect(result).to.have.length(1);
-        expect(result[0].message).to.include('default_schema_id.yaml');
-        expect(result[0].message).to.include('is not valid:');
-        expect(result[0].message).to.include('$defs');
-      });
-
-      it('draft-2020-12: prefixItems must be an array', async () => {
-        const schema = {
-          $schema: 'https://json-schema.org/draft/2020-12/schema',
-          type: 'number',
-          prefixItems: 'foo',
-        } as unknown as JSONSchema;
-        schemaProvider.addSchema(SCHEMA_ID, schema);
-        const result = await parseSetup(content);
-        expect(result).to.have.length(1);
-        expect(result[0].message).to.include('default_schema_id.yaml');
-        expect(result[0].message).to.include('is not valid:');
-        expect(result[0].message).to.include('prefixItems');
-      });
     });
 
     it('should handle bad schema refs', async () => {
@@ -2231,6 +2350,90 @@ obj:
       expect(telemetry.messages).to.be.empty;
     });
   });
+
+  describe('Schema meta-validation', () => {
+    it('should handle not valid schema object', async () => {
+      const schema = 'Foo';
+      schemaProvider.addSchema(SCHEMA_ID, schema as JSONSchema);
+      const content = `foo: bar`;
+      const result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('default_schema_id.yaml');
+      expect(result[0].message).to.include('is not valid:');
+      expect(result[0].message).to.include('expected a JSON Schema object or boolean, got');
+      expect(result[0].message).to.include('string');
+      expect(telemetry.messages).to.be.empty;
+    });
+
+    const content = '6';
+
+    it('draft-04: exclusiveMinimum must be boolean', async () => {
+      const schema = {
+        $schema: 'http://json-schema.org/draft-04/schema#',
+        type: 'number',
+        minimum: 5,
+        exclusiveMinimum: 5,
+      } as unknown as JSONSchema;
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('default_schema_id.yaml');
+      expect(result[0].message).to.include('is not valid:');
+      expect(result[0].message).to.include('exclusiveMinimum');
+    });
+
+    it('draft-07: exclusiveMinimum must be number', async () => {
+      const schema: JSONSchema = {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'number',
+        minimum: 5,
+        exclusiveMinimum: true,
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('default_schema_id.yaml');
+      expect(result[0].message).to.include('is not valid:');
+      expect(result[0].message).to.include('exclusiveMinimum');
+    });
+
+    it('draft-2019-09: should handle invalid type in $defs', async () => {
+      const schema: JSONSchema = {
+        $schema: 'https://json-schema.org/draft/2019-09/schema',
+        $defs: {
+          foo: {
+            type: 'object',
+            properties: {
+              bar: {
+                type: ['foo', 'bar'],
+              },
+            },
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('default_schema_id.yaml');
+      expect(result[0].message).to.include('is not valid:');
+      expect(result[0].message).to.include('$defs');
+    });
+
+    it('draft-2020-12: prefixItems must be an array', async () => {
+      const schema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'number',
+        prefixItems: 'foo',
+      } as unknown as JSONSchema;
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const result = await parseSetup(content);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('default_schema_id.yaml');
+      expect(result[0].message).to.include('is not valid:');
+      expect(result[0].message).to.include('prefixItems');
+    });
+  });
+
   it('Nested AnyOf const should correctly evaluate and merge problems', async () => {
     // note that 'missing form property' is necessary to trigger the bug (there has to be some problem in both subSchemas)
     // order of the object in `anyOf` is also important
