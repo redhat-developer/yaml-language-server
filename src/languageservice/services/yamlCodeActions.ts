@@ -275,7 +275,7 @@ export class YamlCodeActions {
         }
       });
       for (const node of matchingNodes) {
-        const range = Range.create(document.positionAt(node.range[0]), document.positionAt(node.range[2]));
+        const range = Range.create(document.positionAt(node.range[0]), document.positionAt(node.range[1]));
         const rewriter = new BlockStringRewriter(this.indentation, this.lineWidth);
         const foldedBlockScalar = rewriter.writeFoldedBlockScalar(node);
         if (foldedBlockScalar !== null) {
