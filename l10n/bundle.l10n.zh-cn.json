@@ -56,5 +56,7 @@
   "Flow style mapping is forbidden": "禁止使用 flow 样式的映射",
   "Flow style sequence is forbidden": "禁止使用 flow 样式的序列",
   "Unused anchor \"{0}\"": "未使用的锚点 \"{0}\"",
-  "Unresolved alias \"{0}\"": "未解析的别名 \"{0}\""
+  "Unresolved alias \"{0}\"": "未解析的别名 \"{0}\"",
+  "Convert string to folded block string": "将字符串转换为折叠块字符串",
+  "Convert string to literal block string": "将字符串转换为文字块字符串"
 }

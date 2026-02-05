@@ -17,7 +17,7 @@ function createParams(position: Position): DocumentOnTypeFormattingParams {
   };
 }
 describe('YAML On Type Formatter', () => {
-  it('should react on "\n" only', () => {
+  it('should react on "\\n" only', () => {
     const doc = setupTextDocument('foo:');
     const params = createParams(Position.create(1, 0));
     params.ch = '\t';

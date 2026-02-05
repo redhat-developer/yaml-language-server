@@ -3,7 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import * as l10n from '@vscode/l10n';
+import * as path from 'path';
+import { ErrorCode } from 'vscode-json-languageservice';
 import {
   CodeAction,
   CodeActionKind,
@@ -15,21 +17,24 @@ import {
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
 import { ClientCapabilities, CodeActionParams } from 'vscode-languageserver-protocol';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+
+import { CST, isMap, isSeq, isScalar, Scalar, visit, YAMLMap } from 'yaml';
+import { SourceToken } from 'yaml/dist/parse/cst';
+
 import { YamlCommands } from '../../commands';
-import * as path from 'path';
 import { TextBuffer } from '../utils/textBuffer';
 import { toYamlStringScalar } from '../utils/yamlScalar';
 import { LanguageSettings } from '../yamlLanguageService';
 import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
 import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings';
 import { matchOffsetToDocument } from '../utils/arrUtils';
-import { CST, isMap, isSeq, YAMLMap } from 'yaml';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
+
+import { BlockStringRewriter } from '../utils/block-string-rewriter';
 import { FlowStyleRewriter } from '../utils/flow-style-rewriter';
+
 import { ASTNode } from '../jsonASTTypes';
-import { SourceToken } from 'yaml/dist/parse/cst';
-import { ErrorCode } from 'vscode-json-languageservice';
-import * as l10n from '@vscode/l10n';
 
 interface YamlDiagnosticData {
   schemaUri: string[];
@@ -38,11 +43,13 @@ interface YamlDiagnosticData {
 }
 export class YamlCodeActions {
   private indentation = '  ';
+  private lineWidth = 80;
 
   constructor(private readonly clientCapabilities: ClientCapabilities) {}
 
-  configure(settings: LanguageSettings): void {
+  configure(settings: LanguageSettings, printWidth: number): void {
     this.indentation = settings.indentation;
+    this.lineWidth = printWidth;
   }
 
   getCodeAction(document: TextDocument, params: CodeActionParams): CodeAction[] | undefined {
@@ -57,6 +64,7 @@ export class YamlCodeActions {
     result.push(...this.getTabToSpaceConverting(params.context.diagnostics, document));
     result.push(...this.getUnusedAnchorsDelete(params.context.diagnostics, document));
     result.push(...this.getConvertToBlockStyleActions(params.context.diagnostics, document));
+    result.push(...this.getConvertStringToBlockStyleActions(params.range, document));
     result.push(...this.getKeyOrderActions(params.context.diagnostics, document));
     result.push(...this.getQuickFixForPropertyOrValueMismatch(params.context.diagnostics, document));
 
@@ -235,6 +243,57 @@ export class YamlCodeActions {
               l10n.t('Convert to block style {0}', blockTypeDescription),
               createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, rewriter.write(node))]),
               CodeActionKind.QuickFix
+            )
+          );
+        }
+      }
+    }
+    return results;
+  }
+
+  private getConvertStringToBlockStyleActions(range: Range, document: TextDocument): CodeAction[] {
+    const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
+
+    const startOffset: number = range ? document.offsetAt(range.start) : 0;
+    const endOffset: number = range ? document.offsetAt(range.end) : Infinity;
+
+    const results: CodeAction[] = [];
+    for (const singleYamlDocument of yamlDocument.documents) {
+      const matchingNodes: Scalar<string>[] = [];
+      visit(singleYamlDocument.internalDocument, (key, node) => {
+        if (isScalar(node)) {
+          if (
+            (startOffset <= node.range[0] && node.range[2] <= endOffset) ||
+            (node.range[0] <= startOffset && endOffset <= node.range[2])
+          ) {
+            if (node.type === 'QUOTE_DOUBLE' || node.type === 'QUOTE_SINGLE') {
+              if (typeof node.value === 'string' && (node.value.indexOf('\n') >= 0 || node.value.length > this.lineWidth)) {
+                matchingNodes.push(<Scalar<string>>node);
+              }
+            }
+          }
+        }
+      });
+      for (const node of matchingNodes) {
+        const range = Range.create(document.positionAt(node.range[0]), document.positionAt(node.range[1]));
+        const rewriter = new BlockStringRewriter(this.indentation, this.lineWidth);
+        const foldedBlockScalar = rewriter.writeFoldedBlockScalar(node);
+        if (foldedBlockScalar !== null) {
+          results.push(
+            CodeAction.create(
+              l10n.t('Convert string to folded block string'),
+              createWorkspaceEdit(document.uri, [TextEdit.replace(range, foldedBlockScalar)]),
+              CodeActionKind.Refactor
+            )
+          );
+        }
+        const literalBlockScalar = rewriter.writeLiteralBlockScalar(node);
+        if (literalBlockScalar !== null) {
+          results.push(
+            CodeAction.create(
+              l10n.t('Convert string to literal block string'),
+              createWorkspaceEdit(document.uri, [TextEdit.replace(range, literalBlockScalar)]),
+              CodeActionKind.Refactor
             )
           );
         }

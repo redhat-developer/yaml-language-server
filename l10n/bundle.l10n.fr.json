@@ -56,5 +56,7 @@
   "Flow style mapping is forbidden": "Le mappage de style de flux est interdit",
   "Flow style sequence is forbidden": "La séquence de style Flow est interdite",
   "Unused anchor \"{0}\"": "Ancre inutilisée '{0}'",
-  "Unresolved alias \"{0}\"": "Alias non résolu '{0}'"
+  "Unresolved alias \"{0}\"": "Alias non résolu '{0}'",
+  "Convert string to folded block string": "Convertir la chaîne en style de bloc pliée",
+  "Convert string to literal block string": "Convertir la chaîne en style de bloc littérale"
 }

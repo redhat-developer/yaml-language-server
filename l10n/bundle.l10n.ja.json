@@ -56,5 +56,7 @@
   "Flow style mapping is forbidden": "フロースタイルのマッピングは禁止されています",
   "Flow style sequence is forbidden": "フロースタイルのシーケンスは禁止されています",
   "Unused anchor \"{0}\"": "未使用のアンカー \"{0}\"",
-  "Unresolved alias \"{0}\"": "未解決のエイリアス \"{0}\""
+  "Unresolved alias \"{0}\"": "未解決のエイリアス \"{0}\"",
+  "Convert string to folded block string": "文字列を折り畳みブロック文字列に変換する",
+  "Convert string to literal block string": "文字列をリテラルブロック文字列に変換する"
 }

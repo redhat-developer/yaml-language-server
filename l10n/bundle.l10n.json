@@ -41,7 +41,6 @@
   "Object has fewer properties than the required number of {0}": "Object has fewer properties than the required number of {0}",
   "Object is missing property {0} required by property {1}.": "Object is missing property {0} required by property {1}.",
   "Inline schema": "Inline schema",
-  "Create an item of an array{0}{1}": "Create an item of an array{0}{1}",
   "- (array item) ": "- (array item) ",
   "Allowed Values:": "Allowed Values:",
   "Example:": "Example:",
@@ -56,5 +55,7 @@
   "Flow style mapping is forbidden": "Flow style mapping is forbidden",
   "Flow style sequence is forbidden": "Flow style sequence is forbidden",
   "Unused anchor \"{0}\"": "Unused anchor \"{0}\"",
-  "Unresolved alias \"{0}\"": "Unresolved alias \"{0}\""  
+  "Unresolved alias \"{0}\"": "Unresolved alias \"{0}\"",
+  "Convert string to folded block string": "Convert string to folded block string",
+  "Convert string to literal block string": "Convert string to literal block string"
 }

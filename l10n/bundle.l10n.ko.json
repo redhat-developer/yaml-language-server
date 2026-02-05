@@ -56,5 +56,7 @@
   "Flow style mapping is forbidden": "Flow 스타일 맵 사용이 금지됨",
   "Flow style sequence is forbidden": "Flow 스타일 시퀀스 사용이 금지됨",
   "Unused anchor \"{0}\"": "사용되지 않은 앵커 \"{0}\"",
-  "Unresolved alias \"{0}\"": "해결되지 않은 별칭 \"{0}\""
+  "Unresolved alias \"{0}\"": "해결되지 않은 별칭 \"{0}\"",
+  "Convert string to folded block string": "문자열을 접힌 블록 문자열로 변환합니다.",
+  "Convert string to literal block string": "문자열을 리터럴 블록 문자열로 변환합니다."
 }
