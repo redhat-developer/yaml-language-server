@@ -865,5 +865,28 @@ animals: [dog , cat , mouse]  `;
       const result = actions.getCodeAction(doc, params);
       expect(result).to.have.length(0);
     });
+    it('process block string conversion only til closing quote', function () {
+      const docContent =
+        'longline: "ine1thisisaverylonglinethisisaverylonglineine1thisisaverylonglinethisisaverylongline"\n\n# a line';
+      const doc = setupTextDocument(docContent);
+      const params: CodeActionParams = {
+        context: CodeActionContext.create([]),
+        range: Range.create(Position.create(0, 11), Position.create(0, 12)),
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.have.length(1);
+      const edit0: WorkspaceEdit = {
+        changes: {},
+      };
+      edit0.changes[TEST_URI] = [
+        TextEdit.replace(
+          Range.create(Position.create(0, 10), Position.create(0, 96)),
+          '>-\n  ine1thisisaverylonglinethisisaverylonglineine1thisisaverylonglinethisisaverylongline'
+        ),
+      ];
+      expect(result[0].edit).to.deep.equal(edit0);
+    });
   });
 });
