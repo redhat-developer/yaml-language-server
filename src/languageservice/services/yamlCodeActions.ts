@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as l10n from '@vscode/l10n';
-import * as _ from 'lodash';
 import * as path from 'path';
 import { ErrorCode } from 'vscode-json-languageservice';
 import {
@@ -282,7 +281,7 @@ export class YamlCodeActions {
         if (foldedBlockScalar !== null) {
           results.push(
             CodeAction.create(
-              l10n.t('convertToFoldedBlockString'),
+              l10n.t('Convert string to folded block string'),
               createWorkspaceEdit(document.uri, [TextEdit.replace(range, foldedBlockScalar)]),
               CodeActionKind.Refactor
             )
@@ -292,7 +291,7 @@ export class YamlCodeActions {
         if (literalBlockScalar !== null) {
           results.push(
             CodeAction.create(
-              l10n.t('convertToLiteralBlockString'),
+              l10n.t('Convert string to literal block string'),
               createWorkspaceEdit(document.uri, [TextEdit.replace(range, literalBlockScalar)]),
               CodeActionKind.Refactor
             )
