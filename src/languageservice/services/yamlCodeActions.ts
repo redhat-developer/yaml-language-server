@@ -312,6 +312,27 @@ export class YamlCodeActions {
         }
         if (node && isMap(node.internalNode)) {
           const sorted: YAMLMap = structuredClone(node.internalNode);
+
+          const _getTrailingTokens = (value: CST.Token): SourceToken[] => {
+            if (!value) return;
+            if (CST.isScalar(value)) {
+              if (value.type === 'block-scalar') {
+                value.props ??= [];
+                return value.props as SourceToken[];
+              }
+              value.end ??= [];
+              return value.end;
+            }
+            if (value.type === 'flow-collection') {
+              value.end ??= [];
+              return value.end;
+            }
+            if (value.type === 'block-map') {
+              const lastItem = value.items[value.items.length - 1];
+              return lastItem ? _getTrailingTokens(lastItem.value) : undefined;
+            }
+            return;
+          };
           if (
             (sorted.srcToken.type === 'block-map' || sorted.srcToken.type === 'flow-collection') &&
             (node.internalNode.srcToken.type === 'block-map' || node.internalNode.srcToken.type === 'flow-collection')
@@ -335,31 +356,18 @@ export class YamlCodeActions {
               const item = sorted.srcToken.items[i];
               const uItem = node.internalNode.srcToken.items[i];
               item.start = uItem.start;
-              if (
-                item.value?.type === 'alias' ||
-                item.value?.type === 'scalar' ||
-                item.value?.type === 'single-quoted-scalar' ||
-                item.value?.type === 'double-quoted-scalar'
-              ) {
-                const newLineIndex = item.value?.end?.findIndex((p) => p.type === 'newline') ?? -1;
-                let newLineToken = null;
-                if (uItem.value?.type === 'block-scalar') {
-                  newLineToken = uItem.value?.props?.find((p) => p.type === 'newline');
-                } else if (CST.isScalar(uItem.value)) {
-                  newLineToken = uItem.value?.end?.find((p) => p.type === 'newline');
-                }
-                if (newLineToken && newLineIndex < 0) {
-                  item.value.end = item.value.end ?? [];
-                  item.value.end.push(newLineToken as SourceToken);
-                }
-                if (!newLineToken && newLineIndex > -1) {
-                  item.value.end.splice(newLineIndex, 1);
-                }
-              } else if (item.value?.type === 'block-scalar') {
-                const newline = item.value.props.find((p) => p.type === 'newline');
-                if (!newline) {
-                  item.value.props.push({ type: 'newline', indent: 0, offset: item.value.offset, source: '\n' } as SourceToken);
-                }
+              // strip leading blank lines so reordered entries stay one-per-line
+              while (item.start?.[0]?.type === 'newline') item.start.shift();
+              const itemTokens = _getTrailingTokens(item.value);
+              const itemNewLineIndex = itemTokens?.findIndex((p) => p.type === 'newline') ?? -1;
+              const uNewLineToken =
+                _getTrailingTokens(uItem.value)?.find((p) => p.type === 'newline' && p.offset < node.offset + node.length) ??
+                null;
+              if (uNewLineToken && itemNewLineIndex < 0 && itemTokens) {
+                itemTokens.push({ type: 'newline', indent: 0, offset: item.value.offset, source: '\n' } as SourceToken);
+              }
+              if (!uNewLineToken && itemNewLineIndex > -1 && itemTokens) {
+                itemTokens.splice(itemNewLineIndex, 1);
               }
             }
           }
@@ -425,8 +433,15 @@ export class YamlCodeActions {
 function getNodeForDiagnostic(document: TextDocument, diagnostic: Diagnostic): ASTNode {
   const yamlDocuments = yamlDocumentsCache.getYamlDocument(document);
   const startOffset = document.offsetAt(diagnostic.range.start);
+  const endOffset = document.offsetAt(diagnostic.range.end);
   const yamlDoc = matchOffsetToDocument(startOffset, yamlDocuments);
-  const node = yamlDoc.getNodeFromOffset(startOffset);
+  let node = yamlDoc.getNodeFromOffset(startOffset);
+  if (node && startOffset < endOffset && node.offset + node.length === startOffset) {
+    const nodeInsideRange = yamlDoc.getNodeFromOffset(startOffset + 1);
+    if (nodeInsideRange) {
+      node = nodeInsideRange;
+    }
+  }
   return node;
 }
 
