@@ -27,6 +27,7 @@ export class MapKeyOrderValidator implements AdditionalValidator {
                 'mapKeyOrder'
               )
             );
+            break;
           }
         }
       }

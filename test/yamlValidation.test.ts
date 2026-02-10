@@ -191,7 +191,7 @@ animals: [dog , cat , mouse]  `;
     });
   });
   describe('Map keys order Tests', () => {
-    it('should report key order error', async () => {
+    it('should report the first key order error - test 1', async () => {
       const yaml = '- key 2: v\n  key 1: val\n  key 5: valu\n  key 3: ff';
       yamlSettings.keyOrdering = true;
       languageSettingsSetup = new ServiceSetup().withValidate().withKeyOrdering();
@@ -202,7 +202,7 @@ animals: [dog , cat , mouse]  `;
       yamlSettings = settings;
       const result = await parseSetup(yaml);
       expect(result).not.to.be.empty;
-      expect(result.length).to.be.equal(2);
+      expect(result.length).to.be.equal(1);
       expect(result).to.include.deep.members([
         createExpectedError(
           'Wrong ordering of key "key 2" in mapping',
@@ -214,12 +214,33 @@ animals: [dog , cat , mouse]  `;
           'YAML',
           'mapKeyOrder'
         ),
+      ]);
+    });
+    it('should report the first key order error - test 2', async () => {
+      const yaml = `one:
+  child: moo
+two:
+  child: moo
+three:
+  child: moo
+alpha: 1`;
+      yamlSettings.keyOrdering = true;
+      languageSettingsSetup = new ServiceSetup().withValidate().withKeyOrdering();
+      const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
+        languageSettingsSetup.languageSettings
+      );
+      validationHandler = valHandler;
+      yamlSettings = settings;
+      const result = await parseSetup(yaml);
+      expect(result).not.to.be.empty;
+      expect(result.length).to.be.equal(1);
+      expect(result).to.include.deep.members([
         createExpectedError(
-          'Wrong ordering of key "key 5" in mapping',
+          'Wrong ordering of key "two" in mapping',
           2,
+          0,
           2,
-          2,
-          7,
+          3,
           DiagnosticSeverity.Error,
           'YAML',
           'mapKeyOrder'
