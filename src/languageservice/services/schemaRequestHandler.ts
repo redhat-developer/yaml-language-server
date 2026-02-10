@@ -1,11 +1,11 @@
-import { URI } from 'vscode-uri';
-import { Connection, RequestType, WorkspaceFolder } from 'vscode-languageserver';
-import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
+import { join } from 'path';
+import { getErrorStatusDescription, xhr, XHRResponse } from 'request-light';
 import * as URL from 'url';
+import { Connection, RequestType, WorkspaceFolder } from 'vscode-languageserver';
+import { URI } from 'vscode-uri';
 import { CustomSchemaContentRequest, VSCodeContentRequest } from '../../requestTypes';
 import { isRelativePath, relativeToAbsolutePath } from '../utils/paths';
 import { WorkspaceContextService } from '../yamlLanguageService';
-import { dirname, join } from 'path';
 
 export interface FileSystem {
   readFile(fsPath: string, encoding?: string): Promise<string>;
@@ -20,7 +20,7 @@ namespace FSReadUri {
  * Handles schema content requests given the schema URI
  * @param uri can be a local file, vscode request, http(s) request or a custom request
  */
-export const schemaRequestHandler = (
+export const schemaRequestHandler = async (
   connection: Connection,
   uri: string,
   workspaceFolders: WorkspaceFolder[],
@@ -40,12 +40,13 @@ export const schemaRequestHandler = (
     // and this fix is specific to vscode-yaml on web, so don't use it in other cases
     if (workspaceFolders.length === 1 && isWeb) {
       const wsUri = URI.parse(workspaceFolders[0].uri);
-      const wsDirname = dirname(wsUri.path);
+      const wsDirname = wsUri.path;
       const modifiedUri = wsUri.with({ path: join(wsDirname, uri) });
-      return connection.sendRequest(FSReadUri.type, modifiedUri.toString()).catch((e) => {
+      try {
+        return connection.sendRequest(FSReadUri.type, modifiedUri.toString());
+      } catch (e) {
         connection.window.showErrorMessage(`failed to get content of '${modifiedUri}': ${e}`);
-        throw e;
-      });
+      }
     } else {
       uri = relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);
     }
