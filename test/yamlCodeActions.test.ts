@@ -296,6 +296,189 @@ animals: [dog , cat , mouse]  `;
       ]);
       expect(result[1].edit.changes[TEST_URI]).deep.equal([TextEdit.replace(Range.create(2, 9, 2, 21), `{a: 2, b: 1}\n`)]);
     });
+    it('should preserve line breaks when ordering block maps without trailing newline', () => {
+      const yaml = `one:
+  child: moo
+two:
+  child: moo
+three:
+  child: moo`;
+      const doc = setupTextDocument(yaml);
+      const diagnostics = [
+        createExpectedError(
+          'Wrong ordering of key "two" in mapping',
+          2,
+          0,
+          3,
+          2,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+      ];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.be.not.empty;
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([
+        TextEdit.replace(
+          Range.create(0, 0, 5, 12),
+          `one:
+  child: moo
+three:
+  child: moo
+two:
+  child: moo`
+        ),
+      ]);
+    });
+    it('should preserve line breaks when ordering block maps with trailing newline', () => {
+      const yaml = `one:
+  child: moo
+two:
+  child: moo
+three:
+  child: moo
+`;
+      const doc = setupTextDocument(yaml);
+      const diagnostics = [
+        createExpectedError(
+          'Wrong ordering of key "two" in mapping',
+          2,
+          0,
+          3,
+          2,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+      ];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.be.not.empty;
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([
+        TextEdit.replace(
+          Range.create(0, 0, 6, 0),
+          `one:
+  child: moo
+three:
+  child: moo
+two:
+  child: moo
+`
+        ),
+      ]);
+    });
+    it('reordered entries should stay one-per-line after reordering', () => {
+      const yaml = `one:
+  child: moo
+two:
+  child: moo
+three:
+  child: moo
+
+alpha: 1`;
+      const doc = setupTextDocument(yaml);
+      const diagnostics = [
+        createExpectedError(
+          'Wrong ordering of key "two" in mapping',
+          2,
+          0,
+          3,
+          2,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+      ];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.be.not.empty;
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].edit.changes[TEST_URI]).deep.equal([
+        TextEdit.replace(
+          Range.create(0, 0, 7, 8),
+          `alpha: 1
+one:
+  child: moo
+three:
+  child: moo
+two:
+  child: moo`
+        ),
+      ]);
+    });
+    it('should preserve trailing content after a map when ordering keys', () => {
+      const yaml = `one:
+  child: moo
+two:
+  child: moo
+three:
+  child: moo
+
+alpha: 1
+
+
+# comment`;
+      const doc = setupTextDocument(yaml);
+      const diagnostics = [
+        createExpectedError(
+          'Wrong ordering of key "two" in mapping',
+          2,
+          0,
+          3,
+          2,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+      ];
+      const params: CodeActionParams = {
+        context: CodeActionContext.create(diagnostics),
+        range: undefined,
+        textDocument: TextDocumentIdentifier.create(TEST_URI),
+      };
+      const actions = new YamlCodeActions(clientCapabilities);
+      const result = actions.getCodeAction(doc, params);
+      expect(result).to.be.not.empty;
+      expect(result).to.have.lengthOf(1);
+      const edit = result[0].edit.changes[TEST_URI][0];
+      expect(edit.range).deep.equal(Range.create(0, 0, 7, 8));
+      expect(edit.newText).to.equal(`alpha: 1
+one:
+  child: moo
+three:
+  child: moo
+two:
+  child: moo`);
+      const updated = yaml.slice(0, doc.offsetAt(edit.range.start)) + edit.newText + yaml.slice(doc.offsetAt(edit.range.end));
+      expect(updated).to.equal(`alpha: 1
+one:
+  child: moo
+three:
+  child: moo
+two:
+  child: moo
+
+
+# comment`);
+    });
     it(' should generate action to order maps with multi-line strings', () => {
       const yaml = '- cc: 1\n  gg: 2\n  aa: >\n    some\n    text\n  vv: 4';
       const doc = setupTextDocument(yaml);
