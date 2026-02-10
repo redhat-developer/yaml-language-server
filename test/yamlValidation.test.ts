@@ -209,7 +209,7 @@ animals: [dog , cat , mouse]  `;
           0,
           2,
           0,
-          9,
+          7,
           DiagnosticSeverity.Error,
           'YAML',
           'mapKeyOrder'
@@ -217,9 +217,9 @@ animals: [dog , cat , mouse]  `;
         createExpectedError(
           'Wrong ordering of key "key 5" in mapping',
           2,
-          0,
           2,
-          9,
+          2,
+          7,
           DiagnosticSeverity.Error,
           'YAML',
           'mapKeyOrder'
@@ -239,7 +239,42 @@ animals: [dog , cat , mouse]  `;
       expect(result).not.to.be.empty;
       expect(result.length).to.be.equal(1);
       expect(result).to.include.deep.members([
-        createExpectedError('Wrong ordering of key "b" in mapping', 0, 3, 0, 6, DiagnosticSeverity.Error, 'YAML', 'mapKeyOrder'),
+        createExpectedError('Wrong ordering of key "b" in mapping', 0, 3, 0, 4, DiagnosticSeverity.Error, 'YAML', 'mapKeyOrder'),
+      ]);
+    });
+    it('should report key order error for nested', async () => {
+      const yaml = 'one:\n  child: moo\ntwo:\n  mild: meh\n  child: moo\nthree:\n  child: moo';
+      yamlSettings.keyOrdering = true;
+      languageSettingsSetup = new ServiceSetup().withValidate().withKeyOrdering();
+      const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
+        languageSettingsSetup.languageSettings
+      );
+      validationHandler = valHandler;
+      yamlSettings = settings;
+      const result = await parseSetup(yaml);
+      expect(result).not.to.be.empty;
+      expect(result.length).to.be.equal(2);
+      expect(result).to.include.deep.members([
+        createExpectedError(
+          'Wrong ordering of key "two" in mapping',
+          2,
+          0,
+          2,
+          3,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+        createExpectedError(
+          'Wrong ordering of key "mild" in mapping',
+          3,
+          2,
+          3,
+          6,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
       ]);
     });
 
