@@ -435,7 +435,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         }
         hasNestedSchema.set(node, hasNested);
 
-        if (node === root || node.$schema) _metaValidateSchemaNode(node, hasNested);
+        if (node === root || node.$schema) await _metaValidateSchemaNode(node, hasNested);
       }
     };
 
