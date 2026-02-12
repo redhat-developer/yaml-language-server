@@ -4,12 +4,7 @@
  *
  *  The fix passes `loadSchema` as a callback parameter instead.
  *--------------------------------------------------------------------------------------------*/
-import {
-  SCHEMA_ID,
-  setupLanguageService,
-  setupSchemaIDTextDocument,
-  TestCustomSchemaProvider,
-} from './utils/testHelper';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, TestCustomSchemaProvider } from './utils/testHelper';
 import * as assert from 'assert';
 import { ServiceSetup } from './utils/serviceSetup';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
