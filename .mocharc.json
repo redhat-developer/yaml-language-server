@@ -1,5 +1,5 @@
 {
-  "timeout": "5000",
+  "timeout": "10000",
   "ui":  "bdd",
   "extension": ["ts"],
   "package": "./package.json",

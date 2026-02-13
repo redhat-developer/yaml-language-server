@@ -255,9 +255,10 @@ export class YAMLSchemaService extends JSONSchemaService {
      * Meta-validate a schema node against its dialect's meta-schema
      * ----------------------------
      */
+    const _loadSchema = this.loadSchema.bind(this);
     async function _metaValidateSchemaNode(node: JSONSchema, hasNestedSchema: boolean): Promise<void> {
       if (!node || typeof node !== 'object') return;
-      const dialect = await pickSchemaDialect(node.$schema);
+      const dialect = await pickSchemaDialect(node.$schema, _loadSchema);
       dialect && (node._dialect = dialect);
 
       const validator = pickMetaValidator(dialect);
@@ -434,7 +435,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         }
         hasNestedSchema.set(node, hasNested);
 
-        if (node === root || node.$schema) _metaValidateSchemaNode(node, hasNested);
+        if (node === root || node.$schema) await _metaValidateSchemaNode(node, hasNested);
       }
     };
 
@@ -1316,7 +1317,10 @@ function knownDialectFromSchemaUri(schemaUri?: string): SchemaDialect {
   return undefined;
 }
 
-async function pickSchemaDialect($schema: string | undefined): Promise<SchemaDialect> {
+async function pickSchemaDialect(
+  $schema: string | undefined,
+  loadSchema?: (uri: string) => Promise<UnresolvedSchema>
+): Promise<SchemaDialect> {
   if (!$schema) return undefined;
   const s = normalizeSchemaUri($schema || '');
 
@@ -1333,9 +1337,11 @@ async function pickSchemaDialect($schema: string | undefined): Promise<SchemaDia
     return inflight;
   }
 
+  if (!loadSchema) return undefined;
+
   // resolve custom dialect: load the dialect meta-schema doc and infer base dialect from its $schema
   const promise = (async () => {
-    const meta = await this.loadSchema(s);
+    const meta = await loadSchema(s);
     if (meta.errors?.length) return undefined;
     const metaSchema = meta.schema;
     if (!metaSchema || typeof metaSchema !== 'object') return undefined;
