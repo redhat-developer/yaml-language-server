@@ -920,7 +920,7 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
       assert.strictEqual(
         (hover.contents as MarkupContent).value,
-        `The YAML Language Server at https://github.com/redhat\\-developer/yaml\\-language\\-server\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `The YAML Language Server at https://github.com/redhat-developer/yaml-language-server\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -942,7 +942,7 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
       assert.strictEqual(
         (hover.contents as MarkupContent).value,
-        `Yaml Language Server (https://github.com/redhat\\-developer/yaml\\-language\\-server)\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `Yaml Language Server (https://github.com/redhat-developer/yaml-language-server)\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
   });
