@@ -176,11 +176,19 @@ export class SettingsHandler {
           this.yamlSettings.formatterRegistration = this.connection.client.register(DocumentFormattingRequest.type, {
             documentSelector: [
               { language: 'yaml' },
-              { language: 'dockercompose' },
-              { language: 'github-actions-workflow' },
               { language: 'yaml-textmate' },
               { language: 'yaml-tmlanguage' },
-              { pattern: '**/*.{yaml,yml}' },
+              { language: 'ansible' },
+              { language: 'ansible-jinja' },
+              { language: 'azure-pipelines' },
+              { language: 'dockercompose' },
+              { language: 'github-actions-workflow' },
+              { language: 'home-assistant' },
+              { language: 'home-assistant-jinja' },
+              { language: 'jekyll' },
+              { language: 'manifest-yaml' },
+              { language: 'sls' },
+              { language: 'spring-boot-properties-yaml' },
             ],
           });
         }
