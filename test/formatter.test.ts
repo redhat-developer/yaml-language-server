@@ -3,15 +3,29 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as assert from 'assert';
+import * as sinon from 'sinon';
 import { TextEdit } from 'vscode-languageserver-types';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
 import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 
+type LanguageHandlerWithConnection = {
+  connection: {
+    workspace: {
+      getConfiguration: (item?: { section?: string }) => Promise<unknown>;
+    };
+  };
+};
+
 describe('Formatter Tests', () => {
+  const sandbox = sinon.createSandbox();
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
+
+  afterEach(() => {
+    sandbox.restore();
+  });
 
   before(() => {
     const languageSettingsSetup = new ServiceSetup().withFormat();
@@ -41,6 +55,21 @@ describe('Formatter Tests', () => {
         console.dir({ edits });
         assert.notEqual(edits.length, 0);
         assert.equal(edits[0].newText, 'cwd: test\n');
+      });
+
+      it('Formatting can be disabled via language-overridable yaml.format.enable setting', async () => {
+        const content = 'cwd: test\n    test: 2';
+        const testTextDocument = setupTextDocument(content);
+        yamlSettings.documents = new TextDocumentTestManager();
+        (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+        const connection = (languageHandler as unknown as LanguageHandlerWithConnection).connection;
+        sandbox.stub(connection.workspace, 'getConfiguration').resolves({ 'yaml.format.enable': false });
+        yamlSettings.hasConfigurationCapability = true;
+        const edits = await languageHandler.formatterHandler({
+          options: { tabSize: 2, insertSpaces: true },
+          textDocument: testTextDocument,
+        });
+        assert.equal(edits.length, 0);
       });
 
       it('Formatting works with custom tags', async () => {

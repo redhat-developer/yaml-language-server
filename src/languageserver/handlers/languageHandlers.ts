@@ -40,6 +40,7 @@ import { SettingsState } from '../../yamlSettings';
 import { ValidationHandler } from './validationHandlers';
 import { ResultLimitReachedNotification } from '../../requestTypes';
 import * as path from 'path';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 export class LanguageHandlers {
   private languageService: LanguageService;
@@ -120,11 +121,16 @@ export class LanguageHandlers {
    * Called when the formatter is invoked
    * Returns the formatted document content using prettier
    */
-  formatterHandler(formatParams: DocumentFormattingParams): Promise<TextEdit[]> {
+  async formatterHandler(formatParams: DocumentFormattingParams): Promise<TextEdit[]> {
     const document = this.yamlSettings.documents.get(formatParams.textDocument.uri);
 
     if (!document) {
-      return;
+      return [];
+    }
+
+    const formatEnabled = await this.resolveFormatterState(document);
+    if (!formatEnabled) {
+      return [];
     }
 
     const customFormatterSettings = {
@@ -308,5 +314,25 @@ export class LanguageHandlers {
         this.pendingLimitExceededWarnings[uri] = warning;
       }
     };
+  }
+
+  private async resolveFormatterState(document: TextDocument): Promise<boolean> {
+    const fallback = this.yamlSettings.yamlFormatterSettings.enable !== false;
+    if (this.yamlSettings.hasConfigurationCapability && this.connection.workspace?.getConfiguration) {
+      try {
+        const scopedLanguageSettings = await this.connection.workspace.getConfiguration({
+          section: `[${document.languageId}]`,
+          scopeUri: document.uri,
+        });
+
+        if (typeof scopedLanguageSettings?.['yaml.format.enable'] === 'boolean') {
+          return scopedLanguageSettings['yaml.format.enable'];
+        }
+      } catch {
+        // ignore and fall back to global setting
+      }
+    }
+
+    return fallback;
   }
 }

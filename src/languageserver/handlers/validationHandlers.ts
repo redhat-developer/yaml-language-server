@@ -53,24 +53,49 @@ export class ValidationHandler {
       return;
     }
 
-    return this.languageService
-      .doValidation(textDocument, isKubernetesAssociatedDocument(textDocument, this.yamlSettings.specificValidatorPaths))
-      .then((diagnosticResults) => {
-        const diagnostics: Diagnostic[] = [];
-        for (const diagnosticItem of diagnosticResults) {
-          // Convert all warnings to errors
-          if (diagnosticItem.severity === 2) {
-            diagnosticItem.severity = 1;
-          }
-          diagnostics.push(diagnosticItem);
-        }
+    return this.resolveValidationState(textDocument).then((validationEnabled) => {
+      if (!validationEnabled) {
+        this.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
+        return [];
+      }
 
-        const removeDuplicatesDiagnostics = removeDuplicatesObj(diagnostics);
-        this.connection.sendDiagnostics({
-          uri: textDocument.uri,
-          diagnostics: removeDuplicatesDiagnostics,
+      return this.languageService
+        .doValidation(textDocument, isKubernetesAssociatedDocument(textDocument, this.yamlSettings.specificValidatorPaths))
+        .then((diagnosticResults) => {
+          const diagnostics: Diagnostic[] = [];
+          for (const diagnosticItem of diagnosticResults) {
+            // Convert all warnings to errors
+            if (diagnosticItem.severity === 2) {
+              diagnosticItem.severity = 1;
+            }
+            diagnostics.push(diagnosticItem);
+          }
+
+          const removeDuplicatesDiagnostics = removeDuplicatesObj(diagnostics);
+          this.connection.sendDiagnostics({
+            uri: textDocument.uri,
+            diagnostics: removeDuplicatesDiagnostics,
+          });
+          return removeDuplicatesDiagnostics;
         });
-        return removeDuplicatesDiagnostics;
-      });
+    });
+  }
+
+  private async resolveValidationState(document: TextDocument): Promise<boolean> {
+    if (this.yamlSettings.hasConfigurationCapability && this.connection.workspace?.getConfiguration) {
+      try {
+        const scopedLanguageSettings = await this.connection.workspace.getConfiguration({
+          section: `[${document.languageId}]`,
+          scopeUri: document.uri,
+        });
+
+        if (typeof scopedLanguageSettings?.['yaml.validate'] === 'boolean') {
+          return scopedLanguageSettings['yaml.validate'];
+        }
+      } catch {
+        // ignore and fall back to global setting
+      }
+    }
+    return this.yamlSettings.yamlShouldValidate;
   }
 }
