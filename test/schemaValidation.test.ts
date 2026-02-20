@@ -2594,4 +2594,30 @@ pkg: 123
     const result = await parseSetup(content);
     assert.equal(result.length, 0);
   });
+
+  it('resolves relative $ref using local sibling schema path before remote $id ref', async () => {
+    const primaryUri = 'file:///schemas/primary.json';
+    const secondaryUri = 'file:///schemas/secondary.json';
+    const primarySchema: JSONSchema = {
+      $id: 'https://example.com/schemas/primary.json',
+      type: 'object',
+      properties: {
+        mode: { $ref: 'secondary.json' },
+      },
+      required: ['mode'],
+    };
+    const secondarySchema: JSONSchema = {
+      $id: 'https://example.com/schemas/secondary.json',
+      type: 'string',
+      enum: ['dev', 'prod'],
+    };
+
+    schemaProvider.addSchemaWithUri(SCHEMA_ID, primaryUri, primarySchema);
+    schemaProvider.addSchemaWithUri(SCHEMA_ID, secondaryUri, secondarySchema);
+
+    const content = `# yaml-language-server: $schema=${primaryUri}\nmode: stage`;
+    const result = await parseSetup(content);
+    expect(result).to.have.length(1);
+    expect(result[0].message).to.include('Value is not accepted. Valid values');
+  });
 });

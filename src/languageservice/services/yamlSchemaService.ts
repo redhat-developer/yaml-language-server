@@ -346,6 +346,22 @@ export class YAMLSchemaService extends JSONSchemaService {
       return this.normalizeId(ref);
     };
 
+    const _preferLocalBaseForRemoteId = async (currentBase: string, id: string): Promise<string> => {
+      try {
+        const currentBaseUri = URI.parse(currentBase);
+        const idUri = URI.parse(id);
+        const localFileName = path.posix.basename(idUri.path);
+        const localDir = path.posix.dirname(currentBaseUri.path);
+        const localPath = path.posix.join(localDir, localFileName);
+        const localUriStr = currentBaseUri.with({ path: localPath, query: idUri.query, fragment: idUri.fragment }).toString();
+        if (localUriStr === currentBase) return localUriStr;
+        const content = await this.requestService(localUriStr);
+        return content ? localUriStr : _resolveAgainstBase(currentBase, id);
+      } catch {
+        return _resolveAgainstBase(currentBase, id);
+      }
+    };
+
     const _indexSchemaResources = async (root: JSONSchema, initialBaseUri: string): Promise<void> => {
       type WorkItem = { node: JSONSchema; baseUri: string };
       const preOrderStack: WorkItem[] = [{ node: root, baseUri: initialBaseUri }];
@@ -364,17 +380,17 @@ export class YAMLSchemaService extends JSONSchemaService {
         let baseUri = current.baseUri;
         const id = node.$id || node.id;
         if (id) {
-          const normalizedId = _resolveAgainstBase(baseUri, id);
-          node._baseUrl = normalizedId;
-          const hashIndex = normalizedId.indexOf('#');
-          if (hashIndex !== -1 && hashIndex < normalizedId.length - 1) {
+          const preferredBaseUri = await _preferLocalBaseForRemoteId(baseUri, id);
+          node._baseUrl = preferredBaseUri;
+          const hashIndex = preferredBaseUri.indexOf('#');
+          if (hashIndex !== -1 && hashIndex < preferredBaseUri.length - 1) {
             // Draft-07 and earlier: $id with fragment defines a plain-name anchor scoped to the resolved base
-            const frag = normalizedId.slice(hashIndex + 1);
+            const frag = preferredBaseUri.slice(hashIndex + 1);
             _getResourceIndex(baseUri).fragments.set(frag, { node });
           } else {
             // $id without fragment creates a new embedded resource scope
-            baseUri = normalizedId;
-            const entry = _getResourceIndex(normalizedId);
+            baseUri = preferredBaseUri;
+            const entry = _getResourceIndex(preferredBaseUri);
             if (!entry.root) {
               entry.root = node;
             }
@@ -440,7 +456,8 @@ export class YAMLSchemaService extends JSONSchemaService {
     };
 
     let schema = raw as JSONSchema;
-    await _indexSchemaResources(schema, schemaURL);
+    const schemaBaseURL = schemaToResolve.uri ?? schemaURL;
+    await _indexSchemaResources(schema, schemaBaseURL);
 
     const _findSection = (schemaRoot: JSONSchema, refPath: string, sourceURI: string): JSONSchema => {
       if (!refPath) {
