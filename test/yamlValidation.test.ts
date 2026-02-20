@@ -29,6 +29,27 @@ describe('YAML Validation Tests', () => {
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
     return validationHandler.validateTextDocument(testTextDocument);
   }
+
+  it('disables validation when language-overridable yaml.validate is false', async () => {
+    const testTextDocument = setupSchemaIDTextDocument('foo:\n\t- bar');
+    yamlSettings.documents = new TextDocumentTestManager();
+    (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+    const connection = (validationHandler as unknown as { connection: { workspace?: { getConfiguration?: unknown } } })
+      .connection;
+    const workspace = connection.workspace ?? {};
+    const originalGetConfiguration = workspace.getConfiguration;
+    workspace.getConfiguration = async (item?: { section?: string }) =>
+      item?.section === '[yaml]' ? { 'yaml.validate': false } : {};
+
+    try {
+      yamlSettings.hasConfigurationCapability = true;
+      const result = await validationHandler.validateTextDocument(testTextDocument);
+      expect(result).to.be.empty;
+    } finally {
+      workspace.getConfiguration = originalGetConfiguration;
+    }
+  });
+
   describe('TAB Character diagnostics', () => {
     it('Should report if TAB character present', async () => {
       const yaml = 'foo:\n\t- bar';

@@ -43,6 +43,30 @@ describe('Formatter Tests', () => {
         assert.equal(edits[0].newText, 'cwd: test\n');
       });
 
+      it('Formatting can be disabled via language-overridable yaml.format.enable setting', async () => {
+        const content = 'cwd: test\n    test: 2';
+        const testTextDocument = setupTextDocument(content);
+        yamlSettings.documents = new TextDocumentTestManager();
+        (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+        const connection = (languageHandler as unknown as { connection: { workspace?: { getConfiguration?: unknown } } })
+          .connection;
+        const workspace = connection.workspace ?? {};
+        const originalGetConfiguration = workspace.getConfiguration;
+        workspace.getConfiguration = async (item?: { section?: string }) =>
+          item?.section === '[yaml]' ? { 'yaml.format.enable': false } : {};
+
+        try {
+          yamlSettings.hasConfigurationCapability = true;
+          const edits = await languageHandler.formatterHandler({
+            options: { tabSize: 2, insertSpaces: true },
+            textDocument: testTextDocument,
+          });
+          assert.equal(edits.length, 0);
+        } finally {
+          workspace.getConfiguration = originalGetConfiguration;
+        }
+      });
+
       it('Formatting works with custom tags', async () => {
         const content = 'cwd:       !Test test';
         const edits = await parseSetup(content);
