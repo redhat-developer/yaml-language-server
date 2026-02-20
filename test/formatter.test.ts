@@ -3,15 +3,29 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as assert from 'assert';
+import * as sinon from 'sinon';
 import { TextEdit } from 'vscode-languageserver-types';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
 import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 
+type LanguageHandlerWithConnection = {
+  connection: {
+    workspace: {
+      getConfiguration: (item?: { section?: string }) => Promise<unknown>;
+    };
+  };
+};
+
 describe('Formatter Tests', () => {
+  const sandbox = sinon.createSandbox();
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
+
+  afterEach(() => {
+    sandbox.restore();
+  });
 
   before(() => {
     const languageSettingsSetup = new ServiceSetup().withFormat();
@@ -48,23 +62,14 @@ describe('Formatter Tests', () => {
         const testTextDocument = setupTextDocument(content);
         yamlSettings.documents = new TextDocumentTestManager();
         (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
-        const connection = (languageHandler as unknown as { connection: { workspace?: { getConfiguration?: unknown } } })
-          .connection;
-        const workspace = connection.workspace ?? {};
-        const originalGetConfiguration = workspace.getConfiguration;
-        workspace.getConfiguration = async (item?: { section?: string }) =>
-          item?.section === '[yaml]' ? { 'yaml.format.enable': false } : {};
-
-        try {
-          yamlSettings.hasConfigurationCapability = true;
-          const edits = await languageHandler.formatterHandler({
-            options: { tabSize: 2, insertSpaces: true },
-            textDocument: testTextDocument,
-          });
-          assert.equal(edits.length, 0);
-        } finally {
-          workspace.getConfiguration = originalGetConfiguration;
-        }
+        const connection = (languageHandler as unknown as LanguageHandlerWithConnection).connection;
+        sandbox.stub(connection.workspace, 'getConfiguration').resolves({ 'yaml.format.enable': false });
+        yamlSettings.hasConfigurationCapability = true;
+        const edits = await languageHandler.formatterHandler({
+          options: { tabSize: 2, insertSpaces: true },
+          textDocument: testTextDocument,
+        });
+        assert.equal(edits.length, 0);
       });
 
       it('Formatting works with custom tags', async () => {

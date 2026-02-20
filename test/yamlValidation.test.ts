@@ -8,12 +8,27 @@ import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
 import { setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
 
+type ValidationHandlerWithConnection = {
+  connection: {
+    workspace: {
+      getConfiguration: (item?: { section?: string }) => Promise<unknown>;
+    };
+  };
+};
+
 describe('YAML Validation Tests', () => {
+  const sandbox = sinon.createSandbox();
   let languageSettingsSetup: ServiceSetup;
   let validationHandler: ValidationHandler;
   let yamlSettings: SettingsState;
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   before(() => {
     languageSettingsSetup = new ServiceSetup().withValidate();
     const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
@@ -34,20 +49,11 @@ describe('YAML Validation Tests', () => {
     const testTextDocument = setupSchemaIDTextDocument('foo:\n\t- bar');
     yamlSettings.documents = new TextDocumentTestManager();
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
-    const connection = (validationHandler as unknown as { connection: { workspace?: { getConfiguration?: unknown } } })
-      .connection;
-    const workspace = connection.workspace ?? {};
-    const originalGetConfiguration = workspace.getConfiguration;
-    workspace.getConfiguration = async (item?: { section?: string }) =>
-      item?.section === '[yaml]' ? { 'yaml.validate': false } : {};
-
-    try {
-      yamlSettings.hasConfigurationCapability = true;
-      const result = await validationHandler.validateTextDocument(testTextDocument);
-      expect(result).to.be.empty;
-    } finally {
-      workspace.getConfiguration = originalGetConfiguration;
-    }
+    const connection = (validationHandler as unknown as ValidationHandlerWithConnection).connection;
+    sandbox.stub(connection.workspace, 'getConfiguration').resolves({ 'yaml.validate': false });
+    yamlSettings.hasConfigurationCapability = true;
+    const result = await validationHandler.validateTextDocument(testTextDocument);
+    expect(result).to.be.empty;
   });
 
   describe('TAB Character diagnostics', () => {
