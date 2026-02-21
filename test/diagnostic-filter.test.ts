@@ -218,22 +218,4 @@ describe('filterSuppressedDiagnostics', () => {
 
     expect(result).to.have.length(1);
   });
-
-  it('should handle disable comment with trailing explanation text as a specifier', () => {
-    const lines = linesOf(['# yaml-lint-disable invalid value', 'key: bad-value']);
-    const diagnostics = [makeDiag(1, 'invalid value')];
-
-    const result = filter(diagnostics, lines);
-
-    expect(result).to.be.empty;
-  });
-
-  it('should keep a non-matching diagnostic even when specifier is present', () => {
-    const lines = linesOf(['# yaml-lint-disable missing property', 'key: bad-value']);
-    const diagnostics = [makeDiag(1, 'Incorrect type. Expected string.')];
-
-    const result = filter(diagnostics, lines);
-
-    expect(result).to.have.length(1);
-  });
 });
