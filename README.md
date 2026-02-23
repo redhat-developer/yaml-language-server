@@ -58,12 +58,12 @@ The following settings are supported:
 
 ## Suppressing diagnostics
 
-You can suppress specific validation warnings on a per-line basis by adding a `# yaml-lint-disable` comment on the line immediately before the one producing the diagnostic.
+You can suppress specific validation warnings on a per-line basis by adding a `# yaml-language-server-disable` comment on the line immediately before the one producing the diagnostic.
 
 ### Suppress all diagnostics on a line
 
 ```yaml
-# yaml-lint-disable
+# yaml-language-server-disable
 version: 123
 ```
 
@@ -72,12 +72,12 @@ version: 123
 Provide one or more message substrings (comma-separated, case-insensitive). Only diagnostics whose message contains a matching substring will be suppressed; the rest are kept.
 
 ```yaml
-# yaml-lint-disable Incorrect type
+# yaml-language-server-disable Incorrect type
 version: 123
 ```
 
 ```yaml
-# yaml-lint-disable Incorrect type, not accepted
+# yaml-language-server-disable Incorrect type, not accepted
 version: 123
 ```
 

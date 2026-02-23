@@ -4,18 +4,18 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Pattern that matches a `# yaml-lint-disable` comment.
+ * Pattern that matches a `# yaml-language-server-disable` comment.
  *
  * Usage in YAML files:
  *
- *   - `# yaml-lint-disable` - suppress ALL diagnostics on the next line
- *   - `# yaml-lint-disable Incorrect type` - suppress diagnostics whose message contains "Incorrect type"
- *   - `# yaml-lint-disable Incorrect type, not accepted` - suppress diagnostics matching any of the substrings
+ *   - `# yaml-language-server-disable` - suppress ALL diagnostics on the next line
+ *   - `# yaml-language-server-disable Incorrect type` - suppress diagnostics whose message contains "Incorrect type"
+ *   - `# yaml-language-server-disable Incorrect type, not accepted` - suppress diagnostics matching any of the substrings
  *
  * Capture group 1 (optional) contains the comma-separated list of message
  * substrings to match against. If absent, all diagnostics are suppressed.
  */
-export const YAML_LINT_DISABLE_PATTERN = /^\s*#\s*yaml-lint-disable\b(.*)$/;
+export const YAML_DISABLE_PATTERN = /^\s*#\s*yaml-language-server-disable\b(.*)$/;
 
 /**
  * A callback that returns the text content of a given zero-based line number,
@@ -24,7 +24,7 @@ export const YAML_LINT_DISABLE_PATTERN = /^\s*#\s*yaml-lint-disable\b(.*)$/;
 export type GetLineText = (line: number) => string | undefined;
 
 /**
- * Parse the text after `yaml-lint-disable` into an array of trimmed,
+ * Parse the text after `yaml-language-server-disable` into an array of trimmed,
  * lower-cased message substrings.  Returns an empty array when no
  * specifiers are provided (meaning "suppress all").
  */
@@ -41,7 +41,7 @@ export function parseDisableSpecifiers(raw: string): string[] {
 
 /**
  * Determine whether a diagnostic should be suppressed based on the
- * specifiers from a `# yaml-lint-disable` comment.
+ * specifiers from a `# yaml-language-server-disable` comment.
  *
  * @param specifiers - Parsed specifiers (empty means suppress all).
  * @param diagnosticMessage - The diagnostic's message text.
@@ -57,7 +57,7 @@ export function shouldSuppressDiagnostic(specifiers: string[], diagnosticMessage
 
 /**
  * Filters an array of diagnostics, removing any whose starting line is
- * immediately preceded by a `# yaml-lint-disable` comment.
+ * immediately preceded by a `# yaml-language-server-disable` comment.
  *
  * When the comment includes one or more comma-separated message substrings,
  * only diagnostics whose message contains at least one of those substrings
@@ -86,7 +86,7 @@ export function filterSuppressedDiagnostics<T>(
     if (prevLineText === undefined) {
       return true;
     }
-    const match = YAML_LINT_DISABLE_PATTERN.exec(prevLineText);
+    const match = YAML_DISABLE_PATTERN.exec(prevLineText);
     if (!match) {
       return true;
     }

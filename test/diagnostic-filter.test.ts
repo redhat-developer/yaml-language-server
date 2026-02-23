@@ -6,7 +6,7 @@
 import { expect } from 'chai';
 import {
   filterSuppressedDiagnostics,
-  YAML_LINT_DISABLE_PATTERN,
+  YAML_DISABLE_PATTERN,
   parseDisableSpecifiers,
   shouldSuppressDiagnostic,
   GetLineText,
@@ -20,15 +20,15 @@ function linesOf(lines: string[]): GetLineText {
   return (line: number) => (line >= 0 && line < lines.length ? lines[line] : undefined);
 }
 
-describe('YAML_LINT_DISABLE_PATTERN', () => {
+describe('YAML_DISABLE_PATTERN', () => {
   it('should capture specifiers in group 1', () => {
-    const match = YAML_LINT_DISABLE_PATTERN.exec('# yaml-lint-disable Incorrect type, not accepted');
+    const match = YAML_DISABLE_PATTERN.exec('# yaml-language-server-disable Incorrect type, not accepted');
     expect(match).to.not.be.null;
     expect(match[1].trim()).to.equal('Incorrect type, not accepted');
   });
 
   it('should capture empty group 1 when no specifiers given', () => {
-    const match = YAML_LINT_DISABLE_PATTERN.exec('# yaml-lint-disable');
+    const match = YAML_DISABLE_PATTERN.exec('# yaml-language-server-disable');
     expect(match).to.not.be.null;
     expect(match[1].trim()).to.equal('');
   });
@@ -105,7 +105,7 @@ describe('filterSuppressedDiagnostics', () => {
   });
 
   it('should suppress all diagnostics when no specifiers are given', () => {
-    const lines = linesOf(['name: hello', '# yaml-lint-disable', 'age: not-a-number']);
+    const lines = linesOf(['name: hello', '# yaml-language-server-disable', 'age: not-a-number']);
     const diagnostics = [makeDiag(2, 'Incorrect type'), makeDiag(2, 'Value not accepted')];
 
     const result = filter(diagnostics, lines);
@@ -114,7 +114,7 @@ describe('filterSuppressedDiagnostics', () => {
   });
 
   it('should suppress only matching diagnostics when specifiers are given', () => {
-    const lines = linesOf(['name: hello', '# yaml-lint-disable Incorrect type', 'age: not-a-number']);
+    const lines = linesOf(['name: hello', '# yaml-language-server-disable Incorrect type', 'age: not-a-number']);
     const diagnostics = [makeDiag(2, 'Incorrect type. Expected string.'), makeDiag(2, 'Value is not accepted.')];
 
     const result = filter(diagnostics, lines);
@@ -124,7 +124,7 @@ describe('filterSuppressedDiagnostics', () => {
   });
 
   it('should suppress diagnostics matching any of multiple comma-separated specifiers', () => {
-    const lines = linesOf(['# yaml-lint-disable Incorrect type, not accepted', 'key: bad']);
+    const lines = linesOf(['# yaml-language-server-disable Incorrect type, not accepted', 'key: bad']);
     const diagnostics = [
       makeDiag(1, 'Incorrect type. Expected string.'),
       makeDiag(1, 'Value is not accepted.'),
@@ -138,7 +138,7 @@ describe('filterSuppressedDiagnostics', () => {
   });
 
   it('should match specifiers case-insensitively', () => {
-    const lines = linesOf(['# yaml-lint-disable incorrect TYPE', 'key: bad']);
+    const lines = linesOf(['# yaml-language-server-disable incorrect TYPE', 'key: bad']);
     const diagnostics = [makeDiag(1, 'Incorrect type. Expected string.')];
 
     const result = filter(diagnostics, lines);
@@ -147,7 +147,7 @@ describe('filterSuppressedDiagnostics', () => {
   });
 
   it('should keep diagnostics on lines NOT preceded by a disable comment', () => {
-    const lines = linesOf(['name: hello', '# yaml-lint-disable', 'age: bad', 'score: bad']);
+    const lines = linesOf(['name: hello', '# yaml-language-server-disable', 'age: bad', 'score: bad']);
     const diagnostics = [makeDiag(2, 'error on line 2'), makeDiag(3, 'error on line 3')];
 
     const result = filter(diagnostics, lines);
@@ -166,7 +166,7 @@ describe('filterSuppressedDiagnostics', () => {
   });
 
   it('should handle indented disable comments', () => {
-    const lines = linesOf(['root:', '  # yaml-lint-disable', '  child: bad-value']);
+    const lines = linesOf(['root:', '  # yaml-language-server-disable', '  child: bad-value']);
     const diagnostics = [makeDiag(2, 'invalid value')];
 
     const result = filter(diagnostics, lines);
@@ -175,7 +175,7 @@ describe('filterSuppressedDiagnostics', () => {
   });
 
   it('should not suppress when the disable comment is two lines above', () => {
-    const lines = linesOf(['# yaml-lint-disable', 'good: value', 'bad: value']);
+    const lines = linesOf(['# yaml-language-server-disable', 'good: value', 'bad: value']);
     const diagnostics = [makeDiag(2, 'error on line 2')];
 
     const result = filter(diagnostics, lines);
@@ -184,7 +184,7 @@ describe('filterSuppressedDiagnostics', () => {
   });
 
   it('should handle multiple disable comments for different lines', () => {
-    const lines = linesOf(['# yaml-lint-disable', 'line1: bad', 'line2: ok', '# yaml-lint-disable', 'line4: also-bad']);
+    const lines = linesOf(['# yaml-language-server-disable', 'line1: bad', 'line2: ok', '# yaml-language-server-disable', 'line4: also-bad']);
     const diagnostics = [makeDiag(1, 'error on line 1'), makeDiag(2, 'error on line 2'), makeDiag(4, 'error on line 4')];
 
     const result = filter(diagnostics, lines);
@@ -203,7 +203,7 @@ describe('filterSuppressedDiagnostics', () => {
   });
 
   it('should return an empty array when given no diagnostics', () => {
-    const lines = linesOf(['# yaml-lint-disable', 'key: value']);
+    const lines = linesOf(['# yaml-language-server-disable', 'key: value']);
 
     const result = filter([], lines);
 
@@ -211,7 +211,7 @@ describe('filterSuppressedDiagnostics', () => {
   });
 
   it('should not treat a non-comment line containing the keyword as suppression', () => {
-    const lines = linesOf(['key: yaml-lint-disable', 'other: bad']);
+    const lines = linesOf(['key: yaml-language-server-disable', 'other: bad']);
     const diagnostics = [makeDiag(1, 'error on line 1')];
 
     const result = filter(diagnostics, lines);
