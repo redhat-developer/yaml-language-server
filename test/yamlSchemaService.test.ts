@@ -6,6 +6,7 @@ import * as sinon from 'sinon';
 import * as chai from 'chai';
 import * as sinonChai from 'sinon-chai';
 import * as path from 'path';
+import * as url from 'url';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import { parse } from '../src/languageservice/parser/yamlParser07';
 import { SettingsState } from '../src/yamlSettings';
@@ -13,6 +14,11 @@ import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
 const expect = chai.expect;
 chai.use(sinonChai);
+const workspaceContext = {
+  resolveRelativePath: (relativePath: string, resource: string) => {
+    return url.resolve(resource, relativePath);
+  },
+};
 
 describe('YAML Schema Service', () => {
   const sandbox = sinon.createSandbox();
@@ -119,6 +125,170 @@ describe('YAML Schema Service', () => {
       }
 
       expect(schema.schema.type).eqls('array');
+    });
+
+    it('should use local sibling schema path before remote $id ref', async () => {
+      const content = `# yaml-language-server: $schema=file:///schemas/primary.json\nmode: stage`;
+      const yamlDock = parse(content);
+
+      const primarySchema = {
+        $id: 'https://example.com/schemas/primary.json',
+        type: 'object',
+        properties: {
+          mode: { $ref: 'secondary.json' },
+        },
+        required: ['mode'],
+      };
+      const secondarySchema = {
+        $id: 'https://example.com/schemas/secondary.json',
+        type: 'string',
+        enum: ['dev', 'prod'],
+      };
+
+      requestServiceMock = sandbox.fake((uri: string) => {
+        if (uri === 'file:///schemas/primary.json') {
+          return Promise.resolve(JSON.stringify(primarySchema));
+        }
+        if (uri === 'file:///schemas/secondary.json') {
+          return Promise.resolve(JSON.stringify(secondarySchema));
+        }
+        return Promise.reject<string>(`Resource ${uri} not found.`);
+      });
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+      await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      expect(requestedUris).to.include('file:///schemas/primary.json');
+      expect(requestedUris).to.include('file:///schemas/secondary.json');
+      expect(requestedUris).to.not.include('https://example.com/schemas/secondary.json');
+    });
+
+    it('should resolve absolute $ref via remote base and mapped local sibling path', async () => {
+      const content = `# yaml-language-server: $schema=file:///dir/primary.json\nname: John\nage: -1`;
+      const yamlDock = parse(content);
+
+      const primarySchema = {
+        $id: 'https://example.com/schemas/primary.json',
+        $ref: '/schemas/secondary.json',
+      };
+      const secondarySchema = {
+        $id: 'https://example.com/schemas/secondary.json',
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          age: { type: 'integer', minimum: 0 },
+        },
+        required: ['name', 'age'],
+      };
+
+      requestServiceMock = sandbox.fake((uri: string) => {
+        if (uri === 'file:///dir/primary.json') {
+          return Promise.resolve(JSON.stringify(primarySchema));
+        }
+        if (uri === 'file:///dir/secondary.json') {
+          return Promise.resolve(JSON.stringify(secondarySchema));
+        }
+        return Promise.reject<string>(`Resource ${uri} not found.`);
+      });
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+      await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      expect(requestedUris).to.include('file:///dir/primary.json');
+      expect(requestedUris).to.include('file:///dir/secondary.json');
+      expect(requestedUris).to.not.include('file:///schemas/secondary.json');
+      expect(requestedUris).to.not.include('https://example.com/schemas/secondary.json');
+    });
+
+    it('should fallback to remote $id target for absolute $ref when mapped local target is missing', async () => {
+      const content = `# yaml-language-server: $schema=file:///dir/primary.json\nname: John\nage: -1`;
+      const yamlDock = parse(content);
+
+      const primarySchema = {
+        $id: 'https://example.com/schemas/primary.json',
+        $ref: '/schemas/secondary.json',
+      };
+      const secondarySchema = {
+        $id: 'https://example.com/schemas/secondary.json',
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          age: { type: 'integer', minimum: 0 },
+        },
+        required: ['name', 'age'],
+      };
+
+      requestServiceMock = sandbox.fake((uri: string) => {
+        if (uri === 'file:///dir/primary.json') {
+          return Promise.resolve(JSON.stringify(primarySchema));
+        }
+        if (uri === 'https://example.com/schemas/secondary.json') {
+          return Promise.resolve(JSON.stringify(secondarySchema));
+        }
+        return Promise.reject<string>(`Resource ${uri} not found.`);
+      });
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+      await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      expect(requestedUris).to.include('file:///dir/primary.json');
+      expect(requestedUris).to.include('file:///dir/secondary.json');
+      expect(requestedUris).to.include('https://example.com/schemas/secondary.json');
+      expect(requestedUris).to.not.include('file:///schemas/secondary.json');
+      expect(requestedUris.indexOf('file:///dir/secondary.json')).to.be.lessThan(
+        requestedUris.indexOf('https://example.com/schemas/secondary.json')
+      );
+    });
+
+    it('should reload local schema after local file change when resolving via local sibling path instead of remote $id', async () => {
+      const content = `# yaml-language-server: $schema=file:///schemas/primary.json\nmode: stage`;
+      const yamlDock = parse(content);
+
+      const primarySchema = {
+        $id: 'https://example.com/schemas/primary.json',
+        type: 'object',
+        properties: {
+          mode: { $ref: 'secondary.json' },
+        },
+        required: ['mode'],
+      };
+      let secondarySchema = {
+        $id: 'https://example.com/schemas/secondary.json',
+        type: 'string',
+        enum: ['dev', 'prod'],
+      };
+
+      requestServiceMock = sandbox.fake((uri: string) => {
+        if (uri === 'file:///schemas/primary.json') {
+          return Promise.resolve(JSON.stringify(primarySchema));
+        }
+        if (uri === 'file:///schemas/secondary.json') {
+          return Promise.resolve(JSON.stringify(secondarySchema));
+        }
+        return Promise.reject<string>(`Resource ${uri} not found.`);
+      });
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+      await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      const requestedSecondaryUrisAfterFirstLoad = requestServiceMock
+        .getCalls()
+        .map((call) => call.args[0])
+        .filter((uri) => uri === 'file:///schemas/secondary.json');
+      expect(requestedSecondaryUrisAfterFirstLoad).to.have.length(1);
+
+      secondarySchema = { ...secondarySchema, enum: ['dev', 'prod', 'stage'] };
+      service.onResourceChange('file:///schemas/secondary.json');
+      await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      const requestedSecondaryUrisAfterChange = requestServiceMock
+        .getCalls()
+        .map((call) => call.args[0])
+        .filter((uri) => uri === 'file:///schemas/secondary.json');
+      expect(requestedSecondaryUrisAfterChange).to.have.length(2);
     });
 
     it('should handle modeline schema comment in the middle of file', () => {
