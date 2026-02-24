@@ -184,7 +184,13 @@ describe('filterSuppressedDiagnostics', () => {
   });
 
   it('should handle multiple disable comments for different lines', () => {
-    const lines = linesOf(['# yaml-language-server-disable', 'line1: bad', 'line2: ok', '# yaml-language-server-disable', 'line4: also-bad']);
+    const lines = linesOf([
+      '# yaml-language-server-disable',
+      'line1: bad',
+      'line2: ok',
+      '# yaml-language-server-disable',
+      'line4: also-bad',
+    ]);
     const diagnostics = [makeDiag(1, 'error on line 1'), makeDiag(2, 'error on line 2'), makeDiag(4, 'error on line 4')];
 
     const result = filter(diagnostics, lines);
