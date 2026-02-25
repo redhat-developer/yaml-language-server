@@ -336,21 +336,24 @@ export class YamlCompletion {
       }
 
       if (isModeline(lineContent) || isInComment(doc.tokens, offset)) {
-        const schemaIndex = lineContent.indexOf('$schema=');
-        if (schemaIndex !== -1 && schemaIndex + '$schema='.length <= position.character) {
-          this.schemaService.getAllSchemas().forEach((schema) => {
-            const schemaIdCompletion: CompletionItem = {
-              kind: CompletionItemKind.Constant,
-              label: schema.name ?? schema.uri,
-              detail: schema.description,
-              insertText: schema.uri,
-              insertTextFormat: InsertTextFormat.PlainText,
-              insertTextMode: InsertTextMode.asIs,
-            };
-            result.items.push(schemaIdCompletion);
-          });
+        const schemaMatch = lineContent.match(/\$schema[=:]/);
+        if (schemaMatch) {
+          const schemaIndex = schemaMatch.index;
+          if (schemaIndex + schemaMatch[0].length <= position.character) {
+            this.schemaService.getAllSchemas().forEach((schema) => {
+              const schemaIdCompletion: CompletionItem = {
+                kind: CompletionItemKind.Constant,
+                label: schema.name ?? schema.uri,
+                detail: schema.description,
+                insertText: schema.uri,
+                insertTextFormat: InsertTextFormat.PlainText,
+                insertTextMode: InsertTextMode.asIs,
+              };
+              result.items.push(schemaIdCompletion);
+            });
+          }
+          return result;
         }
-        return result;
       }
 
       if (!schema || schema.errors.length) {

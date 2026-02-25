@@ -287,6 +287,12 @@ or absolute path:
 # yaml-language-server: $schema=/absolute/path/to/schema
 ```
 
+or IntelliJ compatible format:
+
+```yaml
+# $schema: <urlOrPathToTheSchema>
+```
+
 ### Schema priority
 
 The following is the priority of schema association in highest to lowest priority:
