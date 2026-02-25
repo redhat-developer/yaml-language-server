@@ -722,7 +722,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           }
           return true;
         };
-        
+
         while (next.$dynamicRef || next.$recursiveRef || next.$ref) {
           const isDynamicRef = typeof next.$dynamicRef === 'string';
           const isRecursiveRef = !isDynamicRef && typeof next.$recursiveRef === 'string';
