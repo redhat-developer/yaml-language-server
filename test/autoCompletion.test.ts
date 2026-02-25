@@ -2022,6 +2022,16 @@ describe('Auto Completion Tests', () => {
         .then(done, done);
     });
 
+    it('Provide completion from schema declared in file with $schema: format', (done) => {
+      const content = `# $schema: ${uri}\n- `;
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 3);
+        })
+        .then(done, done);
+    });
+
     it('Provide completion from schema declared in file with several attributes', (done) => {
       const content = `# yaml-language-server: $schema=${uri} anothermodeline=value\n- `;
       const completion = parseSetup(content, content.length);
