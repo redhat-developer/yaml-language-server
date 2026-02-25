@@ -1164,8 +1164,8 @@ export class YamlCompletion {
           case 'number':
           case 'integer':
           case 'anyOf': {
-            let value = propertySchema.default || propertySchema.const;
-            if (value) {
+            let value = propertySchema.default !== undefined ? propertySchema.default : propertySchema.const;
+            if (value !== undefined) {
               if (type === 'string') {
                 value = toYamlStringScalar(value);
               }
