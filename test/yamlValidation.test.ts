@@ -339,4 +339,19 @@ alpha: 1`;
       expect(result).to.be.empty;
     });
   });
+
+  describe('Map key duplication Tests', () => {
+    it('should not report big integer key duplication error', async () => {
+      const yaml = '123456789012345671: 1\n123456789012345672: 2';
+      const result = await parseSetup(yaml);
+      expect(result).to.be.empty;
+    });
+
+    it('should report duplication when bigint keys match across formats', async () => {
+      const yaml = '123456789012345671: 1\n0x1b69b4ba630f347: 2';
+      const result = await parseSetup(yaml);
+      expect(result).not.to.be.empty;
+      expect(result[0].message).to.include('Map keys must be unique');
+    });
+  });
 });
