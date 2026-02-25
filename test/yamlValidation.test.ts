@@ -339,4 +339,50 @@ alpha: 1`;
       expect(result).to.be.empty;
     });
   });
+
+  describe('yaml-language-server-disable comment suppression', () => {
+    it('should suppress all diagnostics on the next line when no specifiers given', async () => {
+      const yaml = 'foo:\n# yaml-language-server-disable\n\t- bar';
+      const result = await parseSetup(yaml);
+      expect(result).to.be.empty;
+    });
+
+    it('should suppress only matching diagnostics when specifiers are given', async () => {
+      const yaml = 'foo:\n# yaml-language-server-disable Tabs are not allowed\n\t- bar';
+      const result = await parseSetup(yaml);
+      expect(result).to.be.empty;
+    });
+
+    it('should keep diagnostics that do not match the specifier', async () => {
+      const yaml = 'foo:\n# yaml-language-server-disable some other error\n\t- bar';
+      const result = await parseSetup(yaml);
+      expect(result).is.not.empty;
+      expect(result.length).to.be.equal(1);
+    });
+
+    it('should not suppress diagnostics without a preceding disable comment', async () => {
+      const yaml = 'foo:\n\t- bar';
+      const result = await parseSetup(yaml);
+      expect(result).is.not.empty;
+    });
+
+    it('should only suppress the immediately following line', async () => {
+      const yaml = '# yaml-language-server-disable\nfoo:\n\t- bar';
+      const result = await parseSetup(yaml);
+      expect(result.length).to.be.equal(1);
+      expect(result[0].range.start.line).to.equal(2);
+    });
+
+    it('should suppress unused anchor diagnostics', async () => {
+      const yaml = '# yaml-language-server-disable\nfoo: &bar bar\n';
+      const result = await parseSetup(yaml);
+      expect(result).to.be.empty;
+    });
+
+    it('should handle indented disable comments', async () => {
+      const yaml = 'foo:\n  # yaml-language-server-disable\n  \t- bar';
+      const result = await parseSetup(yaml);
+      expect(result).to.be.empty;
+    });
+  });
 });

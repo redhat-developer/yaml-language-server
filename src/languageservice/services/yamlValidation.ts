@@ -13,6 +13,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
 import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
 import { TextBuffer } from '../utils/textBuffer';
+import { filterSuppressedDiagnostics } from '../utils/diagnostic-filter';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { Telemetry } from '../telemetry';
 import { AdditionalValidator } from './validation/types';
@@ -152,7 +153,18 @@ export class YAMLValidation {
       }
     }
 
-    return duplicateMessagesRemoved;
+    const textBuffer = new TextBuffer(textDocument);
+    return filterSuppressedDiagnostics(
+      duplicateMessagesRemoved,
+      (d) => d.range.start.line,
+      (d) => d.message,
+      (line) => {
+        if (line < 0 || line >= textBuffer.getLineCount()) {
+          return undefined;
+        }
+        return textBuffer.getLineContent(line).replace(/[\r\n]+$/, '');
+      }
+    );
   }
   private runAdditionalValidators(document: TextDocument, yarnDoc: SingleYAMLDocument): Diagnostic[] {
     const result = [];
