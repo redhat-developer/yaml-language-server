@@ -1,3 +1,16 @@
+### 1.21.0
+- Feat: Enable suppressing diagnostics per-line by adding a `# yaml-language-server-disable` comment [vscode-yaml#666](https://github.com/redhat-developer/vscode-yaml/issues/666)
+- Feat: Allow `yaml.validate` and `yaml.format.enable` to be overriden in language-specific settings [#1188](https://github.com/redhat-developer/yaml-language-server/pull/1188)
+- Fix: Do not register the extension for templated YAML languages (such as Helm, Jinja, etc.) [vscode-yaml#1204](https://github.com/redhat-developer/vscode-yaml/issues/1204)
+- Fix: Handle default booleans and integers properly in required properties completion [vscode-yaml#1205](https://github.com/redhat-developer/vscode-yaml/issues/1205)
+- Fix: Prevent infinite `$ref` resolution loops [#1195](https://github.com/redhat-developer/yaml-language-server/issues/1195)
+- Fix: Preserve document end marker (`...`) when formatting (by updating prettier to 3.8.1) [vscode-yaml#1211](https://github.com/redhat-developer/vscode-yaml/issues/1211)
+- Fix: Don't escape '-' in hover text, since it was breaking links [#1151](https://github.com/redhat-developer/yaml-language-server/issues/1151)
+- Fix: Attempt to resolve a schema referenced through a relative `$ref` locally before peforming a remote `$id` lookup [#1186](https://github.com/redhat-developer/yaml-language-server/issues/1184)
+- Fix: Improve documentation of `yaml.schemas` setting [vscode-yaml#1207](https://github.com/redhat-developer/vscode-yaml/issues/1207)
+
+Thanks to [Simon Heather](https://github.com/X-Guardian) for your contributions
+
 ### 1.20.0
 - Feat: Support JSON Schema 2019-09 and 2020-12 [#478](https://github.com/redhat-developer/yaml-language-server/issues/478), [vscode-yaml#1122](https://github.com/redhat-developer/vscode-yaml/issues/1122), [#823](https://github.com/redhat-developer/yaml-language-server/issues/823)
 - Feat: Support drafts 2019-09 and 2020-12 when validating a referenced JSON schema using AJV [#1164](https://github.com/redhat-developer/yaml-language-server/pull/1164)
