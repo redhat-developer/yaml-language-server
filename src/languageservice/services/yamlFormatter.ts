@@ -35,6 +35,7 @@ export class YAMLFormatter {
       const prettierOptions: Options = {
         parser: 'yaml',
         plugins: [yamlPlugin, estreePlugin],
+        editorConfig: options.editorConfig,
 
         // --- FormattingOptions ---
         tabWidth: (options.tabWidth as number) || options.tabSize,
