@@ -2364,6 +2364,69 @@ describe('Auto Completion Tests', () => {
       expect(completion.items[0].insertText).eq('prop2: ');
     });
 
+    it('should complete properties of an object under an array', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          steps: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                task: {
+                  type: 'string',
+                },
+                inputs: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+          name: {
+            type: 'string',
+          },
+        },
+      });
+
+      // Thanks to the indentation, the intent is clear: continue adding to the current object.
+      const content = 'steps:\n- task: PowerShell@2\n  '; // len: 30
+      const completion = await parseSetup(content, 30);
+      expect(completion.items).lengthOf(1);
+      expect(completion.items[0].label).eq('inputs');
+    });
+
+    it('should not show bare property completions for array items when the cursor indentation is ambiguous', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          steps: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                task: {
+                  type: 'string',
+                },
+                inputs: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+          name: {
+            type: 'string',
+          },
+        },
+      });
+
+      // Here, the intent _could_ be to move out of the array, or it could be to continue adding to the array.
+      // Thus, `name: ` is fine and so is `- task: `, but _not_ a bare `task: `.
+      const content = 'steps:\n- task: PowerShell@2\n'; // len: 28
+      const completion = await parseSetup(content, 28);
+      expect(completion.items[0].label).eq('name');
+      expect(completion.items.slice(1).filter((item) => !item.insertText.startsWith('- '))).to.be.empty;
+    });
+
     it('should complete string which contains number in default value', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
