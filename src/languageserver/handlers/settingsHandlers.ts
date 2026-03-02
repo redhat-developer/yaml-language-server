@@ -40,7 +40,7 @@ export class SettingsHandler {
     const config = await this.connection.workspace.getConfiguration([
       { section: 'yaml' },
       { section: 'http' },
-      { section: '[yaml]', scopeUri: 'null' },
+      { section: '[yaml]' },
       { section: 'editor' },
       { section: 'files' },
     ]);
