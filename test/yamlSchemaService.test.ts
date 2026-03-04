@@ -456,5 +456,36 @@ spec:
       expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
       expect(requestServiceMock).calledTwice;
     });
+
+    it('should not get schema from crd catalog for RBAC-related resources', async () => {
+      const documentContent = 'apiVersion: rbac.authorization.k8s.io/v1\nkind: RoleBinding';
+      const content = `${documentContent}`;
+      const yamlDock = parse(content);
+
+      const settings = new SettingsState();
+      settings.schemaAssociations = {
+        kubernetes: ['*.yaml'],
+      };
+      settings.kubernetesCRDStoreEnabled = true;
+      requestServiceMock = sandbox.fake.resolves(
+        `
+        {
+          "oneOf": [
+            {
+              "$ref": "_definitions.json#/definitions/io.k8s.api.rbac.v1.RoleBinding"
+            }
+          ]
+        }
+        `
+      );
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
+      service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
+      const resolvedSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+      expect(resolvedSchema.schema.url).eqls(KUBERNETES_SCHEMA_URL);
+
+      expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
+      expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
+      expect(requestServiceMock).calledTwice;
+    });
   });
 });
