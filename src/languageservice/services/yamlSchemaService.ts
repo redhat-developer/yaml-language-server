@@ -200,11 +200,9 @@ export class YAMLSchemaService extends JSONSchemaService {
   async resolveSchemaContent(schemaToResolve: UnresolvedSchema, handle: SchemaHandle): Promise<ResolvedSchema> {
     const schemaURL: string = handle.uri;
     const dependencies: Set<string> = handle.dependencies;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const resolveErrors: any[] = schemaToResolve.errors.slice(0);
+    const resolveErrors: (string | { message: string; code: number })[] = schemaToResolve.errors.slice(0);
     // Normalize errors: upstream v5.x expects { message, code } objects, but our code pushes strings
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const _toDiagErrors = (errors: any[]): { message: string; code: number }[] =>
+    const _toDiagErrors = (errors: (string | { message: string; code: number })[]): { message: string; code: number }[] =>
       errors.map((e) => (typeof e === 'string' ? { message: e, code: 0x10000 } : e));
     const loc = toDisplayString(schemaURL);
 
