@@ -1422,6 +1422,7 @@ describe('JSON Parser', () => {
 
   it('items as array', function () {
     const schema: JsonSchema.JSONSchema = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
       type: 'array',
       items: [
         {
@@ -1457,6 +1458,7 @@ describe('JSON Parser', () => {
 
   it('additionalItems', function () {
     let schema: JsonSchema.JSONSchema = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
       type: 'array',
       items: [
         {
@@ -1484,6 +1486,7 @@ describe('JSON Parser', () => {
       assert.strictEqual(semanticErrors.length, 1);
     }
     schema = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
       type: 'array',
       items: [
         {
@@ -1928,7 +1931,7 @@ describe('JSON Parser', () => {
     assert.strictEqual(res.length, 0);
 
     const schema: JsonSchema.JSONSchema = { type: 'object', required: ['foo'] };
-    res = await ls.doValidation(textDoc, jsonDoc, { trailingCommas: 'ignore' }, schema);
+    res = await ls.doValidation(textDoc, jsonDoc, { trailingCommas: 'ignore' }, schema as any);
     assert.strictEqual(res.length, 1);
     assert.strictEqual(res[0].message, 'Missing property "foo".');
   });

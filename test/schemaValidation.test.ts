@@ -71,6 +71,7 @@ describe('Validation Tests', () => {
 
   afterEach(() => {
     schemaProvider.deleteSchema(SCHEMA_ID);
+    telemetry.clearMessages();
   });
 
   describe('Boolean tests', () => {
