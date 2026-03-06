@@ -11,7 +11,6 @@ import {
   UnresolvedSchema,
   ResolvedSchema,
   JSONSchemaService,
-  SchemaDependencies,
   ISchemaContributions,
   SchemaHandle,
 } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
@@ -153,7 +152,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     const result: JSONSchemaDescriptionExt[] = [];
     const schemaUris = new Set<string>();
     for (const filePattern of this.filePatternAssociations) {
-      const schemaUri = filePattern.uris[0];
+      const schemaUri = filePattern.getURIs()[0];
       if (schemaUris.has(schemaUri)) {
         continue;
       }
@@ -198,12 +197,13 @@ export class YAMLSchemaService extends JSONSchemaService {
     return Object.values(map);
   }
 
-  async resolveSchemaContent(
-    schemaToResolve: UnresolvedSchema,
-    schemaURL: string,
-    dependencies: SchemaDependencies
-  ): Promise<ResolvedSchema> {
-    const resolveErrors: string[] = schemaToResolve.errors.slice(0);
+  async resolveSchemaContent(schemaToResolve: UnresolvedSchema, handle: SchemaHandle): Promise<ResolvedSchema> {
+    const schemaURL: string = handle.uri;
+    const dependencies: Set<string> = handle.dependencies;
+    const resolveErrors: (string | { message: string; code: number })[] = schemaToResolve.errors.slice(0);
+    // Normalize errors: upstream v5.x expects { message, code } objects, but our code pushes strings
+    const _toDiagErrors = (errors: (string | { message: string; code: number })[]): { message: string; code: number }[] =>
+      errors.map((e) => (typeof e === 'string' ? { message: e, code: 0x10000 } : e));
     const loc = toDisplayString(schemaURL);
 
     const raw: unknown = schemaToResolve.schema;
@@ -212,7 +212,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       resolveErrors.push(
         l10n.t("Schema '{0}' is not valid: {1}", loc, `expected a JSON Schema object or boolean, got "${got}".`)
       );
-      return new ResolvedSchema({}, resolveErrors);
+      return new ResolvedSchema({}, _toDiagErrors(resolveErrors));
     }
 
     const _cloneSchema = (
@@ -532,7 +532,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       uri: string,
       linkPath: string,
       parentSchemaURL: string,
-      parentSchemaDependencies: SchemaDependencies,
+      parentSchemaDependencies: Set<string>,
       resolutionStack: Set<string>,
       recursiveAnchorBase: string,
       inheritedDynamicScope: Map<string, JSONSchema[]>
@@ -543,14 +543,14 @@ export class YAMLSchemaService extends JSONSchemaService {
         schemaRoot: JSONSchema,
         schemaUri: string,
         linkPath: string,
-        parentSchemaDependencies: SchemaDependencies,
-        resolveRefDependencies: SchemaDependencies,
+        parentSchemaDependencies: Set<string>,
+        resolveRefDependencies: Set<string>,
         resolutionStack: Set<string>,
         recursiveAnchorBase: string,
         inheritedDynamicScope: Map<string, JSONSchema[]>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ): Promise<any> => {
-        parentSchemaDependencies[schemaUri] = true;
+        parentSchemaDependencies.add(schemaUri);
         _merge(node, schemaRoot, schemaUri, linkPath, !!inheritedDynamicScope || !!recursiveAnchorBase);
         if (!recursiveAnchorBase || !node._baseUrl) node._baseUrl = schemaUri;
         node.url = schemaUri;
@@ -590,7 +590,10 @@ export class YAMLSchemaService extends JSONSchemaService {
         const referencedHandle = this.getOrAddSchemaHandle(targetUri);
         return referencedHandle.getUnresolvedSchema().then(async (unresolvedSchema) => {
           if (
-            unresolvedSchema.errors?.some((error) => error.toLowerCase().includes('unable to load schema from')) &&
+            unresolvedSchema.errors?.some((error) => {
+              const msg = typeof error === 'string' ? error : (error?.message ?? '');
+              return msg.toLowerCase().includes('unable to load schema from');
+            }) &&
             index + 1 < targetUris.length
           ) {
             return _resolveByUri(targetUris, index + 1);
@@ -598,7 +601,9 @@ export class YAMLSchemaService extends JSONSchemaService {
 
           if (unresolvedSchema.errors.length) {
             const loc = linkPath ? targetUri + '#' + linkPath : targetUri;
-            resolveErrors.push(l10n.t("Problems loading reference '{0}': {1}", loc, unresolvedSchema.errors[0]));
+            const firstError = unresolvedSchema.errors[0];
+            const errorMsg = typeof firstError === 'string' ? firstError : (firstError?.message ?? String(firstError));
+            resolveErrors.push(l10n.t("Problems loading reference '{0}': {1}", loc, errorMsg));
           }
           // index resources for the newly loaded schema
           await _indexSchemaResources(unresolvedSchema.schema, targetUri);
@@ -626,7 +631,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       node: JSONSchema,
       parentSchema: JSONSchema,
       parentSchemaURL: string,
-      parentSchemaDependencies: SchemaDependencies,
+      parentSchemaDependencies: Set<string>,
       resolutionStack: Set<string>,
       recursiveAnchorBase?: string,
       inheritedDynamicScope?: Map<string, JSONSchema[]>
@@ -939,7 +944,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     const rootResource = schema._baseUrl || schemaURL;
     if (rootResource) resolutionStack.add(rootResource);
     await resolveRefs(schema, schema, schemaURL, dependencies, resolutionStack);
-    return new ResolvedSchema(schema, resolveErrors);
+    return new ResolvedSchema(schema, _toDiagErrors(resolveErrors));
   }
 
   public getSchemaForResource(resource: string, doc: JSONDocument): Promise<ResolvedSchema> {
@@ -973,7 +978,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     const resolveSchemaForResource = (schemas: string[]): Promise<ResolvedSchema> => {
       const schemaHandle = super.createCombinedSchema(resource, schemas);
       return schemaHandle.getResolvedSchema().then((schema) => {
-        return this.finalizeResolvedSchema(schema, schemaHandle.url, doc, false);
+        return this.finalizeResolvedSchema(schema, schemaHandle.uri, doc, false);
       });
     };
 
@@ -1038,14 +1043,11 @@ export class YAMLSchemaService extends JSONSchemaService {
               })
             ).then(
               (schemas) => {
-                return {
-                  errors: [],
-                  schema: {
-                    allOf: schemas.map((schemaObj) => {
-                      return schemaObj.schema;
-                    }),
-                  },
-                };
+                return new ResolvedSchema({
+                  allOf: schemas.map((schemaObj) => {
+                    return schemaObj.schema;
+                  }),
+                });
               },
               () => {
                 return resolveSchema();
@@ -1130,7 +1132,8 @@ export class YAMLSchemaService extends JSONSchemaService {
 
   private async resolveCustomSchema(schemaUri, doc): ResolvedSchema {
     const unresolvedSchema = await this.loadSchema(schemaUri);
-    const schema = await this.resolveSchemaContent(unresolvedSchema, schemaUri, []);
+    const schemaHandle = this.getOrAddSchemaHandle(schemaUri);
+    const schema = await this.resolveSchemaContent(unresolvedSchema, schemaHandle);
     return this.finalizeResolvedSchema(schema, schemaUri, doc, true);
   }
 
@@ -1259,10 +1262,13 @@ export class YAMLSchemaService extends JSONSchemaService {
         return requestService(schemaUri).then(
           (content) => {
             if (!content) {
+              const errorDetails = unresolvedJsonSchema.errors
+                .map((e) => (typeof e === 'string' ? e : (e?.message ?? String(e))))
+                .join(', ');
               const errorMessage = l10n.t(
                 "Unable to load schema from '{0}': No content. {1}",
                 toDisplayString(schemaUri),
-                unresolvedJsonSchema.errors
+                errorDetails
               );
               return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
             }
@@ -1294,7 +1300,8 @@ export class YAMLSchemaService extends JSONSchemaService {
         unresolvedJsonSchema.schema.description = description ?? unresolvedJsonSchema.schema.description;
         unresolvedJsonSchema.schema.versions = versions ?? unresolvedJsonSchema.schema.versions;
       } else if (unresolvedJsonSchema.errors && unresolvedJsonSchema.errors.length > 0) {
-        let errorMessage: string = unresolvedJsonSchema.errors[0];
+        const firstError = unresolvedJsonSchema.errors[0];
+        let errorMessage: string = typeof firstError === 'string' ? firstError : (firstError?.message ?? String(firstError));
         if (errorMessage.toLowerCase().indexOf('load') !== -1) {
           errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(schemaUri));
         } else if (errorMessage.toLowerCase().indexOf('parse') !== -1) {
@@ -1329,7 +1336,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     if (name || description) {
       this.schemaUriToNameAndDescription.set(uri, { name, description, versions });
     }
-    return super.registerExternalSchema(uri, filePatterns, unresolvedSchema);
+    return super.registerExternalSchema({ uri, fileMatch: filePatterns, schema: unresolvedSchema });
   }
 
   clearExternalSchemas(): void {

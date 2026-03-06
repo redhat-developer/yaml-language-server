@@ -9,7 +9,7 @@ import { JSONDocument } from '../src/languageservice/parser/jsonDocument';
 import { getNodeValue } from '../src/languageservice/parser/astNodeUtils';
 import * as JsonSchema from './../src/languageservice/jsonSchema';
 import { ASTNode, ObjectASTNode } from './../src/languageservice/jsonASTTypes';
-import { ErrorCode, getLanguageService } from 'vscode-json-languageservice';
+import { ErrorCode, getLanguageService, type JSONSchema } from 'vscode-json-languageservice';
 import { Diagnostic, TextDocument, Range } from 'vscode-languageserver-types';
 
 describe('JSON Parser', () => {
@@ -1422,6 +1422,7 @@ describe('JSON Parser', () => {
 
   it('items as array', function () {
     const schema: JsonSchema.JSONSchema = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
       type: 'array',
       items: [
         {
@@ -1457,6 +1458,7 @@ describe('JSON Parser', () => {
 
   it('additionalItems', function () {
     let schema: JsonSchema.JSONSchema = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
       type: 'array',
       items: [
         {
@@ -1484,6 +1486,7 @@ describe('JSON Parser', () => {
       assert.strictEqual(semanticErrors.length, 1);
     }
     schema = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
       type: 'array',
       items: [
         {
@@ -1927,7 +1930,7 @@ describe('JSON Parser', () => {
     res = await ls.doValidation(textDoc, jsonDoc, { trailingCommas: 'ignore' });
     assert.strictEqual(res.length, 0);
 
-    const schema: JsonSchema.JSONSchema = { type: 'object', required: ['foo'] };
+    const schema: JSONSchema = { type: 'object', required: ['foo'] };
     res = await ls.doValidation(textDoc, jsonDoc, { trailingCommas: 'ignore' }, schema);
     assert.strictEqual(res.length, 1);
     assert.strictEqual(res[0].message, 'Missing property "foo".');
