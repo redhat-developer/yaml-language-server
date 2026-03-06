@@ -37,7 +37,7 @@ export function autoDetectKubernetesSchemaFromDocument(
     })
     .filter((ref) => ref)
     .map((ref) => ref.replace('_definitions.json#/definitions/', '').toLowerCase());
-  const groupWithoutK8sIO = group.replace('.k8s.io', '');
+  const groupWithoutK8sIO = group.replace('.k8s.io', '').replace('rbac.authorization', 'rbac');
   const k8sTypeName = `io.k8s.api.${groupWithoutK8sIO.toLowerCase()}.${version.toLowerCase()}.${kind.toLowerCase()}`;
 
   if (kubernetesBuildIns.includes(k8sTypeName)) {
