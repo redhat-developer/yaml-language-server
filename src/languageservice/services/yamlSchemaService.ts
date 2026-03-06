@@ -197,10 +197,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     return Object.values(map);
   }
 
-  async resolveSchemaContent(
-    schemaToResolve: UnresolvedSchema,
-    handle: SchemaHandle
-  ): Promise<ResolvedSchema> {
+  async resolveSchemaContent(schemaToResolve: UnresolvedSchema, handle: SchemaHandle): Promise<ResolvedSchema> {
     const schemaURL: string = handle.uri;
     const dependencies: Set<string> = handle.dependencies;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -596,7 +593,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         return referencedHandle.getUnresolvedSchema().then(async (unresolvedSchema) => {
           if (
             unresolvedSchema.errors?.some((error) => {
-              const msg = typeof error === 'string' ? error : error?.message ?? '';
+              const msg = typeof error === 'string' ? error : (error?.message ?? '');
               return msg.toLowerCase().includes('unable to load schema from');
             }) &&
             index + 1 < targetUris.length
@@ -607,7 +604,7 @@ export class YAMLSchemaService extends JSONSchemaService {
           if (unresolvedSchema.errors.length) {
             const loc = linkPath ? targetUri + '#' + linkPath : targetUri;
             const firstError = unresolvedSchema.errors[0];
-            const errorMsg = typeof firstError === 'string' ? firstError : firstError?.message ?? String(firstError);
+            const errorMsg = typeof firstError === 'string' ? firstError : (firstError?.message ?? String(firstError));
             resolveErrors.push(l10n.t("Problems loading reference '{0}': {1}", loc, errorMsg));
           }
           // index resources for the newly loaded schema
@@ -1267,7 +1264,9 @@ export class YAMLSchemaService extends JSONSchemaService {
         return requestService(schemaUri).then(
           (content) => {
             if (!content) {
-              const errorDetails = unresolvedJsonSchema.errors.map((e) => (typeof e === 'string' ? e : e?.message ?? String(e))).join(', ');
+              const errorDetails = unresolvedJsonSchema.errors
+                .map((e) => (typeof e === 'string' ? e : (e?.message ?? String(e))))
+                .join(', ');
               const errorMessage = l10n.t(
                 "Unable to load schema from '{0}': No content. {1}",
                 toDisplayString(schemaUri),
@@ -1304,7 +1303,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         unresolvedJsonSchema.schema.versions = versions ?? unresolvedJsonSchema.schema.versions;
       } else if (unresolvedJsonSchema.errors && unresolvedJsonSchema.errors.length > 0) {
         const firstError = unresolvedJsonSchema.errors[0];
-        let errorMessage: string = typeof firstError === 'string' ? firstError : firstError?.message ?? String(firstError);
+        let errorMessage: string = typeof firstError === 'string' ? firstError : (firstError?.message ?? String(firstError));
         if (errorMessage.toLowerCase().indexOf('load') !== -1) {
           errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(schemaUri));
         } else if (errorMessage.toLowerCase().indexOf('parse') !== -1) {
