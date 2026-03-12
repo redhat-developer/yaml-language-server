@@ -17,14 +17,9 @@ export function getSchemaFromModeline(doc: SingleYAMLDocument | JSONDocument): s
       return isModeline(lineComment);
     });
     if (yamlLanguageServerModeline != undefined) {
-      const schemaMatchs = yamlLanguageServerModeline.match(/\$schema(?:=|:\s*)(\S+)/);
-      if (schemaMatchs !== null && schemaMatchs.length >= 1) {
-        if (schemaMatchs.length >= 2) {
-          console.log(
-            'Several $schema attributes have been found on the yaml-language-server modeline. The first one will be picked.'
-          );
-        }
-        return schemaMatchs[1];
+      const schemaMatches = yamlLanguageServerModeline.match(/\$schema(?:=|:\s*)(\S+)/);
+      if (schemaMatches !== null && schemaMatches.length === 2) {
+        return schemaMatches[1];
       }
     }
   }
