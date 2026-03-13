@@ -346,6 +346,22 @@ export class YAMLSchemaService extends JSONSchemaService {
       return this.normalizeId(ref);
     };
 
+    const _preferLocalBaseForRemoteId = async (currentBase: string, id: string): Promise<string> => {
+      try {
+        const currentBaseUri = URI.parse(currentBase);
+        const idUri = URI.parse(id);
+        const localFileName = path.posix.basename(idUri.path);
+        const localDir = path.posix.dirname(currentBaseUri.path);
+        const localPath = path.posix.join(localDir, localFileName);
+        const localUriStr = currentBaseUri.with({ path: localPath, query: idUri.query, fragment: idUri.fragment }).toString();
+        if (localUriStr === currentBase) return localUriStr;
+        const content = await this.requestService(localUriStr);
+        return content ? localUriStr : _resolveAgainstBase(currentBase, id);
+      } catch {
+        return _resolveAgainstBase(currentBase, id);
+      }
+    };
+
     const _indexSchemaResources = async (root: JSONSchema, initialBaseUri: string): Promise<void> => {
       type WorkItem = { node: JSONSchema; baseUri: string };
       const preOrderStack: WorkItem[] = [{ node: root, baseUri: initialBaseUri }];
@@ -364,17 +380,17 @@ export class YAMLSchemaService extends JSONSchemaService {
         let baseUri = current.baseUri;
         const id = node.$id || node.id;
         if (id) {
-          const normalizedId = _resolveAgainstBase(baseUri, id);
-          node._baseUrl = normalizedId;
-          const hashIndex = normalizedId.indexOf('#');
-          if (hashIndex !== -1 && hashIndex < normalizedId.length - 1) {
+          const preferredBaseUri = await _preferLocalBaseForRemoteId(baseUri, id);
+          node._baseUrl = preferredBaseUri;
+          const hashIndex = preferredBaseUri.indexOf('#');
+          if (hashIndex !== -1 && hashIndex < preferredBaseUri.length - 1) {
             // Draft-07 and earlier: $id with fragment defines a plain-name anchor scoped to the resolved base
-            const frag = normalizedId.slice(hashIndex + 1);
+            const frag = preferredBaseUri.slice(hashIndex + 1);
             _getResourceIndex(baseUri).fragments.set(frag, { node });
           } else {
             // $id without fragment creates a new embedded resource scope
-            baseUri = normalizedId;
-            const entry = _getResourceIndex(normalizedId);
+            baseUri = preferredBaseUri;
+            const entry = _getResourceIndex(preferredBaseUri);
             if (!entry.root) {
               entry.root = node;
             }
@@ -440,7 +456,8 @@ export class YAMLSchemaService extends JSONSchemaService {
     };
 
     let schema = raw as JSONSchema;
-    await _indexSchemaResources(schema, schemaURL);
+    const schemaBaseURL = schemaToResolve.uri ?? schemaURL;
+    await _indexSchemaResources(schema, schemaBaseURL);
 
     const _findSection = (schemaRoot: JSONSchema, refPath: string, sourceURI: string): JSONSchema => {
       if (!refPath) {
@@ -479,6 +496,34 @@ export class YAMLSchemaService extends JSONSchemaService {
         return;
       } else {
         resolveErrors.push(l10n.t("$ref '{0}' in '{1}' cannot be resolved.", refPath, sourceURI));
+      }
+    };
+
+    const _resolveRefUri = (parentSchemaURL: string, refUri: string): string => {
+      const resolvedAgainstParent = _resolveAgainstBase(parentSchemaURL, refUri);
+      if (!refUri.startsWith('/')) return resolvedAgainstParent;
+      const parentResource = resourceIndexByUri.get(parentSchemaURL)?.root;
+      const parentResourceId = parentResource?.$id || parentResource?.id;
+      const resolvedParentId = _resolveAgainstBase(parentSchemaURL, parentResourceId);
+      if (!resolvedParentId.startsWith('http://') && !resolvedParentId.startsWith('https://')) return resolvedAgainstParent;
+
+      return _resolveAgainstBase(resolvedParentId, refUri);
+    };
+
+    const _resolveLocalSiblingFromRemoteUri = (parentSchemaURL: string, resolvedRefUri: string): string | undefined => {
+      try {
+        const parentUri = URI.parse(parentSchemaURL);
+        const targetUri = URI.parse(resolvedRefUri);
+        if (parentUri.scheme !== 'file') return undefined;
+        if (targetUri.scheme !== 'http' && targetUri.scheme !== 'https') return undefined;
+
+        const localFileName = path.posix.basename(targetUri.path);
+        if (!localFileName) return undefined;
+        const localDir = path.posix.dirname(parentUri.path);
+        const localPath = path.posix.join(localDir, localFileName);
+        return parentUri.with({ path: localPath, query: targetUri.query, fragment: targetUri.fragment }).toString();
+      } catch {
+        return undefined;
       }
     };
 
@@ -524,42 +569,57 @@ export class YAMLSchemaService extends JSONSchemaService {
         );
       };
 
-      const resolvedUri = _resolveAgainstBase(parentSchemaURL, uri);
-      const embeddedSchema = resourceIndexByUri.get(resolvedUri)?.root;
-      if (embeddedSchema) {
-        return _attachResolvedSchema(
-          node,
-          embeddedSchema,
-          resolvedUri,
-          linkPath,
-          parentSchemaDependencies,
-          parentSchemaDependencies,
-          resolutionStack,
-          recursiveAnchorBase,
-          inheritedDynamicScope
-        );
-      }
+      const _resolveByUri = (targetUris: string[], index = 0): Promise<unknown> => {
+        const targetUri = targetUris[index];
 
-      const referencedHandle = this.getOrAddSchemaHandle(resolvedUri);
-      return referencedHandle.getUnresolvedSchema().then(async (unresolvedSchema) => {
-        if (unresolvedSchema.errors.length) {
-          const loc = linkPath ? resolvedUri + '#' + linkPath : resolvedUri;
-          resolveErrors.push(l10n.t("Problems loading reference '{0}': {1}", loc, unresolvedSchema.errors[0]));
+        const embeddedSchema = resourceIndexByUri.get(targetUri)?.root;
+        if (embeddedSchema) {
+          return _attachResolvedSchema(
+            node,
+            embeddedSchema,
+            targetUri,
+            linkPath,
+            parentSchemaDependencies,
+            parentSchemaDependencies,
+            resolutionStack,
+            recursiveAnchorBase,
+            inheritedDynamicScope
+          );
         }
-        // index resources for the newly loaded schema
-        await _indexSchemaResources(unresolvedSchema.schema, resolvedUri);
-        return _attachResolvedSchema(
-          node,
-          unresolvedSchema.schema,
-          resolvedUri,
-          linkPath,
-          parentSchemaDependencies,
-          referencedHandle.dependencies,
-          resolutionStack,
-          recursiveAnchorBase,
-          inheritedDynamicScope
-        );
-      });
+
+        const referencedHandle = this.getOrAddSchemaHandle(targetUri);
+        return referencedHandle.getUnresolvedSchema().then(async (unresolvedSchema) => {
+          if (
+            unresolvedSchema.errors?.some((error) => error.toLowerCase().includes('unable to load schema from')) &&
+            index + 1 < targetUris.length
+          ) {
+            return _resolveByUri(targetUris, index + 1);
+          }
+
+          if (unresolvedSchema.errors.length) {
+            const loc = linkPath ? targetUri + '#' + linkPath : targetUri;
+            resolveErrors.push(l10n.t("Problems loading reference '{0}': {1}", loc, unresolvedSchema.errors[0]));
+          }
+          // index resources for the newly loaded schema
+          await _indexSchemaResources(unresolvedSchema.schema, targetUri);
+          return _attachResolvedSchema(
+            node,
+            unresolvedSchema.schema,
+            targetUri,
+            linkPath,
+            parentSchemaDependencies,
+            referencedHandle.dependencies,
+            resolutionStack,
+            recursiveAnchorBase,
+            inheritedDynamicScope
+          );
+        });
+      };
+
+      const resolvedUri = _resolveRefUri(parentSchemaURL, uri);
+      const localSiblingUri = _resolveLocalSiblingFromRemoteUri(parentSchemaURL, resolvedUri);
+      const targetUris = localSiblingUri && localSiblingUri !== resolvedUri ? [localSiblingUri, resolvedUri] : [resolvedUri];
+      return _resolveByUri(targetUris);
     };
 
     const resolveRefs = async (
@@ -583,6 +643,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         dialect?: SchemaDialect;
         recursiveAnchorBase?: string;
         inheritedDynamicScope?: Map<string, JSONSchema[]>;
+        siblingRefCycleKeys?: Set<string>;
       };
       const toWalk: WalkItem[] = [{ node, baseURL: parentSchemaURL, recursiveAnchorBase, inheritedDynamicScope }];
       const seen = new WeakSet<JSONSchema>(); // prevents re-walking the same schema object graph
@@ -596,7 +657,8 @@ export class YAMLSchemaService extends JSONSchemaService {
         nodeBaseURL: string,
         nodeDialect: SchemaDialect,
         recursiveAnchorBase?: string,
-        inheritedDynamicScope?: Map<string, JSONSchema[]>
+        inheritedDynamicScope?: Map<string, JSONSchema[]>,
+        siblingRefCycleKeys?: Set<string>
       ): void => {
         const currentDynamicScope = _addResourceDynamicAnchors(inheritedDynamicScope, nodeBaseURL);
 
@@ -648,6 +710,19 @@ export class YAMLSchemaService extends JSONSchemaService {
         };
 
         const seenRefs = new Set<string>();
+
+        const _mergeIfResourceAlreadyInResolutionStack = (ref: string, resolvedResource: string, frag: string): boolean => {
+          if (!resolutionStack.has(resolvedResource)) return false;
+          if (!seenRefs.has(ref)) {
+            const source = resourceIndexByUri.get(resolvedResource)?.root;
+            if (source && typeof source === 'object') {
+              _merge(next, source, resolvedResource, frag, !!recursiveAnchorBase);
+            }
+            seenRefs.add(ref);
+          }
+          return true;
+        };
+
         while (next.$dynamicRef || next.$recursiveRef || next.$ref) {
           const isDynamicRef = typeof next.$dynamicRef === 'string';
           const isRecursiveRef = !isDynamicRef && typeof next.$recursiveRef === 'string';
@@ -655,21 +730,37 @@ export class YAMLSchemaService extends JSONSchemaService {
           if (typeof rawRef !== 'string') break;
           next._$ref = rawRef;
 
+          // parse ref into base URI and fragment
+          const ref = decodeURIComponent(rawRef);
+          const segments = ref.split('#', 2);
+          const baseUri = segments[0];
+          const frag = segments.length > 1 ? segments[1] : '';
+          const resolvedRefKey = `${baseUri ? _resolveAgainstBase(nodeBaseURL, baseUri) : nodeBaseURL}#${frag}`;
+
           if (_hasRefSiblings(next)) {
             // Draft-07 and earlier: ignore siblings
             if (nodeDialect === SchemaDialect.draft04 || nodeDialect === SchemaDialect.draft07) {
               _stripRefSiblings(next);
             } else {
+              if (siblingRefCycleKeys?.has(resolvedRefKey)) break;
+
               // Draft-2019+: support sibling keywords
               _rewriteRefWithSiblingsToAllOf(next);
               if (Array.isArray(next.allOf)) {
-                for (const entry of next.allOf) {
+                for (let i = 0; i < next.allOf.length; i++) {
+                  const entry = next.allOf[i];
                   if (entry && typeof entry === 'object') {
+                    let nextSiblingRefCycleKeys: Set<string> | undefined;
+                    if (i === 0) {
+                      nextSiblingRefCycleKeys = new Set(siblingRefCycleKeys);
+                      nextSiblingRefCycleKeys.add(resolvedRefKey);
+                    }
                     toWalk.push({
                       node: entry as JSONSchema,
                       baseURL: nodeBaseURL,
                       recursiveAnchorBase,
                       inheritedDynamicScope: currentDynamicScope,
+                      siblingRefCycleKeys: nextSiblingRefCycleKeys,
                     });
                   }
                 }
@@ -678,15 +769,9 @@ export class YAMLSchemaService extends JSONSchemaService {
             }
           }
 
-          const ref = decodeURIComponent(rawRef);
           delete next.$dynamicRef;
           delete next.$recursiveRef;
           delete next.$ref;
-
-          // parse ref into base URI and fragment
-          const segments = ref.split('#', 2);
-          const baseUri = segments[0];
-          const frag = segments.length > 1 ? segments[1] : '';
 
           // Draft-2019+: $recursiveRef
           if (isRecursiveRef && (ref === '#' || ref === '')) {
@@ -736,6 +821,7 @@ export class YAMLSchemaService extends JSONSchemaService {
             }
 
             if (baseUri.length > 0 || targetHasDynamicAnchor) {
+              if (_mergeIfResourceAlreadyInResolutionStack(ref, resolveResource, frag)) continue;
               openPromises.push(
                 resolveExternalLink(
                   next,
@@ -753,6 +839,8 @@ export class YAMLSchemaService extends JSONSchemaService {
           }
           // normal $ref with external baseUri
           else if (baseUri.length > 0) {
+            const resolvedBaseUri = _resolveAgainstBase(nodeBaseURL, baseUri);
+            if (_mergeIfResourceAlreadyInResolutionStack(ref, resolvedBaseUri, frag)) continue;
             // resolve relative to this node's base URL
             openPromises.push(
               resolveExternalLink(
@@ -771,7 +859,7 @@ export class YAMLSchemaService extends JSONSchemaService {
 
           // local $ref or $dynamicRef
           if (!seenRefs.has(ref)) {
-            _merge(next, parentSchema, nodeBaseURL, frag, !!currentDynamicScope);
+            _merge(next, parentSchema, nodeBaseURL, frag, isDynamicRef && !!currentDynamicScope);
             seenRefs.add(ref);
           }
         }
@@ -842,7 +930,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         const nodeRecursiveAnchorBase = item.recursiveAnchorBase ?? (next.$recursiveAnchor ? nodeBaseURL : undefined);
         if (seen.has(next)) continue;
         seen.add(next);
-        _handleRef(next, nodeBaseURL, nodeDialect, nodeRecursiveAnchorBase, item.inheritedDynamicScope);
+        _handleRef(next, nodeBaseURL, nodeDialect, nodeRecursiveAnchorBase, item.inheritedDynamicScope, item.siblingRefCycleKeys);
       }
       return Promise.all(openPromises);
     };

@@ -2227,5 +2227,33 @@ hey`);
       expect(result).to.have.length(1);
       expect(result[0].message).to.include('String is longer than the maximum length of 2.');
     });
+
+    it('does not infinite loop on cyclic $ref with siblings', async () => {
+      const schema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $id: 'https://example.com/cyclic-ref-with-siblings.json',
+        $defs: {
+          a: {
+            $ref: '#/$defs/b',
+            properties: {
+              a: { type: 'string' },
+            },
+            required: ['a'],
+          },
+          b: {
+            $ref: '#/$defs/a',
+            properties: {
+              b: { type: 'string' },
+            },
+            required: ['b'],
+          },
+        },
+        $ref: '#/$defs/a',
+      } as JSONSchema;
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const result = await parseSetup(`a: hello`);
+      expect(result).to.have.length(1);
+      expect(result[0].message).to.include('Missing property "b".');
+    });
   });
 });

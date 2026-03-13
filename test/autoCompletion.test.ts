@@ -2022,6 +2022,16 @@ describe('Auto Completion Tests', () => {
         .then(done, done);
     });
 
+    it('Provide completion from schema declared in file with $schema: format', (done) => {
+      const content = `# $schema: ${uri}\n- `;
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 3);
+        })
+        .then(done, done);
+    });
+
     it('Provide completion from schema declared in file with several attributes', (done) => {
       const content = `# yaml-language-server: $schema=${uri} anothermodeline=value\n- `;
       const completion = parseSetup(content, content.length);
@@ -3182,6 +3192,43 @@ describe('Auto Completion Tests', () => {
             value: '```yaml\noptions:\n  label: \nprop1: \n```',
           },
           sortText: '_object',
+        })
+      );
+    });
+    it('object completion with default boolean and default integer', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          env: {
+            type: 'object',
+            properties: {
+              val: {
+                type: 'boolean',
+                default: false,
+              },
+            },
+            required: ['val'],
+          },
+          salad: {
+            type: 'integer',
+            default: 0,
+          },
+        },
+        required: ['env', 'salad'],
+      });
+
+      const content = '';
+      const result = await parseSetup(content, 0);
+
+      assert.equal(result.items.length, 3);
+      assert.deepEqual(
+        result.items[1],
+        createExpectedCompletion('object', 'env:\n  val: ${1:false}\nsalad: 0', 0, 0, 0, 0, 7, 2, {
+          sortText: '_object',
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\nenv:\n  val: false\nsalad: 0\n```',
+          },
         })
       );
     });
