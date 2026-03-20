@@ -945,6 +945,39 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
         `Yaml Language Server (https://github.com/redhat-developer/yaml-language-server)\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
+
+    it('Hover prefers markdownDescription for $ref siblings', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
+        properties: {
+          foo: {
+            type: 'string',
+            title: 'foo title',
+            description: 'foo desc',
+            markdownDescription: 'foo md desc **bold** \n * line \n* another \n\n',
+          },
+          bar: {
+            $ref: '#/$defs/veggie',
+            title: 'bar title',
+            description: 'bar desc',
+            markdownDescription: 'bar md desc **bold** \n * line \n* another \n\n',
+          },
+        },
+        $defs: {
+          veggie: {
+            type: 'string',
+            enum: ['potato', 'carrot'],
+          },
+        },
+      });
+      const hover = await parseSetup('b|a|r: potato');
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.ok((hover.contents as MarkupContent).value.includes('bar md desc **bold**'));
+      assert.ok((hover.contents as MarkupContent).value.includes('* another'));
+      assert.ok(!(hover.contents as MarkupContent).value.includes('bar desc'));
+    });
   });
 
   describe('Hover on anyOf', () => {

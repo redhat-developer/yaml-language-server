@@ -219,6 +219,52 @@ describe('JSON Schema', () => {
       );
   });
 
+  it('Preserves markdownDescription on $ref siblings', function (testDone) {
+    const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+    service.setSchemaContributions({
+      schemas: {
+        'https://myschemastore/main/schema.json': {
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          id: 'https://myschemastore/main/schema.json',
+          type: 'object',
+          properties: {
+            bar: {
+              $ref: '#/$defs/veggie',
+              title: 'bar title',
+              description: 'bar desc',
+              markdownDescription: 'bar md desc **bold** \n * line \n* another \n\n',
+            },
+          },
+          $defs: {
+            veggie: {
+              type: 'string',
+              enum: ['potato', 'carrot'],
+            },
+          },
+        },
+      },
+    });
+
+    service
+      .getResolvedSchema('https://myschemastore/main/schema.json')
+      .then((resolvedSchema) => {
+        assert.strictEqual(resolvedSchema.schema.properties['bar'].description, 'bar desc');
+        assert.strictEqual(
+          resolvedSchema.schema.properties['bar'].markdownDescription,
+          'bar md desc **bold** \n * line \n* another \n\n'
+        );
+        assert.deepStrictEqual(resolvedSchema.schema.properties['bar'].enum, ['potato', 'carrot']);
+      })
+      .then(
+        () => {
+          return testDone();
+        },
+        (error) => {
+          testDone(error);
+        }
+      );
+  });
+
   describe('Compound Schema Documents', () => {
     let validationHandler: ValidationHandler;
     let yamlSettings: SettingsState;

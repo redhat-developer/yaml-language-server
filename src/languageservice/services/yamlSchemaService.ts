@@ -75,6 +75,7 @@ const REF_SIBLING_NONCONSTRAINT_KEYS = new Set([
   '$comment',
   'title',
   'description',
+  'markdownDescription',
   '$vocabulary',
   'examples',
   'default',
