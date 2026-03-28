@@ -424,6 +424,7 @@ This repository only contains the server implementation. Here are some known cli
 - [nova-yaml](https://github.com/robb-j/nova-yaml/) for Nova
 - [volar-service-yaml](https://github.com/volarjs/services/tree/master/packages/yaml) for Volar
 - [Kate](https://kate-editor.org/)
+- [yaml-schema-lint](https://github.com/X-Guardian/yaml-schema-lint) A CLI for schema linting yaml files
 
 ## Developer Support
 
