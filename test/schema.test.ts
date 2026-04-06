@@ -23,7 +23,7 @@ import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { Diagnostic, MarkupContent, Position } from 'vscode-languageserver-types';
 import { LineCounter } from 'yaml';
 import { getSchemaFromModeline } from '../src/languageservice/services/modelineUtil';
-import { getGroupVersionKindFromDocument } from '../src/languageservice/services/crdUtil';
+import { getGroupVersionKindFromDocument } from '../src/languageservice/services/k8sSchemaUtil';
 
 const requestServiceMock = function (uri: string): Promise<string> {
   return Promise.reject<string>(`Resource ${uri} not found.`);

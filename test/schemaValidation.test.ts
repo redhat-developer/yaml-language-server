@@ -1212,6 +1212,10 @@ obj:
   });
 
   describe('Test with custom kubernetes schemas', function () {
+    after(() => {
+      languageSettingsSetup.languageSettings.schemas.pop();
+      languageService.configure(languageSettingsSetup.languageSettings);
+    });
     it('Test that properties that match multiple enums get validated properly', (done) => {
       languageService.configure(languageSettingsSetup.withKubernetes().languageSettings);
       yamlSettings.specificValidatorPaths = ['*.yml', '*.yaml'];
@@ -1254,6 +1258,40 @@ obj:
           assert.equal(result.length, 2);
           // eslint-disable-next-line
           assert.equal(result[1].message, `Value is not accepted. Valid values: "ImageStreamImport", "ImageStreamLayers".`);
+        })
+        .then(done, done);
+    });
+
+    it('Test that it validates against the correct schema based on the GroupVersionKind', (done) => {
+      languageService.configure(
+        languageSettingsSetup.withKubernetes().withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['*.yml', '*.yaml'] })
+          .languageSettings
+      );
+      yamlSettings.specificValidatorPaths = ['*.yml', '*.yaml'];
+      const content = `apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: foo
+spec:
+  foo: bar
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: foo
+  minReplicas: 2
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80`;
+      const validator = parseSetup(content);
+      validator
+        .then(function (result) {
+          assert.equal(result.length, 1);
+          assert.equal(result[0].message, `Property foo is not allowed.`);
         })
         .then(done, done);
     });
