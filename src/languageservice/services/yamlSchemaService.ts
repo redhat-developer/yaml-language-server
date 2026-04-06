@@ -4,35 +4,35 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { JSONSchema, JSONSchemaRef, JSONSchemaMap, SchemaDialect } from '../jsonSchema';
-import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
-import { SettingsState } from '../../yamlSettings';
 import {
-  UnresolvedSchema,
-  ResolvedSchema,
-  JSONSchemaService,
-  SchemaDependencies,
   ISchemaContributions,
+  JSONSchemaService,
+  ResolvedSchema,
+  SchemaDependencies,
   SchemaHandle,
+  UnresolvedSchema,
 } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
+import { SettingsState } from '../../yamlSettings';
+import { JSONSchema, JSONSchemaMap, JSONSchemaRef, SchemaDialect } from '../jsonSchema';
+import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
 
-import { URI } from 'vscode-uri';
 import * as l10n from '@vscode/l10n';
-import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { JSONDocument } from '../parser/jsonDocument';
 import * as path from 'path';
-import { getSchemaFromModeline } from './modelineUtil';
+import { URI } from 'vscode-uri';
 import { JSONSchemaDescriptionExt } from '../../requestTypes';
+import { JSONDocument } from '../parser/jsonDocument';
+import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { SchemaVersions } from '../yamlTypes';
+import { getSchemaFromModeline } from './modelineUtil';
 
-import { parse } from 'yaml';
-import * as Json from 'jsonc-parser';
 import Ajv, { DefinedError, type AnySchemaObject, type ValidateFunction } from 'ajv';
 import Ajv4 from 'ajv-draft-04';
 import Ajv2019 from 'ajv/dist/2019';
 import Ajv2020 from 'ajv/dist/2020';
-import { autoDetectKubernetesSchemaFromDocument } from './crdUtil';
+import * as Json from 'jsonc-parser';
+import { parse } from 'yaml';
 import { CRD_CATALOG_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
+import { autoDetectKubernetesSchema } from './k8sSchemaUtil';
 
 const ajv4 = new Ajv4({ allErrors: true });
 const ajv7 = new Ajv({ allErrors: true });
@@ -992,10 +992,10 @@ export class YAMLSchemaService extends JSONSchemaService {
                 if (!k8sAllSchema) {
                   k8sAllSchema = await this.getResolvedSchema(KUBERNETES_SCHEMA_URL);
                 }
-                const kubeSchema = autoDetectKubernetesSchemaFromDocument(
+                const kubeSchema = autoDetectKubernetesSchema(
                   doc,
-                  this.yamlSettings.kubernetesCRDStoreUrl ?? CRD_CATALOG_URL,
-                  k8sAllSchema
+                  k8sAllSchema,
+                  this.yamlSettings.kubernetesCRDStoreUrl ?? CRD_CATALOG_URL
                 );
                 if (kubeSchema) {
                   schemas.push(kubeSchema);
