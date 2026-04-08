@@ -27,7 +27,7 @@ describe('getLanguageService()', () => {
   });
 
   describe('minimal language service hover happy path', () => {
-    const schemaUri = 'my.schema.uri';
+    const schemaUri = 'https://example.com/my.schema.json';
     const schemaContentMap: { [uri: string]: string } = {};
 
     let schemaRequestService: SchemaRequestService;
@@ -79,7 +79,7 @@ describe('getLanguageService()', () => {
       assert.deepEqual(result, {
         contents: {
           kind: 'markdown',
-          value: "The person's first name.\n\nSource: [my.schema.uri](my.schema.uri)",
+          value: "The person's first name.\n\nSource: [my.schema.json](https://example.com/my.schema.json)",
         },
         range: {
           start: {
