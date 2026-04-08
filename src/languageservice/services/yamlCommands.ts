@@ -15,7 +15,7 @@ export function registerCommands(commandExecutor: CommandExecutor, connection: C
     }
     const wsFolders = await connection.workspace.getWorkspaceFolders();
 
-    if (uri.indexOf('://') < 0 && !uri.startsWith('/')) {
+    if (uri.indexOf(':') < 0 && !uri.startsWith('/')) {
       if (wsFolders.length === 1) {
         const wsUri = URI.parse(wsFolders[0].uri);
         uri = wsUri.with({ path: wsUri.path + uri }).toString();
