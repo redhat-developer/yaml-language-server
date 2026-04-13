@@ -557,6 +557,34 @@ describe('Validation Tests', () => {
         })
         .then(done, done);
     });
+
+    it('Big integer value should validate as type:integer', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          bignum: {
+            type: 'integer',
+          },
+        },
+      });
+      const content = 'bignum: 123456789012345671';
+      const result = await parseSetup(content);
+      assert.equal(result.length, 0);
+    });
+
+    it('Big integer value should validate as type:number', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          bignum: {
+            type: 'number',
+          },
+        },
+      });
+      const content = 'bignum: 123456789012345671';
+      const result = await parseSetup(content);
+      assert.equal(result.length, 0);
+    });
   });
 
   describe('Null tests', () => {
