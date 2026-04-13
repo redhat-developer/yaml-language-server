@@ -223,31 +223,34 @@ describe('JSON Schema', () => {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     service.setSchemaContributions({
       schemas: {
-        'file:///main/schema.yaml': {
+        'file:///main/schema.json': {
           type: 'object',
           properties: {
             name: {
-              $ref: '/main/schema2.yaml',
+              $ref: '/main/schema2.json',
             },
           },
+          required: ['name'],
         },
-        'file:///main/schema2.yaml': {
+        'file:///main/schema2.json': {
           type: 'string',
-          description: 'Something.',
+          enum: ['alice', 'bob'],
+          description: 'Allowed names.',
         },
       },
     });
 
     service
-      .getResolvedSchema('file:///main/schema.yaml')
+      .getResolvedSchema('file:///main/schema.json')
       .then((fs) => {
         assert.deepEqual(fs.errors, []);
         assert.deepEqual(fs.schema.properties['name'], {
           type: 'string',
-          description: 'Something.',
-          _$ref: '/main/schema2.yaml',
-          _baseUrl: 'file:///main/schema2.yaml',
-          url: 'file:///main/schema2.yaml',
+          enum: ['alice', 'bob'],
+          description: 'Allowed names.',
+          _$ref: '/main/schema2.json',
+          _baseUrl: 'file:///main/schema2.json',
+          url: 'file:///main/schema2.json',
         });
       })
       .then(
