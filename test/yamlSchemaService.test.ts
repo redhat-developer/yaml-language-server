@@ -164,6 +164,121 @@ describe('YAML Schema Service', () => {
       expect(requestedUris).to.not.include('https://example.com/schemas/secondary.json');
     });
 
+    it('should resolve relative local sibling refs when the root $id basename differs from the local filename', async () => {
+      const content =
+        `# yaml-language-server: $schema=file:///schemas/repro_main_schema.json\n` +
+        `members:\n` +
+        `  - name: Alice\n` +
+        `    age: 30`;
+      const yamlDock = parse(content);
+
+      const primarySchema = {
+        $id: 'https://example.com/schemas/repro-main-v1',
+        type: 'object',
+        properties: {
+          members: {
+            type: 'array',
+            items: {
+              $ref: './repro_defs.json#/$defs/Person',
+            },
+          },
+        },
+        required: ['members'],
+      };
+      const defsSchema = {
+        $id: 'https://example.com/schemas/repro-defs-v1',
+        $defs: {
+          Person: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              age: { type: 'integer' },
+            },
+            required: ['name'],
+          },
+        },
+      };
+
+      requestServiceMock = sandbox.fake((uri: string) => {
+        if (uri === 'file:///schemas/repro_main_schema.json') {
+          return Promise.resolve(JSON.stringify(primarySchema));
+        }
+        if (uri === 'file:///schemas/repro_defs.json') {
+          return Promise.resolve(JSON.stringify(defsSchema));
+        }
+        return Promise.reject<string>(`Resource ${uri} not found.`);
+      });
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+      const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      expect(requestedUris).to.include('file:///schemas/repro_main_schema.json');
+      expect(requestedUris).to.include('file:///schemas/repro_defs.json');
+      expect(requestedUris).to.not.include('https://example.com/schemas/repro_defs.json');
+      expect(schema.errors).to.eql([]);
+      expect(schema.schema.properties.members.items).to.deep.include({
+        type: 'object',
+        url: 'file:///schemas/repro_defs.json',
+      });
+    });
+
+    it('should resolve nested local sibling refs relative to the loaded sibling schema file', async () => {
+      const content = `# yaml-language-server: $schema=file:///schemas/primary.json\nitem: ok`;
+      const yamlDock = parse(content);
+
+      const primarySchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $id: 'https://example.com/schemas/primary-v1',
+        $ref: './secondary.json',
+      };
+      const secondarySchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $id: 'https://example.com/schemas/secondary-v1',
+        type: 'object',
+        properties: {
+          item: {
+            $ref: './third.json',
+          },
+        },
+        required: ['item'],
+      };
+      const thirdSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $id: 'https://example.com/schemas/third-v1',
+        type: 'string',
+        enum: ['ok'],
+      };
+
+      requestServiceMock = sandbox.fake((uri: string) => {
+        if (uri === 'file:///schemas/primary.json') {
+          return Promise.resolve(JSON.stringify(primarySchema));
+        }
+        if (uri === 'file:///schemas/secondary.json') {
+          return Promise.resolve(JSON.stringify(secondarySchema));
+        }
+        if (uri === 'file:///schemas/third.json') {
+          return Promise.resolve(JSON.stringify(thirdSchema));
+        }
+        return Promise.reject<string>(`Resource ${uri} not found.`);
+      });
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+      const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      expect(requestedUris).to.include('file:///schemas/primary.json');
+      expect(requestedUris).to.include('file:///schemas/secondary.json');
+      expect(requestedUris).to.include('file:///schemas/third.json');
+      expect(requestedUris).to.not.include('https://example.com/schemas/secondary.json');
+      expect(requestedUris).to.not.include('https://example.com/schemas/third.json');
+      expect(schema.errors).to.eql([]);
+      expect(schema.schema.properties.item).to.deep.include({
+        type: 'string',
+        url: 'file:///schemas/third.json',
+      });
+    });
+
     it('should resolve absolute $ref via remote base and mapped local sibling path', async () => {
       const content = `# yaml-language-server: $schema=file:///dir/primary.json\nname: John\nage: -1`;
       const yamlDock = parse(content);

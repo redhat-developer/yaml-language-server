@@ -534,6 +534,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       uri: string,
       linkPath: string,
       parentSchemaURL: string,
+      fallbackBaseURL: string,
       parentSchemaDependencies: SchemaDependencies,
       resolutionStack: Set<string>,
       recursiveAnchorBase: string,
@@ -619,7 +620,8 @@ export class YAMLSchemaService extends JSONSchemaService {
       };
 
       const resolvedUri = _resolveRefUri(parentSchemaURL, uri);
-      const localSiblingUri = _resolveLocalSiblingFromRemoteUri(parentSchemaURL, resolvedUri);
+      const hasEmbeddedTarget = !!resourceIndexByUri.get(resolvedUri)?.root;
+      const localSiblingUri = hasEmbeddedTarget ? undefined : _resolveLocalSiblingFromRemoteUri(fallbackBaseURL, resolvedUri);
       const targetUris = localSiblingUri && localSiblingUri !== resolvedUri ? [localSiblingUri, resolvedUri] : [resolvedUri];
       return _resolveByUri(targetUris);
     };
@@ -642,21 +644,30 @@ export class YAMLSchemaService extends JSONSchemaService {
       type WalkItem = {
         node: JSONSchema;
         baseURL?: string;
+        fallbackBaseURL?: string;
         dialect?: SchemaDialect;
         recursiveAnchorBase?: string;
         inheritedDynamicScope?: Map<string, JSONSchema[]>;
         siblingRefCycleKeys?: Set<string>;
       };
-      const toWalk: WalkItem[] = [{ node, baseURL: parentSchemaURL, recursiveAnchorBase, inheritedDynamicScope }];
+      const toWalk: WalkItem[] = [
+        { node, baseURL: parentSchemaURL, fallbackBaseURL: parentSchemaURL, recursiveAnchorBase, inheritedDynamicScope },
+      ];
       const seen = new WeakSet<JSONSchema>(); // prevents re-walking the same schema object graph
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const openPromises: Promise<any>[] = [];
 
+      const _getChildFallbackBaseURL = (entry: JSONSchema, currentFallbackBaseURL: string): string => {
+        const resourceUri = entry?._baseUrl;
+        return resourceUri && resourceIndexByUri.get(resourceUri)?.root === entry ? resourceUri : currentFallbackBaseURL;
+      };
+
       // handle $ref with siblings based on dialect
       const _handleRef = (
         next: JSONSchema,
         nodeBaseURL: string,
+        fallbackBaseURL: string,
         nodeDialect: SchemaDialect,
         recursiveAnchorBase?: string,
         inheritedDynamicScope?: Map<string, JSONSchema[]>,
@@ -666,7 +677,13 @@ export class YAMLSchemaService extends JSONSchemaService {
 
         this.collectSchemaNodes(
           (entry) =>
-            toWalk.push({ node: entry, baseURL: nodeBaseURL, recursiveAnchorBase, inheritedDynamicScope: currentDynamicScope }),
+            toWalk.push({
+              node: entry,
+              baseURL: nodeBaseURL,
+              fallbackBaseURL: _getChildFallbackBaseURL(entry, fallbackBaseURL),
+              recursiveAnchorBase,
+              inheritedDynamicScope: currentDynamicScope,
+            }),
           this.schemaMapValues(next.definitions || next.$defs)
         );
 
@@ -760,6 +777,7 @@ export class YAMLSchemaService extends JSONSchemaService {
                     toWalk.push({
                       node: entry as JSONSchema,
                       baseURL: nodeBaseURL,
+                      fallbackBaseURL: _getChildFallbackBaseURL(entry as JSONSchema, fallbackBaseURL),
                       recursiveAnchorBase,
                       inheritedDynamicScope: currentDynamicScope,
                       siblingRefCycleKeys: nextSiblingRefCycleKeys,
@@ -795,6 +813,7 @@ export class YAMLSchemaService extends JSONSchemaService {
                   recursiveBase,
                   '',
                   nodeBaseURL,
+                  fallbackBaseURL,
                   parentSchemaDependencies,
                   resolutionStack,
                   recursiveAnchorBase,
@@ -830,6 +849,7 @@ export class YAMLSchemaService extends JSONSchemaService {
                   resolveResource,
                   frag,
                   nodeBaseURL,
+                  fallbackBaseURL,
                   parentSchemaDependencies,
                   resolutionStack,
                   recursiveAnchorBase,
@@ -850,6 +870,7 @@ export class YAMLSchemaService extends JSONSchemaService {
                 baseUri,
                 frag,
                 nodeBaseURL,
+                fallbackBaseURL,
                 parentSchemaDependencies,
                 resolutionStack,
                 recursiveAnchorBase,
@@ -872,6 +893,7 @@ export class YAMLSchemaService extends JSONSchemaService {
             toWalk.push({
               node: entry,
               baseURL: next._baseUrl || nodeBaseURL,
+              fallbackBaseURL: _getChildFallbackBaseURL(entry, fallbackBaseURL),
               dialect: nodeDialect,
               recursiveAnchorBase,
               inheritedDynamicScope: currentDynamicScope,
@@ -907,6 +929,7 @@ export class YAMLSchemaService extends JSONSchemaService {
             segments[0],
             segments[1],
             parentSchemaURL,
+            parentSchemaURL,
             parentSchemaDependencies,
             resolutionStack,
             recursiveAnchorBase,
@@ -928,11 +951,20 @@ export class YAMLSchemaService extends JSONSchemaService {
         const item = toWalk.pop();
         const next = item.node;
         const nodeBaseURL = next._baseUrl || item.baseURL;
+        const fallbackBaseURL = item.fallbackBaseURL || item.baseURL;
         const nodeDialect = next._dialect || item.dialect;
         const nodeRecursiveAnchorBase = item.recursiveAnchorBase ?? (next.$recursiveAnchor ? nodeBaseURL : undefined);
         if (seen.has(next)) continue;
         seen.add(next);
-        _handleRef(next, nodeBaseURL, nodeDialect, nodeRecursiveAnchorBase, item.inheritedDynamicScope, item.siblingRefCycleKeys);
+        _handleRef(
+          next,
+          nodeBaseURL,
+          fallbackBaseURL,
+          nodeDialect,
+          nodeRecursiveAnchorBase,
+          item.inheritedDynamicScope,
+          item.siblingRefCycleKeys
+        );
       }
       return Promise.all(openPromises);
     };
