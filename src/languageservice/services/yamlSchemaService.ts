@@ -505,6 +505,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       if (!refUri.startsWith('/')) return resolvedAgainstParent;
       const parentResource = resourceIndexByUri.get(parentSchemaURL)?.root;
       const parentResourceId = parentResource?.$id || parentResource?.id;
+      if (!parentResourceId) return resolvedAgainstParent;
       const resolvedParentId = _resolveAgainstBase(parentSchemaURL, parentResourceId);
       if (!resolvedParentId.startsWith('http://') && !resolvedParentId.startsWith('https://')) return resolvedAgainstParent;
 

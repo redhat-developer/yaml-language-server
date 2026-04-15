@@ -219,6 +219,50 @@ describe('JSON Schema', () => {
       );
   });
 
+  it('Resolving absolute-path $refs without top-level id', function (testDone) {
+    const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+    service.setSchemaContributions({
+      schemas: {
+        'file:///main/schema.json': {
+          type: 'object',
+          properties: {
+            name: {
+              $ref: '/main/schema2.json',
+            },
+          },
+          required: ['name'],
+        },
+        'file:///main/schema2.json': {
+          type: 'string',
+          enum: ['alice', 'bob'],
+          description: 'Allowed names.',
+        },
+      },
+    });
+
+    service
+      .getResolvedSchema('file:///main/schema.json')
+      .then((fs) => {
+        assert.deepEqual(fs.errors, []);
+        assert.deepEqual(fs.schema.properties['name'], {
+          type: 'string',
+          enum: ['alice', 'bob'],
+          description: 'Allowed names.',
+          _$ref: '/main/schema2.json',
+          _baseUrl: 'file:///main/schema2.json',
+          url: 'file:///main/schema2.json',
+        });
+      })
+      .then(
+        () => {
+          return testDone();
+        },
+        (error) => {
+          testDone(error);
+        }
+      );
+  });
+
   it('Preserves markdownDescription on $ref siblings', function (testDone) {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     service.setSchemaContributions({
