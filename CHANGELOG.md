@@ -1,3 +1,30 @@
+### 1.22.0
+- Feat: Use `yaml` package (instead of `prettier`) for formatting. See [#933](https://github.com/redhat-developer/yaml-language-server/issues/933), [#1222](https://github.com/redhat-developer/yaml-language-server/pull/1222).
+- Feat: Allow `# $schema: <url>` in addition to the existing `# yaml-language-server: $schema=<url>` to specify JSON Schema. See [#950](https://github.com/redhat-developer/yaml-language-server/issues/950).
+- Feat: Formatting support on web. See [vscode-yaml#1228](https://github.com/redhat-developer/vscode-yaml/pull/1228).
+- Fix: Issue with local refs in local schema when ID does not end with file name. See [#1228](https://github.com/redhat-developer/yaml-language-server/issues/1228).
+- Fix: `textDocument/hover` crashes with "url argument must be of type string" for schemas without `$id`. See [#1227](https://github.com/redhat-developer/yaml-language-server/issues/1227).
+- Fix: Pick which Kubernetes schema to use based on GroupVersionKind (GVK) instead of heuristics. See [#1213](https://github.com/redhat-developer/yaml-language-server/issues/1213).
+- Fix: Remove annoying log output related to modelines. See [#1211](https://github.com/redhat-developer/yaml-language-server/issues/1211).
+- Fix: Fix Kubernetes validation for RBAC resources. See [#1204](https://github.com/redhat-developer/yaml-language-server/issues/1204).
+- Fix: Emacs eglot (and a few other language clients) gets `Internal error` when processing `workspace/configuration` server request. See [#1201](https://github.com/redhat-developer/yaml-language-server/issues/1201), [#1202](https://github.com/redhat-developer/yaml-language-server/issues/1202).
+- Fix: Preserve `markdownDescription` on $ref siblings
+- Fix: "Open Schema" CodeLens stopped working for contributed schemas. See [vscode-yaml#1220](https://github.com/redhat-developer/vscode-yaml/issues/1220).
+- Fix: Markdown description will not be rendered when the property has any reference. See [vscode-yaml#1223](https://github.com/redhat-developer/vscode-yaml/issues/1223).
+- Fix: The color of the digits after the decimal point is incorrect. See [vscode-yaml#1225](https://github.com/redhat-developer/vscode-yaml/issues/1225).
+- Fix: Integers with leading zeros displaying as strings. See [vscode-yaml#1190](https://github.com/redhat-developer/vscode-yaml/issues/1190).
+- Fix: Fix filesystem watcher glob. See [vscode-yaml#1221](https://github.com/redhat-developer/vscode-yaml/pull/1221)
+- Fix: Remove http-proxy-agent and https-proxy-agent. See [#1208](https://github.com/redhat-developer/yaml-language-server/pull/1208).
+- Bump: lodash from 4.17.23 to 4.18.1. See [#1225](https://github.com/redhat-developer/yaml-language-server/pull/1225).
+- Bump: yaml from 2.7.1 to 2.8.3. See [#1220](https://github.com/redhat-developer/yaml-language-server/pull/1220).
+- Bump: picomatch from 2.3.1 to 2.3.2. See [#1219](https://github.com/redhat-developer/yaml-language-server/pull/1219).
+- Bump: flatted from 3.3.3 to 3.4.2. See [#1218](https://github.com/redhat-developer/yaml-language-server/pull/1218).
+- Bump: minimatch. See [#1200](https://github.com/redhat-developer/yaml-language-server/pull/1200).
+- Docs: Add yaml-schema-lint CLI to the Clients list. See [#1215](https://github.com/redhat-developer/yaml-language-server/pull/1215).
+- Docs: Fix links to schemas in `README.md`. See [vscode-yaml#1177](https://github.com/redhat-developer/vscode-yaml/pull/1177).
+
+Thanks to [Remco Haszing](https://github.com/remcohaszing), [Nicolas K.](https://github.com/nikaro), and [Josef Šimánek](https://github.com/simi) for your contributions.
+
 ### 1.21.0
 - Feat: Enable suppressing diagnostics per-line by adding a `# yaml-language-server-disable` comment [vscode-yaml#666](https://github.com/redhat-developer/vscode-yaml/issues/666)
 - Feat: Allow `yaml.validate` and `yaml.format.enable` to be overriden in language-specific settings [#1188](https://github.com/redhat-developer/yaml-language-server/pull/1188)
