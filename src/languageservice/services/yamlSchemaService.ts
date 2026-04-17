@@ -350,6 +350,9 @@ export class YAMLSchemaService extends JSONSchemaService {
     const _preferLocalBaseForRemoteId = async (currentBase: string, id: string): Promise<string> => {
       try {
         const currentBaseUri = URI.parse(currentBase);
+        if (currentBaseUri.scheme !== 'file') {
+          return _resolveAgainstBase(currentBase, id);
+        }
         const idUri = URI.parse(id);
         const localFileName = path.posix.basename(idUri.path);
         const localDir = path.posix.dirname(currentBaseUri.path);
