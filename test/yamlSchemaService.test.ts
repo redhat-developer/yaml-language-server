@@ -406,6 +406,51 @@ describe('YAML Schema Service', () => {
       expect(requestedSecondaryUrisAfterChange).to.have.length(2);
     });
 
+    it('should not probe local sibling paths when schema is loaded from https://', async () => {
+      const content = `# yaml-language-server: $schema=https://example.com/schemas/openapi-extensions.json\nopenapi: '3.1.0'\ninfo:\n  title: Test\n  version: '1.0'`;
+      const yamlDock = parse(content);
+
+      const extensionsSchema = {
+        $id: 'https://example.com/schemas/openapi-extensions.json',
+        $schema: 'http://json-schema.org/draft-04/schema#',
+        allOf: [{ $ref: './openapi.v3.1.json' }],
+      };
+      const openapiSchema = {
+        $id: 'https://github.com/OAI/OpenAPI-Specification/blob/main/schemas/v3.1/schema.json',
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        properties: {
+          openapi: { type: 'string', pattern: '^3\\.1\\.\\d+(-.+)?$' },
+          info: {
+            type: 'object',
+            properties: { title: { type: 'string' }, version: { type: 'string' } },
+            required: ['title', 'version'],
+          },
+        },
+        required: ['openapi', 'info'],
+      };
+
+      requestServiceMock = sandbox.fake((uri: string) => {
+        if (uri === 'https://example.com/schemas/openapi-extensions.json') {
+          return Promise.resolve(JSON.stringify(extensionsSchema));
+        }
+        if (uri === 'https://example.com/schemas/openapi.v3.1.json') {
+          return Promise.resolve(JSON.stringify(openapiSchema));
+        }
+        return Promise.reject<string>(`Resource ${uri} not found.`);
+      });
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+      await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      expect(requestedUris).to.include('https://example.com/schemas/openapi-extensions.json');
+      expect(requestedUris).to.include('https://example.com/schemas/openapi.v3.1.json');
+      // _preferLocalBaseForRemoteId should NOT probe for the $id basename as a local sibling
+      // when the parent schema was loaded from https:// (not file://)
+      expect(requestedUris).to.not.include('https://example.com/schemas/schema.json');
+    });
+
     it('should handle modeline schema comment in the middle of file', () => {
       const documentContent = `foo:\n  bar\n# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#\naa:bbb\n`;
       const content = `${documentContent}`;
