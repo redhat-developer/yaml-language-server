@@ -88,7 +88,13 @@ export const schemaRequestHandler = async (
     }
 
     // Send the HTTP(S) schema content request and return the result
-    const headers = { 'Accept-Encoding': 'gzip, deflate' };
+    const version = (typeof process !== 'undefined' && process.env.YAML_LANGUAGE_SERVER_VERSION) || 'unknown';
+    const nodeVersion = typeof process !== 'undefined' && process.versions?.node ? ` node/${process.versions.node}` : '';
+    const platform = typeof process !== 'undefined' && process.platform ? ` (${process.platform})` : '';
+    const headers = {
+      'Accept-Encoding': 'gzip, deflate',
+      'User-Agent': `yaml-language-server/${version} (RedHat)${nodeVersion}${platform}`,
+    };
     return xhr({ url: uri, followRedirects: 5, headers }).then(
       (response) => {
         return response.responseText;
