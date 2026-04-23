@@ -2103,6 +2103,121 @@ pkg: 123
         expect(result).to.not.be.empty;
         expect(result.some((d) => /Problems loading reference/i.test(d.message) && /No content/i.test(d.message))).to.eq(true);
       });
+
+      it('root $id ending in the loaded schema filename should not break embedded resource refs', async () => {
+        const root: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2020-12/schema',
+          $id: 'https://example.com/test_schema.json',
+          type: 'object',
+          properties: {
+            option: { $ref: 'subschema/schema.json' },
+          },
+          $defs: {
+            'https://example.com/subschema/schema.json': {
+              $schema: 'https://json-schema.org/draft/2020-12/schema',
+              $id: 'https://example.com/subschema/schema.json',
+              type: 'object',
+              properties: {
+                suboption: { $ref: '#/$defs/sub_options' },
+              },
+              $defs: {
+                sub_options: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        };
+
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///test_schema.json', root);
+        const yaml = `# yaml-language-server: $schema=file:///test_schema.json
+option:
+  suboption: 1
+`;
+        const result = await parseSetup(yaml, 'file:///validated.yaml');
+        expect(result.some((d) => /\$ref '\/\$defs\/sub_options'/.test(d.message))).to.eq(false);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('Incorrect type. Expected "string".');
+      });
+
+      it('local sibling fallback preserves source URI for internal refs in the loaded schema', async () => {
+        const primaryUri = 'file:///schemas/primary.json';
+        const secondaryUri = 'file:///schemas/secondary.json';
+        const primary: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2020-12/schema',
+          $id: 'https://example.com/schemas/primary.json',
+          type: 'object',
+          properties: {
+            option: { $ref: 'secondary.json' },
+          },
+          required: ['option'],
+        };
+        const secondary: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2020-12/schema',
+          $id: 'https://example.com/schemas/secondary.json',
+          type: 'object',
+          properties: {
+            suboption: { $ref: '#/$defs/sub_options' },
+          },
+          required: ['suboption'],
+          $defs: {
+            sub_options: {
+              type: 'string',
+            },
+          },
+        };
+
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, primaryUri, primary);
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, secondaryUri, secondary);
+
+        const yaml = `# yaml-language-server: $schema=${primaryUri}
+option:
+  suboption: 1
+`;
+        const result = await parseSetup(yaml, 'file:///validated-local-sibling.yaml');
+        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result.some((d) => /\$ref '\/\$defs\/sub_options'/.test(d.message))).to.eq(false);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('Incorrect type. Expected "string".');
+      });
+
+      it('embedded resource resolution takes precedence over same-name local sibling schema files', async () => {
+        const primaryUri = 'file:///schemas/primary-with-embedded.json';
+        const localSiblingUri = 'file:///schemas/secondary.json';
+        const primary: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2020-12/schema',
+          $id: 'https://example.com/schemas/primary-with-embedded.json',
+          type: 'object',
+          properties: {
+            option: { $ref: 'secondary.json' },
+          },
+          required: ['option'],
+          $defs: {
+            'https://example.com/schemas/secondary.json': {
+              $schema: 'https://json-schema.org/draft/2020-12/schema',
+              $id: 'https://example.com/schemas/secondary.json',
+              type: 'string',
+              enum: ['embedded'],
+            },
+          },
+        };
+        const localSibling: JSONSchema = {
+          $schema: 'https://json-schema.org/draft/2020-12/schema',
+          type: 'string',
+          enum: ['local'],
+        };
+
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, primaryUri, primary);
+        schemaProvider.addSchemaWithUri(SCHEMA_ID, localSiblingUri, localSibling);
+
+        const yaml = `# yaml-language-server: $schema=${primaryUri}
+option: local
+`;
+        const result = await parseSetup(yaml, 'file:///validated-embedded-precedence.yaml');
+        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result).to.have.length(1);
+        expect(result[0].message).to.include('embedded');
+      });
     });
 
     it('Resolving $refs: should ignore sibling keywords next to $ref', async () => {

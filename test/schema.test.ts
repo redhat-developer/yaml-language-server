@@ -93,7 +93,8 @@ describe('JSON Schema', () => {
           description: 'Test description',
           _$ref: 'https://myschemastore/child',
           url: 'https://myschemastore/child',
-          _baseUrl: 'https://myschemastore/child',
+          _baseUri: 'https://myschemastore/child',
+          _sourceUri: 'https://myschemastore/child',
         });
       })
       .then(
@@ -139,8 +140,14 @@ describe('JSON Schema', () => {
         assert.deepEqual(fs.schema.properties['responseValue'], {
           type: 'object',
           required: ['$ref'],
-          properties: { $ref: { type: 'string' } },
+          properties: {
+            $ref: {
+              type: 'string',
+              _sourceUri: 'https://json.schemastore.org/swagger-2.0',
+            },
+          },
           _$ref: '#/definitions/jsonReference',
+          _sourceUri: 'https://json.schemastore.org/swagger-2.0',
         });
       })
       .then(
@@ -191,21 +198,24 @@ describe('JSON Schema', () => {
           type: 'string',
           enum: ['object'],
           _$ref: 'schema2.json#/definitions/hello',
-          _baseUrl: 'https://myschemastore/main/schema2.json',
+          _baseUri: 'https://myschemastore/main/schema2.json',
+          _sourceUri: 'https://myschemastore/main/schema2.json',
           url: 'https://myschemastore/main/schema2.json',
         });
         assert.deepEqual(fs.schema.properties['p2'], {
           type: 'string',
           enum: ['object'],
           _$ref: './schema2.json#/definitions/hello',
-          _baseUrl: 'https://myschemastore/main/schema2.json',
+          _baseUri: 'https://myschemastore/main/schema2.json',
+          _sourceUri: 'https://myschemastore/main/schema2.json',
           url: 'https://myschemastore/main/schema2.json',
         });
         assert.deepEqual(fs.schema.properties['p3'], {
           type: 'string',
           enum: ['object'],
           _$ref: '/main/schema2.json#/definitions/hello',
-          _baseUrl: 'https://myschemastore/main/schema2.json',
+          _baseUri: 'https://myschemastore/main/schema2.json',
+          _sourceUri: 'https://myschemastore/main/schema2.json',
           url: 'https://myschemastore/main/schema2.json',
         });
       })
@@ -249,7 +259,8 @@ describe('JSON Schema', () => {
           enum: ['alice', 'bob'],
           description: 'Allowed names.',
           _$ref: '/main/schema2.json',
-          _baseUrl: 'file:///main/schema2.json',
+          _baseUri: 'file:///main/schema2.json',
+          _sourceUri: 'file:///main/schema2.json',
           url: 'file:///main/schema2.json',
         });
       })
@@ -851,10 +862,12 @@ address:
     assert.deepEqual(fs.schema.properties['apiVersion'], {
       type: 'string',
       enum: ['v2', 'v3'],
+      _sourceUri: 'https://myschemastore/main/schema1.json',
     });
     assert.deepEqual(fs.schema.properties['kind'], {
       type: 'string',
       enum: ['Pod'],
+      _sourceUri: 'https://myschemastore/main/schema1.json',
     });
   });
 
@@ -894,6 +907,7 @@ address:
     assert.deepEqual(fs.schema.properties['kind'], {
       type: 'string',
       enum: ['Pod'],
+      _sourceUri: 'https://myschemastore/main/schema1.json',
     });
   });
 

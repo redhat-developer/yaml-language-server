@@ -17,7 +17,8 @@ export enum SchemaDialect {
 export interface JSONSchema {
   // for internal use
   _dialect?: SchemaDialect;
-  _baseUrl?: string;
+  _baseUri?: string;
+  _sourceUri?: string;
   _$ref?: string;
 
   id?: string;
