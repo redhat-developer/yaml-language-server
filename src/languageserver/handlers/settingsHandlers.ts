@@ -98,7 +98,9 @@ export class SettingsHandler {
       if (settings.files?.associations) {
         for (const [ext, languageId] of Object.entries(settings.files.associations)) {
           if (languageId === 'yaml') {
-            this.yamlSettings.fileExtensions.push(ext);
+            const index = ext.indexOf('*');
+            const extension = index != -1 ? ext.substring(index + 1) : ext;
+            this.yamlSettings.fileExtensions.push(extension);
           }
         }
       }
