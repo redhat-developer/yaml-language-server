@@ -25,10 +25,11 @@ import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { SchemaVersions } from '../yamlTypes';
 import { getSchemaFromModeline } from './modelineUtil';
 
-import Ajv, { DefinedError, type AnySchemaObject, type ValidateFunction } from 'ajv';
+import Ajv, { DefinedError, type AnySchemaObject, type ErrorObject, type ValidateFunction } from 'ajv';
 import Ajv4 from 'ajv-draft-04';
 import Ajv2019 from 'ajv/dist/2019';
 import Ajv2020 from 'ajv/dist/2020';
+import type { Localize } from 'ajv-i18n/localize/types';
 import * as Json from 'jsonc-parser';
 import { parse } from 'yaml';
 import { CRD_CATALOG_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
@@ -47,6 +48,8 @@ const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
 const jsonSchema2019 = require('ajv/dist/refs/json-schema-2019-09/schema.json');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const jsonSchema2020 = require('ajv/dist/refs/json-schema-2020-12/schema.json');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ajvLocalizers: Record<string, Localize> = require('ajv-i18n');
 
 const schema04Validator = ajv4.compile(jsonSchema04);
 const schema07Validator = ajv7.compile(jsonSchema07);
@@ -55,6 +58,11 @@ const schema2020Validator = ajv2020.compile(jsonSchema2020);
 
 const schemaDialectCache = new Map<string, SchemaDialect>();
 const schemaDialectInFlight = new Map<string, Promise<SchemaDialect>>();
+
+const AJV_LOCALE_ALIASES = new Map<string, string>([
+  ['zh-cn', 'zh'],
+  ['zh-tw', 'zh-TW']
+]);
 
 // metadata/keywords that don't add constraints and thus don't count as $ref siblings
 const REF_SIBLING_NONCONSTRAINT_KEYS = new Set([
@@ -264,6 +272,7 @@ export class YAMLSchemaService extends JSONSchemaService {
      * ----------------------------
      */
     const _loadSchema = this.loadSchema.bind(this);
+    const ajvErrorLocale = this.yamlSettings?.locale;
     async function _metaValidateSchemaNode(node: JSONSchema, hasNestedSchema: boolean): Promise<void> {
       if (!node || typeof node !== 'object') return;
       const dialect = await pickSchemaDialect(node.$schema, _loadSchema);
@@ -283,6 +292,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       }
 
       if (!validator(toValidate)) {
+        localizeAjvErrors(validator.errors, ajvErrorLocale);
         const errs: string[] = [];
         for (const err of validator.errors as DefinedError[]) {
           errs.push(`${err.instancePath} : ${err.message}`);
@@ -1431,6 +1441,22 @@ function knownDialectFromSchemaUri(schemaUri?: string): SchemaDialect {
   if (schemaUri === normalizeSchemaUri(ajv2019.defaultMeta())) return SchemaDialect.draft2019;
   if (schemaUri === normalizeSchemaUri(ajv2020.defaultMeta())) return SchemaDialect.draft2020;
   return undefined;
+}
+
+function getAjvLocalizer(locale?: string): Localize | undefined {
+  if (!locale) return undefined;
+
+  const lowerLocale = locale.trim().toLowerCase();
+  const aliasedLocale = AJV_LOCALE_ALIASES.get(lowerLocale);
+
+  return ajvLocalizers[locale]
+    || ajvLocalizers[lowerLocale]
+    || (aliasedLocale ? ajvLocalizers[aliasedLocale] : undefined);
+}
+
+function localizeAjvErrors(errors: ErrorObject[] | null | undefined, locale?: string): void {
+  const localizer = getAjvLocalizer(locale) || ajvLocalizers.en;
+  localizer(errors);
 }
 
 async function pickSchemaDialect(
