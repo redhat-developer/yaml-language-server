@@ -22,6 +22,7 @@ export class ServiceSetup {
     yamlVersion: '1.2',
     flowMapping: 'allow',
     flowSequence: 'allow',
+    showSchemaSource: true,
   };
 
   withValidate(): ServiceSetup {
@@ -79,6 +80,11 @@ export class ServiceSetup {
 
   withYamlVersion(version: YamlVersion): ServiceSetup {
     this.languageSettings.yamlVersion = version;
+    return this;
+  }
+
+  withShowSchemaSource(show: boolean): ServiceSetup {
+    this.languageSettings.showSchemaSource = show;
     return this;
   }
 }

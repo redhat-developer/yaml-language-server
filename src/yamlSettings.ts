@@ -37,6 +37,7 @@ export interface Settings {
     keyOrdering: boolean;
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
+    showSchemaSource: boolean;
   };
   http: {
     proxy: string;
@@ -80,6 +81,7 @@ export class SettingsState {
   yamlShouldHover = true;
   yamlShouldHoverAnchor = true;
   yamlShouldCompletion = true;
+  yamlShowSchemaSource = true;
   schemaStoreSettings = [];
   customTags = [];
   schemaStoreEnabled = true;

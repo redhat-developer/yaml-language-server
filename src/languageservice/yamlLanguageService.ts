@@ -125,6 +125,11 @@ export interface LanguageSettings {
    * If set enforce alphabetical ordering of keys in mappings.
    */
   keyOrdering?: boolean;
+
+  /**
+   * Show schema source URI in hover popups. Default is true.
+   */
+  showSchemaSource?: boolean;
 }
 
 export interface WorkspaceContextService {
