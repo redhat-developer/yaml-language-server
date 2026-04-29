@@ -120,6 +120,7 @@ export class SettingsState {
   useSchemaSelectionRequests = false;
   hasWsChangeWatchedFileDynamicRegistration = false;
   fileExtensions: string[] = ['.yml', '.yaml'];
+  locale = 'en';
 }
 
 export class TextDocumentTestManager extends TextDocuments<TextDocument> {

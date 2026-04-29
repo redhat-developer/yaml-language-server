@@ -57,6 +57,7 @@ export class YAMLServerInit {
 
   // public for test setup
   async connectionInitialized(params: InitializeParams): Promise<InitializeResult> {
+    this.yamlSettings.locale = params.locale || 'en';
     this.yamlSettings.capabilities = params.capabilities;
     this.languageService = getCustomLanguageService({
       schemaRequestService: this.schemaRequestService,
