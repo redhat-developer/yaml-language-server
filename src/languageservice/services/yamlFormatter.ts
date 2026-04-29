@@ -49,6 +49,9 @@ export class YAMLFormatter {
       };
 
       const formatted = await format(text, prettierOptions);
+      if (formatted === text) {
+        return [];
+      }
 
       return [TextEdit.replace(Range.create(Position.create(0, 0), document.positionAt(text.length)), formatted)];
     } catch (error) {
