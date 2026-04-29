@@ -61,7 +61,7 @@ const schemaDialectInFlight = new Map<string, Promise<SchemaDialect>>();
 
 const AJV_LOCALE_ALIASES = new Map<string, string>([
   ['zh-cn', 'zh'],
-  ['zh-tw', 'zh-TW']
+  ['zh-tw', 'zh-TW'],
 ]);
 
 // metadata/keywords that don't add constraints and thus don't count as $ref siblings
@@ -1449,9 +1449,7 @@ function getAjvLocalizer(locale?: string): Localize | undefined {
   const lowerLocale = locale.trim().toLowerCase();
   const aliasedLocale = AJV_LOCALE_ALIASES.get(lowerLocale);
 
-  return ajvLocalizers[locale]
-    || ajvLocalizers[lowerLocale]
-    || (aliasedLocale ? ajvLocalizers[aliasedLocale] : undefined);
+  return ajvLocalizers[locale] || ajvLocalizers[lowerLocale] || (aliasedLocale ? ajvLocalizers[aliasedLocale] : undefined);
 }
 
 function localizeAjvErrors(errors: ErrorObject[] | null | undefined, locale?: string): void {
