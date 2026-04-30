@@ -1287,4 +1287,76 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       expect((result.contents as MarkupContent).value).to.include('Disabled flag');
     });
   });
+
+  describe('hoverSchemaSource configuration', () => {
+    it('Hover should not show schema source when hoverSchemaSource is false', async () => {
+      const languageSettingsSetupWithoutSource = new ServiceSetup()
+        .withHover()
+        .withhoverSchemaSource(false)
+        .withSchemaFileMatch({
+          uri: SCHEMA_ID,
+          fileMatch: ['*.yaml'],
+        });
+      const {
+        languageHandler: langHandler,
+        yamlSettings: settings,
+        schemaProvider: testSchemaProvider,
+      } = setupLanguageService(languageSettingsSetupWithoutSource.languageSettings);
+
+      testSchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          cwd: {
+            type: 'string',
+            description: 'The directory from which bower should run.',
+          },
+        },
+      });
+      const content = 'c|w|d: test';
+      const { content: parsedContent, position } = caretPosition(content);
+      const testTextDocument = setupSchemaIDTextDocument(parsedContent);
+      settings.documents = new TextDocumentTestManager();
+      (settings.documents as TextDocumentTestManager).set(testTextDocument);
+      const hover = await langHandler.hoverHandler({
+        position: testTextDocument.positionAt(position),
+        textDocument: testTextDocument,
+      });
+
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual((hover.contents as MarkupContent).value, 'The directory from which bower should run.');
+      assert.strictEqual((hover.contents as MarkupContent).value.includes('Source:'), false);
+
+      testSchemaProvider.deleteSchema(SCHEMA_ID);
+    });
+
+    it('Hover should show schema source by default', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          cwd: {
+            type: 'string',
+            description: 'The directory from which bower should run.',
+          },
+        },
+      });
+      const content = 'c|w|d: test';
+      const { content: parsedContent, position } = caretPosition(content);
+      const testTextDocument = setupSchemaIDTextDocument(parsedContent);
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const hover = await languageHandler.hoverHandler({
+        position: testTextDocument.positionAt(position),
+        textDocument: testTextDocument,
+      });
+
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual((hover.contents as MarkupContent).value.includes('Source:'), true);
+      assert.strictEqual(
+        (hover.contents as MarkupContent).value,
+        `The directory from which bower should run.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+  });
 });

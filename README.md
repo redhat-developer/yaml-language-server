@@ -55,6 +55,7 @@ The following settings are supported:
 - `yaml.style.flowMapping` : Forbids flow style mappings if set to `forbid` 
 - `yaml.style.flowSequence` : Forbids flow style sequences if set to `forbid`
 - `yaml.keyOrdering` : Enforces alphabetical ordering of keys in mappings when set to `true`. Default is `false`
+- `yaml.hoverSchemaSource`: Enable/disable showing the schema source in hover tooltips. Default is `true`
 
 ## Suppressing diagnostics
 
