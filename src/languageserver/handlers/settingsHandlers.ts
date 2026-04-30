@@ -77,8 +77,8 @@ export class SettingsHandler {
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'completion')) {
         this.yamlSettings.yamlShouldCompletion = settings.yaml.completion;
       }
-      if (Object.prototype.hasOwnProperty.call(settings.yaml, 'showSchemaSource')) {
-        this.yamlSettings.yamlShowSchemaSource = settings.yaml.showSchemaSource;
+      if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hoverSchemaSource')) {
+        this.yamlSettings.yamlhoverSchemaSource = settings.yaml.hoverSchemaSource;
       }
       this.yamlSettings.customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
 
@@ -283,7 +283,7 @@ export class SettingsHandler {
       flowSequence: this.yamlSettings.style?.flowSequence,
       yamlVersion: this.yamlSettings.yamlVersion,
       keyOrdering: this.yamlSettings.keyOrdering,
-      showSchemaSource: this.yamlSettings.yamlShowSchemaSource,
+      hoverSchemaSource: this.yamlSettings.yamlhoverSchemaSource,
     };
 
     if (this.yamlSettings.schemaAssociations) {

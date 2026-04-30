@@ -27,7 +27,7 @@ export class YAMLHover {
   private shouldHover: boolean;
   private shouldHoverAnchor: boolean;
   private indentation: string;
-  private showSchemaSource: boolean;
+  private hoverSchemaSource: boolean;
   private schemaService: YAMLSchemaService;
 
   constructor(
@@ -43,7 +43,7 @@ export class YAMLHover {
       this.shouldHover = languageSettings.hover;
       this.shouldHoverAnchor = languageSettings.hoverAnchor;
       this.indentation = languageSettings.indentation;
-      this.showSchemaSource = languageSettings.showSchemaSource ?? true;
+      this.hoverSchemaSource = languageSettings.hoverSchemaSource ?? true;
     }
   }
 
@@ -210,7 +210,7 @@ export class YAMLHover {
             result += `\`\`\`yaml\n${example}\`\`\`\n`;
           });
         }
-        if (result.length > 0 && schema.schema.url && this.showSchemaSource) {
+        if (result.length > 0 && schema.schema.url && this.hoverSchemaSource) {
           result = ensureLineBreak(result);
           result += l10n.t('Source: [{0}]({1})', getSchemaName(schema.schema), schema.schema.url);
         }

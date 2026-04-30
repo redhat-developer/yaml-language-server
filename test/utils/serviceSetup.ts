@@ -22,7 +22,7 @@ export class ServiceSetup {
     yamlVersion: '1.2',
     flowMapping: 'allow',
     flowSequence: 'allow',
-    showSchemaSource: true,
+    hoverSchemaSource: true,
   };
 
   withValidate(): ServiceSetup {
@@ -83,8 +83,8 @@ export class ServiceSetup {
     return this;
   }
 
-  withShowSchemaSource(show: boolean): ServiceSetup {
-    this.languageSettings.showSchemaSource = show;
+  withhoverSchemaSource(show: boolean): ServiceSetup {
+    this.languageSettings.hoverSchemaSource = show;
     return this;
   }
 }

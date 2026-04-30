@@ -129,7 +129,7 @@ export interface LanguageSettings {
   /**
    * Show schema source URI in hover popups. Default is true.
    */
-  showSchemaSource?: boolean;
+  hoverSchemaSource?: boolean;
 }
 
 export interface WorkspaceContextService {

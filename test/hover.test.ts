@@ -1288,11 +1288,11 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
     });
   });
 
-  describe('showSchemaSource configuration', () => {
-    it('Hover should not show schema source when showSchemaSource is false', async () => {
+  describe('hoverSchemaSource configuration', () => {
+    it('Hover should not show schema source when hoverSchemaSource is false', async () => {
       const languageSettingsSetupWithoutSource = new ServiceSetup()
         .withHover()
-        .withShowSchemaSource(false)
+        .withhoverSchemaSource(false)
         .withSchemaFileMatch({
           uri: SCHEMA_ID,
           fileMatch: ['*.yaml'],
