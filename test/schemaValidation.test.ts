@@ -510,6 +510,10 @@ describe('Validation Tests', () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
+          caseInsensitiveField: {
+            type: 'string',
+            pattern: '(?i)^(yes|no)$',
+          },
           multilineOnly: {
             type: 'string',
             pattern: '(?m)^start.*end$',
@@ -518,13 +522,13 @@ describe('Validation Tests', () => {
             type: 'string',
             pattern: '(?s)^start.*end$',
           },
-          multilineAndDotall: {
+          multilineAndDotallCombinedFlags: {
             type: 'string',
             pattern: '(?ms)^start.*end$',
           },
-          reversedFlags: {
+          dotallAndCaseInsensitiveFieldFlags: {
             type: 'string',
-            pattern: '(?sm)^start.*end$',
+            pattern: '(?s)(?i)test.*content',
           },
           allFlags: {
             type: 'string',
@@ -533,24 +537,30 @@ describe('Validation Tests', () => {
         },
       });
       const content = [
+        'caseInsensitiveField: YES',
+        '',
         'multilineOnly: |-',
         '  other text',
-        '  start middle end',
+        '  start middle content end',
         '  more text',
+        '',
         'dotallOnly: |-',
         '  start',
         '  middle content',
         '  end',
-        'multilineAndDotall: |-',
+        '',
+        'multilineAndDotallCombinedFlags: |-',
         '  other text',
         '  start',
         '  middle content',
         '  end',
         '  more text',
-        'reversedFlags: |-',
-        '  start',
+        '',
+        'dotallAndCaseInsensitiveFieldFlags: |-',
+        '  TEST',
         '  middle content',
-        '  end',
+        '  CONTENT',
+        '',
         'allFlags: |-',
         '  other text',
         '  start',
@@ -568,13 +578,13 @@ describe('Validation Tests', () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
-          prop: {
+          unsupportedPattern: {
             type: 'string',
             pattern: '(?x)text .*',
           },
         },
       });
-      parseSetup('prop: text content')
+      parseSetup('unsupportedPattern: text content')
         .then(function (result) {
           assert.equal(result.length, 1);
           assert.deepEqual(
@@ -582,9 +592,9 @@ describe('Validation Tests', () => {
             createDiagnosticWithData(
               'Invalid pattern: "(?x)text .*"',
               0,
-              6,
+              20,
               0,
-              18,
+              32,
               DiagnosticSeverity.Error,
               `yaml-schema: file:///${SCHEMA_ID}`,
               `file:///${SCHEMA_ID}`
