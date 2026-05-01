@@ -274,6 +274,35 @@ list:
 
         assert.equal(edits.length, 0, `Edits: ${JSON.stringify(edits)}`);
       });
+      it('Formatting converts quotations', async () => {
+        const content = `root:
+  - it: "should include default selector"
+`;
+        const expected = `root:
+  - it: 'should include default selector'
+`;
+
+        const edits = await parseSetup(content, {
+          tabSize: 1,
+          tabWidth: 2,
+          singleQuote: true,
+        });
+
+        assert.equal(edits[0].newText, expected);
+      });
+      it("Formatting empty doc doesn't do anything", async () => {
+        const content = `
+`;
+        const expected = ``;
+
+        const edits = await parseSetup(content, {
+          tabSize: 1,
+          tabWidth: 2,
+          singleQuote: true,
+        });
+
+        assert.equal(edits[0].newText, expected);
+      });
     });
   });
 });
