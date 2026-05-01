@@ -515,6 +515,60 @@ users:
       );
     });
 
+    it('Hover handles inline pattern modifiers', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          description: {
+            type: 'string',
+            description: 'Field with dotall pattern.',
+            pattern: '(?s).*',
+          },
+          multilineAndDotall: {
+            type: 'string',
+            description: 'Field with multiline and dotall pattern.',
+            pattern: '(?ms)^start.*end$',
+          },
+        },
+      });
+
+      let result = await parseSetup('description: a|n|y text');
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `Field with dotall pattern.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+
+      result = await parseSetup('multilineAndDotall: start middle c|o|ntent end');
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `Field with multiline and dotall pattern.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+      expect(telemetry.messages).to.be.empty;
+    });
+
+    it('Hover handles unsupported pattern', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          unsupportedPattern: {
+            type: 'string',
+            description: 'Field with unsupported pattern.',
+            pattern: '(?x)text .*',
+          },
+        },
+      });
+
+      const result = await parseSetup('unsupportedPattern: text c|o|ntent');
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `Field with unsupported pattern.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+      expect(telemetry.messages).to.be.empty;
+    });
+
     it('hover on value and its description has multiline, indentation and special string', async () => {
       (() => {
         languageSettingsSetup = new ServiceSetup()

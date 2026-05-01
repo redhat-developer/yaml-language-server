@@ -506,6 +506,93 @@ describe('Validation Tests', () => {
         })
         .then(done, done);
     });
+    it('Test inline pattern modifiers', (done) => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          multilineOnly: {
+            type: 'string',
+            pattern: '(?m)^start.*end$',
+          },
+          dotallOnly: {
+            type: 'string',
+            pattern: '(?s)^start.*end$',
+          },
+          multilineAndDotall: {
+            type: 'string',
+            pattern: '(?ms)^start.*end$',
+          },
+          reversedFlags: {
+            type: 'string',
+            pattern: '(?sm)^start.*end$',
+          },
+          allFlags: {
+            type: 'string',
+            pattern: '(?ims)^START.*END$',
+          },
+        },
+      });
+      const content = [
+        'multilineOnly: |-',
+        '  other text',
+        '  start middle end',
+        '  more text',
+        'dotallOnly: |-',
+        '  start',
+        '  middle content',
+        '  end',
+        'multilineAndDotall: |-',
+        '  other text',
+        '  start',
+        '  middle content',
+        '  end',
+        '  more text',
+        'reversedFlags: |-',
+        '  start',
+        '  middle content',
+        '  end',
+        'allFlags: |-',
+        '  other text',
+        '  start',
+        '  middle content',
+        '  end',
+        '  more text',
+      ].join('\n');
+      parseSetup(content)
+        .then(function (result) {
+          assert.equal(result.length, 0);
+        })
+        .then(done, done);
+    });
+    it('Test an unsupported pattern', (done) => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          prop: {
+            type: 'string',
+            pattern: '(?x)text .*',
+          },
+        },
+      });
+      parseSetup('prop: text content')
+        .then(function (result) {
+          assert.equal(result.length, 1);
+          assert.deepEqual(
+            result[0],
+            createDiagnosticWithData(
+              'Invalid pattern: "(?x)text .*"',
+              0,
+              6,
+              0,
+              18,
+              DiagnosticSeverity.Error,
+              `yaml-schema: file:///${SCHEMA_ID}`,
+              `file:///${SCHEMA_ID}`
+            )
+          );
+        })
+        .then(done, done);
+    });
   });
 
   describe('Number tests', () => {

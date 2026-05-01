@@ -66,12 +66,26 @@ export function getIndentation(lineContent: string, position: number): number {
   return position;
 }
 
-export function safeCreateUnicodeRegExp(pattern: string): RegExp {
+export function safeCreateUnicodeRegExp(pattern: string): RegExp | undefined {
+  let flags = '';
+  pattern = pattern.replace(/\(\?([ims]+)\)/g, (_match, modifiers: string) => {
+    for (const modifier of modifiers) {
+      if (!flags.includes(modifier)) {
+        flags += modifier;
+      }
+    }
+    return '';
+  });
+
   // fall back to regular regexp if we cannot create Unicode one
   try {
-    return new RegExp(pattern, 'u');
+    return new RegExp(pattern, flags + 'u');
   } catch (ignore) {
-    return new RegExp(pattern);
+    try {
+      return new RegExp(pattern, flags);
+    } catch (e) {
+      return undefined;
+    }
   }
 }
 

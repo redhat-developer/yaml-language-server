@@ -58,5 +58,6 @@
   "Unused anchor \"{0}\"": "未使用的錨點 \"{0}\"",
   "Unresolved alias \"{0}\"": "未解析的別名 \"{0}\"",
   "Convert string to folded block string": "將字串轉換為折疊塊字串",
-  "Convert string to literal block string": "將字串轉換為文字區塊字串"
+  "Convert string to literal block string": "將字串轉換為文字區塊字串",
+  "Invalid pattern: \"{0}\"": "無效的模式：\"{0}\""
 }

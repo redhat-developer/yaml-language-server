@@ -57,5 +57,6 @@
   "Unused anchor \"{0}\"": "Unused anchor \"{0}\"",
   "Unresolved alias \"{0}\"": "Unresolved alias \"{0}\"",
   "Convert string to folded block string": "Convert string to folded block string",
-  "Convert string to literal block string": "Convert string to literal block string"
+  "Convert string to literal block string": "Convert string to literal block string",
+  "Invalid pattern: \"{0}\"": "Invalid pattern: \"{0}\""
 }
