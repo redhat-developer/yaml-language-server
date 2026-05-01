@@ -58,5 +58,6 @@
   "Unused anchor \"{0}\"": "Nicht verwendeter Anker \"{0}\"",
   "Unresolved alias \"{0}\"": "Nicht aufgelöstes Alias \"{0}\"",
   "Convert string to folded block string": "Konvertieren Sie die Zeichenfolge in eine gefaltete Blockzeichenfolge",
-  "Convert string to literal block string": "Konvertieren Sie die Zeichenfolge in eine wörtliche Blockzeichenfolge"
+  "Convert string to literal block string": "Konvertieren Sie die Zeichenfolge in eine wörtliche Blockzeichenfolge",
+  "Invalid pattern: \"{0}\"": "Ungültiges Pattern: \"{0}\""
 }

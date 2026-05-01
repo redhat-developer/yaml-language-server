@@ -824,7 +824,15 @@ export abstract class BaseValidator {
 
     if (isString(schema.pattern)) {
       const regex = safeCreateUnicodeRegExp(schema.pattern);
-      if (!regex.test(value)) {
+      if (!regex) {
+        validationResult.problems.push({
+          location: { offset: node.offset, length: node.length },
+          severity: DiagnosticSeverity.Warning,
+          message: l10n.t('Invalid pattern: "{0}"', schema.pattern),
+          source: this.getSchemaSource(schema, originalSchema),
+          schemaUri: this.getSchemaUri(schema, originalSchema),
+        });
+      } else if (!regex.test(value)) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,
@@ -1299,6 +1307,7 @@ export abstract class BaseValidator {
 
     for (const propertyPattern of Object.keys(patternProps)) {
       const regex = safeCreateUnicodeRegExp(propertyPattern);
+      if (!regex) continue;
 
       for (const propertyName of unprocessedProperties.slice(0)) {
         if (!regex.test(propertyName)) continue;
