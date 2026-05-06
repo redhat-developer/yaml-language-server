@@ -1,6 +1,6 @@
 ### 1.23.0
 - Feat: Disable "Source" URI in hovers. See [#1120](https://github.com/redhat-developer/yaml-language-server/issues/1120), [vscode-yaml#1238](https://github.com/redhat-developer/vscode-yaml/pull/1238).
-- Fix: Add support for ajv-i18n to localize validation messages for errors in referenced JSON schemas [#1133](https://github.com/redhat-developer/yaml-language-server/issues/1131).
+- Fix: Add support for ajv-i18n to localize validation messages for errors in referenced JSON schemas [#1131](https://github.com/redhat-developer/yaml-language-server/issues/1131).
 - Fix: Revert formatter changes, resolving several regressions. See [#1245](https://github.com/redhat-developer/yaml-language-server/issues/1245), [vscode-yaml#1241](https://github.com/redhat-developer/vscode-yaml/issues/1241), [vscode-yaml#1233](https://github.com/redhat-developer/vscode-yaml/issues/1233), [vscode-yaml#1242](https://github.com/redhat-developer/vscode-yaml/issues/1242)
 - Fix: Bundled schema resolution fails for schemas with `$id` matching a file name. See [#1236](https://github.com/redhat-developer/yaml-language-server/issues/1236).
 - Fix: Skip local sibling probe for non-`file://` schemas. See [#1235](https://github.com/redhat-developer/yaml-language-server/pull/1235).
