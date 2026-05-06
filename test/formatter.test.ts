@@ -303,6 +303,30 @@ list:
 
         assert.equal(edits[0].newText, expected);
       });
+
+      it('Comments separated by blank lines do not inherit indentation of previous lines', async () => {
+        const content = `# Section 1
+
+variables:
+  - "C"
+  - 1
+  - false
+  # four: true
+
+# Section 2
+
+more_variables:
+  - "A"
+  - 2
+`;
+
+        const edits = await parseSetup(content, {
+          tabSize: 1,
+          tabWidth: 2,
+        });
+
+        assert.equal(edits.length, 0, `Edits: ${JSON.stringify(edits)}`);
+      });
     });
   });
 });
