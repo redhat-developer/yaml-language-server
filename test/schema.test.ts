@@ -6,7 +6,7 @@ import * as url from 'url';
 import * as path from 'path';
 import { XHRResponse, xhr } from 'request-light';
 import { MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
-import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
+import { EMPTY_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 import { expect } from 'chai';
 import { ServiceSetup } from './utils/serviceSetup';
 import {
@@ -1013,6 +1013,12 @@ address:
           uri: TEST_URI,
           priority: SchemaPriority.Settings,
           schema: schemaSettingsSample,
+        })
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: EMPTY_SCHEMA_URL,
+          priority: SchemaPriority.SchemaDetectionDisabled,
+          schema: true,
         });
       languageService.configure(languageSettingsSetup.languageSettings);
       languageService.registerCustomSchemaProvider((uri: string) => Promise.resolve(uri));
@@ -1041,6 +1047,12 @@ address:
           uri: TEST_URI,
           priority: SchemaPriority.Settings,
           schema: schemaSettingsSample,
+        })
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: EMPTY_SCHEMA_URL,
+          priority: SchemaPriority.SchemaDetectionDisabled,
+          schema: true,
         });
       languageService.configure(languageSettingsSetup.languageSettings);
       const testTextDocument = setupTextDocument('');
@@ -1068,6 +1080,52 @@ address:
       const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
       assert.strictEqual(result.items.length, 1);
       assert.strictEqual(result.items[0].label, 'association');
+    });
+
+    it('SchemaDetectionDisabled takes precedence over SchemaAssociation', async () => {
+      const schemaDetectionDisabledSetup = new ServiceSetup()
+        .withCompletion()
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.SchemaAssociation,
+          schema: schemaAssociationSample,
+        })
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: EMPTY_SCHEMA_URL,
+          priority: SchemaPriority.SchemaDetectionDisabled,
+          schema: true,
+        });
+
+      languageService.configure(schemaDetectionDisabledSetup.languageSettings);
+      const testTextDocument = setupTextDocument('');
+      const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
+
+      assert.strictEqual(result.items.length, 0);
+    });
+
+    it('SchemaDetectionDisabled takes precedence over SchemaStore', async () => {
+      const schemaDetectionDisabledSetup = new ServiceSetup()
+        .withCompletion()
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.SchemaStore,
+          schema: schemaStoreSample,
+        })
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: EMPTY_SCHEMA_URL,
+          priority: SchemaPriority.SchemaDetectionDisabled,
+          schema: true,
+        });
+
+      languageService.configure(schemaDetectionDisabledSetup.languageSettings);
+      const testTextDocument = setupTextDocument('');
+      const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
+
+      assert.strictEqual(result.items.length, 0);
     });
 
     it('SchemaStore is highest priority if nothing else is available', async () => {

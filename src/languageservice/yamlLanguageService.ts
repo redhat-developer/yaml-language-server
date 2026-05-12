@@ -63,7 +63,8 @@ import { YamlRename } from './services/yamlRename';
 export enum SchemaPriority {
   SchemaStore = 1,
   SchemaAssociation = 2,
-  Settings = 3,
+  SchemaDetectionDisabled = 3,
+  Settings = 4,
 }
 
 export interface SchemasSettings {

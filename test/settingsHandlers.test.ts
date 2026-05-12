@@ -11,9 +11,10 @@ import { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver
 import { LanguageService, LanguageSettings, SchemaConfiguration, SchemaPriority } from '../src';
 import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import { EMPTY_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 import { Telemetry } from '../src/languageservice/telemetry';
 import { SettingsState } from '../src/yamlSettings';
-import { setupLanguageService } from './utils/testHelper';
+import { TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument, setupTextDocument } from './utils/testHelper';
 import { TestWorkspace } from './utils/testsTypes';
 
 const expect = chai.expect;
@@ -308,6 +309,54 @@ describe('Settings Handlers Tests', () => {
       });
     });
 
+    it('SchemaDetectionDisabled should have a priority', async () => {
+      xhrStub.resolves({
+        responseText: `{"schemas": [
+      {
+        "name": ".adonisrc.json",
+        "description": "AdonisJS configuration file",
+        "fileMatch": [
+          ".adonisrc.yaml"
+        ],
+        "url": "https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json"
+      }]}`,
+      });
+      const disabledSchemaFileMatch = ['foo/*.yml'];
+      workspaceStub.getConfiguration.resolves([{ schemaDetectionDisableFor: disabledSchemaFileMatch }, {}, {}, {}, {}]);
+      const configureSpy = await configureSchemaPriorityTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: EMPTY_SCHEMA_URL,
+        fileMatch: disabledSchemaFileMatch,
+        schema: true,
+        priority: SchemaPriority.SchemaDetectionDisabled,
+      });
+    });
+
+    it('SchemaDetectionDisabled should accept a single file match string', async () => {
+      xhrStub.resolves({
+        responseText: `{"schemas": [
+      {
+        "name": ".adonisrc.json",
+        "description": "AdonisJS configuration file",
+        "fileMatch": [
+          ".adonisrc.yaml"
+        ],
+        "url": "https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json"
+      }]}`,
+      });
+      const disabledSchemaFileMatch = 'foo/*.yml';
+      workspaceStub.getConfiguration.resolves([{ schemaDetectionDisableFor: disabledSchemaFileMatch }, {}, {}, {}, {}]);
+      const configureSpy = await configureSchemaPriorityTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: EMPTY_SCHEMA_URL,
+        fileMatch: [disabledSchemaFileMatch],
+        schema: true,
+        priority: SchemaPriority.SchemaDetectionDisabled,
+      });
+    });
+
     it('Schema Associations should have a priority when schema association is an array', async () => {
       xhrStub.resolves({
         responseText: `{"schemas": [
@@ -350,6 +399,112 @@ describe('Settings Handlers Tests', () => {
         fileMatch: testSchemaFileMatch,
         priority: SchemaPriority.SchemaAssociation,
       });
+    });
+  });
+
+  describe('Test schemaDetectionDisableFor validation behavior', () => {
+    const restrictiveSchema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        allowed: {
+          type: 'string',
+        },
+      },
+    };
+
+    it('schemaDetectionDisableFor should not suppress yaml.schemas validation because settings schemas have higher priority', async () => {
+      const schemaUri = 'file:///schemas/schema-detection-disable-settings.json';
+      const schemaProvider = TestCustomSchemaProvider.instance();
+      schemaProvider.addSchemaWithUri('schemaDetectionDisableFor-settings', schemaUri, restrictiveSchema);
+      xhrStub.resolves({ responseText: '{"schemas":[]}' });
+      const schemas = {};
+      schemas[schemaUri] = 'test.yaml';
+      workspaceStub.getConfiguration.resolves([{ schemaDetectionDisableFor: ['test.yaml'], schemas }, {}, {}, {}, {}]);
+
+      try {
+        await new SettingsHandler(
+          connection,
+          languageService,
+          settingsState,
+          validationHandler as unknown as ValidationHandler,
+          {} as Telemetry
+        ).pullConfiguration();
+
+        const result = await languageService.doValidation(setupTextDocument('foo: bar'), false);
+
+        expect(result).length(1);
+        expect(result[0].message).to.equal('Property foo is not allowed.');
+      } finally {
+        schemaProvider.deleteSchema('schemaDetectionDisableFor-settings');
+      }
+    });
+
+    it('schemaDetectionDisableFor should suppress SchemaStore validation', async () => {
+      const schemaUri = 'file:///schemas/github-workflow.json';
+      const githubWorkflowFileMatch = ['.github/workflows/*.yml'];
+      const schemaProvider = TestCustomSchemaProvider.instance();
+      schemaProvider.addSchemaWithUri('schemaDetectionDisableFor-github-actions', schemaUri, restrictiveSchema);
+      xhrStub.resolves({
+        responseText: JSON.stringify({
+          schemas: [
+            {
+              name: 'GitHub Workflow',
+              description: 'GitHub Actions workflow schema',
+              fileMatch: githubWorkflowFileMatch,
+              url: schemaUri,
+            },
+          ],
+        }),
+      });
+      workspaceStub.getConfiguration.resolves([{ schemaDetectionDisableFor: githubWorkflowFileMatch }, {}, {}, {}, {}]);
+
+      try {
+        await new SettingsHandler(
+          connection,
+          languageService,
+          settingsState,
+          validationHandler as unknown as ValidationHandler,
+          {} as Telemetry
+        ).pullConfiguration();
+
+        const result = await languageService.doValidation(
+          setupSchemaIDTextDocument('foo: bar', 'file:///workspace/.github/workflows/build.yml'),
+          false
+        );
+
+        expect(result).length(0);
+      } finally {
+        schemaProvider.deleteSchema('schemaDetectionDisableFor-github-actions');
+      }
+    });
+
+    it('schemaDetectionDisableFor should not suppress modeline validation', async () => {
+      const schemaUri = 'file:///schemas/schema-detection-disable-modeline.json';
+      const schemaProvider = TestCustomSchemaProvider.instance();
+      schemaProvider.addSchemaWithUri('schemaDetectionDisableFor-modeline', schemaUri, restrictiveSchema);
+      xhrStub.resolves({ responseText: '{"schemas":[]}' });
+      workspaceStub.getConfiguration.resolves([{ schemaDetectionDisableFor: ['test.yaml'] }, {}, {}, {}, {}]);
+
+      try {
+        await new SettingsHandler(
+          connection,
+          languageService,
+          settingsState,
+          validationHandler as unknown as ValidationHandler,
+          {} as Telemetry
+        ).pullConfiguration();
+
+        const result = await languageService.doValidation(
+          setupTextDocument(`# yaml-language-server: $schema=${schemaUri}\nfoo: bar`),
+          false
+        );
+
+        expect(result).length(1);
+        expect(result[0].message).to.equal('Property foo is not allowed.');
+      } finally {
+        schemaProvider.deleteSchema('schemaDetectionDisableFor-modeline');
+      }
     });
   });
 

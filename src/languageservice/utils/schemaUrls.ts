@@ -10,6 +10,7 @@ export const BASE_KUBERNETES_SCHEMA_URL =
 export const KUBERNETES_SCHEMA_URL = BASE_KUBERNETES_SCHEMA_URL + 'all.json';
 export const JSON_SCHEMASTORE_URL = 'https://www.schemastore.org/api/json/catalog.json';
 export const CRD_CATALOG_URL = 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main';
+export const EMPTY_SCHEMA_URL = 'vscode://schemas/empty';
 
 export function checkSchemaURI(
   workspaceFolders: WorkspaceFolder[],

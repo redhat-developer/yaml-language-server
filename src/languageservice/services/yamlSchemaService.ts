@@ -32,7 +32,7 @@ import Ajv2020 from 'ajv/dist/2020';
 import type { Localize } from 'ajv-i18n/localize/types';
 import * as Json from 'jsonc-parser';
 import { parse } from 'yaml';
-import { CRD_CATALOG_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
+import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
 import { autoDetectKubernetesSchema } from './k8sSchemaUtil';
 
 const ajv4 = new Ajv4({ allErrors: true });
@@ -164,7 +164,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     const schemaUris = new Set<string>();
     for (const filePattern of this.filePatternAssociations) {
       const schemaUri = filePattern.uris[0];
-      if (schemaUris.has(schemaUri)) {
+      if (schemaUri === EMPTY_SCHEMA_URL || schemaUris.has(schemaUri)) {
         continue;
       }
       schemaUris.add(schemaUri);
