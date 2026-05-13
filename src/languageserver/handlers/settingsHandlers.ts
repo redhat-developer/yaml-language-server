@@ -85,10 +85,10 @@ export class SettingsHandler {
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hoverSchemaSource')) {
         this.yamlSettings.yamlHoverSchemaSource = settings.yaml.hoverSchemaSource;
       }
-      this.yamlSettings.yamlSchemaDetectionDisableFor = Array.isArray(settings.yaml.schemaDetectionDisableFor)
-        ? settings.yaml.schemaDetectionDisableFor
-        : settings.yaml.schemaDetectionDisableFor
-          ? [settings.yaml.schemaDetectionDisableFor]
+      this.yamlSettings.yamlDisableSchemaDetection = Array.isArray(settings.yaml.disableSchemaDetection)
+        ? settings.yaml.disableSchemaDetection
+        : settings.yaml.disableSchemaDetection
+          ? [settings.yaml.disableSchemaDetection]
           : [];
       this.yamlSettings.customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
 
@@ -296,11 +296,11 @@ export class SettingsHandler {
       hoverSchemaSource: this.yamlSettings.yamlHoverSchemaSource,
     };
 
-    if (this.yamlSettings.yamlSchemaDetectionDisableFor) {
-      if (Array.isArray(this.yamlSettings.yamlSchemaDetectionDisableFor)) {
+    if (this.yamlSettings.yamlDisableSchemaDetection) {
+      if (Array.isArray(this.yamlSettings.yamlDisableSchemaDetection)) {
         languageSettings = this.configureSchemas(
           EMPTY_SCHEMA_URL,
-          this.yamlSettings.yamlSchemaDetectionDisableFor,
+          this.yamlSettings.yamlDisableSchemaDetection,
           true,
           languageSettings,
           SchemaPriority.SchemaDetectionDisabled

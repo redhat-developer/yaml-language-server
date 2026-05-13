@@ -992,7 +992,11 @@ address:
     const schemaModelineSample = path.join(__dirname, './fixtures/sample-modeline.json');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const schemaDefaultSnippetSample = require(path.join(__dirname, './fixtures/defaultSnippets-const-if-else.json'));
-    const languageSettingsSetup = new ServiceSetup().withCompletion();
+    let languageSettingsSetup: ServiceSetup;
+
+    beforeEach(() => {
+      languageSettingsSetup = new ServiceSetup().withCompletion();
+    });
 
     it('Modeline Schema takes precendence over all other schema APIs', async () => {
       languageSettingsSetup
@@ -1047,6 +1051,21 @@ address:
           uri: TEST_URI,
           priority: SchemaPriority.Settings,
           schema: schemaSettingsSample,
+        });
+      languageService.configure(languageSettingsSetup.languageSettings);
+      const testTextDocument = setupTextDocument('');
+      const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
+      assert.strictEqual(result.items.length, 1);
+      assert.strictEqual(result.items[0].label, 'settings');
+    });
+
+    it('SchemaDetectionDisabled takes precedence over manually configured schemas', async () => {
+      languageSettingsSetup
+        .withSchemaFileMatch({
+          fileMatch: ['test.yaml'],
+          uri: TEST_URI,
+          priority: SchemaPriority.Settings,
+          schema: schemaSettingsSample,
         })
         .withSchemaFileMatch({
           fileMatch: ['test.yaml'],
@@ -1057,8 +1076,7 @@ address:
       languageService.configure(languageSettingsSetup.languageSettings);
       const testTextDocument = setupTextDocument('');
       const result = await languageService.doComplete(testTextDocument, Position.create(0, 0), false);
-      assert.strictEqual(result.items.length, 1);
-      assert.strictEqual(result.items[0].label, 'settings');
+      assert.strictEqual(result.items.length, 0);
     });
 
     it('SchemaAssociation takes precendence over SchemaStore', async () => {

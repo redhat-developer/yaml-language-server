@@ -322,7 +322,7 @@ describe('Settings Handlers Tests', () => {
       }]}`,
       });
       const disabledSchemaFileMatch = ['foo/*.yml'];
-      workspaceStub.getConfiguration.resolves([{ schemaDetectionDisableFor: disabledSchemaFileMatch }, {}, {}, {}, {}]);
+      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: disabledSchemaFileMatch }, {}, {}, {}, {}]);
       const configureSpy = await configureSchemaPriorityTest();
 
       expect(configureSpy.schemas).deep.include({
@@ -346,7 +346,7 @@ describe('Settings Handlers Tests', () => {
       }]}`,
       });
       const disabledSchemaFileMatch = 'foo/*.yml';
-      workspaceStub.getConfiguration.resolves([{ schemaDetectionDisableFor: disabledSchemaFileMatch }, {}, {}, {}, {}]);
+      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: disabledSchemaFileMatch }, {}, {}, {}, {}]);
       const configureSpy = await configureSchemaPriorityTest();
 
       expect(configureSpy.schemas).deep.include({
@@ -402,7 +402,7 @@ describe('Settings Handlers Tests', () => {
     });
   });
 
-  describe('Test schemaDetectionDisableFor validation behavior', () => {
+  describe('Test disableSchemaDetection validation behavior', () => {
     const restrictiveSchema = {
       type: 'object',
       additionalProperties: false,
@@ -413,14 +413,14 @@ describe('Settings Handlers Tests', () => {
       },
     };
 
-    it('schemaDetectionDisableFor should not suppress yaml.schemas validation because settings schemas have higher priority', async () => {
+    it('disableSchemaDetection should suppress yaml.schemas validation', async () => {
       const schemaUri = 'file:///schemas/schema-detection-disable-settings.json';
       const schemaProvider = TestCustomSchemaProvider.instance();
-      schemaProvider.addSchemaWithUri('schemaDetectionDisableFor-settings', schemaUri, restrictiveSchema);
+      schemaProvider.addSchemaWithUri('disableSchemaDetection-settings', schemaUri, restrictiveSchema);
       xhrStub.resolves({ responseText: '{"schemas":[]}' });
       const schemas = {};
       schemas[schemaUri] = 'test.yaml';
-      workspaceStub.getConfiguration.resolves([{ schemaDetectionDisableFor: ['test.yaml'], schemas }, {}, {}, {}, {}]);
+      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: ['test.yaml'], schemas }, {}, {}, {}, {}]);
 
       try {
         await new SettingsHandler(
@@ -433,18 +433,17 @@ describe('Settings Handlers Tests', () => {
 
         const result = await languageService.doValidation(setupTextDocument('foo: bar'), false);
 
-        expect(result).length(1);
-        expect(result[0].message).to.equal('Property foo is not allowed.');
+        expect(result).length(0);
       } finally {
-        schemaProvider.deleteSchema('schemaDetectionDisableFor-settings');
+        schemaProvider.deleteSchema('disableSchemaDetection-settings');
       }
     });
 
-    it('schemaDetectionDisableFor should suppress SchemaStore validation', async () => {
+    it('disableSchemaDetection should suppress SchemaStore validation', async () => {
       const schemaUri = 'file:///schemas/github-workflow.json';
       const githubWorkflowFileMatch = ['.github/workflows/*.yml'];
       const schemaProvider = TestCustomSchemaProvider.instance();
-      schemaProvider.addSchemaWithUri('schemaDetectionDisableFor-github-actions', schemaUri, restrictiveSchema);
+      schemaProvider.addSchemaWithUri('disableSchemaDetection-github-actions', schemaUri, restrictiveSchema);
       xhrStub.resolves({
         responseText: JSON.stringify({
           schemas: [
@@ -457,7 +456,7 @@ describe('Settings Handlers Tests', () => {
           ],
         }),
       });
-      workspaceStub.getConfiguration.resolves([{ schemaDetectionDisableFor: githubWorkflowFileMatch }, {}, {}, {}, {}]);
+      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: githubWorkflowFileMatch }, {}, {}, {}, {}]);
 
       try {
         await new SettingsHandler(
@@ -475,16 +474,16 @@ describe('Settings Handlers Tests', () => {
 
         expect(result).length(0);
       } finally {
-        schemaProvider.deleteSchema('schemaDetectionDisableFor-github-actions');
+        schemaProvider.deleteSchema('disableSchemaDetection-github-actions');
       }
     });
 
-    it('schemaDetectionDisableFor should not suppress modeline validation', async () => {
+    it('disableSchemaDetection should not suppress modeline validation', async () => {
       const schemaUri = 'file:///schemas/schema-detection-disable-modeline.json';
       const schemaProvider = TestCustomSchemaProvider.instance();
-      schemaProvider.addSchemaWithUri('schemaDetectionDisableFor-modeline', schemaUri, restrictiveSchema);
+      schemaProvider.addSchemaWithUri('disableSchemaDetection-modeline', schemaUri, restrictiveSchema);
       xhrStub.resolves({ responseText: '{"schemas":[]}' });
-      workspaceStub.getConfiguration.resolves([{ schemaDetectionDisableFor: ['test.yaml'] }, {}, {}, {}, {}]);
+      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: ['test.yaml'] }, {}, {}, {}, {}]);
 
       try {
         await new SettingsHandler(
@@ -503,7 +502,7 @@ describe('Settings Handlers Tests', () => {
         expect(result).length(1);
         expect(result[0].message).to.equal('Property foo is not allowed.');
       } finally {
-        schemaProvider.deleteSchema('schemaDetectionDisableFor-modeline');
+        schemaProvider.deleteSchema('disableSchemaDetection-modeline');
       }
     });
   });

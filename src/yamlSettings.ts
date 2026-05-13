@@ -38,7 +38,7 @@ export interface Settings {
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
     hoverSchemaSource: boolean;
-    schemaDetectionDisableFor: string | string[];
+    disableSchemaDetection: string | string[];
   };
   http: {
     proxy: string;
@@ -83,7 +83,7 @@ export class SettingsState {
   yamlShouldHoverAnchor = true;
   yamlShouldCompletion = true;
   yamlHoverSchemaSource = true;
-  yamlSchemaDetectionDisableFor: string[] = [];
+  yamlDisableSchemaDetection: string[] = [];
   schemaStoreSettings = [];
   customTags: string[] = [];
   schemaStoreEnabled = true;
