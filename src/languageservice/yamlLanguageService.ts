@@ -64,6 +64,7 @@ export enum SchemaPriority {
   SchemaStore = 1,
   SchemaAssociation = 2,
   Settings = 3,
+  SchemaDetectionDisabled = 4,
 }
 
 export interface SchemasSettings {

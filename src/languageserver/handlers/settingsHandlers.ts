@@ -5,7 +5,12 @@
 import { configure as configureHttpRequests, xhr } from 'request-light';
 import { Connection, DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
-import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
+import {
+  checkSchemaURI,
+  EMPTY_SCHEMA_URL,
+  JSON_SCHEMASTORE_URL,
+  KUBERNETES_SCHEMA_URL,
+} from '../../languageservice/utils/schemaUrls';
 import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
 import { SchemaSelectionRequests } from '../../requestTypes';
 import { Settings, SettingsState } from '../../yamlSettings';
@@ -78,8 +83,13 @@ export class SettingsHandler {
         this.yamlSettings.yamlShouldCompletion = settings.yaml.completion;
       }
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hoverSchemaSource')) {
-        this.yamlSettings.yamlhoverSchemaSource = settings.yaml.hoverSchemaSource;
+        this.yamlSettings.yamlHoverSchemaSource = settings.yaml.hoverSchemaSource;
       }
+      this.yamlSettings.yamlDisableSchemaDetection = Array.isArray(settings.yaml.disableSchemaDetection)
+        ? settings.yaml.disableSchemaDetection
+        : settings.yaml.disableSchemaDetection
+          ? [settings.yaml.disableSchemaDetection]
+          : [];
       this.yamlSettings.customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
 
       this.yamlSettings.maxItemsComputed = Math.trunc(Math.max(0, Number(settings.yaml.maxItemsComputed))) || 5000;
@@ -283,8 +293,20 @@ export class SettingsHandler {
       flowSequence: this.yamlSettings.style?.flowSequence,
       yamlVersion: this.yamlSettings.yamlVersion,
       keyOrdering: this.yamlSettings.keyOrdering,
-      hoverSchemaSource: this.yamlSettings.yamlhoverSchemaSource,
+      hoverSchemaSource: this.yamlSettings.yamlHoverSchemaSource,
     };
+
+    if (this.yamlSettings.yamlDisableSchemaDetection) {
+      if (Array.isArray(this.yamlSettings.yamlDisableSchemaDetection)) {
+        languageSettings = this.configureSchemas(
+          EMPTY_SCHEMA_URL,
+          this.yamlSettings.yamlDisableSchemaDetection,
+          true,
+          languageSettings,
+          SchemaPriority.SchemaDetectionDisabled
+        );
+      }
+    }
 
     if (this.yamlSettings.schemaAssociations) {
       if (Array.isArray(this.yamlSettings.schemaAssociations)) {

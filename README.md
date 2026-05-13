@@ -39,6 +39,7 @@ The following settings are supported:
 - `yaml.hover`: Enable/disable hover
 - `yaml.completion`: Enable/disable autocompletion
 - `yaml.schemas`: Helps you associate schemas with files in a glob pattern
+- `yaml.disableSchemaDetection`: Disables schema detection for matching YAML files. Modelines still apply.
 - `yaml.schemaStore.enable`: When set to true the YAML language server will pull in all available schemas from [JSON Schema Store](https://www.schemastore.org)
 - `yaml.schemaStore.url`: URL of a schema store catalog to use when downloading schemas.
 - `yaml.kubernetesCRDStore.enable`: When set to true the YAML language server will parse Kubernetes CRDs automatically and download them from the [CRD store](https://github.com/datreeio/CRDs-catalog).
@@ -112,7 +113,7 @@ some_mapping: !Mapping-example
 
 ##### Associating a schema to a glob pattern via yaml.schemas:
 
-yaml.schemas applies a schema to a file. In other words, the schema (placed on the left) is applied to the glob pattern on the right. Your schema can be local or online. Your schema path must be relative to the project root and not an absolute path to the schema.
+`yaml.schemas` applies a schema to a file. In other words, the schema (placed on the left) is applied to the glob pattern on the right. Your schema can be local or online. Local schema paths can be relative to the project root or absolute paths.
 
 For example:
 If you have project structure
@@ -294,14 +295,32 @@ or IntelliJ compatible format:
 # $schema: <urlOrPathToTheSchema>
 ```
 
+### Disabling automatic schema detection for specific files
+
+Use `yaml.disableSchemaDetection` to disable schema detection for files matching a glob pattern. For matching files, schemas from `yaml.schemas`, schema association notifications, and Schema Store are ignored. Modelines still apply.
+
+For one file pattern:
+
+```yaml
+yaml.disableSchemaDetection: "**/.github/workflows/*.yaml"
+```
+
+For multiple file patterns:
+
+```yaml
+yaml.disableSchemaDetection: ["some.yaml", "**/.github/workflows/*.yaml"]
+```
+
+
 ### Schema priority
 
 The following is the priority of schema association in highest to lowest priority:
 1. Modeline
 2. CustomSchemaProvider API
-3. yaml.settings
-4. Schema association notification
-5. Schema Store
+3. `yaml.disableSchemaDetection`
+4. `yaml.schemas`
+5. Schema association notification
+6. Schema Store
 
 ## Containerized Language Server
 

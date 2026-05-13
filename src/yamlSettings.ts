@@ -38,6 +38,7 @@ export interface Settings {
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
     hoverSchemaSource: boolean;
+    disableSchemaDetection: string | string[];
   };
   http: {
     proxy: string;
@@ -81,9 +82,10 @@ export class SettingsState {
   yamlShouldHover = true;
   yamlShouldHoverAnchor = true;
   yamlShouldCompletion = true;
-  yamlhoverSchemaSource = true;
+  yamlHoverSchemaSource = true;
+  yamlDisableSchemaDetection: string[] = [];
   schemaStoreSettings = [];
-  customTags = [];
+  customTags: string[] = [];
   schemaStoreEnabled = true;
   schemaStoreUrl = JSON_SCHEMASTORE_URL;
   kubernetesCRDStoreEnabled = true;
