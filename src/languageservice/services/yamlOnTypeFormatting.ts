@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { DocumentOnTypeFormattingParams } from 'vscode-languageserver';
-import { Position, Range, TextEdit } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { Position, Range, TextEdit } from 'vscode-languageserver-types';
 import { TextBuffer } from '../utils/textBuffer';
 
 export function doDocumentOnTypeFormatting(
@@ -16,29 +16,33 @@ export function doDocumentOnTypeFormatting(
   const tb = new TextBuffer(document);
   if (params.ch === '\n') {
     const previousLine = tb.getLineContent(position.line - 1);
-    if (previousLine.trimRight().endsWith(':')) {
-      const currentLine = tb.getLineContent(position.line);
-      const subLine = currentLine.substring(position.character, currentLine.length);
-      const isInArray = previousLine.indexOf(' - ') !== -1;
-      if (subLine.trimRight().length === 0) {
-        const indentationFix = position.character - (previousLine.length - previousLine.trimLeft().length);
-        if (indentationFix === params.options.tabSize && !isInArray) {
-          return; // skip if line already has proper formatting
-        }
-        const result = [];
-        if (currentLine.length > 0) {
-          result.push(TextEdit.del(Range.create(position, Position.create(position.line, currentLine.length - 1))));
-        }
-        result.push(TextEdit.insert(position, ' '.repeat(params.options.tabSize + (isInArray ? 2 - indentationFix : 0))));
-
-        return result;
+    if (previousLine.trimEnd().endsWith(':')) {
+      let expectedIndentationLength = previousLine.length - previousLine.trimStart().length + params.options.tabSize;
+      if (previousLine.trimStart().startsWith('-')) {
+        expectedIndentationLength += params.options.tabSize;
       }
-      if (isInArray) {
-        return [TextEdit.insert(position, ' '.repeat(params.options.tabSize))];
+      const currentLine = tb.getLineContent(position.line);
+      if (currentLine.trim().length !== 0) {
+        // non-space content, do nothing
+        return;
+      } else if (currentLine.length === expectedIndentationLength) {
+        // already right; do nothing
+        return;
+      } else if (currentLine.length < expectedIndentationLength) {
+        return [TextEdit.insert(position, ' '.repeat(expectedIndentationLength - currentLine.length))];
+      } else {
+        return [
+          TextEdit.del(
+            Range.create(
+              Position.create(position.line, 0),
+              Position.create(position.line, currentLine.length - expectedIndentationLength)
+            )
+          ),
+        ];
       }
     }
 
-    if (previousLine.trimRight().endsWith('|')) {
+    if (previousLine.trimEnd().endsWith('|')) {
       return [TextEdit.insert(position, ' '.repeat(params.options.tabSize))];
     }
 
