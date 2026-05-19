@@ -44,7 +44,7 @@ The following settings are supported:
 - `yaml.schemaStore.url`: URL of a schema store catalog to use when downloading schemas.
 - `yaml.kubernetesCRDStore.enable`: When set to true the YAML language server will parse Kubernetes CRDs automatically and download them from the [CRD store](https://github.com/datreeio/CRDs-catalog).
 - `yaml.kubernetesCRDStore.url`: URL of a crd store catalog to use when downloading schemas. Defaults to `https://raw.githubusercontent.com/datreeio/CRDs-catalog/main`.
-- `yaml.customTags`: Array of custom tags that the parser will validate against. It has two ways to be used. Either an item in the array is a custom tag such as "!Ref" and it will automatically map !Ref to scalar or you can specify the type of the object !Ref should be e.g. "!Ref sequence". The type of object can be either scalar (for strings and booleans), sequence (for arrays), map (for objects).
+- `yaml.customTags`: Array of custom tags that the parser will validate against. It has three ways to be used. A tag without a type, such as "!Ref", is treated as a scalar tag. A tag with a node type, such as "!Ref sequence", specifies the YAML node type that the tag is written on. A tag with a node type and return type, such as "!FindInMap sequence:string", also specifies the schema type that the tagged value evaluates to. Supported node types are scalar, sequence, and mapping. Supported return types are string, number, integer, boolean, null, array, and object. The return type aliases scalar, sequence, and mapping are accepted as string, array, and object.
 - `yaml.maxItemsComputed`: The maximum number of outline symbols and folding regions computed (limited for performance reasons).
 - `[yaml].editor.tabSize`: the number of spaces to use when autocompleting. Takes priority over editor.tabSize.
 - `editor.tabSize`: the number of spaces to use when autocompleting. Default is 2.
@@ -93,11 +93,13 @@ In order to use the custom tags in your YAML file you need to first specify the 
 "yaml.customTags": [
     "!Scalar-example scalar",
     "!Seq-example sequence",
-    "!Mapping-example mapping"
+    "!Mapping-example mapping",
+    "!Seq-as-string-example sequence:string"
 ]
 ```
 
-The !Scalar-example would map to a scalar custom tag, the !Seq-example would map to a sequence custom tag, the !Mapping-example would map to a mapping custom tag.
+The !Scalar-example would map to a scalar custom tag, the !Seq-example would map to a sequence custom tag, and the !Mapping-example would map to a mapping custom tag.
+The !Seq-as-string-example would map to a sequence custom tag, and the whole tagged value would be treated as a string during schema validation.
 
 We can then use the newly defined custom tags inside our YAML file:
 
@@ -109,6 +111,9 @@ some_sequence: !Seq-example
 some_mapping: !Mapping-example
   some_mapping_key_1: some_mapping_value_1
   some_mapping_key_2: some_mapping_value_2
+some_string: !Seq-as-string-example
+  - value_1
+  - value_2
 ```
 
 ##### Associating a schema to a glob pattern via yaml.schemas:
