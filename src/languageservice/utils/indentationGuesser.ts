@@ -5,8 +5,8 @@
 
 //copied from https://github.com/Microsoft/vscode/blob/015c3afe96966df50c15a7d66be2ab0ef1dc5f49/src/vs/editor/common/model/indentationGuesser.ts
 
-import { CharCode } from './charCode';
-import { TextBuffer } from './textBuffer';
+import { CharCode } from './charCode.js';
+import { TextBuffer } from './textBuffer.js';
 
 class SpacesDiffResult {
   public spacesDiff = 0;

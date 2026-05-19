@@ -1,6 +1,6 @@
 import { CST, visit } from 'yaml';
-import { SourceToken } from 'yaml/dist/parse/cst';
-import { ASTNode } from '../jsonASTTypes';
+import { SourceToken } from 'yaml/dist/parse/cst.js';
+import { ASTNode } from '../jsonASTTypes.js';
 
 export class FlowStyleRewriter {
   constructor(private readonly indentation: string) {}

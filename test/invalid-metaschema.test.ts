@@ -4,11 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 import { assert } from 'chai';
 import * as sinon from 'sinon';
-import { Connection, RemoteClient } from 'vscode-languageserver/node';
-import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers';
-import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { setupSchemaIDTextDocument } from './utils/testHelper';
+import { Connection, RemoteClient } from 'vscode-languageserver/node.js';
+import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers.js';
+import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService.js';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
+import { setupSchemaIDTextDocument } from './utils/testHelper.js';
 
 describe('unexpected meta schema', () => {
   const sandbox = sinon.createSandbox();

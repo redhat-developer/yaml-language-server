@@ -5,11 +5,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Range, Position, TextEdit, FormattingOptions } from 'vscode-languageserver-types';
-import { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
+import { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService.js';
 import { Options } from 'prettier';
-import * as yamlPlugin from 'prettier/plugins/yaml';
-import * as estreePlugin from 'prettier/plugins/estree';
-import { format } from 'prettier/standalone';
+import * as yamlPlugin from 'prettier/plugins/yaml.js';
+import * as estreePlugin from 'prettier/plugins/estree.js';
+import { format } from 'prettier/standalone.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 export class YAMLFormatter {

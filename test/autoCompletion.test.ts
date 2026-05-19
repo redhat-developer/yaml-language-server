@@ -10,11 +10,11 @@ import {
   setupSchemaIDTextDocument,
   TestCustomSchemaProvider,
   toFsPath,
-} from './utils/testHelper';
+} from './utils/testHelper.js';
 import * as assert from 'assert';
 import * as path from 'path';
-import { createExpectedCompletion } from './utils/verifyError';
-import { ServiceSetup } from './utils/serviceSetup';
+import { createExpectedCompletion } from './utils/verifyError.js';
+import { ServiceSetup } from './utils/serviceSetup.js';
 import {
   CompletionItemKind,
   CompletionList,
@@ -24,9 +24,9 @@ import {
   Position,
 } from 'vscode-languageserver-types';
 import { expect } from 'chai';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
 import { LanguageService } from '../src';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
 
 describe('Auto Completion Tests', () => {
   let languageSettingsSetup: ServiceSetup;

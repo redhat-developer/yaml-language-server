@@ -1,5 +1,5 @@
-import { Tags, isSeq, isMap, YAMLMap, YAMLSeq, Scalar } from 'yaml';
-import { CustomTagInputType, CustomTagReturnType, parseCustomTag, setCustomTagReturnType } from '../utils/customTags';
+import { isMap, isSeq, Scalar, Tags, YAMLMap, YAMLSeq } from 'yaml';
+import { CustomTagInputType, CustomTagReturnType, parseCustomTag, setCustomTagReturnType } from '../utils/customTags.js';
 
 class CommonTagImpl {
   tag: string;

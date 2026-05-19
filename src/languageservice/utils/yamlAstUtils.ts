@@ -4,9 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Document, isDocument, isScalar, Node, visit, YAMLMap, YAMLSeq } from 'yaml';
-import { CollectionItem, SourceToken, Token } from 'yaml/dist/parse/cst';
-import { VisitPath } from 'yaml/dist/parse/cst-visit';
-import { YamlNode } from '../jsonASTTypes';
+import { CollectionItem, SourceToken, Token } from 'yaml/dist/parse/cst.js';
+import { VisitPath } from 'yaml/dist/parse/cst-visit.js';
+import { YamlNode } from '../jsonASTTypes.js';
 
 type Visitor = (item: SourceToken, path: VisitPath) => number | symbol | Visitor | void;
 

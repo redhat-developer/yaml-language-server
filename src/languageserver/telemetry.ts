@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Connection } from 'vscode-languageserver';
-import { TelemetryEvent, Telemetry } from '../languageservice/telemetry';
-import { convertErrorToTelemetryMsg } from '../languageservice/utils/objects';
+import { TelemetryEvent, Telemetry } from '../languageservice/telemetry.js';
+import { convertErrorToTelemetryMsg } from '../languageservice/utils/objects.js';
 
 export class TelemetryImpl implements Telemetry {
   constructor(private readonly connection: Connection) {}

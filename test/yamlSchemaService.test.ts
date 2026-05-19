@@ -7,10 +7,10 @@ import * as chai from 'chai';
 import * as sinonChai from 'sinon-chai';
 import * as path from 'path';
 import * as url from 'url';
-import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
-import { parse } from '../src/languageservice/parser/yamlParser07';
-import { SettingsState } from '../src/yamlSettings';
-import { BASE_KUBERNETES_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
+import * as SchemaService from '../src/languageservice/services/yamlSchemaService.js';
+import { parse } from '../src/languageservice/parser/yamlParser07.js';
+import { SettingsState } from '../src/yamlSettings.js';
+import { BASE_KUBERNETES_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls.js';
 
 const expect = chai.expect;
 chai.use(sinonChai);

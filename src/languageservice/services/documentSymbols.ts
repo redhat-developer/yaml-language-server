@@ -5,12 +5,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { SymbolInformation, DocumentSymbol } from 'vscode-languageserver-types';
-import { YAMLSchemaService } from './yamlSchemaService';
-import { JSONDocumentSymbols } from 'vscode-json-languageservice/lib/umd/services/jsonDocumentSymbols';
-import { DocumentSymbolsContext } from 'vscode-json-languageservice/lib/umd/jsonLanguageTypes';
+import { YAMLSchemaService } from './yamlSchemaService.js';
+import { JSONDocumentSymbols } from 'vscode-json-languageservice/lib/umd/services/jsonDocumentSymbols.js';
+import { DocumentSymbolsContext } from 'vscode-json-languageservice/lib/umd/jsonLanguageTypes.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { Telemetry } from '../telemetry';
+import { yamlDocumentsCache } from '../parser/yaml-documents.js';
+import { Telemetry } from '../telemetry.js';
 import { isMap, isSeq, Node } from 'yaml';
 
 export class YAMLDocumentSymbols {

@@ -5,14 +5,14 @@
 import * as sinon from 'sinon';
 import * as sinonChai from 'sinon-chai';
 import * as chai from 'chai';
-import { YamlCodeLens } from '../src/languageservice/services/yamlCodeLens';
-import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
-import { setupTextDocument } from './utils/testHelper';
-import { JSONSchema } from '../src/languageservice/jsonSchema';
+import { YamlCodeLens } from '../src/languageservice/services/yamlCodeLens.js';
+import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService.js';
+import { setupTextDocument } from './utils/testHelper.js';
+import { JSONSchema } from '../src/languageservice/jsonSchema.js';
 import { CodeLens, Command, Range } from 'vscode-languageserver-protocol';
-import { YamlCommands } from '../src/commands';
-import { TelemetryImpl } from '../src/languageserver/telemetry';
-import { Telemetry } from '../src/languageservice/telemetry';
+import { YamlCommands } from '../src/commands.js';
+import { TelemetryImpl } from '../src/languageserver/telemetry.js';
+import { Telemetry } from '../src/languageservice/telemetry.js';
 
 const expect = chai.expect;
 chai.use(sinonChai);

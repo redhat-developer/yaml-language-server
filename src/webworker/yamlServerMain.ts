@@ -5,11 +5,11 @@
  *--------------------------------------------------------------------------------------------*/
 import * as l10n from '@vscode/l10n';
 import { Connection, RequestType } from 'vscode-languageserver';
-import { BrowserMessageReader, BrowserMessageWriter, createConnection } from 'vscode-languageserver/browser';
-import { TelemetryImpl } from '../languageserver/telemetry';
-import { schemaRequestHandler, workspaceContext } from '../languageservice/services/schemaRequestHandler';
-import { YAMLServerInit } from '../yamlServerInit';
-import { SettingsState } from '../yamlSettings';
+import { BrowserMessageReader, BrowserMessageWriter, createConnection } from 'vscode-languageserver/browser.js';
+import { TelemetryImpl } from '../languageserver/telemetry.js';
+import { schemaRequestHandler, workspaceContext } from '../languageservice/services/schemaRequestHandler.js';
+import { YAMLServerInit } from '../yamlServerInit.js';
+import { SettingsState } from '../yamlSettings.js';
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace FSReadFile {

@@ -6,9 +6,9 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import { isMap, Node, Pair, visit } from 'yaml';
-import { SingleYAMLDocument } from '../../parser/yaml-documents';
-import { AdditionalValidator } from './types';
-import { SourceToken } from 'yaml/dist/parse/cst';
+import { SingleYAMLDocument } from '../../parser/yaml-documents.js';
+import { AdditionalValidator } from './types.js';
+import { SourceToken } from 'yaml/dist/parse/cst.js';
 
 export class MapKeyOrderValidator implements AdditionalValidator {
   validate(document: TextDocument, yamlDoc: SingleYAMLDocument): Diagnostic[] {

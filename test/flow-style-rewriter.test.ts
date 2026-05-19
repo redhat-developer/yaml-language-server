@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { YamlDocuments } from '../src/languageservice/parser/yaml-documents';
-import { FlowStyleRewriter } from '../src/languageservice/utils/flow-style-rewriter';
-import { setupTextDocument } from './utils/testHelper';
+import { YamlDocuments } from '../src/languageservice/parser/yaml-documents.js';
+import { FlowStyleRewriter } from '../src/languageservice/utils/flow-style-rewriter.js';
+import { setupTextDocument } from './utils/testHelper.js';
 
 describe('Flow style rewriter', () => {
   let writer: FlowStyleRewriter;

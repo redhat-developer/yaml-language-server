@@ -6,10 +6,10 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { FormattingOptions, TextEdit } from 'vscode-languageserver-types';
 import { CustomFormatterOptions } from '../src';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { ServiceSetup } from './utils/serviceSetup';
-import { setupLanguageService, setupTextDocument } from './utils/testHelper';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
+import { ServiceSetup } from './utils/serviceSetup.js';
+import { setupLanguageService, setupTextDocument } from './utils/testHelper.js';
 
 type LanguageHandlerWithConnection = {
   connection: {

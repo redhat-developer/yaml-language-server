@@ -1,9 +1,9 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import { isMap, isSeq, visit } from 'yaml';
-import { FlowCollection } from 'yaml/dist/parse/cst';
-import { SingleYAMLDocument } from '../../parser/yaml-documents';
-import { LanguageSettings } from '../../yamlLanguageService';
+import { FlowCollection } from 'yaml/dist/parse/cst.js';
+import { SingleYAMLDocument } from '../../parser/yaml-documents.js';
+import { LanguageSettings } from '../../yamlLanguageService.js';
 import { AdditionalValidator } from './types';
 import * as l10n from '@vscode/l10n';
 

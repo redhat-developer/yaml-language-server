@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { CST, Scalar } from 'yaml';
-import { FlowScalar } from 'yaml/dist/parse/cst';
+import { FlowScalar } from 'yaml/dist/parse/cst.js';
 
 export class BlockStringRewriter {
   constructor(

@@ -1,9 +1,9 @@
-import { JSONDocument } from '../parser/jsonDocument';
-import { SingleYAMLDocument } from '../parser/yamlParser07';
+import { JSONDocument } from '../parser/jsonDocument.js';
+import { SingleYAMLDocument } from '../parser/yamlParser07.js';
 
-import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
-import { JSONSchema } from '../jsonSchema';
-import { BASE_KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
+import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService.js';
+import { JSONSchema } from '../jsonSchema.js';
+import { BASE_KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls.js';
 
 /**
  * Attempt to retrieve the schema for a given YAML document based on the Kubernetes GroupVersionKind (GVK).

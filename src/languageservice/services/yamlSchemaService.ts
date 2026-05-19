@@ -11,19 +11,19 @@ import {
   SchemaDependencies,
   SchemaHandle,
   UnresolvedSchema,
-} from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
-import { SettingsState } from '../../yamlSettings';
-import { JSONSchema, JSONSchemaMap, JSONSchemaRef, SchemaDialect } from '../jsonSchema';
-import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
+} from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService.js';
+import { SettingsState } from '../../yamlSettings.js';
+import { JSONSchema, JSONSchemaMap, JSONSchemaRef, SchemaDialect } from '../jsonSchema.js';
+import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService.js';
 
 import * as l10n from '@vscode/l10n';
 import * as path from 'path';
 import { URI } from 'vscode-uri';
-import { JSONSchemaDescriptionExt } from '../../requestTypes';
-import { JSONDocument } from '../parser/jsonDocument';
-import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { SchemaVersions } from '../yamlTypes';
-import { getSchemaFromModeline } from './modelineUtil';
+import { JSONSchemaDescriptionExt } from '../../requestTypes.js';
+import { JSONDocument } from '../parser/jsonDocument.js';
+import { SingleYAMLDocument } from '../parser/yamlParser07.js';
+import { SchemaVersions } from '../yamlTypes.js';
+import { getSchemaFromModeline } from './modelineUtil.js';
 
 import Ajv, { DefinedError, type AnySchemaObject, type ErrorObject, type ValidateFunction } from 'ajv';
 import Ajv4 from 'ajv-draft-04';
@@ -32,8 +32,8 @@ import Ajv2020 from 'ajv/dist/2020';
 import type { Localize } from 'ajv-i18n/localize/types';
 import * as Json from 'jsonc-parser';
 import { parse } from 'yaml';
-import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
-import { autoDetectKubernetesSchema } from './k8sSchemaUtil';
+import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls.js';
+import { autoDetectKubernetesSchema } from './k8sSchemaUtil.js';
 
 const ajv4 = new Ajv4({ allErrors: true });
 const ajv7 = new Ajv({ allErrors: true });

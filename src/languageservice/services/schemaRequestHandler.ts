@@ -3,9 +3,9 @@ import { getErrorStatusDescription, xhr, XHRResponse } from 'request-light';
 import * as URL from 'url';
 import { Connection, RequestType, WorkspaceFolder } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { CustomSchemaContentRequest, VSCodeContentRequest } from '../../requestTypes';
-import { isRelativePath, relativeToAbsolutePath } from '../utils/paths';
-import { WorkspaceContextService } from '../yamlLanguageService';
+import { CustomSchemaContentRequest, VSCodeContentRequest } from '../../requestTypes.js';
+import { isRelativePath, relativeToAbsolutePath } from '../utils/paths.js';
+import { WorkspaceContextService } from '../yamlLanguageService.js';
 
 export interface FileSystem {
   readFile(fsPath: string, encoding?: string): Promise<string>;

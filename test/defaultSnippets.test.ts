@@ -2,12 +2,12 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { toFsPath, setupSchemaIDTextDocument, setupLanguageService, caretPosition } from './utils/testHelper';
+import { toFsPath, setupSchemaIDTextDocument, setupLanguageService, caretPosition } from './utils/testHelper.js';
 import * as assert from 'assert';
 import * as path from 'path';
-import { ServiceSetup } from './utils/serviceSetup';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import { ServiceSetup } from './utils/serviceSetup.js';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
 import { CompletionList, TextEdit } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 

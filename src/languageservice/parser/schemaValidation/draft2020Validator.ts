@@ -3,15 +3,15 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
-import { SchemaDialect } from '../../jsonSchema';
-import type { ASTNode, ArrayASTNode } from '../../jsonASTTypes';
-import { isNumber } from '../../utils/objects';
+import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema.js';
+import { SchemaDialect } from '../../jsonSchema.js';
+import type { ASTNode, ArrayASTNode } from '../../jsonASTTypes.js';
+import { isNumber } from '../../utils/objects.js';
 import * as l10n from '@vscode/l10n';
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
-import { Draft2019Validator } from './draft2019Validator';
-import type { ISchemaCollector, Options } from './baseValidator';
-import { ValidationResult, asSchema } from './baseValidator';
+import { Draft2019Validator } from './draft2019Validator.js';
+import type { ISchemaCollector, Options } from './baseValidator.js';
+import { ValidationResult, asSchema } from './baseValidator.js';
 
 export class Draft2020Validator extends Draft2019Validator {
   protected override getCurrentDialect(): SchemaDialect {
