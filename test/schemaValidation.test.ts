@@ -1353,7 +1353,6 @@ obj:
       validator
         .then(function (result) {
           assert.equal(result.length, 2);
-          // eslint-disable-next-line
           assert.equal(result[1].message, `Value is not accepted. Valid values: "ImageStreamImport", "ImageStreamLayers".`);
         })
         .then(done, done);
@@ -1765,7 +1764,7 @@ spec:
       schemaProvider.deleteSchema(sharedSchemaId);
     });
     it('should distinguish types in error "Incorrect type (Expected "type1 | type2 | type3")"', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
       schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', schema.sharedSchema);
       schemaProvider.addSchema(SCHEMA_ID, schema.schema);
@@ -1781,7 +1780,7 @@ spec:
       ]);
     });
     it('should combine types in "Incorrect type error"', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
 
       schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', schema.sharedSchema);
@@ -1794,7 +1793,7 @@ spec:
       assert.strictEqual(result[2].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
     });
     it('should combine const value', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
 
       schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', schema.sharedSchema);
@@ -1807,7 +1806,7 @@ spec:
       assert.strictEqual(result[3].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
     });
     it('should distinguish types in error: "Missing property from multiple schemas"', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
 
       schemaProvider.addSchemaWithUri(sharedSchemaId, 'file:///sharedSchema.json', schema.sharedSchema);

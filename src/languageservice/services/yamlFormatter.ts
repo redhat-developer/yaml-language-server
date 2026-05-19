@@ -54,7 +54,7 @@ export class YAMLFormatter {
       }
 
       return [TextEdit.replace(Range.create(Position.create(0, 0), document.positionAt(text.length)), formatted)];
-    } catch (error) {
+    } catch {
       return [];
     }
   }

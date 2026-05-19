@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-/* eslint-disable @typescript-eslint/no-var-requires */
 import {
   caretPosition,
   SCHEMA_ID,
@@ -793,6 +792,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Insert required attributes at correct level', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testRequiredProperties.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- top:\n    prop1: demo\n- ';
@@ -811,6 +811,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Insert required attributes at correct level even on first element', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testRequiredProperties.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- ';
@@ -829,6 +830,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide the 3 types when none provided', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- ';
@@ -859,6 +861,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide the 2 types when one is provided', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  ';
@@ -883,6 +886,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide the 2 types when one is provided and the second is typed', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  p';
@@ -907,6 +911,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide no completion when maxProperties reached', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  prop2:\n  ';
@@ -1048,6 +1053,7 @@ describe('Auto Completion Tests', () => {
 
     describe('Array Specific Tests', function () {
       it('Should insert empty array item', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testStringArray.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'fooBa'; // len: 5
@@ -1955,6 +1961,7 @@ describe('Auto Completion Tests', () => {
 
   describe('Indentation Specific Tests', function () {
     it('Indent should be considered with position relative to slash', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'install:\n  - he'; // len: 15
@@ -1973,6 +1980,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Large indent should be considered with position relative to slash', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'install:\n -            he'; // len: 25
@@ -1991,6 +1999,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Tab indent should be considered with position relative to slash', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'install:\n -\t             he'; // len: 27
@@ -2773,6 +2782,7 @@ describe('Auto Completion Tests', () => {
 
   describe('Array completion', () => {
     it('Simple array object completion with "-" without any item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  -';
@@ -2787,6 +2797,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Simple array object completion without "-" after array item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  ';
@@ -2800,6 +2811,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Simple array object completion with "-" after array item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  -';
@@ -2814,6 +2826,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion with "- " without any item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - ';
@@ -2830,6 +2843,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion with "-" without any item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  -';
@@ -2844,6 +2858,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Simple array object completion without "-" befor array empty item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  |\n|  -'; // len: 30, pos: 26
@@ -2857,6 +2872,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion without "-" after array item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  ';
@@ -2869,6 +2885,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array nested anyOf without "-" should return all array items', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_nested_anyOf:\n  - obj1:\n    name:1\n  ';
@@ -2881,6 +2898,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion with "-" after array item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  -';
@@ -2895,6 +2913,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion indentation', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj';

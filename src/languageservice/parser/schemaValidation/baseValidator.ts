@@ -1628,7 +1628,6 @@ export function asSchema(schema: JSONSchemaRef): JSONSchema | undefined {
 
   if (typeof schema !== 'object') {
     // Keep legacy behavior: warn and coerce
-    // eslint-disable-next-line no-console
     console.warn(`Wrong schema: ${JSON.stringify(schema)}, it MUST be an Object or Boolean`);
     return { type: schema as string };
   }

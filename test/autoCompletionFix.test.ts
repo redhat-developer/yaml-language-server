@@ -199,7 +199,7 @@ spec:
   });
 
   it('should complete  array', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const schema = require(path.join(__dirname, './fixtures/test-nested-object-array.json'));
     schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = `objA:
@@ -214,7 +214,7 @@ objB:
   });
 
   it('should complete array item for "oneOf" schema', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const schema = require(path.join(__dirname, './fixtures/test-completion-oneOf.json'));
     schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = `metadata:
