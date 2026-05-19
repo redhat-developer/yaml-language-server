@@ -84,7 +84,6 @@ export interface LanguageSettings {
   completion?: boolean; //Setting for whether we want to have completion results
   format?: boolean; //Setting for whether we want to have the formatter or not
   isKubernetes?: boolean; //If true then its validating against kubernetes
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   schemas?: SchemasSettings[]; //List of schemas,
   customTags?: Array<string>; //Array of Custom Tags
   /**

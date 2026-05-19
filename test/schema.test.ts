@@ -982,15 +982,14 @@ address:
   });
 
   describe('Test schema priority', function () {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const schemaAssociationSample = require(path.join(__dirname, './fixtures/sample-association.json'));
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const schemaStoreSample = require(path.join(__dirname, './fixtures/sample-schemastore.json'));
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const schemaSettingsSample = require(path.join(__dirname, './fixtures/sample-settings.json'));
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const schemaModelineSample = path.join(__dirname, './fixtures/sample-modeline.json');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const schemaDefaultSnippetSample = require(path.join(__dirname, './fixtures/defaultSnippets-const-if-else.json'));
     let languageSettingsSetup: ServiceSetup;
 

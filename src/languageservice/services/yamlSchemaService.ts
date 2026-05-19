@@ -40,15 +40,15 @@ const ajv7 = new Ajv({ allErrors: true });
 const ajv2019 = new Ajv2019({ allErrors: true });
 const ajv2020 = new Ajv2020({ allErrors: true });
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const jsonSchema04 = require('ajv-draft-04/dist/refs/json-schema-draft-04.json');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const jsonSchema2019 = require('ajv/dist/refs/json-schema-2019-09/schema.json');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const jsonSchema2020 = require('ajv/dist/refs/json-schema-2020-12/schema.json');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const ajvLocalizers: Record<string, Localize> = require('ajv-i18n');
 
 const schema04Validator = ajv4.compile(jsonSchema04);
@@ -276,7 +276,9 @@ export class YAMLSchemaService extends JSONSchemaService {
     async function _metaValidateSchemaNode(node: JSONSchema, hasNestedSchema: boolean): Promise<void> {
       if (!node || typeof node !== 'object') return;
       const dialect = await pickSchemaDialect(node.$schema, _loadSchema);
-      dialect && (node._dialect = dialect);
+      if (dialect) {
+        node._dialect = dialect;
+      }
 
       const validator = pickMetaValidator(dialect);
       if (!validator) return;
@@ -1258,7 +1260,6 @@ export class YAMLSchemaService extends JSONSchemaService {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private resolveNext(object: any, token: any): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (Array.isArray(object) && isNaN(token)) {
       throw new Error('Expected a number after the array object');
     } else if (typeof object === 'object' && typeof token !== 'string') {
@@ -1275,7 +1276,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     // The parent's `super.normalizeId(id)` isn't visible, so duplicated the code here
     try {
       return URI.parse(id).toString();
-    } catch (e) {
+    } catch {
       return id;
     }
   }
@@ -1398,7 +1399,7 @@ function toDisplayString(url: string): string {
     if (uri.scheme === 'file') {
       return uri.fsPath;
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
   return url;

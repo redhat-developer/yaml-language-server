@@ -23,7 +23,6 @@ import { TelemetryEvent } from '../../src/languageservice/telemetry';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 export class TestWorkspace implements RemoteWorkspace {
   connection: Connection;
   applyEdit(paramOrEdit: ApplyWorkspaceEditParams | WorkspaceEdit): Promise<ApplyWorkspaceEditResponse> {
