@@ -1,13 +1,15 @@
-import { Tags, isSeq, isMap, YAMLMap, YAMLSeq } from 'yaml';
-import { filterInvalidCustomTags } from '../utils/arrUtils';
+import { Tags, isSeq, isMap, YAMLMap, YAMLSeq, Scalar } from 'yaml';
+import { CustomTagInputType, CustomTagReturnType, parseCustomTag, setCustomTagReturnType } from '../utils/customTags';
 
 class CommonTagImpl {
   tag: string;
-  readonly type: string;
+  readonly type: CustomTagInputType;
+  readonly returnType?: CustomTagReturnType;
   default: never;
-  constructor(tag: string, type: string) {
+  constructor(tag: string, type: CustomTagInputType, returnType?: CustomTagReturnType) {
     this.tag = tag;
     this.type = type;
+    this.returnType = returnType;
   }
   get collection(): 'map' | 'seq' | never {
     if (this.type === 'mapping') {
@@ -19,16 +21,29 @@ class CommonTagImpl {
     return undefined;
   }
   identify?: (value: unknown) => boolean;
-  resolve(value: string | YAMLMap | YAMLSeq): string | YAMLMap | YAMLSeq {
+  resolve(value: string | YAMLMap | YAMLSeq): string | YAMLMap | YAMLSeq | Scalar {
     if (isMap(value) && this.type === 'mapping') {
-      return value;
+      return this.addReturnTypeMetadata(value);
     }
     if (isSeq(value) && this.type === 'sequence') {
-      return value;
+      return this.addReturnTypeMetadata(value);
     }
     if (typeof value === 'string' && this.type === 'scalar') {
+      return this.addReturnTypeMetadata(value);
+    }
+  }
+
+  private addReturnTypeMetadata(value: string | YAMLMap | YAMLSeq): string | YAMLMap | YAMLSeq | Scalar {
+    if (!this.returnType) {
       return value;
     }
+    if (typeof value === 'string') {
+      const scalar = new Scalar(value);
+      setCustomTagReturnType(scalar, this.returnType);
+      return scalar;
+    }
+    setCustomTagReturnType(value, this.returnType);
+    return value;
   }
 }
 
@@ -53,12 +68,11 @@ class IncludeTag {
  */
 export function getCustomTags(customTags: string[]): Tags {
   const tags = [];
-  const filteredTags = filterInvalidCustomTags(customTags);
-  for (const tag of filteredTags) {
-    const typeInfo = tag.split(' ');
-    const tagName = typeInfo[0];
-    const tagType = (typeInfo[1] && typeInfo[1].toLowerCase()) || 'scalar';
-    tags.push(new CommonTagImpl(tagName, tagType));
+  for (const tag of customTags ?? []) {
+    const parsedTag = parseCustomTag(tag);
+    if (parsedTag) {
+      tags.push(new CommonTagImpl(parsedTag.tag, parsedTag.inputType, parsedTag.returnType));
+    }
   }
   tags.push(new IncludeTag());
   return tags;

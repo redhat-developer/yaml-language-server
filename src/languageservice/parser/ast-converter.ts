@@ -20,6 +20,7 @@ import {
   LineCounter,
 } from 'yaml';
 import { ASTNode, YamlNode } from '../jsonASTTypes';
+import { getCustomTagReturnType } from '../utils/customTags';
 import {
   NullASTNodeImpl,
   PropertyASTNodeImpl,
@@ -49,23 +50,25 @@ export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineC
   if (!node) {
     return null;
   }
+
+  let result: ASTNode | undefined;
   if (isMap(node)) {
-    return convertMap(node, parent, doc, lineCounter);
+    result = convertMap(node, parent, doc, lineCounter);
+  } else if (isPair(node)) {
+    result = convertPair(node, parent, doc, lineCounter);
+  } else if (isSeq(node)) {
+    result = convertSeq(node, parent, doc, lineCounter);
+  } else if (isScalar(node)) {
+    result = convertScalar(node, parent);
+  } else if (isAlias(node) && aliasDepth.currentRefDepth < aliasDepth.maxRefCount) {
+    result = convertAlias(node, parent, doc, lineCounter);
   }
-  if (isPair(node)) {
-    return convertPair(node, parent, doc, lineCounter);
+
+  if (result && isNode(node)) {
+    result.customTagReturnType = getCustomTagReturnType(node);
   }
-  if (isSeq(node)) {
-    return convertSeq(node, parent, doc, lineCounter);
-  }
-  if (isScalar(node)) {
-    return convertScalar(node, parent);
-  }
-  if (isAlias(node) && aliasDepth.currentRefDepth < aliasDepth.maxRefCount) {
-    return convertAlias(node, parent, doc, lineCounter);
-  } else {
-    return;
-  }
+
+  return result;
 }
 
 function convertMap(node: YAMLMap<unknown, unknown>, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {

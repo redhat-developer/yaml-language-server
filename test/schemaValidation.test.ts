@@ -40,7 +40,6 @@ describe('Validation Tests', () => {
     languageSettingsSetup = new ServiceSetup()
       .withValidate()
       .withCompletion()
-      .withCustomTags(['!Test', '!Ref sequence'])
       .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['.drone.yml'] })
       .withSchemaFileMatch({ uri: 'https://json.schemastore.org/drone', fileMatch: ['.drone.yml'] })
       .withSchemaFileMatch({ uri: KUBERNETES_SCHEMA_URL, fileMatch: ['test.yml'] })
@@ -69,7 +68,13 @@ describe('Validation Tests', () => {
     return validationHandler.validateTextDocument(testTextDocument);
   }
 
+  function configureCustomTags(customTags: string[]): void {
+    languageSettingsSetup.languageSettings.customTags = customTags;
+    languageService.configure(languageSettingsSetup.languageSettings);
+  }
+
   afterEach(() => {
+    configureCustomTags([]);
     schemaProvider.deleteSchema(SCHEMA_ID);
   });
 
@@ -1112,6 +1117,7 @@ obj:
 
   describe('Custom tag tests', () => {
     it('Custom Tags without type', async () => {
+      configureCustomTags(['!Test']);
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -1139,6 +1145,7 @@ obj:
     });
 
     it('Custom Tags with type', (done) => {
+      configureCustomTags(['!Ref sequence']);
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -1186,6 +1193,37 @@ obj:
           assert.deepEqual(result[0], createExpectedError(IncludeWithoutValueError, 0, 11, 0, 19));
         })
         .then(done, done);
+    });
+
+    it('Custom Tags with return type validate against evaluated schema type', async () => {
+      configureCustomTags(['!Ref scalar:string', '!FindInMap sequence:string']);
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          ImageId: {
+            type: 'string',
+          },
+        },
+      });
+      const content = 'ImageId: !FindInMap [AWSRegionArch2AMI, !Ref "AWS::Region", HVM64]';
+      const result = await parseSetup(content);
+      assert.equal(result.length, 0);
+    });
+
+    it('Custom Tags without return type still validate against input node type', async () => {
+      configureCustomTags(['!Ref scalar:string', '!FindInMap sequence']);
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          ImageId: {
+            type: 'string',
+          },
+        },
+      });
+      const content = 'ImageId: !FindInMap [AWSRegionArch2AMI, !Ref "AWS::Region", HVM64]';
+      const result = await parseSetup(content);
+      assert.equal(result.length, 1);
+      assert.ok(result[0].message.includes('Incorrect type. Expected "string".'));
     });
   });
 
