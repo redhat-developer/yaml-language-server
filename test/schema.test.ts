@@ -16,8 +16,8 @@ import {
   setupSchemaIDTextDocument,
   setupTextDocument,
   TEST_URI,
-} from './utils/testHelper';
-import { LanguageService, SchemaPriority } from '../src';
+} from './utils/testHelper.js';
+import { LanguageService, SchemaPriority } from '../src/index.js';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
 import { Diagnostic, MarkupContent, Position } from 'vscode-languageserver-types';

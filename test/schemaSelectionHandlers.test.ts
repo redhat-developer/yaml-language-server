@@ -13,7 +13,7 @@ import { SchemaSelectionRequests } from '../src/requestTypes.js';
 import { SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper.js';
 
 const expect = chai.expect;
-chai.use(sinonChai);
+chai.use(sinonChai.default);
 
 describe('Schema Selection Handlers', () => {
   const sandbox = sinon.createSandbox();

@@ -22,11 +22,11 @@ import { ClientCapabilities, CodeActionParams } from 'vscode-languageserver';
 import { setupTextDocument, TEST_URI } from './utils/testHelper.js';
 import { createDiagnosticWithData, createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError.js';
 import { YamlCommands } from '../src/commands.js';
-import { LanguageSettings } from '../src';
+import { LanguageSettings } from '../src/index.js';
 import { ErrorCode } from 'vscode-json-languageservice';
 
 const expect = chai.expect;
-chai.use(sinonChai);
+chai.use(sinonChai.default);
 
 const JSON_SCHEMA_LOCAL = 'file://some/path/schema.json';
 const JSON_SCHEMA2_LOCAL = 'file://some/path/schema2.json';

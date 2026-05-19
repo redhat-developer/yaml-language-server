@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CompletionItemKind } from 'vscode-json-languageservice';
+import type { CompletionItemKind } from 'vscode-json-languageservice';
 import { SchemaVersions } from './yamlTypes.js';
 
 export type JSONSchemaRef = JSONSchema | boolean;

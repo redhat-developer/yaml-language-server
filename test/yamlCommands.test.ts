@@ -12,7 +12,7 @@ import { Connection } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 
 const expect = chai.expect;
-chai.use(sinonChai);
+chai.use(sinonChai.default);
 
 describe('Yaml Commands', () => {
   const JSON_SCHEMA_LOCAL = 'file://some/path/schema.json';

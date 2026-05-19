@@ -13,7 +13,7 @@ import { SettingsState } from '../src/yamlSettings.js';
 import { BASE_KUBERNETES_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls.js';
 
 const expect = chai.expect;
-chai.use(sinonChai);
+chai.use(sinonChai.default);
 const workspaceContext = {
   resolveRelativePath: (relativePath: string, resource: string) => {
     return url.resolve(resource, relativePath);

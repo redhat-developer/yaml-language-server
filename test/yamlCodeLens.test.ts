@@ -15,7 +15,7 @@ import { TelemetryImpl } from '../src/languageserver/telemetry.js';
 import { Telemetry } from '../src/languageservice/telemetry.js';
 
 const expect = chai.expect;
-chai.use(sinonChai);
+chai.use(sinonChai.default);
 
 describe('YAML CodeLens', () => {
   const sandbox = sinon.createSandbox();

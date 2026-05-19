@@ -25,17 +25,17 @@ import { SingleYAMLDocument } from '../parser/yamlParser07.js';
 import { SchemaVersions } from '../yamlTypes.js';
 import { getSchemaFromModeline } from './modelineUtil.js';
 
-import Ajv, { DefinedError, type AnySchemaObject, type ErrorObject, type ValidateFunction } from 'ajv';
+import { Ajv, DefinedError, type AnySchemaObject, type ErrorObject, type ValidateFunction } from 'ajv';
 import Ajv4 from 'ajv-draft-04';
-import Ajv2019 from 'ajv/dist/2019';
-import Ajv2020 from 'ajv/dist/2020';
-import type { Localize } from 'ajv-i18n/localize/types';
+import { Ajv2019 } from 'ajv/dist/2019.js';
+import { Ajv2020 } from 'ajv/dist/2020.js';
+import type { Localize } from 'ajv-i18n/localize/types.js';
 import * as Json from 'jsonc-parser';
 import { parse } from 'yaml';
 import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls.js';
 import { autoDetectKubernetesSchema } from './k8sSchemaUtil.js';
 
-const ajv4 = new Ajv4({ allErrors: true });
+const ajv4 = new Ajv4.default({ allErrors: true });
 const ajv7 = new Ajv({ allErrors: true });
 const ajv2019 = new Ajv2019({ allErrors: true });
 const ajv2020 = new Ajv2020({ allErrors: true });

@@ -13,7 +13,7 @@ import * as chai from 'chai';
 import * as sinonChai from 'sinon-chai';
 
 const expect = chai.expect;
-chai.use(sinonChai);
+chai.use(sinonChai.default);
 import { testFileSystem } from './utils/testHelper.js';
 
 describe('Schema Request Handler Tests', () => {

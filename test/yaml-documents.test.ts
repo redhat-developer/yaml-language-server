@@ -14,7 +14,7 @@ import { isMap, isScalar, isSeq, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
 import { TextBuffer } from '../src/languageservice/utils/textBuffer.js';
 
 const expect = chai.expect;
-chai.use(sinonChai);
+chai.use(sinonChai.default);
 describe('YAML Documents', () => {
   const sandbox = sinon.createSandbox();
   describe('YAML Documents Cache Tests', () => {

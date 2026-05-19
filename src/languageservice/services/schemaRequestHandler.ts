@@ -1,5 +1,6 @@
 import { join } from 'path';
-import { getErrorStatusDescription, xhr, XHRResponse } from 'request-light';
+import type { XHRResponse } from 'request-light';
+import { getErrorStatusDescription, xhr } from 'request-light';
 import * as URL from 'url';
 import { Connection, RequestType, WorkspaceFolder } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';

@@ -77,14 +77,14 @@ const ws4 = new TestWorkspace(
 
 const checkBadPath = (path: string): void => {
   it('Rejects "' + path + '"', () => {
-    assert(!isRelativePath(path));
+    assert.ok(!isRelativePath(path));
   });
 };
 
 const checkGoodPath = (path: string, expect1: string, expect2: string, expect3: string): void => {
   describe('Relative path = "' + path + '"', () => {
     it('Recognises relative path', () => {
-      assert(isRelativePath(path));
+      assert.ok(isRelativePath(path));
     });
 
     it('Resolves relative path in single-root workspace', () => {
@@ -182,7 +182,7 @@ describe('File path tests', () => {
       const path4 = join('test', 'test.json');
 
       it('Recognises relative path "' + path1 + '"', () => {
-        assert(isRelativePath(path1));
+        assert.ok(isRelativePath(path1));
       });
 
       it('Resolves "' + path1 + '" in single-root workspace', () => {
@@ -209,7 +209,7 @@ describe('File path tests', () => {
         if (process.platform !== 'win32') {
           this.skip();
         } else {
-          assert(isRelativePath(path));
+          assert.ok(isRelativePath(path));
         }
       });
 

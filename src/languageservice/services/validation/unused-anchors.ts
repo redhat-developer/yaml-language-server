@@ -79,7 +79,7 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
     if (parentNode && parentNode.srcToken) {
       const token = parentNode.srcToken;
       if (isCollectionItem(token)) {
-        return getAnchorFromCollectionItem(token);
+        return getAnchorFromCollectionItem(<CST.CollectionItem>token);
       } else if (CST.isCollection(token)) {
         for (const t of token.items) {
           if (node.srcToken !== t.value) continue;

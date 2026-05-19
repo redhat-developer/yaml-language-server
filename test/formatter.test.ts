@@ -5,7 +5,7 @@
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { FormattingOptions, TextEdit } from 'vscode-languageserver-types';
-import { CustomFormatterOptions } from '../src';
+import { CustomFormatterOptions } from '../src/index.js';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
 import { ServiceSetup } from './utils/serviceSetup.js';

@@ -8,17 +8,22 @@ import * as request from 'request-light';
 import * as sinon from 'sinon';
 import * as sinonChai from 'sinon-chai';
 import { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver';
-import { LanguageService, LanguageSettings, SchemaConfiguration, SchemaPriority } from '../src';
+import { LanguageService, LanguageSettings, SchemaConfiguration, SchemaPriority } from '../src/index.js';
 import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers.js';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
 import { EMPTY_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls.js';
 import { Telemetry } from '../src/languageservice/telemetry.js';
 import { SettingsState } from '../src/yamlSettings.js';
-import { TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument, setupTextDocument } from './utils/testHelper.js';
+import {
+  TestCustomSchemaProvider,
+  setupLanguageService,
+  setupSchemaIDTextDocument,
+  setupTextDocument,
+} from './utils/testHelper.js';
 import { TestWorkspace } from './utils/testsTypes.js';
 
 const expect = chai.expect;
-chai.use(sinonChai);
+chai.use(sinonChai.default);
 
 describe('Settings Handlers Tests', () => {
   const sandbox = sinon.createSandbox();

@@ -3,12 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Document, isDocument, isScalar, Node, visit, YAMLMap, YAMLSeq } from 'yaml';
-import { CollectionItem, SourceToken, Token } from 'yaml/dist/parse/cst.js';
-import { VisitPath } from 'yaml/dist/parse/cst-visit.js';
+import { Document, isDocument, isScalar, Node, visit, YAMLMap, YAMLSeq, CST } from 'yaml';
 import { YamlNode } from '../jsonASTTypes.js';
 
-type Visitor = (item: SourceToken, path: VisitPath) => number | symbol | Visitor | void;
+type Visitor = (item: CST.SourceToken, path: CST.VisitPath) => number | symbol | Visitor | void;
 
 export function getParent(doc: Document, nodeToFind: YamlNode): YamlNode | undefined {
   let parentNode: Node;
@@ -48,11 +46,11 @@ export function indexOf(seq: YAMLSeq, item: YamlNode): number | undefined {
  * @param doc the yaml document
  * @param offset the offset to check
  */
-export function isInComment(tokens: Token[], offset: number): boolean {
+export function isInComment(tokens: CST.Token[], offset: number): boolean {
   let inComment = false;
   for (const token of tokens) {
     if (token.type === 'document') {
-      _visit([], token as unknown as SourceToken, (item) => {
+      _visit([], token as unknown as CST.SourceToken, (item) => {
         if (isCollectionItem(item) && item.value?.type === 'comment') {
           if (token.offset <= offset && item.value.source.length + item.value.offset >= offset) {
             inComment = true;
@@ -76,11 +74,11 @@ export function isInComment(tokens: Token[], offset: number): boolean {
   return inComment;
 }
 
-export function isCollectionItem(token: unknown): token is CollectionItem {
+export function isCollectionItem(token: unknown): token is CST.CollectionItem {
   return token['start'] !== undefined;
 }
 
-function _visit(path: VisitPath, item: SourceToken, visitor: Visitor): number | symbol | Visitor | void {
+function _visit(path: CST.VisitPath, item: CST.SourceToken, visitor: Visitor): number | symbol | Visitor | void {
   let ctrl = visitor(item, path);
   if (typeof ctrl === 'symbol') return ctrl;
   for (const field of ['key', 'value'] as const) {

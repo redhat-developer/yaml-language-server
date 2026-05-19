@@ -25,7 +25,7 @@ import {
 } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
-import { LanguageService } from '../src';
+import { LanguageService } from '../src/index.js';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
 
 describe('Auto Completion Tests', () => {

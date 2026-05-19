@@ -38,7 +38,7 @@ describe('Document Symbols Tests', () => {
     const warnings = languageHandler.pendingLimitExceededWarnings;
     assert.deepEqual(Object.keys(warnings), [TEST_URI]);
     assert.deepEqual(warnings[TEST_URI].features, { 'document symbols': 'document symbols' });
-    assert(warnings[TEST_URI].timeout);
+    assert.ok(warnings[TEST_URI].timeout);
   }
 
   describe('Document Symbols Tests (Non Hierarchical)', function () {

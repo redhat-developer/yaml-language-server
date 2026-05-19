@@ -1,5 +1,4 @@
 import { CST, visit } from 'yaml';
-import { SourceToken } from 'yaml/dist/parse/cst.js';
 import { ASTNode } from '../jsonASTTypes.js';
 
 export class FlowStyleRewriter {
@@ -23,10 +22,10 @@ export class FlowStyleRewriter {
     for (const item of collection.items) {
       CST.visit(item, ({ key, sep, value }) => {
         if (blockType === 'block-map') {
-          const start = [{ type: 'space', indent: 0, offset: key.offset, source: this.indentation } as SourceToken];
+          const start = [{ type: 'space', indent: 0, offset: key.offset, source: this.indentation } as CST.SourceToken];
           if (parentType === 'property') {
             // add a new line if part of a map
-            start.unshift({ type: 'newline', indent: 0, offset: key.offset, source: '\n' } as SourceToken);
+            start.unshift({ type: 'newline', indent: 0, offset: key.offset, source: '\n' } as CST.SourceToken);
           }
           blockStyle.items.push({
             start: start,
@@ -37,10 +36,10 @@ export class FlowStyleRewriter {
         } else if (blockType === 'block-seq') {
           blockStyle.items.push({
             start: [
-              { type: 'newline', indent: 0, offset: value.offset, source: '\n' } as SourceToken,
-              { type: 'space', indent: 0, offset: value.offset, source: this.indentation } as SourceToken,
-              { type: 'seq-item-ind', indent: 0, offset: value.offset, source: '-' } as SourceToken,
-              { type: 'space', indent: 0, offset: value.offset, source: ' ' } as SourceToken,
+              { type: 'newline', indent: 0, offset: value.offset, source: '\n' } as CST.SourceToken,
+              { type: 'space', indent: 0, offset: value.offset, source: this.indentation } as CST.SourceToken,
+              { type: 'seq-item-ind', indent: 0, offset: value.offset, source: '-' } as CST.SourceToken,
+              { type: 'space', indent: 0, offset: value.offset, source: ' ' } as CST.SourceToken,
             ],
             value: value,
           });

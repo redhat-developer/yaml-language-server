@@ -11,7 +11,7 @@ import { URI } from 'vscode-uri';
 import { Connection } from 'vscode-languageserver';
 
 const expect = chai.expect;
-chai.use(sinonChai);
+chai.use(sinonChai.default);
 
 describe('Telemetry Tests', () => {
   const sandbox = sinon.createSandbox();

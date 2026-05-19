@@ -6,7 +6,7 @@ import { promises as fs } from 'fs';
 import { ClientCapabilities } from 'vscode-json-languageservice';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Connection, createConnection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node.js';
-import { LanguageService, LanguageSettings } from '../../src';
+import { LanguageService, LanguageSettings } from '../../src/index.js';
 import { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers.js';
 import { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers.js';
 import { JSONSchema } from '../../src/languageservice/jsonSchema.js';
