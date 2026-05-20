@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { findLinks as JSONFindLinks } from 'vscode-json-languageservice/lib/umd/services/jsonLinks.ts';
+import { findLinks as JSONFindLinks } from 'vscode-json-languageservice/lib/umd/services/jsonLinks.js';
 import { DocumentLink } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Telemetry } from '../telemetry.ts';

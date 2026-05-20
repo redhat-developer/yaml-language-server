@@ -5,7 +5,7 @@
 import * as l10n from '@vscode/l10n';
 import * as assert from 'assert';
 import * as path from 'path';
-import { Connection, createConnection } from 'vscode-languageserver/node.ts';
+import { Connection, createConnection } from 'vscode-languageserver/node.js';
 import { schemaRequestHandler, workspaceContext } from '../src/languageservice/services/schemaRequestHandler.ts';
 import { setupl10nBundle } from '../src/nodeTranslationSetup.ts';
 import { YAMLServerInit } from '../src/yamlServerInit.ts';

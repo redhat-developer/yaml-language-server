@@ -11,7 +11,7 @@ import {
   SchemaDependencies,
   SchemaHandle,
   UnresolvedSchema,
-} from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService.ts';
+} from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService.js';
 import { SettingsState } from '../../yamlSettings.ts';
 import { JSONSchema, JSONSchemaMap, JSONSchemaRef, SchemaDialect } from '../jsonSchema.ts';
 import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService.ts';
@@ -27,9 +27,9 @@ import { getSchemaFromModeline } from './modelineUtil.ts';
 
 import { Ajv, DefinedError, type AnySchemaObject, type ErrorObject, type ValidateFunction } from 'ajv';
 import Ajv4 from 'ajv-draft-04';
-import { Ajv2019 } from 'ajv/dist/2019.ts';
-import { Ajv2020 } from 'ajv/dist/2020.ts';
-import type { Localize } from 'ajv-i18n/localize/types.ts';
+import { Ajv2019 } from 'ajv/dist/2019.js';
+import { Ajv2020 } from 'ajv/dist/2020.js';
+import type { Localize } from 'ajv-i18n/localize/types.js';
 import * as Json from 'jsonc-parser';
 import { parse } from 'yaml';
 import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls.ts';

@@ -5,7 +5,7 @@
 import { promises as fs } from 'fs';
 import { ClientCapabilities } from 'vscode-json-languageservice';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Connection, createConnection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node.ts';
+import { Connection, createConnection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node.js';
 import { LanguageService, LanguageSettings } from '../../src/index.ts';
 import { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers.ts';
 import { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers.ts';
