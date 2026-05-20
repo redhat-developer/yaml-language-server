@@ -24,7 +24,7 @@ export function registerCommands(commandExecutor: CommandExecutor, connection: C
       const wsUri = URI.parse(wsFolders[0].uri);
       const pathFromUri = URI.parse(uri).path;
       uri = wsUri.with({ path: pathFromUri }).toString();
-    } else if (!uri.startsWith('file') && !/^[a-z]:[\\/]/i.test(uri)) {
+    } else if (!uri.startsWith('file') && !uri.startsWith('/') && !/^[a-z]:[\\/]/i.test(uri)) {
       // if uri points to local file of its a windows path
       const origUri = URI.parse(uri);
       const customUri = URI.from({
@@ -36,10 +36,10 @@ export function registerCommands(commandExecutor: CommandExecutor, connection: C
       uri = customUri.toString();
     }
 
-    // test if uri is windows path, ie starts with 'c:\' and convert to URI
-    if (/^[a-z]:[\\/]/i.test(uri)) {
-      const winUri = URI.file(uri);
-      uri = winUri.toString();
+    // test if uri is a plain local file path and convert it to URI
+    if (uri.startsWith('/') || /^[a-z]:[\\/]/i.test(uri)) {
+      const fileUri = URI.file(uri);
+      uri = fileUri.toString();
     }
 
     const result = await connection.window.showDocument({ uri: uri, external: false, takeFocus: true });
