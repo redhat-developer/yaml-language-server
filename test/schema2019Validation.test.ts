@@ -2,14 +2,14 @@
  *  Copyright (c) IBM Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { SCHEMA_ID, TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
-import { ServiceSetup } from './utils/serviceSetup.js';
+import { SCHEMA_ID, TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.ts';
+import { ServiceSetup } from './utils/serviceSetup.ts';
 import { Diagnostic } from 'vscode-languageserver-types';
 import { expect } from 'chai';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
-import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls.js';
-import { JSONSchema } from '../src/languageservice/jsonSchema.js';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.ts';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.ts';
+import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls.ts';
+import { JSONSchema } from '../src/languageservice/jsonSchema.ts';
 
 describe('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;

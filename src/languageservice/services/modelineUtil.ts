@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { SingleYAMLDocument } from '../parser/yamlParser07.js';
-import { JSONDocument } from '../parser/jsonDocument.js';
+import { SingleYAMLDocument } from '../parser/yamlParser07.ts';
+import { JSONDocument } from '../parser/jsonDocument.ts';
 
 /**
  * Retrieve schema if declared as modeline.

@@ -11,29 +11,29 @@ import {
   SchemaDependencies,
   SchemaHandle,
   UnresolvedSchema,
-} from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService.js';
-import { SettingsState } from '../../yamlSettings.js';
-import { JSONSchema, JSONSchemaMap, JSONSchemaRef, SchemaDialect } from '../jsonSchema.js';
-import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService.js';
+} from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService.ts';
+import { SettingsState } from '../../yamlSettings.ts';
+import { JSONSchema, JSONSchemaMap, JSONSchemaRef, SchemaDialect } from '../jsonSchema.ts';
+import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService.ts';
 
 import * as l10n from '@vscode/l10n';
 import * as path from 'path';
 import { URI } from 'vscode-uri';
-import { JSONSchemaDescriptionExt } from '../../requestTypes.js';
-import { JSONDocument } from '../parser/jsonDocument.js';
-import { SingleYAMLDocument } from '../parser/yamlParser07.js';
-import { SchemaVersions } from '../yamlTypes.js';
-import { getSchemaFromModeline } from './modelineUtil.js';
+import { JSONSchemaDescriptionExt } from '../../requestTypes.ts';
+import { JSONDocument } from '../parser/jsonDocument.ts';
+import { SingleYAMLDocument } from '../parser/yamlParser07.ts';
+import { SchemaVersions } from '../yamlTypes.ts';
+import { getSchemaFromModeline } from './modelineUtil.ts';
 
 import { Ajv, DefinedError, type AnySchemaObject, type ErrorObject, type ValidateFunction } from 'ajv';
 import Ajv4 from 'ajv-draft-04';
-import { Ajv2019 } from 'ajv/dist/2019.js';
-import { Ajv2020 } from 'ajv/dist/2020.js';
-import type { Localize } from 'ajv-i18n/localize/types.js';
+import { Ajv2019 } from 'ajv/dist/2019.ts';
+import { Ajv2020 } from 'ajv/dist/2020.ts';
+import type { Localize } from 'ajv-i18n/localize/types.ts';
 import * as Json from 'jsonc-parser';
 import { parse } from 'yaml';
-import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls.js';
-import { autoDetectKubernetesSchema } from './k8sSchemaUtil.js';
+import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls.ts';
+import { autoDetectKubernetesSchema } from './k8sSchemaUtil.ts';
 
 const ajv4 = new Ajv4.default({ allErrors: true });
 const ajv7 = new Ajv({ allErrors: true });

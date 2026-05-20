@@ -3,12 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { SchemaDialect } from '../../jsonSchema.js';
-import { BaseValidator } from './baseValidator.js';
-import { Draft04Validator } from './draft04Validator.js';
-import { Draft07Validator } from './draft07Validator.js';
-import { Draft2019Validator } from './draft2019Validator.js';
-import { Draft2020Validator } from './draft2020Validator.js';
+import { SchemaDialect } from '../../jsonSchema.ts';
+import { BaseValidator } from './baseValidator.ts';
+import { Draft04Validator } from './draft04Validator.ts';
+import { Draft07Validator } from './draft07Validator.ts';
+import { Draft2019Validator } from './draft2019Validator.ts';
+import { Draft2020Validator } from './draft2020Validator.ts';
 
 export function getValidator(dialect: SchemaDialect): BaseValidator {
   switch (dialect) {

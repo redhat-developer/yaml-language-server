@@ -6,13 +6,13 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { promises as fs } from 'fs';
-import { Connection, createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
-import { TelemetryImpl } from './languageserver/telemetry.js';
-import { schemaRequestHandler, workspaceContext } from './languageservice/services/schemaRequestHandler.js';
-import { convertErrorToTelemetryMsg } from './languageservice/utils/objects.js';
-import { setupl10nBundle } from './nodeTranslationSetup.js';
-import { YAMLServerInit } from './yamlServerInit.js';
-import { SettingsState } from './yamlSettings.js';
+import { Connection, createConnection, ProposedFeatures } from 'vscode-languageserver/node.ts';
+import { TelemetryImpl } from './languageserver/telemetry.ts';
+import { schemaRequestHandler, workspaceContext } from './languageservice/services/schemaRequestHandler.ts';
+import { convertErrorToTelemetryMsg } from './languageservice/utils/objects.ts';
+import { setupl10nBundle } from './nodeTranslationSetup.ts';
+import { YAMLServerInit } from './yamlServerInit.ts';
+import { SettingsState } from './yamlSettings.ts';
 
 // Create a connection for the server.
 let connection: Connection = null;

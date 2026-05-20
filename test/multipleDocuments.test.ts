@@ -3,14 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as path from 'path';
-import { setupLanguageService, setupTextDocument, toFsPath } from './utils/testHelper.js';
+import { setupLanguageService, setupTextDocument, toFsPath } from './utils/testHelper.ts';
 import * as assert from 'assert';
-import { ServiceSetup } from './utils/serviceSetup.js';
+import { ServiceSetup } from './utils/serviceSetup.ts';
 import { Diagnostic, Hover, MarkupContent } from 'vscode-languageserver-types';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
-import { LanguageService } from '../src/languageservice/yamlLanguageService.js';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.ts';
+import { LanguageService } from '../src/languageservice/yamlLanguageService.ts';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.ts';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.ts';
 
 /**
  * Setup the schema we are going to use with the language settings

@@ -6,8 +6,8 @@
 import * as sinon from 'sinon';
 import * as sinonChai from 'sinon-chai';
 import * as chai from 'chai';
-import { registerCommands } from '../src/languageservice/services/yamlCommands.js';
-import { commandExecutor } from '../src/languageserver/commandExecutor.js';
+import { registerCommands } from '../src/languageservice/services/yamlCommands.ts';
+import { commandExecutor } from '../src/languageserver/commandExecutor.ts';
 import { Connection } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 

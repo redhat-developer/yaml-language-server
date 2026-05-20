@@ -5,10 +5,10 @@
 
 import * as chai from 'chai';
 import { isPair, isSeq, Pair, YAMLSeq } from 'yaml';
-import { YamlDocuments } from '../src/languageservice/parser/yaml-documents.js';
-import { getParent, isInComment } from '../src/languageservice/utils/yamlAstUtils.js';
-import { TextBuffer } from '../src/languageservice/utils/textBuffer.js';
-import { setupTextDocument } from './utils/testHelper.js';
+import { YamlDocuments } from '../src/languageservice/parser/yaml-documents.ts';
+import { getParent, isInComment } from '../src/languageservice/utils/yamlAstUtils.ts';
+import { TextBuffer } from '../src/languageservice/utils/textBuffer.ts';
+import { setupTextDocument } from './utils/testHelper.ts';
 const expect = chai.expect;
 
 describe('AST Utils Tests', () => {

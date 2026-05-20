@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { Position, Range, SelectionRange } from 'vscode-languageserver-types';
-import { setupTextDocument } from './utils/testHelper.js';
-import { getSelectionRanges } from '../src/languageservice/services/yamlSelectionRanges.js';
+import { setupTextDocument } from './utils/testHelper.ts';
+import { getSelectionRanges } from '../src/languageservice/services/yamlSelectionRanges.ts';
 
 function isRangesEqual(range1: Range, range2: Range): boolean {
   return (

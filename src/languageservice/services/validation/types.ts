@@ -5,7 +5,7 @@
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic } from 'vscode-languageserver-types';
-import { SingleYAMLDocument } from '../../parser/yaml-documents.js';
+import { SingleYAMLDocument } from '../../parser/yaml-documents.ts';
 
 export interface AdditionalValidator {
   validate(document: TextDocument, yamlDoc: SingleYAMLDocument): Diagnostic[];

@@ -3,17 +3,17 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { Connection } from 'vscode-languageserver';
-import { CustomSchemaProvider } from '../../languageservice/services/yamlSchemaService.js';
-import { LanguageService, SchemaConfiguration } from '../../languageservice/yamlLanguageService.js';
+import { CustomSchemaProvider } from '../../languageservice/services/yamlSchemaService.ts';
+import { LanguageService, SchemaConfiguration } from '../../languageservice/yamlLanguageService.ts';
 import {
   CustomSchemaRequest,
   DynamicCustomSchemaRequestRegistration,
   SchemaAssociationNotification,
   SchemaSelectionRequests,
   VSCodeContentRequestRegistration,
-} from '../../requestTypes.js';
-import { SettingsState } from '../../yamlSettings.js';
-import { SettingsHandler } from './settingsHandlers.js';
+} from '../../requestTypes.ts';
+import { SettingsState } from '../../yamlSettings.ts';
+import { SettingsHandler } from './settingsHandlers.ts';
 
 export class NotificationHandlers {
   private languageService: LanguageService;

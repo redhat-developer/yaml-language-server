@@ -19,7 +19,7 @@ import {
   isScalar,
   isSeq,
 } from 'yaml';
-import { ASTNode, YamlNode } from '../jsonASTTypes.js';
+import { ASTNode, YamlNode } from '../jsonASTTypes.ts';
 import {
   ArrayASTNodeImpl,
   BooleanASTNodeImpl,
@@ -28,8 +28,8 @@ import {
   ObjectASTNodeImpl,
   PropertyASTNodeImpl,
   StringASTNodeImpl,
-} from './jsonDocument.js';
-import { getCustomTagReturnType } from '../utils/customTags.js';
+} from './jsonDocument.ts';
+import { getCustomTagReturnType } from '../utils/customTags.ts';
 
 type NodeRange = [number, number, number];
 

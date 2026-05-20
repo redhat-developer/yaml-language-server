@@ -10,7 +10,7 @@ import {
   parseDisableSpecifiers,
   shouldSuppressDiagnostic,
   GetLineText,
-} from '../src/languageservice/utils/diagnostic-filter.js';
+} from '../src/languageservice/utils/diagnostic-filter.ts';
 
 function makeDiag(startLine: number, message: string): { startLine: number; message: string } {
   return { startLine, message };

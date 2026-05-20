@@ -4,9 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 import { assert } from 'chai';
 import { Position, TextDocument } from 'vscode-languageserver-textdocument';
-import { getLanguageService, LanguageService, SchemaRequestService, WorkspaceContextService } from '../src/index.js';
-import { workspaceContext } from '../src/languageservice/services/schemaRequestHandler.js';
-import { caretPosition, setupSchemaIDTextDocument } from './utils/testHelper.js';
+import { getLanguageService, LanguageService, SchemaRequestService, WorkspaceContextService } from '../src/index.ts';
+import { workspaceContext } from '../src/languageservice/services/schemaRequestHandler.ts';
+import { caretPosition, setupSchemaIDTextDocument } from './utils/testHelper.ts';
 
 /**
  * Builds a simple schema request service

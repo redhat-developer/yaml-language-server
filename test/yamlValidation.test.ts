@@ -3,13 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
-import { ServiceSetup } from './utils/serviceSetup.js';
-import { setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.ts';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.ts';
+import { ServiceSetup } from './utils/serviceSetup.ts';
+import { setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.ts';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError.js';
+import { createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError.ts';
 
 type ValidationHandlerWithConnection = {
   connection: {

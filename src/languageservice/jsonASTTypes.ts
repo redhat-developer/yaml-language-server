@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Node, Pair } from 'yaml';
-import { CustomTagReturnType } from './utils/customTags.js';
+import { CustomTagReturnType } from './utils/customTags.ts';
 
 export type YamlNode = Node | Pair;
 

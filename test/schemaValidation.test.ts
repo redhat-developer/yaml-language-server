@@ -2,9 +2,9 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { SCHEMA_ID, TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
-import { createDiagnosticWithData, createExpectedError } from './utils/verifyError.js';
-import { ServiceSetup } from './utils/serviceSetup.js';
+import { SCHEMA_ID, TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.ts';
+import { createDiagnosticWithData, createExpectedError } from './utils/verifyError.ts';
+import { ServiceSetup } from './utils/serviceSetup.ts';
 import {
   StringTypeError,
   BooleanTypeError,
@@ -14,18 +14,18 @@ import {
   DuplicateKeyError,
   propertyIsNotAllowed,
   MissingRequiredPropWarning,
-} from './utils/errorMessages.js';
+} from './utils/errorMessages.ts';
 import * as assert from 'assert';
 import * as path from 'path';
 import { Diagnostic, DiagnosticSeverity, Position } from 'vscode-languageserver-types';
 import { expect } from 'chai';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
-import { LanguageService } from '../src/languageservice/yamlLanguageService.js';
-import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls.js';
-import { IProblem } from '../src/languageservice/parser/schemaValidation/baseValidator.js';
-import { JSONSchema } from '../src/languageservice/jsonSchema.js';
-import { TestTelemetry } from './utils/testsTypes.js';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.ts';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.ts';
+import { LanguageService } from '../src/languageservice/yamlLanguageService.ts';
+import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls.ts';
+import { IProblem } from '../src/languageservice/parser/schemaValidation/baseValidator.ts';
+import { JSONSchema } from '../src/languageservice/jsonSchema.ts';
+import { TestTelemetry } from './utils/testsTypes.ts';
 import { ErrorCode } from 'vscode-json-languageservice';
 
 describe('Validation Tests', () => {

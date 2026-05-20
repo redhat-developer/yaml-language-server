@@ -16,12 +16,12 @@ import {
   PropertyASTNode,
   StringASTNode,
   YamlNode,
-} from '../jsonASTTypes.js';
-import { JSONSchema } from '../jsonSchema.js';
-import { findNodeAtOffset } from './astNodeUtils.js';
-import { type IApplicableSchema } from './schemaValidation/baseValidator.js';
-import { getValidator } from './schemaValidation/validatorFactory.js';
-import { CustomTagReturnType } from '../utils/customTags.js';
+} from '../jsonASTTypes.ts';
+import { JSONSchema } from '../jsonSchema.ts';
+import { findNodeAtOffset } from './astNodeUtils.ts';
+import { type IApplicableSchema } from './schemaValidation/baseValidator.ts';
+import { getValidator } from './schemaValidation/validatorFactory.ts';
+import { CustomTagReturnType } from '../utils/customTags.ts';
 
 abstract class ASTNodeImpl {
   public abstract readonly type: 'object' | 'property' | 'array' | 'number' | 'boolean' | 'null' | 'string';

@@ -4,18 +4,18 @@
  *--------------------------------------------------------------------------------------------*/
 import { configure as configureHttpRequests, xhr } from 'request-light';
 import { Connection, DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
-import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths.js';
+import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths.ts';
 import {
   checkSchemaURI,
   EMPTY_SCHEMA_URL,
   JSON_SCHEMASTORE_URL,
   KUBERNETES_SCHEMA_URL,
-} from '../../languageservice/utils/schemaUrls.js';
-import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService.js';
-import { SchemaSelectionRequests } from '../../requestTypes.js';
-import { Settings, SettingsState } from '../../yamlSettings.js';
-import { Telemetry } from '../../languageservice/telemetry.js';
-import { ValidationHandler } from './validationHandlers.js';
+} from '../../languageservice/utils/schemaUrls.ts';
+import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService.ts';
+import { SchemaSelectionRequests } from '../../requestTypes.ts';
+import { Settings, SettingsState } from '../../yamlSettings.ts';
+import { Telemetry } from '../../languageservice/telemetry.ts';
+import { ValidationHandler } from './validationHandlers.ts';
 
 export class SettingsHandler {
   constructor(

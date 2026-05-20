@@ -1,23 +1,23 @@
 import { Connection, InitializeParams, InitializeResult, TextDocumentSyncKind } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { YamlCommands } from './commands.js';
-import { commandExecutor } from './languageserver/commandExecutor.js';
-import { LanguageHandlers } from './languageserver/handlers/languageHandlers.js';
-import { NotificationHandlers } from './languageserver/handlers/notificationHandlers.js';
-import { RequestHandlers } from './languageserver/handlers/requestHandlers.js';
-import { SettingsHandler } from './languageserver/handlers/settingsHandlers.js';
-import { ValidationHandler } from './languageserver/handlers/validationHandlers.js';
-import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers.js';
-import { registerCommands } from './languageservice/services/yamlCommands.js';
-import { Telemetry } from './languageservice/telemetry.js';
-import { workspaceFoldersChanged } from './languageservice/utils/paths.js';
+import { YamlCommands } from './commands.ts';
+import { commandExecutor } from './languageserver/commandExecutor.ts';
+import { LanguageHandlers } from './languageserver/handlers/languageHandlers.ts';
+import { NotificationHandlers } from './languageserver/handlers/notificationHandlers.ts';
+import { RequestHandlers } from './languageserver/handlers/requestHandlers.ts';
+import { SettingsHandler } from './languageserver/handlers/settingsHandlers.ts';
+import { ValidationHandler } from './languageserver/handlers/validationHandlers.ts';
+import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers.ts';
+import { registerCommands } from './languageservice/services/yamlCommands.ts';
+import { Telemetry } from './languageservice/telemetry.ts';
+import { workspaceFoldersChanged } from './languageservice/utils/paths.ts';
 import {
   getLanguageService as getCustomLanguageService,
   LanguageService,
   SchemaRequestService,
   WorkspaceContextService,
-} from './languageservice/yamlLanguageService.js';
-import { SettingsState } from './yamlSettings.js';
+} from './languageservice/yamlLanguageService.ts';
+import { SettingsState } from './yamlSettings.ts';
 
 export class YAMLServerInit {
   languageService: LanguageService;

@@ -6,7 +6,7 @@
 import { DocumentOnTypeFormattingParams } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Position, Range, TextEdit } from 'vscode-languageserver-types';
-import { TextBuffer } from '../utils/textBuffer.js';
+import { TextBuffer } from '../utils/textBuffer.ts';
 
 export function doDocumentOnTypeFormatting(
   document: TextDocument,

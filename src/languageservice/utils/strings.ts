@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CharCode } from './charCode.js';
+import { CharCode } from './charCode.ts';
 
 export function startsWith(haystack: string, needle: string): boolean {
   if (haystack.length < needle.length) {

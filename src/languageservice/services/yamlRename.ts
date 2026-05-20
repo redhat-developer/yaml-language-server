@@ -5,13 +5,13 @@
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Position, Range, WorkspaceEdit, TextEdit } from 'vscode-languageserver-types';
-import { yamlDocumentsCache } from '../parser/yaml-documents.js';
-import { matchOffsetToDocument } from '../utils/arrUtils.js';
-import { TextBuffer } from '../utils/textBuffer.js';
-import { Telemetry } from '../telemetry.js';
+import { yamlDocumentsCache } from '../parser/yaml-documents.ts';
+import { matchOffsetToDocument } from '../utils/arrUtils.ts';
+import { TextBuffer } from '../utils/textBuffer.ts';
+import { Telemetry } from '../telemetry.ts';
 import { CST, isAlias, isCollection, isScalar, visit, Node } from 'yaml';
-import { SingleYAMLDocument } from '../parser/yamlParser07.js';
-import { isCollectionItem } from '../utils/yamlAstUtils.js';
+import { SingleYAMLDocument } from '../parser/yamlParser07.ts';
+import { isCollectionItem } from '../utils/yamlAstUtils.ts';
 import { PrepareRenameParams, RenameParams, ResponseError, ErrorCodes } from 'vscode-languageserver-protocol';
 
 interface RenameTarget {

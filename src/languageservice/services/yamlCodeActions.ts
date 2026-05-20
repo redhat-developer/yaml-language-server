@@ -21,19 +21,19 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { CST, isMap, isSeq, isScalar, Scalar, visit, YAMLMap } from 'yaml';
 
-import { YamlCommands } from '../../commands.js';
-import { TextBuffer } from '../utils/textBuffer.js';
-import { toYamlStringScalar } from '../utils/yamlScalar.js';
-import { LanguageSettings } from '../yamlLanguageService.js';
-import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator.js';
-import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings.js';
-import { matchOffsetToDocument } from '../utils/arrUtils.js';
-import { yamlDocumentsCache } from '../parser/yaml-documents.js';
+import { YamlCommands } from '../../commands.ts';
+import { TextBuffer } from '../utils/textBuffer.ts';
+import { toYamlStringScalar } from '../utils/yamlScalar.ts';
+import { LanguageSettings } from '../yamlLanguageService.ts';
+import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator.ts';
+import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings.ts';
+import { matchOffsetToDocument } from '../utils/arrUtils.ts';
+import { yamlDocumentsCache } from '../parser/yaml-documents.ts';
 
-import { BlockStringRewriter } from '../utils/block-string-rewriter.js';
-import { FlowStyleRewriter } from '../utils/flow-style-rewriter.js';
+import { BlockStringRewriter } from '../utils/block-string-rewriter.ts';
+import { FlowStyleRewriter } from '../utils/flow-style-rewriter.ts';
 
-import { ASTNode } from '../jsonASTTypes.js';
+import { ASTNode } from '../jsonASTTypes.ts';
 
 interface YamlDiagnosticData {
   schemaUri: string[];

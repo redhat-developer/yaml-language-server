@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import { join } from 'path';
 
-import { relativeToAbsolutePath, isRelativePath, workspaceFoldersChanged } from '../src/languageservice/utils/paths.js';
+import { relativeToAbsolutePath, isRelativePath, workspaceFoldersChanged } from '../src/languageservice/utils/paths.ts';
 import { URI } from 'vscode-uri';
 
 class TestWorkspace {

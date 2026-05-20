@@ -8,9 +8,9 @@ import {
   SchemaAdditions,
   SchemaDeletions,
   SchemaDeletionsAll,
-} from '../../languageservice/services/yamlSchemaService.js';
-import { LanguageService } from '../../languageservice/yamlLanguageService.js';
-import { SchemaModificationNotification } from '../../requestTypes.js';
+} from '../../languageservice/services/yamlSchemaService.ts';
+import { LanguageService } from '../../languageservice/yamlLanguageService.ts';
+import { SchemaModificationNotification } from '../../requestTypes.ts';
 
 export class RequestHandlers {
   private languageService: LanguageService;

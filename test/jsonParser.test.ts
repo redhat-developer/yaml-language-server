@@ -5,10 +5,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as assert from 'assert';
-import { JSONDocument } from '../src/languageservice/parser/jsonDocument.js';
-import { getNodeValue } from '../src/languageservice/parser/astNodeUtils.js';
-import * as JsonSchema from './../src/languageservice/jsonSchema.js';
-import { ASTNode, ObjectASTNode } from './../src/languageservice/jsonASTTypes.js';
+import { JSONDocument } from '../src/languageservice/parser/jsonDocument.ts';
+import { getNodeValue } from '../src/languageservice/parser/astNodeUtils.ts';
+import * as JsonSchema from './../src/languageservice/jsonSchema.ts';
+import { ASTNode, ObjectASTNode } from './../src/languageservice/jsonASTTypes.ts';
 import { ErrorCode, getLanguageService } from 'vscode-json-languageservice';
 import { Diagnostic, TextDocument, Range } from 'vscode-languageserver-types';
 

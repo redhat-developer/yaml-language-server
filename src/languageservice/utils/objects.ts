@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { parseYamlBoolean } from '../parser/scalar-type.js';
+import { parseYamlBoolean } from '../parser/scalar-type.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function equals(one: any, other: any, type?: any): boolean {

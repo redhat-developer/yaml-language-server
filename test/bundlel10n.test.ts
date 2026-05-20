@@ -5,13 +5,13 @@
 import * as l10n from '@vscode/l10n';
 import * as assert from 'assert';
 import * as path from 'path';
-import { Connection, createConnection } from 'vscode-languageserver/node.js';
-import { schemaRequestHandler, workspaceContext } from '../src/languageservice/services/schemaRequestHandler.js';
-import { setupl10nBundle } from '../src/nodeTranslationSetup.js';
-import { YAMLServerInit } from '../src/yamlServerInit.js';
-import { SettingsState } from '../src/yamlSettings.js';
-import { TestCustomSchemaProvider, testFileSystem } from './utils/testHelper.js';
-import { TestTelemetry } from './utils/testsTypes.js';
+import { Connection, createConnection } from 'vscode-languageserver/node.ts';
+import { schemaRequestHandler, workspaceContext } from '../src/languageservice/services/schemaRequestHandler.ts';
+import { setupl10nBundle } from '../src/nodeTranslationSetup.ts';
+import { YAMLServerInit } from '../src/yamlServerInit.ts';
+import { SettingsState } from '../src/yamlSettings.ts';
+import { TestCustomSchemaProvider, testFileSystem } from './utils/testHelper.ts';
+import { TestTelemetry } from './utils/testsTypes.ts';
 
 describe('Bundle l10n Test', () => {
   let serverInit: YAMLServerInit;

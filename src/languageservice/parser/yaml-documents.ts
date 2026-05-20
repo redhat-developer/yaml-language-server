@@ -4,17 +4,17 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONDocument } from './jsonDocument.js';
+import { JSONDocument } from './jsonDocument.ts';
 import { CST, Document, isNode, isPair, isScalar, LineCounter, Node, visit, YAMLError } from 'yaml';
-import { ASTNode, YamlNode } from '../jsonASTTypes.js';
-import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07.js';
+import { ASTNode, YamlNode } from '../jsonASTTypes.ts';
+import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07.ts';
 import { ErrorCode } from 'vscode-json-languageservice';
-import { convertAST } from './ast-converter.js';
-import { YAMLDocDiagnostic } from '../utils/parseUtils.js';
-import { isArrayEqual } from '../utils/arrUtils.js';
-import { getParent } from '../utils/yamlAstUtils.js';
-import { TextBuffer } from '../utils/textBuffer.js';
-import { getIndentation } from '../utils/strings.js';
+import { convertAST } from './ast-converter.ts';
+import { YAMLDocDiagnostic } from '../utils/parseUtils.ts';
+import { isArrayEqual } from '../utils/arrUtils.ts';
+import { getParent } from '../utils/yamlAstUtils.ts';
+import { TextBuffer } from '../utils/textBuffer.ts';
+import { getIndentation } from '../utils/strings.ts';
 
 /**
  * These documents are collected into a final YAMLDocument

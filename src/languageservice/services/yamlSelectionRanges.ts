@@ -1,5 +1,5 @@
 import { Position, Range, SelectionRange } from 'vscode-languageserver-types';
-import { yamlDocumentsCache } from '../parser/yaml-documents.js';
+import { yamlDocumentsCache } from '../parser/yaml-documents.ts';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { ASTNode } from 'vscode-json-languageservice';
 

@@ -5,11 +5,11 @@
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { FormattingOptions, TextEdit } from 'vscode-languageserver-types';
-import { CustomFormatterOptions } from '../src/index.js';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
-import { ServiceSetup } from './utils/serviceSetup.js';
-import { setupLanguageService, setupTextDocument } from './utils/testHelper.js';
+import { CustomFormatterOptions } from '../src/index.ts';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.ts';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.ts';
+import { ServiceSetup } from './utils/serviceSetup.ts';
+import { setupLanguageService, setupTextDocument } from './utils/testHelper.ts';
 
 type LanguageHandlerWithConnection = {
   connection: {

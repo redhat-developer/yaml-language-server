@@ -2,13 +2,13 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { setupLanguageService, setupTextDocument } from './utils/testHelper.js';
+import { setupLanguageService, setupTextDocument } from './utils/testHelper.ts';
 import * as assert from 'assert';
 import { Diagnostic, CompletionList, Hover, MarkupContent } from 'vscode-languageserver-types';
-import { ServiceSetup } from './utils/serviceSetup.js';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
+import { ServiceSetup } from './utils/serviceSetup.ts';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.ts';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.ts';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.ts';
 
 // Defines a Mocha test describe to group tests of similar kind together
 describe('Kubernetes Integration Tests', () => {

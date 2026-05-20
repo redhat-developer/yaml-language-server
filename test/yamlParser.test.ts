@@ -4,9 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 import * as assert from 'assert';
 import { expect } from 'chai';
-import { ArrayASTNode, ObjectASTNode, PropertyASTNode } from '../src/languageservice/jsonASTTypes.js';
-import { parse, YAMLDocument } from './../src/languageservice/parser/yamlParser07.js';
-import { aliasDepth } from '../src/languageservice/parser/ast-converter.js';
+import { ArrayASTNode, ObjectASTNode, PropertyASTNode } from '../src/languageservice/jsonASTTypes.ts';
+import { parse, YAMLDocument } from './../src/languageservice/parser/yamlParser07.ts';
+import { aliasDepth } from '../src/languageservice/parser/ast-converter.ts';
 
 describe('YAML parser', () => {
   describe('YAML parser', function () {

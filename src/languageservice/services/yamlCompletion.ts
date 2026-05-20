@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as l10n from '@vscode/l10n';
-import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService.js';
+import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService.ts';
 import { ClientCapabilities } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import {
@@ -20,26 +20,26 @@ import {
   TextEdit,
 } from 'vscode-languageserver-types';
 import { isMap, isNode, isPair, isScalar, isSeq, Node, Pair, YAMLMap, YAMLSeq } from 'yaml';
-import { SettingsState } from '../../yamlSettings.js';
-import { YamlNode } from '../jsonASTTypes.js';
-import { JSONSchema, JSONSchemaRef } from '../jsonSchema.js';
-import { setKubernetesParserOption } from '../parser/isKubernetes.js';
-import { asSchema } from '../parser/schemaValidation/baseValidator.js';
-import { SingleYAMLDocument, YamlDocuments } from '../parser/yaml-documents.js';
-import { YamlVersion } from '../parser/yamlParser07.js';
-import { Telemetry } from '../telemetry.js';
-import { matchOffsetToDocument } from '../utils/arrUtils.js';
-import { guessIndentation } from '../utils/indentationGuesser.js';
-import { stringifyObject, StringifySettings } from '../utils/json.js';
-import { isDefined, isString } from '../utils/objects.js';
-import { getSchemaTypeName, isAnyOfAllOfOneOfType, isPrimitiveType } from '../utils/schemaUtils.js';
-import { TextBuffer } from '../utils/textBuffer.js';
-import { indexOf, isInComment, isMapContainsEmptyPair } from '../utils/yamlAstUtils.js';
-import { toYamlStringScalar } from '../utils/yamlScalar.js';
-import { LanguageSettings } from '../yamlLanguageService.js';
-import { isModeline } from './modelineUtil.js';
-import { YAMLSchemaService } from './yamlSchemaService.js';
-import { parseCustomTag } from '../utils/customTags.js';
+import { SettingsState } from '../../yamlSettings.ts';
+import { YamlNode } from '../jsonASTTypes.ts';
+import { JSONSchema, JSONSchemaRef } from '../jsonSchema.ts';
+import { setKubernetesParserOption } from '../parser/isKubernetes.ts';
+import { asSchema } from '../parser/schemaValidation/baseValidator.ts';
+import { SingleYAMLDocument, YamlDocuments } from '../parser/yaml-documents.ts';
+import { YamlVersion } from '../parser/yamlParser07.ts';
+import { Telemetry } from '../telemetry.ts';
+import { matchOffsetToDocument } from '../utils/arrUtils.ts';
+import { guessIndentation } from '../utils/indentationGuesser.ts';
+import { stringifyObject, StringifySettings } from '../utils/json.ts';
+import { isDefined, isString } from '../utils/objects.ts';
+import { getSchemaTypeName, isAnyOfAllOfOneOfType, isPrimitiveType } from '../utils/schemaUtils.ts';
+import { TextBuffer } from '../utils/textBuffer.ts';
+import { indexOf, isInComment, isMapContainsEmptyPair } from '../utils/yamlAstUtils.ts';
+import { toYamlStringScalar } from '../utils/yamlScalar.ts';
+import { LanguageSettings } from '../yamlLanguageService.ts';
+import { isModeline } from './modelineUtil.ts';
+import { YAMLSchemaService } from './yamlSchemaService.ts';
+import { parseCustomTag } from '../utils/customTags.ts';
 
 const parentCompletionKind = CompletionItemKind.Class;
 

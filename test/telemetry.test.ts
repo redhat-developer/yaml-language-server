@@ -5,8 +5,8 @@
 import * as sinon from 'sinon';
 import * as sinonChai from 'sinon-chai';
 import * as chai from 'chai';
-import { checkSchemaURI } from '../src/languageservice/utils/schemaUrls.js';
-import { TelemetryImpl } from '../src/languageserver/telemetry.js';
+import { checkSchemaURI } from '../src/languageservice/utils/schemaUrls.ts';
+import { TelemetryImpl } from '../src/languageserver/telemetry.ts';
 import { URI } from 'vscode-uri';
 import { Connection } from 'vscode-languageserver';
 
