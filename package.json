@@ -62,7 +62,6 @@
     "sinon": "^9.0.3",
     "sinon-chai": "^3.5.0",
     "source-map-support": "^0.5.19",
-    "ts-node": "^10.9.2",
     "tsx": "^4.22.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.4"
