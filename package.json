@@ -62,7 +62,7 @@
     "sinon": "^9.0.3",
     "sinon-chai": "^3.5.0",
     "source-map-support": "^0.5.19",
-    "ts-node": "^10.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.4"
   },
@@ -70,7 +70,7 @@
     "clean": "rimraf out/server && rimraf lib",
     "compile": "tsc -p .",
     "watch": "tsc --watch -p .",
-    "test": "mocha --require ts-node/register --timeout 10000 --ui bdd ./test/*.test.ts",
+    "test": "mocha --require ts-node/esm --timeout 10000 --ui bdd ./test/*.test.ts",
     "coverage": "nyc mocha --require ts-node/register --timeout 10000 --require source-map-support/register --recursive --ui bdd ./test/*.test.ts",
     "coveralls": "nyc --reporter=lcov --reporter=text mocha --timeout 10000 --require ts-node/register --require source-map-support/register --recursive --ui bdd ./test/*.test.ts",
     "lint": "eslint --max-warnings 0 --ext .ts src test",

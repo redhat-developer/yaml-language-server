@@ -43,7 +43,7 @@ export const ProblemTypeMessages: Record<ProblemType, string> = {
 export interface IProblem {
   location: IRange;
   severity: DiagnosticSeverity;
-  code?: typeof ErrorCode;
+  code?: ErrorCode;
   message: string;
   source?: string;
   problemType?: ProblemType;
