@@ -338,6 +338,32 @@ describe('Settings Handlers Tests', () => {
         priority: SchemaPriority.Settings,
       });
     });
+    it('Schema Settings should normalize multiple absolute local paths for the same file', async () => {
+      xhrStub.resolves({
+        responseText: '{"schemas":[]}',
+      });
+      const schemaPath1 = '/Users/test/schemas/schema1.json';
+      const schemaPath2 = '/Users/test/schemas/schema2.json';
+      const fileMatch = ['asdf.yaml'];
+      const schemas = {};
+      schemas[schemaPath1] = fileMatch;
+      schemas[schemaPath2] = fileMatch;
+      workspaceStub.getConfiguration.resolves([{ schemas }, {}, {}, {}]);
+      const configureSpy = await configureSchemaSettingsTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: URI.file(schemaPath1).toString(),
+        fileMatch,
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
+      expect(configureSpy.schemas).deep.include({
+        uri: URI.file(schemaPath2).toString(),
+        fileMatch,
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
+    });
   });
 
   describe('Test that schema priorities are available', async () => {
