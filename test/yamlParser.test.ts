@@ -4,85 +4,85 @@
  *--------------------------------------------------------------------------------------------*/
 import * as assert from 'assert';
 import { expect } from 'chai';
-import { ArrayASTNode, ObjectASTNode, PropertyASTNode } from '../src/languageservice/jsonASTTypes';
-import { parse, YAMLDocument } from './../src/languageservice/parser/yamlParser07';
-import { aliasDepth } from '../src/languageservice/parser/ast-converter';
+import { ArrayASTNode, ObjectASTNode, PropertyASTNode } from '../src/languageservice/jsonASTTypes.ts';
+import { parse, YAMLDocument } from './../src/languageservice/parser/yamlParser07.ts';
+import { aliasDepth } from '../src/languageservice/parser/ast-converter.ts';
 
 describe('YAML parser', () => {
   describe('YAML parser', function () {
     it('parse emtpy text', () => {
       const parsedDocument = parse('');
-      assert(parsedDocument.documents.length === 1, 'A document has been created for an empty text');
+      assert.ok(parsedDocument.documents.length === 1, 'A document has been created for an empty text');
     });
 
     it('parse only comment', () => {
       const parsedDocument = parse('# a comment');
-      assert(parsedDocument.documents.length === 1, 'A document has been created when there is a comment');
+      assert.ok(parsedDocument.documents.length === 1, 'A document has been created when there is a comment');
     });
 
     it('parse single document with --- at the start of the file', () => {
       const parsedDocument = parse('---\n# a comment\ntest: test');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 1,
         `A single document should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(parsedDocument.documents[0].lineComments.length === 1);
-      assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
+      assert.ok(parsedDocument.documents[0].lineComments.length === 1);
+      assert.ok(parsedDocument.documents[0].lineComments[0] === '# a comment');
     });
 
     it('parse multi document with --- at the start of the file', () => {
       const parsedDocument = parse('---\n# a comment\ntest: test\n...\n---\n# second document\ntest2: test2');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 2,
         `two documents should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(parsedDocument.documents[0].lineComments.length === 1);
-      assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
+      assert.ok(parsedDocument.documents[0].lineComments.length === 1);
+      assert.ok(parsedDocument.documents[0].lineComments[0] === '# a comment');
 
-      assert(parsedDocument.documents[1].lineComments.length === 1);
-      assert(parsedDocument.documents[1].lineComments[0] === '# second document');
+      assert.ok(parsedDocument.documents[1].lineComments.length === 1);
+      assert.ok(parsedDocument.documents[1].lineComments[0] === '# second document');
     });
 
     it('parse single document with directives and line comments', () => {
       const parsedDocument = parse('%TAG !yaml! tag:yaml.org,2002:\n---\n# a comment\ntest');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 1,
         `A single document should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(
+      assert.ok(
         parsedDocument.documents[0].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
       );
-      assert(parsedDocument.documents[0].lineComments.length === 1);
-      assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
+      assert.ok(parsedDocument.documents[0].lineComments.length === 1);
+      assert.ok(parsedDocument.documents[0].lineComments[0] === '# a comment');
     });
 
     it('parse 2 documents with directives and line comments', () => {
       const parsedDocument = parse('%TAG !yaml! tag:yaml.org,2002:\n# a comment\ntest\n...\n---\ntest2');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 2,
         `2 documents should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(
+      assert.ok(
         parsedDocument.documents[0].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
       );
-      assert(
+      assert.ok(
         parsedDocument.documents[1].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[1].root.children.length}`
       );
-      assert(parsedDocument.documents[1].root.value === 'test2');
-      assert(parsedDocument.documents[0].lineComments.length === 1);
-      assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
+      assert.ok(parsedDocument.documents[1].root.value === 'test2');
+      assert.ok(parsedDocument.documents[0].lineComments.length === 1);
+      assert.ok(parsedDocument.documents[0].lineComments[0] === '# a comment');
     });
 
     it('parse single document', () => {
       const parsedDocument = parse('test');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 1,
         `A single document should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(
+      assert.ok(
         parsedDocument.documents[0].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
       );
@@ -90,11 +90,11 @@ describe('YAML parser', () => {
 
     it('parse single document with directives', () => {
       const parsedDocument = parse('%TAG !yaml! tag:yaml.org,2002:\n---\ntest');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 1,
         `A single document should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(
+      assert.ok(
         parsedDocument.documents[0].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
       );
@@ -102,147 +102,147 @@ describe('YAML parser', () => {
 
     it('parse 2 documents', () => {
       const parsedDocument = parse('test\n---\ntest2');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 2,
         `2 documents should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(
+      assert.ok(
         parsedDocument.documents[0].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
       );
-      assert(parsedDocument.documents[0].root.value === 'test');
-      assert(
+      assert.ok(parsedDocument.documents[0].root.value === 'test');
+      assert.ok(
         parsedDocument.documents[1].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[1].root.children.length}`
       );
-      assert(parsedDocument.documents[1].root.value === 'test2');
+      assert.ok(parsedDocument.documents[1].root.value === 'test2');
     });
 
     it('parse 3 documents', () => {
       const parsedDocument = parse('test\n---\ntest2\n---\ntest3');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 3,
         `3 documents should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(
+      assert.ok(
         parsedDocument.documents[0].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
       );
-      assert(parsedDocument.documents[0].root.value === 'test');
-      assert(
+      assert.ok(parsedDocument.documents[0].root.value === 'test');
+      assert.ok(
         parsedDocument.documents[1].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[1].root.children.length}`
       );
-      assert(parsedDocument.documents[1].root.value === 'test2');
-      assert(
+      assert.ok(parsedDocument.documents[1].root.value === 'test2');
+      assert.ok(
         parsedDocument.documents[2].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[2].root.children.length}`
       );
-      assert(parsedDocument.documents[2].root.value === 'test3');
+      assert.ok(parsedDocument.documents[2].root.value === 'test3');
     });
 
     it('parse single document with comment', () => {
       const parsedDocument = parse('# a comment\ntest');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 1,
         `A single document should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(
+      assert.ok(
         parsedDocument.documents[0].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
       );
-      assert(parsedDocument.documents[0].lineComments.length === 1);
-      assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
+      assert.ok(parsedDocument.documents[0].lineComments.length === 1);
+      assert.ok(parsedDocument.documents[0].lineComments[0] === '# a comment');
     });
 
     it('parse 2 documents with comment', () => {
       const parsedDocument = parse('---\n# a comment\ntest: test\n---\n# a second comment\ntest2');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 2,
         `2 documents should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(
+      assert.ok(
         parsedDocument.documents[0].root.children.length === 1,
         `There should one children available but there are ${parsedDocument.documents[0].root.children.length}`
       );
-      assert(parsedDocument.documents[0].lineComments.length === 1);
-      assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
+      assert.ok(parsedDocument.documents[0].lineComments.length === 1);
+      assert.ok(parsedDocument.documents[0].lineComments[0] === '# a comment');
 
-      assert(
+      assert.ok(
         parsedDocument.documents[1].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
       );
-      assert(parsedDocument.documents[1].lineComments.length === 1);
-      assert(parsedDocument.documents[1].lineComments[0] === '# a second comment');
+      assert.ok(parsedDocument.documents[1].lineComments.length === 1);
+      assert.ok(parsedDocument.documents[1].lineComments[0] === '# a second comment');
     });
 
     it('parse 2 documents with comment and a directive', () => {
       const parsedDocument = parse('%TAG !yaml! tag:yaml.org,2002:\n---\n# a comment\ntest\n---\n# a second comment\ntest2');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 2,
         `2 documents should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(
+      assert.ok(
         parsedDocument.documents[0].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
       );
-      assert(parsedDocument.documents[0].lineComments.length === 1);
-      assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
+      assert.ok(parsedDocument.documents[0].lineComments.length === 1);
+      assert.ok(parsedDocument.documents[0].lineComments[0] === '# a comment');
 
-      assert(
+      assert.ok(
         parsedDocument.documents[1].root.children.length === 0,
         `There should no children available but there are ${parsedDocument.documents[0].root.children.length}`
       );
-      assert(parsedDocument.documents[1].lineComments.length === 1);
-      assert(parsedDocument.documents[1].lineComments[0] === '# a second comment');
+      assert.ok(parsedDocument.documents[1].lineComments.length === 1);
+      assert.ok(parsedDocument.documents[1].lineComments[0] === '# a second comment');
     });
 
     it('parse document with comment first', () => {
       const parsedDocument = parse('# a comment\n---\ntest:test');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 1,
         `1 document should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(parsedDocument.documents[0].lineComments.length === 1);
-      assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
+      assert.ok(parsedDocument.documents[0].lineComments.length === 1);
+      assert.ok(parsedDocument.documents[0].lineComments[0] === '# a comment');
     });
 
     it('parse document with comment first and directive', () => {
       const parsedDocument = parse('# a comment\n%TAG !yaml! tag:yaml.org,2002:\ntest: test');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 1,
         `1 document should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(parsedDocument.documents[0].lineComments.length === 1);
-      assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
+      assert.ok(parsedDocument.documents[0].lineComments.length === 1);
+      assert.ok(parsedDocument.documents[0].lineComments[0] === '# a comment');
     });
 
     it('parse document with comment first, directive, and seperator', () => {
       const parsedDocument = parse('# a comment\n%TAG !yaml! tag:yaml.org,2002:\n---test: test');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 1,
         `1 document should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(parsedDocument.documents[0].lineComments.length === 1);
-      assert(parsedDocument.documents[0].lineComments[0] === '# a comment');
+      assert.ok(parsedDocument.documents[0].lineComments.length === 1);
+      assert.ok(parsedDocument.documents[0].lineComments[0] === '# a comment');
     });
 
     it('parse document with "str" tag from recommended schema', () => {
       const parsedDocument = parse('"yes as a string with tag": !!str yes');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 1,
         `1 document should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(parsedDocument.documents[0].errors.length === 0);
+      assert.ok(parsedDocument.documents[0].errors.length === 0);
     });
 
     it('parse document with "int" tag from recommended schema', () => {
       const parsedDocument = parse('POSTGRES_PORT: !!int 54');
-      assert(
+      assert.ok(
         parsedDocument.documents.length === 1,
         `1 document should be available but there are ${parsedDocument.documents.length}`
       );
-      assert(parsedDocument.documents[0].errors.length === 0, JSON.stringify(parsedDocument.documents[0].errors));
+      assert.ok(parsedDocument.documents[0].errors.length === 0, JSON.stringify(parsedDocument.documents[0].errors));
     });
 
     it('parse aliases up to a depth', () => {
@@ -274,9 +274,9 @@ c: &c
       const cvalprops: PropertyASTNode = (cnode.properties[0].valueNode as ObjectASTNode).properties[0];
       const cval = cvalprops.valueNode;
 
-      assert(aval?.value === 'web');
-      assert(bval?.value === 'web');
-      assert(cval?.value === undefined);
+      assert.ok(aval?.value === 'web');
+      assert.ok(bval?.value === 'web');
+      assert.ok(cval?.value === undefined);
     });
 
     it('parse aliases up to a depth for multiple objects', () => {
@@ -308,8 +308,8 @@ o: &o
       const cvalprops: PropertyASTNode = (cnode.properties[0].valueNode as ObjectASTNode).properties[0];
       const cval = cvalprops.valueNode;
 
-      assert(cval?.value === undefined);
-      assert(oval?.value === 'web');
+      assert.ok(cval?.value === undefined);
+      assert.ok(oval?.value === 'web');
     });
   });
 
@@ -360,12 +360,12 @@ metadata:
   describe('YAML version', () => {
     it('should use yaml 1.2 by default', () => {
       const parsedDocument = parse('SOME_BOOLEAN : !!bool yes');
-      assert(parsedDocument.documents[0].warnings.length === 1);
+      assert.ok(parsedDocument.documents[0].warnings.length === 1);
     });
 
     it('should respect yaml 1.1', () => {
       const parsedDocument = parse('SOME_BOOLEAN : !!bool yes', { customTags: [], yamlVersion: '1.1' });
-      assert(parsedDocument.documents[0].warnings.length === 0);
+      assert.ok(parsedDocument.documents[0].warnings.length === 0);
     });
   });
 });

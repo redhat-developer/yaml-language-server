@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { NotificationType, RequestType } from 'vscode-languageserver';
-import { SchemaAdditions, SchemaDeletions } from './languageservice/services/yamlSchemaService';
-import { SchemaConfiguration } from './languageservice/yamlLanguageService';
-import { SchemaVersions } from './languageservice/yamlTypes';
+import { SchemaAdditions, SchemaDeletions } from './languageservice/services/yamlSchemaService.ts';
+import { SchemaConfiguration } from './languageservice/yamlLanguageService.ts';
+import { SchemaVersions } from './languageservice/yamlTypes.ts';
 
 export type ISchemaAssociations = Record<string, string[]>;
 

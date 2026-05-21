@@ -5,13 +5,13 @@
 import * as sinon from 'sinon';
 import * as sinonChai from 'sinon-chai';
 import * as chai from 'chai';
-import { checkSchemaURI } from '../src/languageservice/utils/schemaUrls';
-import { TelemetryImpl } from '../src/languageserver/telemetry';
+import { checkSchemaURI } from '../src/languageservice/utils/schemaUrls.ts';
+import { TelemetryImpl } from '../src/languageserver/telemetry.ts';
 import { URI } from 'vscode-uri';
 import { Connection } from 'vscode-languageserver';
 
 const expect = chai.expect;
-chai.use(sinonChai);
+chai.use(sinonChai.default);
 
 describe('Telemetry Tests', () => {
   const sandbox = sinon.createSandbox();

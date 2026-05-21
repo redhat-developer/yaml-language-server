@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { CST, Scalar } from 'yaml';
-import { FlowScalar } from 'yaml/dist/parse/cst';
 
 export class BlockStringRewriter {
   constructor(
@@ -17,7 +16,7 @@ export class BlockStringRewriter {
     }
 
     const stringContent = node.value;
-    const currentIndentNum = (node.srcToken as FlowScalar).indent;
+    const currentIndentNum = (node.srcToken as CST.FlowScalar).indent;
     let indentText = this.indentation;
     for (let i = 0; i < currentIndentNum / this.indentation.length; i++) {
       indentText += this.indentation;
@@ -160,7 +159,7 @@ export class BlockStringRewriter {
     if (stringContent.indexOf('\n') < 0) {
       return null;
     }
-    const currentIndentNum = (node.srcToken as FlowScalar).indent;
+    const currentIndentNum = (node.srcToken as CST.FlowScalar).indent;
     let indentText = this.indentation;
     for (let i = 0; i < currentIndentNum / this.indentation.length; i++) {
       indentText += this.indentation;

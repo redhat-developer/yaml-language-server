@@ -7,10 +7,10 @@ import { DefinitionParams } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DefinitionLink, LocationLink, Range } from 'vscode-languageserver-types';
 import { isAlias } from 'yaml';
-import { Telemetry } from '../telemetry';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { matchOffsetToDocument } from '../utils/arrUtils';
-import { TextBuffer } from '../utils/textBuffer';
+import { Telemetry } from '../telemetry.ts';
+import { yamlDocumentsCache } from '../parser/yaml-documents.ts';
+import { matchOffsetToDocument } from '../utils/arrUtils.ts';
+import { TextBuffer } from '../utils/textBuffer.ts';
 
 export class YamlDefinition {
   constructor(private readonly telemetry?: Telemetry) {}

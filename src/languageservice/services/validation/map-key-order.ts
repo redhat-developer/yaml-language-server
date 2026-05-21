@@ -5,10 +5,9 @@
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
-import { isMap, Node, Pair, visit } from 'yaml';
-import { SingleYAMLDocument } from '../../parser/yaml-documents';
-import { AdditionalValidator } from './types';
-import { SourceToken } from 'yaml/dist/parse/cst';
+import { CST, isMap, Node, Pair, visit } from 'yaml';
+import { SingleYAMLDocument } from '../../parser/yaml-documents.ts';
+import { AdditionalValidator } from './types.ts';
 
 export class MapKeyOrderValidator implements AdditionalValidator {
   validate(document: TextDocument, yamlDoc: SingleYAMLDocument): Diagnostic[] {
@@ -38,7 +37,7 @@ export class MapKeyOrderValidator implements AdditionalValidator {
 }
 
 function createRange(document: TextDocument, node: Pair): Range {
-  const keySourceToken = (node.key as Node).srcToken as SourceToken;
+  const keySourceToken = (node.key as Node).srcToken as CST.SourceToken;
   const start = keySourceToken.offset;
   const end = start + keySourceToken.source.length;
   return Range.create(document.positionAt(start), document.positionAt(end));

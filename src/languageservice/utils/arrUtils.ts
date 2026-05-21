@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { YAMLDocument, SingleYAMLDocument } from '../parser/yamlParser07';
+import { YAMLDocument, SingleYAMLDocument } from '../parser/yamlParser07.ts';
 
 export function getLineOffsets(textDocString: string): number[] {
   const lineOffsets: number[] = [];

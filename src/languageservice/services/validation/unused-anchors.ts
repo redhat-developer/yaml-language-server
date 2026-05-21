@@ -6,10 +6,10 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity, DiagnosticTag, Range } from 'vscode-languageserver-types';
 import { isAlias, isCollection, isNode, isScalar, Node, Scalar, visit, YAMLMap, YAMLSeq, CST, Pair } from 'yaml';
-import { YamlNode } from '../../jsonASTTypes';
-import { SingleYAMLDocument } from '../../parser/yaml-documents';
-import { AdditionalValidator } from './types';
-import { isCollectionItem } from '../../utils/yamlAstUtils';
+import { YamlNode } from '../../jsonASTTypes.ts';
+import { SingleYAMLDocument } from '../../parser/yaml-documents.ts';
+import { AdditionalValidator } from './types.ts';
+import { isCollectionItem } from '../../utils/yamlAstUtils.ts';
 import * as l10n from '@vscode/l10n';
 
 export class UnusedAnchorsValidator implements AdditionalValidator {
@@ -79,7 +79,7 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
     if (parentNode && parentNode.srcToken) {
       const token = parentNode.srcToken;
       if (isCollectionItem(token)) {
-        return getAnchorFromCollectionItem(token);
+        return getAnchorFromCollectionItem(<CST.CollectionItem>token);
       } else if (CST.isCollection(token)) {
         for (const t of token.items) {
           if (node.srcToken !== t.value) continue;

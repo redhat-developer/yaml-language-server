@@ -3,18 +3,17 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { schemaRequestHandler } from '../src/languageservice/services/schemaRequestHandler';
+import { schemaRequestHandler } from '../src/languageservice/services/schemaRequestHandler.ts';
 import * as sinon from 'sinon';
-import * as request from 'request-light';
-import { XHRResponse } from 'request-light';
 import { Connection } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import * as chai from 'chai';
 import * as sinonChai from 'sinon-chai';
+import * as td from 'testdouble';
 
 const expect = chai.expect;
-chai.use(sinonChai);
-import { testFileSystem } from './utils/testHelper';
+chai.use(sinonChai.default);
+import { testFileSystem } from './utils/testHelper.ts';
 
 describe('Schema Request Handler Tests', () => {
   describe('schemaRequestHandler', () => {
@@ -71,15 +70,18 @@ describe('Schema Request Handler Tests', () => {
 
   describe('HTTP(S) schema requests', () => {
     const sandbox = sinon.createSandbox();
-    let xhrStub: sinon.SinonStub;
+    let xhrStub: sinon.SinonSpy;
     const connection = {} as Connection;
 
-    beforeEach(() => {
-      xhrStub = sandbox.stub(request, 'xhr');
-      xhrStub.resolves({ responseText: '{"$schema":"http://json-schema.org/draft-07/schema"}', status: 200 } as XHRResponse);
+    beforeEach(async () => {
+      xhrStub = sandbox.fake.resolves({ responseText: '{"$schema":"http://json-schema.org/draft-07/schema"}', status: 200 });
+      await td.replaceEsm('request-light', {
+        xhr: xhrStub,
+      });
     });
 
     afterEach(() => {
+      td.reset();
       sandbox.restore();
       delete process.env.YAML_LANGUAGE_SERVER_VERSION;
     });
@@ -132,7 +134,10 @@ describe('Schema Request Handler Tests', () => {
     });
 
     it('should reject with responseText on xhr error', async () => {
-      xhrStub.rejects({ responseText: 'Not Found', status: 404 } as XHRResponse);
+      xhrStub = sandbox.fake.rejects({ responseText: 'Not Found', status: 404 });
+      await td.replaceEsm('request-light', {
+        xhr: xhrStub,
+      });
       try {
         await schemaRequestHandler(
           connection,

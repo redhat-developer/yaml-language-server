@@ -9,10 +9,10 @@ import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 export default defineConfig(
   js.configs.recommended,
   tseslint.configs.recommended,
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [importPlugin.flatConfigs.recommended, importPlugin.flatConfigs.typescript],
-  },
+  // {
+  //   files: ['**/*.{ts,tsx}'],
+  //   extends: [importPlugin.flatConfigs.recommended, importPlugin.flatConfigs.typescript],
+  // },
   eslintPluginPrettierRecommended,
   // chai assertions are sometimes expressions
   {

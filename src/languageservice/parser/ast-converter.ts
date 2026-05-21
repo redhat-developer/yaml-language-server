@@ -4,32 +4,32 @@
  *--------------------------------------------------------------------------------------------*/
 
 import {
-  Node,
-  isScalar,
-  Scalar,
-  isMap,
-  YAMLMap,
-  isPair,
-  Pair,
-  isSeq,
-  YAMLSeq,
-  isNode,
-  isAlias,
   Alias,
   Document,
   LineCounter,
+  Node,
+  Pair,
+  Scalar,
+  YAMLMap,
+  YAMLSeq,
+  isAlias,
+  isMap,
+  isNode,
+  isPair,
+  isScalar,
+  isSeq,
 } from 'yaml';
-import { ASTNode, YamlNode } from '../jsonASTTypes';
-import { getCustomTagReturnType } from '../utils/customTags';
+import { ASTNode, YamlNode } from '../jsonASTTypes.ts';
 import {
-  NullASTNodeImpl,
-  PropertyASTNodeImpl,
-  StringASTNodeImpl,
-  ObjectASTNodeImpl,
-  NumberASTNodeImpl,
   ArrayASTNodeImpl,
   BooleanASTNodeImpl,
-} from './jsonDocument';
+  NullASTNodeImpl,
+  NumberASTNodeImpl,
+  ObjectASTNodeImpl,
+  PropertyASTNodeImpl,
+  StringASTNodeImpl,
+} from './jsonDocument.ts';
+import { getCustomTagReturnType } from '../utils/customTags.ts';
 
 type NodeRange = [number, number, number];
 

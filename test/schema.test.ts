@@ -1,14 +1,14 @@
 import * as assert from 'assert';
-import * as parser from '../src/languageservice/parser/yamlParser07';
-import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
-import * as JsonSchema from '../src/languageservice/jsonSchema';
+import * as parser from '../src/languageservice/parser/yamlParser07.ts';
+import * as SchemaService from '../src/languageservice/services/yamlSchemaService.ts';
+import * as JsonSchema from '../src/languageservice/jsonSchema.ts';
 import * as url from 'url';
 import * as path from 'path';
 import { XHRResponse, xhr } from 'request-light';
-import { MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
-import { EMPTY_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
+import { MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/services/yamlSchemaService.ts';
+import { EMPTY_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls.ts';
 import { expect } from 'chai';
-import { ServiceSetup } from './utils/serviceSetup';
+import { ServiceSetup } from './utils/serviceSetup.ts';
 import {
   SCHEMA_ID,
   TestCustomSchemaProvider,
@@ -16,14 +16,14 @@ import {
   setupSchemaIDTextDocument,
   setupTextDocument,
   TEST_URI,
-} from './utils/testHelper';
-import { LanguageService, SchemaPriority } from '../src';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+} from './utils/testHelper.ts';
+import { LanguageService, SchemaPriority } from '../src/index.ts';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.ts';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.ts';
 import { Diagnostic, MarkupContent, Position } from 'vscode-languageserver-types';
 import { LineCounter } from 'yaml';
-import { getSchemaFromModeline } from '../src/languageservice/services/modelineUtil';
-import { getGroupVersionKindFromDocument } from '../src/languageservice/services/k8sSchemaUtil';
+import { getSchemaFromModeline } from '../src/languageservice/services/modelineUtil.ts';
+import { getGroupVersionKindFromDocument } from '../src/languageservice/services/k8sSchemaUtil.ts';
 
 const requestServiceMock = function (uri: string): Promise<string> {
   return Promise.reject<string>(`Resource ${uri} not found.`);

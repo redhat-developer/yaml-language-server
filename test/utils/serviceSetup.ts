@@ -2,8 +2,8 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { LanguageSettings, SchemasSettings } from '../../src/languageservice/yamlLanguageService';
-import { YamlVersion } from '../../src/languageservice/parser/yamlParser07';
+import { LanguageSettings, SchemasSettings } from '../../src/languageservice/yamlLanguageService.ts';
+import { YamlVersion } from '../../src/languageservice/parser/yamlParser07.ts';
 
 export class ServiceSetup {
   /*

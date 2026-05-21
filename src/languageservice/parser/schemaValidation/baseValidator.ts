@@ -4,21 +4,21 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { JSONSchema, JSONSchemaRef, SchemaDialect } from '../../jsonSchema';
-import type { ASTNode, ArrayASTNode, NumberASTNode, ObjectASTNode, PropertyASTNode, StringASTNode } from '../../jsonASTTypes';
-import { equals, isBoolean, isDefined, isIterable, isNumber, isString } from '../../utils/objects';
-import { getSchemaTypeName } from '../../utils/schemaUtils';
-import { isArrayEqual } from '../../utils/arrUtils';
-import { safeCreateUnicodeRegExp } from '../../utils/strings';
-import { FilePatternAssociation } from '../../utils/filePatternAssociation';
-import { floatSafeRemainder } from '../../utils/math';
+import type { JSONSchema, JSONSchemaRef, SchemaDialect } from '../../jsonSchema.ts';
+import type { ASTNode, ArrayASTNode, NumberASTNode, ObjectASTNode, PropertyASTNode, StringASTNode } from '../../jsonASTTypes.ts';
+import { equals, isBoolean, isDefined, isIterable, isNumber, isString } from '../../utils/objects.ts';
+import { getSchemaTypeName } from '../../utils/schemaUtils.ts';
+import { isArrayEqual } from '../../utils/arrUtils.ts';
+import { safeCreateUnicodeRegExp } from '../../utils/strings.ts';
+import { FilePatternAssociation } from '../../utils/filePatternAssociation.ts';
+import { floatSafeRemainder } from '../../utils/math.ts';
 import { ErrorCode } from 'vscode-json-languageservice';
 import * as l10n from '@vscode/l10n';
 import { URI } from 'vscode-uri';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { contains, getNodeValue } from '../astNodeUtils';
-import { getValidator } from './validatorFactory';
+import { contains, getNodeValue } from '../astNodeUtils.ts';
+import { getValidator } from './validatorFactory.ts';
 
 export const YAML_SOURCE = 'YAML';
 const YAML_SCHEMA_PREFIX = 'yaml-schema: ';

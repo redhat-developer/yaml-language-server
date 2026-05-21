@@ -20,21 +20,20 @@ import { ClientCapabilities, CodeActionParams } from 'vscode-languageserver-prot
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { CST, isMap, isSeq, isScalar, Scalar, visit, YAMLMap } from 'yaml';
-import { SourceToken } from 'yaml/dist/parse/cst';
 
-import { YamlCommands } from '../../commands';
-import { TextBuffer } from '../utils/textBuffer';
-import { toYamlStringScalar } from '../utils/yamlScalar';
-import { LanguageSettings } from '../yamlLanguageService';
-import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
-import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings';
-import { matchOffsetToDocument } from '../utils/arrUtils';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
+import { YamlCommands } from '../../commands.ts';
+import { TextBuffer } from '../utils/textBuffer.ts';
+import { toYamlStringScalar } from '../utils/yamlScalar.ts';
+import { LanguageSettings } from '../yamlLanguageService.ts';
+import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator.ts';
+import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings.ts';
+import { matchOffsetToDocument } from '../utils/arrUtils.ts';
+import { yamlDocumentsCache } from '../parser/yaml-documents.ts';
 
-import { BlockStringRewriter } from '../utils/block-string-rewriter';
-import { FlowStyleRewriter } from '../utils/flow-style-rewriter';
+import { BlockStringRewriter } from '../utils/block-string-rewriter.ts';
+import { FlowStyleRewriter } from '../utils/flow-style-rewriter.ts';
 
-import { ASTNode } from '../jsonASTTypes';
+import { ASTNode } from '../jsonASTTypes.ts';
 
 interface YamlDiagnosticData {
   schemaUri: string[];
@@ -313,12 +312,12 @@ export class YamlCodeActions {
         if (node && isMap(node.internalNode)) {
           const sorted: YAMLMap = structuredClone(node.internalNode);
 
-          const _getTrailingTokens = (value: CST.Token): SourceToken[] => {
+          const _getTrailingTokens = (value: CST.Token): CST.SourceToken[] => {
             if (!value) return;
             if (CST.isScalar(value)) {
               if (value.type === 'block-scalar') {
                 value.props ??= [];
-                return value.props as SourceToken[];
+                return value.props as CST.SourceToken[];
               }
               value.end ??= [];
               return value.end;
@@ -364,7 +363,7 @@ export class YamlCodeActions {
                 _getTrailingTokens(uItem.value)?.find((p) => p.type === 'newline' && p.offset < node.offset + node.length) ??
                 null;
               if (uNewLineToken && itemNewLineIndex < 0 && itemTokens) {
-                itemTokens.push({ type: 'newline', indent: 0, offset: item.value.offset, source: '\n' } as SourceToken);
+                itemTokens.push({ type: 'newline', indent: 0, offset: item.value.offset, source: '\n' } as CST.SourceToken);
               }
               if (!uNewLineToken && itemNewLineIndex > -1 && itemTokens) {
                 itemTokens.splice(itemNewLineIndex, 1);

@@ -1,9 +1,10 @@
 {
   "timeout": "10000",
-  "ui":  "bdd",
+  "ui": "bdd",
   "extension": ["ts"],
   "package": "./package.json",
   "reporter": "spec",
   "watch-files": ["./test/*.test.ts"],
-  "spec":  ["./test/*.test.ts"]
+  "spec": ["./test/*.test.ts"],
+  "node-option": ["require=tsx", "experimental-transform-types"]
 }

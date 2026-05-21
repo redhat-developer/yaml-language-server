@@ -7,13 +7,13 @@ import * as chai from 'chai';
 import * as sinonChai from 'sinon-chai';
 import * as path from 'path';
 import * as url from 'url';
-import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
-import { parse } from '../src/languageservice/parser/yamlParser07';
-import { SettingsState } from '../src/yamlSettings';
-import { BASE_KUBERNETES_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
+import * as SchemaService from '../src/languageservice/services/yamlSchemaService.ts';
+import { parse } from '../src/languageservice/parser/yamlParser07.ts';
+import { SettingsState } from '../src/yamlSettings.ts';
+import { BASE_KUBERNETES_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls.ts';
 
 const expect = chai.expect;
-chai.use(sinonChai);
+chai.use(sinonChai.default);
 const workspaceContext = {
   resolveRelativePath: (relativePath: string, resource: string) => {
     return url.resolve(resource, relativePath);

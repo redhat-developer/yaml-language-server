@@ -1,9 +1,9 @@
 import { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
-import { Telemetry } from '../telemetry';
-import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
-import { isBoolean } from './objects';
-import { isRelativePath, relativeToAbsolutePath } from './paths';
+import { Telemetry } from '../telemetry.ts';
+import { JSONSchema, JSONSchemaRef } from '../jsonSchema.ts';
+import { isBoolean } from './objects.ts';
+import { isRelativePath, relativeToAbsolutePath } from './paths.ts';
 
 export const BASE_KUBERNETES_SCHEMA_URL =
   'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.1-standalone-strict/';

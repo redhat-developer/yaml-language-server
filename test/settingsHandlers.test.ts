@@ -8,17 +8,22 @@ import * as request from 'request-light';
 import * as sinon from 'sinon';
 import * as sinonChai from 'sinon-chai';
 import { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver';
-import { LanguageService, LanguageSettings, SchemaConfiguration, SchemaPriority } from '../src';
-import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { EMPTY_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
-import { Telemetry } from '../src/languageservice/telemetry';
-import { SettingsState } from '../src/yamlSettings';
-import { TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument, setupTextDocument } from './utils/testHelper';
-import { TestWorkspace } from './utils/testsTypes';
+import { LanguageService, LanguageSettings, SchemaConfiguration, SchemaPriority } from '../src/index.ts';
+import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers.ts';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.ts';
+import { EMPTY_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls.ts';
+import { Telemetry } from '../src/languageservice/telemetry.ts';
+import { SettingsState } from '../src/yamlSettings.ts';
+import {
+  TestCustomSchemaProvider,
+  setupLanguageService,
+  setupSchemaIDTextDocument,
+  setupTextDocument,
+} from './utils/testHelper.ts';
+import { TestWorkspace } from './utils/testsTypes.ts';
 
 const expect = chai.expect;
-chai.use(sinonChai);
+chai.use(sinonChai.default);
 
 describe('Settings Handlers Tests', () => {
   const sandbox = sinon.createSandbox();

@@ -5,21 +5,21 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Diagnostic, Position } from 'vscode-languageserver-types';
-import { LanguageSettings } from '../yamlLanguageService';
-import { YAMLDocument, YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07';
-import { YAMLSchemaService } from './yamlSchemaService';
-import { YAMLDocDiagnostic } from '../utils/parseUtils';
+import { LanguageSettings } from '../yamlLanguageService.ts';
+import { YAMLDocument, YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07.ts';
+import { YAMLSchemaService } from './yamlSchemaService.ts';
+import { YAMLDocDiagnostic } from '../utils/parseUtils.ts';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
-import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
-import { TextBuffer } from '../utils/textBuffer';
-import { filterSuppressedDiagnostics } from '../utils/diagnostic-filter';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { Telemetry } from '../telemetry';
-import { AdditionalValidator } from './validation/types';
-import { UnusedAnchorsValidator } from './validation/unused-anchors';
-import { YAMLStyleValidator } from './validation/yaml-style';
-import { MapKeyOrderValidator } from './validation/map-key-order';
+import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation.js';
+import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator.ts';
+import { TextBuffer } from '../utils/textBuffer.ts';
+import { filterSuppressedDiagnostics } from '../utils/diagnostic-filter.ts';
+import { yamlDocumentsCache } from '../parser/yaml-documents.ts';
+import { Telemetry } from '../telemetry.ts';
+import { AdditionalValidator } from './validation/types.ts';
+import { UnusedAnchorsValidator } from './validation/unused-anchors.ts';
+import { YAMLStyleValidator } from './validation/yaml-style.ts';
+import { MapKeyOrderValidator } from './validation/map-key-order.ts';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
