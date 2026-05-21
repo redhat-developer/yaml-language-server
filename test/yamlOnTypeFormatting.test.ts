@@ -66,6 +66,15 @@ describe('YAML On Type Formatter', () => {
     expect(result[0]).to.deep.equal(TextEdit.insert(pos, '  '));
   });
 
+  it('should handle nested maps with content afterwards', () => {
+    const doc = setupTextDocument('some:\n  BODY:\n  \n  foo: asdf');
+    const pos = Position.create(2, 2);
+    const params = createParams(pos);
+    const result = doDocumentOnTypeFormatting(doc, params);
+    expect(result).to.have.length(1);
+    expect(result[0]).to.deep.equal(TextEdit.insert(pos, '  '));
+  });
+
   it('should handle nested arrays', () => {
     const doc = setupTextDocument('some:\n  - BODY:\n  ');
     const pos = Position.create(2, 2);
