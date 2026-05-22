@@ -63,6 +63,16 @@ describe('Custom Tag tests Tests', () => {
         .then(done, done);
     });
 
+    it('Custom Tags with input and return types', (done) => {
+      const content = 'resolvers: !Ref\n  - test';
+      const validator = parseSetup(content, ['!Ref sequence:string']);
+      validator
+        .then(function (result) {
+          assert.equal(result.length, 0);
+        })
+        .then(done, done);
+    });
+
     it('Allow multiple different custom tag types with different use', (done) => {
       const content = '!test\nhello: !test\n  world';
       const validator = parseSetup(content, ['!test scalar', '!test mapping']);

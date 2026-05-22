@@ -77,32 +77,27 @@ describe('String Tests', () => {
   describe('safeCreateUnicodeRegExp', () => {
     it('should create unicode RegExp for non unicode patterns', () => {
       const result = safeCreateUnicodeRegExp(
-        // eslint-disable-next-line prettier/prettier
         '^([2-9])\\.([0-9]+)\\.([0-9]+)(\\-[0-9a-z-]+(\\.[0-9a-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$'
       );
       expect(result).is.not.undefined;
     });
 
     it('should create unicode RegExp for non unicode patterns2', () => {
-      // eslint-disable-next-line prettier/prettier
       const result = safeCreateUnicodeRegExp('^[^\\/~\\^\\: \\[\\]\\\\]+(\\/[^\\/~\\^\\: \\[\\]\\\\]+)*$');
       expect(result).is.not.undefined;
     });
 
     it('should create unicode RegExp for non unicode patterns3', () => {
-      // eslint-disable-next-line prettier/prettier
       const result = safeCreateUnicodeRegExp('^(\\s?)+=[^\\=](.+)');
       expect(result).is.not.undefined;
     });
 
     it('should create unicode RegExp for non unicode patterns4', () => {
-      // eslint-disable-next-line prettier/prettier
       const result = safeCreateUnicodeRegExp('^x-[\\w\\d\\.\\-\\_]+$');
       expect(result).is.not.undefined;
     });
 
     it('should create unicode RegExp for non unicode patterns5', () => {
-      // eslint-disable-next-line prettier/prettier
       const result = safeCreateUnicodeRegExp('^[\\w\\-_]+$');
       expect(result).is.not.undefined;
     });

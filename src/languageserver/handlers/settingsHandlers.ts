@@ -223,7 +223,7 @@ export class SettingsHandler {
       try {
         const schemaStore = await this.getSchemaStoreMatchingSchemas(schemaStoreUrl);
         this.yamlSettings.schemaStoreSettings = schemaStore.schemas;
-      } catch (err) {
+      } catch {
         // ignore
       }
     } else if (!this.yamlSettings.schemaStoreEnabled) {
@@ -369,7 +369,6 @@ export class SettingsHandler {
    * @param schema schema id
    * @param languageSettings current server settings
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private configureSchemas(
     uri: string,
     fileMatch: string[],

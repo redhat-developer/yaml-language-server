@@ -15,6 +15,7 @@ import {
   PropertyASTNode,
   YamlNode,
 } from '../jsonASTTypes';
+import type { CustomTagReturnType } from '../utils/customTags';
 import { Diagnostic, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Node, Pair } from 'yaml';
@@ -29,6 +30,7 @@ abstract class ASTNodeImpl {
   public length: number;
   public readonly parent: ASTNode;
   public location: string;
+  public customTagReturnType?: CustomTagReturnType;
   readonly internalNode: YamlNode;
 
   constructor(parent: ASTNode, internalNode: YamlNode, offset: number, length?: number) {

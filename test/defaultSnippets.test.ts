@@ -252,7 +252,6 @@ describe('Default Snippet Tests', () => {
         .then(function (result) {
           assert.equal(result.items.length, 1);
           assert.equal(result.items[0].label, 'apply-manifests');
-          // eslint-disable-next-line
           assert.equal(
             result.items[0].insertText,
             '\n  name: $1\n  taskRef:\n    name: apply-manifests\n  resources:\n    inputs:\n      - name: source\n        resource: $3\n  params:\n    - name: manifest_dir\n      value: $2'
@@ -268,7 +267,6 @@ describe('Default Snippet Tests', () => {
         .then(function (result) {
           assert.equal(result.items.length, 15); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[4].label, 'longSnippet');
-          // eslint-disable-next-line
           assert.equal(
             result.items[4].insertText,
             'longSnippet:\n  name: $1\n  taskRef:\n    name: apply-manifests\n  resources:\n    inputs:\n      - name: source\n        resource: $3\n  params:\n    - name: manifest_dir\n      value: $2'

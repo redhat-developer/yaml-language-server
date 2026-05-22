@@ -18,10 +18,11 @@ import {
   TextEdit,
 } from 'vscode-languageserver-types';
 import { Node, isPair, isScalar, isMap, YAMLMap, isSeq, YAMLSeq, isNode, Pair } from 'yaml';
+import { parseCustomTag } from '../utils/customTags';
 import { Telemetry } from '../telemetry';
 import { SingleYAMLDocument, YamlDocuments } from '../parser/yaml-documents';
 import { YamlVersion } from '../parser/yamlParser07';
-import { filterInvalidCustomTags, matchOffsetToDocument } from '../utils/arrUtils';
+import { matchOffsetToDocument } from '../utils/arrUtils';
 import { guessIndentation } from '../utils/indentationGuesser';
 import { TextBuffer } from '../utils/textBuffer';
 import { LanguageSettings } from '../yamlLanguageService';
@@ -1629,12 +1630,12 @@ export class YamlCompletion {
   }
 
   private getCustomTagValueCompletions(collector: CompletionsCollector): void {
-    const validCustomTags = filterInvalidCustomTags(this.customTags);
-    validCustomTags.forEach((validTag) => {
-      // Valid custom tags are guarenteed to be strings
-      const label = validTag.split(' ')[0];
-      this.addCustomTagValueCompletion(collector, ' ', label);
-    });
+    for (const customTag of this.customTags ?? []) {
+      const parsedTag = parseCustomTag(customTag);
+      if (parsedTag) {
+        this.addCustomTagValueCompletion(collector, ' ', parsedTag.tag);
+      }
+    }
   }
 
   private addCustomTagValueCompletion(collector: CompletionsCollector, separatorAfter: string, label: string): void {

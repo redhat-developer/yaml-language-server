@@ -80,10 +80,10 @@ export function safeCreateUnicodeRegExp(pattern: string): RegExp | undefined {
   // fall back to regular regexp if we cannot create Unicode one
   try {
     return new RegExp(pattern, flags + 'u');
-  } catch (ignore) {
+  } catch {
     try {
       return new RegExp(pattern, flags);
-    } catch (e) {
+    } catch {
       return undefined;
     }
   }

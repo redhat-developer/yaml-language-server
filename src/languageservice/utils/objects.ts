@@ -5,7 +5,7 @@
 
 import { parseYamlBoolean } from '../parser/scalar-type';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function equals(one: any, other: any, type?: any): boolean {
   if (type === 'boolean' && typeof one === 'string') {
     one = parseYamlBoolean(one);
@@ -65,7 +65,6 @@ export function isNumber(val: unknown): val is number {
   return typeof val === 'number';
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export function isDefined(val: unknown): val is object | string | number | boolean {
   return typeof val !== 'undefined';
 }
