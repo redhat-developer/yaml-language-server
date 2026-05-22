@@ -1772,3 +1772,4 @@ export class YamlCompletion {
   isParentCompletionItem(item: CompletionItemBase): item is CompletionItem {
     return 'parent' in item;
   }
+}
