@@ -1053,7 +1053,6 @@ export class YamlCompletion {
                 shouldIndentWithTab: false,
               },
               [],
-              1
             );
             // add space before default snippet value
             if (!value.startsWith(' ') && !value.startsWith('\n')) {
