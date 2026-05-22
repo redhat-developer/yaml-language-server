@@ -362,7 +362,7 @@ export class YamlCompletion {
       }
       let currentProperty: YamlNode = null;
 
-      if (!node) {
+  if (!node) {
     if (!currentDoc.internalDocument.contents || isScalar(currentDoc.internalDocument.contents)) {
           const map = currentDoc.internalDocument.createNode({});
           map.range = [offset, offset + 1, offset + 1];
@@ -813,9 +813,10 @@ export class YamlCompletion {
                       ),
                       insertTextFormat: InsertTextFormat.Snippet,
                       documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
-                      parent: 
+                      parent: {
                         schema: schema.schema,
                         indent: identCompensation,
+                      },
                     }
                   );
 
