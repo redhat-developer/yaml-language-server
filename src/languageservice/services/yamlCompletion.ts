@@ -833,82 +833,72 @@ export class YamlCompletion {
                     );
                   }
                 }
-                }
               }
             }
           }
         }
-        // Error fix
-        // If this is a array of string/boolean/number
-        //  test:
-        //    - item1
-        // it will treated as a property key since `:` has been appended
-        if (nodeParent && isSeq(nodeParent) && isPrimitiveType(schema.schema)) {
-          this.addSchemaValueCompletions(schema.schema, separatorAfter, collector, {}, ignoreScalars);
-        }
+      }
+      // Error fix
+      // If this is a array of string/boolean/number
+      //  test:
+      //    - item1
+      // it will treated as a property key since `:` has been appended
+      if (nodeParent && isSeq(nodeParent) && isPrimitiveType(schema.schema)) {
+        this.addSchemaValueCompletions(schema.schema, separatorAfter, collector, {}, ignoreScalars);
+      }
 
-        if (schema.schema.type === 'object' && schema.schema.propertyNames && schema.schema.additionalProperties !== false) {
-          const propertyNameSchema = asSchema(schema.schema.propertyNames);
-          if (!propertyNameSchema.deprecationMessage && !propertyNameSchema.doNotSuggest) {
-            const doc = this.fromMarkup(
-              (propertyNameSchema.markdownDescription || propertyNameSchema.description || '') +
-                (propertyNameSchema.pattern ? `\n\n**Pattern:** \`${propertyNameSchema.pattern}\`` : '')
-            );
-            const { candidates, impossible } = this.getPropertyNamesCandidates(propertyNameSchema);
-            if (impossible) {
-              // suggest nothing
-            } else if (candidates.length) {
-              for (const key of candidates) {
-                collector.add({
-                  kind: CompletionItemKind.Property,
-                  label: key,
-                  insertText: `${key}: `,
-                  insertTextFormat: InsertTextFormat.PlainText,
-                  documentation: doc,
-                });
-              }
-            } else {
-              const label = propertyNameSchema.title || 'property';
+      if (schema.schema.type === 'object' && schema.schema.propertyNames && schema.schema.additionalProperties !== false) {
+        const propertyNameSchema = asSchema(schema.schema.propertyNames);
+        if (!propertyNameSchema.deprecationMessage && !propertyNameSchema.doNotSuggest) {
+          const doc = this.fromMarkup(
+            (propertyNameSchema.markdownDescription || propertyNameSchema.description || '') +
+              (propertyNameSchema.pattern ? `\n\n**Pattern:** \`${propertyNameSchema.pattern}\`` : '')
+          );
+          const { candidates, impossible } = this.getPropertyNamesCandidates(propertyNameSchema);
+          if (impossible) {
+            // suggest nothing
+          } else if (candidates.length) {
+            for (const key of candidates) {
               collector.add({
                 kind: CompletionItemKind.Property,
-                label,
-                insertText: '$' + `{1:${label}}: `,
-                insertTextFormat: InsertTextFormat.Snippet,
+                label: key,
+                insertText: `${key}: `,
+                insertTextFormat: InsertTextFormat.PlainText,
                 documentation: doc,
               });
             }
+          } else {
+            const label = propertyNameSchema.title || 'property';
+            collector.add({
+              kind: CompletionItemKind.Property,
+              label,
+              insertText: '$' + `{1:${label}}: `,
+              insertTextFormat: InsertTextFormat.Snippet,
+              documentation: doc,
+            });
           }
         }
       }
+    }
 
-      if (nodeParent && schema.node.internalNode === nodeParent && schema.schema.defaultSnippets) {
-        // For some reason the first item in the array needs to be treated differently, otherwise
-        // the indentation will not be correct
-        if (node.items.length === 1) {
-          this.collectDefaultSnippets(
-            schema.schema,
-            separatorAfter,
-            collector,
-            {
-              newLineFirst: false,
-              indentFirstObject: false,
-              shouldIndentWithTab: true,
-            },
-          );
-        } else {
-          this.collectDefaultSnippets(
-            schema.schema,
-            separatorAfter,
-            collector,
-            {
-              newLineFirst: false,
-              indentFirstObject: true,
-              shouldIndentWithTab: false,
-            },
-          );
-        }
+    if (nodeParent && schema.node.internalNode === nodeParent && schema.schema.defaultSnippets) {
+      // For some reason the first item in the array needs to be treated differently, otherwise
+      // the indentation will not be correct
+      if (node.items.length === 1) {
+        this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
+          newLineFirst: false,
+          indentFirstObject: false,
+          shouldIndentWithTab: true,
+        });
+      } else {
+        this.collectDefaultSnippets(schema.schema, separatorAfter, collector, {
+          newLineFirst: false,
+          indentFirstObject: true,
+          shouldIndentWithTab: false,
+        });
       }
     }
+  }
   private getValueCompletions(
     schema: ResolvedSchema,
     doc: SingleYAMLDocument,
@@ -1052,7 +1042,7 @@ export class YamlCompletion {
                 indentFirstObject: false,
                 shouldIndentWithTab: false,
               },
-              [],
+              []
             );
             // add space before default snippet value
             if (!value.startsWith(' ') && !value.startsWith('\n')) {
