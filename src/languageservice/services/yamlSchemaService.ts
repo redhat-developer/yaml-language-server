@@ -19,7 +19,7 @@ import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '.
 import * as l10n from '@vscode/l10n';
 import * as path from 'path';
 import { URI } from 'vscode-uri';
-import { JSONSchemaDescriptionExt } from '../../requestTypes';
+import { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes';
 import { JSONDocument } from '../parser/jsonDocument';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { SchemaVersions } from '../yamlTypes';
@@ -206,6 +206,103 @@ export class YAMLSchemaService extends JSONSchemaService {
   private schemaMapValues(map?: JSONSchemaMap): JSONSchemaRef[] | undefined {
     if (!map || typeof map !== 'object') return undefined;
     return Object.values(map);
+  }
+
+  private resolveModelineSchema(resource: string, doc: JSONDocument): string | undefined {
+    let schemaFromModeline = getSchemaFromModeline(doc);
+    if (schemaFromModeline !== undefined) {
+      if (!schemaFromModeline.startsWith('file:') && !schemaFromModeline.startsWith('http')) {
+        // If path contains a fragment and it is left intact, "#" will be
+        // considered part of the filename and converted to "%23" by
+        // path.resolve() -> take it out and add back after path.resolve
+        let appendix = '';
+        if (schemaFromModeline.indexOf('#') > 0) {
+          const segments = schemaFromModeline.split('#', 2);
+          schemaFromModeline = segments[0];
+          appendix = segments[1];
+        }
+        if (!path.isAbsolute(schemaFromModeline)) {
+          const resUri = URI.parse(resource);
+          schemaFromModeline = URI.file(path.resolve(path.parse(resUri.fsPath).dir, schemaFromModeline)).toString();
+        } else {
+          schemaFromModeline = URI.file(schemaFromModeline).toString();
+        }
+        if (appendix.length > 0) {
+          schemaFromModeline += '#' + appendix;
+        }
+      }
+      return schemaFromModeline;
+    }
+  }
+
+  private async getSchemaIdsForResource(resource: string, doc: JSONDocument): Promise<string[]> {
+    const modelineSchema = this.resolveModelineSchema(resource, doc);
+    if (modelineSchema) {
+      return [modelineSchema];
+    }
+
+    if (this.customSchemaProvider) {
+      try {
+        const schemaUri = await this.customSchemaProvider(resource);
+        if (Array.isArray(schemaUri)) {
+          if (schemaUri.length > 0) {
+            return schemaUri;
+          }
+        } else if (schemaUri) {
+          return [schemaUri];
+        }
+      } catch {
+        // Fall back to configured schemas
+      }
+    }
+
+    const seen: { [schemaId: string]: boolean } = Object.create(null);
+    const schemas: string[] = [];
+    for (const entry of this.filePatternAssociations) {
+      if (entry.matchesPattern(resource)) {
+        for (const schemaId of entry.getURIs()) {
+          if (!seen[schemaId]) {
+            schemas.push(schemaId);
+            seen[schemaId] = true;
+          }
+        }
+      }
+    }
+
+    return schemas.length > 0 ? this.highestPrioritySchemas(schemas) : [];
+  }
+
+  public async getSchemaDescriptionsForResource(resource: string, doc: JSONDocument): Promise<JSONSchemaDescription[]> {
+    const schemaIds = await this.getSchemaIdsForResource(resource, doc);
+    const result: JSONSchemaDescription[] = [];
+
+    for (const schemaId of schemaIds) {
+      if (schemaId === EMPTY_SCHEMA_URL) {
+        continue;
+      }
+
+      const metadata = this.schemaUriToNameAndDescription.get(schemaId);
+      let schema: JSONSchema | undefined;
+      if (!metadata) {
+        try {
+          const unresolvedSchema = await this.loadSchema(schemaId);
+          if (unresolvedSchema.schema && typeof unresolvedSchema.schema === 'object') {
+            schema = unresolvedSchema.schema;
+          }
+        } catch {
+          // Keep the schema URI visible even when its content cannot be loaded.
+        }
+      }
+
+      result.push({
+        uri: schemaId,
+        name: metadata?.name ?? schema?.title,
+        description: metadata?.description ?? schema?.description,
+        versions: metadata?.versions ?? schema?.versions,
+      });
+    }
+
+    return result;
   }
 
   async resolveSchemaContent(
@@ -983,33 +1080,6 @@ export class YAMLSchemaService extends JSONSchemaService {
   }
 
   public getSchemaForResource(resource: string, doc: JSONDocument): Promise<ResolvedSchema> {
-    const resolveModelineSchema = (): string | undefined => {
-      let schemaFromModeline = getSchemaFromModeline(doc);
-      if (schemaFromModeline !== undefined) {
-        if (!schemaFromModeline.startsWith('file:') && !schemaFromModeline.startsWith('http')) {
-          // If path contains a fragment and it is left intact, "#" will be
-          // considered part of the filename and converted to "%23" by
-          // path.resolve() -> take it out and add back after path.resolve
-          let appendix = '';
-          if (schemaFromModeline.indexOf('#') > 0) {
-            const segments = schemaFromModeline.split('#', 2);
-            schemaFromModeline = segments[0];
-            appendix = segments[1];
-          }
-          if (!path.isAbsolute(schemaFromModeline)) {
-            const resUri = URI.parse(resource);
-            schemaFromModeline = URI.file(path.resolve(path.parse(resUri.fsPath).dir, schemaFromModeline)).toString();
-          } else {
-            schemaFromModeline = URI.file(schemaFromModeline).toString();
-          }
-          if (appendix.length > 0) {
-            schemaFromModeline += '#' + appendix;
-          }
-        }
-        return schemaFromModeline;
-      }
-    };
-
     const resolveSchemaForResource = (schemas: string[]): Promise<ResolvedSchema> => {
       const schemaHandle = super.createCombinedSchema(resource, schemas);
       return schemaHandle.getResolvedSchema().then((schema) => {
@@ -1060,7 +1130,7 @@ export class YAMLSchemaService extends JSONSchemaService {
 
       return Promise.resolve(null);
     };
-    const modelineSchema = resolveModelineSchema();
+    const modelineSchema = this.resolveModelineSchema(resource, doc);
     if (modelineSchema) {
       return resolveSchemaForResource([modelineSchema]);
     }
