@@ -362,8 +362,8 @@ export class YamlCompletion {
       }
       let currentProperty: YamlNode = null;
 
-  if (!node) {
-    if (!currentDoc.internalDocument.contents || isScalar(currentDoc.internalDocument.contents)) {
+      if (!node) {
+        if (!currentDoc.internalDocument.contents || isScalar(currentDoc.internalDocument.contents)) {
           const map = currentDoc.internalDocument.createNode({});
           map.range = [offset, offset + 1, offset + 1];
           currentDoc.internalDocument.contents = map;
@@ -798,9 +798,9 @@ export class YamlCompletion {
                   const isNodeNull =
                     (isScalar(originalNode) && originalNode.value === null) ||
                     (isMap(originalNode) && originalNode.items.length === 0);
-                  const existsParentCompletion = schema.schema.required?.length > 0
-                  
-                   // if the prop is required add it also to parent suggestion;
+                  const existsParentCompletion = schema.schema.required?.length > 0;
+
+                  // If the property is required, add it also to the parent suggestion.
                   if (schema.schema.required?.includes(key)) {
                     collector.add({
                       label: key,
@@ -817,13 +817,11 @@ export class YamlCompletion {
                         schema: schema.schema,
                         indent: identCompensation,
                       },
-                    }
-                  );
-
+                    });
                   }
 
-                  if (!this.parentSkeletonSelectedFirst || !isNodeNull || !existsParentCompletion);
-                  collector.add(
+                  if (!this.parentSkeletonSelectedFirst || !isNodeNull || !existsParentCompletion) {
+                    collector.add(
                       {
                         kind: CompletionItemKind.Property,
                         label: key,
@@ -833,8 +831,8 @@ export class YamlCompletion {
                       },
                       didOneOfSchemaMatches
                     );
-               }
-      
+                  }
+                }
                 }
               }
             }
@@ -896,7 +894,6 @@ export class YamlCompletion {
               indentFirstObject: false,
               shouldIndentWithTab: true,
             },
-            1
           );
         } else {
           this.collectDefaultSnippets(
@@ -908,7 +905,6 @@ export class YamlCompletion {
               indentFirstObject: true,
               shouldIndentWithTab: false,
             },
-            1
           );
         }
       }
@@ -1778,4 +1774,3 @@ export class YamlCompletion {
   isParentCompletionItem(item: CompletionItemBase): item is CompletionItem {
     return 'parent' in item;
   }
-}

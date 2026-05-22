@@ -362,7 +362,7 @@ function ensureLineBreak(content: string): string {
   if (content.length === 0) {
     return content;
   }
-  
+
   return content.replace(/\n+$/g, '') + '\n\n';
 }
 
