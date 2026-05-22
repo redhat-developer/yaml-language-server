@@ -798,20 +798,9 @@ export class YamlCompletion {
                   const isNodeNull =
                     (isScalar(originalNode) && originalNode.value === null) ||
                     (isMap(originalNode) && originalNode.items.length === 0);
-                  const existsParentCompletion = schema.schema.required?.length > 0;
-                  if (!this.parentSkeletonSelectedFirst || !isNodeNull || !existsParentCompletion) {
-                    collector.add(
-                      {
-                        kind: CompletionItemKind.Property,
-                        label: key,
-                        insertText,
-                        insertTextFormat: InsertTextFormat.Snippet,
-                        documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
-                      },
-                      didOneOfSchemaMatches
-                    );
-                  }
-                  // if the prop is required add it also to parent suggestion
+                  const existsParentCompletion = schema.schema.required?.length > 0
+                  
+                   // if the prop is required add it also to parent suggestion;
                   if (schema.schema.required?.includes(key)) {
                     collector.add({
                       label: key,
@@ -824,12 +813,27 @@ export class YamlCompletion {
                       ),
                       insertTextFormat: InsertTextFormat.Snippet,
                       documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
-                      parent: {
+                      parent: 
                         schema: schema.schema,
                         indent: identCompensation,
-                      },
-                    });
+                    }
+                  );
+
                   }
+
+                  if (!this.parentSkeletonSelectedFirst || !isNodeNull || !existsParentCompletion);
+                  collector.add(
+                      {
+                        kind: CompletionItemKind.Property,
+                        label: key,
+                        insertText,
+                        insertTextFormat: InsertTextFormat.Snippet,
+                        documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
+                      },
+                      didOneOfSchemaMatches
+                    );
+               }
+      
                 }
               }
             }
