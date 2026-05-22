@@ -38,7 +38,6 @@ describe('Formatter Tests', () => {
   // Tests for formatter
   describe('Formatter', function () {
     describe('Test that formatter works with custom tags', function () {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       function parseSetup(
         content: string,
         options: Partial<FormattingOptions | CustomFormatterOptions> = {}

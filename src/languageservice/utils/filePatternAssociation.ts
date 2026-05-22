@@ -7,7 +7,7 @@ export class FilePatternAssociation {
   constructor(pattern: string) {
     try {
       this.patternRegExp = new RegExp(convertSimple2RegExpPattern(pattern) + '$');
-    } catch (e) {
+    } catch {
       // invalid pattern
       this.patternRegExp = null;
     }

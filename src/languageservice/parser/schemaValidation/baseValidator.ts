@@ -428,6 +428,18 @@ export abstract class BaseValidator {
    */
   protected abstract getCurrentDialect(): SchemaDialect;
 
+  protected matchesSchemaType(node: ASTNode, schemaType: string): boolean {
+    const type = node.customTagReturnType ?? node.type;
+
+    if (schemaType === 'integer') {
+      return type === 'integer' || (type === 'number' && (node as NumberASTNode).isInteger);
+    }
+    if (schemaType === 'number') {
+      return type === 'number' || type === 'integer';
+    }
+    return type === schemaType;
+  }
+
   // ---------------- core traversal ----------------
   protected validateNode(
     node: ASTNode,
@@ -515,9 +527,7 @@ export abstract class BaseValidator {
   ): void {
     const { isKubernetes, callFromAutoComplete } = options;
 
-    const matchesType = (type: string): boolean => {
-      return node.type === type || (type === 'integer' && node.type === 'number' && (node as NumberASTNode).isInteger);
-    };
+    const matchesType = (type: string): boolean => this.matchesSchemaType(node, type);
 
     const mergeEvaluated = (target: ValidationResult, source: ValidationResult): void => {
       if (source.evaluatedProperties) {
@@ -1596,7 +1606,7 @@ export abstract class BaseValidator {
           maxOneMatch &&
           bestMatch.schema.type === 'object' &&
           node.type !== 'null' &&
-          node.type !== bestMatch.schema.type)
+          (node.customTagReturnType ?? node.type) !== bestMatch.schema.type)
       ) {
         bestMatch = { schema: subSchema, validationResult: subValidationResult, matchingSchemas: subMatchingSchemas };
       } else if (compareResult === 0 || ((node.value === null || node.type === 'null') && node.length === 0)) {
@@ -1628,7 +1638,6 @@ export function asSchema(schema: JSONSchemaRef): JSONSchema | undefined {
 
   if (typeof schema !== 'object') {
     // Keep legacy behavior: warn and coerce
-    // eslint-disable-next-line no-console
     console.warn(`Wrong schema: ${JSON.stringify(schema)}, it MUST be an Object or Boolean`);
     return { type: schema as string };
   }
