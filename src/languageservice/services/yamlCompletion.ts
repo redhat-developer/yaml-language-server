@@ -360,11 +360,10 @@ export class YamlCompletion {
       if (!schema || schema.errors.length) {
         return result;
       }
-
       let currentProperty: YamlNode = null;
 
       if (!node) {
-        if (!currentDoc.internalDocument.contents || isScalar(currentDoc.internalDocument.contents)) {
+    if (!currentDoc.internalDocument.contents || isScalar(currentDoc.internalDocument.contents)) {
           const map = currentDoc.internalDocument.createNode({});
           map.range = [offset, offset + 1, offset + 1];
           currentDoc.internalDocument.contents = map;
