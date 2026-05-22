@@ -21,7 +21,7 @@ export function doDocumentOnTypeFormatting(
       if (previousLine.trimStart().startsWith('-')) {
         expectedIndentationLength += params.options.tabSize;
       }
-      const currentLine = tb.getLineContent(position.line);
+      const currentLine = tb.getLineContent(position.line).replace('\r', '').replace('\n', '');
       if (currentLine.trim().length !== 0) {
         // non-space content, do nothing
         return;
