@@ -909,8 +909,6 @@ export class YamlCompletion {
         }
       }
     }
-  }
-
   private getValueCompletions(
     schema: ResolvedSchema,
     doc: SingleYAMLDocument,
