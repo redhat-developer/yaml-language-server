@@ -1034,16 +1034,11 @@ export class YamlCompletion {
         if (propertySchema.defaultSnippets.length === 1) {
           const body = propertySchema.defaultSnippets[0].body;
           if (isDefined(body)) {
-            value = this.getInsertTextForSnippetValue(
-              body,
-              '',
-              {
-                newLineFirst: true,
-                indentFirstObject: false,
-                shouldIndentWithTab: false,
-              },
-              []
-            );
+            value = this.getInsertTextForSnippetValue(body, '', {
+              newLineFirst: true,
+              indentFirstObject: false,
+              shouldIndentWithTab: false,
+            });
             // add space before default snippet value
             if (!value.startsWith(' ') && !value.startsWith('\n')) {
               value = ' ' + value;
