@@ -1,5 +1,6 @@
 import { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
+import * as path from 'path';
 import { Telemetry } from '../telemetry';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isBoolean } from './objects';
@@ -21,6 +22,9 @@ export function checkSchemaURI(
   if (uri.trim().toLowerCase() === 'kubernetes') {
     telemetry.send({ name: 'yaml.schema.configured', properties: { kubernetes: true } });
     return KUBERNETES_SCHEMA_URL;
+  } else if (path.isAbsolute(uri) || /^[a-z]:[\\/]/i.test(uri)) {
+    const localPath = uri.split('#', 2)[0];
+    return URI.file(localPath).toString() + uri.substring(localPath.length);
   } else if (isRelativePath(uri)) {
     return relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);
   } else {

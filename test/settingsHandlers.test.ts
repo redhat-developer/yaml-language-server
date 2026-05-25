@@ -8,6 +8,7 @@ import * as request from 'request-light';
 import * as sinon from 'sinon';
 import * as sinonChai from 'sinon-chai';
 import { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver';
+import { URI } from 'vscode-uri';
 import { LanguageService, LanguageSettings, SchemaConfiguration, SchemaPriority } from '../src';
 import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
@@ -263,6 +264,105 @@ describe('Settings Handlers Tests', () => {
       name: '.adonisrc.json',
       description: 'AdonisJS configuration file',
       versions: undefined,
+    });
+  });
+
+  describe('Schema URI normalization', () => {
+    const testSchemaFileMatch = ['foo/*.yml'];
+
+    async function configureSchemaSettingsTest(): Promise<LanguageSettings> {
+      const settingsHandler = new SettingsHandler(
+        connection,
+        languageService,
+        settingsState,
+        validationHandler as unknown as ValidationHandler,
+        {} as Telemetry
+      );
+      const configureSpy = sinon.spy(languageService, 'configure');
+      await settingsHandler.pullConfiguration();
+      configureSpy.restore();
+      return configureSpy.args[0][0];
+    }
+
+    it('Schema Settings should normalize absolute local paths', async () => {
+      xhrStub.resolves({
+        responseText: '{"schemas":[]}',
+      });
+      const absoluteSchemaPath = '/Users/test/schemas/schema.json';
+      const schemas = {};
+      schemas[absoluteSchemaPath] = testSchemaFileMatch;
+      workspaceStub.getConfiguration.resolves([{ schemas: schemas }, {}, {}, {}]);
+      const configureSpy = await configureSchemaSettingsTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: URI.file(absoluteSchemaPath).toString(),
+        fileMatch: testSchemaFileMatch,
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
+    });
+
+    it('Schema Settings should preserve fragments when normalizing absolute local paths', async () => {
+      xhrStub.resolves({
+        responseText: '{"schemas":[]}',
+      });
+      const absoluteSchemaPath = '/Users/test/schemas/schema.json';
+      const schemaUri = `${absoluteSchemaPath}#/definitions/foo`;
+      const schemas = {};
+      schemas[schemaUri] = testSchemaFileMatch;
+      workspaceStub.getConfiguration.resolves([{ schemas: schemas }, {}, {}, {}]);
+      const configureSpy = await configureSchemaSettingsTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: `${URI.file(absoluteSchemaPath).toString()}#/definitions/foo`,
+        fileMatch: testSchemaFileMatch,
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
+    });
+
+    it('Schema Settings should preserve remote schema URLs', async () => {
+      xhrStub.resolves({
+        responseText: '{"schemas":[]}',
+      });
+      const schemaUri = 'https://example.com/schemas/schema.json#/definitions/foo';
+      const schemas = {};
+      schemas[schemaUri] = testSchemaFileMatch;
+      workspaceStub.getConfiguration.resolves([{ schemas: schemas }, {}, {}, {}]);
+      const configureSpy = await configureSchemaSettingsTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: schemaUri,
+        fileMatch: testSchemaFileMatch,
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
+    });
+    it('Schema Settings should normalize multiple absolute local paths for the same file', async () => {
+      xhrStub.resolves({
+        responseText: '{"schemas":[]}',
+      });
+      const schemaPath1 = '/Users/test/schemas/schema1.json';
+      const schemaPath2 = '/Users/test/schemas/schema2.json';
+      const fileMatch = ['asdf.yaml'];
+      const schemas = {};
+      schemas[schemaPath1] = fileMatch;
+      schemas[schemaPath2] = fileMatch;
+      workspaceStub.getConfiguration.resolves([{ schemas }, {}, {}, {}]);
+      const configureSpy = await configureSchemaSettingsTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: URI.file(schemaPath1).toString(),
+        fileMatch,
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
+      expect(configureSpy.schemas).deep.include({
+        uri: URI.file(schemaPath2).toString(),
+        fileMatch,
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
     });
   });
 

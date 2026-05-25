@@ -7,7 +7,6 @@ import { Connection } from 'vscode-languageserver/node';
 import { JSONSchema } from '../../languageservice/jsonSchema';
 import { yamlDocumentsCache } from '../../languageservice/parser/yaml-documents';
 import { YAMLSchemaService } from '../../languageservice/services/yamlSchemaService';
-import { getSchemaUrls } from '../../languageservice/utils/schemaUrls';
 import { SettingsState } from '../../yamlSettings';
 import { JSONSchemaDescription, JSONSchemaDescriptionExt, SchemaSelectionRequests } from '../../requestTypes';
 
@@ -47,15 +46,14 @@ export class JSONSchemaSelection {
     const yamlDoc = yamlDocumentsCache.getYamlDocument(document);
 
     for (const currentYAMLDoc of yamlDoc.documents) {
-      const schema = await this.schemaService.getSchemaForResource(document.uri, currentYAMLDoc);
-      if (schema?.schema) {
-        const schemaUrls = getSchemaUrls(schema?.schema);
-        if (schemaUrls.size === 0) {
-          continue;
-        }
-        for (const urlToSchema of schemaUrls) {
-          schemas.set(urlToSchema[0], urlToSchema[1]);
-        }
+      const schemaDescriptions = await this.schemaService.getSchemaDescriptionsForResource(document.uri, currentYAMLDoc);
+      for (const schemaDescription of schemaDescriptions) {
+        schemas.set(schemaDescription.uri, {
+          url: schemaDescription.uri,
+          title: schemaDescription.name,
+          description: schemaDescription.description,
+          versions: schemaDescription.versions,
+        });
       }
     }
     return schemas;

@@ -10,7 +10,7 @@ import * as url from 'url';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import { parse } from '../src/languageservice/parser/yamlParser07';
 import { SettingsState } from '../src/yamlSettings';
-import { BASE_KUBERNETES_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
+import { BASE_KUBERNETES_SCHEMA_URL, getSchemaUrls, KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -449,6 +449,42 @@ describe('YAML Schema Service', () => {
       // _preferLocalBaseForRemoteId should NOT probe for the $id basename as a local sibling
       // when the parent schema was loaded from https:// (not file://)
       expect(requestedUris).to.not.include('https://example.com/schemas/schema.json');
+    });
+
+    it('should resolve and expose multiple local file schemas with absolute local paths', async () => {
+      const content = `foo: bar`;
+      const yamlDock = parse(content);
+      const schemaOneUri = 'file:///Users/test/schemas/schema1.json';
+      const schemaTwoUri = 'file:///Users/test/schemas/schema2.json';
+
+      requestServiceMock = sandbox.fake((uri: string) => {
+        if (uri === schemaOneUri) {
+          return Promise.resolve(JSON.stringify({ title: 'Schema 1', type: 'object' }));
+        }
+        if (uri === schemaTwoUri) {
+          return Promise.resolve(JSON.stringify({ title: 'Schema 2', type: 'object' }));
+        }
+        return Promise.reject<string>(`Resource ${uri} not found.`);
+      });
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+      service.registerExternalSchema(schemaOneUri, ['test.yaml']);
+      service.registerExternalSchema(schemaTwoUri, ['test.yaml']);
+
+      const schema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+
+      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      expect(requestedUris).to.include(schemaOneUri);
+      expect(requestedUris).to.include(schemaTwoUri);
+      expect(requestedUris.some((uri) => uri.startsWith('schemaservice:///'))).to.be.false;
+
+      expect(schema.errors).to.eql([]);
+      expect(schema.schema.url).to.equal('schemaservice://combinedSchema/test.yaml');
+      expect(schema.schema.allOf.map((item) => item.url)).to.have.members([schemaOneUri, schemaTwoUri]);
+
+      const schemaUris = Array.from(getSchemaUrls(schema.schema).keys());
+      expect(schemaUris).to.have.members([schemaOneUri, schemaTwoUri]);
+      expect(schemaUris.some((uri) => uri.startsWith('schemaservice:///'))).to.be.false;
     });
 
     it('should handle modeline schema comment in the middle of file', () => {
