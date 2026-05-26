@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import { configure as configureHttpRequests, xhr } from 'request-light';
 import { Connection, DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
+import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import {
   checkSchemaURI,
@@ -18,6 +19,8 @@ import { Telemetry } from '../../languageservice/telemetry';
 import { ValidationHandler } from './validationHandlers';
 
 export class SettingsHandler {
+  private schemaSettings: string | undefined;
+
   constructor(
     private readonly connection: Connection,
     private readonly languageService: LanguageService,
@@ -41,7 +44,13 @@ export class SettingsHandler {
   /**
    *  The server pull the 'yaml', 'http.proxy', 'http.proxyStrictSSL', '[yaml]' settings sections
    */
-  async pullConfiguration(): Promise<void> {
+  pullConfiguration(): Promise<void> {
+    const configurationPullPromise = this.doPullConfiguration();
+    this.yamlSettings.configurationPullPromise = configurationPullPromise.catch(() => undefined);
+    return configurationPullPromise;
+  }
+
+  private async doPullConfiguration(): Promise<void> {
     const config = await this.connection.workspace.getConfiguration([
       { section: 'yaml' },
       { section: 'http' },
@@ -356,10 +365,26 @@ export class SettingsHandler {
       languageSettings.schemas = languageSettings.schemas.concat(this.yamlSettings.schemaStoreSettings);
     }
 
-    this.languageService.configure(languageSettings);
+    const schemaSettings = JSON.stringify(languageSettings.schemas ?? []);
+    const shouldRefreshCodeLens = this.schemaSettings !== undefined && this.schemaSettings !== schemaSettings;
 
+    this.languageService.configure(languageSettings);
+    this.schemaSettings = schemaSettings;
+
+    if (shouldRefreshCodeLens) {
+      this.refreshCodeLens();
+    }
     // Revalidate any open text documents
     this.yamlSettings.documents.all().forEach((document) => this.validationHandler.validate(document));
+  }
+
+  private refreshCodeLens(): void {
+    if (!this.yamlSettings.hasCodeLensRefreshSupport) {
+      return;
+    }
+    this.connection
+      .sendRequest(CodeLensRefreshRequest.type)
+      .catch((err) => this.telemetry.sendError('yaml.codeLens.refresh.error', err));
   }
 
   /**
