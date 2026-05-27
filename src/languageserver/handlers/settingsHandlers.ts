@@ -12,14 +12,15 @@ import {
   JSON_SCHEMASTORE_URL,
   KUBERNETES_SCHEMA_URL,
 } from '../../languageservice/utils/schemaUrls';
-import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
+import { equals } from '../../languageservice/utils/objects';
+import { LanguageService, LanguageSettings, SchemaPriority, SchemasSettings } from '../../languageservice/yamlLanguageService';
 import { SchemaSelectionRequests } from '../../requestTypes';
 import { Settings, SettingsState } from '../../yamlSettings';
 import { Telemetry } from '../../languageservice/telemetry';
 import { ValidationHandler } from './validationHandlers';
 
 export class SettingsHandler {
-  private schemaSettings: string | undefined;
+  private schemaSettings: SchemasSettings[] | undefined;
 
   constructor(
     private readonly connection: Connection,
@@ -365,12 +366,10 @@ export class SettingsHandler {
       languageSettings.schemas = languageSettings.schemas.concat(this.yamlSettings.schemaStoreSettings);
     }
 
-    const schemaSettings = JSON.stringify(languageSettings.schemas ?? []);
-    const shouldRefreshCodeLens = this.schemaSettings !== undefined && this.schemaSettings !== schemaSettings;
-
     this.languageService.configure(languageSettings);
-    this.schemaSettings = schemaSettings;
 
+    const shouldRefreshCodeLens = this.schemaSettings !== undefined && !equals(this.schemaSettings, languageSettings.schemas);
+    this.schemaSettings = languageSettings.schemas;
     if (shouldRefreshCodeLens) {
       this.refreshCodeLens();
     }
