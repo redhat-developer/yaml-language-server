@@ -8,6 +8,7 @@ import * as request from 'request-light';
 import * as sinon from 'sinon';
 import * as sinonChai from 'sinon-chai';
 import { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver';
+import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
 import { LanguageService, LanguageSettings, SchemaConfiguration, SchemaPriority } from '../src';
 import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers';
@@ -77,6 +78,54 @@ describe('Settings Handlers Tests', () => {
 
     settingsHandler.registerHandlers();
     expect(connection.client.register).calledOnce;
+  });
+
+  it('should request CodeLens refresh after schema settings update if client supports it', async () => {
+    settingsState.hasCodeLensRefreshSupport = true;
+    const sendRequest = sandbox.stub().resolves();
+    connection.sendRequest = sendRequest;
+    workspaceStub.getConfiguration.onFirstCall().resolves([{ schemaStore: { enable: false } }, {}, {}, {}, {}]);
+    workspaceStub.getConfiguration
+      .onSecondCall()
+      .resolves([
+        { schemas: { 'https://example.com/schema.json': 'test.yaml' }, schemaStore: { enable: false } },
+        {},
+        {},
+        {},
+        {},
+      ]);
+    const settingsHandler = new SettingsHandler(
+      connection,
+      languageService as unknown as LanguageService,
+      settingsState,
+      validationHandler as unknown as ValidationHandler,
+      {} as Telemetry
+    );
+    await settingsHandler.pullConfiguration();
+    await settingsHandler.pullConfiguration();
+    expect(sendRequest).calledOnceWithExactly(CodeLensRefreshRequest.type);
+  });
+
+  it('should not request CodeLens refresh when only non-schema settings update', async () => {
+    settingsState.hasCodeLensRefreshSupport = true;
+    const sendRequest = sandbox.stub().resolves();
+    connection.sendRequest = sendRequest;
+    const yamlSettings = {
+      schemas: { 'https://example.com/schema.json': 'test.yaml' },
+      schemaStore: { enable: false },
+    };
+    workspaceStub.getConfiguration.onFirstCall().resolves([yamlSettings, {}, {}, {}, {}]);
+    workspaceStub.getConfiguration.onSecondCall().resolves([{ ...yamlSettings, keyOrdering: true }, {}, {}, {}, {}]);
+    const settingsHandler = new SettingsHandler(
+      connection,
+      languageService as unknown as LanguageService,
+      settingsState,
+      validationHandler as unknown as ValidationHandler,
+      {} as Telemetry
+    );
+    await settingsHandler.pullConfiguration();
+    await settingsHandler.pullConfiguration();
+    expect(sendRequest).not.called;
   });
 
   describe('Settings for YAML style should ', () => {

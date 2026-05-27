@@ -119,6 +119,8 @@ export class SettingsState {
   hierarchicalDocumentSymbolSupport = false;
   hasWorkspaceFolderCapability = false;
   hasConfigurationCapability = false;
+  hasCodeLensRefreshSupport = false;
+  configurationPullPromise: Promise<void> = Promise.resolve();
   useVSCodeContentRequest = false;
   yamlVersion: YamlVersion = '1.2';
   useSchemaSelectionRequests = false;

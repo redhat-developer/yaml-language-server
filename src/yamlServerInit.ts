@@ -90,6 +90,7 @@ export class YAMLServerInit {
     this.yamlSettings.hasConfigurationCapability = !!(
       this.yamlSettings.capabilities.workspace && !!this.yamlSettings.capabilities.workspace.configuration
     );
+    this.yamlSettings.hasCodeLensRefreshSupport = !!this.yamlSettings.capabilities.workspace?.codeLens?.refreshSupport;
 
     this.yamlSettings.hasWsChangeWatchedFileDynamicRegistration = !!(
       this.yamlSettings.capabilities.workspace &&

@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import { configure as configureHttpRequests, xhr } from 'request-light';
 import { Connection, DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
+import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import {
   checkSchemaURI,
@@ -11,13 +12,16 @@ import {
   JSON_SCHEMASTORE_URL,
   KUBERNETES_SCHEMA_URL,
 } from '../../languageservice/utils/schemaUrls';
-import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
+import { equals } from '../../languageservice/utils/objects';
+import { LanguageService, LanguageSettings, SchemaPriority, SchemasSettings } from '../../languageservice/yamlLanguageService';
 import { SchemaSelectionRequests } from '../../requestTypes';
 import { Settings, SettingsState } from '../../yamlSettings';
 import { Telemetry } from '../../languageservice/telemetry';
 import { ValidationHandler } from './validationHandlers';
 
 export class SettingsHandler {
+  private schemaSettings: SchemasSettings[] | undefined;
+
   constructor(
     private readonly connection: Connection,
     private readonly languageService: LanguageService,
@@ -41,7 +45,13 @@ export class SettingsHandler {
   /**
    *  The server pull the 'yaml', 'http.proxy', 'http.proxyStrictSSL', '[yaml]' settings sections
    */
-  async pullConfiguration(): Promise<void> {
+  pullConfiguration(): Promise<void> {
+    const configurationPullPromise = this.doPullConfiguration();
+    this.yamlSettings.configurationPullPromise = configurationPullPromise.catch(() => undefined);
+    return configurationPullPromise;
+  }
+
+  private async doPullConfiguration(): Promise<void> {
     const config = await this.connection.workspace.getConfiguration([
       { section: 'yaml' },
       { section: 'http' },
@@ -358,8 +368,22 @@ export class SettingsHandler {
 
     this.languageService.configure(languageSettings);
 
+    const shouldRefreshCodeLens = this.schemaSettings !== undefined && !equals(this.schemaSettings, languageSettings.schemas);
+    this.schemaSettings = languageSettings.schemas;
+    if (shouldRefreshCodeLens) {
+      this.refreshCodeLens();
+    }
     // Revalidate any open text documents
     this.yamlSettings.documents.all().forEach((document) => this.validationHandler.validate(document));
+  }
+
+  private refreshCodeLens(): void {
+    if (!this.yamlSettings.hasCodeLensRefreshSupport) {
+      return;
+    }
+    this.connection
+      .sendRequest(CodeLensRefreshRequest.type)
+      .catch((err) => this.telemetry.sendError('yaml.codeLens.refresh.error', err));
   }
 
   /**
