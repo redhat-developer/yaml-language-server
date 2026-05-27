@@ -242,11 +242,11 @@ export class LanguageHandlers {
   }
 
   async codeLensHandler(params: CodeLensParams): Promise<CodeLens[] | undefined> {
+    await this.yamlSettings.configurationPullPromise;
     const textDocument = this.yamlSettings.documents.get(params.textDocument.uri);
     if (!textDocument) {
       return;
     }
-    await this.yamlSettings.configurationPullPromise;
     return this.languageService.getCodeLens(textDocument);
   }
 
