@@ -708,7 +708,7 @@ export class YamlCompletion {
     const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
     const hasOnlyWhitespace = lineContent.trim().length === 0;
     const hasColon = lineContent.indexOf(':') !== -1;
-    const isInArray = lineContent.trimLeft().indexOf('-') === 0;
+    const isInArray = lineContent.trimStart().indexOf('-') === 0;
     const nodeParent = doc.getParent(node);
     const matchOriginal = matchingSchemas.find((it) => it.node.internalNode === originalNode && it.schema.properties);
     const oneOfSchema = matchingSchemas.filter((schema) => schema.schema.oneOf).map((oneOfSchema) => oneOfSchema.schema.oneOf)[0];
@@ -1001,7 +1001,7 @@ export class YamlCompletion {
     index?: number
   ): void {
     const schemaType = getSchemaTypeName(schema);
-    const insertText = `- ${this.getInsertTextForObject(schema, separatorAfter).insertText.trimLeft()}`;
+    const insertText = `- ${this.getInsertTextForObject(schema, separatorAfter).insertText.trimStart()}`;
     //append insertText to documentation
     const schemaTypeTitle = schemaType ? ' type `' + schemaType + '`' : '';
     const schemaDescription = schema.description ? ' (' + schema.description + ')' : '';
@@ -1100,6 +1100,14 @@ export class YamlCompletion {
       if (propertySchema.properties) {
         return `${resultText}\n${this.getInsertTextForObject(propertySchema, separatorAfter, indent).insertText}`;
       } else if (propertySchema.items) {
+        if (type === 'array' && Array.isArray(propertySchema.default)) {
+          if (propertySchema.default.length === 0) {
+            return `${resultText} []${separatorAfter}`;
+          }
+          return (
+            resultText + this.getInsertTemplateForValue(propertySchema.default, indent, { index: 1 }, separatorAfter).trimEnd()
+          );
+        }
         return `${resultText}\n${indent}- ${
           this.getInsertTextForArray(propertySchema.items, separatorAfter, 1, indent).insertText
         }`;
@@ -1231,7 +1239,7 @@ export class YamlCompletion {
     if (insertText.trim().length === 0) {
       insertText = `${indent}$${insertIndex++}\n`;
     }
-    insertText = insertText.trimRight() + separatorAfter;
+    insertText = insertText.trimEnd() + separatorAfter;
     return { insertText, insertIndex };
   }
 
@@ -1251,24 +1259,28 @@ export class YamlCompletion {
         type = 'array';
       }
     }
-    switch (schema.type) {
-      case 'boolean':
-        insertText = `\${${insertIndex++}:false}`;
-        break;
-      case 'number':
-      case 'integer':
-        insertText = `\${${insertIndex++}:0}`;
-        break;
-      case 'string':
-        insertText = `\${${insertIndex++}}`;
-        break;
-      case 'object':
-        {
-          const objectInsertResult = this.getInsertTextForObject(schema, separatorAfter, `${indent}  `, insertIndex++);
-          insertText = objectInsertResult.insertText.trimLeft();
-          insertIndex = objectInsertResult.insertIndex;
-        }
-        break;
+    if (isDefined(schema.default)) {
+      insertText = this.getInsertTextForGuessedValue(schema.default, separatorAfter, type);
+    } else {
+      switch (schema.type) {
+        case 'boolean':
+          insertText = `\${${insertIndex++}:false}`;
+          break;
+        case 'number':
+        case 'integer':
+          insertText = `\${${insertIndex++}:0}`;
+          break;
+        case 'string':
+          insertText = `\${${insertIndex++}}`;
+          break;
+        case 'object':
+          {
+            const objectInsertResult = this.getInsertTextForObject(schema, separatorAfter, `${indent}  `, insertIndex++);
+            insertText = objectInsertResult.insertText.trimStart();
+            insertIndex = objectInsertResult.insertIndex;
+          }
+          break;
+      }
     }
     return { insertText, insertIndex };
   }

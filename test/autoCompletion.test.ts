@@ -2410,6 +2410,146 @@ describe('Auto Completion Tests', () => {
       expect(envItem.textEdit.newText).equal('env: ${1:1}');
     });
 
+    it('should use array property default when completing array property', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          'foo-default-outside': {
+            type: 'array',
+            default: ['foo-default-outside'],
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['foo-default-outside'],
+      });
+
+      const completion = await parseSetup('foo', 3);
+
+      const defaultOutside = completion.items.find((i) => i.label === 'foo-default-outside');
+      expect(defaultOutside).to.not.undefined;
+      expect(defaultOutside.textEdit.newText).equal('foo-default-outside:\n  - ${1:foo-default-outside}');
+
+      const nextItemContent = 'foo-default-outside:\n  - foo-default-outside\n  - ';
+      const nextItemCompletion = await parseSetup(nextItemContent, nextItemContent.length);
+      expect(nextItemCompletion.items).is.empty;
+    });
+
+    it('should use array item default when completing array property', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          'foo-default-in-items': {
+            type: 'array',
+            items: {
+              type: 'string',
+              default: 'foo-default-in-items',
+            },
+          },
+        },
+        required: ['foo-default-in-items'],
+      });
+
+      const completion = await parseSetup('foo', 3);
+
+      const defaultInItems = completion.items.find((i) => i.label === 'foo-default-in-items');
+      expect(defaultInItems).to.not.undefined;
+      expect(defaultInItems.textEdit.newText).equal('foo-default-in-items:\n  - ${1:foo-default-in-items}');
+
+      const nextItemContent = 'foo-default-in-items:\n  - foo-default-in-items\n  - ';
+      const nextItemCompletion = await parseSetup(nextItemContent, nextItemContent.length);
+      const nextItemDefault = nextItemCompletion.items.find((i) => i.label === 'foo-default-in-items');
+      expect(nextItemDefault).to.not.undefined;
+      expect(nextItemDefault.textEdit.newText).equal('foo-default-in-items');
+    });
+
+    it('should prefer array property default over item default', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          'foo-two-default': {
+            type: 'array',
+            default: ['foo-two-default'],
+            items: {
+              type: 'string',
+              default: 'item-default',
+            },
+          },
+        },
+        required: ['foo-two-default'],
+      });
+
+      const completion = await parseSetup('foo', 3);
+
+      const twoDefaults = completion.items.find((i) => i.label === 'foo-two-default');
+      expect(twoDefaults).to.not.undefined;
+      expect(twoDefaults.textEdit.newText).equal('foo-two-default:\n  - ${1:foo-two-default}');
+
+      const nextItemContent = 'foo-two-default:\n  - foo-two-default\n  - ';
+      const nextItemCompletion = await parseSetup(nextItemContent, nextItemContent.length);
+      const nextItemDefault = nextItemCompletion.items.find((i) => i.label === 'item-default');
+      expect(nextItemDefault).to.not.undefined;
+      expect(nextItemDefault.textEdit.newText).equal('item-default');
+    });
+
+    it('should keep parent skeleton array defaults on separate snippet tab stops', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        title: 'dummy',
+        properties: {
+          bar: {
+            type: 'string',
+            default: 'hello',
+          },
+          num: {
+            type: 'number',
+            default: '42',
+          },
+          'foo-two-default': {
+            type: 'array',
+            default: ['foo-two-default'],
+            items: {
+              type: 'string',
+              default: 'item-default',
+            },
+          },
+          'foo-default-in-items': {
+            type: 'array',
+            items: {
+              type: 'string',
+              default: 'foo-default-in-items',
+            },
+          },
+          'foo-default-outside': {
+            type: 'array',
+            default: ['foo-default-outside'],
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['foo-two-default', 'foo-default-in-items', 'foo-default-outside', 'bar', 'num'],
+      });
+
+      const completion = await parseSetup('dum|m|y');
+      const dummy = completion.items.find((i) => i.label === 'dummy');
+
+      expect(dummy).to.not.undefined;
+      expect(dummy.textEdit.newText).equal(
+        [
+          'bar: hello',
+          'num: 42',
+          'foo-two-default:',
+          '  - ${1:foo-two-default}',
+          'foo-default-in-items:',
+          '  - ${2:foo-default-in-items}',
+          'foo-default-outside:',
+          '  - ${3:foo-default-outside}',
+        ].join('\n')
+      );
+    });
+
     it('should complete string which contains number in examples values', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
