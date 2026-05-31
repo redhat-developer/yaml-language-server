@@ -257,10 +257,21 @@ export class SettingsHandler {
 
     for (const schemaIndex in schemas.schemas) {
       const schema = schemas.schemas[schemaIndex];
-
-      if (schema && schema.fileMatch) {
-        for (const fileMatch in schema.fileMatch) {
-          const currFileMatch: string = schema.fileMatch[fileMatch];
+      if (!schema.url) {
+        continue;
+      }
+      const fileMatches = schema.fileMatch ?? [];
+      if (fileMatches.length === 0) {
+        languageSettings.schemas.push({
+          uri: schema.url,
+          fileMatch: [],
+          priority: SchemaPriority.SchemaStore,
+          name: schema.name,
+          description: schema.description,
+          versions: schema.versions,
+        });
+      } else {
+        for (const currFileMatch of fileMatches) {
           // If the schema is for files with a YAML extension, save the schema association
           if (
             this.yamlSettings.fileExtensions.findIndex((value) => {

@@ -277,6 +277,37 @@ describe('Settings Handlers Tests', () => {
         versions: undefined,
       });
     });
+    it('SettingsHandler should include schemas without file matches as selectable schemas', async () => {
+      const languageServerSetup = setupLanguageService({});
+      const languageService = languageServerSetup.languageService;
+      xhrStub.resolves({
+        responseText: `{"schemas": [
+        {
+          "name": "Traefik v3",
+          "description": "Traefik v3 YAML configuration file",
+          "url": "https://www.schemastore.org/traefik-v3.json"
+        }]}`,
+      });
+      const settingsHandler = new SettingsHandler(
+        connection,
+        languageService as unknown as LanguageService,
+        settingsState,
+        validationHandler as unknown as ValidationHandler,
+        {} as Telemetry
+      );
+      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      const configureSpy = sinon.stub(languageService, 'configure');
+      await settingsHandler.pullConfiguration();
+      configureSpy.restore();
+      expect(settingsState.schemaStoreSettings).deep.include({
+        uri: 'https://www.schemastore.org/traefik-v3.json',
+        fileMatch: [],
+        priority: SchemaPriority.SchemaStore,
+        name: 'Traefik v3',
+        description: 'Traefik v3 YAML configuration file',
+        versions: undefined,
+      });
+    });
   });
 
   it('SettingsHandler should not modify file match patterns', async () => {
