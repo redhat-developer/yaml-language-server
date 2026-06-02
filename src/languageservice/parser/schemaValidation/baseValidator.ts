@@ -703,7 +703,9 @@ export abstract class BaseValidator {
       const subMatchingSchemas = matchingSchemas.newSub();
 
       this.validateNode(node, subSchema, original, subValidationResult, subMatchingSchemas, options);
-      matchingSchemas.merge(subMatchingSchemas);
+      if (!callFromAutoComplete) {
+        matchingSchemas.merge(subMatchingSchemas);
+      }
 
       const filePatternAssociation = subSchema?.filePatternAssociation;
       if (filePatternAssociation) {
