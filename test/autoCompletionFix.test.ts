@@ -912,6 +912,198 @@ objB:
     });
   });
 
+  describe('conditional schemas', () => {
+    it('should not suggest value from conditional if branch', async () => {
+      const schema: JSONSchema = {
+        required: ['on'],
+        type: 'object',
+        properties: {
+          on: {
+            type: 'object',
+            properties: {
+              workflow_dispatch: {
+                $comment: 'https://github.blog/changelog/2020-07-06-github-actions-manual-triggers-with-workflow_dispatch/',
+                description:
+                  "You can now create workflows that are manually triggered with the new workflow_dispatch event. You will then see a 'Run workflow' button on the Actions tab, enabling you to easily trigger a run.",
+                properties: {
+                  inputs: {
+                    $comment:
+                      'https://help.github.com/en/github/automating-your-workflow-with-github-actions/metadata-syntax-for-github-actions#inputs',
+                    description:
+                      'Input parameters allow you to specify data that the action expects to use during runtime. GitHub stores input parameters as environment variables. Input ids with uppercase letters are converted to lowercase during runtime. We recommended using lowercase input ids.',
+                    type: 'object',
+                    patternProperties: {
+                      '^[_a-zA-Z][a-zA-Z0-9_-]*$': {
+                        $ref: '#/definitions/workflowDispatchInput',
+                      },
+                    },
+                    additionalProperties: false,
+                  },
+                },
+                additionalProperties: false,
+              },
+            },
+          },
+          jobs: {
+            type: 'object',
+          },
+        },
+        definitions: {
+          workflowDispatchInput: {
+            $comment:
+              'https://help.github.com/en/github/automating-your-workflow-with-github-actions/metadata-syntax-for-github-actions#inputsinput_id',
+            description:
+              "A string identifier to associate with the input. The value of <input_id> is a map of the input's metadata. The <input_id> must be a unique identifier within the inputs object. The <input_id> must start with a letter or _ and contain only alphanumeric characters, -, or _.",
+            type: 'object',
+            properties: {
+              description: {
+                $comment:
+                  'https://help.github.com/en/github/automating-your-workflow-with-github-actions/metadata-syntax-for-github-actions#inputsinput_iddescription',
+                description: 'A string description of the input parameter.',
+                type: 'string',
+              },
+              deprecationMessage: {
+                description: 'A string shown to users using the deprecated input.',
+                type: 'string',
+              },
+              required: {
+                $comment:
+                  'https://help.github.com/en/github/automating-your-workflow-with-github-actions/metadata-syntax-for-github-actions#inputsinput_idrequired',
+                description:
+                  'A boolean to indicate whether the action requires the input parameter. Set to true when the parameter is required.',
+                type: 'boolean',
+              },
+              default: {
+                $comment:
+                  'https://help.github.com/en/github/automating-your-workflow-with-github-actions/metadata-syntax-for-github-actions#inputsinput_iddefault',
+                description:
+                  "A string representing the default value. The default value is used when an input parameter isn't specified in a workflow file.",
+              },
+              type: {
+                $comment:
+                  'https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_dispatchinputsinput_idtype',
+                description: 'A string representing the type of the input.',
+                type: 'string',
+                enum: ['string', 'choice', 'boolean', 'number', 'environment'],
+              },
+              options: {
+                $comment: 'https://github.blog/changelog/2021-11-10-github-actions-input-types-for-manual-workflows',
+                description: 'The options of the dropdown list, if the type is a choice.',
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                minItems: 1,
+              },
+            },
+            allOf: [
+              {
+                if: {
+                  properties: {
+                    type: {
+                      const: 'string',
+                    },
+                  },
+                  required: ['type'],
+                },
+                then: {
+                  properties: {
+                    default: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+              {
+                if: {
+                  properties: {
+                    type: {
+                      const: 'boolean',
+                    },
+                  },
+                  required: ['type'],
+                },
+                then: {
+                  properties: {
+                    default: {
+                      type: 'boolean',
+                    },
+                  },
+                },
+              },
+              {
+                if: {
+                  properties: {
+                    type: {
+                      const: 'number',
+                    },
+                  },
+                  required: ['type'],
+                },
+                then: {
+                  properties: {
+                    default: {
+                      type: 'number',
+                    },
+                  },
+                },
+              },
+              {
+                if: {
+                  properties: {
+                    type: {
+                      const: 'environment',
+                    },
+                  },
+                  required: ['type'],
+                },
+                then: {
+                  properties: {
+                    default: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+              {
+                if: {
+                  properties: {
+                    type: {
+                      const: 'choice',
+                    },
+                  },
+                  required: ['type'],
+                },
+                then: {
+                  required: ['options'],
+                },
+              },
+            ],
+            additionalProperties: false,
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+
+      const content = `name: Check configuration schema changes
+
+on:
+  workflow_dispatch:
+    inputs:
+      sdaf:
+        
+
+jobs:
+  foo:
+    uses: repo/test.yml@main`;
+      const completion = await parseSetup(content, 7, 8);
+      const labels = completion.items.map((i) => i.label);
+
+      expect(labels).to.include.members(['description', 'required', 'default', 'type', 'options']);
+      expect(labels.filter((label) => label === 'GitHub Workflow')).to.be.empty;
+    });
+  });
+
   describe('extra space after cursor', () => {
     it('simple const', async () => {
       const schema: JSONSchema = {
