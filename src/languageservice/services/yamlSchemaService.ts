@@ -390,7 +390,15 @@ export class YAMLSchemaService extends JSONSchemaService {
         toValidate = _cloneSchema(node, new Map(), stopAtDialectBoundary) as JSONSchema;
       }
 
-      if (!validator(toValidate)) {
+      let valid = false;
+      try {
+        valid = validator(toValidate);
+      } catch (e) {
+        // AJV overflows on recursive/cyclic schemas; attempt to degrade gracefully
+        console.warn(l10n.t("Schema '{0}' could not be fully validated: {1}", loc, e.message));
+        return;
+      }
+      if (!valid) {
         localizeAjvErrors(validator.errors, ajvErrorLocale);
         const errs: string[] = [];
         for (const err of validator.errors as DefinedError[]) {
