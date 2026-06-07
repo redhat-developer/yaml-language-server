@@ -1,7 +1,6 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
-import { isMap, isSeq, visit } from 'yaml';
-import { FlowCollection } from 'yaml/dist/parse/cst';
+import { CST, isMap, isSeq, visit } from 'yaml';
 import { SingleYAMLDocument } from '../../parser/yaml-documents';
 import { LanguageSettings } from '../../yamlLanguageService';
 import { AdditionalValidator } from './types';
@@ -42,7 +41,7 @@ export class YAMLStyleValidator implements AdditionalValidator {
     return result;
   }
 
-  private getRangeOf(document: TextDocument, node: FlowCollection): Range {
+  private getRangeOf(document: TextDocument, node: CST.FlowCollection): Range {
     const endOffset = node.end[0].offset;
     let endPosition = document.positionAt(endOffset);
     endPosition = { character: endPosition.character + 1, line: endPosition.line };

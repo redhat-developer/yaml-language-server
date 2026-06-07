@@ -20,7 +20,6 @@ import { ClientCapabilities, CodeActionParams } from 'vscode-languageserver-prot
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { CST, isMap, isSeq, isScalar, Scalar, visit, YAMLMap } from 'yaml';
-import { SourceToken } from 'yaml/dist/parse/cst';
 
 import { YamlCommands } from '../../commands';
 import { TextBuffer } from '../utils/textBuffer';
@@ -313,12 +312,12 @@ export class YamlCodeActions {
         if (node && isMap(node.internalNode)) {
           const sorted: YAMLMap = structuredClone(node.internalNode);
 
-          const _getTrailingTokens = (value: CST.Token): SourceToken[] => {
+          const _getTrailingTokens = (value: CST.Token): CST.SourceToken[] => {
             if (!value) return;
             if (CST.isScalar(value)) {
               if (value.type === 'block-scalar') {
                 value.props ??= [];
-                return value.props as SourceToken[];
+                return value.props as CST.SourceToken[];
               }
               value.end ??= [];
               return value.end;
@@ -364,7 +363,7 @@ export class YamlCodeActions {
                 _getTrailingTokens(uItem.value)?.find((p) => p.type === 'newline' && p.offset < node.offset + node.length) ??
                 null;
               if (uNewLineToken && itemNewLineIndex < 0 && itemTokens) {
-                itemTokens.push({ type: 'newline', indent: 0, offset: item.value.offset, source: '\n' } as SourceToken);
+                itemTokens.push({ type: 'newline', indent: 0, offset: item.value.offset, source: '\n' });
               }
               if (!uNewLineToken && itemNewLineIndex > -1 && itemTokens) {
                 itemTokens.splice(itemNewLineIndex, 1);

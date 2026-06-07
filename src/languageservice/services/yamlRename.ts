@@ -10,14 +10,13 @@ import { matchOffsetToDocument } from '../utils/arrUtils';
 import { TextBuffer } from '../utils/textBuffer';
 import { Telemetry } from '../telemetry';
 import { CST, isAlias, isCollection, isScalar, visit, Node } from 'yaml';
-import { SourceToken, CollectionItem } from 'yaml/dist/parse/cst';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { isCollectionItem } from '../utils/yamlAstUtils';
 import { PrepareRenameParams, RenameParams, ResponseError, ErrorCodes } from 'vscode-languageserver-protocol';
 
 interface RenameTarget {
   anchorNode: Node;
-  token: SourceToken;
+  token: CST.SourceToken;
   yamlDoc: SingleYAMLDocument;
 }
 
@@ -64,7 +63,7 @@ export class YamlRename {
 
       visit(target.yamlDoc.internalDocument, (key, node) => {
         if (isAlias(node) && node.srcToken && node.resolve(target.yamlDoc.internalDocument) === target.anchorNode) {
-          edits.push(TextEdit.replace(this.getNameRange(document, node.srcToken as SourceToken), newName));
+          edits.push(TextEdit.replace(this.getNameRange(document, node.srcToken as CST.SourceToken), newName));
         }
       });
 
@@ -95,12 +94,12 @@ export class YamlRename {
       return this.findByToken(yamlDoc, offset);
     }
 
-    if (isAlias(node) && node.srcToken && this.isOffsetInsideToken(node.srcToken as SourceToken, offset)) {
+    if (isAlias(node) && node.srcToken && this.isOffsetInsideToken(node.srcToken as CST.SourceToken, offset)) {
       const anchorNode = node.resolve(yamlDoc.internalDocument);
       if (!anchorNode) {
         return null;
       }
-      return { anchorNode, token: node.srcToken as SourceToken, yamlDoc };
+      return { anchorNode, token: node.srcToken as CST.SourceToken, yamlDoc };
     }
 
     if ((isCollection(node) || isScalar(node)) && node.anchor) {
@@ -116,10 +115,10 @@ export class YamlRename {
   private findByToken(yamlDoc: SingleYAMLDocument, offset: number): RenameTarget | null {
     let target: RenameTarget;
     visit(yamlDoc.internalDocument, (key, node) => {
-      if (isAlias(node) && node.srcToken && this.isOffsetInsideToken(node.srcToken as SourceToken, offset)) {
+      if (isAlias(node) && node.srcToken && this.isOffsetInsideToken(node.srcToken as CST.SourceToken, offset)) {
         const anchorNode = node.resolve(yamlDoc.internalDocument);
         if (anchorNode) {
-          target = { anchorNode, token: node.srcToken as SourceToken, yamlDoc };
+          target = { anchorNode, token: node.srcToken as CST.SourceToken, yamlDoc };
           return visit.BREAK;
         }
       }
@@ -135,14 +134,14 @@ export class YamlRename {
     return target ?? null;
   }
 
-  private findAnchorToken(yamlDoc: SingleYAMLDocument, node: Node): SourceToken | undefined {
+  private findAnchorToken(yamlDoc: SingleYAMLDocument, node: Node): CST.SourceToken | undefined {
     const parent = yamlDoc.getParent(node);
-    const candidates = [];
-    if (parent && (parent as unknown as { srcToken?: SourceToken }).srcToken) {
-      candidates.push((parent as unknown as { srcToken: SourceToken }).srcToken);
+    const candidates: CST.SourceToken[] = [];
+    if (parent && parent.srcToken) {
+      candidates.push(parent.srcToken as CST.SourceToken);
     }
-    if ((node as unknown as { srcToken?: SourceToken }).srcToken) {
-      candidates.push((node as unknown as { srcToken: SourceToken }).srcToken);
+    if (node.srcToken) {
+      candidates.push(node.srcToken as CST.SourceToken);
     }
 
     for (const token of candidates) {
@@ -155,13 +154,13 @@ export class YamlRename {
     return undefined;
   }
 
-  private getAnchorFromToken(token: SourceToken, node: Node): SourceToken | undefined {
+  private getAnchorFromToken(token: CST.SourceToken, node: Node): CST.SourceToken | undefined {
     if (isCollectionItem(token)) {
       return this.getAnchorFromCollectionItem(token);
     } else if (CST.isCollection(token)) {
-      const collection = token as unknown as { items?: CollectionItem[] };
+      const collection = token as unknown as { items?: CST.CollectionItem[] };
       for (const item of collection.items ?? []) {
-        if (item.value !== (node as unknown as { srcToken?: SourceToken }).srcToken) {
+        if (item.value !== node.srcToken) {
           continue;
         }
         const anchor = this.getAnchorFromCollectionItem(item);
@@ -173,7 +172,7 @@ export class YamlRename {
     return undefined;
   }
 
-  private getAnchorFromCollectionItem(token: CollectionItem): SourceToken | undefined {
+  private getAnchorFromCollectionItem(token: CST.CollectionItem): CST.SourceToken | undefined {
     for (const t of token.start) {
       if (t.type === 'anchor') {
         return t;
@@ -189,13 +188,13 @@ export class YamlRename {
     return undefined;
   }
 
-  private getNameRange(document: TextDocument, token: SourceToken): Range {
+  private getNameRange(document: TextDocument, token: CST.SourceToken): Range {
     const startOffset = token.offset + 1;
     const endOffset = token.offset + token.source.length;
     return Range.create(document.positionAt(startOffset), document.positionAt(endOffset));
   }
 
-  private isOffsetInsideToken(token: SourceToken, offset: number): boolean {
+  private isOffsetInsideToken(token: CST.SourceToken, offset: number): boolean {
     return offset >= token.offset && offset <= token.offset + token.source.length;
   }
 
