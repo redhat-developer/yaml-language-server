@@ -39,6 +39,7 @@ The following settings are supported:
 - `yaml.hover`: Enable/disable hover
 - `yaml.completion`: Enable/disable autocompletion
 - `yaml.schemas`: Helps you associate schemas with files in a glob pattern
+- `yaml.kubernetesVersion`: Kubernetes version used to build the schema URL when `yaml.schemas` maps files to the `Kubernetes` keyword.
 - `yaml.disableSchemaDetection`: Disables schema detection for matching YAML files. Modelines still apply.
 - `yaml.schemaStore.enable`: When set to true the YAML language server will pull in all available schemas from [JSON Schema Store](https://www.schemastore.org)
 - `yaml.schemaStore.url`: URL of a schema store catalog to use when downloading schemas.

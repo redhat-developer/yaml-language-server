@@ -192,6 +192,56 @@ describe('Settings Handlers Tests', () => {
     });
   });
 
+  describe('Settings for Kubernetes version should ', () => {
+    it('accepts versions with or without a v prefix', async () => {
+      const settingsHandler = new SettingsHandler(
+        connection,
+        languageService as unknown as LanguageService,
+        settingsState,
+        validationHandler as unknown as ValidationHandler,
+        {} as Telemetry
+      );
+
+      workspaceStub.getConfiguration
+        .onFirstCall()
+        .resolves([{ kubernetesVersion: '1.36.1' }, {}, {}, {}, {}])
+        .onSecondCall()
+        .resolves([{ kubernetesVersion: 'v1.37.2' }, {}, {}, {}, {}]);
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.kubernetesVersion).to.equal('v1.36.1');
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.kubernetesVersion).to.equal('v1.37.2');
+    });
+
+    it('resolves to undefined for invalid or removed values so the default version is used', async () => {
+      const settingsHandler = new SettingsHandler(
+        connection,
+        languageService as unknown as LanguageService,
+        settingsState,
+        validationHandler as unknown as ValidationHandler,
+        {} as Telemetry
+      );
+      workspaceStub.getConfiguration
+        .onFirstCall()
+        .resolves([{ kubernetesVersion: '1.36.1' }, {}, {}, {}, {}])
+        .onSecondCall()
+        .resolves([{ kubernetesVersion: 'invalid' }, {}, {}, {}, {}])
+        .onThirdCall()
+        .resolves([{}, {}, {}, {}, {}]);
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.kubernetesVersion).to.equal('v1.36.1');
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.kubernetesVersion).to.equal(undefined);
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.kubernetesVersion).to.equal(undefined);
+    });
+  });
+
   describe('Settings for file associations should ', () => {
     it('reflect to settings state', async () => {
       const settingsHandler = new SettingsHandler(
@@ -351,12 +401,13 @@ describe('Settings Handlers Tests', () => {
     const testSchemaFileMatch = ['foo/*.yml'];
 
     async function configureSchemaSettingsTest(): Promise<LanguageSettings> {
+      const telemetry = { send: sinon.stub(), sendError: sinon.stub() } as unknown as Telemetry;
       const settingsHandler = new SettingsHandler(
         connection,
         languageService,
         settingsState,
         validationHandler as unknown as ValidationHandler,
-        {} as Telemetry
+        telemetry
       );
       const configureSpy = sinon.spy(languageService, 'configure');
       await settingsHandler.pullConfiguration();
@@ -418,6 +469,27 @@ describe('Settings Handlers Tests', () => {
         priority: SchemaPriority.Settings,
       });
     });
+
+    it('Schema Settings should treat direct Kubernetes standalone-strict/all.json URLs as Kubernetes associations', async () => {
+      xhrStub.resolves({
+        responseText: '{"schemas":[]}',
+      });
+      const schemaUri =
+        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.9-standalone-strict/all.json';
+      const schemas = {};
+      schemas[schemaUri] = ['*.yaml'];
+      workspaceStub.getConfiguration.resolves([{ schemas }, {}, {}, {}]);
+      const configureSpy = await configureSchemaSettingsTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: schemaUri,
+        fileMatch: ['*.yaml'],
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
+      expect(settingsState.specificValidatorPaths).deep.include('*.yaml');
+    });
+
     it('Schema Settings should normalize multiple absolute local paths for the same file', async () => {
       xhrStub.resolves({
         responseText: '{"schemas":[]}',

@@ -6,22 +6,34 @@ import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { isBoolean } from './objects';
 import { isRelativePath, relativeToAbsolutePath } from './paths';
 
-export const BASE_KUBERNETES_SCHEMA_URL =
-  'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.1-standalone-strict/';
-export const KUBERNETES_SCHEMA_URL = BASE_KUBERNETES_SCHEMA_URL + 'all.json';
+export const DEFAULT_KUBERNETES_SCHEMA_VERSION = 'v1.34.1';
 export const JSON_SCHEMASTORE_URL = 'https://www.schemastore.org/api/json/catalog.json';
 export const CRD_CATALOG_URL = 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main';
 export const EMPTY_SCHEMA_URL = 'vscode://schemas/empty';
+
+const KUBERNETES_SCHEMA_URL_PATTERN =
+  /^https:\/\/raw\.githubusercontent\.com\/yannh\/kubernetes-json-schema\/master\/((?:v(\d+)\.(\d+)\.(\d+))-standalone-strict)\/all\.json$/;
+
+export function isKubernetes(uri: string): boolean {
+  if (uri.trim().toLowerCase() === 'kubernetes') return true;
+  return KUBERNETES_SCHEMA_URL_PATTERN.test(uri);
+}
 
 export function checkSchemaURI(
   workspaceFolders: WorkspaceFolder[],
   workspaceRoot: URI,
   uri: string,
-  telemetry: Telemetry
+  telemetry: Telemetry,
+  kubernetesVersion?: string
 ): string {
-  if (uri.trim().toLowerCase() === 'kubernetes') {
+  const k8sKeywordUsed = uri.trim().toLowerCase() === 'kubernetes';
+  if (k8sKeywordUsed || KUBERNETES_SCHEMA_URL_PATTERN.test(uri)) {
     telemetry.send({ name: 'yaml.schema.configured', properties: { kubernetes: true } });
-    return KUBERNETES_SCHEMA_URL;
+    if (k8sKeywordUsed) {
+      return `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${kubernetesVersion ?? DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/all.json`;
+    } else {
+      return uri;
+    }
   } else if (path.isAbsolute(uri) || /^[a-z]:[\\/]/i.test(uri)) {
     const localPath = uri.split('#', 2)[0];
     return URI.file(localPath).toString() + uri.substring(localPath.length);

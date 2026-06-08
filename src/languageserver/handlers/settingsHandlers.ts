@@ -6,12 +6,7 @@ import { configure as configureHttpRequests, xhr } from 'request-light';
 import { Connection, DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
 import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
-import {
-  checkSchemaURI,
-  EMPTY_SCHEMA_URL,
-  JSON_SCHEMASTORE_URL,
-  KUBERNETES_SCHEMA_URL,
-} from '../../languageservice/utils/schemaUrls';
+import { checkSchemaURI, EMPTY_SCHEMA_URL, isKubernetes, JSON_SCHEMASTORE_URL } from '../../languageservice/utils/schemaUrls';
 import { equals } from '../../languageservice/utils/objects';
 import { LanguageService, LanguageSettings, SchemaPriority, SchemasSettings } from '../../languageservice/yamlLanguageService';
 import { SchemaSelectionRequests } from '../../requestTypes';
@@ -94,6 +89,13 @@ export class SettingsHandler {
       }
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hoverSchemaSource')) {
         this.yamlSettings.yamlHoverSchemaSource = settings.yaml.hoverSchemaSource;
+      }
+      if (Object.prototype.hasOwnProperty.call(settings.yaml, 'kubernetesVersion')) {
+        const match =
+          typeof settings.yaml.kubernetesVersion === 'string'
+            ? /^v?(\d+)\.(\d+)\.(\d+)$/i.exec(settings.yaml.kubernetesVersion.trim())
+            : undefined;
+        this.yamlSettings.kubernetesVersion = match ? `v${match[1]}.${match[2]}.${match[3]}` : undefined;
       }
       this.yamlSettings.yamlDisableSchemaDetection = Array.isArray(settings.yaml.disableSchemaDetection)
         ? settings.yaml.disableSchemaDetection
@@ -179,7 +181,7 @@ export class SettingsHandler {
 
       const schemaObj = {
         fileMatch: Array.isArray(globPattern) ? globPattern : [globPattern],
-        uri: checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri, this.telemetry),
+        uri,
       };
       this.yamlSettings.schemaConfigurationSettings.push(schemaObj);
     }
@@ -411,7 +413,13 @@ export class SettingsHandler {
     languageSettings: LanguageSettings,
     priorityLevel: number
   ): LanguageSettings {
-    uri = checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri, this.telemetry);
+    uri = checkSchemaURI(
+      this.yamlSettings.workspaceFolders,
+      this.yamlSettings.workspaceRoot,
+      uri,
+      this.telemetry,
+      this.yamlSettings.kubernetesVersion
+    );
 
     if (schema === null) {
       languageSettings.schemas.push({ uri, fileMatch: fileMatch, priority: priorityLevel });
@@ -419,12 +427,14 @@ export class SettingsHandler {
       languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema, priority: priorityLevel });
     }
 
-    if (fileMatch.constructor === Array && uri === KUBERNETES_SCHEMA_URL) {
-      fileMatch.forEach((url) => {
-        this.yamlSettings.specificValidatorPaths.push(url);
-      });
-    } else if (uri === KUBERNETES_SCHEMA_URL) {
-      this.yamlSettings.specificValidatorPaths.push(fileMatch);
+    if (isKubernetes(uri)) {
+      if (Array.isArray(fileMatch)) {
+        fileMatch.forEach((pattern) => {
+          this.yamlSettings.specificValidatorPaths.push(pattern);
+        });
+      } else {
+        this.yamlSettings.specificValidatorPaths.push(fileMatch);
+      }
     }
 
     return languageSettings;

@@ -22,11 +22,13 @@ import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
-import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 import { IProblem } from '../src/languageservice/parser/schemaValidation/baseValidator';
 import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { TestTelemetry } from './utils/testsTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
+import { DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls';
+
+const KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/all.json`;
 
 describe('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -1394,6 +1396,75 @@ obj:
           assert.equal(result[1].message, `Value is not accepted. Valid values: "ImageStreamImport", "ImageStreamLayers".`);
         })
         .then(done, done);
+    });
+
+    it('does not report error for direct Kubernetes standalone-strict/all.json schema associations', async () => {
+      const schemaUri =
+        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.9-standalone-strict/all.json';
+      languageService.configure(
+        new ServiceSetup().withValidate().withSchemaFileMatch({ uri: schemaUri, fileMatch: ['*.yaml'] }).languageSettings
+      );
+      yamlSettings.specificValidatorPaths = ['*.yaml'];
+
+      try {
+        const result = await parseSetup(
+          `apiVersion: v1
+kind: Service
+metadata:
+  name: longhorn-ui-nodeport
+  namespace: longhorn-system
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30080
+  selector:
+    app: longhorn-ui`,
+          'file://~/Desktop/vscode-yaml/service.yaml'
+        );
+
+        expect(result.map((diagnostic) => diagnostic.message)).not.include(
+          'Matches multiple schemas when only one must validate.'
+        );
+        expect(result.map((diagnostic) => diagnostic.message)).deep.equal([]);
+      } finally {
+        yamlSettings.specificValidatorPaths = [];
+      }
+    });
+
+    it('does not report error for direct Kubernetes standalone-strict/all.json modelines', async () => {
+      const schemaUri =
+        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.9-standalone-strict/all.json';
+      languageService.configure(languageSettingsSetup.withKubernetes(false).languageSettings);
+      yamlSettings.specificValidatorPaths = [];
+
+      try {
+        const result = await parseSetup(
+          `# yaml-language-server: $schema=${schemaUri}
+apiVersion: v1
+kind: Service
+metadata:
+  name: longhorn-ui-nodeport
+  namespace: longhorn-system
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30080
+  selector:
+    app: longhorn-ui`,
+          'file://~/Desktop/vscode-yaml/service.yaml'
+        );
+
+        expect(result.map((diagnostic) => diagnostic.message)).not.include(
+          'Matches multiple schemas when only one must validate.'
+        );
+        expect(result.map((diagnostic) => diagnostic.message)).deep.equal([]);
+      } finally {
+        languageService.configure(languageSettingsSetup.withKubernetes().languageSettings);
+      }
     });
 
     it('Test that it validates against the correct schema based on the GroupVersionKind', (done) => {
