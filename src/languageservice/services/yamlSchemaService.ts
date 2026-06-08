@@ -32,7 +32,7 @@ import Ajv2020 from 'ajv/dist/2020';
 import type { Localize } from 'ajv-i18n/localize/types';
 import * as Json from 'jsonc-parser';
 import { parse } from 'yaml';
-import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
+import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, isKubernetes } from '../utils/schemaUrls';
 import { autoDetectKubernetesSchema } from './k8sSchemaUtil';
 
 const ajv4 = new Ajv4({ allErrors: true });
@@ -1100,18 +1100,21 @@ export class YAMLSchemaService extends JSONSchemaService {
       const seen: { [schemaId: string]: boolean } = Object.create(null);
       const schemas: string[] = [];
       let k8sAllSchema: ResolvedSchema = undefined;
+      let k8sSchemaUrl: string | undefined = undefined;
 
       for (const entry of this.filePatternAssociations) {
         if (entry.matchesPattern(resource)) {
           for (const schemaId of entry.getURIs()) {
             if (!seen[schemaId]) {
-              if (this.yamlSettings?.kubernetesCRDStoreEnabled && schemaId === KUBERNETES_SCHEMA_URL) {
+              if (this.yamlSettings?.kubernetesCRDStoreEnabled && isKubernetes(schemaId)) {
                 if (!k8sAllSchema) {
-                  k8sAllSchema = await this.getResolvedSchema(KUBERNETES_SCHEMA_URL);
+                  k8sSchemaUrl = schemaId;
+                  k8sAllSchema = await this.getResolvedSchema(schemaId);
                 }
                 const kubeSchema = autoDetectKubernetesSchema(
                   doc,
                   k8sAllSchema,
+                  k8sSchemaUrl ?? schemaId,
                   this.yamlSettings.kubernetesCRDStoreUrl ?? CRD_CATALOG_URL
                 );
                 if (kubeSchema) {

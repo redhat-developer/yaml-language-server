@@ -8,7 +8,7 @@ import { Diagnostic } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
+import { DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls';
 import { JSONSchema } from '../src/languageservice/jsonSchema';
 
 describe('Validation Tests', () => {
@@ -16,6 +16,8 @@ describe('Validation Tests', () => {
   let validationHandler: ValidationHandler;
   let yamlSettings: SettingsState;
   let schemaProvider: TestCustomSchemaProvider;
+
+  const KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/all.json`;
 
   const toContent = (data: unknown): string => JSON.stringify(data, null, 2);
 

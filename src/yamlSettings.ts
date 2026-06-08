@@ -25,6 +25,7 @@ export interface Settings {
       url: string;
       enable: boolean;
     };
+    kubernetesVersion: string;
     disableDefaultProperties: boolean;
     disableAdditionalProperties: boolean;
     suggest: {
@@ -90,6 +91,7 @@ export class SettingsState {
   schemaStoreUrl = JSON_SCHEMASTORE_URL;
   kubernetesCRDStoreEnabled = true;
   kubernetesCRDStoreUrl = CRD_CATALOG_URL;
+  kubernetesVersion: string | undefined = undefined;
   indentation: string | undefined = undefined;
   disableAdditionalProperties = false;
   disableDefaultProperties = false;

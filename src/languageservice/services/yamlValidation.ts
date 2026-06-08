@@ -20,6 +20,8 @@ import { AdditionalValidator } from './validation/types';
 import { UnusedAnchorsValidator } from './validation/unused-anchors';
 import { YAMLStyleValidator } from './validation/yaml-style';
 import { MapKeyOrderValidator } from './validation/map-key-order';
+import { getSchemaFromModeline } from './modelineUtil';
+import { isKubernetes as isKubernetesSchemaURI } from '../utils/schemaUrls';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -80,6 +82,7 @@ export class YAMLValidation {
     }
 
     const validationResult = [];
+    let suppressKubernetesMatchesMultiple = isKubernetes;
     try {
       const yamlDocument: YAMLDocument = yamlDocumentsCache.getYamlDocument(
         textDocument,
@@ -89,7 +92,9 @@ export class YAMLValidation {
 
       let index = 0;
       for (const currentYAMLDoc of yamlDocument.documents) {
-        currentYAMLDoc.isKubernetes = isKubernetes;
+        const currentDocumentIsKubernetes = isKubernetes || this.hasKubernetesModelineSchema(currentYAMLDoc);
+        currentYAMLDoc.isKubernetes = currentDocumentIsKubernetes;
+        suppressKubernetesMatchesMultiple = suppressKubernetesMatchesMultiple || currentDocumentIsKubernetes;
         currentYAMLDoc.currentDocIndex = index;
         currentYAMLDoc.disableAdditionalProperties = this.disableAdditionalProperties;
         currentYAMLDoc.uri = textDocument.uri;
@@ -122,7 +127,7 @@ export class YAMLValidation {
        * 'Matches many schemas' error for kubernetes
        * for a better user experience.
        */
-      if (isKubernetes && err.message === this.MATCHES_MULTIPLE) {
+      if (suppressKubernetesMatchesMultiple && err.message === this.MATCHES_MULTIPLE) {
         continue;
       }
 
@@ -166,6 +171,12 @@ export class YAMLValidation {
       }
     );
   }
+
+  private hasKubernetesModelineSchema(currentYAMLDoc: SingleYAMLDocument): boolean {
+    const schemaFromModeline = getSchemaFromModeline(currentYAMLDoc);
+    return typeof schemaFromModeline === 'string' && isKubernetesSchemaURI(schemaFromModeline);
+  }
+
   private runAdditionalValidators(document: TextDocument, yarnDoc: SingleYAMLDocument): Diagnostic[] {
     const result = [];
 

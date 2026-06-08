@@ -3,7 +3,6 @@ import { SingleYAMLDocument } from '../parser/yamlParser07';
 
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
 import { JSONSchema } from '../jsonSchema';
-import { BASE_KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
 
 /**
  * Attempt to retrieve the schema for a given YAML document based on the Kubernetes GroupVersionKind (GVK).
@@ -18,13 +17,14 @@ import { BASE_KUBERNETES_SCHEMA_URL } from '../utils/schemaUrls';
 export function autoDetectKubernetesSchema(
   doc: SingleYAMLDocument | JSONDocument,
   kubernetesSchema: ResolvedSchema,
+  kubernetesSchemaURI: string,
   crdCatalogURI: string
 ): string | undefined {
   const gvk = getGroupVersionKindFromDocument(doc);
   if (!gvk || !gvk.group || !gvk.version || !gvk.kind) {
     return undefined;
   }
-  const builtinResource = autoDetectBuiltinResource(gvk, kubernetesSchema);
+  const builtinResource = autoDetectBuiltinResource(gvk, kubernetesSchema, kubernetesSchemaURI);
   if (builtinResource) {
     return builtinResource;
   }
@@ -35,7 +35,11 @@ export function autoDetectKubernetesSchema(
   return undefined;
 }
 
-function autoDetectBuiltinResource(gvk: GroupVersionKind, kubernetesSchema: ResolvedSchema): string | undefined {
+function autoDetectBuiltinResource(
+  gvk: GroupVersionKind,
+  kubernetesSchema: ResolvedSchema,
+  kubernetesSchemaURI: string
+): string | undefined {
   const { group, version, kind } = gvk;
 
   const groupWithoutK8sIO = group.replace('.k8s.io', '').replace('rbac.authorization', 'rbac');
@@ -57,7 +61,9 @@ function autoDetectBuiltinResource(gvk: GroupVersionKind, kubernetesSchema: Reso
     });
 
   if (matchingBuiltin) {
-    return BASE_KUBERNETES_SCHEMA_URL + matchingBuiltin;
+    const lastSlash = kubernetesSchemaURI.lastIndexOf('/');
+    const baseURL = lastSlash === -1 ? null : kubernetesSchemaURI.substring(0, lastSlash + 1);
+    return baseURL ? baseURL + matchingBuiltin : undefined;
   }
 
   return undefined;

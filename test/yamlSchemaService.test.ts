@@ -10,7 +10,10 @@ import * as url from 'url';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import { parse } from '../src/languageservice/parser/yamlParser07';
 import { SettingsState } from '../src/yamlSettings';
-import { BASE_KUBERNETES_SCHEMA_URL, getSchemaUrls, KUBERNETES_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
+import { DEFAULT_KUBERNETES_SCHEMA_VERSION, getSchemaUrls } from '../src/languageservice/utils/schemaUrls';
+
+const BASE_KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/`;
+const KUBERNETES_SCHEMA_URL = BASE_KUBERNETES_SCHEMA_URL + 'all.json';
 
 const expect = chai.expect;
 chai.use(sinonChai);
