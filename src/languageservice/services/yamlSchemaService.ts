@@ -211,6 +211,9 @@ export class YAMLSchemaService extends JSONSchemaService {
   private resolveModelineSchema(resource: string, doc: JSONDocument): string | undefined {
     let schemaFromModeline = getSchemaFromModeline(doc);
     if (schemaFromModeline !== undefined) {
+      if (schemaFromModeline.trim().toLowerCase() === 'none') {
+        return 'none';
+      }
       if (!schemaFromModeline.startsWith('file:') && !schemaFromModeline.startsWith('http')) {
         // If path contains a fragment and it is left intact, "#" will be
         // considered part of the filename and converted to "%23" by
@@ -238,6 +241,9 @@ export class YAMLSchemaService extends JSONSchemaService {
   private async getSchemaIdsForResource(resource: string, doc: JSONDocument): Promise<string[]> {
     const modelineSchema = this.resolveModelineSchema(resource, doc);
     if (modelineSchema) {
+      if (modelineSchema === 'none') {
+        return [];
+      }
       return [modelineSchema];
     }
 
@@ -1143,6 +1149,9 @@ export class YAMLSchemaService extends JSONSchemaService {
     };
     const modelineSchema = this.resolveModelineSchema(resource, doc);
     if (modelineSchema) {
+      if (modelineSchema === 'none') {
+        return Promise.resolve(null);
+      }
       return resolveSchemaForResource([modelineSchema]);
     }
 

@@ -1243,6 +1243,34 @@ address:
     }
   });
 
+  describe('Test schema validation disabling via modeline', function () {
+    it('should not validate when schema is disabled via modeline with $schema=none', async () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+          },
+          age: {
+            type: 'number',
+            minimum: 0,
+          },
+        },
+        required: ['name'],
+      };
+      const languageSettingsSetup = new ServiceSetup().withValidate().withSchemaFileMatch({
+        uri: 'http://test-schema.org/person',
+        fileMatch: ['*.yml'],
+        schema,
+      });
+      const { languageService: langService } = setupLanguageService(languageSettingsSetup.languageSettings);
+      const content = '# yaml-language-server: $schema=none\nage: not-a-number';
+      const testTextDocument = setupTextDocument(content);
+      const result = await langService.doValidation(testTextDocument, false);
+      expect(result).to.be.empty;
+    });
+  });
+
   describe('Test getSchemaFromModeline', function () {
     it('simple case', async () => {
       checkReturnSchemaUrl('# yaml-language-server: $schema=expectedUrl', 'expectedUrl');

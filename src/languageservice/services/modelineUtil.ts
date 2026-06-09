@@ -11,7 +11,7 @@ import { JSONDocument } from '../parser/jsonDocument';
  * Public for testing purpose, not part of the API.
  * @param doc
  */
-export function getSchemaFromModeline(doc: SingleYAMLDocument | JSONDocument): string {
+export function getSchemaFromModeline(doc: SingleYAMLDocument | JSONDocument): string | undefined {
   if (doc instanceof SingleYAMLDocument) {
     const yamlLanguageServerModeline = doc.lineComments.find((lineComment) => {
       return isModeline(lineComment);

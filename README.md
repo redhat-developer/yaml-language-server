@@ -61,7 +61,7 @@ The following settings are supported:
 
 ## Suppressing diagnostics
 
-You can suppress specific validation warnings on a per-line basis by adding a `# yaml-language-server-disable` comment on the line immediately before the one producing the diagnostic.
+You can suppress specific validation warnings on a per-line basis by adding a `# yaml-language-server-disable` comment on the line immediately before the one producing the diagnostic. To disable schema validation for an entire file, use a [modeline schema association](#using-modeline).
 
 ### Suppress all diagnostics on a line
 
@@ -275,9 +275,9 @@ yaml.schemas: {
 > **Note**
 > This will require reading your existing schema and understanding the schemastore structure a bit. (TODO: link to a documentation or blog post here?)
 
-### Using inlined schema
+### Using modeline
 
-It is possible to specify a yaml schema using a modeline.
+You can specify a JSON Schema for a YAML file using a modeline.
 
 ```yaml
 # yaml-language-server: $schema=<urlToTheSchema>
@@ -299,6 +299,12 @@ or IntelliJ compatible format:
 
 ```yaml
 # $schema: <urlOrPathToTheSchema>
+```
+
+You can also disable schema validation entirely for a specific file using the modeline:
+
+```yaml
+# yaml-language-server: $schema=none
 ```
 
 ### Disabling automatic schema detection for specific files
