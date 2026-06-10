@@ -1,15 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "downlevelIteration": true,
     "lib": ["WebWorker"],
     "module": "esnext",
+    "moduleResolution": "bundler",
     "outDir": "./lib/esm",
+    "rootDir": "./src"
   },
-  "exclude": [
-    "node_modules",
-    "out",
-    "lib",
-    "test"
-  ]
+  "include": ["src"]
 }

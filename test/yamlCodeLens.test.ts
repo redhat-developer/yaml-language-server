@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as sinon from 'sinon';
-import * as sinonChai from 'sinon-chai';
+import sinonChai from 'sinon-chai';
 import * as chai from 'chai';
 import { YamlCodeLens } from '../src/languageservice/services/yamlCodeLens';
 import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';

@@ -15,7 +15,7 @@ import {
   propertyIsNotAllowed,
   MissingRequiredPropWarning,
 } from './utils/errorMessages';
-import * as assert from 'assert';
+import assert from 'assert';
 import * as path from 'path';
 import { Diagnostic, DiagnosticSeverity, Position } from 'vscode-languageserver-types';
 import { expect } from 'chai';

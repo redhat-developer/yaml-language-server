@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import * as sinon from 'sinon';
 import * as chai from 'chai';
-import * as sinonChai from 'sinon-chai';
+import sinonChai from 'sinon-chai';
 import * as path from 'path';
 import * as url from 'url';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';

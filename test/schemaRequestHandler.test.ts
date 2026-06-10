@@ -10,7 +10,7 @@ import { XHRResponse } from 'request-light';
 import { Connection } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import * as chai from 'chai';
-import * as sinonChai from 'sinon-chai';
+import sinonChai from 'sinon-chai';
 
 const expect = chai.expect;
 chai.use(sinonChai);

@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as l10n from '@vscode/l10n';
-import * as assert from 'assert';
+import assert from 'assert';
 import * as path from 'path';
 import { Connection, createConnection } from 'vscode-languageserver/node';
 import { schemaRequestHandler, workspaceContext } from '../src/languageservice/services/schemaRequestHandler';

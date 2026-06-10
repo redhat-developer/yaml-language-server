@@ -11,7 +11,7 @@ import {
   TestCustomSchemaProvider,
   toFsPath,
 } from './utils/testHelper';
-import * as assert from 'assert';
+import assert from 'assert';
 import * as path from 'path';
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
