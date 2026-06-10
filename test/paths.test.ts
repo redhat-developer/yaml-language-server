@@ -1,4 +1,4 @@
-import * as assert from 'assert';
+import assert from 'assert';
 import { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import { join } from 'path';
 

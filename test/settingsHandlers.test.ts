@@ -6,7 +6,7 @@
 import * as chai from 'chai';
 import * as request from 'request-light';
 import * as sinon from 'sinon';
-import * as sinonChai from 'sinon-chai';
+import sinonChai from 'sinon-chai';
 import { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver';
 import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';

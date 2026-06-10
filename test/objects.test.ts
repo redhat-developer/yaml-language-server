@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { equals, convertErrorToTelemetryMsg } from '../src/languageservice/utils/objects';
-import * as assert from 'assert';
+import assert from 'assert';
 
 describe('Object Equals Tests', () => {
   describe('Equals', function () {

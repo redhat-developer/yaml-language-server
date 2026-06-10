@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as sinon from 'sinon';
-import * as sinonChai from 'sinon-chai';
+import sinonChai from 'sinon-chai';
 import * as chai from 'chai';
 import { registerCommands } from '../src/languageservice/services/yamlCommands';
 import { commandExecutor } from '../src/languageserver/commandExecutor';

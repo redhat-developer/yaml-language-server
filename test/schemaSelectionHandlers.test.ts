@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import * as sinon from 'sinon';
 import * as chai from 'chai';
-import * as sinonChai from 'sinon-chai';
+import sinonChai from 'sinon-chai';
 import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers';
 import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
 import { Connection, RemoteClient } from 'vscode-languageserver/node';

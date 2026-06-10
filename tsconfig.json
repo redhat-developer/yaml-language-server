@@ -2,16 +2,19 @@
   "compilerOptions": {
     "alwaysStrict": true,
     "declaration": true,
-    "forceConsistentCasingInFileNames": true,
     "lib": ["es2020", "WebWorker"],
-    "module": "commonjs",
-    "moduleResolution": "nodenext",
+    "module": "nodenext",
+    "noImplicitAny": false,
+    "noImplicitThis": false,
     "outDir": "./out/server",
+    "skipLibCheck": true,
     "sourceMap": true,
+    "strictFunctionTypes": false,
+    "strictNullChecks": false,
     "target": "es2020",
-    "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true
+    "types": ["mocha", "node"],
+    "useUnknownInCatchVariables": false
   },
-  "include": [ "src", "test" ],
+  "include": ["src", "test"],
   "exclude": ["node_modules", "out"]
 }

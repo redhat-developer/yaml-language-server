@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { startsWith, endsWith, convertSimple2RegExp, safeCreateUnicodeRegExp } from '../src/languageservice/utils/strings';
-import * as assert from 'assert';
+import assert from 'assert';
 import { expect } from 'chai';
 
 describe('String Tests', () => {

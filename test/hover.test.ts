@@ -10,7 +10,7 @@ import {
   setupSchemaIDTextDocument,
   TestCustomSchemaProvider,
 } from './utils/testHelper';
-import * as assert from 'assert';
+import assert from 'assert';
 import { Hover, MarkupContent, Position } from 'vscode-languageserver-types';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';

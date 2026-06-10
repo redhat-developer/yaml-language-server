@@ -6,7 +6,7 @@ import * as SchemaService from '../src/languageservice/services/yamlSchemaServic
 import * as url from 'url';
 import * as sinon from 'sinon';
 import * as chai from 'chai';
-import * as sinonChai from 'sinon-chai';
+import sinonChai from 'sinon-chai';
 
 const expect = chai.expect;
 chai.use(sinonChai);

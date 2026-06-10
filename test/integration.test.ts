@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { setupLanguageService, setupTextDocument } from './utils/testHelper';
-import * as assert from 'assert';
+import assert from 'assert';
 import { Diagnostic, CompletionList, Hover, MarkupContent } from 'vscode-languageserver-types';
 import { ServiceSetup } from './utils/serviceSetup';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';

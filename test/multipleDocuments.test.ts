@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import * as path from 'path';
 import { setupLanguageService, setupTextDocument, toFsPath } from './utils/testHelper';
-import * as assert from 'assert';
+import assert from 'assert';
 import { ServiceSetup } from './utils/serviceSetup';
 import { Diagnostic, Hover, MarkupContent } from 'vscode-languageserver-types';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
