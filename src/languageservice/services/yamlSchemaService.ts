@@ -401,7 +401,7 @@ export class YAMLSchemaService extends JSONSchemaService {
         valid = validator(toValidate);
       } catch (e) {
         // AJV overflows on recursive/cyclic schemas; attempt to degrade gracefully
-        console.warn(l10n.t("Schema '{0}' could not be fully validated: {1}", loc, e.message));
+        console.warn(l10n.t("Schema '{0}' could not be fully validated: {1}", loc, `${e}`));
         return;
       }
       if (!valid) {
@@ -1400,7 +1400,7 @@ export class YAMLSchemaService extends JSONSchemaService {
               const schemaContent = parse(content);
               return new UnresolvedSchema(schemaContent, []);
             } catch (yamlError) {
-              const errorMessage = l10n.t("Unable to parse content from '{0}': {1}.", toDisplayString(schemaUri), yamlError);
+              const errorMessage = l10n.t("Unable to parse content from '{0}': {1}.", toDisplayString(schemaUri), `${yamlError}`);
               return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
             }
           },

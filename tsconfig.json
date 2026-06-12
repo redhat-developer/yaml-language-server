@@ -13,7 +13,6 @@
     "strictNullChecks": false,
     "target": "es2020",
     "types": ["mocha", "node"],
-    "useUnknownInCatchVariables": false
   },
   "include": ["src", "test"],
   "exclude": ["node_modules", "out"]
