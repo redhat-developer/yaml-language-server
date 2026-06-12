@@ -5,8 +5,8 @@
 import { expect } from 'chai';
 import { DocumentOnTypeFormattingParams } from 'vscode-languageserver-protocol';
 import { FormattingOptions, Position, Range, TextEdit } from 'vscode-languageserver-types';
-import { doDocumentOnTypeFormatting } from '../src/languageservice/services/yamlOnTypeFormatting';
-import { setupTextDocument } from './utils/testHelper';
+import { doDocumentOnTypeFormatting } from '../src/languageservice/services/yamlOnTypeFormatting.ts';
+import { setupTextDocument } from './utils/testHelper.ts';
 
 function createParams(position: Position): DocumentOnTypeFormattingParams {
   return {

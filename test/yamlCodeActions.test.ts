@@ -6,7 +6,7 @@
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import * as chai from 'chai';
-import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions';
+import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions.ts';
 import {
   CodeAction,
   CodeActionContext,
@@ -19,10 +19,10 @@ import {
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
 import { ClientCapabilities, CodeActionParams } from 'vscode-languageserver';
-import { setupTextDocument, TEST_URI } from './utils/testHelper';
-import { createDiagnosticWithData, createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
-import { YamlCommands } from '../src/commands';
-import { LanguageSettings } from '../src';
+import { setupTextDocument, TEST_URI } from './utils/testHelper.ts';
+import { createDiagnosticWithData, createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError.ts';
+import { YamlCommands } from '../src/commands.ts';
+import { LanguageSettings } from '../src/index.ts';
 import { ErrorCode } from 'vscode-json-languageservice';
 
 const expect = chai.expect;

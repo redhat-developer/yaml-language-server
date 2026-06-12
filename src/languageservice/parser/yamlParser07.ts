@@ -5,10 +5,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Parser, Composer, Document, LineCounter, ParseOptions, DocumentOptions, SchemaOptions } from 'yaml';
-import { YAMLDocument, SingleYAMLDocument } from './yaml-documents';
-import { getCustomTags } from './custom-tag-provider';
+import { YAMLDocument, SingleYAMLDocument } from './yaml-documents.ts';
+import { getCustomTags } from './custom-tag-provider.ts';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { TextBuffer } from '../utils/textBuffer';
+import { TextBuffer } from '../utils/textBuffer.ts';
 
 export { YAMLDocument, SingleYAMLDocument };
 

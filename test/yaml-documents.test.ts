@@ -6,12 +6,12 @@
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import * as chai from 'chai';
-import { YamlDocuments } from '../src/languageservice/parser/yaml-documents';
-import { setupTextDocument } from './utils/testHelper';
-import * as yamlParser from '../src/languageservice/parser/yamlParser07';
+import { YamlDocuments } from '../src/languageservice/parser/yaml-documents.ts';
+import { setupTextDocument } from './utils/testHelper.ts';
+import * as yamlParser from '../src/languageservice/parser/yamlParser07.ts';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { isMap, isScalar, isSeq, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
-import { TextBuffer } from '../src/languageservice/utils/textBuffer';
+import { TextBuffer } from '../src/languageservice/utils/textBuffer.ts';
 
 const expect = chai.expect;
 chai.use(sinonChai);

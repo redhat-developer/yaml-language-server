@@ -2,7 +2,7 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
+import * as SchemaService from '../src/languageservice/services/yamlSchemaService.ts';
 import * as url from 'url';
 import * as sinon from 'sinon';
 import * as chai from 'chai';

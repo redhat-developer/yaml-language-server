@@ -5,13 +5,13 @@
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { CodeLens, Range } from 'vscode-languageserver-types';
-import { YamlCommands } from '../../commands';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { YAMLSchemaService } from './yamlSchemaService';
-import { JSONSchema } from '../jsonSchema';
-import { Telemetry } from '../telemetry';
-import { getSchemaUrls } from '../utils/schemaUrls';
-import { getSchemaTitle } from '../utils/schemaUtils';
+import { YamlCommands } from '../../commands.ts';
+import { yamlDocumentsCache } from '../parser/yaml-documents.ts';
+import { YAMLSchemaService } from './yamlSchemaService.ts';
+import { JSONSchema } from '../jsonSchema.ts';
+import { Telemetry } from '../telemetry.ts';
+import { getSchemaUrls } from '../utils/schemaUrls.ts';
+import { getSchemaTitle } from '../utils/schemaUtils.ts';
 
 export class YamlCodeLens {
   constructor(

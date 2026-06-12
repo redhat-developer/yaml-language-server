@@ -1,4 +1,4 @@
-import { convertSimple2RegExpPattern } from './strings';
+import { convertSimple2RegExpPattern } from './strings.ts';
 
 export class FilePatternAssociation {
   private schemas: string[];

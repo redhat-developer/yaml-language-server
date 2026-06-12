@@ -18,8 +18,8 @@ import {
   ServerCapabilities,
 } from 'vscode-languageserver-protocol';
 import { Connection, RemoteWorkspace } from 'vscode-languageserver';
-import { TelemetryImpl } from '../../src/languageserver/telemetry';
-import { TelemetryEvent } from '../../src/languageservice/telemetry';
+import { TelemetryImpl } from '../../src/languageserver/telemetry.ts';
+import { TelemetryEvent } from '../../src/languageservice/telemetry.ts';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */

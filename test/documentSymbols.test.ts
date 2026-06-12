@@ -2,17 +2,17 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { setupLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper';
+import { setupLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper.ts';
 import {
   createExpectedSymbolInformation,
   createExpectedDocumentSymbol,
   createExpectedDocumentSymbolNoDetail,
-} from './utils/verifyError';
+} from './utils/verifyError.ts';
 import { DocumentSymbol, SymbolKind, SymbolInformation } from 'vscode-languageserver-types';
 import assert from 'assert';
-import { ServiceSetup } from './utils/serviceSetup';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { ServiceSetup } from './utils/serviceSetup.ts';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.ts';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.ts';
 
 describe('Document Symbols Tests', () => {
   let languageHandler: LanguageHandlers;

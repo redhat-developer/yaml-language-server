@@ -5,10 +5,10 @@
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 import { Connection, RemoteClient } from 'vscode-languageserver/node';
-import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers';
-import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { setupSchemaIDTextDocument } from './utils/testHelper';
+import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers.ts';
+import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService.ts';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.ts';
+import { setupSchemaIDTextDocument } from './utils/testHelper.ts';
 
 describe('unexpected meta schema', () => {
   const sandbox = sinon.createSandbox();

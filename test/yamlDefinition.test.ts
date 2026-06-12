@@ -3,11 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { setupTextDocument, TEST_URI } from './utils/testHelper';
+import { setupTextDocument, TEST_URI } from './utils/testHelper.ts';
 import { expect } from 'chai';
-import { YamlDefinition } from '../src/languageservice/services/yamlDefinition';
+import { YamlDefinition } from '../src/languageservice/services/yamlDefinition.ts';
 import { LocationLink, Position, Range } from 'vscode-languageserver-types';
-import { Telemetry } from '../src/languageservice/telemetry';
+import { Telemetry } from '../src/languageservice/telemetry.ts';
 
 describe('YAML Definition', () => {
   it('should not provide definition for non anchor node', () => {

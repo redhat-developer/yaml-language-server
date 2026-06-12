@@ -5,8 +5,8 @@
 import { findLinks as JSONFindLinks } from 'vscode-json-languageservice/lib/umd/services/jsonLinks';
 import { DocumentLink } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Telemetry } from '../telemetry';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
+import { Telemetry } from '../telemetry.ts';
+import { yamlDocumentsCache } from '../parser/yaml-documents.ts';
 
 export class YamlLinks {
   constructor(private readonly telemetry?: Telemetry) {}

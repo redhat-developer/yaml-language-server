@@ -5,12 +5,12 @@
 import * as sinon from 'sinon';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers';
-import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
+import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers.ts';
+import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService.ts';
 import { Connection, RemoteClient } from 'vscode-languageserver/node';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { SchemaSelectionRequests } from '../src/requestTypes';
-import { SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.ts';
+import { SchemaSelectionRequests } from '../src/requestTypes.ts';
+import { SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper.ts';
 
 const expect = chai.expect;
 chai.use(sinonChai);

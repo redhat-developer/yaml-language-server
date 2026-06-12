@@ -5,14 +5,14 @@
 import { configure as configureHttpRequests, xhr } from 'request-light';
 import { Connection, DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
 import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
-import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
-import { checkSchemaURI, EMPTY_SCHEMA_URL, isKubernetes, JSON_SCHEMASTORE_URL } from '../../languageservice/utils/schemaUrls';
-import { equals } from '../../languageservice/utils/objects';
-import { LanguageService, LanguageSettings, SchemaPriority, SchemasSettings } from '../../languageservice/yamlLanguageService';
-import { SchemaSelectionRequests } from '../../requestTypes';
-import { Settings, SettingsState } from '../../yamlSettings';
-import { Telemetry } from '../../languageservice/telemetry';
-import { ValidationHandler } from './validationHandlers';
+import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths.ts';
+import { checkSchemaURI, EMPTY_SCHEMA_URL, isKubernetes, JSON_SCHEMASTORE_URL } from '../../languageservice/utils/schemaUrls.ts';
+import { equals } from '../../languageservice/utils/objects.ts';
+import { LanguageService, LanguageSettings, SchemaPriority, SchemasSettings } from '../../languageservice/yamlLanguageService.ts';
+import { SchemaSelectionRequests } from '../../requestTypes.ts';
+import { Settings, SettingsState } from '../../yamlSettings.ts';
+import { Telemetry } from '../../languageservice/telemetry.ts';
+import { ValidationHandler } from './validationHandlers.ts';
 
 export class SettingsHandler {
   private schemaSettings: SchemasSettings[] | undefined;

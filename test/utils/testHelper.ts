@@ -6,15 +6,15 @@ import { promises as fs } from 'fs';
 import { ClientCapabilities } from 'vscode-json-languageservice';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Connection, createConnection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node';
-import { LanguageService, LanguageSettings } from '../../src';
-import { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers';
-import { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers';
-import { JSONSchema } from '../../src/languageservice/jsonSchema';
-import { yamlDocumentsCache } from '../../src/languageservice/parser/yaml-documents';
-import { FileSystem, schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler';
-import { YAMLServerInit } from '../../src/yamlServerInit';
-import { SettingsState } from '../../src/yamlSettings';
-import { TestTelemetry } from './testsTypes';
+import { LanguageService, LanguageSettings } from '../../src/index.ts';
+import { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers.ts';
+import { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers.ts';
+import { JSONSchema } from '../../src/languageservice/jsonSchema.ts';
+import { yamlDocumentsCache } from '../../src/languageservice/parser/yaml-documents.ts';
+import { FileSystem, schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler.ts';
+import { YAMLServerInit } from '../../src/yamlServerInit.ts';
+import { SettingsState } from '../../src/yamlSettings.ts';
+import { TestTelemetry } from './testsTypes.ts';
 import * as path from 'path';
 
 export function toFsPath(str: unknown): string {

@@ -7,10 +7,10 @@ import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 import * as path from 'path';
 import * as url from 'url';
-import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
-import { parse } from '../src/languageservice/parser/yamlParser07';
-import { SettingsState } from '../src/yamlSettings';
-import { DEFAULT_KUBERNETES_SCHEMA_VERSION, getSchemaUrls } from '../src/languageservice/utils/schemaUrls';
+import * as SchemaService from '../src/languageservice/services/yamlSchemaService.ts';
+import { parse } from '../src/languageservice/parser/yamlParser07.ts';
+import { SettingsState } from '../src/yamlSettings.ts';
+import { DEFAULT_KUBERNETES_SCHEMA_VERSION, getSchemaUrls } from '../src/languageservice/utils/schemaUrls.ts';
 
 const BASE_KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/`;
 const KUBERNETES_SCHEMA_URL = BASE_KUBERNETES_SCHEMA_URL + 'all.json';
