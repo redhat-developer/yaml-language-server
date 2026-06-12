@@ -1,9 +1,9 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import { CST, isMap, isSeq, visit } from 'yaml';
-import { SingleYAMLDocument } from '../../parser/yaml-documents';
-import { LanguageSettings } from '../../yamlLanguageService';
-import { AdditionalValidator } from './types';
+import { SingleYAMLDocument } from '../../parser/yaml-documents.ts';
+import { LanguageSettings } from '../../yamlLanguageService.ts';
+import { AdditionalValidator } from './types.ts';
 import * as l10n from '@vscode/l10n';
 
 export class YAMLStyleValidator implements AdditionalValidator {

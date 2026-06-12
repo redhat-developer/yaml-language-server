@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { FilePatternAssociation } from '../utils/filePatternAssociation';
-import * as Parser from './jsonDocument';
+import { FilePatternAssociation } from '../utils/filePatternAssociation.ts';
+import * as Parser from './jsonDocument.ts';
 
 export function setKubernetesParserOption(jsonDocuments: Parser.JSONDocument[], option: boolean): void {
   for (const jsonDoc of jsonDocuments) {

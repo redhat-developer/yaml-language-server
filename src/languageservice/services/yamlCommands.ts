@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Connection } from 'vscode-languageserver';
-import { YamlCommands } from '../../commands';
-import { CommandExecutor } from '../../languageserver/commandExecutor';
+import { YamlCommands } from '../../commands.ts';
+import { CommandExecutor } from '../../languageserver/commandExecutor.ts';
 import { URI } from 'vscode-uri';
 
 export function registerCommands(commandExecutor: CommandExecutor, connection: Connection): void {

@@ -7,6 +7,7 @@
     "noImplicitAny": false,
     "noImplicitThis": false,
     "outDir": "./out/server",
+    "rewriteRelativeImportExtensions": true,
     "skipLibCheck": true,
     "sourceMap": true,
     "strictFunctionTypes": false,

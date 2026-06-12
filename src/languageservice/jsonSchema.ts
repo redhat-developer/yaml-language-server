@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { CompletionItemKind } from 'vscode-json-languageservice';
-import { SchemaVersions } from './yamlTypes';
+import { SchemaVersions } from './yamlTypes.ts';
 
 export type JSONSchemaRef = JSONSchema | boolean;
 export enum SchemaDialect {

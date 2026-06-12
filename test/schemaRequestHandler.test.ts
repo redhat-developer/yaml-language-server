@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { schemaRequestHandler } from '../src/languageservice/services/schemaRequestHandler';
+import { schemaRequestHandler } from '../src/languageservice/services/schemaRequestHandler.ts';
 import * as sinon from 'sinon';
 import * as request from 'request-light';
 import { XHRResponse } from 'request-light';
@@ -14,7 +14,7 @@ import sinonChai from 'sinon-chai';
 
 const expect = chai.expect;
 chai.use(sinonChai);
-import { testFileSystem } from './utils/testHelper';
+import { testFileSystem } from './utils/testHelper.ts';
 
 describe('Schema Request Handler Tests', () => {
   describe('schemaRequestHandler', () => {

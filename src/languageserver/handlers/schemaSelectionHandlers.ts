@@ -4,11 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Connection } from 'vscode-languageserver/node';
-import { JSONSchema } from '../../languageservice/jsonSchema';
-import { yamlDocumentsCache } from '../../languageservice/parser/yaml-documents';
-import { YAMLSchemaService } from '../../languageservice/services/yamlSchemaService';
-import { SettingsState } from '../../yamlSettings';
-import { JSONSchemaDescription, JSONSchemaDescriptionExt, SchemaSelectionRequests } from '../../requestTypes';
+import { JSONSchema } from '../../languageservice/jsonSchema.ts';
+import { yamlDocumentsCache } from '../../languageservice/parser/yaml-documents.ts';
+import { YAMLSchemaService } from '../../languageservice/services/yamlSchemaService.ts';
+import { SettingsState } from '../../yamlSettings.ts';
+import { JSONSchemaDescription, JSONSchemaDescriptionExt, SchemaSelectionRequests } from '../../requestTypes.ts';
 
 export class JSONSchemaSelection {
   constructor(

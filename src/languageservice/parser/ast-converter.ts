@@ -19,8 +19,8 @@ import {
   Document,
   LineCounter,
 } from 'yaml';
-import { ASTNode, YamlNode } from '../jsonASTTypes';
-import { getCustomTagReturnType } from '../utils/customTags';
+import { ASTNode, YamlNode } from '../jsonASTTypes.ts';
+import { getCustomTagReturnType } from '../utils/customTags.ts';
 import {
   NullASTNodeImpl,
   PropertyASTNodeImpl,
@@ -29,7 +29,7 @@ import {
   NumberASTNodeImpl,
   ArrayASTNodeImpl,
   BooleanASTNodeImpl,
-} from './jsonDocument';
+} from './jsonDocument.ts';
 
 type NodeRange = [number, number, number];
 

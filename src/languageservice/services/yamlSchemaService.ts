@@ -12,18 +12,18 @@ import {
   SchemaHandle,
   UnresolvedSchema,
 } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
-import { SettingsState } from '../../yamlSettings';
-import { JSONSchema, JSONSchemaMap, JSONSchemaRef, SchemaDialect } from '../jsonSchema';
-import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
+import { SettingsState } from '../../yamlSettings.ts';
+import { JSONSchema, JSONSchemaMap, JSONSchemaRef, SchemaDialect } from '../jsonSchema.ts';
+import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService.ts';
 
 import * as l10n from '@vscode/l10n';
 import * as path from 'path';
 import { URI } from 'vscode-uri';
-import { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes';
-import { JSONDocument } from '../parser/jsonDocument';
-import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { SchemaVersions } from '../yamlTypes';
-import { getSchemaFromModeline } from './modelineUtil';
+import { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes.ts';
+import { JSONDocument } from '../parser/jsonDocument.ts';
+import { SingleYAMLDocument } from '../parser/yamlParser07.ts';
+import { SchemaVersions } from '../yamlTypes.ts';
+import { getSchemaFromModeline } from './modelineUtil.ts';
 
 import Ajv, { DefinedError, type AnySchemaObject, type ErrorObject, type ValidateFunction } from 'ajv';
 import Ajv4 from 'ajv-draft-04';
@@ -32,8 +32,8 @@ import Ajv2020 from 'ajv/dist/2020';
 import type { Localize } from 'ajv-i18n/localize/types';
 import * as Json from 'jsonc-parser';
 import { parse } from 'yaml';
-import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, isKubernetes } from '../utils/schemaUrls';
-import { autoDetectKubernetesSchema } from './k8sSchemaUtil';
+import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, isKubernetes } from '../utils/schemaUrls.ts';
+import { autoDetectKubernetesSchema } from './k8sSchemaUtil.ts';
 
 const ajv4 = new Ajv4({ allErrors: true });
 const ajv7 = new Ajv({ allErrors: true });

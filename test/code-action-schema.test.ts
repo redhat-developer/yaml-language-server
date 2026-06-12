@@ -8,13 +8,13 @@ import {
   setupSchemaIDTextDocument,
   TEST_URI,
   TestCustomSchemaProvider,
-} from './utils/testHelper';
-import { ServiceSetup } from './utils/serviceSetup';
+} from './utils/testHelper.ts';
+import { ServiceSetup } from './utils/serviceSetup.ts';
 import { TextDocumentIdentifier, CodeActionParams, CodeActionContext, TextEdit, Range } from 'vscode-languageserver';
 import { expect } from 'chai';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.ts';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.ts';
+import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions.ts';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 describe('Schema Errors Code Action Tests', () => {

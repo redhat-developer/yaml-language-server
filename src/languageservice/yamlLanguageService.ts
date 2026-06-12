@@ -10,7 +10,7 @@ import {
   SchemaAdditions,
   SchemaDeletions,
   SchemaDeletionsAll,
-} from './services/yamlSchemaService';
+} from './services/yamlSchemaService.ts';
 import {
   Position,
   CodeAction,
@@ -28,13 +28,13 @@ import {
   Range,
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
-import { JSONSchema } from './jsonSchema';
-import { YAMLDocumentSymbols } from './services/documentSymbols';
-import { YAMLHover } from './services/yamlHover';
-import { YAMLValidation } from './services/yamlValidation';
-import { YAMLFormatter } from './services/yamlFormatter';
+import { JSONSchema } from './jsonSchema.ts';
+import { YAMLDocumentSymbols } from './services/documentSymbols.ts';
+import { YAMLHover } from './services/yamlHover.ts';
+import { YAMLValidation } from './services/yamlValidation.ts';
+import { YAMLFormatter } from './services/yamlFormatter.ts';
 import { DocumentSymbolsContext } from 'vscode-json-languageservice';
-import { YamlLinks } from './services/yamlLinks';
+import { YamlLinks } from './services/yamlLinks.ts';
 import {
   ClientCapabilities,
   CodeActionParams,
@@ -45,20 +45,20 @@ import {
   RenameParams,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { getFoldingRanges } from './services/yamlFolding';
-import { FoldingRangesContext, SchemaVersions } from './yamlTypes';
-import { YamlCodeActions } from './services/yamlCodeActions';
-import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
-import { YamlCodeLens } from './services/yamlCodeLens';
-import { Telemetry } from './telemetry';
-import { YamlVersion } from './parser/yamlParser07';
-import { YamlCompletion } from './services/yamlCompletion';
-import { yamlDocumentsCache } from './parser/yaml-documents';
-import { SettingsState } from '../yamlSettings';
-import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers';
-import { YamlDefinition } from './services/yamlDefinition';
-import { getSelectionRanges } from './services/yamlSelectionRanges';
-import { YamlRename } from './services/yamlRename';
+import { getFoldingRanges } from './services/yamlFolding.ts';
+import { FoldingRangesContext, SchemaVersions } from './yamlTypes.ts';
+import { YamlCodeActions } from './services/yamlCodeActions.ts';
+import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting.ts';
+import { YamlCodeLens } from './services/yamlCodeLens.ts';
+import { Telemetry } from './telemetry.ts';
+import { YamlVersion } from './parser/yamlParser07.ts';
+import { YamlCompletion } from './services/yamlCompletion.ts';
+import { yamlDocumentsCache } from './parser/yaml-documents.ts';
+import { SettingsState } from '../yamlSettings.ts';
+import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers.ts';
+import { YamlDefinition } from './services/yamlDefinition.ts';
+import { getSelectionRanges } from './services/yamlSelectionRanges.ts';
+import { YamlRename } from './services/yamlRename.ts';
 
 export enum SchemaPriority {
   SchemaStore = 1,
