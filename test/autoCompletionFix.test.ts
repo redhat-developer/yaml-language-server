@@ -129,16 +129,16 @@ describe('Auto Completion Fix Tests', () => {
         },
       },
     });
-    const content = '- prop1: a\n   | |'; // len: 12, pos: 11
-    const completion = await parseCaret(content);
+    const content = '- prop1: a\n  '; // len: 13
+    const completion = await parseSetup(content, 1, 2);
     expect(completion.items).lengthOf(2);
     expect(completion.items[0]).eql(
-      createExpectedCompletion('prop2', 'prop2: ', 1, 3, 1, 4, 10, 2, {
+      createExpectedCompletion('prop2', 'prop2: ', 1, 2, 1, 2, 10, 2, {
         documentation: '',
       })
     );
     expect(completion.items[1]).eql(
-      createExpectedCompletion('prop3', 'prop3: ', 1, 3, 1, 4, 10, 2, {
+      createExpectedCompletion('prop3', 'prop3: ', 1, 2, 1, 2, 10, 2, {
         documentation: '',
       })
     );
