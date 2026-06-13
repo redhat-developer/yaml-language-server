@@ -33,77 +33,49 @@ describe('Custom Tag tests Tests', () => {
   }
 
   describe('Test that validation does not throw errors', function () {
-    it('Custom Tags without type not specified', (done) => {
+    it('Custom Tags without type not specified', async () => {
       const content = 'scalar_test: !Test test_example';
-      const validator = parseSetup(content, ['!Test']);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 0);
-        })
-        .then(done, done);
+      const result = await parseSetup(content, ['!Test']);
+      assert.equal(result.length, 0);
     });
 
-    it('Custom Tags with one type', (done) => {
+    it('Custom Tags with one type', async () => {
       const content = 'resolvers: !Ref\n  - test';
-      const validator = parseSetup(content, ['!Ref sequence']);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 0);
-        })
-        .then(done, done);
+      const result = await parseSetup(content, ['!Ref sequence']);
+      assert.equal(result.length, 0);
     });
 
-    it('Custom Tags with multiple types', (done) => {
+    it('Custom Tags with multiple types', async () => {
       const content = 'resolvers: !Ref\n  - test';
-      const validator = parseSetup(content, ['!Ref sequence', '!Ref mapping', '!Ref scalar']);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 0);
-        })
-        .then(done, done);
+      const result = await parseSetup(content, ['!Ref sequence', '!Ref mapping', '!Ref scalar']);
+      assert.equal(result.length, 0);
     });
 
-    it('Custom Tags with input and return types', (done) => {
+    it('Custom Tags with input and return types', async () => {
       const content = 'resolvers: !Ref\n  - test';
-      const validator = parseSetup(content, ['!Ref sequence:string']);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 0);
-        })
-        .then(done, done);
+      const result = await parseSetup(content, ['!Ref sequence:string']);
+      assert.equal(result.length, 0);
     });
 
-    it('Allow multiple different custom tag types with different use', (done) => {
+    it('Allow multiple different custom tag types with different use', async () => {
       const content = '!test\nhello: !test\n  world';
-      const validator = parseSetup(content, ['!test scalar', '!test mapping']);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 0);
-        })
-        .then(done, done);
+      const result = await parseSetup(content, ['!test scalar', '!test mapping']);
+      assert.equal(result.length, 0);
     });
 
-    it('Allow multiple different custom tag types with multiple different uses', (done) => {
+    it('Allow multiple different custom tag types with multiple different uses', async () => {
       const content = '!test\nhello: !test\n  world\nsequence: !ref\n  - item1';
-      const validator = parseSetup(content, ['!test scalar', '!test mapping', '!ref sequence', '!ref mapping']);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 0);
-        })
-        .then(done, done);
+      const result = await parseSetup(content, ['!test scalar', '!test mapping', '!ref sequence', '!ref mapping']);
+      assert.equal(result.length, 0);
     });
   });
 
   describe('Test that validation does throw errors', function () {
-    it('Error when custom tag is not available', (done) => {
+    it('Error when custom tag is not available', async () => {
       const content = '!test';
-      const validator = parseSetup(content, []);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 1);
-          assert.deepEqual(result[0], createExpectedError('Unresolved tag: !test', 0, 0, 0, 5));
-        })
-        .then(done, done);
+      const result = await parseSetup(content, []);
+      assert.equal(result.length, 1);
+      assert.deepEqual(result[0], createExpectedError('Unresolved tag: !test', 0, 0, 0, 5));
     });
   });
 });

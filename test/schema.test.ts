@@ -65,7 +65,7 @@ describe('JSON Schema', () => {
     languageService = langService;
   });
 
-  it('Resolving $refs', function (testDone) {
+  it('Resolving $refs', async function () {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     service.setSchemaContributions({
       schemas: {
@@ -86,30 +86,19 @@ describe('JSON Schema', () => {
       },
     });
 
-    service
-      .getResolvedSchema('https://myschemastore/main')
-      .then((solvedSchema) => {
-        assert.deepEqual(solvedSchema.schema.properties['child'], {
-          id: 'https://myschemastore/child',
-          type: 'bool',
-          description: 'Test description',
-          _$ref: 'https://myschemastore/child',
-          url: 'https://myschemastore/child',
-          _baseUri: 'https://myschemastore/child',
-          _sourceUri: 'https://myschemastore/child',
-        });
-      })
-      .then(
-        () => {
-          return testDone();
-        },
-        (error) => {
-          testDone(error);
-        }
-      );
+    const solvedSchema = await service.getResolvedSchema('https://myschemastore/main');
+    assert.deepEqual(solvedSchema.schema.properties['child'], {
+      id: 'https://myschemastore/child',
+      type: 'bool',
+      description: 'Test description',
+      _$ref: 'https://myschemastore/child',
+      url: 'https://myschemastore/child',
+      _baseUri: 'https://myschemastore/child',
+      _sourceUri: 'https://myschemastore/child',
+    });
   });
 
-  it('Resolving $refs 2', function (testDone) {
+  it('Resolving $refs 2', async function () {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     service.setSchemaContributions({
       schemas: {
@@ -136,33 +125,22 @@ describe('JSON Schema', () => {
       },
     });
 
-    service
-      .getResolvedSchema('https://json.schemastore.org/swagger-2.0')
-      .then((fs) => {
-        assert.deepEqual(fs.schema.properties['responseValue'], {
-          type: 'object',
-          required: ['$ref'],
-          properties: {
-            $ref: {
-              type: 'string',
-              _sourceUri: 'https://json.schemastore.org/swagger-2.0',
-            },
-          },
-          _$ref: '#/definitions/jsonReference',
+    const fs = await service.getResolvedSchema('https://json.schemastore.org/swagger-2.0');
+    assert.deepEqual(fs.schema.properties['responseValue'], {
+      type: 'object',
+      required: ['$ref'],
+      properties: {
+        $ref: {
+          type: 'string',
           _sourceUri: 'https://json.schemastore.org/swagger-2.0',
-        });
-      })
-      .then(
-        () => {
-          return testDone();
         },
-        (error) => {
-          testDone(error);
-        }
-      );
+      },
+      _$ref: '#/definitions/jsonReference',
+      _sourceUri: 'https://json.schemastore.org/swagger-2.0',
+    });
   });
 
-  it('Resolving $refs 3', function (testDone) {
+  it('Resolving $refs 3', async function () {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     service.setSchemaContributions({
       schemas: {
@@ -193,45 +171,34 @@ describe('JSON Schema', () => {
       },
     });
 
-    service
-      .getResolvedSchema('https://myschemastore/main/schema1.json')
-      .then((fs) => {
-        assert.deepEqual(fs.schema.properties['p1'], {
-          type: 'string',
-          enum: ['object'],
-          _$ref: 'schema2.json#/definitions/hello',
-          _baseUri: 'https://myschemastore/main/schema2.json',
-          _sourceUri: 'https://myschemastore/main/schema2.json',
-          url: 'https://myschemastore/main/schema2.json',
-        });
-        assert.deepEqual(fs.schema.properties['p2'], {
-          type: 'string',
-          enum: ['object'],
-          _$ref: './schema2.json#/definitions/hello',
-          _baseUri: 'https://myschemastore/main/schema2.json',
-          _sourceUri: 'https://myschemastore/main/schema2.json',
-          url: 'https://myschemastore/main/schema2.json',
-        });
-        assert.deepEqual(fs.schema.properties['p3'], {
-          type: 'string',
-          enum: ['object'],
-          _$ref: '/main/schema2.json#/definitions/hello',
-          _baseUri: 'https://myschemastore/main/schema2.json',
-          _sourceUri: 'https://myschemastore/main/schema2.json',
-          url: 'https://myschemastore/main/schema2.json',
-        });
-      })
-      .then(
-        () => {
-          return testDone();
-        },
-        (error) => {
-          testDone(error);
-        }
-      );
+    const fs = await service.getResolvedSchema('https://myschemastore/main/schema1.json');
+    assert.deepEqual(fs.schema.properties['p1'], {
+      type: 'string',
+      enum: ['object'],
+      _$ref: 'schema2.json#/definitions/hello',
+      _baseUri: 'https://myschemastore/main/schema2.json',
+      _sourceUri: 'https://myschemastore/main/schema2.json',
+      url: 'https://myschemastore/main/schema2.json',
+    });
+    assert.deepEqual(fs.schema.properties['p2'], {
+      type: 'string',
+      enum: ['object'],
+      _$ref: './schema2.json#/definitions/hello',
+      _baseUri: 'https://myschemastore/main/schema2.json',
+      _sourceUri: 'https://myschemastore/main/schema2.json',
+      url: 'https://myschemastore/main/schema2.json',
+    });
+    assert.deepEqual(fs.schema.properties['p3'], {
+      type: 'string',
+      enum: ['object'],
+      _$ref: '/main/schema2.json#/definitions/hello',
+      _baseUri: 'https://myschemastore/main/schema2.json',
+      _sourceUri: 'https://myschemastore/main/schema2.json',
+      url: 'https://myschemastore/main/schema2.json',
+    });
   });
 
-  it('Resolving absolute-path $refs without top-level id', function (testDone) {
+  it('Resolving absolute-path $refs without top-level id', async function () {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     service.setSchemaContributions({
       schemas: {
@@ -252,31 +219,20 @@ describe('JSON Schema', () => {
       },
     });
 
-    service
-      .getResolvedSchema('file:///main/schema.json')
-      .then((fs) => {
-        assert.deepEqual(fs.errors, []);
-        assert.deepEqual(fs.schema.properties['name'], {
-          type: 'string',
-          enum: ['alice', 'bob'],
-          description: 'Allowed names.',
-          _$ref: '/main/schema2.json',
-          _baseUri: 'file:///main/schema2.json',
-          _sourceUri: 'file:///main/schema2.json',
-          url: 'file:///main/schema2.json',
-        });
-      })
-      .then(
-        () => {
-          return testDone();
-        },
-        (error) => {
-          testDone(error);
-        }
-      );
+    const fs = await service.getResolvedSchema('file:///main/schema.json');
+    assert.deepEqual(fs.errors, []);
+    assert.deepEqual(fs.schema.properties['name'], {
+      type: 'string',
+      enum: ['alice', 'bob'],
+      description: 'Allowed names.',
+      _$ref: '/main/schema2.json',
+      _baseUri: 'file:///main/schema2.json',
+      _sourceUri: 'file:///main/schema2.json',
+      url: 'file:///main/schema2.json',
+    });
   });
 
-  it('Preserves markdownDescription on $ref siblings', function (testDone) {
+  it('Preserves markdownDescription on $ref siblings', async function () {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     service.setSchemaContributions({
       schemas: {
@@ -302,24 +258,13 @@ describe('JSON Schema', () => {
       },
     });
 
-    service
-      .getResolvedSchema('https://myschemastore/main/schema.json')
-      .then((resolvedSchema) => {
-        assert.strictEqual(resolvedSchema.schema.properties['bar'].description, 'bar desc');
-        assert.strictEqual(
-          resolvedSchema.schema.properties['bar'].markdownDescription,
-          'bar md desc **bold** \n * line \n* another \n\n'
-        );
-        assert.deepStrictEqual(resolvedSchema.schema.properties['bar'].enum, ['potato', 'carrot']);
-      })
-      .then(
-        () => {
-          return testDone();
-        },
-        (error) => {
-          testDone(error);
-        }
-      );
+    const resolvedSchema = await service.getResolvedSchema('https://myschemastore/main/schema.json');
+    assert.strictEqual(resolvedSchema.schema.properties['bar'].description, 'bar desc');
+    assert.strictEqual(
+      resolvedSchema.schema.properties['bar'].markdownDescription,
+      'bar md desc **bold** \n * line \n* another \n\n'
+    );
+    assert.deepStrictEqual(resolvedSchema.schema.properties['bar'].enum, ['potato', 'carrot']);
   });
 
   describe('Compound Schema Documents', () => {
@@ -605,7 +550,7 @@ address:
     });
   });
 
-  it('FileSchema', function (testDone) {
+  it('FileSchema', async function () {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
     service.setSchemaContributions({
@@ -628,23 +573,12 @@ address:
       },
     });
 
-    service
-      .getResolvedSchema('main')
-      .then((fs) => {
-        const section = fs.getSection(['child', 'grandchild']);
-        assert.equal(section.description, 'Meaning of Life');
-      })
-      .then(
-        () => {
-          return testDone();
-        },
-        (error) => {
-          testDone(error);
-        }
-      );
+    const fs = await service.getResolvedSchema('main');
+    const section = fs.getSection(['child', 'grandchild']);
+    assert.equal(section.description, 'Meaning of Life');
   });
 
-  it('Array FileSchema', function (testDone) {
+  it('Array FileSchema', async function () {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
     service.setSchemaContributions({
@@ -670,23 +604,12 @@ address:
       },
     });
 
-    service
-      .getResolvedSchema('main')
-      .then((fs) => {
-        const section = fs.getSection(['child', '0', 'grandchild']);
-        assert.equal(section.description, 'Meaning of Life');
-      })
-      .then(
-        () => {
-          return testDone();
-        },
-        (error) => {
-          testDone(error);
-        }
-      );
+    const fs = await service.getResolvedSchema('main');
+    const section = fs.getSection(['child', '0', 'grandchild']);
+    assert.equal(section.description, 'Meaning of Life');
   });
 
-  it('Missing subschema', function (testDone) {
+  it('Missing subschema', async function () {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
     service.setSchemaContributions({
@@ -703,23 +626,12 @@ address:
       },
     });
 
-    service
-      .getResolvedSchema('main')
-      .then((fs) => {
-        const section = fs.getSection(['child', 'grandchild']);
-        assert.strictEqual(section, undefined);
-      })
-      .then(
-        () => {
-          return testDone();
-        },
-        (error) => {
-          testDone(error);
-        }
-      );
+    const fs = await service.getResolvedSchema('main');
+    const section = fs.getSection(['child', 'grandchild']);
+    assert.strictEqual(section, undefined);
   });
 
-  it('Preloaded Schema', function (testDone) {
+  it('Preloaded Schema', async function () {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     const id = 'https://myschemastore/test1';
     const schema: JsonSchema.JSONSchema = {
@@ -739,20 +651,9 @@ address:
 
     service.registerExternalSchema(id, ['*.json'], schema);
 
-    service
-      .getSchemaForResource('test.json', undefined)
-      .then((schema) => {
-        const section = schema.getSection(['child', 'grandchild']);
-        assert.equal(section.description, 'Meaning of Life');
-      })
-      .then(
-        () => {
-          return testDone();
-        },
-        (error) => {
-          testDone(error);
-        }
-      );
+    const fs = await service.getSchemaForResource('test.json', undefined);
+    const section = fs.getSection(['child', 'grandchild']);
+    assert.equal(section.description, 'Meaning of Life');
   });
 
   it('Schema has url', async () => {
@@ -780,43 +681,21 @@ address:
     expect(result.schema.url).equal(id);
   });
 
-  it('Null Schema', function (testDone) {
+  it('Null Schema', async function () {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
-    service
-      .getSchemaForResource('test.json', undefined)
-      .then((schema) => {
-        assert.equal(schema, null);
-      })
-      .then(
-        () => {
-          return testDone();
-        },
-        (error) => {
-          testDone(error);
-        }
-      );
+    const schema = await service.getSchemaForResource('test.json', undefined);
+    assert.equal(schema, null);
   });
 
-  it('Schema not found', function (testDone) {
+  it('Schema not found', async function () {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
 
-    service
-      .loadSchema('test.json')
-      .then((schema) => {
-        assert.notEqual(schema.errors.length, 0);
-      })
-      .then(
-        () => {
-          return testDone();
-        },
-        (error) => {
-          testDone(error);
-        }
-      );
+    const schema = await service.loadSchema('test.json');
+    assert.notEqual(schema.errors.length, 0);
   });
 
-  it('Schema with non uri registers correctly', function (testDone) {
+  it('Schema with non uri registers correctly', async function () {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
     const non_uri = 'non_uri';
     service.registerExternalSchema(non_uri, ['*.yml', '*.yaml'], {
@@ -827,10 +706,8 @@ address:
         },
       },
     });
-    service.getResolvedSchema(non_uri).then((schema) => {
-      assert.notEqual(schema, undefined);
-      testDone();
-    });
+    const schema = await service.getResolvedSchema(non_uri);
+    assert.notEqual(schema, undefined);
   });
   it('Modifying schema', async () => {
     const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
