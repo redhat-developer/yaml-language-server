@@ -5,9 +5,10 @@
 import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 import assert from 'assert';
 import { ServiceSetup } from './utils/serviceSetup';
-import { DocumentLink } from 'vscode-languageserver-types';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import type { DocumentLink } from 'vscode-languageserver-types';
+import type { SettingsState } from '../src/yamlSettings';
+import { TextDocumentTestManager } from '../src/yamlSettings';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
 describe('Find Links Tests', () => {
   let languageHandler: LanguageHandlers;

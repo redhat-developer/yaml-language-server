@@ -1,11 +1,12 @@
-import { TextDocuments, Disposable, ClientCapabilities, WorkspaceFolder } from 'vscode-languageserver';
-import { CustomFormatterOptions, SchemaConfiguration } from './languageservice/yamlLanguageService';
-import { ISchemaAssociations } from './requestTypes';
-import { URI } from 'vscode-uri';
-import { JSONSchema } from './languageservice/jsonSchema';
+import type { Disposable, ClientCapabilities, WorkspaceFolder } from 'vscode-languageserver';
+import { TextDocuments } from 'vscode-languageserver';
+import type { CustomFormatterOptions, SchemaConfiguration } from './languageservice/yamlLanguageService';
+import type { ISchemaAssociations } from './requestTypes';
+import type { URI } from 'vscode-uri';
+import type { JSONSchema } from './languageservice/jsonSchema';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { CRD_CATALOG_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
-import { YamlVersion } from './languageservice/parser/yamlParser07';
+import type { YamlVersion } from './languageservice/parser/yamlParser07';
 
 // Client settings interface to grab settings relevant for the language server
 export interface Settings {

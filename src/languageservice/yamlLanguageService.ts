@@ -4,14 +4,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import {
-  YAMLSchemaService,
-  CustomSchemaProvider,
-  SchemaAdditions,
-  SchemaDeletions,
-  SchemaDeletionsAll,
-} from './services/yamlSchemaService';
-import {
+import type { CustomSchemaProvider, SchemaAdditions, SchemaDeletions, SchemaDeletionsAll } from './services/yamlSchemaService';
+import { YAMLSchemaService } from './services/yamlSchemaService';
+import type {
   Position,
   CodeAction,
   CompletionList,
@@ -28,14 +23,14 @@ import {
   Range,
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
-import { JSONSchema } from './jsonSchema';
+import type { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
-import { DocumentSymbolsContext } from 'vscode-json-languageservice';
+import type { DocumentSymbolsContext } from 'vscode-json-languageservice';
 import { YamlLinks } from './services/yamlLinks';
-import {
+import type {
   ClientCapabilities,
   CodeActionParams,
   Connection,
@@ -44,17 +39,17 @@ import {
   PrepareRenameParams,
   RenameParams,
 } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { getFoldingRanges } from './services/yamlFolding';
-import { FoldingRangesContext, SchemaVersions } from './yamlTypes';
+import type { FoldingRangesContext, SchemaVersions } from './yamlTypes';
 import { YamlCodeActions } from './services/yamlCodeActions';
 import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
 import { YamlCodeLens } from './services/yamlCodeLens';
-import { Telemetry } from './telemetry';
-import { YamlVersion } from './parser/yamlParser07';
+import type { Telemetry } from './telemetry';
+import type { YamlVersion } from './parser/yamlParser07';
 import { YamlCompletion } from './services/yamlCompletion';
 import { yamlDocumentsCache } from './parser/yaml-documents';
-import { SettingsState } from '../yamlSettings';
+import type { SettingsState } from '../yamlSettings';
 import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers';
 import { YamlDefinition } from './services/yamlDefinition';
 import { getSelectionRanges } from './services/yamlSelectionRanges';

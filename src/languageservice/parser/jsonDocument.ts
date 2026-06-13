@@ -3,8 +3,8 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { JSONSchema } from '../jsonSchema';
-import {
+import type { JSONSchema } from '../jsonSchema';
+import type {
   ASTNode,
   ObjectASTNode,
   ArrayASTNode,
@@ -16,10 +16,10 @@ import {
   YamlNode,
 } from '../jsonASTTypes';
 import type { CustomTagReturnType } from '../utils/customTags';
-import { Diagnostic, Range } from 'vscode-languageserver-types';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Node, Pair } from 'yaml';
-import { type IApplicableSchema } from './schemaValidation/baseValidator';
+import type { Diagnostic, Range } from 'vscode-languageserver-types';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type { Node, Pair } from 'yaml';
+import type { IApplicableSchema } from './schemaValidation/baseValidator';
 import { findNodeAtOffset } from './astNodeUtils';
 import { getValidator } from './schemaValidation/validatorFactory';
 

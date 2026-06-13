@@ -2,7 +2,8 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { SCHEMA_ID, TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import type { TestCustomSchemaProvider } from './utils/testHelper';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { createDiagnosticWithData, createExpectedError } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
 import {
@@ -17,14 +18,16 @@ import {
 } from './utils/errorMessages';
 import assert from 'assert';
 import * as path from 'path';
-import { Diagnostic, DiagnosticSeverity, Position } from 'vscode-languageserver-types';
+import type { Diagnostic } from 'vscode-languageserver-types';
+import { DiagnosticSeverity, Position } from 'vscode-languageserver-types';
 import { expect } from 'chai';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { LanguageService } from '../src/languageservice/yamlLanguageService';
-import { IProblem } from '../src/languageservice/parser/schemaValidation/baseValidator';
-import { JSONSchema } from '../src/languageservice/jsonSchema';
-import { TestTelemetry } from './utils/testsTypes';
+import type { SettingsState } from '../src/yamlSettings';
+import { TextDocumentTestManager } from '../src/yamlSettings';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService';
+import type { IProblem } from '../src/languageservice/parser/schemaValidation/baseValidator';
+import type { JSONSchema } from '../src/languageservice/jsonSchema';
+import type { TestTelemetry } from './utils/testsTypes';
 import { ErrorCode } from 'vscode-json-languageservice';
 import { DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls';
 

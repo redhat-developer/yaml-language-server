@@ -3,8 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CST, Document, isDocument, isScalar, Node, visit, YAMLMap, YAMLSeq } from 'yaml';
-import { YamlNode } from '../jsonASTTypes';
+import type { CST, Document, Node, YAMLMap, YAMLSeq } from 'yaml';
+import { isDocument, isScalar, visit } from 'yaml';
+import type { YamlNode } from '../jsonASTTypes';
 
 type Visitor = (item: CST.SourceToken, path: CST.VisitPath) => number | symbol | Visitor | void;
 

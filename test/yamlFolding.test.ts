@@ -6,7 +6,7 @@
 import { expect } from 'chai';
 import { FoldingRange } from 'vscode-languageserver-types';
 import { getFoldingRanges } from '../src/languageservice/services/yamlFolding';
-import { FoldingRangesContext } from '../src/languageservice/yamlTypes';
+import type { FoldingRangesContext } from '../src/languageservice/yamlTypes';
 import { setupTextDocument, TEST_URI } from './utils/testHelper';
 
 const context: FoldingRangesContext = { rangeLimit: 10_0000 };
