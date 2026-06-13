@@ -362,10 +362,8 @@ function ensureLineBreak(content: string): string {
   if (content.length === 0) {
     return content;
   }
-  if (!content.endsWith('\n')) {
-    content += '\n';
-  }
-  return content + '\n';
+
+  return content.replace(/\n+$/g, '') + '\n\n';
 }
 
 function getSchemaName(schema: JSONSchema): string {
