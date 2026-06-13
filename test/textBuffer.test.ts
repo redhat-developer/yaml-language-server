@@ -3,9 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { TextBuffer } from '../src/languageservice/utils/textBuffer';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import assert from 'assert';
+
+import { TextDocument } from 'vscode-languageserver-textdocument';
+
+import { TextBuffer } from '../src/languageservice/utils/textBuffer';
 
 describe('TextBuffer', () => {
   it('getLineLength should return actual line length', () => {

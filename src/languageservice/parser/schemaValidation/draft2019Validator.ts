@@ -3,16 +3,18 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
-import { SchemaDialect } from '../../jsonSchema';
-import type { ASTNode, ArrayASTNode, ObjectASTNode } from '../../jsonASTTypes';
-import { isNumber } from '../../utils/objects';
-import * as l10n from '@vscode/l10n';
-import { DiagnosticSeverity } from 'vscode-languageserver-types';
-import { ErrorCode } from 'vscode-json-languageservice';
-import { Draft07Validator } from './draft07Validator';
-import { ValidationResult, asSchema } from './baseValidator';
 import type { ISchemaCollector, Options } from './baseValidator';
+import type { ASTNode, ArrayASTNode, ObjectASTNode } from '../../jsonASTTypes';
+import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
+
+import * as l10n from '@vscode/l10n';
+import { ErrorCode } from 'vscode-json-languageservice';
+import { DiagnosticSeverity } from 'vscode-languageserver-types';
+
+import { ValidationResult, asSchema } from './baseValidator';
+import { Draft07Validator } from './draft07Validator';
+import { SchemaDialect } from '../../jsonSchema';
+import { isNumber } from '../../utils/objects';
 
 export class Draft2019Validator extends Draft07Validator {
   protected override getCurrentDialect(): SchemaDialect {

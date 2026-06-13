@@ -3,14 +3,18 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Diagnostic, DiagnosticSeverity, DiagnosticTag, Range } from 'vscode-languageserver-types';
-import { isAlias, isCollection, isNode, isScalar, Node, Scalar, visit, YAMLMap, YAMLSeq, CST, Pair } from 'yaml';
-import { YamlNode } from '../../jsonASTTypes';
-import { SingleYAMLDocument } from '../../parser/yaml-documents';
-import { AdditionalValidator } from './types';
-import { isCollectionItem } from '../../utils/yamlAstUtils';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type { Node, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
+
+import type { AdditionalValidator } from './types';
+import type { YamlNode } from '../../jsonASTTypes';
+import type { SingleYAMLDocument } from '../../parser/yaml-documents';
+
 import * as l10n from '@vscode/l10n';
+import { Diagnostic, DiagnosticSeverity, DiagnosticTag, Range } from 'vscode-languageserver-types';
+import { CST, isAlias, isCollection, isNode, isScalar, visit } from 'yaml';
+
+import { isCollectionItem } from '../../utils/yamlAstUtils';
 
 export class UnusedAnchorsValidator implements AdditionalValidator {
   validate(document: TextDocument, yamlDoc: SingleYAMLDocument): Diagnostic[] {

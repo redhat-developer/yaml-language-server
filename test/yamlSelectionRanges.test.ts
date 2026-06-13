@@ -1,5 +1,7 @@
+import type { Position, Range, SelectionRange } from 'vscode-languageserver-types';
+
 import { expect } from 'chai';
-import { Position, Range, SelectionRange } from 'vscode-languageserver-types';
+
 import { setupTextDocument } from './utils/testHelper';
 import { getSelectionRanges } from '../src/languageservice/services/yamlSelectionRanges';
 

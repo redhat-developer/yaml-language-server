@@ -3,9 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DocumentOnTypeFormattingParams } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import type { DocumentOnTypeFormattingParams } from 'vscode-languageserver';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+
 import { Position, Range, TextEdit } from 'vscode-languageserver-types';
+
 import { TextBuffer } from '../utils/textBuffer';
 
 export function doDocumentOnTypeFormatting(

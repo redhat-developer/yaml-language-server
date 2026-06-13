@@ -2,12 +2,16 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { setupLanguageService, setupTextDocument } from './utils/testHelper';
+import type { DocumentLink } from 'vscode-languageserver-types';
+
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import type { SettingsState } from '../src/yamlSettings';
+
 import assert from 'assert';
+
 import { ServiceSetup } from './utils/serviceSetup';
-import { DocumentLink } from 'vscode-languageserver-types';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { setupLanguageService, setupTextDocument } from './utils/testHelper';
+import { TextDocumentTestManager } from '../src/yamlSettings';
 
 describe('Find Links Tests', () => {
   let languageHandler: LanguageHandlers;

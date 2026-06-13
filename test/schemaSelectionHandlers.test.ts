@@ -2,14 +2,16 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as sinon from 'sinon';
+import type { Connection, RemoteClient } from 'vscode-languageserver/node';
+
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+
 import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers';
 import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
-import { Connection, RemoteClient } from 'vscode-languageserver/node';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { SchemaSelectionRequests } from '../src/requestTypes';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper';
 
 const expect = chai.expect;

@@ -2,10 +2,14 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as l10n from '@vscode/l10n';
+import type { Connection } from 'vscode-languageserver/node';
+
 import assert from 'assert';
 import * as path from 'path';
-import { Connection, createConnection } from 'vscode-languageserver/node';
+
+import * as l10n from '@vscode/l10n';
+import { createConnection } from 'vscode-languageserver/node';
+
 import { schemaRequestHandler, workspaceContext } from '../src/languageservice/services/schemaRequestHandler';
 import { setupl10nBundle } from '../src/nodeTranslationSetup';
 import { YAMLServerInit } from '../src/yamlServerInit';

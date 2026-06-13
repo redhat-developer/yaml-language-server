@@ -3,10 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Connection } from 'vscode-languageserver';
-import { YamlCommands } from '../../commands';
-import { CommandExecutor } from '../../languageserver/commandExecutor';
+import type { Connection } from 'vscode-languageserver';
+
+import type { CommandExecutor } from '../../languageserver/commandExecutor';
+
 import { URI } from 'vscode-uri';
+
+import { YamlCommands } from '../../commands';
 
 export function registerCommands(commandExecutor: CommandExecutor, connection: Connection): void {
   commandExecutor.registerCommand(YamlCommands.JUMP_TO_SCHEMA, async (uri: string) => {

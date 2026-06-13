@@ -3,14 +3,17 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type { Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
+
+import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import * as chai from 'chai';
-import { YamlDocuments } from '../src/languageservice/parser/yaml-documents';
-import { setupTextDocument } from './utils/testHelper';
-import * as yamlParser from '../src/languageservice/parser/yamlParser07';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { isMap, isScalar, isSeq, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
+import { isMap, isScalar, isSeq } from 'yaml';
+
+import { setupTextDocument } from './utils/testHelper';
+import { YamlDocuments } from '../src/languageservice/parser/yaml-documents';
+import * as yamlParser from '../src/languageservice/parser/yamlParser07';
 import { TextBuffer } from '../src/languageservice/utils/textBuffer';
 
 const expect = chai.expect;

@@ -3,7 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Node, Pair } from 'yaml';
+import type { Node, Pair } from 'yaml';
+
 import type { CustomTagReturnType } from './utils/customTags';
 
 export type YamlNode = Node | Pair;

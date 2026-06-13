@@ -2,13 +2,15 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { Connection } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Diagnostic } from 'vscode-languageserver-types';
+import type { Connection } from 'vscode-languageserver';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type { Diagnostic } from 'vscode-languageserver-types';
+
+import type { LanguageService } from '../../languageservice/yamlLanguageService';
+import type { SettingsState } from '../../yamlSettings';
+
 import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
 import { removeDuplicatesObj } from '../../languageservice/utils/arrUtils';
-import { LanguageService } from '../../languageservice/yamlLanguageService';
-import { SettingsState } from '../../yamlSettings';
 
 export class ValidationHandler {
   private languageService: LanguageService;

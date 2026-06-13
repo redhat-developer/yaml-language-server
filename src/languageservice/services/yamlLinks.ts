@@ -2,10 +2,13 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type { DocumentLink } from 'vscode-languageserver-types';
+
+import type { Telemetry } from '../telemetry';
+
 import { findLinks as JSONFindLinks } from 'vscode-json-languageservice/lib/umd/services/jsonLinks';
-import { DocumentLink } from 'vscode-languageserver-types';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Telemetry } from '../telemetry';
+
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 
 export class YamlLinks {

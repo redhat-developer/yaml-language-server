@@ -2,15 +2,17 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as sinon from 'sinon';
-import * as chai from 'chai';
-import sinonChai from 'sinon-chai';
 import * as path from 'path';
 import * as url from 'url';
-import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
+
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+
 import { parse } from '../src/languageservice/parser/yamlParser07';
-import { SettingsState } from '../src/yamlSettings';
+import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import { DEFAULT_KUBERNETES_SCHEMA_VERSION, getSchemaUrls } from '../src/languageservice/utils/schemaUrls';
+import { SettingsState } from '../src/yamlSettings';
 
 const BASE_KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/`;
 const KUBERNETES_SCHEMA_URL = BASE_KUBERNETES_SCHEMA_URL + 'all.json';

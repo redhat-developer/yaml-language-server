@@ -2,11 +2,13 @@
  *  Copyright (c) IBM Corp. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as path from 'path';
+import type { InitializeParams } from 'vscode-languageserver';
+
 import { existsSync } from 'fs';
-import { URI } from 'vscode-uri';
+import * as path from 'path';
+
 import * as l10n from '@vscode/l10n';
-import { InitializeParams } from 'vscode-languageserver';
+import { URI } from 'vscode-uri';
 
 /**
  * Loads translations from the filesystem based on the configured locale and the folder of translations provided in the initialization parameters.

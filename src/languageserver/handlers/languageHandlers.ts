@@ -3,44 +3,47 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Connection } from 'vscode-languageserver';
-import {
+import type { Connection } from 'vscode-languageserver';
+import type {
   CodeActionParams,
+  CodeLensParams,
+  DefinitionParams,
   DidChangeWatchedFilesParams,
   DocumentFormattingParams,
   DocumentLinkParams,
   DocumentOnTypeFormattingParams,
   DocumentSymbolParams,
   FoldingRangeParams,
-  SelectionRangeParams,
-  TextDocumentPositionParams,
-  CodeLensParams,
-  DefinitionParams,
   PrepareRenameParams,
   RenameParams,
+  SelectionRangeParams,
+  TextDocumentPositionParams,
 } from 'vscode-languageserver-protocol';
-import {
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type {
   CodeAction,
   CodeLens,
   CompletionList,
   DefinitionLink,
   DocumentLink,
   DocumentSymbol,
-  Hover,
   FoldingRange,
+  Hover,
   Range,
   SelectionRange,
   SymbolInformation,
   TextEdit,
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
-import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
-import { LanguageService } from '../../languageservice/yamlLanguageService';
-import { SettingsState } from '../../yamlSettings';
-import { ValidationHandler } from './validationHandlers';
-import { ResultLimitReachedNotification } from '../../requestTypes';
+
+import type { ValidationHandler } from './validationHandlers';
+import type { LanguageService } from '../../languageservice/yamlLanguageService';
+import type { SettingsState } from '../../yamlSettings';
+
 import * as path from 'path';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+
+import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
+import { ResultLimitReachedNotification } from '../../requestTypes';
 
 export class LanguageHandlers {
   private languageService: LanguageService;

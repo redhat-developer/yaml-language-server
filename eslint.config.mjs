@@ -1,36 +1,67 @@
 // @ts-check
 
+import { join } from 'node:path';
 import js from '@eslint/js';
-import { defineConfig } from 'eslint/config';
+import { defineConfig, includeIgnoreFile } from 'eslint/config';
 import tseslint from 'typescript-eslint';
-import importPlugin from 'eslint-plugin-import';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import { flatConfigs, createNodeResolver } from 'eslint-plugin-import-x';
+import prettierPlugin from 'eslint-plugin-prettier';
 
 export default defineConfig(
+  includeIgnoreFile(join(import.meta.dirname, '.gitignore')),
   js.configs.recommended,
   tseslint.configs.recommended,
+  flatConfigs.recommended,
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: 'error',
+      reportUnusedInlineConfigs: 'error',
+    },
+    plugins: {
+      prettier: prettierPlugin,
+    },
+    settings: {
+      'import-x/resolver-next': [createNodeResolver()],
+    },
+  },
   {
     files: ['**/*.{ts,tsx}'],
-    extends: [importPlugin.flatConfigs.recommended, importPlugin.flatConfigs.typescript],
+    extends: [flatConfigs.typescript],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+      },
+    },
+    rules: {
+      'sort-imports': ['error', { ignoreDeclarationSort: true }],
+      '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/no-use-before-define': ['error', { functions: false, classes: false }],
+      '@typescript-eslint/explicit-function-return-type': ['error', { allowExpressions: true }],
+      'import-x/consistent-type-specifier-style': ['error', 'prefer-top-level'],
+      'import-x/first': 'error',
+      'import-x/newline-after-import': 'error',
+      'import-x/order': [
+        'error',
+        {
+          alphabetize: { order: 'asc' },
+          groups: ['type', 'builtin', 'external', ['parent', 'sibling', 'index']],
+          'newlines-between': 'always',
+          sortTypesGroup: true,
+        },
+      ],
+    },
   },
-  eslintPluginPrettierRecommended,
+  {
+    rules: {
+      'import-x/no-unresolved': 'off',
+      'prettier/prettier': 'error',
+    },
+  },
   // chai assertions are sometimes expressions
   {
     files: ['**/*.test.ts'],
     rules: {
       '@typescript-eslint/no-unused-expressions': 'off',
-    },
-  },
-  {
-    files: ['**/*.ts'],
-    rules: {
-      'prettier/prettier': 'error',
-      '@typescript-eslint/no-use-before-define': ['error', { functions: false, classes: false }],
-      '@typescript-eslint/explicit-function-return-type': [1, { allowExpressions: true }],
-      'eol-last': ['error'],
-      'space-infix-ops': ['error', { int32Hint: false }],
-      'no-multi-spaces': ['error', { ignoreEOLComments: true }],
-      'keyword-spacing': ['error'],
     },
   }
 );

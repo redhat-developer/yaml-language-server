@@ -2,13 +2,15 @@
  *  Copyright (c) IBM Corp. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import type { Connection, RemoteClient } from 'vscode-languageserver/node';
+
 import { assert } from 'chai';
 import * as sinon from 'sinon';
-import { Connection, RemoteClient } from 'vscode-languageserver/node';
+
+import { setupSchemaIDTextDocument } from './utils/testHelper';
 import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers';
 import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { setupSchemaIDTextDocument } from './utils/testHelper';
 
 describe('unexpected meta schema', () => {
   const sandbox = sinon.createSandbox();

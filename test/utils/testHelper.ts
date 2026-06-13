@@ -2,20 +2,26 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import type { Connection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node';
+
+import type { LanguageService, LanguageSettings } from '../../src';
+import type { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers';
+import type { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers';
+import type { JSONSchema } from '../../src/languageservice/jsonSchema';
+import type { FileSystem } from '../../src/languageservice/services/schemaRequestHandler';
+
 import { promises as fs } from 'fs';
+import * as path from 'path';
+
 import { ClientCapabilities } from 'vscode-json-languageservice';
+import { createConnection } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Connection, createConnection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node';
-import { LanguageService, LanguageSettings } from '../../src';
-import { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers';
-import { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers';
-import { JSONSchema } from '../../src/languageservice/jsonSchema';
+
+import { TestTelemetry } from './testsTypes';
 import { yamlDocumentsCache } from '../../src/languageservice/parser/yaml-documents';
-import { FileSystem, schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler';
+import { schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler';
 import { YAMLServerInit } from '../../src/yamlServerInit';
 import { SettingsState } from '../../src/yamlSettings';
-import { TestTelemetry } from './testsTypes';
-import * as path from 'path';
 
 export function toFsPath(str: unknown): string {
   if (typeof str !== 'string') {

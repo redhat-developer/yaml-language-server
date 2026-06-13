@@ -3,18 +3,20 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { schemaRequestHandler } from '../src/languageservice/services/schemaRequestHandler';
-import * as sinon from 'sinon';
-import * as request from 'request-light';
-import { XHRResponse } from 'request-light';
-import { Connection } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
+import type { XHRResponse } from 'request-light';
+import type { Connection } from 'vscode-languageserver';
+
 import * as chai from 'chai';
+import * as request from 'request-light';
+import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import { URI } from 'vscode-uri';
+
+import { testFileSystem } from './utils/testHelper';
+import { schemaRequestHandler } from '../src/languageservice/services/schemaRequestHandler';
 
 const expect = chai.expect;
 chai.use(sinonChai);
-import { testFileSystem } from './utils/testHelper';
 
 describe('Schema Request Handler Tests', () => {
   describe('schemaRequestHandler', () => {

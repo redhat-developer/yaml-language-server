@@ -2,13 +2,18 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { ServiceSetup } from './utils/serviceSetup';
-import { setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import type { Diagnostic } from 'vscode-languageserver-types';
+
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import type { SettingsState } from '../src/yamlSettings';
+
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { DiagnosticSeverity } from 'vscode-languageserver-types';
+
+import { TextDocumentTestManager } from '../src/yamlSettings';
+import { ServiceSetup } from './utils/serviceSetup';
+import { setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
 
 type ValidationHandlerWithConnection = {

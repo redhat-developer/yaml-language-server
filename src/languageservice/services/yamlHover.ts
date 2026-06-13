@@ -4,24 +4,30 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as l10n from '@vscode/l10n';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type { Hover, MarkupContent, Position } from 'vscode-languageserver-types';
+import type { Node } from 'yaml';
+
+import type { ASTNode, ObjectASTNode, PropertyASTNode } from '../jsonASTTypes';
+import type { JSONSchema } from '../jsonSchema';
+import type { YAMLSchemaService } from './yamlSchemaService';
+import type { IApplicableSchema } from '../parser/schemaValidation/baseValidator';
+import type { SingleYAMLDocument } from '../parser/yamlParser07';
+import type { Telemetry } from '../telemetry';
+import type { LanguageSettings } from '../yamlLanguageService';
+
 import * as path from 'path';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Hover, MarkupContent, MarkupKind, Position, Range } from 'vscode-languageserver-types';
+
+import * as l10n from '@vscode/l10n';
+import { MarkupKind, Range } from 'vscode-languageserver-types';
 import { URI } from 'vscode-uri';
-import { isAlias, isMap, isSeq, Node, stringify as stringifyYAML } from 'yaml';
-import { ASTNode, ObjectASTNode, PropertyASTNode } from '../jsonASTTypes';
-import { JSONSchema } from '../jsonSchema';
-import { setKubernetesParserOption } from '../parser/isKubernetes';
+import { isAlias, isMap, isSeq, stringify as stringifyYAML } from 'yaml';
+
 import { getNodeValue } from '../parser/astNodeUtils';
-import { IApplicableSchema } from '../parser/schemaValidation/baseValidator';
+import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { Telemetry } from '../telemetry';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { toYamlStringScalar } from '../utils/yamlScalar';
-import { LanguageSettings } from '../yamlLanguageService';
-import { YAMLSchemaService } from './yamlSchemaService';
 
 export class YAMLHover {
   private shouldHover: boolean;

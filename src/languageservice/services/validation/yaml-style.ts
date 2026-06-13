@@ -1,10 +1,13 @@
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
-import { CST, isMap, isSeq, visit } from 'yaml';
-import { SingleYAMLDocument } from '../../parser/yaml-documents';
-import { LanguageSettings } from '../../yamlLanguageService';
-import { AdditionalValidator } from './types';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type { CST } from 'yaml';
+
+import type { AdditionalValidator } from './types';
+import type { SingleYAMLDocument } from '../../parser/yaml-documents';
+import type { LanguageSettings } from '../../yamlLanguageService';
+
 import * as l10n from '@vscode/l10n';
+import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
+import { isMap, isSeq, visit } from 'yaml';
 
 export class YAMLStyleValidator implements AdditionalValidator {
   private forbidSequence: boolean;

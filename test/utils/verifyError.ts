@@ -3,19 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import {
+import type {
   CompletionItem,
   CompletionItemKind,
-  Diagnostic,
-  DiagnosticSeverity,
-  DiagnosticTag,
-  DocumentSymbol,
   InsertTextFormat,
-  Range,
-  SymbolKind,
   SymbolInformation,
+  SymbolKind,
 } from 'vscode-languageserver-types';
+
 import { ErrorCode } from 'vscode-json-languageservice';
+import { Diagnostic, DiagnosticSeverity, DiagnosticTag, DocumentSymbol, Range } from 'vscode-languageserver-types';
 
 export function createExpectedError(
   message: string,

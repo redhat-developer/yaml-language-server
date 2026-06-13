@@ -4,36 +4,43 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import {
+import type { AnySchemaObject, DefinedError, ErrorObject, ValidateFunction } from 'ajv';
+import type { Localize } from 'ajv-i18n/localize/types';
+import type {
   ISchemaContributions,
-  JSONSchemaService,
-  ResolvedSchema,
   SchemaDependencies,
   SchemaHandle,
-  UnresolvedSchema,
 } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
-import { SettingsState } from '../../yamlSettings';
-import { JSONSchema, JSONSchemaMap, JSONSchemaRef, SchemaDialect } from '../jsonSchema';
-import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
+
+import type { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes';
+import type { SettingsState } from '../../yamlSettings';
+import type { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
+import type { JSONDocument } from '../parser/jsonDocument';
+import type { SingleYAMLDocument } from '../parser/yamlParser07';
+import type { SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
+import type { SchemaVersions } from '../yamlTypes';
+
+import * as path from 'path';
 
 import * as l10n from '@vscode/l10n';
-import * as path from 'path';
-import { URI } from 'vscode-uri';
-import { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes';
-import { JSONDocument } from '../parser/jsonDocument';
-import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { SchemaVersions } from '../yamlTypes';
-import { getSchemaFromModeline } from './modelineUtil';
-
-import Ajv, { DefinedError, type AnySchemaObject, type ErrorObject, type ValidateFunction } from 'ajv';
-import Ajv4 from 'ajv-draft-04';
+import Ajv from 'ajv';
 import Ajv2019 from 'ajv/dist/2019';
 import Ajv2020 from 'ajv/dist/2020';
-import type { Localize } from 'ajv-i18n/localize/types';
+import Ajv4 from 'ajv-draft-04';
 import * as Json from 'jsonc-parser';
+import {
+  JSONSchemaService,
+  ResolvedSchema,
+  UnresolvedSchema,
+} from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
+import { URI } from 'vscode-uri';
 import { parse } from 'yaml';
-import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, isKubernetes } from '../utils/schemaUrls';
+
+import { SchemaDialect } from '../jsonSchema';
 import { autoDetectKubernetesSchema } from './k8sSchemaUtil';
+import { getSchemaFromModeline } from './modelineUtil';
+import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, isKubernetes } from '../utils/schemaUrls';
+import { SchemaPriority } from '../yamlLanguageService';
 
 const ajv4 = new Ajv4({ allErrors: true });
 const ajv7 = new Ajv({ allErrors: true });
@@ -41,13 +48,13 @@ const ajv2019 = new Ajv2019({ allErrors: true });
 const ajv2020 = new Ajv2020({ allErrors: true });
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const jsonSchema04 = require('ajv-draft-04/dist/refs/json-schema-draft-04.json');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const jsonSchema2019 = require('ajv/dist/refs/json-schema-2019-09/schema.json');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const jsonSchema2020 = require('ajv/dist/refs/json-schema-2020-12/schema.json');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const jsonSchema04 = require('ajv-draft-04/dist/refs/json-schema-draft-04.json');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ajvLocalizers: Record<string, Localize> = require('ajv-i18n');
 

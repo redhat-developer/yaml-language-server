@@ -4,21 +4,24 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { JSONSchema, JSONSchemaRef, SchemaDialect } from '../../jsonSchema';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+
 import type { ASTNode, ArrayASTNode, NumberASTNode, ObjectASTNode, PropertyASTNode, StringASTNode } from '../../jsonASTTypes';
-import { equals, isBoolean, isDefined, isIterable, isNumber, isString } from '../../utils/objects';
-import { getSchemaTypeName } from '../../utils/schemaUtils';
+import type { JSONSchema, JSONSchemaRef, SchemaDialect } from '../../jsonSchema';
+
+import * as l10n from '@vscode/l10n';
+import { ErrorCode } from 'vscode-json-languageservice';
+import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
+import { URI } from 'vscode-uri';
+
+import { getValidator } from './validatorFactory';
 import { isArrayEqual } from '../../utils/arrUtils';
-import { safeCreateUnicodeRegExp } from '../../utils/strings';
 import { FilePatternAssociation } from '../../utils/filePatternAssociation';
 import { floatSafeRemainder } from '../../utils/math';
-import { ErrorCode } from 'vscode-json-languageservice';
-import * as l10n from '@vscode/l10n';
-import { URI } from 'vscode-uri';
-import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
-import type { TextDocument } from 'vscode-languageserver-textdocument';
+import { equals, isBoolean, isDefined, isIterable, isNumber, isString } from '../../utils/objects';
+import { getSchemaTypeName } from '../../utils/schemaUtils';
+import { safeCreateUnicodeRegExp } from '../../utils/strings';
 import { contains, getNodeValue } from '../astNodeUtils';
-import { getValidator } from './validatorFactory';
 
 export const YAML_SOURCE = 'YAML';
 const YAML_SCHEMA_PREFIX = 'yaml-schema: ';

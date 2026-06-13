@@ -2,13 +2,15 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import type { Connection } from 'vscode-languageserver';
+
+import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import * as chai from 'chai';
-import { checkSchemaURI } from '../src/languageservice/utils/schemaUrls';
-import { TelemetryImpl } from '../src/languageserver/telemetry';
 import { URI } from 'vscode-uri';
-import { Connection } from 'vscode-languageserver';
+
+import { TelemetryImpl } from '../src/languageserver/telemetry';
+import { checkSchemaURI } from '../src/languageservice/utils/schemaUrls';
 
 const expect = chai.expect;
 chai.use(sinonChai);

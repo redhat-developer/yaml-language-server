@@ -3,18 +3,23 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONDocument } from './jsonDocument';
-import { CST, Document, isNode, isPair, isScalar, LineCounter, Node, visit, YAMLError } from 'yaml';
-import { ASTNode, YamlNode } from '../jsonASTTypes';
-import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type { CST, Document, LineCounter, Node, YAMLError } from 'yaml';
+
+import type { ASTNode, YamlNode } from '../jsonASTTypes';
+import type { ParserOptions } from './yamlParser07';
+import type { YAMLDocDiagnostic } from '../utils/parseUtils';
+import type { TextBuffer } from '../utils/textBuffer';
+
 import { ErrorCode } from 'vscode-json-languageservice';
+import { isNode, isPair, isScalar, visit } from 'yaml';
+
 import { convertAST } from './ast-converter';
-import { YAMLDocDiagnostic } from '../utils/parseUtils';
+import { JSONDocument } from './jsonDocument';
+import { defaultOptions, parse as parseYAML } from './yamlParser07';
 import { isArrayEqual } from '../utils/arrUtils';
-import { getParent } from '../utils/yamlAstUtils';
-import { TextBuffer } from '../utils/textBuffer';
 import { getIndentation } from '../utils/strings';
+import { getParent } from '../utils/yamlAstUtils';
 
 /**
  * These documents are collected into a final YAMLDocument

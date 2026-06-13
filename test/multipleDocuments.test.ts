@@ -2,15 +2,21 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as path from 'path';
-import { setupLanguageService, setupTextDocument, toFsPath } from './utils/testHelper';
+import type { Diagnostic, Hover } from 'vscode-languageserver-types';
+
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService';
+import type { SettingsState } from '../src/yamlSettings';
+
 import assert from 'assert';
+import * as path from 'path';
+
+import { MarkupContent } from 'vscode-languageserver-types';
+
 import { ServiceSetup } from './utils/serviceSetup';
-import { Diagnostic, Hover, MarkupContent } from 'vscode-languageserver-types';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { LanguageService } from '../src/languageservice/yamlLanguageService';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { setupLanguageService, setupTextDocument, toFsPath } from './utils/testHelper';
+import { TextDocumentTestManager } from '../src/yamlSettings';
 
 /**
  * Setup the schema we are going to use with the language settings
