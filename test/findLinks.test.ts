@@ -30,26 +30,22 @@ describe('Find Links Tests', () => {
   }
 
   describe('Jump to definition', function () {
-    it('Find source definition', (done) => {
+    it('Find source definition', async () => {
       const content =
         "definitions:\n  link:\n    type: string\ntype: object\nproperties:\n  uri:\n    $ref: '#/definitions/link'\n";
-      const definitions = findLinks(content);
-      definitions
-        .then(function (results) {
-          assert.equal(results.length, 1);
-          assert.deepEqual(results[0].range, {
-            start: {
-              line: 6,
-              character: 11,
-            },
-            end: {
-              line: 6,
-              character: 29,
-            },
-          });
-          assert.deepEqual(results[0].target, 'file://~/Desktop/vscode-k8s/test.yaml#3,5');
-        })
-        .then(done, done);
+      const results = await findLinks(content);
+      assert.equal(results.length, 1);
+      assert.deepEqual(results[0].range, {
+        start: {
+          line: 6,
+          character: 11,
+        },
+        end: {
+          line: 6,
+          character: 29,
+        },
+      });
+      assert.deepEqual(results[0].target, 'file://~/Desktop/vscode-k8s/test.yaml#3,5');
     });
   });
 
