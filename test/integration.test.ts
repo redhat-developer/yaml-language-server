@@ -51,95 +51,59 @@ describe('Kubernetes Integration Tests', () => {
 
     //Validating basic nodes
     describe('Test that validation does not throw errors', function () {
-      it('Basic test', (done) => {
+      it('Basic test', async () => {
         const content = 'apiVersion: v1';
-        const validator = parseSetup(content);
-        validator
-          .then(function (result) {
-            assert.equal(result.length, 0);
-          })
-          .then(done, done);
+        const result = await parseSetup(content);
+        assert.equal(result.length, 0);
       });
 
-      it('Basic test on nodes with children', (done) => {
+      it('Basic test on nodes with children', async () => {
         const content = 'metadata:\n  name: hello';
-        const validator = parseSetup(content);
-        validator
-          .then(function (result) {
-            assert.equal(result.length, 0);
-          })
-          .then(done, done);
+        const result = await parseSetup(content);
+        assert.equal(result.length, 0);
       });
 
-      it('Advanced test on nodes with children', (done) => {
+      it('Advanced test on nodes with children', async () => {
         const content = 'apiVersion: v1\nmetadata:\n  name: test1';
-        const validator = parseSetup(content);
-        validator
-          .then(function (result) {
-            assert.equal(result.length, 0);
-          })
-          .then(done, done);
+        const result = await parseSetup(content);
+        assert.equal(result.length, 0);
       });
 
-      it('Type string validates under children', (done) => {
+      it('Type string validates under children', async () => {
         const content = 'apiVersion: v1\nkind: Pod\nmetadata:\n  resourceVersion: test';
-        const validator = parseSetup(content);
-        validator
-          .then(function (result) {
-            assert.equal(result.length, 0);
-          })
-          .then(done, done);
+        const result = await parseSetup(content);
+        assert.equal(result.length, 0);
       });
 
       describe('Type tests', function () {
-        it('Type String does not error on valid node', (done) => {
+        it('Type String does not error on valid node', async () => {
           const content = 'apiVersion: v1';
-          const validator = parseSetup(content);
-          validator
-            .then(function (result) {
-              assert.equal(result.length, 0);
-            })
-            .then(done, done);
+          const result = await parseSetup(content);
+          assert.equal(result.length, 0);
         });
 
-        it('Type Boolean does not error on valid node', (done) => {
+        it('Type Boolean does not error on valid node', async () => {
           const content = 'readOnlyRootFilesystem: false';
-          const validator = parseSetup(content);
-          validator
-            .then(function (result) {
-              assert.equal(result.length, 0);
-            })
-            .then(done, done);
+          const result = await parseSetup(content);
+          assert.equal(result.length, 0);
         });
 
-        it('Type Number does not error on valid node', (done) => {
+        it('Type Number does not error on valid node', async () => {
           const content = 'generation: 5';
-          const validator = parseSetup(content);
-          validator
-            .then(function (result) {
-              assert.equal(result.length, 0);
-            })
-            .then(done, done);
+          const result = await parseSetup(content);
+          assert.equal(result.length, 0);
         });
 
-        it('Type Object does not error on valid node', (done) => {
+        it('Type Object does not error on valid node', async () => {
           const content = 'metadata:\n  name: tes';
-          const validator = parseSetup(content);
-          validator
-            .then(function (result) {
-              assert.equal(result.length, 0);
-            })
-            .then(done, done);
+          const result = await parseSetup(content);
+          assert.equal(result.length, 0);
         });
 
-        it('Type Array does not error on valid node', (done) => {
+        it('Type Array does not error on valid node', async () => {
           const content = 'items:\n  - apiVersion: v1';
-          const validator = parseSetup(content);
-          validator
-            .then(function (result) {
-              assert.equal(result.length, 0);
-            })
-            .then(done, done);
+          const result = await parseSetup(content);
+          assert.equal(result.length, 0);
         });
       });
     });
@@ -150,61 +114,47 @@ describe('Kubernetes Integration Tests', () => {
      * No longer has those types of validation
      */
     // describe('Test that validation DOES throw errors', function () {
-    //     it('Error when theres no value for a node', done => {
+    //     it('Error when theres no value for a node', async () => {
     //         const content = 'apiVersion:';
-    //         const validator = parseSetup(content);
-    //         validator.then(function (result){
-    //             assert.notEqual(result.length, 0);
-    //         }).then(done, done);
+    //         const result = await parseSetup(content);
+    //         assert.notEqual(result.length, 0);
     //     });
 
-    //     it('Error on incorrect value type (number)', done => {
+    //     it('Error on incorrect value type (number)', async () => {
     //         const content = 'apiVersion: 1000';
-    //         const validator = parseSetup(content);
-    //         validator.then(function (result){
-    //             assert.notEqual(result.length, 0);
-    //         }).then(done, done);
+    //         const result = await parseSetup(content);
+    //         assert.notEqual(result.length, 0);
     //     });
 
-    //     it('Error on incorrect value type (boolean)', done => {
+    //     it('Error on incorrect value type (boolean)', async () => {
     //         const content = 'apiVersion: False';
-    //         const validator = parseSetup(content);
-    //         validator.then(function (result){
-    //             assert.notEqual(result.length, 0);
-    //         }).then(done, done);
+    //         const result = await parseSetup(content);
+    //         assert.notEqual(result.length, 0);
     //     });
 
-    //     it('Error on incorrect value type (string)', done => {
+    //     it('Error on incorrect value type (string)', async () => {
     //         const content = 'isNonResourceURL: hello_world';
-    //         const validator = parseSetup(content);
-    //         validator.then(function (result){
-    //             assert.notEqual(result.length, 0);
-    //         }).then(done, done);
+    //         const result = await parseSetup(content);
+    //         assert.notEqual(result.length, 0);
     //     });
 
-    //     it('Error on incorrect value type (object)', done => {
+    //     it('Error on incorrect value type (object)', async () => {
     //         const content = 'apiVersion: v1\nkind: Pod\nmetadata:\n  name: False';
-    //         const validator = parseSetup(content);
-    //         validator.then(function (result){
-    //             assert.notEqual(result.length, 0);
-    //         }).then(done, done);
+    //         const result = await parseSetup(content);
+    //         assert.notEqual(result.length, 0);
     //     });
 
-    //     it('Error on incorrect value type in multiple yaml documents', done => {
+    //     it('Error on incorrect value type in multiple yaml documents', async () => {
     //         const content = '---\napiVersion: v1\n...\n---\napiVersion: False\n...';
-    //         const validator = parseSetup(content);
-    //         validator.then(function (result){
-    //             assert.notEqual(result.length, 0);
-    //         }).then(done, done);
+    //         const result = await parseSetup(content);
+    //         assert.notEqual(result.length, 0);
     //     });
 
-    //     it('Property error message should be \"Property unknown_node is not allowed.\" when property is not allowed ', done => {
+    //     it('Property error message should be \"Property unknown_node is not allowed.\" when property is not allowed ', async () => {
     //         const content = 'unknown_node: test';
-    //         const validator = parseSetup(content);
-    //         validator.then(function (result){
-    //             assert.equal(result.length, 1);
-    //             assert.equal(result[0].message, 'Property unknown_node is not allowed.');
-    //         }).then(done, done);
+    //         const result = await parseSetup(content);
+    //         assert.equal(result.length, 1);
+    //         assert.equal(result[0].message, 'Property unknown_node is not allowed.');
     //     });
 
     // });
@@ -225,20 +175,16 @@ describe('Kubernetes Integration Tests', () => {
       /**
        * Known issue: https://github.com/redhat-developer/yaml-language-server/issues/51
        */
-      // it('Autocomplete on root node without word', done => {
+      // it('Autocomplete on root node without word', async () => {
       //     const content = '';
-      //     const completion = parseSetup(content, 0);
-      //     completion.then(function (result){
-      //         assert.notEqual(result.items.length, 0);
-      //     }).then(done, done);
+      //     const result = await parseSetup(content, 0);
+      //     assert.notEqual(result.items.length, 0);
       // });
 
-      // it('Autocomplete on root node with word', done => {
+      // it('Autocomplete on root node with word', async () => {
       //     const content = 'api';
-      //     const completion = parseSetup(content, 6);
-      //     completion.then(function (result){
-      //         assert.notEqual(result.items.length, 0);
-      //     }).then(done, done);
+      //     const result = await parseSetup(content, 6);
+      //     assert.notEqual(result.items.length, 0);
       // });
 
       /**
@@ -246,62 +192,40 @@ describe('Kubernetes Integration Tests', () => {
        * https://github.com/redhat-developer/yaml-language-server/pull/108
        * No longer has those types of completion
        */
-      // it('Autocomplete on default value (without value content)', done => {
+      // it('Autocomplete on default value (without value content)', async () => {
       //     const content = 'apiVersion: ';
-      //     const completion = parseSetup(content, 10);
-      //     completion.then(function (result){
-      //         assert.notEqual(result.items.length, 0);
-      //     }).then(done, done);
+      //     const result = await parseSetup(content, 10);
+      //     assert.notEqual(result.items.length, 0);
       // });
 
-      it('Autocomplete on default value (with value content)', (done) => {
+      it('Autocomplete on default value (with value content)', async () => {
         const content = 'apiVersion: v1\nkind: Depl';
-        const completion = parseSetup(content, 19);
-        completion
-          .then(function (result) {
-            assert.notEqual(result.items.length, 0);
-          })
-          .then(done, done);
+        const result = await parseSetup(content, 19);
+        assert.notEqual(result.items.length, 0);
       });
 
-      it('Autocomplete on boolean value (without value content)', (done) => {
+      it('Autocomplete on boolean value (without value content)', async () => {
         const content = 'apiVersion: apps/v1\nkind: Deployment\nspec:\n  paused: ';
-        const completion = parseSetup(content, content.length);
-        completion
-          .then(function (result) {
-            assert.equal(result.items.length, 2);
-          })
-          .then(done, done);
+        const result = await parseSetup(content, content.length);
+        assert.equal(result.items.length, 2);
       });
 
-      it('Autocomplete on boolean value (with value content)', (done) => {
+      it('Autocomplete on boolean value (with value content)', async () => {
         const content = 'apiVersion: apps/v1\nkind: Deployment\nspec:\n  paused: fal';
-        const completion = parseSetup(content, content.length);
-        completion
-          .then(function (result) {
-            assert.equal(result.items.length, 2);
-          })
-          .then(done, done);
+        const result = await parseSetup(content, content.length);
+        assert.equal(result.items.length, 2);
       });
 
-      it('Autocomplete key in middle of file', (done) => {
+      it('Autocomplete key in middle of file', async () => {
         const content = 'metadata:\n  nam';
-        const completion = parseSetup(content, 14);
-        completion
-          .then(function (result) {
-            assert.notEqual(result.items.length, 0);
-          })
-          .then(done, done);
+        const result = await parseSetup(content, 14);
+        assert.notEqual(result.items.length, 0);
       });
 
-      it('Autocomplete key in middle of file 2', (done) => {
+      it('Autocomplete key in middle of file 2', async () => {
         const content = 'metadata:\n  name: test\n  cluster';
-        const completion = parseSetup(content, 31);
-        completion
-          .then(function (result) {
-            assert.notEqual(result.items.length, 0);
-          })
-          .then(done, done);
+        const result = await parseSetup(content, 31);
+        assert.notEqual(result.items.length, 0);
       });
     });
   });

@@ -51,11 +51,10 @@ describe('Document Symbols Tests', () => {
       });
     }
 
-    it('Document is empty', (done) => {
+    it('Document is empty', () => {
       const content = '';
       const symbols = parseNonHierarchicalSetup(content);
       assert.deepStrictEqual(symbols, []);
-      done();
     });
 
     it('Simple document symbols', () => {
@@ -159,11 +158,10 @@ describe('Document Symbols Tests', () => {
       });
     }
 
-    it('Document is empty', (done) => {
+    it('Document is empty', () => {
       const content = '';
       const symbols = parseHierarchicalSetup(content);
       assert.deepStrictEqual(symbols, []);
-      done();
     });
 
     it('Simple document symbols', () => {

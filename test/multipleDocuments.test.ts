@@ -66,59 +66,43 @@ describe('Multiple Documents Validation Tests', () => {
       });
     }
 
-    it('Should validate multiple documents', (done) => {
+    it('Should validate multiple documents', async () => {
       const content = `
 name: jack
 age: 22
 ---
 cwd: test
             `;
-      const validator = validatorSetup(content);
-      validator
-        .then((result) => {
-          assert.equal(result.length, 0);
-        })
-        .then(done, done);
+      const result = await validatorSetup(content);
+      assert.equal(result.length, 0);
     });
 
-    it('Should find errors in both documents', (done) => {
+    it('Should find errors in both documents', async () => {
       const content = `name1: jack
 age: asd
 ---
 cwd: False`;
-      const validator = validatorSetup(content);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 3);
-        })
-        .then(done, done);
+      const result = await validatorSetup(content);
+      assert.equal(result.length, 3);
     });
 
-    it('Should find errors in first document', (done) => {
+    it('Should find errors in first document', async () => {
       const content = `name: jack
 age: age
 ---
 cwd: test`;
-      const validator = validatorSetup(content);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 1);
-        })
-        .then(done, done);
+      const result = await validatorSetup(content);
+      assert.equal(result.length, 1);
     });
 
-    it('Should find errors in second document', (done) => {
+    it('Should find errors in second document', async () => {
       const content = `name: jack
 age: 22
 ---
 cwd: False
 `;
-      const validator = validatorSetup(content);
-      validator
-        .then(function (result) {
-          assert.equal(result.length, 1);
-        })
-        .then(done, done);
+      const result = await validatorSetup(content);
+      assert.equal(result.length, 1);
     });
 
     it('Should hover in first document', async () => {
