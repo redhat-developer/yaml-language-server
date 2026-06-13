@@ -1,5 +1,5 @@
 import { CST, visit } from 'yaml';
-import { ASTNode } from '../jsonASTTypes';
+import type { ASTNode } from '../jsonASTTypes';
 
 export class FlowStyleRewriter {
   constructor(private readonly indentation: string) {}

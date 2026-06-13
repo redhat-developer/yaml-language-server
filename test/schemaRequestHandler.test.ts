@@ -6,8 +6,8 @@
 import { schemaRequestHandler } from '../src/languageservice/services/schemaRequestHandler';
 import * as sinon from 'sinon';
 import * as request from 'request-light';
-import { XHRResponse } from 'request-light';
-import { Connection } from 'vscode-languageserver';
+import type { XHRResponse } from 'request-light';
+import type { Connection } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';

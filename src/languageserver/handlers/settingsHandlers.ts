@@ -3,16 +3,18 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { configure as configureHttpRequests, xhr } from 'request-light';
-import { Connection, DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
+import type { Connection } from 'vscode-languageserver';
+import { DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
 import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
 import { checkSchemaURI, EMPTY_SCHEMA_URL, isKubernetes, JSON_SCHEMASTORE_URL } from '../../languageservice/utils/schemaUrls';
 import { equals } from '../../languageservice/utils/objects';
-import { LanguageService, LanguageSettings, SchemaPriority, SchemasSettings } from '../../languageservice/yamlLanguageService';
+import type { LanguageService, LanguageSettings, SchemasSettings } from '../../languageservice/yamlLanguageService';
+import { SchemaPriority } from '../../languageservice/yamlLanguageService';
 import { SchemaSelectionRequests } from '../../requestTypes';
-import { Settings, SettingsState } from '../../yamlSettings';
-import { Telemetry } from '../../languageservice/telemetry';
-import { ValidationHandler } from './validationHandlers';
+import type { Settings, SettingsState } from '../../yamlSettings';
+import type { Telemetry } from '../../languageservice/telemetry';
+import type { ValidationHandler } from './validationHandlers';
 
 export class SettingsHandler {
   private schemaSettings: SchemasSettings[] | undefined;

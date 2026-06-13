@@ -8,11 +8,13 @@ import {
   createExpectedDocumentSymbol,
   createExpectedDocumentSymbolNoDetail,
 } from './utils/verifyError';
-import { DocumentSymbol, SymbolKind, SymbolInformation } from 'vscode-languageserver-types';
+import type { DocumentSymbol, SymbolInformation } from 'vscode-languageserver-types';
+import { SymbolKind } from 'vscode-languageserver-types';
 import assert from 'assert';
 import { ServiceSetup } from './utils/serviceSetup';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import type { SettingsState } from '../src/yamlSettings';
+import { TextDocumentTestManager } from '../src/yamlSettings';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
 describe('Document Symbols Tests', () => {
   let languageHandler: LanguageHandlers;

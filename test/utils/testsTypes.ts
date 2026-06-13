@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Disposable, Event, NotificationHandler, RequestHandler } from 'vscode-jsonrpc';
-import {
+import type { Disposable, Event, NotificationHandler, RequestHandler } from 'vscode-jsonrpc';
+import type {
   ApplyWorkspaceEditParams,
   WorkspaceEdit,
   ApplyWorkspaceEditResponse,
@@ -17,9 +17,9 @@ import {
   ClientCapabilities,
   ServerCapabilities,
 } from 'vscode-languageserver-protocol';
-import { Connection, RemoteWorkspace } from 'vscode-languageserver';
+import type { Connection, RemoteWorkspace } from 'vscode-languageserver';
 import { TelemetryImpl } from '../../src/languageserver/telemetry';
-import { TelemetryEvent } from '../../src/languageservice/telemetry';
+import type { TelemetryEvent } from '../../src/languageservice/telemetry';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */

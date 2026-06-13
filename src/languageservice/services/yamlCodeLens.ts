@@ -3,13 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { CodeLens, Range } from 'vscode-languageserver-types';
 import { YamlCommands } from '../../commands';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { YAMLSchemaService } from './yamlSchemaService';
-import { JSONSchema } from '../jsonSchema';
-import { Telemetry } from '../telemetry';
+import type { YAMLSchemaService } from './yamlSchemaService';
+import type { JSONSchema } from '../jsonSchema';
+import type { Telemetry } from '../telemetry';
 import { getSchemaUrls } from '../utils/schemaUrls';
 import { getSchemaTitle } from '../utils/schemaUtils';
 

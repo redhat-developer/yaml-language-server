@@ -8,7 +8,7 @@ import * as chai from 'chai';
 import { checkSchemaURI } from '../src/languageservice/utils/schemaUrls';
 import { TelemetryImpl } from '../src/languageserver/telemetry';
 import { URI } from 'vscode-uri';
-import { Connection } from 'vscode-languageserver';
+import type { Connection } from 'vscode-languageserver';
 
 const expect = chai.expect;
 chai.use(sinonChai);

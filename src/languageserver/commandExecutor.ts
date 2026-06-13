@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ExecuteCommandParams } from 'vscode-languageserver-protocol';
+import type { ExecuteCommandParams } from 'vscode-languageserver-protocol';
 
 export interface CommandHandler {
   (...args: unknown[]): void;

@@ -4,28 +4,33 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import {
+import type {
   ISchemaContributions,
-  JSONSchemaService,
-  ResolvedSchema,
   SchemaDependencies,
   SchemaHandle,
+} from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
+import {
+  JSONSchemaService,
+  ResolvedSchema,
   UnresolvedSchema,
 } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
-import { SettingsState } from '../../yamlSettings';
-import { JSONSchema, JSONSchemaMap, JSONSchemaRef, SchemaDialect } from '../jsonSchema';
-import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
+import type { SettingsState } from '../../yamlSettings';
+import type { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
+import { SchemaDialect } from '../jsonSchema';
+import type { SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
+import { SchemaPriority } from '../yamlLanguageService';
 
 import * as l10n from '@vscode/l10n';
 import * as path from 'path';
 import { URI } from 'vscode-uri';
-import { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes';
-import { JSONDocument } from '../parser/jsonDocument';
-import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { SchemaVersions } from '../yamlTypes';
+import type { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes';
+import type { JSONDocument } from '../parser/jsonDocument';
+import type { SingleYAMLDocument } from '../parser/yamlParser07';
+import type { SchemaVersions } from '../yamlTypes';
 import { getSchemaFromModeline } from './modelineUtil';
 
-import Ajv, { DefinedError, type AnySchemaObject, type ErrorObject, type ValidateFunction } from 'ajv';
+import Ajv from 'ajv';
+import type { DefinedError, AnySchemaObject, ErrorObject, ValidateFunction } from 'ajv';
 import Ajv4 from 'ajv-draft-04';
 import Ajv2019 from 'ajv/dist/2019';
 import Ajv2020 from 'ajv/dist/2020';
