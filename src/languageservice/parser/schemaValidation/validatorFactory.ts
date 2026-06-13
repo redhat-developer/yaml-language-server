@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { SchemaDialect } from '../../jsonSchema';
-import { BaseValidator } from './baseValidator';
+import type { BaseValidator } from './baseValidator';
 import { Draft04Validator } from './draft04Validator';
 import { Draft07Validator } from './draft07Validator';
 import { Draft2019Validator } from './draft2019Validator';

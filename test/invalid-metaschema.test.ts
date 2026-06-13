@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import { assert } from 'chai';
 import * as sinon from 'sinon';
-import { Connection, RemoteClient } from 'vscode-languageserver/node';
+import type { Connection, RemoteClient } from 'vscode-languageserver/node';
 import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers';
 import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';

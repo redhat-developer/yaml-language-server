@@ -4,12 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { expect } from 'chai';
+import type { GetLineText } from '../src/languageservice/utils/diagnostic-filter';
 import {
   filterSuppressedDiagnostics,
   YAML_DISABLE_PATTERN,
   parseDisableSpecifiers,
   shouldSuppressDiagnostic,
-  GetLineText,
 } from '../src/languageservice/utils/diagnostic-filter';
 
 function makeDiag(startLine: number, message: string): { startLine: number; message: string } {

@@ -2,14 +2,10 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { Connection } from 'vscode-languageserver';
-import {
-  MODIFICATION_ACTIONS,
-  SchemaAdditions,
-  SchemaDeletions,
-  SchemaDeletionsAll,
-} from '../../languageservice/services/yamlSchemaService';
-import { LanguageService } from '../../languageservice/yamlLanguageService';
+import type { Connection } from 'vscode-languageserver';
+import type { SchemaAdditions, SchemaDeletions, SchemaDeletionsAll } from '../../languageservice/services/yamlSchemaService';
+import { MODIFICATION_ACTIONS } from '../../languageservice/services/yamlSchemaService';
+import type { LanguageService } from '../../languageservice/yamlLanguageService';
 import { SchemaModificationNotification } from '../../requestTypes';
 
 export class RequestHandlers {

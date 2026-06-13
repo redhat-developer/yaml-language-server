@@ -3,22 +3,19 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CompletionItemKind, CompletionList, InsertTextFormat, Position, Range } from 'vscode-languageserver-types';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import { LanguageService } from '../src/languageservice/yamlLanguageService';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import type { CompletionList } from 'vscode-languageserver-types';
+import { CompletionItemKind, InsertTextFormat, Position, Range } from 'vscode-languageserver-types';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService';
+import type { SettingsState } from '../src/yamlSettings';
+import { TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
-import {
-  caretPosition,
-  SCHEMA_ID,
-  setupLanguageService,
-  setupSchemaIDTextDocument,
-  TestCustomSchemaProvider,
-} from './utils/testHelper';
+import type { TestCustomSchemaProvider } from './utils/testHelper';
+import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { expect } from 'chai';
 import { createExpectedCompletion } from './utils/verifyError';
 import * as path from 'path';
-import { JSONSchema } from './../src/languageservice/jsonSchema';
+import type { JSONSchema } from './../src/languageservice/jsonSchema';
 
 describe('Auto Completion Fix Tests', () => {
   let languageSettingsSetup: ServiceSetup;

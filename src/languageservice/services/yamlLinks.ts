@@ -3,9 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { findLinks as JSONFindLinks } from 'vscode-json-languageservice/lib/umd/services/jsonLinks';
-import { DocumentLink } from 'vscode-languageserver-types';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Telemetry } from '../telemetry';
+import type { DocumentLink } from 'vscode-languageserver-types';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type { Telemetry } from '../telemetry';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 
 export class YamlLinks {

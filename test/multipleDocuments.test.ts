@@ -6,11 +6,13 @@ import * as path from 'path';
 import { setupLanguageService, setupTextDocument, toFsPath } from './utils/testHelper';
 import assert from 'assert';
 import { ServiceSetup } from './utils/serviceSetup';
-import { Diagnostic, Hover, MarkupContent } from 'vscode-languageserver-types';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { LanguageService } from '../src/languageservice/yamlLanguageService';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import type { Diagnostic, Hover } from 'vscode-languageserver-types';
+import { MarkupContent } from 'vscode-languageserver-types';
+import type { SettingsState } from '../src/yamlSettings';
+import { TextDocumentTestManager } from '../src/yamlSettings';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
 /**
  * Setup the schema we are going to use with the language settings

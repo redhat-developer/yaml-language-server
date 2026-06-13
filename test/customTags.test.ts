@@ -6,9 +6,9 @@ import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 import { ServiceSetup } from './utils/serviceSetup';
 import { createExpectedError } from './utils/verifyError';
 import assert from 'assert';
-import { Diagnostic } from 'vscode-languageserver-types';
-import { LanguageService } from '../src/languageservice/yamlLanguageService';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import type { Diagnostic } from 'vscode-languageserver-types';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 
 // Defines a Mocha test describe to group tests of similar kind together
 describe('Custom Tag tests Tests', () => {

@@ -4,7 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as chai from 'chai';
-import { isPair, isSeq, Pair, YAMLSeq } from 'yaml';
+import type { Pair, YAMLSeq } from 'yaml';
+import { isPair, isSeq } from 'yaml';
 import { YamlDocuments } from '../src/languageservice/parser/yaml-documents';
 import { getParent, isInComment } from '../src/languageservice/utils/yamlAstUtils';
 import { TextBuffer } from '../src/languageservice/utils/textBuffer';

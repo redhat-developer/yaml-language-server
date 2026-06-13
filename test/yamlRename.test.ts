@@ -1,7 +1,8 @@
 import { expect } from 'chai';
-import { Position, TextEdit } from 'vscode-languageserver-types';
+import type { TextEdit } from 'vscode-languageserver-types';
+import { Position } from 'vscode-languageserver-types';
 import { setupLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 
 function applyEdits(document: TextDocument, edits: TextEdit[]): string {
   const sorted = [...edits].sort((a, b) => document.offsetAt(b.range.start) - document.offsetAt(a.range.start));

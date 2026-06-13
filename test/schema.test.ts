@@ -1,26 +1,25 @@
 import assert from 'assert';
 import * as parser from '../src/languageservice/parser/yamlParser07';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
-import * as JsonSchema from '../src/languageservice/jsonSchema';
+import type * as JsonSchema from '../src/languageservice/jsonSchema';
 import * as url from 'url';
 import * as path from 'path';
-import { XHRResponse, xhr } from 'request-light';
-import { MODIFICATION_ACTIONS, SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
+import type { XHRResponse } from 'request-light';
+import { xhr } from 'request-light';
+import type { SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
+import { MODIFICATION_ACTIONS } from '../src/languageservice/services/yamlSchemaService';
 import { EMPTY_SCHEMA_URL, DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls';
 import { expect } from 'chai';
 import { ServiceSetup } from './utils/serviceSetup';
-import {
-  SCHEMA_ID,
-  TestCustomSchemaProvider,
-  setupLanguageService,
-  setupSchemaIDTextDocument,
-  setupTextDocument,
-  TEST_URI,
-} from './utils/testHelper';
-import { LanguageService, SchemaPriority } from '../src';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { Diagnostic, MarkupContent, Position } from 'vscode-languageserver-types';
+import type { TestCustomSchemaProvider } from './utils/testHelper';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, setupTextDocument, TEST_URI } from './utils/testHelper';
+import type { LanguageService } from '../src';
+import { SchemaPriority } from '../src';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import type { SettingsState } from '../src/yamlSettings';
+import { TextDocumentTestManager } from '../src/yamlSettings';
+import type { Diagnostic, MarkupContent } from 'vscode-languageserver-types';
+import { Position } from 'vscode-languageserver-types';
 import { LineCounter } from 'yaml';
 import { getSchemaFromModeline } from '../src/languageservice/services/modelineUtil';
 import { getGroupVersionKindFromDocument } from '../src/languageservice/services/k8sSchemaUtil';

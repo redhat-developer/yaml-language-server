@@ -6,9 +6,10 @@ import { toFsPath, setupSchemaIDTextDocument, setupLanguageService, caretPositio
 import assert from 'assert';
 import * as path from 'path';
 import { ServiceSetup } from './utils/serviceSetup';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { CompletionList, TextEdit } from 'vscode-languageserver-types';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import type { SettingsState } from '../src/yamlSettings';
+import { TextDocumentTestManager } from '../src/yamlSettings';
+import type { CompletionList, TextEdit } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 
 describe('Default Snippet Tests', () => {
