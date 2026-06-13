@@ -4,11 +4,13 @@
  *--------------------------------------------------------------------------------------------*/
 import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 import assert from 'assert';
-import { Diagnostic, CompletionList, Hover, MarkupContent } from 'vscode-languageserver-types';
+import type { Diagnostic, CompletionList, Hover } from 'vscode-languageserver-types';
+import { MarkupContent } from 'vscode-languageserver-types';
 import { ServiceSetup } from './utils/serviceSetup';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import type { SettingsState } from '../src/yamlSettings';
+import { TextDocumentTestManager } from '../src/yamlSettings';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 
 // Defines a Mocha test describe to group tests of similar kind together
 describe('Kubernetes Integration Tests', () => {

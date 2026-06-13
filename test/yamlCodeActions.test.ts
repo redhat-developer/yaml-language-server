@@ -18,11 +18,11 @@ import {
   TextEdit,
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
-import { ClientCapabilities, CodeActionParams } from 'vscode-languageserver';
+import type { ClientCapabilities, CodeActionParams } from 'vscode-languageserver';
 import { setupTextDocument, TEST_URI } from './utils/testHelper';
 import { createDiagnosticWithData, createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
 import { YamlCommands } from '../src/commands';
-import { LanguageSettings } from '../src';
+import type { LanguageSettings } from '../src';
 import { ErrorCode } from 'vscode-json-languageservice';
 
 const expect = chai.expect;

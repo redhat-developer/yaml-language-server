@@ -3,11 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
-import { CST, isMap, Node, Pair, visit } from 'yaml';
-import { SingleYAMLDocument } from '../../parser/yaml-documents';
-import { AdditionalValidator } from './types';
+import type { CST, Node, Pair } from 'yaml';
+import { isMap, visit } from 'yaml';
+import type { SingleYAMLDocument } from '../../parser/yaml-documents';
+import type { AdditionalValidator } from './types';
 
 export class MapKeyOrderValidator implements AdditionalValidator {
   validate(document: TextDocument, yamlDoc: SingleYAMLDocument): Diagnostic[] {

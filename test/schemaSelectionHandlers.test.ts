@@ -7,7 +7,7 @@ import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers';
 import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
-import { Connection, RemoteClient } from 'vscode-languageserver/node';
+import type { Connection, RemoteClient } from 'vscode-languageserver/node';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { SchemaSelectionRequests } from '../src/requestTypes';
 import { SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper';

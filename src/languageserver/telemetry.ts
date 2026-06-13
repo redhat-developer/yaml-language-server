@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Connection } from 'vscode-languageserver';
-import { TelemetryEvent, Telemetry } from '../languageservice/telemetry';
+import type { Connection } from 'vscode-languageserver';
+import type { TelemetryEvent, Telemetry } from '../languageservice/telemetry';
 import { convertErrorToTelemetryMsg } from '../languageservice/utils/objects';
 
 export class TelemetryImpl implements Telemetry {

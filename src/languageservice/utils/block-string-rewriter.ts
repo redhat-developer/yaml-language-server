@@ -2,7 +2,8 @@
  *  Copyright (c) IBM Corp. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { CST, Scalar } from 'yaml';
+import type { Scalar } from 'yaml';
+import { CST } from 'yaml';
 
 export class BlockStringRewriter {
   constructor(

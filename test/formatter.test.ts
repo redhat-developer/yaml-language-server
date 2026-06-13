@@ -4,10 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 import assert from 'assert';
 import * as sinon from 'sinon';
-import { FormattingOptions, TextEdit } from 'vscode-languageserver-types';
-import { CustomFormatterOptions } from '../src';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import type { FormattingOptions, TextEdit } from 'vscode-languageserver-types';
+import type { CustomFormatterOptions } from '../src';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import type { SettingsState } from '../src/yamlSettings';
+import { TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
 import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 
