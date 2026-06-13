@@ -5,9 +5,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { promises as fs } from 'fs';
 import type { Connection } from 'vscode-languageserver/node';
-import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
+
+import { promises as fs } from 'fs';
+
+import { ProposedFeatures, createConnection } from 'vscode-languageserver/node';
+
 import { TelemetryImpl } from './languageserver/telemetry';
 import { schemaRequestHandler, workspaceContext } from './languageservice/services/schemaRequestHandler';
 import { convertErrorToTelemetryMsg } from './languageservice/utils/objects';

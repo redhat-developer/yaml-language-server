@@ -4,14 +4,18 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import assert from 'assert';
-import type { JSONDocument } from '../src/languageservice/parser/jsonDocument';
-import { getNodeValue } from '../src/languageservice/parser/astNodeUtils';
-import type * as JsonSchema from './../src/languageservice/jsonSchema';
-import type { ASTNode, ObjectASTNode } from './../src/languageservice/jsonASTTypes';
-import { ErrorCode, getLanguageService } from 'vscode-json-languageservice';
 import type { Diagnostic } from 'vscode-languageserver-types';
-import { TextDocument, Range } from 'vscode-languageserver-types';
+
+import type { JSONDocument } from '../src/languageservice/parser/jsonDocument';
+import type { ASTNode, ObjectASTNode } from './../src/languageservice/jsonASTTypes';
+import type * as JsonSchema from './../src/languageservice/jsonSchema';
+
+import assert from 'assert';
+
+import { ErrorCode, getLanguageService } from 'vscode-json-languageservice';
+import { Range, TextDocument } from 'vscode-languageserver-types';
+
+import { getNodeValue } from '../src/languageservice/parser/astNodeUtils';
 
 describe('JSON Parser', () => {
   function isValid(json: string): void {

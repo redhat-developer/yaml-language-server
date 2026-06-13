@@ -2,22 +2,26 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { promises as fs } from 'fs';
-import { ClientCapabilities } from 'vscode-json-languageservice';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Connection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node';
-import { createConnection } from 'vscode-languageserver/node';
+
 import type { LanguageService, LanguageSettings } from '../../src';
 import type { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers';
 import type { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers';
 import type { JSONSchema } from '../../src/languageservice/jsonSchema';
-import { yamlDocumentsCache } from '../../src/languageservice/parser/yaml-documents';
 import type { FileSystem } from '../../src/languageservice/services/schemaRequestHandler';
+
+import { promises as fs } from 'fs';
+import * as path from 'path';
+
+import { ClientCapabilities } from 'vscode-json-languageservice';
+import { createConnection } from 'vscode-languageserver/node';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+
+import { TestTelemetry } from './testsTypes';
+import { yamlDocumentsCache } from '../../src/languageservice/parser/yaml-documents';
 import { schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler';
 import { YAMLServerInit } from '../../src/yamlServerInit';
 import { SettingsState } from '../../src/yamlSettings';
-import { TestTelemetry } from './testsTypes';
-import * as path from 'path';
 
 export function toFsPath(str: unknown): string {
   if (typeof str !== 'string') {

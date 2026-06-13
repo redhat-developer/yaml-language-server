@@ -7,11 +7,12 @@ import type {
   CompletionItem,
   CompletionItemKind,
   InsertTextFormat,
-  SymbolKind,
   SymbolInformation,
+  SymbolKind,
 } from 'vscode-languageserver-types';
-import { Diagnostic, DiagnosticSeverity, DiagnosticTag, DocumentSymbol, Range } from 'vscode-languageserver-types';
+
 import { ErrorCode } from 'vscode-json-languageservice';
+import { Diagnostic, DiagnosticSeverity, DiagnosticTag, DocumentSymbol, Range } from 'vscode-languageserver-types';
 
 export function createExpectedError(
   message: string,

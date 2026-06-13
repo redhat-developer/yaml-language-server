@@ -3,10 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type { ClientCapabilities, CodeActionParams } from 'vscode-languageserver';
+
+import type { LanguageSettings } from '../src';
+
+import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import * as chai from 'chai';
-import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions';
+import { ErrorCode } from 'vscode-json-languageservice';
 import {
   CodeAction,
   CodeActionContext,
@@ -18,12 +22,11 @@ import {
   TextEdit,
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
-import type { ClientCapabilities, CodeActionParams } from 'vscode-languageserver';
-import { setupTextDocument, TEST_URI } from './utils/testHelper';
+
+import { TEST_URI, setupTextDocument } from './utils/testHelper';
 import { createDiagnosticWithData, createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
 import { YamlCommands } from '../src/commands';
-import type { LanguageSettings } from '../src';
-import { ErrorCode } from 'vscode-json-languageservice';
+import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions';
 
 const expect = chai.expect;
 chai.use(sinonChai);

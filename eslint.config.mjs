@@ -33,10 +33,22 @@ export default defineConfig(
       },
     },
     rules: {
+      'sort-imports': ['error', { ignoreDeclarationSort: true }],
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-use-before-define': ['error', { functions: false, classes: false }],
       '@typescript-eslint/explicit-function-return-type': ['error', { allowExpressions: true }],
       'import-x/consistent-type-specifier-style': ['error', 'prefer-top-level'],
+      'import-x/first': 'error',
+      'import-x/newline-after-import': 'error',
+      'import-x/order': [
+        'error',
+        {
+          alphabetize: { order: 'asc' },
+          groups: ['type', 'builtin', 'external', ['parent', 'sibling', 'index']],
+          'newlines-between': 'always',
+          sortTypesGroup: true,
+        },
+      ],
     },
   },
   {

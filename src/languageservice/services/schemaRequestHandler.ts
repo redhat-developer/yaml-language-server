@@ -1,13 +1,17 @@
-import { join } from 'path';
 import type { XHRResponse } from 'request-light';
-import { getErrorStatusDescription, xhr } from 'request-light';
-import * as URL from 'url';
 import type { Connection, WorkspaceFolder } from 'vscode-languageserver';
+
+import type { WorkspaceContextService } from '../yamlLanguageService';
+
+import { join } from 'path';
+import * as URL from 'url';
+
+import { getErrorStatusDescription, xhr } from 'request-light';
 import { RequestType } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
+
 import { CustomSchemaContentRequest, VSCodeContentRequest } from '../../requestTypes';
 import { isRelativePath, relativeToAbsolutePath } from '../utils/paths';
-import type { WorkspaceContextService } from '../yamlLanguageService';
 
 export interface FileSystem {
   readFile(fsPath: string, encoding?: string): Promise<string>;

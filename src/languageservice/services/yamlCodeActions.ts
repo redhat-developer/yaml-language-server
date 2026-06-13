@@ -3,30 +3,30 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as l10n from '@vscode/l10n';
-import * as path from 'path';
-import { ErrorCode } from 'vscode-json-languageservice';
-import type { Diagnostic, WorkspaceEdit } from 'vscode-languageserver-types';
-import { CodeAction, CodeActionKind, Command, Position, Range, TextEdit } from 'vscode-languageserver-types';
 import type { ClientCapabilities, CodeActionParams } from 'vscode-languageserver-protocol';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-
+import type { Diagnostic, WorkspaceEdit } from 'vscode-languageserver-types';
 import type { Scalar, YAMLMap } from 'yaml';
-import { CST, isMap, isSeq, isScalar, visit } from 'yaml';
-
-import { YamlCommands } from '../../commands';
-import { TextBuffer } from '../utils/textBuffer';
-import { toYamlStringScalar } from '../utils/yamlScalar';
-import type { LanguageSettings } from '../yamlLanguageService';
-import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
-import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings';
-import { matchOffsetToDocument } from '../utils/arrUtils';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
-
-import { BlockStringRewriter } from '../utils/block-string-rewriter';
-import { FlowStyleRewriter } from '../utils/flow-style-rewriter';
 
 import type { ASTNode } from '../jsonASTTypes';
+import type { LanguageSettings } from '../yamlLanguageService';
+
+import * as path from 'path';
+
+import * as l10n from '@vscode/l10n';
+import { ErrorCode } from 'vscode-json-languageservice';
+import { CodeAction, CodeActionKind, Command, Position, Range, TextEdit } from 'vscode-languageserver-types';
+import { CST, isMap, isScalar, isSeq, visit } from 'yaml';
+
+import { YamlCommands } from '../../commands';
+import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
+import { yamlDocumentsCache } from '../parser/yaml-documents';
+import { matchOffsetToDocument } from '../utils/arrUtils';
+import { BlockStringRewriter } from '../utils/block-string-rewriter';
+import { FlowStyleRewriter } from '../utils/flow-style-rewriter';
+import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings';
+import { TextBuffer } from '../utils/textBuffer';
+import { toYamlStringScalar } from '../utils/yamlScalar';
 
 interface YamlDiagnosticData {
   schemaUri: string[];

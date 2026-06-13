@@ -3,22 +3,25 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver';
+
+import type { LanguageService, LanguageSettings, SchemaConfiguration } from '../src';
+import type { Telemetry } from '../src/languageservice/telemetry';
+
 import * as chai from 'chai';
 import * as request from 'request-light';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver';
 import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
-import type { LanguageService, LanguageSettings, SchemaConfiguration } from '../src';
+
 import { SchemaPriority } from '../src';
+import { TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument, setupTextDocument } from './utils/testHelper';
+import { TestWorkspace } from './utils/testsTypes';
 import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
 import { EMPTY_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
-import type { Telemetry } from '../src/languageservice/telemetry';
 import { SettingsState } from '../src/yamlSettings';
-import { TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument, setupTextDocument } from './utils/testHelper';
-import { TestWorkspace } from './utils/testsTypes';
 
 const expect = chai.expect;
 chai.use(sinonChai);

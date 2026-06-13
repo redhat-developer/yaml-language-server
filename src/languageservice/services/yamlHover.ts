@@ -4,26 +4,30 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as l10n from '@vscode/l10n';
-import * as path from 'path';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Hover, MarkupContent, Position } from 'vscode-languageserver-types';
-import { MarkupKind, Range } from 'vscode-languageserver-types';
-import { URI } from 'vscode-uri';
 import type { Node } from 'yaml';
-import { isAlias, isMap, isSeq, stringify as stringifyYAML } from 'yaml';
+
 import type { ASTNode, ObjectASTNode, PropertyASTNode } from '../jsonASTTypes';
 import type { JSONSchema } from '../jsonSchema';
-import { setKubernetesParserOption } from '../parser/isKubernetes';
-import { getNodeValue } from '../parser/astNodeUtils';
+import type { YAMLSchemaService } from './yamlSchemaService';
 import type { IApplicableSchema } from '../parser/schemaValidation/baseValidator';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
 import type { SingleYAMLDocument } from '../parser/yamlParser07';
 import type { Telemetry } from '../telemetry';
+import type { LanguageSettings } from '../yamlLanguageService';
+
+import * as path from 'path';
+
+import * as l10n from '@vscode/l10n';
+import { MarkupKind, Range } from 'vscode-languageserver-types';
+import { URI } from 'vscode-uri';
+import { isAlias, isMap, isSeq, stringify as stringifyYAML } from 'yaml';
+
+import { getNodeValue } from '../parser/astNodeUtils';
+import { setKubernetesParserOption } from '../parser/isKubernetes';
+import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { toYamlStringScalar } from '../utils/yamlScalar';
-import type { LanguageSettings } from '../yamlLanguageService';
-import type { YAMLSchemaService } from './yamlSchemaService';
 
 export class YAMLHover {
   private shouldHover: boolean;

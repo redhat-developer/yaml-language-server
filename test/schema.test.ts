@@ -1,28 +1,32 @@
-import assert from 'assert';
-import * as parser from '../src/languageservice/parser/yamlParser07';
-import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
-import type * as JsonSchema from '../src/languageservice/jsonSchema';
-import * as url from 'url';
-import * as path from 'path';
 import type { XHRResponse } from 'request-light';
-import { xhr } from 'request-light';
-import type { SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
-import { MODIFICATION_ACTIONS } from '../src/languageservice/services/yamlSchemaService';
-import { EMPTY_SCHEMA_URL, DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls';
-import { expect } from 'chai';
-import { ServiceSetup } from './utils/serviceSetup';
-import type { TestCustomSchemaProvider } from './utils/testHelper';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, setupTextDocument, TEST_URI } from './utils/testHelper';
-import type { LanguageService } from '../src';
-import { SchemaPriority } from '../src';
-import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
 import type { Diagnostic, MarkupContent } from 'vscode-languageserver-types';
+
+import type { LanguageService } from '../src';
+import type { TestCustomSchemaProvider } from './utils/testHelper';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import type * as JsonSchema from '../src/languageservice/jsonSchema';
+import type { SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
+import type { SettingsState } from '../src/yamlSettings';
+
+import assert from 'assert';
+import * as path from 'path';
+import * as url from 'url';
+
+import { expect } from 'chai';
+import { xhr } from 'request-light';
 import { Position } from 'vscode-languageserver-types';
 import { LineCounter } from 'yaml';
-import { getSchemaFromModeline } from '../src/languageservice/services/modelineUtil';
+
+import { SchemaPriority } from '../src';
+import { ServiceSetup } from './utils/serviceSetup';
+import { SCHEMA_ID, TEST_URI, setupLanguageService, setupSchemaIDTextDocument, setupTextDocument } from './utils/testHelper';
+import * as parser from '../src/languageservice/parser/yamlParser07';
 import { getGroupVersionKindFromDocument } from '../src/languageservice/services/k8sSchemaUtil';
+import { getSchemaFromModeline } from '../src/languageservice/services/modelineUtil';
+import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
+import { MODIFICATION_ACTIONS } from '../src/languageservice/services/yamlSchemaService';
+import { DEFAULT_KUBERNETES_SCHEMA_VERSION, EMPTY_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
+import { TextDocumentTestManager } from '../src/yamlSettings';
 
 const KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/all.json`;
 

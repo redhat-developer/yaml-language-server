@@ -5,10 +5,12 @@
 import type { Connection } from 'vscode-languageserver';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Diagnostic } from 'vscode-languageserver-types';
-import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
-import { removeDuplicatesObj } from '../../languageservice/utils/arrUtils';
+
 import type { LanguageService } from '../../languageservice/yamlLanguageService';
 import type { SettingsState } from '../../yamlSettings';
+
+import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
+import { removeDuplicatesObj } from '../../languageservice/utils/arrUtils';
 
 export class ValidationHandler {
   private languageService: LanguageService;

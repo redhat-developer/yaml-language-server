@@ -4,18 +4,22 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { CompletionList } from 'vscode-languageserver-types';
-import { CompletionItemKind, InsertTextFormat, Position, Range } from 'vscode-languageserver-types';
+
+import type { TestCustomSchemaProvider } from './utils/testHelper';
 import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import type { LanguageService } from '../src/languageservice/yamlLanguageService';
 import type { SettingsState } from '../src/yamlSettings';
+import type { JSONSchema } from './../src/languageservice/jsonSchema';
+
+import * as path from 'path';
+
+import { expect } from 'chai';
+import { CompletionItemKind, InsertTextFormat, Position, Range } from 'vscode-languageserver-types';
+
 import { TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
-import type { TestCustomSchemaProvider } from './utils/testHelper';
-import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
-import { expect } from 'chai';
+import { SCHEMA_ID, caretPosition, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { createExpectedCompletion } from './utils/verifyError';
-import * as path from 'path';
-import type { JSONSchema } from './../src/languageservice/jsonSchema';
 
 describe('Auto Completion Fix Tests', () => {
   let languageSettingsSetup: ServiceSetup;

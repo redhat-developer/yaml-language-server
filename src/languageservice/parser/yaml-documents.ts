@@ -4,19 +4,22 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONDocument } from './jsonDocument';
 import type { CST, Document, LineCounter, Node, YAMLError } from 'yaml';
-import { isNode, isPair, isScalar, visit } from 'yaml';
+
 import type { ASTNode, YamlNode } from '../jsonASTTypes';
 import type { ParserOptions } from './yamlParser07';
-import { defaultOptions, parse as parseYAML } from './yamlParser07';
-import { ErrorCode } from 'vscode-json-languageservice';
-import { convertAST } from './ast-converter';
 import type { YAMLDocDiagnostic } from '../utils/parseUtils';
-import { isArrayEqual } from '../utils/arrUtils';
-import { getParent } from '../utils/yamlAstUtils';
 import type { TextBuffer } from '../utils/textBuffer';
+
+import { ErrorCode } from 'vscode-json-languageservice';
+import { isNode, isPair, isScalar, visit } from 'yaml';
+
+import { convertAST } from './ast-converter';
+import { JSONDocument } from './jsonDocument';
+import { defaultOptions, parse as parseYAML } from './yamlParser07';
+import { isArrayEqual } from '../utils/arrUtils';
 import { getIndentation } from '../utils/strings';
+import { getParent } from '../utils/yamlAstUtils';
 
 /**
  * These documents are collected into a final YAMLDocument

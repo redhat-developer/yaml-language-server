@@ -4,11 +4,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { Document, ParseOptions, DocumentOptions, SchemaOptions } from 'yaml';
-import { Parser, Composer, LineCounter } from 'yaml';
-import { YAMLDocument, SingleYAMLDocument } from './yaml-documents';
-import { getCustomTags } from './custom-tag-provider';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type { Document, DocumentOptions, ParseOptions, SchemaOptions } from 'yaml';
+
+import { Composer, LineCounter, Parser } from 'yaml';
+
+import { getCustomTags } from './custom-tag-provider';
+import { SingleYAMLDocument, YAMLDocument } from './yaml-documents';
 import { TextBuffer } from '../utils/textBuffer';
 
 export { YAMLDocument, SingleYAMLDocument };

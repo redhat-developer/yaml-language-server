@@ -4,7 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { Connection } from 'vscode-languageserver';
-import type { TelemetryEvent, Telemetry } from '../languageservice/telemetry';
+
+import type { Telemetry, TelemetryEvent } from '../languageservice/telemetry';
+
 import { convertErrorToTelemetryMsg } from '../languageservice/utils/objects';
 
 export class TelemetryImpl implements Telemetry {

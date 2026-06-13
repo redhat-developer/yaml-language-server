@@ -5,6 +5,7 @@
 
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Diagnostic } from 'vscode-languageserver-types';
+
 import type { SingleYAMLDocument } from '../../parser/yaml-documents';
 
 export interface AdditionalValidator {

@@ -4,23 +4,26 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Diagnostic, Position } from 'vscode-languageserver-types';
-import type { LanguageSettings } from '../yamlLanguageService';
-import type { YAMLDocument, YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07';
-import type { YAMLSchemaService } from './yamlSchemaService';
-import type { YAMLDocDiagnostic } from '../utils/parseUtils';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
-import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
-import { TextBuffer } from '../utils/textBuffer';
-import { filterSuppressedDiagnostics } from '../utils/diagnostic-filter';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
+
+import type { YAMLSchemaService } from './yamlSchemaService';
+import type { SingleYAMLDocument, YAMLDocument, YamlVersion } from '../parser/yamlParser07';
 import type { Telemetry } from '../telemetry';
+import type { YAMLDocDiagnostic } from '../utils/parseUtils';
+import type { LanguageSettings } from '../yamlLanguageService';
 import type { AdditionalValidator } from './validation/types';
+
+import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
+import { Diagnostic, Position } from 'vscode-languageserver-types';
+
+import { getSchemaFromModeline } from './modelineUtil';
+import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
+import { yamlDocumentsCache } from '../parser/yaml-documents';
+import { filterSuppressedDiagnostics } from '../utils/diagnostic-filter';
+import { TextBuffer } from '../utils/textBuffer';
+import { MapKeyOrderValidator } from './validation/map-key-order';
 import { UnusedAnchorsValidator } from './validation/unused-anchors';
 import { YAMLStyleValidator } from './validation/yaml-style';
-import { MapKeyOrderValidator } from './validation/map-key-order';
-import { getSchemaFromModeline } from './modelineUtil';
 import { isKubernetes as isKubernetesSchemaURI } from '../utils/schemaUrls';
 
 /**

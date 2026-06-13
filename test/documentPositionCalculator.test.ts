@@ -2,8 +2,9 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { binarySearch, getLineStartPositions, getPosition } from '../src/languageservice/utils/documentPositionCalculator';
 import assert from 'assert';
+
+import { binarySearch, getLineStartPositions, getPosition } from '../src/languageservice/utils/documentPositionCalculator';
 
 describe('DocumentPositionCalculator Tests', () => {
   describe('binarySearch', function () {

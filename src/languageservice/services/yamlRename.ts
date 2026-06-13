@@ -3,19 +3,22 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type { PrepareRenameParams, RenameParams } from 'vscode-languageserver-protocol';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Position, WorkspaceEdit } from 'vscode-languageserver-types';
+import type { Node } from 'yaml';
+
+import type { SingleYAMLDocument } from '../parser/yamlParser07';
+import type { Telemetry } from '../telemetry';
+
+import { ErrorCodes, ResponseError } from 'vscode-languageserver-protocol';
 import { Range, TextEdit } from 'vscode-languageserver-types';
+import { CST, isAlias, isCollection, isScalar, visit } from 'yaml';
+
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { TextBuffer } from '../utils/textBuffer';
-import type { Telemetry } from '../telemetry';
-import type { Node } from 'yaml';
-import { CST, isAlias, isCollection, isScalar, visit } from 'yaml';
-import type { SingleYAMLDocument } from '../parser/yamlParser07';
 import { isCollectionItem } from '../utils/yamlAstUtils';
-import type { PrepareRenameParams, RenameParams } from 'vscode-languageserver-protocol';
-import { ResponseError, ErrorCodes } from 'vscode-languageserver-protocol';
 
 interface RenameTarget {
   anchorNode: Node;
