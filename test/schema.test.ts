@@ -991,9 +991,7 @@ address:
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const schemaSettingsSample = require(path.join(__dirname, './fixtures/sample-settings.json'));
     const schemaModelineSample = path.join(__dirname, './fixtures/sample-modeline.json');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const schemaDollarSample = path.join(__dirname, './fixtures/sample-dollar-schema.json');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const schemaDefaultSnippetSample = require(path.join(__dirname, './fixtures/defaultSnippets-const-if-else.json'));
     let languageSettingsSetup: ServiceSetup;
