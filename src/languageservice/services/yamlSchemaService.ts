@@ -209,33 +209,44 @@ export class YAMLSchemaService extends JSONSchemaService {
     return Object.values(map);
   }
 
+  private resolveSchemaRef(resource: string, schemaRef: string): string {
+    if (!schemaRef.startsWith('file:') && !schemaRef.startsWith('http')) {
+      // If path contains a fragment and it is left intact, "#" will be
+      // considered part of the filename and converted to "%23" by
+      // path.resolve() -> take it out and add back after path.resolve
+      let appendix = '';
+      if (schemaRef.indexOf('#') > 0) {
+        const segments = schemaRef.split('#', 2);
+        schemaRef = segments[0];
+        appendix = segments[1];
+      }
+      if (!path.isAbsolute(schemaRef)) {
+        const resUri = URI.parse(resource);
+        schemaRef = URI.file(path.resolve(path.parse(resUri.fsPath).dir, schemaRef)).toString();
+      } else {
+        schemaRef = URI.file(schemaRef).toString();
+      }
+      if (appendix.length > 0) {
+        schemaRef += '#' + appendix;
+      }
+    }
+    return schemaRef;
+  }
+
   private resolveModelineSchema(resource: string, doc: JSONDocument): string | undefined {
-    let schemaFromModeline = getSchemaFromModeline(doc);
+    const schemaFromModeline = getSchemaFromModeline(doc);
     if (schemaFromModeline !== undefined) {
       if (schemaFromModeline.trim().toLowerCase() === 'none') {
         return 'none';
       }
-      if (!schemaFromModeline.startsWith('file:') && !schemaFromModeline.startsWith('http')) {
-        // If path contains a fragment and it is left intact, "#" will be
-        // considered part of the filename and converted to "%23" by
-        // path.resolve() -> take it out and add back after path.resolve
-        let appendix = '';
-        if (schemaFromModeline.indexOf('#') > 0) {
-          const segments = schemaFromModeline.split('#', 2);
-          schemaFromModeline = segments[0];
-          appendix = segments[1];
-        }
-        if (!path.isAbsolute(schemaFromModeline)) {
-          const resUri = URI.parse(resource);
-          schemaFromModeline = URI.file(path.resolve(path.parse(resUri.fsPath).dir, schemaFromModeline)).toString();
-        } else {
-          schemaFromModeline = URI.file(schemaFromModeline).toString();
-        }
-        if (appendix.length > 0) {
-          schemaFromModeline += '#' + appendix;
-        }
-      }
-      return schemaFromModeline;
+      return this.resolveSchemaRef(resource, schemaFromModeline);
+    }
+  }
+
+  private resolveDollarSchema(resource: string, doc: JSONDocument): string | undefined {
+    const dollarSchema = getDollarSchema(doc);
+    if (dollarSchema !== undefined) {
+      return this.resolveSchemaRef(resource, dollarSchema);
     }
   }
 
@@ -1095,38 +1106,6 @@ export class YAMLSchemaService extends JSONSchemaService {
   }
 
   public getSchemaForResource(resource: string, doc: JSONDocument): Promise<ResolvedSchema> {
-    const normalizeSchemaRef = (schemaRef: string): string | undefined => {
-      if (!schemaRef.startsWith('file:') && !schemaRef.startsWith('http')) {
-        // If path contains a fragment and it is left intact, "#" will be
-        // considered part of the filename and converted to "%23" by
-        // path.resolve() -> take it out and add back after path.resolve
-        let appendix = '';
-        if (schemaRef.indexOf('#') > 0) {
-          const segments = schemaRef.split('#', 2);
-          schemaRef = segments[0];
-          appendix = segments[1];
-        }
-        if (!path.isAbsolute(schemaRef)) {
-          const resUri = URI.parse(resource);
-          schemaRef = URI.file(path.resolve(path.parse(resUri.fsPath).dir, schemaRef)).toString();
-        } else {
-          schemaRef = URI.file(schemaRef).toString();
-        }
-        if (appendix.length > 0) {
-          schemaRef += '#' + appendix;
-        }
-      }
-      return schemaRef;
-    };
-
-    const resolveDollarSchema = (): string | undefined => {
-      let dollarSchema = getDollarSchema(doc);
-      if (dollarSchema !== undefined) {
-        dollarSchema = normalizeSchemaRef(dollarSchema);
-        return dollarSchema;
-      }
-    };
-
     const resolveSchemaForResource = (schemas: string[]): Promise<ResolvedSchema> => {
       const schemaHandle = super.createCombinedSchema(resource, schemas);
       return schemaHandle.getResolvedSchema().then((schema) => {
@@ -1187,7 +1166,7 @@ export class YAMLSchemaService extends JSONSchemaService {
       }
       return resolveSchemaForResource([modelineSchema]);
     }
-    const dollarSchema = resolveDollarSchema();
+    const dollarSchema = this.resolveDollarSchema(resource, doc);
     if (dollarSchema) {
       return resolveSchemaForResource([dollarSchema]);
     }
