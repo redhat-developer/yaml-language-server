@@ -28,7 +28,7 @@ describe('Auto Completion Fix Tests', () => {
   let schemaProvider: TestCustomSchemaProvider;
   before(() => {
     languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
-      uri: 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.4-standalone-strict/all.json',
+      uri: 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.1-standalone-strict/all.json',
       fileMatch: [SCHEMA_ID],
     });
     const {
@@ -199,7 +199,7 @@ spec:
   });
 
   it('should complete  array', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const schema = require(path.join(__dirname, './fixtures/test-nested-object-array.json'));
     schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = `objA:
@@ -214,7 +214,7 @@ objB:
   });
 
   it('should complete array item for "oneOf" schema', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const schema = require(path.join(__dirname, './fixtures/test-completion-oneOf.json'));
     schemaProvider.addSchema(SCHEMA_ID, schema);
     const content = `metadata:
@@ -482,7 +482,7 @@ objB:
 
     expect(completion.items.length).equal(1);
     expect(completion.items[0]).to.be.deep.equal(
-      createExpectedCompletion('objectWithArray', 'objectWithArray:\n    - ${1:""}', 1, 4, 1, 4, 10, 2, {
+      createExpectedCompletion('objectWithArray', 'objectWithArray:\n    - ${1}', 1, 4, 1, 4, 10, 2, {
         documentation: '',
       })
     );
@@ -758,6 +758,349 @@ objB:
       expect(completion.items.length).equal(1);
       expect(completion.items[0].label).to.be.equal('prop');
       expect(completion.items[0].insertText).to.be.equal('prop: ${1|const value,null|}');
+    });
+    it('should take all sub-schemas when value has not been set (cursor in the middle of the empty space)', async () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              prop: { type: 'null' },
+            },
+          },
+          {
+            properties: {
+              prop: { const: 'const value' },
+            },
+          },
+          {
+            properties: {
+              prop: { const: 5 },
+            },
+          },
+        ],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'prop: | | ';
+      const completion = await parseCaret(content);
+      expect(completion.items.map((i) => i.label)).to.be.deep.eq(['const value', '5', 'null']);
+    });
+    it('should take only null sub-schema when value is "null"', async () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              prop: { type: 'null' },
+            },
+          },
+          {
+            properties: {
+              prop: { const: 'const value' },
+            },
+          },
+        ],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'prop: null';
+      const completion = await parseSetup(content, 0, content.length);
+      expect(completion.items.map((i) => i.label)).to.be.deep.eq(['null']);
+    });
+    it('should take only one sub-schema because first sub-schema does not match', async () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              prop: { const: 'const value' },
+            },
+          },
+          {
+            properties: {
+              prop: { const: 'const value2' },
+            },
+          },
+        ],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'prop: const value2';
+      const completion = await parseSetup(content, 0, content.length);
+      expect(completion.items.map((i) => i.label)).to.be.deep.eq(['const value2']);
+    });
+    it('should match only second sub-schema because the first one does not match', async () => {
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              prop: {
+                const: 'typeA',
+              },
+              propA: {},
+            },
+          },
+          {
+            properties: {
+              prop: {
+                const: 'typeB',
+              },
+              propB: {},
+            },
+          },
+        ],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'prop: typeB\n|\n|';
+      const completion = await parseCaret(content);
+      expect(completion.items.map((i) => i.label)).to.be.deep.eq(['propB']);
+    });
+    it('should suggest from all sub-schemas even if nodes properties match better other schema', async () => {
+      // this is a case when we have a better match in the second schema but we should still suggest from the first one
+      // it works because `prop: ` will evaluate to `enumValueMatch = true` for both schemas
+      const schema: JSONSchema = {
+        anyOf: [
+          {
+            properties: {
+              prop: {
+                const: 'typeA',
+              },
+            },
+          },
+          {
+            properties: {
+              prop: {
+                const: 'typeB',
+              },
+              propB: {},
+            },
+          },
+        ],
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'prop: |\n|\npropB: B';
+      const completion = await parseCaret(content);
+      expect(completion.items.map((i) => i.label)).to.be.deep.eq(['typeA', 'typeB'], 'with null value');
+
+      const content2 = 'prop: typ|\n|\npropB: B';
+      const completion2 = await parseCaret(content2);
+      expect(completion2.items.map((i) => i.label)).to.be.deep.eq(['typeA', 'typeB'], 'with prefix value');
+    });
+
+    it('should suggest both sub-schemas for anyof array', async () => {
+      const schema: JSONSchema = {
+        properties: {
+          entities: {
+            type: 'array',
+            items: {
+              anyOf: [
+                {
+                  enum: ['enum1'],
+                },
+                {
+                  type: 'object',
+                  title: 'entity object',
+                  properties: {
+                    entityProp: { type: 'string' },
+                  },
+                  required: ['entityProp'],
+                },
+              ],
+            },
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+      const content = 'entities:\n  - |\n|';
+      const completion = await parseCaret(content);
+      expect(completion.items.map((i) => i.label)).to.be.deep.eq(['enum1', 'entityProp', 'entity object']);
+    });
+  });
+
+  describe('conditional schemas', () => {
+    it('should not suggest value from conditional if branch', async () => {
+      const schema: JSONSchema = {
+        required: ['on'],
+        type: 'object',
+        properties: {
+          on: {
+            type: 'object',
+            properties: {
+              workflow_dispatch: {
+                $comment: 'https://github.blog/changelog/2020-07-06-github-actions-manual-triggers-with-workflow_dispatch/',
+                description:
+                  "You can now create workflows that are manually triggered with the new workflow_dispatch event. You will then see a 'Run workflow' button on the Actions tab, enabling you to easily trigger a run.",
+                properties: {
+                  inputs: {
+                    $comment:
+                      'https://help.github.com/en/github/automating-your-workflow-with-github-actions/metadata-syntax-for-github-actions#inputs',
+                    description:
+                      'Input parameters allow you to specify data that the action expects to use during runtime. GitHub stores input parameters as environment variables. Input ids with uppercase letters are converted to lowercase during runtime. We recommended using lowercase input ids.',
+                    type: 'object',
+                    patternProperties: {
+                      '^[_a-zA-Z][a-zA-Z0-9_-]*$': {
+                        $ref: '#/definitions/workflowDispatchInput',
+                      },
+                    },
+                    additionalProperties: false,
+                  },
+                },
+                additionalProperties: false,
+              },
+            },
+          },
+          jobs: {
+            type: 'object',
+          },
+        },
+        definitions: {
+          workflowDispatchInput: {
+            $comment:
+              'https://help.github.com/en/github/automating-your-workflow-with-github-actions/metadata-syntax-for-github-actions#inputsinput_id',
+            description:
+              "A string identifier to associate with the input. The value of <input_id> is a map of the input's metadata. The <input_id> must be a unique identifier within the inputs object. The <input_id> must start with a letter or _ and contain only alphanumeric characters, -, or _.",
+            type: 'object',
+            properties: {
+              description: {
+                $comment:
+                  'https://help.github.com/en/github/automating-your-workflow-with-github-actions/metadata-syntax-for-github-actions#inputsinput_iddescription',
+                description: 'A string description of the input parameter.',
+                type: 'string',
+              },
+              deprecationMessage: {
+                description: 'A string shown to users using the deprecated input.',
+                type: 'string',
+              },
+              required: {
+                $comment:
+                  'https://help.github.com/en/github/automating-your-workflow-with-github-actions/metadata-syntax-for-github-actions#inputsinput_idrequired',
+                description:
+                  'A boolean to indicate whether the action requires the input parameter. Set to true when the parameter is required.',
+                type: 'boolean',
+              },
+              default: {
+                $comment:
+                  'https://help.github.com/en/github/automating-your-workflow-with-github-actions/metadata-syntax-for-github-actions#inputsinput_iddefault',
+                description:
+                  "A string representing the default value. The default value is used when an input parameter isn't specified in a workflow file.",
+              },
+              type: {
+                $comment:
+                  'https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_dispatchinputsinput_idtype',
+                description: 'A string representing the type of the input.',
+                type: 'string',
+                enum: ['string', 'choice', 'boolean', 'number', 'environment'],
+              },
+              options: {
+                $comment: 'https://github.blog/changelog/2021-11-10-github-actions-input-types-for-manual-workflows',
+                description: 'The options of the dropdown list, if the type is a choice.',
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                minItems: 1,
+              },
+            },
+            allOf: [
+              {
+                if: {
+                  properties: {
+                    type: {
+                      const: 'string',
+                    },
+                  },
+                  required: ['type'],
+                },
+                then: {
+                  properties: {
+                    default: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+              {
+                if: {
+                  properties: {
+                    type: {
+                      const: 'boolean',
+                    },
+                  },
+                  required: ['type'],
+                },
+                then: {
+                  properties: {
+                    default: {
+                      type: 'boolean',
+                    },
+                  },
+                },
+              },
+              {
+                if: {
+                  properties: {
+                    type: {
+                      const: 'number',
+                    },
+                  },
+                  required: ['type'],
+                },
+                then: {
+                  properties: {
+                    default: {
+                      type: 'number',
+                    },
+                  },
+                },
+              },
+              {
+                if: {
+                  properties: {
+                    type: {
+                      const: 'environment',
+                    },
+                  },
+                  required: ['type'],
+                },
+                then: {
+                  properties: {
+                    default: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+              {
+                if: {
+                  properties: {
+                    type: {
+                      const: 'choice',
+                    },
+                  },
+                  required: ['type'],
+                },
+                then: {
+                  required: ['options'],
+                },
+              },
+            ],
+            additionalProperties: false,
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+
+      const content = `name: Check configuration schema changes
+
+on:
+  workflow_dispatch:
+    inputs:
+      sdaf:
+        
+
+jobs:
+  foo:
+    uses: repo/test.yml@main`;
+      const completion = await parseSetup(content, 7, 8);
+      const labels = completion.items.map((i) => i.label);
+
+      expect(labels).to.include.members(['description', 'required', 'default', 'type', 'options']);
+      expect(labels.filter((label) => label === 'GitHub Workflow')).to.be.empty;
     });
   });
 
@@ -1183,6 +1526,30 @@ objB:
     expect(completion.items[0].insertText).to.be.equal('test1');
   });
 
+  it('should suggest defaultSnippets from additionalProperties', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'string',
+        },
+      },
+      additionalProperties: {
+        anyOf: [
+          {
+            type: 'string',
+            defaultSnippets: [{ label: 'snippet', body: 'snippetBody' }],
+          },
+        ],
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = 'value: |\n|';
+    const completion = await parseCaret(content);
+
+    expect(completion.items.map((i) => i.insertText)).to.be.deep.equal(['snippetBody']);
+  });
+
   describe('should suggest prop of the object (based on not completed prop name)', () => {
     const schema: JSONSchema = {
       definitions: {
@@ -1303,6 +1670,280 @@ test1:
 
     expect(completion.items.length).equal(1);
     expect(completion.items[0].insertText).to.be.equal('${1:property}: ');
-    expect(completion.items[0].documentation).to.be.equal('Property Description');
+    expect(completion.items[0].documentation).to.be.deep.equal({ kind: 'markdown', value: 'Property Description' });
+  });
+  it('should not suggest propertyNames with doNotSuggest', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: true,
+      propertyNames: {
+        title: 'property',
+        doNotSuggest: true,
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = '';
+    const completion = await parseSetup(content, 0, content.length);
+
+    expect(completion.items.length).equal(0);
+  });
+
+  it('should suggest enum based on type', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        test: {
+          type: 'string',
+          enum: ['YES', 'NO'],
+        },
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const content = 'test: ';
+    const completion = await parseSetup(content, 0, content.length);
+    expect(completion.items.length).equal(2);
+    expect(completion.items[0].insertText).to.be.equal('"YES"');
+    expect(completion.items[1].insertText).to.be.equal('"NO"');
+  });
+
+  it('should suggest propertyNames keys from definitions $ref', async () => {
+    const schema: JSONSchema = {
+      definitions: {
+        EventName: {
+          type: 'string',
+          title: 'EventName',
+          enum: ['None', 'Event1', 'Event2'],
+        },
+      },
+      type: 'object',
+      properties: {
+        events: {
+          type: 'object',
+          propertyNames: { $ref: '#/definitions/EventName' },
+        },
+      },
+      required: ['events'],
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('events:\n  ', 1, 2);
+    expect(completion.items.map((i) => i.label)).to.have.members(['None', 'Event1', 'Event2']);
+  });
+
+  it('should suggest propertyNames candidates from const', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      propertyNames: {
+        const: 'Event0',
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('', 0, 0);
+    expect(completion.items.map((i) => i.label)).to.have.members(['Event0']);
+  });
+
+  it('should suggest propertyNames candidates from enum', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      additionalProperties: true,
+      propertyNames: {
+        enum: ['Event1', 'Event2', 'Event3'],
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('', 0, 0);
+    expect(completion.items.map((i) => i.label)).to.have.members(['Event1', 'Event2', 'Event3']);
+  });
+
+  it('should suggest propertyNames candidates from oneOf', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      propertyNames: {
+        oneOf: [{ const: 'Event1' }, { const: 'Event2' }],
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('', 0, 0);
+    expect(completion.items.map((i) => i.label)).to.have.members(['Event1', 'Event2']);
+  });
+
+  it('should suggest propertyNames candidates from anyOf', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      propertyNames: {
+        anyOf: [{ const: 'Event1' }, { enum: ['Event2', 'Event3'] }],
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('', 0, 0);
+    expect(completion.items.map((i) => i.label)).to.have.members(['Event1', 'Event2', 'Event3']);
+  });
+
+  it('should suggest only the intersected propertyNames candidate from allOf (const + enum)', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      propertyNames: {
+        allOf: [{ const: 'One' }, { enum: ['One', 'Two'] }],
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('', 0, 0);
+    expect(completion.items.map((i) => i.label)).to.have.members(['One']);
+    expect(completion.items.map((i) => i.label)).to.not.include('Two');
+  });
+
+  it('should not suggest any propertyNames when allOf makes keys impossible (const + const)', async () => {
+    const schema: JSONSchema = {
+      type: 'object',
+      propertyNames: {
+        allOf: [{ const: 'One' }, { const: 'Two' }],
+      },
+    };
+    schemaProvider.addSchema(SCHEMA_ID, schema);
+    const completion = await parseSetup('', 0, 0);
+    expect(completion.items).to.be.empty;
+  });
+
+  describe('String scalar completion comprehensive tests', () => {
+    const STRING_CASES: {
+      value: string;
+      expected: string;
+      description: string;
+      expectedLabel?: string;
+    }[] = [
+      { value: '', expected: '""', description: 'empty string' },
+      { value: '""', expected: '"\\"\\""', description: 'literal double quotes' },
+      { value: "''", expected: `"''"`, description: 'literal single quotes' },
+      { value: '"', expected: '"\\""', description: 'single quote character' },
+      { value: "'", expected: '"\'"', description: 'single apostrophe' },
+      { value: 'a: b', expected: '"a: b"', description: 'string with colon and space' },
+      { value: '# not a comment', expected: '"# not a comment"', description: 'string starting with hash' },
+      { value: '- starts with dash', expected: '"- starts with dash"', description: 'string starting with dash' },
+      {
+        value: '? starts with question',
+        expected: '"? starts with question"',
+        description: 'string starting with question mark',
+      },
+      { value: 'null', expected: '"null"', description: 'string "null"' },
+      { value: '123', expected: '"123"', description: 'numeric string' },
+      { value: '  leading space', expected: '"  leading space"', description: 'string with leading spaces' },
+      { value: 'trailing space ', expected: '"trailing space "', description: 'string with trailing space' },
+      {
+        value: 'line1\n\tline2',
+        expected: '"line1\\n\\tline2"',
+        expectedLabel: '"line1↵\\tline2"',
+        description: 'string with newline and tab',
+      },
+      { value: 'endsWithColon:', expected: '"endsWithColon:"', description: 'string ending with colon' },
+      { value: '0xdeadbeef', expected: '"0xdeadbeef"', description: 'hex-like string' },
+      { value: '01', expected: '"01"', description: 'octal-like string' },
+      { value: '0o12', expected: '"0o12"', description: 'octal-like string with prefix' },
+      { value: '\\"', expected: '"\\\\\\\\\\""', description: 'backslash-quote' },
+    ];
+
+    const addEnumSchema = (value: string): void => {
+      const schema: JSONSchema = {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          testProp: {
+            type: 'string',
+            enum: [value],
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+    };
+    describe('Enum', () => {
+      STRING_CASES.forEach(({ value, expected, description }) => {
+        describe(description, () => {
+          beforeEach(() => addEnumSchema(value));
+
+          it('should handle enum key value', async () => {
+            const content = '';
+            const completion = await parseSetup(content, 0, content.length);
+
+            expect(completion.items.length).to.equal(1);
+            expect(completion.items[0].insertText).to.equal(`testProp: \${1:${expected}}`);
+          });
+
+          it('should handle enum value after property name', async () => {
+            const content = 'testProp: ';
+            const completion = await parseSetup(content, 0, content.length);
+
+            expect(completion.items.length).to.equal(1);
+            expect(completion.items[0].insertText).to.equal(expected);
+          });
+        });
+      });
+    });
+
+    const addConstSchema = (value: string): void => {
+      const schema: JSONSchema = {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          testProp: {
+            type: 'string',
+            const: value,
+          },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+    };
+    describe('Const', () => {
+      STRING_CASES.forEach(({ value, expected, expectedLabel, description }) => {
+        describe(description, () => {
+          beforeEach(() => addConstSchema(value));
+
+          it('should handle const key value', async () => {
+            const content = 'test';
+            const completion = await parseSetup(content, 0, content.length);
+
+            expect(completion.items.length).to.equal(1);
+            expect(completion.items[0].insertText).to.equal(`testProp: ${expected}`);
+          });
+
+          it('should handle const value after property name', async () => {
+            const content = 'testProp: ';
+            const completion = await parseSetup(content, 0, content.length);
+
+            expect(completion.items.length).to.be.greaterThan(0);
+            expect(completion.items[0].insertText).to.equal(expected);
+
+            // Only assert label when we expect it to differ (e.g., newline rendering)
+            if (expectedLabel !== undefined) {
+              expect(completion.items[0].label).to.equal(expectedLabel);
+            }
+          });
+        });
+      });
+    });
+
+    const addPropertyNameSchema = (propName: string): void => {
+      const schema: JSONSchema = {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          [propName]: { type: 'string' },
+        },
+      };
+      schemaProvider.addSchema(SCHEMA_ID, schema);
+    };
+    describe('Property name (key)', () => {
+      STRING_CASES.filter(({ value }) => value !== '').forEach(({ value, expected, description }) => {
+        describe(description, () => {
+          beforeEach(() => addPropertyNameSchema(value));
+
+          it('should handle property name completion', async () => {
+            const content = '';
+            const completion = await parseSetup(content, 0, content.length);
+
+            expect(completion.items.length).to.equal(1);
+            expect(completion.items[0].insertText).to.equal(`${expected}: `);
+          });
+        });
+      });
+    });
   });
 });

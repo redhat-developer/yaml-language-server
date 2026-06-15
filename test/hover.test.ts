@@ -10,7 +10,7 @@ import {
   setupSchemaIDTextDocument,
   TestCustomSchemaProvider,
 } from './utils/testHelper';
-import * as assert from 'assert';
+import assert from 'assert';
 import { Hover, MarkupContent, Position } from 'vscode-languageserver-types';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
@@ -86,7 +86,7 @@ describe('Hover Tests', () => {
       assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
       assert.strictEqual(
         (hover.contents as MarkupContent).value,
-        `The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `The directory from which bower should run. All relative paths will be calculated according to this setting.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -108,7 +108,7 @@ describe('Hover Tests', () => {
       assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `The directory from which bower should run\\. All relative paths will be calculated according to this setting\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `The directory from which bower should run. All relative paths will be calculated according to this setting.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -303,7 +303,7 @@ describe('Hover Tests', () => {
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `Full name of the author\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `Full name of the author.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -335,7 +335,7 @@ describe('Hover Tests', () => {
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `Email address of the author\\.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `Email address of the author.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -425,7 +425,7 @@ storage:
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `#### no\\_proxy \\(list of strings\\):\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `#### no\\_proxy (list of strings):\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
 
       const content2 = `ignition:
@@ -444,7 +444,7 @@ storage:
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `#### devices \\(list of strings\\):\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `#### devices (list of strings):\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -515,6 +515,60 @@ users:
       );
     });
 
+    it('Hover handles inline pattern modifiers', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          description: {
+            type: 'string',
+            description: 'Field with dotall pattern.',
+            pattern: '(?s).*',
+          },
+          multilineAndDotall: {
+            type: 'string',
+            description: 'Field with multiline and dotall pattern.',
+            pattern: '(?ms)^start.*end$',
+          },
+        },
+      });
+
+      let result = await parseSetup('description: a|n|y text');
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `Field with dotall pattern.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+
+      result = await parseSetup('multilineAndDotall: start middle c|o|ntent end');
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `Field with multiline and dotall pattern.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+      expect(telemetry.messages).to.be.empty;
+    });
+
+    it('Hover handles unsupported pattern', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          unsupportedPattern: {
+            type: 'string',
+            description: 'Field with unsupported pattern.',
+            pattern: '(?x)text .*',
+          },
+        },
+      });
+
+      const result = await parseSetup('unsupportedPattern: text c|o|ntent');
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `Field with unsupported pattern.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+      expect(telemetry.messages).to.be.empty;
+    });
+
     it('hover on value and its description has multiline, indentation and special string', async () => {
       (() => {
         languageSettingsSetup = new ServiceSetup()
@@ -552,7 +606,7 @@ users:
       assert.strictEqual(MarkupContent.is(result.contents), true);
       assert.strictEqual(
         (result.contents as MarkupContent).value,
-        `#### Person\n\nAt the top level my\\_var is shown properly\\.\n\n&emsp;&emsp;Issue with my\\_var2\n\n&emsp;&emsp;&emsp;here my\\_var3\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+        `#### Person\n\nAt the top level my\\_var is shown properly.\n\n&emsp;&emsp;Issue with my\\_var2\n\n&emsp;&emsp;&emsp;here my\\_var3\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
     });
 
@@ -582,6 +636,193 @@ Allowed Values:
 * \`cat\`
 * \`dog\`: Canis familiaris
 * \`non\`
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
+    it('Hover displays unique enum values', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            description: 'should return this description',
+            anyOf: [
+              {
+                enum: ['cat', 'dog', 'non'],
+                enumDescriptions: ['', 'Canis familiaris'],
+              },
+              {
+                enum: ['bird', 'fish', 'non'], // the second "non" from this enum should be filtered out
+                enumDescriptions: ['', 'Special fish'],
+              },
+            ],
+          },
+        },
+      });
+      const content = 'animal:\n  no|n|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+Allowed Values:
+
+* \`non\`
+* \`cat\`
+* \`dog\`: Canis familiaris
+* \`bird\`
+* \`fish\`: Special fish
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
+    it('Hover displays unique enum values with prroper description (1st case)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            description: 'should return this description',
+            anyOf: [
+              {
+                enum: ['cat', 'dog', 'fish'],
+                enumDescriptions: ['1st cat', '1st dog', '1st fish'], // should use this description for "fish"
+              },
+              {
+                enum: ['bird', 'fish', 'ant'],
+              },
+            ],
+          },
+        },
+      });
+      const content = 'animal:\n  fis|n|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+Allowed Values:
+
+* \`ant\`
+* \`cat\`: 1st cat
+* \`dog\`: 1st dog
+* \`fish\`: 1st fish
+* \`bird\`
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
+    it('Hover displays unique enum values with prroper description (2nd case)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            description: 'should return this description',
+            anyOf: [
+              {
+                enum: ['cat', 'dog', 'fish'],
+              },
+              {
+                enum: ['bird', 'fish', 'ant'],
+                enumDescriptions: ['2nd bird', '2nd fish', '2nd ant'], // should use this description for "fish"
+              },
+            ],
+          },
+        },
+      });
+      const content = 'animal:\n  fis|n|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+Allowed Values:
+
+* \`ant\`: 2nd ant
+* \`cat\`
+* \`dog\`
+* \`fish\`: 2nd fish
+* \`bird\`: 2nd bird
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
+    it('Hover displays unique enum values with prroper description (3rd case)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          animal: {
+            description: 'should return this description',
+            anyOf: [
+              {
+                enum: ['cat', 'dog', 'fish'],
+                enumDescriptions: ['1st cat', '1st dog', '1st fish'], // should use this description for "fish"
+              },
+              {
+                enum: ['bird', 'fish', 'ant'],
+                enumDescriptions: ['2nd bird', '2nd fish', '2nd ant'],
+              },
+            ],
+          },
+        },
+      });
+      const content = 'animal:\n  fis|n|'; // len: 13, pos: 12
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `should return this description
+
+Allowed Values:
+
+* \`ant\`: 2nd ant
+* \`cat\`: 1st cat
+* \`dog\`: 1st dog
+* \`fish\`: 1st fish
+* \`bird\`: 2nd bird
+
+Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+    it('Hover displays escaped quote strings correctly in enum', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          value: {
+            type: 'string',
+            description: 'Test enum with special quote strings',
+            enum: ['', '""', "''"],
+          },
+        },
+      });
+      const content = 'value: |\n|'; // len: 8, pos: 7
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual((result.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `Test enum with special quote strings
+
+Allowed Values:
+
+* \`"''"\`
+* \`""\`
+* \`"\\"\\""\`
 
 Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
@@ -672,6 +913,124 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       });
 
       expect(result).to.be.null;
+    });
+    it('Hover preserves literal parentheses', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          parentheses: {
+            type: 'string',
+            description: 'Parentheses should be literal: (abc)(1).',
+          },
+        },
+      });
+
+      const content = 'parenth|e|ses: x';
+      const hover = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (hover.contents as MarkupContent).value,
+        `Parentheses should be literal: (abc)(1).\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+    it('Hover preserves literal dots', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          dotInText: {
+            type: 'string',
+            description: 'Dots should be literal in normal text: v1.2.3, 3.14159, example.com.',
+          },
+        },
+      });
+
+      const content = 'dot|I|nText: x';
+      const hover = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (hover.contents as MarkupContent).value,
+        `Dots should be literal in normal text: v1.2.3, 3.14159, example.com.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+    it('Hover preserves bare URL in description (no escaping)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          repo: {
+            type: 'string',
+            description: 'The YAML Language Server at https://github.com/redhat-developer/yaml-language-server',
+          },
+        },
+      });
+
+      const content = 'rep|o|: x';
+      const hover = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (hover.contents as MarkupContent).value,
+        `The YAML Language Server at https://github.com/redhat-developer/yaml-language-server\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
+    it('Hover preserves URL wrapped in parentheses in description (no escaping)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          repo: {
+            type: 'string',
+            description: 'Yaml Language Server (https://github.com/redhat-developer/yaml-language-server)',
+          },
+        },
+      });
+
+      const content = 'rep|o|: x';
+      const hover = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual(
+        (hover.contents as MarkupContent).value,
+        `Yaml Language Server (https://github.com/redhat-developer/yaml-language-server)\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+    });
+
+    it('Hover prefers markdownDescription for $ref siblings', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
+        properties: {
+          foo: {
+            type: 'string',
+            title: 'foo title',
+            description: 'foo desc',
+            markdownDescription: 'foo md desc **bold** \n * line \n* another \n\n',
+          },
+          bar: {
+            $ref: '#/$defs/veggie',
+            title: 'bar title',
+            description: 'bar desc',
+            markdownDescription: 'bar md desc **bold** \n * line \n* another \n\n',
+          },
+        },
+        $defs: {
+          veggie: {
+            type: 'string',
+            enum: ['potato', 'carrot'],
+          },
+        },
+      });
+      const hover = await parseSetup('b|a|r: potato');
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.ok((hover.contents as MarkupContent).value.includes('bar md desc **bold**'));
+      assert.ok((hover.contents as MarkupContent).value.includes('* another'));
+      assert.ok(!(hover.contents as MarkupContent).value.includes('bar desc'));
     });
   });
 
@@ -764,6 +1123,102 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
       expect(telemetry.messages).to.be.empty;
     });
+    it('should show the parent description in anyOf (no child descriptions)', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        title: 'The Root',
+        description: 'Root Object',
+        type: 'object',
+        properties: {
+          optionalZipFile: {
+            title: 'ZIP file',
+            anyOf: [{ type: 'string', pattern: '\\.zip$' }, { type: 'null' }],
+            default: null,
+            description: 'Optional ZIP file path.',
+          },
+        },
+        required: ['optionalZipFile'],
+        additionalProperties: false,
+      });
+      const content = 'optionalZipF|i|le:';
+      const result = await parseSetup(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `#### ZIP file || ZIP file\n\nOptional ZIP file path.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+      expect(telemetry.messages).to.be.empty;
+    });
+    it('should concat parent and child descriptions in anyOf', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        title: 'The Root',
+        description: 'Root Object',
+        type: 'object',
+        properties: {
+          child: {
+            title: 'Child',
+            anyOf: [
+              {
+                $ref: '#/definitions/FirstChoice',
+              },
+              {
+                $ref: '#/definitions/SecondChoice',
+              },
+            ],
+            description: 'The parent description.',
+          },
+        },
+        required: ['child'],
+        additionalProperties: false,
+        definitions: {
+          FirstChoice: {
+            title: 'FirstChoice',
+            description: 'The first choice',
+            type: 'object',
+            properties: {
+              choice: {
+                title: 'Choice',
+                default: 'first',
+                enum: ['first'],
+                type: 'string',
+              },
+              property_a: {
+                title: 'Property A',
+                type: 'string',
+              },
+            },
+            required: ['property_a'],
+          },
+          SecondChoice: {
+            title: 'SecondChoice',
+            description: 'The second choice',
+            type: 'object',
+            properties: {
+              choice: {
+                title: 'Choice',
+                default: 'second',
+                enum: ['second'],
+                type: 'string',
+              },
+              property_b: {
+                title: 'Property B',
+                type: 'string',
+              },
+            },
+            required: ['property_b'],
+          },
+        },
+      });
+
+      const content = 'ch|i|ld:';
+      const result = await parseSetup(content);
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.strictEqual(
+        (result.contents as MarkupContent).value,
+        `#### FirstChoice || SecondChoice\n\nThe parent description.\nThe first choice || The second choice\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
+      expect(telemetry.messages).to.be.empty;
+    });
   });
 
   describe('Bug fixes', () => {
@@ -773,6 +1228,189 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       const result = await parseSetup(content);
       expect(telemetry.messages).to.be.empty;
       expect(result).to.be.null;
+    });
+  });
+
+  describe('YAML 1.1 boolean hover', () => {
+    let yaml11LanguageHandler: LanguageHandlers;
+    let yaml11Settings: SettingsState;
+    let yaml11SchemaProvider: TestCustomSchemaProvider;
+
+    before(() => {
+      const yaml11Setup = new ServiceSetup().withHover().withYamlVersion('1.1');
+      const {
+        languageHandler: langHandler,
+        yamlSettings: settings,
+        schemaProvider: testSchemaProvider,
+      } = setupLanguageService(yaml11Setup.languageSettings);
+      yaml11LanguageHandler = langHandler;
+      yaml11Settings = settings;
+      yaml11SchemaProvider = testSchemaProvider;
+    });
+
+    afterEach(() => {
+      yaml11SchemaProvider.deleteSchema(SCHEMA_ID);
+    });
+
+    function parseSetupYaml11(content: string, position?: number): Promise<Hover> {
+      if (typeof position === 'undefined') {
+        ({ content, position } = caretPosition(content));
+      }
+      const testTextDocument = setupSchemaIDTextDocument(content);
+      yaml11Settings.documents = new TextDocumentTestManager();
+      (yaml11Settings.documents as TextDocumentTestManager).set(testTextDocument);
+      return yaml11LanguageHandler.hoverHandler({
+        position: testTextDocument.positionAt(position),
+        textDocument: testTextDocument,
+      });
+    }
+
+    it('Hover on YAML 1.1 boolean value "True" with enum schema', async () => {
+      yaml11SchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          enabled: {
+            type: 'boolean',
+            description: 'Enable or disable the feature',
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'enabled: |T|rue';
+      const result = await parseSetupYaml11(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.notStrictEqual((result.contents as MarkupContent).value, '');
+      expect((result.contents as MarkupContent).value).to.include('Enable or disable the feature');
+    });
+
+    it('Hover on YAML 1.1 boolean value "False" with enum schema', async () => {
+      yaml11SchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          enabled: {
+            type: 'boolean',
+            description: 'Enable or disable the feature',
+            enum: [true, false],
+          },
+        },
+      });
+      const content = 'enabled: |F|alse';
+      const result = await parseSetupYaml11(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.notStrictEqual((result.contents as MarkupContent).value, '');
+      expect((result.contents as MarkupContent).value).to.include('Enable or disable the feature');
+    });
+
+    it('Hover on YAML 1.1 boolean value "yes" with const schema', async () => {
+      yaml11SchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          confirmed: {
+            type: 'boolean',
+            description: 'Confirmation flag',
+            const: true,
+          },
+        },
+      });
+      const content = 'confirmed: |y|es';
+      const result = await parseSetupYaml11(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.notStrictEqual((result.contents as MarkupContent).value, '');
+      expect((result.contents as MarkupContent).value).to.include('Confirmation flag');
+    });
+
+    it('Hover on YAML 1.1 boolean value "no" with const schema', async () => {
+      yaml11SchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          disabled: {
+            type: 'boolean',
+            description: 'Disabled flag',
+            const: false,
+          },
+        },
+      });
+      const content = 'disabled: |n|o';
+      const result = await parseSetupYaml11(content);
+
+      assert.strictEqual(MarkupContent.is(result.contents), true);
+      assert.notStrictEqual((result.contents as MarkupContent).value, '');
+      expect((result.contents as MarkupContent).value).to.include('Disabled flag');
+    });
+  });
+
+  describe('hoverSchemaSource configuration', () => {
+    it('Hover should not show schema source when hoverSchemaSource is false', async () => {
+      const languageSettingsSetupWithoutSource = new ServiceSetup()
+        .withHover()
+        .withhoverSchemaSource(false)
+        .withSchemaFileMatch({
+          uri: SCHEMA_ID,
+          fileMatch: ['*.yaml'],
+        });
+      const {
+        languageHandler: langHandler,
+        yamlSettings: settings,
+        schemaProvider: testSchemaProvider,
+      } = setupLanguageService(languageSettingsSetupWithoutSource.languageSettings);
+
+      testSchemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          cwd: {
+            type: 'string',
+            description: 'The directory from which bower should run.',
+          },
+        },
+      });
+      const content = 'c|w|d: test';
+      const { content: parsedContent, position } = caretPosition(content);
+      const testTextDocument = setupSchemaIDTextDocument(parsedContent);
+      settings.documents = new TextDocumentTestManager();
+      (settings.documents as TextDocumentTestManager).set(testTextDocument);
+      const hover = await langHandler.hoverHandler({
+        position: testTextDocument.positionAt(position),
+        textDocument: testTextDocument,
+      });
+
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual((hover.contents as MarkupContent).value, 'The directory from which bower should run.');
+      assert.strictEqual((hover.contents as MarkupContent).value.includes('Source:'), false);
+
+      testSchemaProvider.deleteSchema(SCHEMA_ID);
+    });
+
+    it('Hover should show schema source by default', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          cwd: {
+            type: 'string',
+            description: 'The directory from which bower should run.',
+          },
+        },
+      });
+      const content = 'c|w|d: test';
+      const { content: parsedContent, position } = caretPosition(content);
+      const testTextDocument = setupSchemaIDTextDocument(parsedContent);
+      yamlSettings.documents = new TextDocumentTestManager();
+      (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+      const hover = await languageHandler.hoverHandler({
+        position: testTextDocument.positionAt(position),
+        textDocument: testTextDocument,
+      });
+
+      assert.strictEqual(MarkupContent.is(hover.contents), true);
+      assert.strictEqual((hover.contents as MarkupContent).kind, 'markdown');
+      assert.strictEqual((hover.contents as MarkupContent).value.includes('Source:'), true);
+      assert.strictEqual(
+        (hover.contents as MarkupContent).value,
+        `The directory from which bower should run.\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
+      );
     });
   });
 });

@@ -79,7 +79,7 @@ describe('getLanguageService()', () => {
       assert.deepEqual(result, {
         contents: {
           kind: 'markdown',
-          value: "The person's first name\\.\n\nSource: [my.schema.uri](my.schema.uri)",
+          value: "The person's first name.\n\nSource: [my.schema.uri](my.schema.uri)",
         },
         range: {
           start: {

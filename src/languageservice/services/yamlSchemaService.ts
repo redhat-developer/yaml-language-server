@@ -4,41 +4,96 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
-import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
 import {
-  UnresolvedSchema,
-  ResolvedSchema,
-  JSONSchemaService,
-  SchemaDependencies,
   ISchemaContributions,
+  JSONSchemaService,
+  ResolvedSchema,
+  SchemaDependencies,
   SchemaHandle,
+  UnresolvedSchema,
 } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
+import { SettingsState } from '../../yamlSettings';
+import { JSONSchema, JSONSchemaMap, JSONSchemaRef, SchemaDialect } from '../jsonSchema';
+import { SchemaPriority, SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
 
-import { URI } from 'vscode-uri';
-
-import * as nls from 'vscode-nls';
-import { convertSimple2RegExpPattern } from '../utils/strings';
-import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { JSONDocument } from '../parser/jsonParser07';
-import { parse } from 'yaml';
+import * as l10n from '@vscode/l10n';
 import * as path from 'path';
-import { getSchemaFromModeline } from './modelineUtil';
-import { JSONSchemaDescriptionExt } from '../../requestTypes';
+import { URI } from 'vscode-uri';
+import { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes';
+import { JSONDocument } from '../parser/jsonDocument';
+import { SingleYAMLDocument } from '../parser/yamlParser07';
 import { SchemaVersions } from '../yamlTypes';
-
-import Ajv, { DefinedError } from 'ajv';
-import { getSchemaTitle } from '../utils/schemaUtils';
+import { getSchemaFromModeline } from './modelineUtil';
 import { getDollarSchema } from './dollarUtils';
 
-const localize = nls.loadMessageBundle();
+import Ajv, { DefinedError, type AnySchemaObject, type ErrorObject, type ValidateFunction } from 'ajv';
+import Ajv4 from 'ajv-draft-04';
+import Ajv2019 from 'ajv/dist/2019';
+import Ajv2020 from 'ajv/dist/2020';
+import type { Localize } from 'ajv-i18n/localize/types';
+import * as Json from 'jsonc-parser';
+import { parse } from 'yaml';
+import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, isKubernetes } from '../utils/schemaUrls';
+import { autoDetectKubernetesSchema } from './k8sSchemaUtil';
 
-const ajv = new Ajv();
+const ajv4 = new Ajv4({ allErrors: true });
+const ajv7 = new Ajv({ allErrors: true });
+const ajv2019 = new Ajv2019({ allErrors: true });
+const ajv2020 = new Ajv2020({ allErrors: true });
 
-// load JSON Schema 07 def to validate loaded schemas
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const jsonSchema04 = require('ajv-draft-04/dist/refs/json-schema-draft-04.json');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
-const schema07Validator = ajv.compile(jsonSchema07);
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const jsonSchema2019 = require('ajv/dist/refs/json-schema-2019-09/schema.json');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const jsonSchema2020 = require('ajv/dist/refs/json-schema-2020-12/schema.json');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const ajvLocalizers: Record<string, Localize> = require('ajv-i18n');
+
+const schema04Validator = ajv4.compile(jsonSchema04);
+const schema07Validator = ajv7.compile(jsonSchema07);
+const schema2019Validator = ajv2019.compile(jsonSchema2019);
+const schema2020Validator = ajv2020.compile(jsonSchema2020);
+
+const schemaDialectCache = new Map<string, SchemaDialect>();
+const schemaDialectInFlight = new Map<string, Promise<SchemaDialect>>();
+
+const AJV_LOCALE_ALIASES = new Map<string, string>([
+  ['zh-cn', 'zh'],
+  ['zh-tw', 'zh-TW'],
+]);
+
+// metadata/keywords that don't add constraints and thus don't count as $ref siblings
+const REF_SIBLING_NONCONSTRAINT_KEYS = new Set([
+  '$ref',
+  '_$ref',
+  '$schema',
+  '$id',
+  'id',
+  '_baseUri',
+  '_sourceUri',
+  '_dialect',
+  '$anchor',
+  '$dynamicAnchor',
+  '$dynamicRef',
+  '$recursiveAnchor',
+  '$recursiveRef',
+  'definitions',
+  '$defs',
+  '$comment',
+  'title',
+  'description',
+  'markdownDescription',
+  '$vocabulary',
+  'examples',
+  'default',
+  'url',
+  'closestTitle',
+  'unevaluatedProperties',
+  'unevaluatedItems',
+]);
 
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
@@ -69,32 +124,6 @@ export interface SchemaDeletionsAll {
   action: MODIFICATION_ACTIONS.deleteAll;
 }
 
-export class FilePatternAssociation {
-  private schemas: string[];
-  private patternRegExp: RegExp;
-
-  constructor(pattern: string) {
-    try {
-      this.patternRegExp = new RegExp(convertSimple2RegExpPattern(pattern) + '$');
-    } catch (e) {
-      // invalid pattern
-      this.patternRegExp = null;
-    }
-    this.schemas = [];
-  }
-
-  public addSchema(id: string): void {
-    this.schemas.push(id);
-  }
-
-  public matchesPattern(fileName: string): boolean {
-    return this.patternRegExp && this.patternRegExp.test(fileName);
-  }
-
-  public getSchemas(): string[] {
-    return this.schemas;
-  }
-}
 interface SchemaStoreSchema {
   name: string;
   description: string;
@@ -109,6 +138,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   private filePatternAssociations: JSONSchemaService.FilePatternAssociation[];
   private contextService: WorkspaceContextService;
   private requestService: SchemaRequestService;
+  private yamlSettings: SettingsState;
   public schemaPriorityMapping: Map<string, Set<SchemaPriority>>;
 
   private schemaUriToNameAndDescription = new Map<string, SchemaStoreSchema>();
@@ -116,12 +146,14 @@ export class YAMLSchemaService extends JSONSchemaService {
   constructor(
     requestService: SchemaRequestService,
     contextService?: WorkspaceContextService,
-    promiseConstructor?: PromiseConstructor
+    promiseConstructor?: PromiseConstructor,
+    yamlSettings?: SettingsState
   ) {
     super(requestService, contextService, promiseConstructor);
     this.customSchemaProvider = undefined;
     this.requestService = requestService;
     this.schemaPriorityMapping = new Map();
+    this.yamlSettings = yamlSettings;
   }
 
   registerCustomSchemaProvider(customSchemaProvider: CustomSchemaProvider): void {
@@ -133,7 +165,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     const schemaUris = new Set<string>();
     for (const filePattern of this.filePatternAssociations) {
       const schemaUri = filePattern.uris[0];
-      if (schemaUris.has(schemaUri)) {
+      if (schemaUri === EMPTY_SCHEMA_URL || schemaUris.has(schemaUri)) {
         continue;
       }
       schemaUris.add(schemaUri);
@@ -156,49 +188,461 @@ export class YAMLSchemaService extends JSONSchemaService {
     return result;
   }
 
+  private collectSchemaNodes(push: (node: JSONSchema) => void, ...values: unknown[]): void {
+    const collect = (value: unknown): void => {
+      if (!value || typeof value !== 'object') return;
+      if (Array.isArray(value)) {
+        for (const entry of value) {
+          collect(entry);
+        }
+        return;
+      }
+      push(value as JSONSchema);
+    };
+    for (const value of values) {
+      collect(value);
+    }
+  }
+
+  private schemaMapValues(map?: JSONSchemaMap): JSONSchemaRef[] | undefined {
+    if (!map || typeof map !== 'object') return undefined;
+    return Object.values(map);
+  }
+
+  private resolveModelineSchema(resource: string, doc: JSONDocument): string | undefined {
+    let schemaFromModeline = getSchemaFromModeline(doc);
+    if (schemaFromModeline !== undefined) {
+      if (schemaFromModeline.trim().toLowerCase() === 'none') {
+        return 'none';
+      }
+      if (!schemaFromModeline.startsWith('file:') && !schemaFromModeline.startsWith('http')) {
+        // If path contains a fragment and it is left intact, "#" will be
+        // considered part of the filename and converted to "%23" by
+        // path.resolve() -> take it out and add back after path.resolve
+        let appendix = '';
+        if (schemaFromModeline.indexOf('#') > 0) {
+          const segments = schemaFromModeline.split('#', 2);
+          schemaFromModeline = segments[0];
+          appendix = segments[1];
+        }
+        if (!path.isAbsolute(schemaFromModeline)) {
+          const resUri = URI.parse(resource);
+          schemaFromModeline = URI.file(path.resolve(path.parse(resUri.fsPath).dir, schemaFromModeline)).toString();
+        } else {
+          schemaFromModeline = URI.file(schemaFromModeline).toString();
+        }
+        if (appendix.length > 0) {
+          schemaFromModeline += '#' + appendix;
+        }
+      }
+      return schemaFromModeline;
+    }
+  }
+
+  private async getSchemaIdsForResource(resource: string, doc: JSONDocument): Promise<string[]> {
+    const modelineSchema = this.resolveModelineSchema(resource, doc);
+    if (modelineSchema) {
+      if (modelineSchema === 'none') {
+        return [];
+      }
+      return [modelineSchema];
+    }
+
+    if (this.customSchemaProvider) {
+      try {
+        const schemaUri = await this.customSchemaProvider(resource);
+        if (Array.isArray(schemaUri)) {
+          if (schemaUri.length > 0) {
+            return schemaUri;
+          }
+        } else if (schemaUri) {
+          return [schemaUri];
+        }
+      } catch {
+        // Fall back to configured schemas
+      }
+    }
+
+    const seen: { [schemaId: string]: boolean } = Object.create(null);
+    const schemas: string[] = [];
+    for (const entry of this.filePatternAssociations) {
+      if (entry.matchesPattern(resource)) {
+        for (const schemaId of entry.getURIs()) {
+          if (!seen[schemaId]) {
+            schemas.push(schemaId);
+            seen[schemaId] = true;
+          }
+        }
+      }
+    }
+
+    return schemas.length > 0 ? this.highestPrioritySchemas(schemas) : [];
+  }
+
+  public async getSchemaDescriptionsForResource(resource: string, doc: JSONDocument): Promise<JSONSchemaDescription[]> {
+    const schemaIds = await this.getSchemaIdsForResource(resource, doc);
+    const result: JSONSchemaDescription[] = [];
+
+    for (const schemaId of schemaIds) {
+      if (schemaId === EMPTY_SCHEMA_URL) {
+        continue;
+      }
+
+      const metadata = this.schemaUriToNameAndDescription.get(schemaId);
+      let schema: JSONSchema | undefined;
+      if (!metadata) {
+        try {
+          const unresolvedSchema = await this.loadSchema(schemaId);
+          if (unresolvedSchema.schema && typeof unresolvedSchema.schema === 'object') {
+            schema = unresolvedSchema.schema;
+          }
+        } catch {
+          // Keep the schema URI visible even when its content cannot be loaded.
+        }
+      }
+
+      result.push({
+        uri: schemaId,
+        name: metadata?.name ?? schema?.title,
+        description: metadata?.description ?? schema?.description,
+        versions: metadata?.versions ?? schema?.versions,
+      });
+    }
+
+    return result;
+  }
+
   async resolveSchemaContent(
     schemaToResolve: UnresolvedSchema,
     schemaURL: string,
     dependencies: SchemaDependencies
   ): Promise<ResolvedSchema> {
     const resolveErrors: string[] = schemaToResolve.errors.slice(0);
-    let schema: JSONSchema = schemaToResolve.schema;
-    const contextService = this.contextService;
+    const loc = toDisplayString(schemaURL);
 
-    if (!schema07Validator(schema)) {
-      const errs: string[] = [];
-      for (const err of schema07Validator.errors as DefinedError[]) {
-        errs.push(`${err.instancePath} : ${err.message}`);
-      }
-      resolveErrors.push(`Schema '${getSchemaTitle(schemaToResolve.schema, schemaURL)}' is not valid:\n${errs.join('\n')}`);
+    const raw: unknown = schemaToResolve.schema;
+    if (raw === null || Array.isArray(raw) || (typeof raw !== 'object' && typeof raw !== 'boolean')) {
+      const got = raw === null ? 'null' : Array.isArray(raw) ? 'array' : typeof raw;
+      resolveErrors.push(
+        l10n.t("Schema '{0}' is not valid: {1}", loc, `expected a JSON Schema object or boolean, got "${got}".`)
+      );
+      return new ResolvedSchema({}, resolveErrors);
     }
 
-    const findSection = (schema: JSONSchema, path: string): JSONSchema => {
-      if (!path) {
-        return schema;
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let current: any = schema;
-      if (path[0] === '/') {
-        path = path.substr(1);
-      }
-      path.split('/').some((part) => {
-        current = current[part];
-        return !current;
-      });
-      return current;
+    const _setSourceUri = (node: JSONSchema, sourceUri: string | undefined): void => {
+      if (!node || typeof node !== 'object' || !sourceUri) return;
+      node._sourceUri = sourceUri;
     };
 
-    const merge = (target: JSONSchema, sourceRoot: JSONSchema, sourceURI: string, path: string): void => {
-      const section = findSection(sourceRoot, path);
-      if (section) {
-        for (const key in section) {
-          if (Object.prototype.hasOwnProperty.call(section, key) && !Object.prototype.hasOwnProperty.call(target, key)) {
-            target[key] = section[key];
+    const _cloneSchema = (
+      value: JSONSchema,
+      seen: Map<object, unknown>,
+      stopCondition?: (val: unknown, seenSize: number) => unknown | undefined
+    ): unknown => {
+      // primitives and null
+      if (value === null || typeof value !== 'object') return value;
+
+      if (stopCondition) {
+        const replacement = stopCondition(value, seen.size);
+        if (replacement !== undefined) return replacement;
+      }
+
+      // already cloned
+      if (seen.has(value)) return seen.get(value);
+
+      // clone arrays
+      if (Array.isArray(value)) {
+        const arr = [];
+        seen.set(value, arr);
+        for (const item of value) {
+          arr.push(_cloneSchema(item, seen, stopCondition));
+        }
+        return arr;
+      }
+
+      // clone objects
+      const result: JSONSchema = {};
+      seen.set(value, result);
+      for (const prop in value) {
+        result[prop] = _cloneSchema(value[prop], seen, stopCondition);
+      }
+      _setSourceUri(result, value._sourceUri);
+      return result;
+    };
+
+    /**
+     * ----------------------------
+     * Meta-validate a schema node against its dialect's meta-schema
+     * ----------------------------
+     */
+    const _loadSchema = this.loadSchema.bind(this);
+    const ajvErrorLocale = this.yamlSettings?.locale;
+    async function _metaValidateSchemaNode(node: JSONSchema, hasNestedSchema: boolean): Promise<void> {
+      if (!node || typeof node !== 'object') return;
+      const dialect = await pickSchemaDialect(node.$schema, _loadSchema);
+      if (dialect) {
+        node._dialect = dialect;
+      }
+
+      const validator = pickMetaValidator(dialect);
+      if (!validator) return;
+
+      let toValidate = node;
+      if (hasNestedSchema) {
+        // clone for meta-validation: stop at dialect boundaries abd replace with {}
+        const stopAtDialectBoundary = (val: JSONSchema, seenSize: number): JSONSchema | undefined => {
+          if (seenSize !== 0 && val && typeof val === 'object' && val.$schema) return {};
+          return undefined;
+        };
+        toValidate = _cloneSchema(node, new Map(), stopAtDialectBoundary) as JSONSchema;
+      }
+
+      let valid = false;
+      try {
+        valid = validator(toValidate);
+      } catch (e) {
+        // AJV overflows on recursive/cyclic schemas; attempt to degrade gracefully
+        console.warn(l10n.t("Schema '{0}' could not be fully validated: {1}", loc, e.message));
+        return;
+      }
+      if (!valid) {
+        localizeAjvErrors(validator.errors, ajvErrorLocale);
+        const errs: string[] = [];
+        for (const err of validator.errors as DefinedError[]) {
+          errs.push(`${err.instancePath} : ${err.message}`);
+        }
+        resolveErrors.push(l10n.t("Schema '{0}' is not valid: {1}", loc, `\n${errs.join('\n')}`));
+      }
+    }
+
+    /**
+     * ----------------------------
+     * Schema resource and fragment resolution
+     * ----------------------------
+     * Manages two types of schema identification:
+     * 1. Embedded resources ($id without fragment):
+     *    Creates a new resource scope that can be referenced by other schemas, e.g. "$id": "other.json"
+     * 2. Plain-name fragments/anchors:
+     *    Creates named anchors within a resource for direct reference.
+     *
+     * Cache per resource URI in resourceIndexByUri:
+     * - root: schema node for the resource
+     * - fragments: map of plain-name anchors to their schema nodes + dynamic flag
+     */
+    type FragmentEntry = { node: JSONSchema; dynamic?: boolean };
+    type PlainNameFragmentMap = Map<string, FragmentEntry>;
+    type ResourceIndex = { root?: JSONSchema; fragments: PlainNameFragmentMap };
+    const resourceIndexByUri = new Map<string, ResourceIndex>();
+
+    const _getResourceIndex = (resourceUri: string): ResourceIndex => {
+      let entry = resourceIndexByUri.get(resourceUri);
+      if (!entry) {
+        entry = { fragments: new Map<string, FragmentEntry>() };
+        resourceIndexByUri.set(resourceUri, entry);
+      }
+      return entry;
+    };
+
+    /**
+     * Adds a resource's dynamic anchors to the inherited scope from parent resources
+     *
+     * Draft 2020-12: For $dynamicRef resolution, when schema A references schema B,
+     * B's dynamic anchors are added to A's scope. This builds a chain where $dynamicRef
+     * looks for the outermost (first) matching anchor.
+     */
+    const _addResourceDynamicAnchors = (
+      scope: Map<string, JSONSchema[]> | undefined,
+      resourceUri: string | undefined
+    ): Map<string, JSONSchema[]> | undefined => {
+      const entry = resourceIndexByUri.get(resourceUri);
+      if (!entry || entry.fragments.size === 0) return scope;
+
+      let result = scope;
+      for (const [name, entryItem] of entry.fragments) {
+        if (!entryItem.dynamic) continue;
+
+        const current = result?.get(name) ?? [];
+        if (current.some((existing) => existing._baseUri === resourceUri)) continue;
+
+        // clone map on first modification
+        if (result === scope) result = scope ? new Map(scope) : new Map<string, JSONSchema[]>();
+        result.set(name, current.concat(entryItem.node));
+      }
+      return result;
+    };
+
+    // resolve relative URI against base URI
+    // e.g. resolve "./foo.json" against "http://example.com/bar.json" => "http://example.com/foo.json"
+    const _resolveAgainstBase = (baseUri: string, ref: string): string => {
+      if (this.contextService) return this.contextService.resolveRelativePath(ref, baseUri);
+      return this.normalizeId(ref);
+    };
+
+    const _indexSchemaResources = async (root: JSONSchema, initialBaseUri: string): Promise<void> => {
+      type WorkItem = { node: JSONSchema; baseUri: string; sourceUri: string };
+      const preOrderStack: WorkItem[] = [{ node: root, baseUri: initialBaseUri, sourceUri: initialBaseUri }];
+      const postOrderStack: JSONSchema[] = [];
+      const childListByNode = new WeakMap<JSONSchema, JSONSchema[]>();
+
+      const seen = new Set<JSONSchema>();
+      while (preOrderStack.length) {
+        const current = preOrderStack.pop();
+        if (!current) continue;
+
+        const node = current.node;
+        if (!node || typeof node !== 'object' || seen.has(node)) continue;
+        seen.add(node);
+
+        let baseUri = current.baseUri;
+        _setSourceUri(node, current.sourceUri);
+        const id = node.$id || node.id;
+        if (id) {
+          const resolvedBaseUri = _resolveAgainstBase(baseUri, id);
+          node._baseUri = resolvedBaseUri;
+          const hashIndex = resolvedBaseUri.indexOf('#');
+          if (hashIndex !== -1 && hashIndex < resolvedBaseUri.length - 1) {
+            // Draft-07 and earlier: $id with fragment defines a plain-name anchor scoped to the resolved base
+            const frag = resolvedBaseUri.slice(hashIndex + 1);
+            _getResourceIndex(baseUri).fragments.set(frag, { node });
+          } else {
+            // $id without fragment creates a new embedded resource scope
+            baseUri = resolvedBaseUri;
+            const entry = _getResourceIndex(resolvedBaseUri);
+            if (!entry.root) {
+              entry.root = node;
+            }
           }
         }
+        // Draft 2019-09+: $anchor keyword
+        if (node.$anchor) {
+          _getResourceIndex(baseUri).fragments.set(node.$anchor, { node });
+        }
+        // Draft 2020-12+: $dynamicAnchor keyword
+        if (node.$dynamicAnchor) {
+          node._baseUri = baseUri;
+          _getResourceIndex(baseUri).fragments.set(node.$dynamicAnchor, { node, dynamic: true });
+        }
+
+        const children: JSONSchema[] = [];
+        childListByNode.set(node, children);
+
+        // collect all child schemas
+        this.collectSchemaNodes(
+          (entry) => {
+            children.push(entry);
+            preOrderStack.push({ node: entry, baseUri, sourceUri: current.sourceUri });
+          },
+          node.not,
+          node.if,
+          node.then,
+          node.else,
+          node.contains,
+          node.propertyNames,
+          node.additionalProperties as JSONSchema,
+          node.items,
+          node.additionalItems,
+          node.prefixItems,
+          this.schemaMapValues(node.properties),
+          this.schemaMapValues(node.patternProperties),
+          this.schemaMapValues(node.definitions),
+          this.schemaMapValues(node.$defs),
+          this.schemaMapValues(node.dependentSchemas),
+          this.schemaMapValues(node.dependencies as JSONSchemaMap),
+          node.allOf,
+          node.anyOf,
+          node.oneOf,
+          node.schemaSequence
+        );
+        postOrderStack.push(node);
+      }
+
+      const hasNestedSchema = new WeakMap<JSONSchema, boolean>();
+      while (postOrderStack.length) {
+        const node = postOrderStack.pop();
+        let hasNested = false;
+        for (const child of childListByNode.get(node)) {
+          if (child.$schema || hasNestedSchema.get(child)) {
+            hasNested = true;
+            break;
+          }
+        }
+        hasNestedSchema.set(node, hasNested);
+
+        if (node === root || node.$schema) await _metaValidateSchemaNode(node, hasNested);
+      }
+    };
+
+    let schema = raw as JSONSchema;
+    const schemaBaseURL = schemaToResolve.uri ?? schemaURL;
+    await _indexSchemaResources(schema, schemaBaseURL);
+
+    const _findSection = (schemaRoot: JSONSchema, refPath: string, sourceURI: string): JSONSchema => {
+      if (!refPath) {
+        return schemaRoot;
+      }
+
+      // JSON pointer style
+      if (refPath[0] === '/') {
+        let current = schemaRoot;
+        const parts = refPath.substr(1).split('/');
+        for (const part of parts) {
+          // in JSON Pointer: ~ must be escaped as ~0, / must be escaped as ~1
+          current = current?.[part.replace(/~1/g, '/').replace(/~0/g, '~')];
+          if (current === null) return undefined;
+        }
+        return current as JSONSchema;
+      }
+
+      // plain-name fragment ($anchor or $id#fragment) -> lookup in collected fragments
+      return _getResourceIndex(sourceURI).fragments.get(refPath).node;
+    };
+
+    const _merge = (target: JSONSchema, sourceRoot: JSONSchema, sourceURI: string, refPath: string, clone = false): void => {
+      const section = _findSection(sourceRoot, refPath, sourceURI);
+      if (typeof section === 'boolean') {
+        if (!section) target.not = {};
+        return;
+      }
+      if (typeof section === 'object' && section) {
+        const source = clone ? (_cloneSchema(section, new Map()) as JSONSchema) : section;
+        for (const key in source) {
+          if (Object.prototype.hasOwnProperty.call(source, key) && !Object.prototype.hasOwnProperty.call(target, key)) {
+            target[key] = source[key];
+          }
+        }
+        _setSourceUri(target, source._sourceUri);
+        return;
       } else {
-        resolveErrors.push(localize('json.schema.invalidref', "$ref '{0}' in '{1}' can not be resolved.", path, sourceURI));
+        resolveErrors.push(l10n.t("$ref '{0}' in '{1}' cannot be resolved.", refPath, sourceURI));
+      }
+    };
+
+    const _resolveRefUri = (parentSchemaURL: string, refUri: string): string => {
+      const resolvedAgainstParent = _resolveAgainstBase(parentSchemaURL, refUri);
+      if (!refUri.startsWith('/')) return resolvedAgainstParent;
+      const parentResource = resourceIndexByUri.get(parentSchemaURL)?.root;
+      const parentResourceId = parentResource?.$id || parentResource?.id;
+      if (!parentResourceId) return resolvedAgainstParent;
+      const resolvedParentId = _resolveAgainstBase(parentSchemaURL, parentResourceId);
+      if (!resolvedParentId.startsWith('http://') && !resolvedParentId.startsWith('https://')) return resolvedAgainstParent;
+
+      return _resolveAgainstBase(resolvedParentId, refUri);
+    };
+
+    const _resolveLocalSiblingFromRemoteUri = (parentSchemaURL: string, resolvedRefUri: string): string | undefined => {
+      try {
+        const parentUri = URI.parse(parentSchemaURL);
+        const targetUri = URI.parse(resolvedRefUri);
+        if (parentUri.scheme !== 'file') return undefined;
+        if (targetUri.scheme !== 'http' && targetUri.scheme !== 'https') return undefined;
+
+        const localFileName = path.posix.basename(targetUri.path);
+        if (!localFileName) return undefined;
+        const localDir = path.posix.dirname(parentUri.path);
+        const localPath = path.posix.join(localDir, localFileName);
+        return parentUri.with({ path: localPath, query: targetUri.query, fragment: targetUri.fragment }).toString();
+      } catch {
+        return undefined;
       }
     };
 
@@ -207,115 +651,408 @@ export class YAMLSchemaService extends JSONSchemaService {
       uri: string,
       linkPath: string,
       parentSchemaURL: string,
-      parentSchemaDependencies: SchemaDependencies
+      parentSchemaSourceUri: string,
+      parentSchemaDependencies: SchemaDependencies,
+      resolutionStack: Set<string>,
+      recursiveAnchorBase: string,
+      inheritedDynamicScope: Map<string, JSONSchema[]>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any> => {
-      if (contextService && !/^\w+:\/\/.*/.test(uri)) {
-        uri = contextService.resolveRelativePath(uri, parentSchemaURL);
-      }
-      uri = this.normalizeId(uri);
-      const referencedHandle = this.getOrAddSchemaHandle(uri);
-      return referencedHandle.getUnresolvedSchema().then((unresolvedSchema) => {
-        parentSchemaDependencies[uri] = true;
-        if (unresolvedSchema.errors.length) {
-          const loc = linkPath ? uri + '#' + linkPath : uri;
-          resolveErrors.push(
-            localize('json.schema.problemloadingref', "Problems loading reference '{0}': {1}", loc, unresolvedSchema.errors[0])
+      const _attachResolvedSchema = (
+        node: JSONSchema,
+        schemaRoot: JSONSchema,
+        schemaUri: string,
+        linkPath: string,
+        parentSchemaDependencies: SchemaDependencies,
+        resolveRefDependencies: SchemaDependencies,
+        resolutionStack: Set<string>,
+        recursiveAnchorBase: string,
+        inheritedDynamicScope: Map<string, JSONSchema[]>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ): Promise<any> => {
+        parentSchemaDependencies[schemaUri] = true;
+        _merge(node, schemaRoot, schemaUri, linkPath, !!inheritedDynamicScope || !!recursiveAnchorBase);
+        if (!recursiveAnchorBase || !node._baseUri) node._baseUri = schemaUri;
+        node.url = schemaUri;
+
+        const nextStack = new Set(resolutionStack);
+        nextStack.add(schemaUri);
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return resolveRefs(
+          node,
+          schemaRoot,
+          schemaUri,
+          resolveRefDependencies,
+          nextStack,
+          recursiveAnchorBase,
+          inheritedDynamicScope
+        );
+      };
+
+      const _resolveByUri = (targetUris: string[], index = 0): Promise<unknown> => {
+        const targetUri = targetUris[index];
+
+        const embeddedSchema = resourceIndexByUri.get(targetUri)?.root;
+        if (embeddedSchema) {
+          return _attachResolvedSchema(
+            node,
+            embeddedSchema,
+            targetUri,
+            linkPath,
+            parentSchemaDependencies,
+            parentSchemaDependencies,
+            resolutionStack,
+            recursiveAnchorBase,
+            inheritedDynamicScope
           );
         }
-        merge(node, unresolvedSchema.schema, uri, linkPath);
-        node.url = uri;
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        return resolveRefs(node, unresolvedSchema.schema, uri, referencedHandle.dependencies);
-      });
+
+        const referencedHandle = this.getOrAddSchemaHandle(targetUri);
+        return referencedHandle.getUnresolvedSchema().then(async (unresolvedSchema) => {
+          if (
+            unresolvedSchema.errors?.some((error) => error.toLowerCase().includes('unable to load schema from')) &&
+            index + 1 < targetUris.length
+          ) {
+            return _resolveByUri(targetUris, index + 1);
+          }
+
+          if (unresolvedSchema.errors.length) {
+            const loc = linkPath ? targetUri + '#' + linkPath : targetUri;
+            resolveErrors.push(l10n.t("Problems loading reference '{0}': {1}", loc, unresolvedSchema.errors[0]));
+          }
+          // index resources for the newly loaded schema
+          await _indexSchemaResources(unresolvedSchema.schema, targetUri);
+          return _attachResolvedSchema(
+            node,
+            unresolvedSchema.schema,
+            targetUri,
+            linkPath,
+            parentSchemaDependencies,
+            referencedHandle.dependencies,
+            resolutionStack,
+            recursiveAnchorBase,
+            inheritedDynamicScope
+          );
+        });
+      };
+
+      const resolvedUri = _resolveRefUri(parentSchemaURL, uri);
+      const embeddedTarget = resourceIndexByUri.get(resolvedUri)?.root;
+      const localSiblingUri = embeddedTarget ? undefined : _resolveLocalSiblingFromRemoteUri(parentSchemaSourceUri, resolvedUri);
+      const targetUris = localSiblingUri && localSiblingUri !== resolvedUri ? [localSiblingUri, resolvedUri] : [resolvedUri];
+      return _resolveByUri(targetUris);
     };
 
     const resolveRefs = async (
       node: JSONSchema,
       parentSchema: JSONSchema,
       parentSchemaURL: string,
-      parentSchemaDependencies: SchemaDependencies
+      parentSchemaDependencies: SchemaDependencies,
+      resolutionStack: Set<string>,
+      recursiveAnchorBase?: string,
+      inheritedDynamicScope?: Map<string, JSONSchema[]>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ): Promise<any> => {
       if (!node || typeof node !== 'object') {
         return null;
       }
 
-      const toWalk: JSONSchema[] = [node];
-      const seen: Set<JSONSchema> = new Set();
+      // track nodes with their base URL for $id resolution
+      type WalkItem = {
+        node: JSONSchema;
+        baseUri?: string;
+        sourceUri?: string;
+        dialect?: SchemaDialect;
+        recursiveAnchorBase?: string;
+        inheritedDynamicScope?: Map<string, JSONSchema[]>;
+        siblingRefCycleKeys?: Set<string>;
+      };
+      const toWalk: WalkItem[] = [
+        {
+          node,
+          baseUri: parentSchemaURL,
+          sourceUri: node._sourceUri ?? parentSchemaURL,
+          recursiveAnchorBase,
+          inheritedDynamicScope,
+        },
+      ];
+      const seen = new WeakSet<JSONSchema>(); // prevents re-walking the same schema object graph
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const openPromises: Promise<any>[] = [];
 
-      const collectEntries = (...entries: JSONSchemaRef[]): void => {
-        for (const entry of entries) {
-          if (typeof entry === 'object') {
-            toWalk.push(entry);
+      // handle $ref with siblings based on dialect
+      const _handleRef = (
+        next: JSONSchema,
+        nodeBaseUri: string,
+        nodeSourceUri: string,
+        nodeDialect: SchemaDialect,
+        recursiveAnchorBase?: string,
+        inheritedDynamicScope?: Map<string, JSONSchema[]>,
+        siblingRefCycleKeys?: Set<string>
+      ): void => {
+        const currentDynamicScope = _addResourceDynamicAnchors(inheritedDynamicScope, nodeBaseUri);
+
+        this.collectSchemaNodes(
+          (entry) =>
+            toWalk.push({
+              node: entry,
+              baseUri: nodeBaseUri,
+              sourceUri: nodeSourceUri,
+              recursiveAnchorBase,
+              inheritedDynamicScope: currentDynamicScope,
+            }),
+          this.schemaMapValues(next.definitions || next.$defs)
+        );
+
+        // checks if a node with $ref has other constraint keywords
+        const _hasRefSiblings = (node: JSONSchema): boolean => {
+          for (const k of Object.keys(node)) {
+            if (REF_SIBLING_NONCONSTRAINT_KEYS.has(k)) continue;
+            return true;
           }
-        }
-      };
-      const collectMapEntries = (...maps: JSONSchemaMap[]): void => {
-        for (const map of maps) {
-          if (typeof map === 'object') {
-            for (const key in map) {
-              const entry = map[key];
-              if (typeof entry === 'object') {
-                toWalk.push(entry);
-              }
+          return false;
+        };
+
+        /**
+         * For Draft-2019+:
+         *   { $ref: "...", <siblings...> }
+         * becomes
+         *   { allOf: [ { $ref: "..." }, <siblings...> ] }
+         */
+        const _rewriteRefWithSiblingsToAllOf = (node: JSONSchema): void => {
+          const siblings: JSONSchema = {};
+          for (const k of Object.keys(node)) {
+            if (!REF_SIBLING_NONCONSTRAINT_KEYS.has(k)) {
+              siblings[k] = node[k];
+              delete node[k];
             }
           }
-        }
-      };
-      const collectArrayEntries = (...arrays: JSONSchemaRef[][]): void => {
-        for (const array of arrays) {
-          if (Array.isArray(array)) {
-            for (const entry of array) {
-              if (typeof entry === 'object') {
-                toWalk.push(entry);
-              }
-            }
+
+          const refValue = node.$dynamicRef ?? node.$recursiveRef ?? node.$ref;
+          if (typeof refValue !== 'string') return;
+          node.allOf = [
+            { [node.$dynamicRef ? '$dynamicRef' : node.$recursiveRef ? '$recursiveRef' : '$ref']: refValue } as JSONSchema,
+            siblings,
+          ];
+          delete node.$dynamicRef;
+          delete node.$recursiveRef;
+          delete node.$ref;
+        };
+
+        const _stripRefSiblings = (node: JSONSchema): void => {
+          for (const k of Object.keys(node)) {
+            if (!REF_SIBLING_NONCONSTRAINT_KEYS.has(k)) delete node[k];
           }
-        }
-      };
-      const handleRef = (next: JSONSchema): void => {
-        const seenRefs = new Set();
-        while (next.$ref) {
-          const ref = next.$ref;
+        };
+
+        const seenRefs = new Set<string>();
+
+        const _mergeIfResourceAlreadyInResolutionStack = (ref: string, resolvedResource: string, frag: string): boolean => {
+          if (!resolutionStack.has(resolvedResource)) return false;
+          if (!seenRefs.has(ref)) {
+            const source = resourceIndexByUri.get(resolvedResource)?.root;
+            if (source && typeof source === 'object') {
+              _merge(next, source, resolvedResource, frag, !!recursiveAnchorBase);
+            }
+            seenRefs.add(ref);
+          }
+          return true;
+        };
+
+        while (next.$dynamicRef || next.$recursiveRef || next.$ref) {
+          const isDynamicRef = typeof next.$dynamicRef === 'string';
+          const isRecursiveRef = !isDynamicRef && typeof next.$recursiveRef === 'string';
+          const rawRef = next.$dynamicRef ?? next.$recursiveRef ?? next.$ref;
+          if (typeof rawRef !== 'string') break;
+          next._$ref = rawRef;
+
+          // parse ref into base URI and fragment
+          const ref = decodeURIComponent(rawRef);
           const segments = ref.split('#', 2);
-          //return back removed $ref. We lost info about referenced type without it.
-          next._$ref = next.$ref;
-          delete next.$ref;
-          if (segments[0].length > 0) {
-            openPromises.push(resolveExternalLink(next, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies));
-            return;
-          } else {
-            if (!seenRefs.has(ref)) {
-              merge(next, parentSchema, parentSchemaURL, segments[1]); // can set next.$ref again, use seenRefs to avoid circle
-              seenRefs.add(ref);
+          const baseUri = segments[0];
+          const frag = segments.length > 1 ? segments[1] : '';
+          const resolvedRefKey = `${baseUri ? _resolveAgainstBase(nodeBaseUri, baseUri) : nodeBaseUri}#${frag}`;
+
+          if (_hasRefSiblings(next)) {
+            // Draft-07 and earlier: ignore siblings
+            if (nodeDialect === SchemaDialect.draft04 || nodeDialect === SchemaDialect.draft07) {
+              _stripRefSiblings(next);
+            } else {
+              if (siblingRefCycleKeys?.has(resolvedRefKey)) break;
+
+              // Draft-2019+: support sibling keywords
+              _rewriteRefWithSiblingsToAllOf(next);
+              if (Array.isArray(next.allOf)) {
+                for (let i = 0; i < next.allOf.length; i++) {
+                  const entry = next.allOf[i];
+                  if (entry && typeof entry === 'object') {
+                    let nextSiblingRefCycleKeys: Set<string> | undefined;
+                    if (i === 0) {
+                      nextSiblingRefCycleKeys = new Set(siblingRefCycleKeys);
+                      nextSiblingRefCycleKeys.add(resolvedRefKey);
+                    }
+                    toWalk.push({
+                      node: entry as JSONSchema,
+                      baseUri: nodeBaseUri,
+                      sourceUri: nodeSourceUri,
+                      recursiveAnchorBase,
+                      inheritedDynamicScope: currentDynamicScope,
+                      siblingRefCycleKeys: nextSiblingRefCycleKeys,
+                    });
+                  }
+                }
+              }
+              return;
             }
+          }
+
+          delete next.$dynamicRef;
+          delete next.$recursiveRef;
+          delete next.$ref;
+
+          // Draft-2019+: $recursiveRef
+          if (isRecursiveRef && (ref === '#' || ref === '')) {
+            const targetRoot = resourceIndexByUri.get(nodeBaseUri)?.root;
+            const recursiveBase = targetRoot?.$recursiveAnchor && recursiveAnchorBase ? recursiveAnchorBase : nodeBaseUri;
+
+            if (recursiveBase.length > 0) {
+              if (resolutionStack?.has(recursiveBase) || recursiveBase === nodeBaseUri) {
+                const sourceRoot = resourceIndexByUri.get(recursiveBase)?.root ?? parentSchema;
+                if (!seenRefs.has(ref)) {
+                  _merge(next, sourceRoot, recursiveBase, '', false);
+                  seenRefs.add(ref);
+                }
+                continue;
+              }
+              openPromises.push(
+                resolveExternalLink(
+                  next,
+                  recursiveBase,
+                  '',
+                  nodeBaseUri,
+                  nodeSourceUri,
+                  parentSchemaDependencies,
+                  resolutionStack,
+                  recursiveAnchorBase,
+                  currentDynamicScope
+                )
+              );
+              return;
+            }
+            continue;
+          }
+
+          // Draft-2020+: $dynamicRef
+          else if (isDynamicRef) {
+            const targetResource = baseUri.length > 0 ? _resolveAgainstBase(nodeBaseUri, baseUri) : nodeBaseUri;
+            const targetFragments = resourceIndexByUri.get(targetResource)?.fragments;
+            const targetHasDynamicAnchor = frag.length > 0 && targetFragments?.get(frag)?.dynamic;
+            const dynamicTarget = targetHasDynamicAnchor ? currentDynamicScope?.get(frag)?.[0] : undefined;
+            const resolveResource = dynamicTarget ? dynamicTarget._baseUri : targetResource;
+
+            if (dynamicTarget && (resolveResource === nodeBaseUri || resolutionStack.has(resolveResource))) {
+              if (!seenRefs.has(ref)) {
+                _merge(next, dynamicTarget, resolveResource, '', false);
+                seenRefs.add(ref);
+              }
+              continue;
+            }
+
+            if (baseUri.length > 0 || targetHasDynamicAnchor) {
+              if (_mergeIfResourceAlreadyInResolutionStack(ref, resolveResource, frag)) continue;
+              openPromises.push(
+                resolveExternalLink(
+                  next,
+                  resolveResource,
+                  frag,
+                  nodeBaseUri,
+                  nodeSourceUri,
+                  parentSchemaDependencies,
+                  resolutionStack,
+                  recursiveAnchorBase,
+                  currentDynamicScope
+                )
+              );
+              return;
+            }
+          }
+          // normal $ref with external baseUri
+          else if (baseUri.length > 0) {
+            const resolvedBaseUri = _resolveAgainstBase(nodeBaseUri, baseUri);
+            if (_mergeIfResourceAlreadyInResolutionStack(ref, resolvedBaseUri, frag)) continue;
+            // resolve relative to this node's base URL
+            openPromises.push(
+              resolveExternalLink(
+                next,
+                baseUri,
+                frag,
+                nodeBaseUri,
+                nodeSourceUri,
+                parentSchemaDependencies,
+                resolutionStack,
+                recursiveAnchorBase,
+                currentDynamicScope
+              )
+            );
+            return;
+          }
+
+          // local $ref or $dynamicRef
+          if (!seenRefs.has(ref)) {
+            _merge(next, parentSchema, nodeBaseUri, frag, isDynamicRef && !!currentDynamicScope);
+            seenRefs.add(ref);
           }
         }
 
-        collectEntries(
-          <JSONSchema>next.items,
-          next.additionalItems,
-          <JSONSchema>next.additionalProperties,
+        // recursively process children
+        this.collectSchemaNodes(
+          (entry) =>
+            toWalk.push({
+              node: entry,
+              baseUri: next._baseUri || nodeBaseUri,
+              sourceUri: next._sourceUri || nodeSourceUri,
+              dialect: nodeDialect,
+              recursiveAnchorBase,
+              inheritedDynamicScope: currentDynamicScope,
+            }),
           next.not,
-          next.contains,
-          next.propertyNames,
           next.if,
           next.then,
-          next.else
+          next.else,
+          next.contains,
+          next.propertyNames,
+          next.additionalProperties as JSONSchema,
+          next.items,
+          next.additionalItems,
+          next.prefixItems,
+          this.schemaMapValues(next.properties),
+          this.schemaMapValues(next.patternProperties),
+          this.schemaMapValues(next.dependentSchemas),
+          this.schemaMapValues(next.dependencies as JSONSchemaMap),
+          next.allOf,
+          next.anyOf,
+          next.oneOf,
+          next.schemaSequence
         );
-        collectMapEntries(next.definitions, next.properties, next.patternProperties, <JSONSchemaMap>next.dependencies);
-        collectArrayEntries(next.anyOf, next.allOf, next.oneOf, <JSONSchema[]>next.items, next.schemaSequence);
       };
 
+      // handle file path with fragments
       if (parentSchemaURL.indexOf('#') > 0) {
         const segments = parentSchemaURL.split('#', 2);
         if (segments[0].length > 0 && segments[1].length > 0) {
           const newSchema = {};
-          await resolveExternalLink(newSchema, segments[0], segments[1], parentSchemaURL, parentSchemaDependencies);
+          await resolveExternalLink(
+            newSchema,
+            segments[0],
+            segments[1],
+            parentSchemaURL,
+            schema._sourceUri ?? parentSchemaURL,
+            parentSchemaDependencies,
+            resolutionStack,
+            recursiveAnchorBase,
+            inheritedDynamicScope
+          );
           for (const key in schema) {
             if (key === 'required') {
               continue;
@@ -329,17 +1066,31 @@ export class YAMLSchemaService extends JSONSchemaService {
       }
 
       while (toWalk.length) {
-        const next = toWalk.pop();
-        if (seen.has(next)) {
-          continue;
-        }
+        const item = toWalk.pop();
+        const next = item.node;
+        const nodeBaseUri = next._baseUri || item.baseUri;
+        const nodeSourceUri = next._sourceUri || nodeBaseUri;
+        const nodeDialect = next._dialect || item.dialect;
+        const nodeRecursiveAnchorBase = item.recursiveAnchorBase ?? (next.$recursiveAnchor ? nodeBaseUri : undefined);
+        if (seen.has(next)) continue;
         seen.add(next);
-        handleRef(next);
+        _handleRef(
+          next,
+          nodeBaseUri,
+          nodeSourceUri,
+          nodeDialect,
+          nodeRecursiveAnchorBase,
+          item.inheritedDynamicScope,
+          item.siblingRefCycleKeys
+        );
       }
       return Promise.all(openPromises);
     };
 
-    await resolveRefs(schema, schema, schemaURL, dependencies);
+    const resolutionStack = new Set<string>(); // prevents $ref/$recursiveRef/$dynamicRef loops across schema URIs
+    const rootResource = schema._baseUri || schemaURL;
+    if (rootResource) resolutionStack.add(rootResource);
+    await resolveRefs(schema, schema, schemaURL, dependencies, resolutionStack);
     return new ResolvedSchema(schema, resolveErrors);
   }
 
@@ -368,14 +1119,6 @@ export class YAMLSchemaService extends JSONSchemaService {
       return schemaRef;
     };
 
-    const resolveModelineSchema = (): string | undefined => {
-      let schemaFromModeline = getSchemaFromModeline(doc);
-      if (schemaFromModeline !== undefined) {
-        schemaFromModeline = normalizeSchemaRef(schemaFromModeline);
-        return schemaFromModeline;
-      }
-    };
-
     const resolveDollarSchema = (): string | undefined => {
       let dollarSchema = getDollarSchema(doc);
       if (dollarSchema !== undefined) {
@@ -387,32 +1130,43 @@ export class YAMLSchemaService extends JSONSchemaService {
     const resolveSchemaForResource = (schemas: string[]): Promise<ResolvedSchema> => {
       const schemaHandle = super.createCombinedSchema(resource, schemas);
       return schemaHandle.getResolvedSchema().then((schema) => {
-        if (schema.schema && typeof schema.schema === 'object') {
-          schema.schema.url = schemaHandle.url;
-        }
-
-        if (
-          schema.schema &&
-          schema.schema.schemaSequence &&
-          schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]
-        ) {
-          return new ResolvedSchema(schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]);
-        }
-        return schema;
+        return this.finalizeResolvedSchema(schema, schemaHandle.url, doc, false);
       });
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const resolveSchema = (): any => {
+    const resolveSchema = async (): Promise<any> => {
       const seen: { [schemaId: string]: boolean } = Object.create(null);
       const schemas: string[] = [];
+      let k8sAllSchema: ResolvedSchema = undefined;
+      let k8sSchemaUrl: string | undefined = undefined;
 
       for (const entry of this.filePatternAssociations) {
         if (entry.matchesPattern(resource)) {
           for (const schemaId of entry.getURIs()) {
             if (!seen[schemaId]) {
-              schemas.push(schemaId);
-              seen[schemaId] = true;
+              if (this.yamlSettings?.kubernetesCRDStoreEnabled && isKubernetes(schemaId)) {
+                if (!k8sAllSchema) {
+                  k8sSchemaUrl = schemaId;
+                  k8sAllSchema = await this.getResolvedSchema(schemaId);
+                }
+                const kubeSchema = autoDetectKubernetesSchema(
+                  doc,
+                  k8sAllSchema,
+                  k8sSchemaUrl ?? schemaId,
+                  this.yamlSettings.kubernetesCRDStoreUrl ?? CRD_CATALOG_URL
+                );
+                if (kubeSchema) {
+                  schemas.push(kubeSchema);
+                  seen[schemaId] = true;
+                } else {
+                  schemas.push(schemaId);
+                  seen[schemaId] = true;
+                }
+              } else {
+                schemas.push(schemaId);
+                seen[schemaId] = true;
+              }
             }
           }
         }
@@ -426,8 +1180,11 @@ export class YAMLSchemaService extends JSONSchemaService {
 
       return Promise.resolve(null);
     };
-    const modelineSchema = resolveModelineSchema();
+    const modelineSchema = this.resolveModelineSchema(resource, doc);
     if (modelineSchema) {
+      if (modelineSchema === 'none') {
+        return Promise.resolve(null);
+      }
       return resolveSchemaForResource([modelineSchema]);
     }
     const dollarSchema = resolveDollarSchema();
@@ -476,9 +1233,27 @@ export class YAMLSchemaService extends JSONSchemaService {
             return resolveSchema();
           }
         );
-    } else {
-      return resolveSchema();
     }
+    return resolveSchema();
+  }
+
+  private finalizeResolvedSchema(
+    schema: ResolvedSchema,
+    schemaUrl: string,
+    doc: JSONDocument,
+    includeErrorsForSequence: boolean
+  ): ResolvedSchema {
+    if (schema.schema && typeof schema.schema === 'object') {
+      schema.schema.url = schemaUrl;
+      if (schema.schema.schemaSequence && schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]) {
+        const selectedSchema = schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex];
+        if (includeErrorsForSequence) {
+          return new ResolvedSchema(selectedSchema, schema.errors);
+        }
+        return new ResolvedSchema(selectedSchema);
+      }
+    }
+    return schema;
   }
 
   // Set the priority of a schema in the schema service
@@ -522,13 +1297,7 @@ export class YAMLSchemaService extends JSONSchemaService {
   private async resolveCustomSchema(schemaUri, doc): ResolvedSchema {
     const unresolvedSchema = await this.loadSchema(schemaUri);
     const schema = await this.resolveSchemaContent(unresolvedSchema, schemaUri, []);
-    if (schema.schema && typeof schema.schema === 'object') {
-      schema.schema.url = schemaUri;
-    }
-    if (schema.schema && schema.schema.schemaSequence && schema.schema.schemaSequence[doc.currentDocIndex]) {
-      return new ResolvedSchema(schema.schema.schemaSequence[doc.currentDocIndex], schema.errors);
-    }
-    return schema;
+    return this.finalizeResolvedSchema(schema, schemaUri, doc, true);
   }
 
   /**
@@ -617,7 +1386,6 @@ export class YAMLSchemaService extends JSONSchemaService {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private resolveNext(object: any, token: any): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (Array.isArray(object) && isNaN(token)) {
       throw new Error('Expected a number after the array object');
     } else if (typeof object === 'object' && typeof token !== 'string') {
@@ -634,15 +1402,10 @@ export class YAMLSchemaService extends JSONSchemaService {
     // The parent's `super.normalizeId(id)` isn't visible, so duplicated the code here
     try {
       return URI.parse(id).toString();
-    } catch (e) {
+    } catch {
       return id;
     }
   }
-
-  /*
-   * Everything below here is needed because we're importing from vscode-json-languageservice umd and we need
-   * to provide a wrapper around the javascript methods we are calling since they have no type
-   */
 
   getOrAddSchemaHandle(id: string, unresolvedSchemaContent?: JSONSchema): SchemaHandle {
     return super.getOrAddSchemaHandle(id, unresolvedSchemaContent);
@@ -650,14 +1413,18 @@ export class YAMLSchemaService extends JSONSchemaService {
 
   loadSchema(schemaUri: string): Promise<UnresolvedSchema> {
     const requestService = this.requestService;
-    return super.loadSchema(schemaUri).then((unresolvedJsonSchema: UnresolvedSchema) => {
+    return super.loadSchema(schemaUri).then(async (unresolvedJsonSchema: UnresolvedSchema) => {
       // If json-language-server failed to parse the schema, attempt to parse it as YAML instead.
-      if (unresolvedJsonSchema.errors && unresolvedJsonSchema.schema === undefined) {
+      // If the YAML file starts with %YAML 1.x or contains a comment with a number the schema will
+      // contain a number instead of being undefined, so we need to check for that too.
+      if (
+        unresolvedJsonSchema.errors &&
+        (unresolvedJsonSchema.schema === undefined || typeof unresolvedJsonSchema.schema === 'number')
+      ) {
         return requestService(schemaUri).then(
           (content) => {
             if (!content) {
-              const errorMessage = localize(
-                'json.schema.nocontent',
+              const errorMessage = l10n.t(
                 "Unable to load schema from '{0}': No content. {1}",
                 toDisplayString(schemaUri),
                 unresolvedJsonSchema.errors
@@ -669,12 +1436,7 @@ export class YAMLSchemaService extends JSONSchemaService {
               const schemaContent = parse(content);
               return new UnresolvedSchema(schemaContent, []);
             } catch (yamlError) {
-              const errorMessage = localize(
-                'json.schema.invalidFormat',
-                "Unable to parse content from '{0}': {1}.",
-                toDisplayString(schemaUri),
-                yamlError
-              );
+              const errorMessage = l10n.t("Unable to parse content from '{0}': {1}.", toDisplayString(schemaUri), yamlError);
               return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
             }
           },
@@ -696,6 +1458,26 @@ export class YAMLSchemaService extends JSONSchemaService {
         unresolvedJsonSchema.schema.title = name ?? unresolvedJsonSchema.schema.title;
         unresolvedJsonSchema.schema.description = description ?? unresolvedJsonSchema.schema.description;
         unresolvedJsonSchema.schema.versions = versions ?? unresolvedJsonSchema.schema.versions;
+      } else if (unresolvedJsonSchema.errors && unresolvedJsonSchema.errors.length > 0) {
+        let errorMessage: string = unresolvedJsonSchema.errors[0];
+        if (errorMessage.toLowerCase().indexOf('load') !== -1) {
+          errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(schemaUri));
+        } else if (errorMessage.toLowerCase().indexOf('parse') !== -1) {
+          const content = await requestService(schemaUri);
+          const jsonErrors: Json.ParseError[] = [];
+          const schemaContent = Json.parse(content, jsonErrors);
+          if (jsonErrors.length && schemaContent) {
+            const { offset } = jsonErrors[0];
+            const { line, column } = getLineAndColumnFromOffset(content, offset);
+            errorMessage = l10n.t(
+              "Unable to parse content from '{0}': Parse error at line: {1} column: {2}",
+              toDisplayString(schemaUri),
+              line,
+              column
+            );
+          }
+        }
+        return new UnresolvedSchema(<JSONSchema>{}, [errorMessage]);
       }
       return unresolvedJsonSchema;
     });
@@ -743,8 +1525,120 @@ function toDisplayString(url: string): string {
     if (uri.scheme === 'file') {
       return uri.fsPath;
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
   return url;
+}
+
+function getLineAndColumnFromOffset(text: string, offset: number): { line: number; column: number } {
+  const lines = text.slice(0, offset).split(/\r?\n/);
+  const line = lines.length; // 1-based line number
+  const column = lines[lines.length - 1].length + 1; // 1-based column number
+  return { line, column };
+}
+
+function normalizeSchemaUri(uri: string | AnySchemaObject): string {
+  if (!uri) return '';
+
+  let s: string;
+  if (typeof uri === 'string') {
+    s = uri;
+  } else {
+    s = uri.$id || uri.id || '';
+  }
+  s = s.trim();
+
+  // strips fragment (# or #/something)
+  const hash = s.indexOf('#');
+
+  s = hash === -1 ? s : s.slice(0, hash);
+
+  // normalize http to https (don't normalize custom dialects)
+  s = s.replace(/^http:\/\/json-schema\.org\//i, 'https://json-schema.org/');
+
+  // normalize to no trailing slash
+  s = s.replace(/\/+$/g, '');
+  return s;
+}
+
+function knownDialectFromSchemaUri(schemaUri?: string): SchemaDialect {
+  if (schemaUri === normalizeSchemaUri(ajv4.defaultMeta())) return SchemaDialect.draft04;
+  if (schemaUri === normalizeSchemaUri(ajv7.defaultMeta())) return SchemaDialect.draft07;
+  if (schemaUri === normalizeSchemaUri(ajv2019.defaultMeta())) return SchemaDialect.draft2019;
+  if (schemaUri === normalizeSchemaUri(ajv2020.defaultMeta())) return SchemaDialect.draft2020;
+  return undefined;
+}
+
+function getAjvLocalizer(locale?: string): Localize | undefined {
+  if (!locale) return undefined;
+
+  const lowerLocale = locale.trim().toLowerCase();
+  const aliasedLocale = AJV_LOCALE_ALIASES.get(lowerLocale);
+
+  return ajvLocalizers[locale] || ajvLocalizers[lowerLocale] || (aliasedLocale ? ajvLocalizers[aliasedLocale] : undefined);
+}
+
+function localizeAjvErrors(errors: ErrorObject[] | null | undefined, locale?: string): void {
+  const localizer = getAjvLocalizer(locale) || ajvLocalizers.en;
+  localizer(errors);
+}
+
+async function pickSchemaDialect(
+  $schema: string | undefined,
+  loadSchema?: (uri: string) => Promise<UnresolvedSchema>
+): Promise<SchemaDialect> {
+  if (!$schema) return undefined;
+  const s = normalizeSchemaUri($schema || '');
+
+  const dialect = knownDialectFromSchemaUri(s);
+  if (dialect) return dialect;
+
+  // cache custom dialect result
+  const cached = schemaDialectCache.get(s);
+  if (cached) {
+    return cached;
+  }
+  const inflight = schemaDialectInFlight.get(s);
+  if (inflight) {
+    return inflight;
+  }
+
+  if (!loadSchema) return undefined;
+
+  // resolve custom dialect: load the dialect meta-schema doc and infer base dialect from its $schema
+  const promise = (async () => {
+    const meta = await loadSchema(s);
+    if (meta.errors?.length) return undefined;
+    const metaSchema = meta.schema;
+    if (!metaSchema || typeof metaSchema !== 'object') return undefined;
+    const metaDialect = knownDialectFromSchemaUri(metaSchema.$schema);
+    if (metaDialect) return metaDialect;
+    return undefined;
+  })();
+
+  schemaDialectInFlight.set(s, promise);
+  try {
+    const result = await promise;
+    schemaDialectCache.set(s, result);
+    return result;
+  } finally {
+    schemaDialectInFlight.delete(s);
+  }
+}
+
+function pickMetaValidator(dialect: SchemaDialect): ValidateFunction | undefined {
+  switch (dialect) {
+    case SchemaDialect.draft04:
+      return schema04Validator;
+    case SchemaDialect.draft07:
+      return schema07Validator;
+    case SchemaDialect.draft2019:
+      return schema2019Validator;
+    case SchemaDialect.draft2020:
+      return schema2020Validator;
+    default:
+      // don't meta-validate unknown schema URI
+      return undefined;
+  }
 }

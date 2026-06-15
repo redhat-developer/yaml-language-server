@@ -25,6 +25,8 @@ import {
   CodeLens,
   DefinitionLink,
   SelectionRange,
+  Range,
+  WorkspaceEdit,
 } from 'vscode-languageserver-types';
 import { JSONSchema } from './jsonSchema';
 import { YAMLDocumentSymbols } from './services/documentSymbols';
@@ -39,6 +41,8 @@ import {
   Connection,
   DocumentOnTypeFormattingParams,
   DefinitionParams,
+  PrepareRenameParams,
+  RenameParams,
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getFoldingRanges } from './services/yamlFolding';
@@ -54,11 +58,13 @@ import { SettingsState } from '../yamlSettings';
 import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers';
 import { YamlDefinition } from './services/yamlDefinition';
 import { getSelectionRanges } from './services/yamlSelectionRanges';
+import { YamlRename } from './services/yamlRename';
 
 export enum SchemaPriority {
   SchemaStore = 1,
   SchemaAssociation = 2,
   Settings = 3,
+  SchemaDetectionDisabled = 4,
 }
 
 export interface SchemasSettings {
@@ -74,10 +80,10 @@ export interface SchemasSettings {
 export interface LanguageSettings {
   validate?: boolean; //Setting for whether we want to validate the schema
   hover?: boolean; //Setting for whether we want to have hover results
+  hoverAnchor?: boolean; //Setting for whether we want to have hover anchor results
   completion?: boolean; //Setting for whether we want to have completion results
   format?: boolean; //Setting for whether we want to have the formatter or not
   isKubernetes?: boolean; //If true then its validating against kubernetes
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   schemas?: SchemasSettings[]; //List of schemas,
   customTags?: Array<string>; //Array of Custom Tags
   /**
@@ -119,6 +125,11 @@ export interface LanguageSettings {
    * If set enforce alphabetical ordering of keys in mappings.
    */
   keyOrdering?: boolean;
+
+  /**
+   * Show schema source URI in hover popups. Default is true.
+   */
+  hoverSchemaSource?: boolean;
 }
 
 export interface WorkspaceContextService {
@@ -151,6 +162,7 @@ export interface SchemaConfiguration {
 export interface CustomFormatterOptions {
   singleQuote?: boolean;
   bracketSpacing?: boolean;
+  trailingComma?: boolean;
   proseWrap?: string;
   printWidth?: number;
   enable?: boolean;
@@ -166,7 +178,7 @@ export interface LanguageService {
   findDocumentSymbols2: (document: TextDocument, context?: DocumentSymbolsContext) => DocumentSymbol[];
   findLinks: (document: TextDocument) => Promise<DocumentLink[]>;
   resetSchema: (uri: string) => boolean;
-  doFormat: (document: TextDocument, options?: CustomFormatterOptions) => TextEdit[];
+  doFormat: (document: TextDocument, options?: CustomFormatterOptions) => Promise<TextEdit[]>;
   doDefinition: (document: TextDocument, params: DefinitionParams) => DefinitionLink[] | undefined;
   doDocumentOnTypeFormatting: (document: TextDocument, params: DocumentOnTypeFormattingParams) => TextEdit[] | undefined;
   addSchema: (schemaID: string, schema: JSONSchema) => void;
@@ -175,10 +187,12 @@ export interface LanguageService {
   deleteSchemaContent: (schemaDeletions: SchemaDeletions) => void;
   deleteSchemasWhole: (schemaDeletions: SchemaDeletionsAll) => void;
   getFoldingRanges: (document: TextDocument, context: FoldingRangesContext) => FoldingRange[] | null;
-  getSelectionRanges: (document: TextDocument, positions: Position[]) => SelectionRange[] | undefined;
+  getSelectionRanges: (document: TextDocument, positions: Position[]) => SelectionRange[];
   getCodeAction: (document: TextDocument, params: CodeActionParams) => CodeAction[] | undefined;
   getCodeLens: (document: TextDocument) => PromiseLike<CodeLens[] | undefined> | CodeLens[] | undefined;
   resolveCodeLens: (param: CodeLens) => PromiseLike<CodeLens> | CodeLens;
+  prepareRename: (document: TextDocument, params: PrepareRenameParams) => Range | null;
+  doRename: (document: TextDocument, params: RenameParams) => WorkspaceEdit | null;
 }
 
 export function getLanguageService(params: {
@@ -189,7 +203,7 @@ export function getLanguageService(params: {
   yamlSettings?: SettingsState;
   clientCapabilities?: ClientCapabilities;
 }): LanguageService {
-  const schemaService = new YAMLSchemaService(params.schemaRequestService, params.workspaceContext);
+  const schemaService = new YAMLSchemaService(params.schemaRequestService, params.workspaceContext, null, params.yamlSettings);
   const completer = new YamlCompletion(schemaService, params.clientCapabilities, yamlDocumentsCache, params.telemetry);
   const hover = new YAMLHover(schemaService, params.telemetry);
   const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService, params.telemetry);
@@ -199,6 +213,7 @@ export function getLanguageService(params: {
   const yamlCodeLens = new YamlCodeLens(schemaService, params.telemetry);
   const yamlLinks = new YamlLinks(params.telemetry);
   const yamlDefinition = new YamlDefinition(params.telemetry);
+  const yamlRename = new YamlRename(params.telemetry);
 
   new JSONSchemaSelection(schemaService, params.yamlSettings, params.connection);
 
@@ -222,9 +237,9 @@ export function getLanguageService(params: {
       }
       yamlValidation.configure(settings);
       hover.configure(settings);
-      completer.configure(settings);
+      completer.configure(settings, params.yamlSettings);
       formatter.configure(settings);
-      yamlCodeActions.configure(settings);
+      yamlCodeActions.configure(settings, params?.yamlSettings?.yamlFormatterSettings?.printWidth || 80);
     },
     registerCustomSchemaProvider: (schemaProvider: CustomSchemaProvider) => {
       schemaService.registerCustomSchemaProvider(schemaProvider);
@@ -265,5 +280,7 @@ export function getLanguageService(params: {
       return yamlCodeLens.getCodeLens(document);
     },
     resolveCodeLens: (param) => yamlCodeLens.resolveCodeLens(param),
+    prepareRename: (document, params) => yamlRename.prepareRename(document, params),
+    doRename: (document, params) => yamlRename.doRename(document, params),
   };
 }

@@ -11,15 +11,17 @@ import { YAMLSchemaService } from './yamlSchemaService';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
-import { YAML_SOURCE } from '../parser/jsonParser07';
+import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
 import { TextBuffer } from '../utils/textBuffer';
+import { filterSuppressedDiagnostics } from '../utils/diagnostic-filter';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { convertErrorToTelemetryMsg } from '../utils/objects';
 import { Telemetry } from '../telemetry';
 import { AdditionalValidator } from './validation/types';
 import { UnusedAnchorsValidator } from './validation/unused-anchors';
 import { YAMLStyleValidator } from './validation/yaml-style';
 import { MapKeyOrderValidator } from './validation/map-key-order';
+import { getSchemaFromModeline } from './modelineUtil';
+import { isKubernetes as isKubernetesSchemaURI } from '../utils/schemaUrls';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -48,7 +50,10 @@ export class YAMLValidation {
 
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
-  constructor(schemaService: YAMLSchemaService, private readonly telemetry?: Telemetry) {
+  constructor(
+    schemaService: YAMLSchemaService,
+    private readonly telemetry?: Telemetry
+  ) {
     this.validationEnabled = true;
     this.jsonValidation = new JSONValidation(schemaService, Promise);
   }
@@ -77,6 +82,7 @@ export class YAMLValidation {
     }
 
     const validationResult = [];
+    let suppressKubernetesMatchesMultiple = isKubernetes;
     try {
       const yamlDocument: YAMLDocument = yamlDocumentsCache.getYamlDocument(
         textDocument,
@@ -86,7 +92,9 @@ export class YAMLValidation {
 
       let index = 0;
       for (const currentYAMLDoc of yamlDocument.documents) {
-        currentYAMLDoc.isKubernetes = isKubernetes;
+        const currentDocumentIsKubernetes = isKubernetes || this.hasKubernetesModelineSchema(currentYAMLDoc);
+        currentYAMLDoc.isKubernetes = currentDocumentIsKubernetes;
+        suppressKubernetesMatchesMultiple = suppressKubernetesMatchesMultiple || currentDocumentIsKubernetes;
         currentYAMLDoc.currentDocIndex = index;
         currentYAMLDoc.disableAdditionalProperties = this.disableAdditionalProperties;
         currentYAMLDoc.uri = textDocument.uri;
@@ -107,7 +115,7 @@ export class YAMLValidation {
         index++;
       }
     } catch (err) {
-      this.telemetry?.sendError('yaml.validation.error', { error: convertErrorToTelemetryMsg(err) });
+      this.telemetry?.sendError('yaml.validation.error', err);
     }
 
     let previousErr: Diagnostic;
@@ -119,7 +127,7 @@ export class YAMLValidation {
        * 'Matches many schemas' error for kubernetes
        * for a better user experience.
        */
-      if (isKubernetes && err.message === this.MATCHES_MULTIPLE) {
+      if (suppressKubernetesMatchesMultiple && err.message === this.MATCHES_MULTIPLE) {
         continue;
       }
 
@@ -150,8 +158,25 @@ export class YAMLValidation {
       }
     }
 
-    return duplicateMessagesRemoved;
+    const textBuffer = new TextBuffer(textDocument);
+    return filterSuppressedDiagnostics(
+      duplicateMessagesRemoved,
+      (d) => d.range.start.line,
+      (d) => d.message,
+      (line) => {
+        if (line < 0 || line >= textBuffer.getLineCount()) {
+          return undefined;
+        }
+        return textBuffer.getLineContent(line).replace(/[\r\n]+$/, '');
+      }
+    );
   }
+
+  private hasKubernetesModelineSchema(currentYAMLDoc: SingleYAMLDocument): boolean {
+    const schemaFromModeline = getSchemaFromModeline(currentYAMLDoc);
+    return typeof schemaFromModeline === 'string' && isKubernetesSchemaURI(schemaFromModeline);
+  }
+
   private runAdditionalValidators(document: TextDocument, yarnDoc: SingleYAMLDocument): Diagnostic[] {
     const result = [];
 

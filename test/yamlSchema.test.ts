@@ -6,7 +6,7 @@ import * as SchemaService from '../src/languageservice/services/yamlSchemaServic
 import * as url from 'url';
 import * as sinon from 'sinon';
 import * as chai from 'chai';
-import * as sinonChai from 'sinon-chai';
+import sinonChai from 'sinon-chai';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -29,14 +29,15 @@ describe('YAML Schema', () => {
   });
 
   it('Loading yaml scheme', async () => {
-    requestServiceStub.resolves(`
-    properties:
-      fooBar:
-        items:
-          type: string
-        type: array
-    type: object
-    `);
+    requestServiceStub.resolves(`%YAML 1.2
+---
+properties:
+  fooBar:
+    items:
+      type: string
+    type: array
+type: object
+`);
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('fooScheme.yaml');
     expect(requestServiceStub.calledOnceWith('fooScheme.yaml'));

@@ -4,7 +4,7 @@ import { ISchemaAssociations } from './requestTypes';
 import { URI } from 'vscode-uri';
 import { JSONSchema } from './languageservice/jsonSchema';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
+import { CRD_CATALOG_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 import { YamlVersion } from './languageservice/parser/yamlParser07';
 
 // Client settings interface to grab settings relevant for the language server
@@ -14,12 +14,18 @@ export interface Settings {
     schemas: JSONSchemaSettings[];
     validate: boolean;
     hover: boolean;
+    hoverAnchor: boolean;
     completion: boolean;
     customTags: Array<string>;
     schemaStore: {
       url: string;
       enable: boolean;
     };
+    kubernetesCRDStore: {
+      url: string;
+      enable: boolean;
+    };
+    kubernetesVersion: string;
     disableDefaultProperties: boolean;
     disableAdditionalProperties: boolean;
     suggest: {
@@ -32,6 +38,8 @@ export interface Settings {
     keyOrdering: boolean;
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
+    hoverSchemaSource: boolean;
+    disableSchemaDetection: string | string[];
   };
   http: {
     proxy: string;
@@ -69,14 +77,21 @@ export class SettingsState {
     bracketSpacing: true,
     proseWrap: 'preserve',
     printWidth: 80,
+    trailingComma: true,
     enable: true,
   } as CustomFormatterOptions;
   yamlShouldHover = true;
+  yamlShouldHoverAnchor = true;
   yamlShouldCompletion = true;
+  yamlHoverSchemaSource = true;
+  yamlDisableSchemaDetection: string[] = [];
   schemaStoreSettings = [];
-  customTags = [];
+  customTags: string[] = [];
   schemaStoreEnabled = true;
   schemaStoreUrl = JSON_SCHEMASTORE_URL;
+  kubernetesCRDStoreEnabled = true;
+  kubernetesCRDStoreUrl = CRD_CATALOG_URL;
+  kubernetesVersion: string | undefined = undefined;
   indentation: string | undefined = undefined;
   disableAdditionalProperties = false;
   disableDefaultProperties = false;
@@ -91,7 +106,7 @@ export class SettingsState {
   maxItemsComputed = 5000;
 
   // File validation helpers
-  pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
+  pendingValidationRequests: { [uri: string]: NodeJS.Timeout } = {};
   validationDelayMs = 200;
 
   // Create a simple text document manager. The text document manager
@@ -106,11 +121,14 @@ export class SettingsState {
   hierarchicalDocumentSymbolSupport = false;
   hasWorkspaceFolderCapability = false;
   hasConfigurationCapability = false;
+  hasCodeLensRefreshSupport = false;
+  configurationPullPromise: Promise<void> = Promise.resolve();
   useVSCodeContentRequest = false;
   yamlVersion: YamlVersion = '1.2';
   useSchemaSelectionRequests = false;
   hasWsChangeWatchedFileDynamicRegistration = false;
   fileExtensions: string[] = ['.yml', '.yaml'];
+  locale = 'en';
 }
 
 export class TextDocumentTestManager extends TextDocuments<TextDocument> {

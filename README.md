@@ -2,7 +2,7 @@
 
 # YAML Language Server
 
-Supports JSON Schema 7 and below.
+Supports JSON Schema drafts 04, 07, 2019-09, and 2020-12.
 Starting from `1.0.0` the language server uses [eemeli/yaml](https://github.com/eemeli/yaml) as the new YAML parser, which strictly enforces the specified YAML spec version. Default YAML spec version is `1.2`, it can be changed with `yaml.yamlVersion` setting.
 
 ## Features
@@ -39,9 +39,13 @@ The following settings are supported:
 - `yaml.hover`: Enable/disable hover
 - `yaml.completion`: Enable/disable autocompletion
 - `yaml.schemas`: Helps you associate schemas with files in a glob pattern
-- `yaml.schemaStore.enable`: When set to true the YAML language server will pull in all available schemas from [JSON Schema Store](https://www.schemastore.org/json/)
+- `yaml.kubernetesVersion`: Kubernetes version used to build the schema URL when `yaml.schemas` maps files to the `Kubernetes` keyword.
+- `yaml.disableSchemaDetection`: Disables schema detection for matching YAML files. Modelines still apply.
+- `yaml.schemaStore.enable`: When set to true the YAML language server will pull in all available schemas from [JSON Schema Store](https://www.schemastore.org)
 - `yaml.schemaStore.url`: URL of a schema store catalog to use when downloading schemas.
-- `yaml.customTags`: Array of custom tags that the parser will validate against. It has two ways to be used. Either an item in the array is a custom tag such as "!Ref" and it will automatically map !Ref to scalar or you can specify the type of the object !Ref should be e.g. "!Ref sequence". The type of object can be either scalar (for strings and booleans), sequence (for arrays), map (for objects).
+- `yaml.kubernetesCRDStore.enable`: When set to true the YAML language server will parse Kubernetes CRDs automatically and download them from the [CRD store](https://github.com/datreeio/CRDs-catalog).
+- `yaml.kubernetesCRDStore.url`: URL of a crd store catalog to use when downloading schemas. Defaults to `https://raw.githubusercontent.com/datreeio/CRDs-catalog/main`.
+- `yaml.customTags`: Array of custom tags that the parser will validate against. It has three ways to be used. A tag without a type, such as "!Ref", is treated as a scalar tag. A tag with a node type, such as "!Ref sequence", specifies the YAML node type that the tag is written on. A tag with a node type and return type, such as "!FindInMap sequence:string", also specifies the schema type that the tagged value evaluates to. Supported node types are scalar, sequence, and mapping. Supported return types are string, number, integer, boolean, null, array, and object. The return type aliases scalar, sequence, and mapping are accepted as string, array, and object.
 - `yaml.maxItemsComputed`: The maximum number of outline symbols and folding regions computed (limited for performance reasons).
 - `[yaml].editor.tabSize`: the number of spaces to use when autocompleting. Takes priority over editor.tabSize.
 - `editor.tabSize`: the number of spaces to use when autocompleting. Default is 2.
@@ -49,10 +53,38 @@ The following settings are supported:
 - `http.proxyStrictSSL`: If true the proxy server certificate should be verified against the list of supplied CAs. Default is false.
 - `[yaml].editor.formatOnType`: Enable/disable on type indent and auto formatting array
 - `yaml.disableDefaultProperties`: Disable adding not required properties with default values into completion text
-- `yaml.suggest.parentSkeletonSelectedFirst`: If true, the user must select some parent skeleton first before autocompletion starts to suggest the rest of the properties.\nWhen yaml object is not empty, autocompletion ignores this setting and returns all properties and skeletons.
+- `yaml.suggest.parentSkeletonSelectedFirst`: If true, the user must select some parent skeleton first before autocompletion starts to suggest the rest of the properties. When yaml object is not empty, autocompletion ignores this setting and returns all properties and skeletons.
 - `yaml.style.flowMapping` : Forbids flow style mappings if set to `forbid` 
 - `yaml.style.flowSequence` : Forbids flow style sequences if set to `forbid`
 - `yaml.keyOrdering` : Enforces alphabetical ordering of keys in mappings when set to `true`. Default is `false`
+- `yaml.hoverSchemaSource`: Enable/disable showing the schema source in hover tooltips. Default is `true`
+
+## Suppressing diagnostics
+
+You can suppress specific validation warnings on a per-line basis by adding a `# yaml-language-server-disable` comment on the line immediately before the one producing the diagnostic. To disable schema validation for an entire file, use a [modeline schema association](#using-modeline).
+
+### Suppress all diagnostics on a line
+
+```yaml
+# yaml-language-server-disable
+version: 123
+```
+
+### Suppress only specific diagnostics
+
+Provide one or more message substrings (comma-separated, case-insensitive). Only diagnostics whose message contains a matching substring will be suppressed; the rest are kept.
+
+```yaml
+# yaml-language-server-disable Incorrect type
+version: 123
+```
+
+```yaml
+# yaml-language-server-disable Incorrect type, not accepted
+version: 123
+```
+
+The substrings are matched against the diagnostic message text reported by the language server.
 
 ##### Adding custom tags
 
@@ -62,11 +94,13 @@ In order to use the custom tags in your YAML file you need to first specify the 
 "yaml.customTags": [
     "!Scalar-example scalar",
     "!Seq-example sequence",
-    "!Mapping-example mapping"
+    "!Mapping-example mapping",
+    "!Seq-as-string-example sequence:string"
 ]
 ```
 
-The !Scalar-example would map to a scalar custom tag, the !Seq-example would map to a sequence custom tag, the !Mapping-example would map to a mapping custom tag.
+The !Scalar-example would map to a scalar custom tag, the !Seq-example would map to a sequence custom tag, and the !Mapping-example would map to a mapping custom tag.
+The !Seq-as-string-example would map to a sequence custom tag, and the whole tagged value would be treated as a string during schema validation.
 
 We can then use the newly defined custom tags inside our YAML file:
 
@@ -78,11 +112,14 @@ some_sequence: !Seq-example
 some_mapping: !Mapping-example
   some_mapping_key_1: some_mapping_value_1
   some_mapping_key_2: some_mapping_value_2
+some_string: !Seq-as-string-example
+  - value_1
+  - value_2
 ```
 
 ##### Associating a schema to a glob pattern via yaml.schemas:
 
-yaml.schemas applies a schema to a file. In other words, the schema (placed on the left) is applied to the glob pattern on the right. Your schema can be local or online. Your schema path must be relative to the project root and not an absolute path to the schema.
+`yaml.schemas` applies a schema to a file. In other words, the schema (placed on the left) is applied to the glob pattern on the right. Your schema can be local or online. Local schema paths can be relative to the project root or absolute paths.
 
 For example:
 If you have project structure
@@ -238,9 +275,9 @@ yaml.schemas: {
 > **Note**
 > This will require reading your existing schema and understanding the schemastore structure a bit. (TODO: link to a documentation or blog post here?)
 
-### Using inlined schema
+### Using modeline
 
-It is possible to specify a yaml schema using a modeline.
+You can specify a JSON Schema for a YAML file using a modeline.
 
 ```yaml
 # yaml-language-server: $schema=<urlToTheSchema>
@@ -258,14 +295,44 @@ or absolute path:
 # yaml-language-server: $schema=/absolute/path/to/schema
 ```
 
+or IntelliJ compatible format:
+
+```yaml
+# $schema: <urlOrPathToTheSchema>
+```
+
+You can also disable schema validation entirely for a specific file using the modeline:
+
+```yaml
+# yaml-language-server: $schema=none
+```
+
+### Disabling automatic schema detection for specific files
+
+Use `yaml.disableSchemaDetection` to disable schema detection for files matching a glob pattern. For matching files, schemas from `yaml.schemas`, schema association notifications, and Schema Store are ignored. Modelines still apply.
+
+For one file pattern:
+
+```yaml
+yaml.disableSchemaDetection: "**/.github/workflows/*.yaml"
+```
+
+For multiple file patterns:
+
+```yaml
+yaml.disableSchemaDetection: ["some.yaml", "**/.github/workflows/*.yaml"]
+```
+
+
 ### Schema priority
 
 The following is the priority of schema association in highest to lowest priority:
 1. Modeline
 2. CustomSchemaProvider API
-3. yaml.settings
-4. Schema association notification
-5. Schema Store
+3. `yaml.disableSchemaDetection`
+4. `yaml.schemas`
+5. Schema association notification
+6. Schema Store
 
 ## Containerized Language Server
 
@@ -388,6 +455,8 @@ This repository only contains the server implementation. Here are some known cli
 - [Vim-EasyComplete](https://github.com/jayli/vim-easycomplete) for Vim/NeoVim
 - [nova-yaml](https://github.com/robb-j/nova-yaml/) for Nova
 - [volar-service-yaml](https://github.com/volarjs/services/tree/master/packages/yaml) for Volar
+- [Kate](https://kate-editor.org/)
+- [yaml-schema-lint](https://github.com/X-Guardian/yaml-schema-lint) A CLI for schema linting yaml files
 
 ## Developer Support
 
@@ -400,11 +469,11 @@ This repository only contains the server implementation. Here are some known cli
 3. Install the dependencies
    ```bash
    cd yaml-language-server
-   $ yarn install
+   $ npm install
    ```
 4. Build the language server
    ```bash
-   $ yarn run build
+   $ npm run build
    ```
 5. The new built server is now located in ./out/server/src/server.js.
    ```bash

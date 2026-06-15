@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-/* eslint-disable @typescript-eslint/no-var-requires */
 import {
   caretPosition,
   SCHEMA_ID,
@@ -12,11 +11,18 @@ import {
   TestCustomSchemaProvider,
   toFsPath,
 } from './utils/testHelper';
-import assert = require('assert');
-import path = require('path');
+import assert from 'assert';
+import * as path from 'path';
 import { createExpectedCompletion } from './utils/verifyError';
 import { ServiceSetup } from './utils/serviceSetup';
-import { CompletionList, InsertTextFormat, MarkupContent, MarkupKind, Position } from 'vscode-languageserver-types';
+import {
+  CompletionItemKind,
+  CompletionList,
+  InsertTextFormat,
+  MarkupContent,
+  MarkupKind,
+  Position,
+} from 'vscode-languageserver-types';
 import { expect } from 'chai';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { LanguageService } from '../src';
@@ -786,6 +792,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Insert required attributes at correct level', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testRequiredProperties.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- top:\n    prop1: demo\n- ';
@@ -804,6 +811,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Insert required attributes at correct level even on first element', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testRequiredProperties.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- ';
@@ -822,6 +830,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide the 3 types when none provided', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- ';
@@ -852,6 +861,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide the 2 types when one is provided', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  ';
@@ -876,6 +886,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide the 2 types when one is provided and the second is typed', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  p';
@@ -900,6 +911,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide no completion when maxProperties reached', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = '- prop1:\n  prop2:\n  ';
@@ -1041,13 +1053,14 @@ describe('Auto Completion Tests', () => {
 
     describe('Array Specific Tests', function () {
       it('Should insert empty array item', (done) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testStringArray.json'));
         schemaProvider.addSchema(SCHEMA_ID, schema);
         const content = 'fooBa'; // len: 5
         const completion = parseSetup(content, content.lastIndexOf('Ba') + 2); // pos: 3+2
         completion
           .then(function (result) {
-            assert.strictEqual('fooBar:\n  - ${1:""}', result.items[0].insertText);
+            assert.strictEqual('fooBar:\n  - ${1}', result.items[0].insertText);
           })
           .then(done, done);
       });
@@ -1539,133 +1552,239 @@ describe('Auto Completion Tests', () => {
           )
         );
       });
-    });
 
-    it('Array of objects autocomplete with 2 space indentation check', async () => {
-      const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('  ');
-      languageService.configure(languageSettingsSetup.languageSettings);
-      schemaProvider.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: {
-          metadata: {
-            type: 'object',
-            properties: {
-              ownerReferences: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    apiVersion: {
-                      type: 'string',
-                    },
-                    kind: {
-                      type: 'string',
-                    },
-                    name: {
-                      type: 'string',
-                    },
-                    uid: {
-                      type: 'string',
-                    },
+      it('Array of const autocomplete', async () => {
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            test: {
+              type: 'array',
+              items: {
+                anyOf: [
+                  {
+                    const: 'value1',
+                    description: 'desc1',
                   },
-                  required: ['apiVersion', 'kind', 'name', 'uid'],
-                },
+                  {
+                    const: 'value2',
+                    description: 'desc2',
+                  },
+                ],
               },
             },
           },
-        },
+        });
+        const content = 'test:\n  - ';
+        const result = await parseSetup(content, content.length);
+        expect(result.items.length).to.be.equal(2);
+        assert.deepEqual(
+          result.items[0],
+          createExpectedCompletion('value1', 'value1', 1, 4, 1, 4, CompletionItemKind.Value, 2, {
+            documentation: 'desc1',
+          })
+        );
+        assert.deepEqual(
+          result.items[1],
+          createExpectedCompletion('value2', 'value2', 1, 4, 1, 4, CompletionItemKind.Value, 2, {
+            documentation: 'desc2',
+          })
+        );
       });
 
-      const content = 'metadata:\n  ownerReferences'; // len: 27
-      const completion = await parseSetup(content, 27);
-      expect(completion.items[0]).deep.eq(
-        createExpectedCompletion(
-          'ownerReferences',
-          'ownerReferences:\n  - apiVersion: $1\n    kind: $2\n    name: $3\n    uid: $4',
-          1,
-          2,
-          1,
-          17,
-          10,
-          2,
-          { documentation: '' }
-        )
-      );
-    });
-
-    it('Array of objects autocomplete with 3 space indentation check', async () => {
-      const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('   ');
-      languageService.configure(languageSettingsSetup.languageSettings);
-      schemaProvider.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: {
-          metadata: {
-            type: 'object',
-            properties: {
-              ownerReferences: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    apiVersion: {
-                      type: 'string',
-                    },
-                    kind: {
-                      type: 'string',
-                    },
-                    name: {
-                      type: 'string',
-                    },
-                    uid: {
-                      type: 'string',
-                    },
-                  },
-                  required: ['apiVersion', 'kind', 'name', 'uid'],
-                },
-              },
-            },
-          },
-        },
-      });
-
-      const content = 'metadata:\n   ownerReference|s|'; // len: 28, pos: 27
-      const completion = await parseSetup(content);
-      expect(completion.items[0]).deep.eq(
-        createExpectedCompletion(
-          'ownerReferences',
-          'ownerReferences:\n   - apiVersion: $1\n     kind: $2\n     name: $3\n     uid: $4',
-          1,
-          3,
-          1,
-          18,
-          10,
-          2,
-          { documentation: '' }
-        )
-      );
-    });
-
-    it('Array completion - should not suggest const', async () => {
-      languageService.addSchema(SCHEMA_ID, {
-        type: 'object',
-        properties: {
-          test: {
-            type: 'array',
-            items: {
+      it('Array of objects autocomplete with 2 space indentation check', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('  ');
+        languageService.configure(languageSettingsSetup.languageSettings);
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            metadata: {
               type: 'object',
               properties: {
-                constProp: {
-                  type: 'string',
-                  const: 'const1',
+                ownerReferences: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      apiVersion: {
+                        type: 'string',
+                      },
+                      kind: {
+                        type: 'string',
+                      },
+                      name: {
+                        type: 'string',
+                      },
+                      uid: {
+                        type: 'string',
+                      },
+                    },
+                    required: ['apiVersion', 'kind', 'name', 'uid'],
+                  },
                 },
               },
             },
           },
-        },
+        });
+
+        const content = 'metadata:\n  ownerReferences'; // len: 27
+        const completion = await parseSetup(content, 27);
+        expect(completion.items[0]).deep.eq(
+          createExpectedCompletion(
+            'ownerReferences',
+            'ownerReferences:\n  - apiVersion: $1\n    kind: $2\n    name: $3\n    uid: $4',
+            1,
+            2,
+            1,
+            17,
+            10,
+            2,
+            { documentation: '' }
+          )
+        );
       });
-      const content = 'test:\n  - constProp:\n    ';
-      const result = await parseSetup(content, content.length);
-      expect(result.items.length).to.be.equal(0);
+
+      it('Array of objects autocomplete with 3 space indentation check', async () => {
+        const languageSettingsSetup = new ServiceSetup().withCompletion().withIndentation('   ');
+        languageService.configure(languageSettingsSetup.languageSettings);
+        schemaProvider.addSchema(SCHEMA_ID, {
+          type: 'object',
+          properties: {
+            metadata: {
+              type: 'object',
+              properties: {
+                ownerReferences: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      apiVersion: {
+                        type: 'string',
+                      },
+                      kind: {
+                        type: 'string',
+                      },
+                      name: {
+                        type: 'string',
+                      },
+                      uid: {
+                        type: 'string',
+                      },
+                    },
+                    required: ['apiVersion', 'kind', 'name', 'uid'],
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const content = 'metadata:\n   ownerReference|s|'; // len: 28, pos: 27
+        const completion = await parseSetup(content);
+        expect(completion.items[0]).deep.eq(
+          createExpectedCompletion(
+            'ownerReferences',
+            'ownerReferences:\n   - apiVersion: $1\n     kind: $2\n     name: $3\n     uid: $4',
+            1,
+            3,
+            1,
+            18,
+            10,
+            2,
+            { documentation: '' }
+          )
+        );
+      });
+
+      describe('Map const in the next line', async () => {
+        beforeEach(() => {
+          schemaProvider.addSchema(SCHEMA_ID, {
+            type: 'object',
+            properties: {
+              test: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    constProp: {
+                      type: 'string',
+                      const: 'const1',
+                      description: 'test desc',
+                    },
+                  },
+                },
+              },
+            },
+          });
+        });
+
+        it('Next line const with :', async () => {
+          const content = 'test:\n  - constProp:\n    ';
+          const result = await parseSetup(content, content.length);
+          expect(result.items.length).to.be.equal(0);
+        });
+        // For some reason, this gets inserted at the cursor (char 4)
+        // It should be inserted at char 2
+        xit('Next line const no :', async () => {
+          const content = 'test:\n  - constProp\n    ';
+          const result = await parseSetup(content, content.length);
+          expect(result.items.length).to.be.equal(1);
+          assert.deepEqual(
+            result.items[0],
+            createExpectedCompletion(
+              '- (array item) object',
+              '- ',
+              2,
+              2,
+              2,
+              2,
+              CompletionItemKind.Module,
+              InsertTextFormat.Snippet
+            )
+          );
+        });
+        it('Next line const with |-', async () => {
+          const content = 'test:\n  - constProp: |-\n      ';
+          const result = await parseSetup(content, content.length);
+          expect(result.items.length).to.be.equal(1);
+          assert.deepEqual(
+            result.items[0],
+            createExpectedCompletion('const1', 'const1', 2, 6, 2, 6, CompletionItemKind.Value, InsertTextFormat.Snippet, {
+              documentation: 'test desc',
+            })
+          );
+        });
+        it('Next line const with : but array level completion', async () => {
+          const content = 'test:\n  - constProp:\n  ';
+          const result = await parseSetup(content, content.length);
+          expect(result.items.length).to.be.equal(0);
+        });
+        it('Next line const with : & |- but array level completion', async () => {
+          const content = 'test:\n  - constProp: |-\n  ';
+          const result = await parseSetup(content, content.length);
+          expect(result.items.length).to.be.equal(1);
+          expect(result.items[0]).contain;
+          // TODO: Ideally, this would not be a deep equal, it'd be does real contain expected
+          assert.deepEqual(
+            result.items[0],
+            createExpectedCompletion(
+              '- (array item) object',
+              '- ',
+              2,
+              2,
+              2,
+              2,
+              CompletionItemKind.Module,
+              InsertTextFormat.Snippet,
+              {
+                documentation: {
+                  kind: 'markdown',
+                  value: 'Create an item of an array type `object`\n ```\n- \n```',
+                },
+              }
+            )
+          );
+        });
+      });
     });
 
     it('Object in array with 4 space indentation check', async () => {
@@ -1833,7 +1952,7 @@ describe('Auto Completion Tests', () => {
 
       expect(completion.items.length).equal(1);
       expect(completion.items[0]).to.deep.equal(
-        createExpectedCompletion('@test', '"@test"', 0, 6, 0, 6, 12, 2, {
+        createExpectedCompletion('"@test"', '"@test"', 0, 6, 0, 6, 12, 2, {
           documentation: undefined,
         })
       );
@@ -1842,6 +1961,7 @@ describe('Auto Completion Tests', () => {
 
   describe('Indentation Specific Tests', function () {
     it('Indent should be considered with position relative to slash', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'install:\n  - he'; // len: 15
@@ -1860,6 +1980,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Large indent should be considered with position relative to slash', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'install:\n -            he'; // len: 25
@@ -1878,6 +1999,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Tab indent should be considered with position relative to slash', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'install:\n -\t             he'; // len: 27
@@ -1901,6 +2023,16 @@ describe('Auto Completion Tests', () => {
 
     it('Provide completion from schema declared in file', (done) => {
       const content = `# yaml-language-server: $schema=${uri}\n- `;
+      const completion = parseSetup(content, content.length);
+      completion
+        .then(function (result) {
+          assert.equal(result.items.length, 3);
+        })
+        .then(done, done);
+    });
+
+    it('Provide completion from schema declared in file with $schema: format', (done) => {
+      const content = `# $schema: ${uri}\n- `;
       const completion = parseSetup(content, content.length);
       completion
         .then(function (result) {
@@ -2278,6 +2410,146 @@ describe('Auto Completion Tests', () => {
       expect(envItem.textEdit.newText).equal('env: ${1:1}');
     });
 
+    it('should use array property default when completing array property', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          'foo-default-outside': {
+            type: 'array',
+            default: ['foo-default-outside'],
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['foo-default-outside'],
+      });
+
+      const completion = await parseSetup('foo', 3);
+
+      const defaultOutside = completion.items.find((i) => i.label === 'foo-default-outside');
+      expect(defaultOutside).to.not.undefined;
+      expect(defaultOutside.textEdit.newText).equal('foo-default-outside:\n  - ${1:foo-default-outside}');
+
+      const nextItemContent = 'foo-default-outside:\n  - foo-default-outside\n  - ';
+      const nextItemCompletion = await parseSetup(nextItemContent, nextItemContent.length);
+      expect(nextItemCompletion.items).is.empty;
+    });
+
+    it('should use array item default when completing array property', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          'foo-default-in-items': {
+            type: 'array',
+            items: {
+              type: 'string',
+              default: 'foo-default-in-items',
+            },
+          },
+        },
+        required: ['foo-default-in-items'],
+      });
+
+      const completion = await parseSetup('foo', 3);
+
+      const defaultInItems = completion.items.find((i) => i.label === 'foo-default-in-items');
+      expect(defaultInItems).to.not.undefined;
+      expect(defaultInItems.textEdit.newText).equal('foo-default-in-items:\n  - ${1:foo-default-in-items}');
+
+      const nextItemContent = 'foo-default-in-items:\n  - foo-default-in-items\n  - ';
+      const nextItemCompletion = await parseSetup(nextItemContent, nextItemContent.length);
+      const nextItemDefault = nextItemCompletion.items.find((i) => i.label === 'foo-default-in-items');
+      expect(nextItemDefault).to.not.undefined;
+      expect(nextItemDefault.textEdit.newText).equal('foo-default-in-items');
+    });
+
+    it('should prefer array property default over item default', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          'foo-two-default': {
+            type: 'array',
+            default: ['foo-two-default'],
+            items: {
+              type: 'string',
+              default: 'item-default',
+            },
+          },
+        },
+        required: ['foo-two-default'],
+      });
+
+      const completion = await parseSetup('foo', 3);
+
+      const twoDefaults = completion.items.find((i) => i.label === 'foo-two-default');
+      expect(twoDefaults).to.not.undefined;
+      expect(twoDefaults.textEdit.newText).equal('foo-two-default:\n  - ${1:foo-two-default}');
+
+      const nextItemContent = 'foo-two-default:\n  - foo-two-default\n  - ';
+      const nextItemCompletion = await parseSetup(nextItemContent, nextItemContent.length);
+      const nextItemDefault = nextItemCompletion.items.find((i) => i.label === 'item-default');
+      expect(nextItemDefault).to.not.undefined;
+      expect(nextItemDefault.textEdit.newText).equal('item-default');
+    });
+
+    it('should keep parent skeleton array defaults on separate snippet tab stops', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        title: 'dummy',
+        properties: {
+          bar: {
+            type: 'string',
+            default: 'hello',
+          },
+          num: {
+            type: 'number',
+            default: '42',
+          },
+          'foo-two-default': {
+            type: 'array',
+            default: ['foo-two-default'],
+            items: {
+              type: 'string',
+              default: 'item-default',
+            },
+          },
+          'foo-default-in-items': {
+            type: 'array',
+            items: {
+              type: 'string',
+              default: 'foo-default-in-items',
+            },
+          },
+          'foo-default-outside': {
+            type: 'array',
+            default: ['foo-default-outside'],
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['foo-two-default', 'foo-default-in-items', 'foo-default-outside', 'bar', 'num'],
+      });
+
+      const completion = await parseSetup('dum|m|y');
+      const dummy = completion.items.find((i) => i.label === 'dummy');
+
+      expect(dummy).to.not.undefined;
+      expect(dummy.textEdit.newText).equal(
+        [
+          'bar: hello',
+          'num: 42',
+          'foo-two-default:',
+          '  - ${1:foo-two-default}',
+          'foo-default-in-items:',
+          '  - ${2:foo-default-in-items}',
+          'foo-default-outside:',
+          '  - ${3:foo-default-outside}',
+        ].join('\n')
+      );
+    });
+
     it('should complete string which contains number in examples values', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
@@ -2296,11 +2568,11 @@ describe('Auto Completion Tests', () => {
       expect(testItem).to.not.undefined;
       expect(testItem.textEdit.newText).equal('test');
 
-      const oneItem = completion.items.find((i) => i.label === '1');
+      const oneItem = completion.items.find((i) => i.label === '"1"');
       expect(oneItem).to.not.undefined;
       expect(oneItem.textEdit.newText).equal('"1"');
 
-      const trueItem = completion.items.find((i) => i.label === 'true');
+      const trueItem = completion.items.find((i) => i.label === '"true"');
       expect(trueItem).to.not.undefined;
       expect(trueItem.textEdit.newText).equal('"true"');
     });
@@ -2594,13 +2866,63 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('2', '2', 0, 9, 0, 9, 12, InsertTextFormat.Snippet, { documentation: undefined })
       );
       expect(completion.items[1]).eql(
-        createExpectedCompletion('2.1', '2.1', 0, 9, 0, 9, 12, InsertTextFormat.Snippet, { documentation: undefined })
+        createExpectedCompletion('2.1', '2.1', 0, 9, 0, 9, 12, InsertTextFormat.Snippet, {
+          documentation: undefined,
+          detail: 'Default value',
+        })
+      );
+    });
+    it('required enum property completes with default value', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          Mode: {
+            type: 'integer',
+            enum: [0, 1],
+            default: 1,
+          },
+        },
+        required: ['Mode'],
+      });
+      const completion = await parseSetup('', 0);
+      expect(completion.items[0]).eql(
+        createExpectedCompletion('Mode', 'Mode: 1', 0, 0, 0, 0, 10, InsertTextFormat.Snippet, { documentation: '' })
+      );
+    });
+    it('enum completion should label the default value', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          Mode: {
+            type: 'integer',
+            enum: [0, 1],
+            default: 1,
+          },
+        },
+      });
+
+      const content = 'Mode: ';
+      const completion = await parseSetup(content, content.length);
+
+      const zero = completion.items.find((i) => i.label === '0');
+      const one = completion.items.find((i) => i.label === '1');
+
+      expect(zero, 'Expected enum option 0').to.not.be.undefined;
+      expect(one, 'Expected enum option 1').to.not.be.undefined;
+
+      expect(zero).eql(createExpectedCompletion('0', '0', 0, 6, 0, 6, 12, 2, { documentation: undefined }));
+      expect(one).eql(
+        createExpectedCompletion('1', '1', 0, 6, 0, 6, 12, 2, {
+          documentation: undefined,
+          detail: 'Default value',
+        })
       );
     });
   });
 
   describe('Array completion', () => {
     it('Simple array object completion with "-" without any item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  -';
@@ -2615,6 +2937,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Simple array object completion without "-" after array item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  ';
@@ -2628,6 +2951,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Simple array object completion with "-" after array item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  -';
@@ -2642,6 +2966,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion with "- " without any item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - ';
@@ -2658,6 +2983,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion with "-" without any item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  -';
@@ -2672,6 +2998,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Simple array object completion without "-" befor array empty item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_simpleArrayObject:\n  |\n|  -'; // len: 30, pos: 26
@@ -2685,6 +3012,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion without "-" after array item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  ';
@@ -2697,6 +3025,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array nested anyOf without "-" should return all array items', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_nested_anyOf:\n  - obj1:\n    name:1\n  ';
@@ -2709,6 +3038,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion with "-" after array item', (done) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  -';
@@ -2723,6 +3053,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion indentation', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
       const content = 'test_array_anyOf_2objects:\n  - obj';
@@ -3023,6 +3354,43 @@ describe('Auto Completion Tests', () => {
         })
       );
     });
+    it('object completion with default boolean and default integer', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          env: {
+            type: 'object',
+            properties: {
+              val: {
+                type: 'boolean',
+                default: false,
+              },
+            },
+            required: ['val'],
+          },
+          salad: {
+            type: 'integer',
+            default: 0,
+          },
+        },
+        required: ['env', 'salad'],
+      });
+
+      const content = '';
+      const result = await parseSetup(content, 0);
+
+      assert.equal(result.items.length, 3);
+      assert.deepEqual(
+        result.items[1],
+        createExpectedCompletion('object', 'env:\n  val: ${1:false}\nsalad: 0', 0, 0, 0, 0, 7, 2, {
+          sortText: '_object',
+          documentation: {
+            kind: 'markdown',
+            value: '```yaml\nenv:\n  val: false\nsalad: 0\n```',
+          },
+        })
+      );
+    });
     describe('Select parent skeleton first', () => {
       beforeEach(() => {
         const languageSettingsSetup = new ServiceSetup().withCompletion();
@@ -3125,6 +3493,11 @@ describe('Auto Completion Tests', () => {
 
         expect(result.items.map((i) => i.label)).to.have.members(['fruit', 'vegetable']);
       });
+    });
+    it('Should function when settings are undefined', async () => {
+      languageService.configure({ completion: true });
+      const content = '';
+      await parseSetup(content, 0);
     });
   });
 });

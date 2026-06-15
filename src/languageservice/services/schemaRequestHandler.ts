@@ -1,7 +1,8 @@
-import { URI } from 'vscode-uri';
-import { Connection, WorkspaceFolder } from 'vscode-languageserver';
-import { xhr, XHRResponse, getErrorStatusDescription } from 'request-light';
+import { join } from 'path';
+import { getErrorStatusDescription, xhr, XHRResponse } from 'request-light';
 import * as URL from 'url';
+import { Connection, RequestType, WorkspaceFolder } from 'vscode-languageserver';
+import { URI } from 'vscode-uri';
 import { CustomSchemaContentRequest, VSCodeContentRequest } from '../../requestTypes';
 import { isRelativePath, relativeToAbsolutePath } from '../utils/paths';
 import { WorkspaceContextService } from '../yamlLanguageService';
@@ -10,17 +11,23 @@ export interface FileSystem {
   readFile(fsPath: string, encoding?: string): Promise<string>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
+namespace FSReadUri {
+  export const type: RequestType<string, string, unknown> = new RequestType('fs/readUri');
+}
+
 /**
  * Handles schema content requests given the schema URI
  * @param uri can be a local file, vscode request, http(s) request or a custom request
  */
-export const schemaRequestHandler = (
+export const schemaRequestHandler = async (
   connection: Connection,
   uri: string,
   workspaceFolders: WorkspaceFolder[],
   workspaceRoot: URI,
   useVSCodeContentRequest: boolean,
-  fs: FileSystem
+  fs: FileSystem,
+  isWeb: boolean
 ): Promise<string> => {
   if (!uri) {
     return Promise.reject('No schema specified');
@@ -29,7 +36,20 @@ export const schemaRequestHandler = (
   // If the requested schema URI is a relative file path
   // Convert it into a proper absolute path URI
   if (isRelativePath(uri)) {
-    uri = relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);
+    // HACK: the fs/readUri extension is only available with vscode-yaml,
+    // and this fix is specific to vscode-yaml on web, so don't use it in other cases
+    if (workspaceFolders.length === 1 && isWeb) {
+      const wsUri = URI.parse(workspaceFolders[0].uri);
+      const wsDirname = wsUri.path;
+      const modifiedUri = wsUri.with({ path: join(wsDirname, uri) });
+      try {
+        return connection.sendRequest(FSReadUri.type, modifiedUri.toString());
+      } catch (e) {
+        connection.window.showErrorMessage(`failed to get content of '${modifiedUri}': ${e}`);
+      }
+    } else {
+      uri = relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);
+    }
   }
 
   let scheme = URI.parse(uri).scheme.toLowerCase();
@@ -68,7 +88,13 @@ export const schemaRequestHandler = (
     }
 
     // Send the HTTP(S) schema content request and return the result
-    const headers = { 'Accept-Encoding': 'gzip, deflate' };
+    const version = (typeof process !== 'undefined' && process.env.YAML_LANGUAGE_SERVER_VERSION) || 'unknown';
+    const nodeVersion = typeof process !== 'undefined' && process.versions?.node ? ` node/${process.versions.node}` : '';
+    const platform = typeof process !== 'undefined' && process.platform ? ` (${process.platform})` : '';
+    const headers = {
+      'Accept-Encoding': 'gzip, deflate',
+      'User-Agent': `yaml-language-server/${version} (RedHat)${nodeVersion}${platform}`,
+    };
     return xhr({ url: uri, followRedirects: 5, headers }).then(
       (response) => {
         return response.responseText;

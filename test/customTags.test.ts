@@ -5,7 +5,7 @@
 import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 import { ServiceSetup } from './utils/serviceSetup';
 import { createExpectedError } from './utils/verifyError';
-import * as assert from 'assert';
+import assert from 'assert';
 import { Diagnostic } from 'vscode-languageserver-types';
 import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
@@ -56,6 +56,16 @@ describe('Custom Tag tests Tests', () => {
     it('Custom Tags with multiple types', (done) => {
       const content = 'resolvers: !Ref\n  - test';
       const validator = parseSetup(content, ['!Ref sequence', '!Ref mapping', '!Ref scalar']);
+      validator
+        .then(function (result) {
+          assert.equal(result.length, 0);
+        })
+        .then(done, done);
+    });
+
+    it('Custom Tags with input and return types', (done) => {
+      const content = 'resolvers: !Ref\n  - test';
+      const validator = parseSetup(content, ['!Ref sequence:string']);
       validator
         .then(function (result) {
           assert.equal(result.length, 0);

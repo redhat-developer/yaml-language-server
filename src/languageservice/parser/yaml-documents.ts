@@ -4,18 +4,17 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONDocument } from './jsonParser07';
-import { Document, isNode, isPair, isScalar, LineCounter, Node, visit, YAMLError } from 'yaml';
+import { JSONDocument } from './jsonDocument';
+import { CST, Document, isNode, isPair, isScalar, LineCounter, Node, visit, YAMLError } from 'yaml';
 import { ASTNode, YamlNode } from '../jsonASTTypes';
 import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07';
 import { ErrorCode } from 'vscode-json-languageservice';
 import { convertAST } from './ast-converter';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { isArrayEqual } from '../utils/arrUtils';
-import { getParent } from '../utils/astUtils';
+import { getParent } from '../utils/yamlAstUtils';
 import { TextBuffer } from '../utils/textBuffer';
 import { getIndentation } from '../utils/strings';
-import { Token } from 'yaml/dist/parse/cst';
 
 /**
  * These documents are collected into a final YAMLDocument
@@ -241,12 +240,12 @@ export class SingleYAMLDocument extends JSONDocument {
  */
 export class YAMLDocument {
   documents: SingleYAMLDocument[];
-  tokens: Token[];
+  tokens: CST.Token[];
 
   private errors: YAMLDocDiagnostic[];
   private warnings: YAMLDocDiagnostic[];
 
-  constructor(documents: SingleYAMLDocument[], tokens: Token[]) {
+  constructor(documents: SingleYAMLDocument[], tokens: CST.Token[]) {
     this.documents = documents;
     this.tokens = tokens;
     this.errors = [];

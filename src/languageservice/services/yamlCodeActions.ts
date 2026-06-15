@@ -3,7 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import * as l10n from '@vscode/l10n';
+import * as path from 'path';
+import { ErrorCode } from 'vscode-json-languageservice';
 import {
   CodeAction,
   CodeActionKind,
@@ -15,30 +17,38 @@ import {
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
 import { ClientCapabilities, CodeActionParams } from 'vscode-languageserver-protocol';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+
+import { CST, isMap, isSeq, isScalar, Scalar, visit, YAMLMap } from 'yaml';
+
 import { YamlCommands } from '../../commands';
-import * as path from 'path';
 import { TextBuffer } from '../utils/textBuffer';
+import { toYamlStringScalar } from '../utils/yamlScalar';
 import { LanguageSettings } from '../yamlLanguageService';
-import { YAML_SOURCE } from '../parser/jsonParser07';
+import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
 import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings';
 import { matchOffsetToDocument } from '../utils/arrUtils';
-import { CST, isMap, isSeq, YAMLMap } from 'yaml';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
+
+import { BlockStringRewriter } from '../utils/block-string-rewriter';
 import { FlowStyleRewriter } from '../utils/flow-style-rewriter';
+
 import { ASTNode } from '../jsonASTTypes';
-import * as _ from 'lodash';
-import { SourceToken } from 'yaml/dist/parse/cst';
 
 interface YamlDiagnosticData {
   schemaUri: string[];
+  values?: string[];
+  properties?: string[];
 }
 export class YamlCodeActions {
   private indentation = '  ';
+  private lineWidth = 80;
 
   constructor(private readonly clientCapabilities: ClientCapabilities) {}
 
-  configure(settings: LanguageSettings): void {
+  configure(settings: LanguageSettings, printWidth: number): void {
     this.indentation = settings.indentation;
+    this.lineWidth = printWidth;
   }
 
   getCodeAction(document: TextDocument, params: CodeActionParams): CodeAction[] | undefined {
@@ -53,7 +63,9 @@ export class YamlCodeActions {
     result.push(...this.getTabToSpaceConverting(params.context.diagnostics, document));
     result.push(...this.getUnusedAnchorsDelete(params.context.diagnostics, document));
     result.push(...this.getConvertToBlockStyleActions(params.context.diagnostics, document));
+    result.push(...this.getConvertStringToBlockStyleActions(params.range, document));
     result.push(...this.getKeyOrderActions(params.context.diagnostics, document));
+    result.push(...this.getQuickFixForPropertyOrValueMismatch(params.context.diagnostics, document));
 
     return result;
   }
@@ -78,7 +90,7 @@ export class YamlCodeActions {
     const result = [];
     for (const schemaUri of schemaUriToDiagnostic.keys()) {
       const action = CodeAction.create(
-        `Jump to schema location (${path.basename(schemaUri)})`,
+        l10n.t('Jump to schema location ({0})', path.basename(schemaUri)),
         Command.create('JumpToSchema', YamlCommands.JUMP_TO_SCHEMA, schemaUri)
       );
       action.diagnostics = schemaUriToDiagnostic.get(schemaUri);
@@ -93,7 +105,7 @@ export class YamlCodeActions {
     const textBuff = new TextBuffer(document);
     const processedLine: number[] = [];
     for (const diag of diagnostics) {
-      if (diag.message === 'Using tabs can lead to unpredictable results') {
+      if (diag.message === 'Tabs are not allowed as indentation') {
         if (processedLine.includes(diag.range.start.line)) {
           continue;
         }
@@ -119,7 +131,7 @@ export class YamlCodeActions {
         }
         result.push(
           CodeAction.create(
-            'Convert Tab to Spaces',
+            l10n.t('Convert Tab to Spaces'),
             createWorkspaceEdit(document.uri, [TextEdit.replace(resultRange, newText)]),
             CodeActionKind.QuickFix
           )
@@ -164,7 +176,7 @@ export class YamlCodeActions {
       if (replaceEdits.length > 0) {
         result.push(
           CodeAction.create(
-            'Convert all Tabs to Spaces',
+            l10n.t('Convert all Tabs to Spaces'),
             createWorkspaceEdit(document.uri, replaceEdits),
             CodeActionKind.QuickFix
           )
@@ -186,7 +198,7 @@ export class YamlCodeActions {
         const lastWhitespaceChar = getFirstNonWhitespaceCharacterAfterOffset(lineContent, range.end.character);
         range.end.character = lastWhitespaceChar;
         const action = CodeAction.create(
-          `Delete unused anchor: ${actual}`,
+          l10n.t('Delete unused anchor: {0}', actual),
           createWorkspaceEdit(document.uri, [TextEdit.del(range)]),
           CodeActionKind.QuickFix
         );
@@ -206,7 +218,7 @@ export class YamlCodeActions {
           const newValue = value.includes('true') ? 'true' : 'false';
           results.push(
             CodeAction.create(
-              'Convert to boolean',
+              l10n.t('Convert to boolean'),
               createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, newValue)]),
               CodeActionKind.QuickFix
             )
@@ -221,15 +233,66 @@ export class YamlCodeActions {
     const results: CodeAction[] = [];
     for (const diagnostic of diagnostics) {
       if (diagnostic.code === 'flowMap' || diagnostic.code === 'flowSeq') {
-        const node = getNodeforDiagnostic(document, diagnostic);
+        const node = getNodeForDiagnostic(document, diagnostic);
         if (isMap(node.internalNode) || isSeq(node.internalNode)) {
           const blockTypeDescription = isMap(node.internalNode) ? 'map' : 'sequence';
           const rewriter = new FlowStyleRewriter(this.indentation);
           results.push(
             CodeAction.create(
-              `Convert to block style ${blockTypeDescription}`,
+              l10n.t('Convert to block style {0}', blockTypeDescription),
               createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, rewriter.write(node))]),
               CodeActionKind.QuickFix
+            )
+          );
+        }
+      }
+    }
+    return results;
+  }
+
+  private getConvertStringToBlockStyleActions(range: Range, document: TextDocument): CodeAction[] {
+    const yamlDocument = yamlDocumentsCache.getYamlDocument(document);
+
+    const startOffset: number = range ? document.offsetAt(range.start) : 0;
+    const endOffset: number = range ? document.offsetAt(range.end) : Infinity;
+
+    const results: CodeAction[] = [];
+    for (const singleYamlDocument of yamlDocument.documents) {
+      const matchingNodes: Scalar<string>[] = [];
+      visit(singleYamlDocument.internalDocument, (key, node) => {
+        if (isScalar(node)) {
+          if (
+            (startOffset <= node.range[0] && node.range[2] <= endOffset) ||
+            (node.range[0] <= startOffset && endOffset <= node.range[2])
+          ) {
+            if (node.type === 'QUOTE_DOUBLE' || node.type === 'QUOTE_SINGLE') {
+              if (typeof node.value === 'string' && (node.value.indexOf('\n') >= 0 || node.value.length > this.lineWidth)) {
+                matchingNodes.push(<Scalar<string>>node);
+              }
+            }
+          }
+        }
+      });
+      for (const node of matchingNodes) {
+        const range = Range.create(document.positionAt(node.range[0]), document.positionAt(node.range[1]));
+        const rewriter = new BlockStringRewriter(this.indentation, this.lineWidth);
+        const foldedBlockScalar = rewriter.writeFoldedBlockScalar(node);
+        if (foldedBlockScalar !== null) {
+          results.push(
+            CodeAction.create(
+              l10n.t('Convert string to folded block string'),
+              createWorkspaceEdit(document.uri, [TextEdit.replace(range, foldedBlockScalar)]),
+              CodeActionKind.Refactor
+            )
+          );
+        }
+        const literalBlockScalar = rewriter.writeLiteralBlockScalar(node);
+        if (literalBlockScalar !== null) {
+          results.push(
+            CodeAction.create(
+              l10n.t('Convert string to literal block string'),
+              createWorkspaceEdit(document.uri, [TextEdit.replace(range, literalBlockScalar)]),
+              CodeActionKind.Refactor
             )
           );
         }
@@ -242,12 +305,33 @@ export class YamlCodeActions {
     const results: CodeAction[] = [];
     for (const diagnostic of diagnostics) {
       if (diagnostic?.code === 'mapKeyOrder') {
-        let node = getNodeforDiagnostic(document, diagnostic);
+        let node = getNodeForDiagnostic(document, diagnostic);
         while (node && node.type !== 'object') {
           node = node.parent;
         }
         if (node && isMap(node.internalNode)) {
-          const sorted: YAMLMap = _.cloneDeep(node.internalNode);
+          const sorted: YAMLMap = structuredClone(node.internalNode);
+
+          const _getTrailingTokens = (value: CST.Token): CST.SourceToken[] => {
+            if (!value) return;
+            if (CST.isScalar(value)) {
+              if (value.type === 'block-scalar') {
+                value.props ??= [];
+                return value.props as CST.SourceToken[];
+              }
+              value.end ??= [];
+              return value.end;
+            }
+            if (value.type === 'flow-collection') {
+              value.end ??= [];
+              return value.end;
+            }
+            if (value.type === 'block-map') {
+              const lastItem = value.items[value.items.length - 1];
+              return lastItem ? _getTrailingTokens(lastItem.value) : undefined;
+            }
+            return;
+          };
           if (
             (sorted.srcToken.type === 'block-map' || sorted.srcToken.type === 'flow-collection') &&
             (node.internalNode.srcToken.type === 'block-map' || node.internalNode.srcToken.type === 'flow-collection')
@@ -271,38 +355,25 @@ export class YamlCodeActions {
               const item = sorted.srcToken.items[i];
               const uItem = node.internalNode.srcToken.items[i];
               item.start = uItem.start;
-              if (
-                item.value?.type === 'alias' ||
-                item.value?.type === 'scalar' ||
-                item.value?.type === 'single-quoted-scalar' ||
-                item.value?.type === 'double-quoted-scalar'
-              ) {
-                const newLineIndex = item.value?.end?.findIndex((p) => p.type === 'newline') ?? -1;
-                let newLineToken = null;
-                if (uItem.value?.type === 'block-scalar') {
-                  newLineToken = uItem.value?.props?.find((p) => p.type === 'newline');
-                } else if (CST.isScalar(uItem.value)) {
-                  newLineToken = uItem.value?.end?.find((p) => p.type === 'newline');
-                }
-                if (newLineToken && newLineIndex < 0) {
-                  item.value.end = item.value.end ?? [];
-                  item.value.end.push(newLineToken as SourceToken);
-                }
-                if (!newLineToken && newLineIndex > -1) {
-                  item.value.end.splice(newLineIndex, 1);
-                }
-              } else if (item.value?.type === 'block-scalar') {
-                const nwline = item.value.props.find((p) => p.type === 'newline');
-                if (!nwline) {
-                  item.value.props.push({ type: 'newline', indent: 0, offset: item.value.offset, source: '\n' } as SourceToken);
-                }
+              // strip leading blank lines so reordered entries stay one-per-line
+              while (item.start?.[0]?.type === 'newline') item.start.shift();
+              const itemTokens = _getTrailingTokens(item.value);
+              const itemNewLineIndex = itemTokens?.findIndex((p) => p.type === 'newline') ?? -1;
+              const uNewLineToken =
+                _getTrailingTokens(uItem.value)?.find((p) => p.type === 'newline' && p.offset < node.offset + node.length) ??
+                null;
+              if (uNewLineToken && itemNewLineIndex < 0 && itemTokens) {
+                itemTokens.push({ type: 'newline', indent: 0, offset: item.value.offset, source: '\n' });
+              }
+              if (!uNewLineToken && itemNewLineIndex > -1 && itemTokens) {
+                itemTokens.splice(itemNewLineIndex, 1);
               }
             }
           }
           const replaceRange = Range.create(document.positionAt(node.offset), document.positionAt(node.offset + node.length));
           results.push(
             CodeAction.create(
-              'Fix key order for this map',
+              l10n.t('Fix key order for this map'),
               createWorkspaceEdit(document.uri, [TextEdit.replace(replaceRange, CST.stringify(sorted.srcToken))]),
               CodeActionKind.QuickFix
             )
@@ -312,13 +383,64 @@ export class YamlCodeActions {
     }
     return results;
   }
+
+  /**
+   * Check if diagnostic contains info for quick fix
+   * Supports Enum/Const/Property mismatch
+   */
+  private getPossibleQuickFixValues(diagnostic: Diagnostic): string[] | undefined {
+    if (typeof diagnostic.data !== 'object') {
+      return;
+    }
+    if (
+      diagnostic.code === ErrorCode.EnumValueMismatch &&
+      'values' in diagnostic.data &&
+      Array.isArray((diagnostic.data as YamlDiagnosticData).values)
+    ) {
+      return (diagnostic.data as YamlDiagnosticData).values;
+    } else if (
+      diagnostic.code === ErrorCode.PropertyExpected &&
+      'properties' in diagnostic.data &&
+      Array.isArray((diagnostic.data as YamlDiagnosticData).properties)
+    ) {
+      return (diagnostic.data as YamlDiagnosticData).properties;
+    }
+  }
+
+  private getQuickFixForPropertyOrValueMismatch(diagnostics: Diagnostic[], document: TextDocument): CodeAction[] {
+    const results: CodeAction[] = [];
+    for (const diagnostic of diagnostics) {
+      const values = this.getPossibleQuickFixValues(diagnostic);
+      if (!values?.length) {
+        continue;
+      }
+      for (const value of values) {
+        const scalar = typeof value === 'string' ? toYamlStringScalar(value) : String(value);
+        results.push(
+          CodeAction.create(
+            scalar,
+            createWorkspaceEdit(document.uri, [TextEdit.replace(diagnostic.range, scalar)]),
+            CodeActionKind.QuickFix
+          )
+        );
+      }
+    }
+    return results;
+  }
 }
 
-function getNodeforDiagnostic(document: TextDocument, diagnostic: Diagnostic): ASTNode {
+function getNodeForDiagnostic(document: TextDocument, diagnostic: Diagnostic): ASTNode {
   const yamlDocuments = yamlDocumentsCache.getYamlDocument(document);
   const startOffset = document.offsetAt(diagnostic.range.start);
+  const endOffset = document.offsetAt(diagnostic.range.end);
   const yamlDoc = matchOffsetToDocument(startOffset, yamlDocuments);
-  const node = yamlDoc.getNodeFromOffset(startOffset);
+  let node = yamlDoc.getNodeFromOffset(startOffset);
+  if (node && startOffset < endOffset && node.offset + node.length === startOffset) {
+    const nodeInsideRange = yamlDoc.getNodeFromOffset(startOffset + 1);
+    if (nodeInsideRange) {
+      node = nodeInsideRange;
+    }
+  }
   return node;
 }
 

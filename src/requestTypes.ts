@@ -19,6 +19,7 @@ export interface JSONSchemaDescription {
    * Schema description, from schema store
    */
   description?: string;
+  versions?: SchemaVersions;
 }
 
 export interface JSONSchemaDescriptionExt extends JSONSchemaDescription {
@@ -30,8 +31,6 @@ export interface JSONSchemaDescriptionExt extends JSONSchemaDescription {
    * Is schema from schema store
    */
   fromStore: boolean;
-
-  versions?: SchemaVersions;
 }
 
 export namespace SchemaAssociationNotification {

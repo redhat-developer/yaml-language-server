@@ -20,6 +20,7 @@ import {
   LineCounter,
 } from 'yaml';
 import { ASTNode, YamlNode } from '../jsonASTTypes';
+import { getCustomTagReturnType } from '../utils/customTags';
 import {
   NullASTNodeImpl,
   PropertyASTNodeImpl,
@@ -28,43 +29,46 @@ import {
   NumberASTNodeImpl,
   ArrayASTNodeImpl,
   BooleanASTNodeImpl,
-} from './jsonParser07';
+} from './jsonDocument';
 
 type NodeRange = [number, number, number];
 
-const maxRefCount = 1000;
-let refDepth = 0;
-const seenAlias = new Set<Alias>();
+// Exported for tests
+export const aliasDepth = {
+  maxRefCount: 1000,
+  currentRefDepth: 0,
+  aliasResolutionCache: new Map<Alias, ASTNode>(),
+};
 
 export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineCounter: LineCounter): ASTNode | undefined {
   if (!parent) {
     // first invocation
-    refDepth = 0;
+    aliasDepth.currentRefDepth = 0;
+    aliasDepth.aliasResolutionCache = new Map();
   }
 
   if (!node) {
     return null;
   }
+
+  let result: ASTNode | undefined;
   if (isMap(node)) {
-    return convertMap(node, parent, doc, lineCounter);
+    result = convertMap(node, parent, doc, lineCounter);
+  } else if (isPair(node)) {
+    result = convertPair(node, parent, doc, lineCounter);
+  } else if (isSeq(node)) {
+    result = convertSeq(node, parent, doc, lineCounter);
+  } else if (isScalar(node)) {
+    result = convertScalar(node, parent);
+  } else if (isAlias(node) && aliasDepth.currentRefDepth < aliasDepth.maxRefCount) {
+    result = convertAlias(node, parent, doc, lineCounter);
   }
-  if (isPair(node)) {
-    return convertPair(node, parent, doc, lineCounter);
+
+  if (result && isNode(node)) {
+    result.customTagReturnType = getCustomTagReturnType(node);
   }
-  if (isSeq(node)) {
-    return convertSeq(node, parent, doc, lineCounter);
-  }
-  if (isScalar(node)) {
-    return convertScalar(node, parent);
-  }
-  if (isAlias(node) && !seenAlias.has(node) && refDepth < maxRefCount) {
-    seenAlias.add(node);
-    const converted = convertAlias(node, parent, doc, lineCounter);
-    seenAlias.delete(node);
-    return converted;
-  } else {
-    return;
-  }
+
+  return result;
 }
 
 function convertMap(node: YAMLMap<unknown, unknown>, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
@@ -137,7 +141,7 @@ function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
       return result;
     }
     case 'boolean':
-      return new BooleanASTNodeImpl(parent, node, node.value, ...toOffsetLength(node.range));
+      return new BooleanASTNodeImpl(parent, node, node.value, node.source, ...toOffsetLength(node.range));
     case 'number': {
       const result = new NumberASTNodeImpl(parent, node, ...toOffsetLength(node.range));
       result.value = node.value;
@@ -154,15 +158,23 @@ function convertScalar(node: Scalar, parent: ASTNode): ASTNode {
 }
 
 function convertAlias(node: Alias, parent: ASTNode, doc: Document, lineCounter: LineCounter): ASTNode {
-  refDepth++;
+  if (aliasDepth.aliasResolutionCache.has(node)) {
+    return aliasDepth.aliasResolutionCache.get(node);
+  }
+
+  aliasDepth.currentRefDepth++;
   const resolvedNode = node.resolve(doc);
+  let ans: ASTNode;
   if (resolvedNode) {
-    return convertAST(parent, resolvedNode, doc, lineCounter);
+    ans = convertAST(parent, resolvedNode, doc, lineCounter);
   } else {
     const resultNode = new StringASTNodeImpl(parent, node, ...toOffsetLength(node.range));
     resultNode.value = node.source;
-    return resultNode;
+    ans = resultNode;
   }
+  aliasDepth.currentRefDepth--;
+  aliasDepth.aliasResolutionCache.set(node, ans);
+  return ans;
 }
 
 export function toOffsetLength(range: NodeRange): [number, number] {

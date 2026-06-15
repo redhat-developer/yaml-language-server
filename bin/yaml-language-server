@@ -1,3 +1,27 @@
 #!/usr/bin/env node
 
+const version = require('../package.json').version;
+const args = process.argv.slice(2);
+
+if (args.includes('--version') || args.includes('-version')) {
+  console.log(version);
+  process.exit(0);
+}
+
+if (args.includes('--help') || args.includes('-help') || args.includes('-h')) {
+  console.log(`Usage: yaml-language-server [transport]
+
+LSP transport options:
+  --stdio            communicate using standard input/output (stdin/stdout)
+  --node-ipc         communicate using Node IPC
+  --socket=<number>  listen on a TCP socket on the given port number
+
+Other:
+  --version | -version   print product version to the output stream and exit
+  --help | -help | -h    print this help message to the output stream and exit
+`);
+  process.exit(0);
+}
+
+process.env.YAML_LANGUAGE_SERVER_VERSION = version;
 require('../out/server/src/server.js');

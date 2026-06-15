@@ -3,81 +3,72 @@ import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { ASTNode } from 'vscode-json-languageservice';
 
-export function getSelectionRanges(document: TextDocument, positions: Position[]): SelectionRange[] | undefined {
-  if (!document) {
-    return;
-  }
+export function getSelectionRanges(document: TextDocument, positions: Position[]): SelectionRange[] {
   const doc = yamlDocumentsCache.getYamlDocument(document);
   return positions.map((position) => {
     const ranges = getRanges(position);
-    let current: SelectionRange;
+    let current: SelectionRange | undefined;
     for (const range of ranges) {
       current = SelectionRange.create(range, current);
     }
-    if (!current) {
-      current = SelectionRange.create({
-        start: position,
-        end: position,
-      });
-    }
-    return current;
+    return current ?? SelectionRange.create({ start: position, end: position });
   });
 
   function getRanges(position: Position): Range[] {
     const offset = document.offsetAt(position);
     const result: Range[] = [];
     for (const ymlDoc of doc.documents) {
-      let currentNode: ASTNode;
-      let firstNodeOffset: number;
-      let isFirstNode = true;
+      let currentNode: ASTNode | undefined;
+      let overrideStartOffset: number | undefined;
       ymlDoc.visit((node) => {
         const endOffset = node.offset + node.length;
         // Skip if end offset doesn't even reach cursor position
         if (endOffset < offset) {
           return true;
         }
-        let startOffset = node.offset;
-        // Recheck start offset with the trimmed one in case of this
-        // key:
-        //   - value
-        // ↑
-        if (startOffset > offset) {
-          const nodePosition = document.positionAt(startOffset);
-          if (nodePosition.line !== position.line) {
-            return true;
-          }
-          const lineBeginning = { line: nodePosition.line, character: 0 };
-          const text = document.getText({
-            start: lineBeginning,
-            end: nodePosition,
-          });
-          if (text.trim().length !== 0) {
-            return true;
-          }
-          startOffset = document.offsetAt(lineBeginning);
-          if (startOffset > offset) {
+        // Skip if we're ending at new line
+        // times:
+        //   - second: 1
+        //     millisecond: 10
+        // | - second: 2
+        // ↑   millisecond: 0
+        // (| is actually part of { second: 1, millisecond: 10 })
+        // \r\n doesn't matter here
+        if (getTextFromOffsets(endOffset - 1, endOffset) === '\n') {
+          if (endOffset - 1 < offset) {
             return true;
           }
         }
+
+        let startOffset = node.offset;
+        if (startOffset > offset) {
+          // Recheck start offset for some special cases
+          const newOffset = getStartOffsetForSpecialCases(node, position);
+          if (!newOffset || newOffset > offset) {
+            return true;
+          }
+          startOffset = newOffset;
+        }
+
         // Allow equal for children to override
         if (!currentNode || startOffset >= currentNode.offset) {
           currentNode = node;
-          firstNodeOffset = startOffset;
+          overrideStartOffset = startOffset;
         }
         return true;
       });
       while (currentNode) {
-        const startOffset = isFirstNode ? firstNodeOffset : currentNode.offset;
+        const startOffset = overrideStartOffset ?? currentNode.offset;
         const endOffset = currentNode.offset + currentNode.length;
         const range = {
           start: document.positionAt(startOffset),
           end: document.positionAt(endOffset),
         };
         const text = document.getText(range);
-        const trimmedText = text.trimEnd();
-        const trimmedLength = text.length - trimmedText.length;
-        if (trimmedLength > 0) {
-          range.end = document.positionAt(endOffset - trimmedLength);
+        const trimmedText = trimEndNewLine(text);
+        const trimmedEndOffset = startOffset + trimmedText.length;
+        if (trimmedEndOffset >= offset) {
+          range.end = document.positionAt(trimmedEndOffset);
         }
         // Add a jump between '' "" {} []
         const isSurroundedBy = (startCharacter: string, endCharacter?: string): boolean => {
@@ -95,7 +86,7 @@ export function getSelectionRanges(document: TextDocument, positions: Position[]
         }
         result.push(range);
         currentNode = currentNode.parent;
-        isFirstNode = false;
+        overrideStartOffset = undefined;
       }
       // A position can't be in multiple documents
       if (result.length > 0) {
@@ -104,4 +95,48 @@ export function getSelectionRanges(document: TextDocument, positions: Position[]
     }
     return result.reverse();
   }
+
+  function getStartOffsetForSpecialCases(node: ASTNode, position: Position): number | undefined {
+    const nodeStartPosition = document.positionAt(node.offset);
+    if (nodeStartPosition.line !== position.line) {
+      return;
+    }
+
+    if (node.parent?.type === 'array') {
+      // array:
+      //   - value
+      //    ↑
+      if (getTextFromOffsets(node.offset - 2, node.offset) === '- ') {
+        return node.offset - 2;
+      }
+    }
+
+    if (node.type === 'array' || node.type === 'object') {
+      // array:
+      //   - value
+      // ↑
+      const lineBeginning = { line: nodeStartPosition.line, character: 0 };
+      const text = document.getText({ start: lineBeginning, end: nodeStartPosition });
+      if (text.trim().length === 0) {
+        return document.offsetAt(lineBeginning);
+      }
+    }
+  }
+
+  function getTextFromOffsets(startOffset: number, endOffset: number): string {
+    return document.getText({
+      start: document.positionAt(startOffset),
+      end: document.positionAt(endOffset),
+    });
+  }
+}
+
+function trimEndNewLine(str: string): string {
+  if (str.endsWith('\r\n')) {
+    return str.substring(0, str.length - 2);
+  }
+  if (str.endsWith('\n')) {
+    return str.substring(0, str.length - 1);
+  }
+  return str;
 }

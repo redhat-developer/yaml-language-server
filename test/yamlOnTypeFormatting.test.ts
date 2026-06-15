@@ -17,7 +17,7 @@ function createParams(position: Position): DocumentOnTypeFormattingParams {
   };
 }
 describe('YAML On Type Formatter', () => {
-  it('should react on "\n" only', () => {
+  it('should react on "\\n" only', () => {
     const doc = setupTextDocument('foo:');
     const params = createParams(Position.create(1, 0));
     params.ch = '\t';
@@ -48,12 +48,40 @@ describe('YAML On Type Formatter', () => {
     expect(result).to.deep.include(TextEdit.insert(pos, '    '));
   });
 
-  it('should replace all spaces in newline', () => {
+  it('should replace excess spaces in newline', () => {
     const doc = setupTextDocument('some:\n    ');
     const pos = Position.create(1, 0);
     const params = createParams(pos);
     const result = doDocumentOnTypeFormatting(doc, params);
-    expect(result).to.deep.include.members([TextEdit.del(Range.create(pos, Position.create(1, 3))), TextEdit.insert(pos, '  ')]);
+    expect(result.length).to.equal(1);
+    expect(result[0]).to.deep.equal(TextEdit.del(Range.create(Position.create(1, 0), Position.create(1, 2))));
+  });
+
+  it('should handle nested maps', () => {
+    const doc = setupTextDocument('some:\n  BODY:\n  ');
+    const pos = Position.create(2, 2);
+    const params = createParams(pos);
+    const result = doDocumentOnTypeFormatting(doc, params);
+    expect(result).to.have.length(1);
+    expect(result[0]).to.deep.equal(TextEdit.insert(pos, '  '));
+  });
+
+  it('should handle nested maps with content afterwards', () => {
+    const doc = setupTextDocument('some:\n  BODY:\n  \n  foo: asdf');
+    const pos = Position.create(2, 2);
+    const params = createParams(pos);
+    const result = doDocumentOnTypeFormatting(doc, params);
+    expect(result).to.have.length(1);
+    expect(result[0]).to.deep.equal(TextEdit.insert(pos, '  '));
+  });
+
+  it('should handle nested arrays', () => {
+    const doc = setupTextDocument('some:\n  - BODY:\n  ');
+    const pos = Position.create(2, 2);
+    const params = createParams(pos);
+    const result = doDocumentOnTypeFormatting(doc, params);
+    expect(result).to.have.length(1);
+    expect(result[0]).to.deep.equal(TextEdit.insert(pos, '    '));
   });
 
   it('should keep all non white spaces characters in newline', () => {

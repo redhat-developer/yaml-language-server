@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import * as sinon from 'sinon';
 import * as chai from 'chai';
-import * as sinonChai from 'sinon-chai';
+import sinonChai from 'sinon-chai';
 import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers';
 import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
 import { Connection, RemoteClient } from 'vscode-languageserver/node';
@@ -98,6 +98,75 @@ describe('Schema Selection Handlers', () => {
       description: 'Schema description',
       versions: undefined,
     });
+  });
+
+  it('getSchemas should not resolve schema references', async () => {
+    requestServiceMock = sandbox.fake((uri: string) => {
+      if (uri === 'https://some.com/some.json') {
+        return Promise.resolve(
+          JSON.stringify({
+            title: 'Schema name',
+            description: 'Schema description',
+            properties: {
+              child: {
+                $ref: 'https://some.com/ref.json',
+              },
+            },
+          })
+        );
+      }
+      return Promise.reject(`Resource ${uri} not found.`);
+    });
+    service = new YAMLSchemaService(requestServiceMock);
+    service.registerExternalSchema('https://some.com/some.json', [SCHEMA_ID]);
+    const settings = new SettingsState();
+    const testTextDocument = setupSchemaIDTextDocument('');
+    settings.documents = new TextDocumentTestManager();
+    (settings.documents as TextDocumentTestManager).set(testTextDocument);
+    const selection = new JSONSchemaSelection(service, settings, connection);
+
+    const result = await selection.getSchemas(testTextDocument.uri);
+
+    expect(result).length(1);
+    expect(result[0]).to.be.eqls({
+      uri: 'https://some.com/some.json',
+      name: 'Schema name',
+      description: 'Schema description',
+      versions: undefined,
+    });
+    expect(requestServiceMock).calledOnceWith('https://some.com/some.json');
+    expect(requestServiceMock).not.calledWith('https://some.com/ref.json');
+  });
+
+  it('getSchemas should use registered schema metadata without loading schema content', async () => {
+    const versions = {
+      '1.0.0': 'https://some.com/some-1.0.0.json',
+      '2.0.0': 'https://some.com/some-2.0.0.json',
+    };
+    service.registerExternalSchema(
+      'https://some.com/some.json',
+      [SCHEMA_ID],
+      undefined,
+      'Schema name',
+      'Schema description',
+      versions
+    );
+    const settings = new SettingsState();
+    const testTextDocument = setupSchemaIDTextDocument('');
+    settings.documents = new TextDocumentTestManager();
+    (settings.documents as TextDocumentTestManager).set(testTextDocument);
+    const selection = new JSONSchemaSelection(service, settings, connection);
+
+    const result = await selection.getSchemas(testTextDocument.uri);
+
+    expect(result).length(1);
+    expect(result[0]).to.be.eqls({
+      uri: 'https://some.com/some.json',
+      name: 'Schema name',
+      description: 'Schema description',
+      versions,
+    });
+    expect(requestServiceMock).not.called;
   });
 
   it('getSchemas should handle empty schemas', async () => {

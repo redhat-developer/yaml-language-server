@@ -39,9 +39,19 @@ export function createDiagnosticWithData(
   severity: DiagnosticSeverity = 1,
   source = 'YAML',
   schemaUri: string | string[],
+  code: string | number = ErrorCode.Undefined,
   data: Record<string, unknown> = {}
 ): Diagnostic {
-  const diagnostic: Diagnostic = createExpectedError(message, startLine, startCharacter, endLine, endCharacter, severity, source);
+  const diagnostic: Diagnostic = createExpectedError(
+    message,
+    startLine,
+    startCharacter,
+    endLine,
+    endCharacter,
+    severity,
+    source,
+    code
+  );
   diagnostic.data = { schemaUri: typeof schemaUri === 'string' ? [schemaUri] : schemaUri, ...data };
   return diagnostic;
 }
@@ -59,7 +69,7 @@ export function createUnusedAnchorDiagnostic(
     startCharacter,
     endLine,
     endCharacter,
-    DiagnosticSeverity.Hint,
+    DiagnosticSeverity.Information,
     'YAML'
   );
   diagnostic.tags = [DiagnosticTag.Unnecessary];
@@ -155,7 +165,7 @@ export function createExpectedCompletion(
   endCharacter: number,
   kind: CompletionItemKind,
   insertTextFormat: InsertTextFormat = 2,
-  extra = {}
+  extra: Partial<CompletionItem> = {}
 ): CompletionItem {
   return {
     ...{

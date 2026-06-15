@@ -1,14 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "lib": ["webworker"],
     "module": "umd",
+    "moduleResolution": "node10",
     "outDir": "./lib/umd",
+    "rootDir": "./src"
   },
-  "exclude": [
-    "node_modules",
-    "out",
-    "lib",
-    "test"
-  ]
+  "include": ["src"]
 }

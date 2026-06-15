@@ -2,20 +2,20 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { createConnection, Connection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node';
-import path = require('path');
 import { promises as fs } from 'fs';
-import { SettingsState } from '../../src/yamlSettings';
+import { ClientCapabilities } from 'vscode-json-languageservice';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { Connection, createConnection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node';
+import { LanguageService, LanguageSettings } from '../../src';
+import { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers';
+import { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers';
+import { JSONSchema } from '../../src/languageservice/jsonSchema';
+import { yamlDocumentsCache } from '../../src/languageservice/parser/yaml-documents';
 import { FileSystem, schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler';
 import { YAMLServerInit } from '../../src/yamlServerInit';
-import { LanguageService, LanguageSettings } from '../../src';
-import { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers';
-import { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { ClientCapabilities } from 'vscode-json-languageservice';
-import { yamlDocumentsCache } from '../../src/languageservice/parser/yaml-documents';
+import { SettingsState } from '../../src/yamlSettings';
 import { TestTelemetry } from './testsTypes';
-import { JSONSchema } from '../../src/languageservice/jsonSchema';
+import * as path from 'path';
 
 export function toFsPath(str: unknown): string {
   if (typeof str !== 'string') {
@@ -76,17 +76,23 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
       yamlSettings.workspaceFolders,
       yamlSettings.workspaceRoot,
       yamlSettings.useVSCodeContentRequest,
-      testFileSystem
+      testFileSystem,
+      false
     );
   };
   const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
   const telemetry = new TestTelemetry(connection);
   const serverInit = new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService, telemetry);
+  const __dirname = path.resolve(path.dirname(__filename), '..');
   serverInit.connectionInitialized({
     processId: null,
     capabilities: ClientCapabilities.LATEST as LSPClientCapabilities,
     rootUri: null,
     workspaceFolders: null,
+    initializationOptions: {
+      l10nPath: path.join(__dirname, '../l10n'),
+    },
+    locale: 'en',
   });
   const languageService = serverInit.languageService;
   const validationHandler = serverInit.validationHandler;

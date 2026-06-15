@@ -5,7 +5,7 @@
 
 import { TextBuffer } from '../src/languageservice/utils/textBuffer';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import * as assert from 'assert';
+import assert from 'assert';
 
 describe('TextBuffer', () => {
   it('getLineLength should return actual line length', () => {

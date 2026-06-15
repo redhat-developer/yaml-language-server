@@ -8,12 +8,27 @@ import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 import { ServiceSetup } from './utils/serviceSetup';
 import { setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
 
+type ValidationHandlerWithConnection = {
+  connection: {
+    workspace: {
+      getConfiguration: (item?: { section?: string }) => Promise<unknown>;
+    };
+  };
+};
+
 describe('YAML Validation Tests', () => {
+  const sandbox = sinon.createSandbox();
   let languageSettingsSetup: ServiceSetup;
   let validationHandler: ValidationHandler;
   let yamlSettings: SettingsState;
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   before(() => {
     languageSettingsSetup = new ServiceSetup().withValidate();
     const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
@@ -29,6 +44,18 @@ describe('YAML Validation Tests', () => {
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
     return validationHandler.validateTextDocument(testTextDocument);
   }
+
+  it('disables validation when language-overridable yaml.validate is false', async () => {
+    const testTextDocument = setupSchemaIDTextDocument('foo:\n\t- bar');
+    yamlSettings.documents = new TextDocumentTestManager();
+    (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
+    const connection = (validationHandler as unknown as ValidationHandlerWithConnection).connection;
+    sandbox.stub(connection.workspace, 'getConfiguration').resolves({ 'yaml.validate': false });
+    yamlSettings.hasConfigurationCapability = true;
+    const result = await validationHandler.validateTextDocument(testTextDocument);
+    expect(result).to.be.empty;
+  });
+
   describe('TAB Character diagnostics', () => {
     it('Should report if TAB character present', async () => {
       const yaml = 'foo:\n\t- bar';
@@ -52,6 +79,12 @@ describe('YAML Validation Tests', () => {
       expect(result).is.not.empty;
       expect(result.length).to.be.equal(1);
       expect(result[0]).deep.equal(createExpectedError('Tabs are not allowed as indentation', 1, 1, 1, 10));
+    });
+
+    it('Should allow proper space indentation followed by tab', async () => {
+      const yaml = 'foo:\n  bar';
+      const result = await parseSetup(yaml);
+      expect(result).to.be.empty;
     });
   });
 
@@ -84,13 +117,23 @@ some:
 ee: *g`;
       const result = await parseSetup(yaml);
       expect(result).is.not.empty;
-      expect(result.length).to.be.equal(4);
+      expect(result.length).to.be.equal(5);
       expect(result).to.include.deep.members([
         createUnusedAnchorDiagnostic('Unused anchor "&bar"', 0, 5, 0, 9),
         createUnusedAnchorDiagnostic('Unused anchor "&a"', 4, 2, 4, 4),
         createUnusedAnchorDiagnostic('Unused anchor "&aa"', 5, 0, 5, 3),
         createUnusedAnchorDiagnostic('Unused anchor "&e"', 8, 4, 8, 6),
       ]);
+    });
+  });
+
+  describe('Unresolved alias diagnostics', () => {
+    it('should report unresolved alias', async () => {
+      const yaml = 'foo: *bar';
+      const result = await parseSetup(yaml);
+      expect(result).is.not.empty;
+      expect(result.length).to.be.equal(1);
+      expect(result[0]).deep.equal(createUnusedAnchorDiagnostic('Unresolved alias "*bar"', 0, 5, 0, 9));
     });
   });
 
@@ -126,7 +169,7 @@ animals: [dog , cat , mouse]  `;
       expect(result).not.to.be.empty;
       expect(result.length).to.be.equal(2);
       expect(result).to.include.deep.members([
-        createExpectedError('Flow style mapping is forbidden', 1, 12, 1, 42, DiagnosticSeverity.Error, 'YAML', 'flowMap'),
+        createExpectedError('Flow style mapping is forbidden', 1, 12, 1, 40, DiagnosticSeverity.Error, 'YAML', 'flowMap'),
         createExpectedError('Flow style sequence is forbidden', 2, 9, 2, 28, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
       ]);
     });
@@ -169,13 +212,13 @@ animals: [dog , cat , mouse]  `;
       expect(result).not.to.be.empty;
       expect(result.length).to.be.equal(2);
       expect(result).to.include.deep.members([
-        createExpectedError('Flow style mapping is forbidden', 0, 8, 0, 11, DiagnosticSeverity.Error, 'YAML', 'flowMap'),
-        createExpectedError('Flow style sequence is forbidden', 1, 9, 1, 10, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
+        createExpectedError('Flow style mapping is forbidden', 0, 8, 0, 10, DiagnosticSeverity.Error, 'YAML', 'flowMap'),
+        createExpectedError('Flow style sequence is forbidden', 1, 9, 1, 11, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
       ]);
     });
   });
   describe('Map keys order Tests', () => {
-    it('should report key order error', async () => {
+    it('should report the first key order error - test 1', async () => {
       const yaml = '- key 2: v\n  key 1: val\n  key 5: valu\n  key 3: ff';
       yamlSettings.keyOrdering = true;
       languageSettingsSetup = new ServiceSetup().withValidate().withKeyOrdering();
@@ -186,24 +229,45 @@ animals: [dog , cat , mouse]  `;
       yamlSettings = settings;
       const result = await parseSetup(yaml);
       expect(result).not.to.be.empty;
-      expect(result.length).to.be.equal(2);
+      expect(result.length).to.be.equal(1);
       expect(result).to.include.deep.members([
         createExpectedError(
           'Wrong ordering of key "key 2" in mapping',
           0,
           2,
           0,
-          9,
+          7,
           DiagnosticSeverity.Error,
           'YAML',
           'mapKeyOrder'
         ),
+      ]);
+    });
+    it('should report the first key order error - test 2', async () => {
+      const yaml = `one:
+  child: moo
+two:
+  child: moo
+three:
+  child: moo
+alpha: 1`;
+      yamlSettings.keyOrdering = true;
+      languageSettingsSetup = new ServiceSetup().withValidate().withKeyOrdering();
+      const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
+        languageSettingsSetup.languageSettings
+      );
+      validationHandler = valHandler;
+      yamlSettings = settings;
+      const result = await parseSetup(yaml);
+      expect(result).not.to.be.empty;
+      expect(result.length).to.be.equal(1);
+      expect(result).to.include.deep.members([
         createExpectedError(
-          'Wrong ordering of key "key 5" in mapping',
+          'Wrong ordering of key "two" in mapping',
           2,
           0,
           2,
-          9,
+          3,
           DiagnosticSeverity.Error,
           'YAML',
           'mapKeyOrder'
@@ -223,7 +287,42 @@ animals: [dog , cat , mouse]  `;
       expect(result).not.to.be.empty;
       expect(result.length).to.be.equal(1);
       expect(result).to.include.deep.members([
-        createExpectedError('Wrong ordering of key "b" in mapping', 0, 3, 0, 6, DiagnosticSeverity.Error, 'YAML', 'mapKeyOrder'),
+        createExpectedError('Wrong ordering of key "b" in mapping', 0, 3, 0, 4, DiagnosticSeverity.Error, 'YAML', 'mapKeyOrder'),
+      ]);
+    });
+    it('should report key order error for nested', async () => {
+      const yaml = 'one:\n  child: moo\ntwo:\n  mild: meh\n  child: moo\nthree:\n  child: moo';
+      yamlSettings.keyOrdering = true;
+      languageSettingsSetup = new ServiceSetup().withValidate().withKeyOrdering();
+      const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
+        languageSettingsSetup.languageSettings
+      );
+      validationHandler = valHandler;
+      yamlSettings = settings;
+      const result = await parseSetup(yaml);
+      expect(result).not.to.be.empty;
+      expect(result.length).to.be.equal(2);
+      expect(result).to.include.deep.members([
+        createExpectedError(
+          'Wrong ordering of key "two" in mapping',
+          2,
+          0,
+          2,
+          3,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
+        createExpectedError(
+          'Wrong ordering of key "mild" in mapping',
+          3,
+          2,
+          3,
+          6,
+          DiagnosticSeverity.Error,
+          'YAML',
+          'mapKeyOrder'
+        ),
       ]);
     });
 
@@ -236,6 +335,52 @@ animals: [dog , cat , mouse]  `;
       );
       validationHandler = valHandler;
       yamlSettings = settings;
+      const result = await parseSetup(yaml);
+      expect(result).to.be.empty;
+    });
+  });
+
+  describe('yaml-language-server-disable comment suppression', () => {
+    it('should suppress all diagnostics on the next line when no specifiers given', async () => {
+      const yaml = 'foo:\n# yaml-language-server-disable\n\t- bar';
+      const result = await parseSetup(yaml);
+      expect(result).to.be.empty;
+    });
+
+    it('should suppress only matching diagnostics when specifiers are given', async () => {
+      const yaml = 'foo:\n# yaml-language-server-disable Tabs are not allowed\n\t- bar';
+      const result = await parseSetup(yaml);
+      expect(result).to.be.empty;
+    });
+
+    it('should keep diagnostics that do not match the specifier', async () => {
+      const yaml = 'foo:\n# yaml-language-server-disable some other error\n\t- bar';
+      const result = await parseSetup(yaml);
+      expect(result).is.not.empty;
+      expect(result.length).to.be.equal(1);
+    });
+
+    it('should not suppress diagnostics without a preceding disable comment', async () => {
+      const yaml = 'foo:\n\t- bar';
+      const result = await parseSetup(yaml);
+      expect(result).is.not.empty;
+    });
+
+    it('should only suppress the immediately following line', async () => {
+      const yaml = '# yaml-language-server-disable\nfoo:\n\t- bar';
+      const result = await parseSetup(yaml);
+      expect(result.length).to.be.equal(1);
+      expect(result[0].range.start.line).to.equal(2);
+    });
+
+    it('should suppress unused anchor diagnostics', async () => {
+      const yaml = '# yaml-language-server-disable\nfoo: &bar bar\n';
+      const result = await parseSetup(yaml);
+      expect(result).to.be.empty;
+    });
+
+    it('should handle indented disable comments', async () => {
+      const yaml = 'foo:\n  # yaml-language-server-disable\n  \t- bar';
       const result = await parseSetup(yaml);
       expect(result).to.be.empty;
     });

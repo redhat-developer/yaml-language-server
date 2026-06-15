@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { getLineOffsets, removeDuplicatesObj } from '../src/languageservice/utils/arrUtils';
-import * as assert from 'assert';
+import assert from 'assert';
 
 describe('Array Utils Tests', () => {
   describe('Server - Array Utils', function () {

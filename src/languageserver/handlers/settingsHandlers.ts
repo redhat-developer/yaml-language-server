@@ -4,16 +4,19 @@
  *--------------------------------------------------------------------------------------------*/
 import { configure as configureHttpRequests, xhr } from 'request-light';
 import { Connection, DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
-import { convertErrorToTelemetryMsg } from '../../languageservice/utils/objects';
+import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
 import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
-import { checkSchemaURI, JSON_SCHEMASTORE_URL, KUBERNETES_SCHEMA_URL } from '../../languageservice/utils/schemaUrls';
-import { LanguageService, LanguageSettings, SchemaPriority } from '../../languageservice/yamlLanguageService';
+import { checkSchemaURI, EMPTY_SCHEMA_URL, isKubernetes, JSON_SCHEMASTORE_URL } from '../../languageservice/utils/schemaUrls';
+import { equals } from '../../languageservice/utils/objects';
+import { LanguageService, LanguageSettings, SchemaPriority, SchemasSettings } from '../../languageservice/yamlLanguageService';
 import { SchemaSelectionRequests } from '../../requestTypes';
 import { Settings, SettingsState } from '../../yamlSettings';
 import { Telemetry } from '../../languageservice/telemetry';
 import { ValidationHandler } from './validationHandlers';
 
 export class SettingsHandler {
+  private schemaSettings: SchemasSettings[] | undefined;
+
   constructor(
     private readonly connection: Connection,
     private readonly languageService: LanguageService,
@@ -28,7 +31,7 @@ export class SettingsHandler {
         // Register for all configuration changes.
         await this.connection.client.register(DidChangeConfigurationNotification.type);
       } catch (err) {
-        this.telemetry.sendError('yaml.settings.error', { error: convertErrorToTelemetryMsg(err) });
+        this.telemetry.sendError('yaml.settings.error', err);
       }
     }
     this.connection.onDidChangeConfiguration(() => this.pullConfiguration());
@@ -37,7 +40,13 @@ export class SettingsHandler {
   /**
    *  The server pull the 'yaml', 'http.proxy', 'http.proxyStrictSSL', '[yaml]' settings sections
    */
-  async pullConfiguration(): Promise<void> {
+  pullConfiguration(): Promise<void> {
+    const configurationPullPromise = this.doPullConfiguration();
+    this.yamlSettings.configurationPullPromise = configurationPullPromise.catch(() => undefined);
+    return configurationPullPromise;
+  }
+
+  private async doPullConfiguration(): Promise<void> {
     const config = await this.connection.workspace.getConfiguration([
       { section: 'yaml' },
       { section: 'http' },
@@ -72,19 +81,45 @@ export class SettingsHandler {
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hover')) {
         this.yamlSettings.yamlShouldHover = settings.yaml.hover;
       }
+      if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hoverAnchor')) {
+        this.yamlSettings.yamlShouldHoverAnchor = settings.yaml.hoverAnchor;
+      }
       if (Object.prototype.hasOwnProperty.call(settings.yaml, 'completion')) {
         this.yamlSettings.yamlShouldCompletion = settings.yaml.completion;
       }
+      if (Object.prototype.hasOwnProperty.call(settings.yaml, 'hoverSchemaSource')) {
+        this.yamlSettings.yamlHoverSchemaSource = settings.yaml.hoverSchemaSource;
+      }
+      if (Object.prototype.hasOwnProperty.call(settings.yaml, 'kubernetesVersion')) {
+        const match =
+          typeof settings.yaml.kubernetesVersion === 'string'
+            ? /^v?(\d+)\.(\d+)\.(\d+)$/i.exec(settings.yaml.kubernetesVersion.trim())
+            : undefined;
+        this.yamlSettings.kubernetesVersion = match ? `v${match[1]}.${match[2]}.${match[3]}` : undefined;
+      }
+      this.yamlSettings.yamlDisableSchemaDetection = Array.isArray(settings.yaml.disableSchemaDetection)
+        ? settings.yaml.disableSchemaDetection
+        : settings.yaml.disableSchemaDetection
+          ? [settings.yaml.disableSchemaDetection]
+          : [];
       this.yamlSettings.customTags = settings.yaml.customTags ? settings.yaml.customTags : [];
 
       this.yamlSettings.maxItemsComputed = Math.trunc(Math.max(0, Number(settings.yaml.maxItemsComputed))) || 5000;
 
       if (settings.yaml.schemaStore) {
         this.yamlSettings.schemaStoreEnabled = settings.yaml.schemaStore.enable;
-        if (settings.yaml.schemaStore.url.length !== 0) {
+        if (settings.yaml.schemaStore.url) {
           this.yamlSettings.schemaStoreUrl = settings.yaml.schemaStore.url;
         }
       }
+
+      if (settings.yaml.kubernetesCRDStore) {
+        this.yamlSettings.kubernetesCRDStoreEnabled = settings.yaml.kubernetesCRDStore.enable;
+        if (settings.yaml.kubernetesCRDStore.url?.length !== 0) {
+          this.yamlSettings.kubernetesCRDStoreUrl = settings.yaml.kubernetesCRDStore.url;
+        }
+      }
+
       if (settings.files?.associations) {
         for (const [ext, languageId] of Object.entries(settings.files.associations)) {
           if (languageId === 'yaml') {
@@ -106,6 +141,10 @@ export class SettingsHandler {
 
         if (settings.yaml.format.bracketSpacing !== undefined) {
           this.yamlSettings.yamlFormatterSettings.bracketSpacing = settings.yaml.format.bracketSpacing;
+        }
+
+        if (settings.yaml.format.trailingComma !== undefined) {
+          this.yamlSettings.yamlFormatterSettings.trailingComma = settings.yaml.format.trailingComma;
         }
 
         if (settings.yaml.format.enable !== undefined) {
@@ -142,7 +181,7 @@ export class SettingsHandler {
 
       const schemaObj = {
         fileMatch: Array.isArray(globPattern) ? globPattern : [globPattern],
-        uri: checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri, this.telemetry),
+        uri,
       };
       this.yamlSettings.schemaConfigurationSettings.push(schemaObj);
     }
@@ -160,7 +199,18 @@ export class SettingsHandler {
       if (enableFormatter) {
         if (!this.yamlSettings.formatterRegistration) {
           this.yamlSettings.formatterRegistration = this.connection.client.register(DocumentFormattingRequest.type, {
-            documentSelector: [{ language: 'yaml' }],
+            documentSelector: [
+              { language: 'yaml' },
+              { language: 'yaml-textmate' },
+              { language: 'yaml-tmlanguage' },
+              { language: 'ansible' },
+              { language: 'azure-pipelines' },
+              { language: 'dockercompose' },
+              { language: 'github-actions-workflow' },
+              { language: 'home-assistant' },
+              { language: 'manifest-yaml' },
+              { language: 'spring-boot-properties-yaml' },
+            ],
           });
         }
       } else if (this.yamlSettings.formatterRegistration) {
@@ -179,18 +229,13 @@ export class SettingsHandler {
    */
   private async setSchemaStoreSettingsIfNotSet(): Promise<void> {
     const schemaStoreIsSet = this.yamlSettings.schemaStoreSettings.length !== 0;
-    let schemaStoreUrl = '';
-    if (this.yamlSettings.schemaStoreUrl.length !== 0) {
-      schemaStoreUrl = this.yamlSettings.schemaStoreUrl;
-    } else {
-      schemaStoreUrl = JSON_SCHEMASTORE_URL;
-    }
+    const schemaStoreUrl = this.yamlSettings.schemaStoreUrl || JSON_SCHEMASTORE_URL;
 
     if (this.yamlSettings.schemaStoreEnabled && !schemaStoreIsSet) {
       try {
         const schemaStore = await this.getSchemaStoreMatchingSchemas(schemaStoreUrl);
         this.yamlSettings.schemaStoreSettings = schemaStore.schemas;
-      } catch (err) {
+      } catch {
         // ignore
       }
     } else if (!this.yamlSettings.schemaStoreEnabled) {
@@ -214,10 +259,21 @@ export class SettingsHandler {
 
     for (const schemaIndex in schemas.schemas) {
       const schema = schemas.schemas[schemaIndex];
-
-      if (schema && schema.fileMatch) {
-        for (const fileMatch in schema.fileMatch) {
-          const currFileMatch: string = schema.fileMatch[fileMatch];
+      if (!schema.url) {
+        continue;
+      }
+      const fileMatches = schema.fileMatch ?? [];
+      if (fileMatches.length === 0) {
+        languageSettings.schemas.push({
+          uri: schema.url,
+          fileMatch: [],
+          priority: SchemaPriority.SchemaStore,
+          name: schema.name,
+          description: schema.description,
+          versions: schema.versions,
+        });
+      } else {
+        for (const currFileMatch of fileMatches) {
           // If the schema is for files with a YAML extension, save the schema association
           if (
             this.yamlSettings.fileExtensions.findIndex((value) => {
@@ -247,6 +303,7 @@ export class SettingsHandler {
     let languageSettings: LanguageSettings = {
       validate: this.yamlSettings.yamlShouldValidate,
       hover: this.yamlSettings.yamlShouldHover,
+      hoverAnchor: this.yamlSettings.yamlShouldHoverAnchor,
       completion: this.yamlSettings.yamlShouldCompletion,
       schemas: [],
       customTags: this.yamlSettings.customTags,
@@ -259,7 +316,20 @@ export class SettingsHandler {
       flowSequence: this.yamlSettings.style?.flowSequence,
       yamlVersion: this.yamlSettings.yamlVersion,
       keyOrdering: this.yamlSettings.keyOrdering,
+      hoverSchemaSource: this.yamlSettings.yamlHoverSchemaSource,
     };
+
+    if (this.yamlSettings.yamlDisableSchemaDetection) {
+      if (Array.isArray(this.yamlSettings.yamlDisableSchemaDetection)) {
+        languageSettings = this.configureSchemas(
+          EMPTY_SCHEMA_URL,
+          this.yamlSettings.yamlDisableSchemaDetection,
+          true,
+          languageSettings,
+          SchemaPriority.SchemaDetectionDisabled
+        );
+      }
+    }
 
     if (this.yamlSettings.schemaAssociations) {
       if (Array.isArray(this.yamlSettings.schemaAssociations)) {
@@ -311,8 +381,22 @@ export class SettingsHandler {
 
     this.languageService.configure(languageSettings);
 
+    const shouldRefreshCodeLens = this.schemaSettings !== undefined && !equals(this.schemaSettings, languageSettings.schemas);
+    this.schemaSettings = languageSettings.schemas;
+    if (shouldRefreshCodeLens) {
+      this.refreshCodeLens();
+    }
     // Revalidate any open text documents
     this.yamlSettings.documents.all().forEach((document) => this.validationHandler.validate(document));
+  }
+
+  private refreshCodeLens(): void {
+    if (!this.yamlSettings.hasCodeLensRefreshSupport) {
+      return;
+    }
+    this.connection
+      .sendRequest(CodeLensRefreshRequest.type)
+      .catch((err) => this.telemetry.sendError('yaml.codeLens.refresh.error', err));
   }
 
   /**
@@ -322,7 +406,6 @@ export class SettingsHandler {
    * @param schema schema id
    * @param languageSettings current server settings
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private configureSchemas(
     uri: string,
     fileMatch: string[],
@@ -330,7 +413,13 @@ export class SettingsHandler {
     languageSettings: LanguageSettings,
     priorityLevel: number
   ): LanguageSettings {
-    uri = checkSchemaURI(this.yamlSettings.workspaceFolders, this.yamlSettings.workspaceRoot, uri, this.telemetry);
+    uri = checkSchemaURI(
+      this.yamlSettings.workspaceFolders,
+      this.yamlSettings.workspaceRoot,
+      uri,
+      this.telemetry,
+      this.yamlSettings.kubernetesVersion
+    );
 
     if (schema === null) {
       languageSettings.schemas.push({ uri, fileMatch: fileMatch, priority: priorityLevel });
@@ -338,12 +427,14 @@ export class SettingsHandler {
       languageSettings.schemas.push({ uri, fileMatch: fileMatch, schema: schema, priority: priorityLevel });
     }
 
-    if (fileMatch.constructor === Array && uri === KUBERNETES_SCHEMA_URL) {
-      fileMatch.forEach((url) => {
-        this.yamlSettings.specificValidatorPaths.push(url);
-      });
-    } else if (uri === KUBERNETES_SCHEMA_URL) {
-      this.yamlSettings.specificValidatorPaths.push(fileMatch);
+    if (isKubernetes(uri)) {
+      if (Array.isArray(fileMatch)) {
+        fileMatch.forEach((pattern) => {
+          this.yamlSettings.specificValidatorPaths.push(pattern);
+        });
+      } else {
+        this.yamlSettings.specificValidatorPaths.push(fileMatch);
+      }
     }
 
     return languageSettings;

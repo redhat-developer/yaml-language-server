@@ -3,16 +3,21 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as sinon from 'sinon';
-import * as sinonChai from 'sinon-chai';
+import sinonChai from 'sinon-chai';
 import * as chai from 'chai';
 import { YamlCodeLens } from '../src/languageservice/services/yamlCodeLens';
 import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
 import { setupTextDocument } from './utils/testHelper';
 import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { CodeLens, Command, Range } from 'vscode-languageserver-protocol';
+import { Connection } from 'vscode-languageserver';
 import { YamlCommands } from '../src/commands';
 import { TelemetryImpl } from '../src/languageserver/telemetry';
 import { Telemetry } from '../src/languageservice/telemetry';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import { LanguageService } from '../src/languageservice/yamlLanguageService';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -74,6 +79,44 @@ describe('YAML CodeLens', () => {
     expect(result[0].command).is.deep.equal(
       createCommand('schema.json', YamlCommands.JUMP_TO_SCHEMA, 'some://url/to/schema.json')
     );
+  });
+
+  it('should wait for configuration update before providing CodeLens', async () => {
+    const doc = setupTextDocument('foo: bar');
+    const expected = createCodeLens('schema.json', YamlCommands.JUMP_TO_SCHEMA, 'some://url/to/schema.json');
+    const yamlSettings = new SettingsState();
+    yamlSettings.documents = new TextDocumentTestManager();
+    (yamlSettings.documents as TextDocumentTestManager).set(doc);
+
+    let resolveConfiguration: () => void = () => undefined;
+    yamlSettings.configurationPullPromise = new Promise<void>((resolve) => {
+      resolveConfiguration = resolve;
+    });
+
+    const getCodeLensStub = sandbox.stub().returns([expected]);
+    const languageService = {
+      getCodeLens: getCodeLensStub,
+    } as unknown as LanguageService;
+    const codeLensHandler = new LanguageHandlers({} as Connection, languageService, yamlSettings, {} as ValidationHandler);
+
+    const response = Promise.resolve(
+      codeLensHandler.codeLensHandler({
+        textDocument: { uri: doc.uri },
+      })
+    );
+    let settled = false;
+    response.then(() => {
+      settled = true;
+    });
+
+    await Promise.resolve();
+    expect(settled).to.be.false;
+    expect(getCodeLensStub).not.called;
+
+    resolveConfiguration();
+    const result = await response;
+    expect(getCodeLensStub).calledOnceWithExactly(doc);
+    expect(result).deep.equal([expected]);
   });
 
   it('should place one CodeLens at beginning of the file for multiple documents', async () => {

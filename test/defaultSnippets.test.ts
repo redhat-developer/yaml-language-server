@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { toFsPath, setupSchemaIDTextDocument, setupLanguageService, caretPosition } from './utils/testHelper';
-import assert = require('assert');
-import path = require('path');
+import assert from 'assert';
+import * as path from 'path';
 import { ServiceSetup } from './utils/serviceSetup';
 import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
@@ -252,7 +252,6 @@ describe('Default Snippet Tests', () => {
         .then(function (result) {
           assert.equal(result.items.length, 1);
           assert.equal(result.items[0].label, 'apply-manifests');
-          // eslint-disable-next-line
           assert.equal(
             result.items[0].insertText,
             '\n  name: $1\n  taskRef:\n    name: apply-manifests\n  resources:\n    inputs:\n      - name: source\n        resource: $3\n  params:\n    - name: manifest_dir\n      value: $2'
@@ -268,7 +267,6 @@ describe('Default Snippet Tests', () => {
         .then(function (result) {
           assert.equal(result.items.length, 15); // This is just checking the total number of snippets in the defaultSnippets.json
           assert.equal(result.items[4].label, 'longSnippet');
-          // eslint-disable-next-line
           assert.equal(
             result.items[4].insertText,
             'longSnippet:\n  name: $1\n  taskRef:\n    name: apply-manifests\n  resources:\n    inputs:\n      - name: source\n        resource: $3\n  params:\n    - name: manifest_dir\n      value: $2'

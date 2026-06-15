@@ -6,14 +6,17 @@
 import * as chai from 'chai';
 import * as request from 'request-light';
 import * as sinon from 'sinon';
-import * as sinonChai from 'sinon-chai';
+import sinonChai from 'sinon-chai';
 import { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver';
+import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
+import { URI } from 'vscode-uri';
 import { LanguageService, LanguageSettings, SchemaConfiguration, SchemaPriority } from '../src';
 import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers';
 import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import { EMPTY_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
 import { Telemetry } from '../src/languageservice/telemetry';
 import { SettingsState } from '../src/yamlSettings';
-import { setupLanguageService } from './utils/testHelper';
+import { TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument, setupTextDocument } from './utils/testHelper';
 import { TestWorkspace } from './utils/testsTypes';
 
 const expect = chai.expect;
@@ -77,6 +80,54 @@ describe('Settings Handlers Tests', () => {
     expect(connection.client.register).calledOnce;
   });
 
+  it('should request CodeLens refresh after schema settings update if client supports it', async () => {
+    settingsState.hasCodeLensRefreshSupport = true;
+    const sendRequest = sandbox.stub().resolves();
+    connection.sendRequest = sendRequest;
+    workspaceStub.getConfiguration.onFirstCall().resolves([{ schemaStore: { enable: false } }, {}, {}, {}, {}]);
+    workspaceStub.getConfiguration
+      .onSecondCall()
+      .resolves([
+        { schemas: { 'https://example.com/schema.json': 'test.yaml' }, schemaStore: { enable: false } },
+        {},
+        {},
+        {},
+        {},
+      ]);
+    const settingsHandler = new SettingsHandler(
+      connection,
+      languageService as unknown as LanguageService,
+      settingsState,
+      validationHandler as unknown as ValidationHandler,
+      {} as Telemetry
+    );
+    await settingsHandler.pullConfiguration();
+    await settingsHandler.pullConfiguration();
+    expect(sendRequest).calledOnceWithExactly(CodeLensRefreshRequest.type);
+  });
+
+  it('should not request CodeLens refresh when only non-schema settings update', async () => {
+    settingsState.hasCodeLensRefreshSupport = true;
+    const sendRequest = sandbox.stub().resolves();
+    connection.sendRequest = sendRequest;
+    const yamlSettings = {
+      schemas: { 'https://example.com/schema.json': 'test.yaml' },
+      schemaStore: { enable: false },
+    };
+    workspaceStub.getConfiguration.onFirstCall().resolves([yamlSettings, {}, {}, {}, {}]);
+    workspaceStub.getConfiguration.onSecondCall().resolves([{ ...yamlSettings, keyOrdering: true }, {}, {}, {}, {}]);
+    const settingsHandler = new SettingsHandler(
+      connection,
+      languageService as unknown as LanguageService,
+      settingsState,
+      validationHandler as unknown as ValidationHandler,
+      {} as Telemetry
+    );
+    await settingsHandler.pullConfiguration();
+    await settingsHandler.pullConfiguration();
+    expect(sendRequest).not.called;
+  });
+
   describe('Settings for YAML style should ', () => {
     it(' reflect to the settings ', async () => {
       const settingsHandler = new SettingsHandler(
@@ -138,6 +189,56 @@ describe('Settings Handlers Tests', () => {
       await settingsHandler.pullConfiguration();
       expect(settingsState.style).to.exist;
       expect(settingsState.keyOrdering).to.be.false;
+    });
+  });
+
+  describe('Settings for Kubernetes version should ', () => {
+    it('accepts versions with or without a v prefix', async () => {
+      const settingsHandler = new SettingsHandler(
+        connection,
+        languageService as unknown as LanguageService,
+        settingsState,
+        validationHandler as unknown as ValidationHandler,
+        {} as Telemetry
+      );
+
+      workspaceStub.getConfiguration
+        .onFirstCall()
+        .resolves([{ kubernetesVersion: '1.36.1' }, {}, {}, {}, {}])
+        .onSecondCall()
+        .resolves([{ kubernetesVersion: 'v1.37.2' }, {}, {}, {}, {}]);
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.kubernetesVersion).to.equal('v1.36.1');
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.kubernetesVersion).to.equal('v1.37.2');
+    });
+
+    it('resolves to undefined for invalid or removed values so the default version is used', async () => {
+      const settingsHandler = new SettingsHandler(
+        connection,
+        languageService as unknown as LanguageService,
+        settingsState,
+        validationHandler as unknown as ValidationHandler,
+        {} as Telemetry
+      );
+      workspaceStub.getConfiguration
+        .onFirstCall()
+        .resolves([{ kubernetesVersion: '1.36.1' }, {}, {}, {}, {}])
+        .onSecondCall()
+        .resolves([{ kubernetesVersion: 'invalid' }, {}, {}, {}, {}])
+        .onThirdCall()
+        .resolves([{}, {}, {}, {}, {}]);
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.kubernetesVersion).to.equal('v1.36.1');
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.kubernetesVersion).to.equal(undefined);
+
+      await settingsHandler.pullConfiguration();
+      expect(settingsState.kubernetesVersion).to.equal(undefined);
     });
   });
 
@@ -226,6 +327,37 @@ describe('Settings Handlers Tests', () => {
         versions: undefined,
       });
     });
+    it('SettingsHandler should include schemas without file matches as selectable schemas', async () => {
+      const languageServerSetup = setupLanguageService({});
+      const languageService = languageServerSetup.languageService;
+      xhrStub.resolves({
+        responseText: `{"schemas": [
+        {
+          "name": "Traefik v3",
+          "description": "Traefik v3 YAML configuration file",
+          "url": "https://www.schemastore.org/traefik-v3.json"
+        }]}`,
+      });
+      const settingsHandler = new SettingsHandler(
+        connection,
+        languageService as unknown as LanguageService,
+        settingsState,
+        validationHandler as unknown as ValidationHandler,
+        {} as Telemetry
+      );
+      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      const configureSpy = sinon.stub(languageService, 'configure');
+      await settingsHandler.pullConfiguration();
+      configureSpy.restore();
+      expect(settingsState.schemaStoreSettings).deep.include({
+        uri: 'https://www.schemastore.org/traefik-v3.json',
+        fileMatch: [],
+        priority: SchemaPriority.SchemaStore,
+        name: 'Traefik v3',
+        description: 'Traefik v3 YAML configuration file',
+        versions: undefined,
+      });
+    });
   });
 
   it('SettingsHandler should not modify file match patterns', async () => {
@@ -262,6 +394,127 @@ describe('Settings Handlers Tests', () => {
       name: '.adonisrc.json',
       description: 'AdonisJS configuration file',
       versions: undefined,
+    });
+  });
+
+  describe('Schema URI normalization', () => {
+    const testSchemaFileMatch = ['foo/*.yml'];
+
+    async function configureSchemaSettingsTest(): Promise<LanguageSettings> {
+      const telemetry = { send: sinon.stub(), sendError: sinon.stub() } as unknown as Telemetry;
+      const settingsHandler = new SettingsHandler(
+        connection,
+        languageService,
+        settingsState,
+        validationHandler as unknown as ValidationHandler,
+        telemetry
+      );
+      const configureSpy = sinon.spy(languageService, 'configure');
+      await settingsHandler.pullConfiguration();
+      configureSpy.restore();
+      return configureSpy.args[0][0];
+    }
+
+    it('Schema Settings should normalize absolute local paths', async () => {
+      xhrStub.resolves({
+        responseText: '{"schemas":[]}',
+      });
+      const absoluteSchemaPath = '/Users/test/schemas/schema.json';
+      const schemas = {};
+      schemas[absoluteSchemaPath] = testSchemaFileMatch;
+      workspaceStub.getConfiguration.resolves([{ schemas: schemas }, {}, {}, {}]);
+      const configureSpy = await configureSchemaSettingsTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: URI.file(absoluteSchemaPath).toString(),
+        fileMatch: testSchemaFileMatch,
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
+    });
+
+    it('Schema Settings should preserve fragments when normalizing absolute local paths', async () => {
+      xhrStub.resolves({
+        responseText: '{"schemas":[]}',
+      });
+      const absoluteSchemaPath = '/Users/test/schemas/schema.json';
+      const schemaUri = `${absoluteSchemaPath}#/definitions/foo`;
+      const schemas = {};
+      schemas[schemaUri] = testSchemaFileMatch;
+      workspaceStub.getConfiguration.resolves([{ schemas: schemas }, {}, {}, {}]);
+      const configureSpy = await configureSchemaSettingsTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: `${URI.file(absoluteSchemaPath).toString()}#/definitions/foo`,
+        fileMatch: testSchemaFileMatch,
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
+    });
+
+    it('Schema Settings should preserve remote schema URLs', async () => {
+      xhrStub.resolves({
+        responseText: '{"schemas":[]}',
+      });
+      const schemaUri = 'https://example.com/schemas/schema.json#/definitions/foo';
+      const schemas = {};
+      schemas[schemaUri] = testSchemaFileMatch;
+      workspaceStub.getConfiguration.resolves([{ schemas: schemas }, {}, {}, {}]);
+      const configureSpy = await configureSchemaSettingsTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: schemaUri,
+        fileMatch: testSchemaFileMatch,
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
+    });
+
+    it('Schema Settings should treat direct Kubernetes standalone-strict/all.json URLs as Kubernetes associations', async () => {
+      xhrStub.resolves({
+        responseText: '{"schemas":[]}',
+      });
+      const schemaUri =
+        'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.9-standalone-strict/all.json';
+      const schemas = {};
+      schemas[schemaUri] = ['*.yaml'];
+      workspaceStub.getConfiguration.resolves([{ schemas }, {}, {}, {}]);
+      const configureSpy = await configureSchemaSettingsTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: schemaUri,
+        fileMatch: ['*.yaml'],
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
+      expect(settingsState.specificValidatorPaths).deep.include('*.yaml');
+    });
+
+    it('Schema Settings should normalize multiple absolute local paths for the same file', async () => {
+      xhrStub.resolves({
+        responseText: '{"schemas":[]}',
+      });
+      const schemaPath1 = '/Users/test/schemas/schema1.json';
+      const schemaPath2 = '/Users/test/schemas/schema2.json';
+      const fileMatch = ['asdf.yaml'];
+      const schemas = {};
+      schemas[schemaPath1] = fileMatch;
+      schemas[schemaPath2] = fileMatch;
+      workspaceStub.getConfiguration.resolves([{ schemas }, {}, {}, {}]);
+      const configureSpy = await configureSchemaSettingsTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: URI.file(schemaPath1).toString(),
+        fileMatch,
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
+      expect(configureSpy.schemas).deep.include({
+        uri: URI.file(schemaPath2).toString(),
+        fileMatch,
+        schema: undefined,
+        priority: SchemaPriority.Settings,
+      });
     });
   });
 
@@ -308,6 +561,54 @@ describe('Settings Handlers Tests', () => {
       });
     });
 
+    it('SchemaDetectionDisabled should have a priority', async () => {
+      xhrStub.resolves({
+        responseText: `{"schemas": [
+      {
+        "name": ".adonisrc.json",
+        "description": "AdonisJS configuration file",
+        "fileMatch": [
+          ".adonisrc.yaml"
+        ],
+        "url": "https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json"
+      }]}`,
+      });
+      const disabledSchemaFileMatch = ['foo/*.yml'];
+      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: disabledSchemaFileMatch }, {}, {}, {}, {}]);
+      const configureSpy = await configureSchemaPriorityTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: EMPTY_SCHEMA_URL,
+        fileMatch: disabledSchemaFileMatch,
+        schema: true,
+        priority: SchemaPriority.SchemaDetectionDisabled,
+      });
+    });
+
+    it('SchemaDetectionDisabled should accept a single file match string', async () => {
+      xhrStub.resolves({
+        responseText: `{"schemas": [
+      {
+        "name": ".adonisrc.json",
+        "description": "AdonisJS configuration file",
+        "fileMatch": [
+          ".adonisrc.yaml"
+        ],
+        "url": "https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json"
+      }]}`,
+      });
+      const disabledSchemaFileMatch = 'foo/*.yml';
+      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: disabledSchemaFileMatch }, {}, {}, {}, {}]);
+      const configureSpy = await configureSchemaPriorityTest();
+
+      expect(configureSpy.schemas).deep.include({
+        uri: EMPTY_SCHEMA_URL,
+        fileMatch: [disabledSchemaFileMatch],
+        schema: true,
+        priority: SchemaPriority.SchemaDetectionDisabled,
+      });
+    });
+
     it('Schema Associations should have a priority when schema association is an array', async () => {
       xhrStub.resolves({
         responseText: `{"schemas": [
@@ -350,6 +651,111 @@ describe('Settings Handlers Tests', () => {
         fileMatch: testSchemaFileMatch,
         priority: SchemaPriority.SchemaAssociation,
       });
+    });
+  });
+
+  describe('Test disableSchemaDetection validation behavior', () => {
+    const restrictiveSchema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        allowed: {
+          type: 'string',
+        },
+      },
+    };
+
+    it('disableSchemaDetection should suppress yaml.schemas validation', async () => {
+      const schemaUri = 'file:///schemas/schema-detection-disable-settings.json';
+      const schemaProvider = TestCustomSchemaProvider.instance();
+      schemaProvider.addSchemaWithUri('disableSchemaDetection-settings', schemaUri, restrictiveSchema);
+      xhrStub.resolves({ responseText: '{"schemas":[]}' });
+      const schemas = {};
+      schemas[schemaUri] = 'test.yaml';
+      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: ['test.yaml'], schemas }, {}, {}, {}, {}]);
+
+      try {
+        await new SettingsHandler(
+          connection,
+          languageService,
+          settingsState,
+          validationHandler as unknown as ValidationHandler,
+          {} as Telemetry
+        ).pullConfiguration();
+
+        const result = await languageService.doValidation(setupTextDocument('foo: bar'), false);
+
+        expect(result).length(0);
+      } finally {
+        schemaProvider.deleteSchema('disableSchemaDetection-settings');
+      }
+    });
+
+    it('disableSchemaDetection should suppress SchemaStore validation', async () => {
+      const schemaUri = 'file:///schemas/github-workflow.json';
+      const githubWorkflowFileMatch = ['.github/workflows/*.yml'];
+      const schemaProvider = TestCustomSchemaProvider.instance();
+      schemaProvider.addSchemaWithUri('disableSchemaDetection-github-actions', schemaUri, restrictiveSchema);
+      xhrStub.resolves({
+        responseText: JSON.stringify({
+          schemas: [
+            {
+              name: 'GitHub Workflow',
+              description: 'GitHub Actions workflow schema',
+              fileMatch: githubWorkflowFileMatch,
+              url: schemaUri,
+            },
+          ],
+        }),
+      });
+      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: githubWorkflowFileMatch }, {}, {}, {}, {}]);
+
+      try {
+        await new SettingsHandler(
+          connection,
+          languageService,
+          settingsState,
+          validationHandler as unknown as ValidationHandler,
+          {} as Telemetry
+        ).pullConfiguration();
+
+        const result = await languageService.doValidation(
+          setupSchemaIDTextDocument('foo: bar', 'file:///workspace/.github/workflows/build.yml'),
+          false
+        );
+
+        expect(result).length(0);
+      } finally {
+        schemaProvider.deleteSchema('disableSchemaDetection-github-actions');
+      }
+    });
+
+    it('disableSchemaDetection should not suppress modeline validation', async () => {
+      const schemaUri = 'file:///schemas/schema-detection-disable-modeline.json';
+      const schemaProvider = TestCustomSchemaProvider.instance();
+      schemaProvider.addSchemaWithUri('disableSchemaDetection-modeline', schemaUri, restrictiveSchema);
+      xhrStub.resolves({ responseText: '{"schemas":[]}' });
+      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: ['test.yaml'] }, {}, {}, {}, {}]);
+
+      try {
+        await new SettingsHandler(
+          connection,
+          languageService,
+          settingsState,
+          validationHandler as unknown as ValidationHandler,
+          {} as Telemetry
+        ).pullConfiguration();
+
+        const result = await languageService.doValidation(
+          setupTextDocument(`# yaml-language-server: $schema=${schemaUri}\nfoo: bar`),
+          false
+        );
+
+        expect(result).length(1);
+        expect(result[0].message).to.equal('Property foo is not allowed.');
+      } finally {
+        schemaProvider.deleteSchema('disableSchemaDetection-modeline');
+      }
     });
   });
 
