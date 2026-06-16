@@ -29,37 +29,37 @@ Starting from `1.0.0` the language server uses [eemeli/yaml](https://github.com/
 
 The following settings are supported:
 
-| Setting | Default | Description |
-| --- | --- | --- |
-| `yaml.yamlVersion` | `1.2` | Set default YAML spec version (`1.2` or `1.1`). |
-| `yaml.format.enable` | `true` | Enable/disable default YAML formatter (requires restart). |
-| `yaml.format.singleQuote` | `false` | Use single quotes instead of double quotes. |
-| `yaml.format.bracketSpacing` | `true` | Print spaces between brackets in objects. |
-| `yaml.format.proseWrap` | `preserve` | `always`: wrap prose if it exceeds the print width; `never`: never wrap prose; `preserve`: wrap prose as-is. |
-| `yaml.format.printWidth` | `80` | Specify the line length that the printer will wrap on. |
-| `yaml.validate` | `true` | Enable/disable validation feature. |
-| `yaml.hover` | `true` | Enable/disable hover. |
-| `yaml.completion` | `true` | Enable/disable autocompletion. |
-| `yaml.schemas` | none | Helps you associate schemas with files in a glob pattern. |
-| `yaml.kubernetesVersion` | unset; Kubernetes schema keyword falls back to `v1.34.1` | Kubernetes version used to build the schema URL when `yaml.schemas` maps files to the `Kubernetes` keyword. |
-| `yaml.disableSchemaDetection` | `[]` | Disables schema detection for matching YAML files. Modelines still apply. |
-| `yaml.schemaStore.enable` | `true` | When set to true the YAML language server will pull in all available schemas from [JSON Schema Store](https://www.schemastore.org). |
-| `yaml.schemaStore.url` | `https://www.schemastore.org/api/json/catalog.json` | URL of a schema store catalog to use when downloading schemas. |
-| `yaml.kubernetesCRDStore.enable` | `true` | When set to true the YAML language server will parse Kubernetes CRDs automatically and download them from the [CRD store](https://github.com/datreeio/CRDs-catalog). |
-| `yaml.kubernetesCRDStore.url` | `https://raw.githubusercontent.com/datreeio/CRDs-catalog/main` | URL of a CRD store catalog to use when downloading schemas. |
-| `yaml.customTags` | `[]` | Array of custom tags that the parser will validate against. It has three ways to be used. A tag without a type, such as `!Ref`, is treated as a scalar tag. A tag with a node type, such as `!Ref sequence`, specifies the YAML node type that the tag is written on. A tag with a node type and return type, such as `!FindInMap sequence:string`, also specifies the schema type that the tagged value evaluates to. Supported node types are scalar, sequence, and mapping. Supported return types are string, number, integer, boolean, null, array, and object. The return type aliases scalar, sequence, and mapping are accepted as string, array, and object. |
-| `yaml.maxItemsComputed` | `5000` | The maximum number of outline symbols and folding regions computed (limited for performance reasons). |
-| `[yaml].editor.tabSize` | `2` | The number of spaces to use when autocompleting. Takes priority over `editor.tabSize`. |
-| `editor.tabSize` | `2` | The number of spaces to use when autocompleting. |
-| `http.proxy` | unset | The URL of the proxy server that will be used when attempting to download a schema. If it is not set or it is undefined no proxy server will be used. |
-| `http.proxyStrictSSL` | `false` | If true the proxy server certificate should be verified against the list of supplied CAs. |
-| `[yaml].editor.formatOnType` | client default | Enable/disable on type indent and auto formatting array. |
-| `yaml.disableDefaultProperties` | `false` | Disable adding not required properties with default values into completion text. |
-| `yaml.suggest.parentSkeletonSelectedFirst` | `false` | If true, the user must select some parent skeleton first before autocompletion starts to suggest the rest of the properties. When yaml object is not empty, autocompletion ignores this setting and returns all properties and skeletons. |
-| `yaml.style.flowMapping` | `allow` | Forbids flow style mappings if set to `forbid`. |
-| `yaml.style.flowSequence` | `allow` | Forbids flow style sequences if set to `forbid`. |
-| `yaml.keyOrdering` | `false` | Enforces alphabetical ordering of keys in mappings when set to `true`. |
-| `yaml.hoverSchemaSource` | `true` | Enable/disable showing the schema source in hover tooltips. |
+| Setting | Description |
+| --- | --- |
+| `yaml.yamlVersion` (default: `1.2`) | Set default YAML spec version (`1.2` or `1.1`). |
+| `yaml.format.enable` (default: `true`) | Enable/disable default YAML formatter (requires restart). |
+| `yaml.format.singleQuote` (default: `false`) | Use single quotes instead of double quotes. |
+| `yaml.format.bracketSpacing` (default: `true`) | Print spaces between brackets in objects. |
+| `yaml.format.proseWrap` (default: `preserve`) | `always`: wrap prose if it exceeds the print width; `never`: never wrap prose; `preserve`: wrap prose as-is. |
+| `yaml.format.printWidth` (default: `80`) | Specify the line length that the printer will wrap on. |
+| `yaml.validate` (default: `true`) | Enable/disable validation feature. |
+| `yaml.hover` (default: `true`) | Enable/disable hover. |
+| `yaml.completion` (default: `true`) | Enable/disable autocompletion. |
+| `yaml.schemas` (default: none) | Helps you associate schemas with files in a glob pattern. |
+| `yaml.kubernetesVersion` (default: unset; Kubernetes schema keyword falls back to `v1.34.1`) | Kubernetes version used to build the schema URL when `yaml.schemas` maps files to the `Kubernetes` keyword. |
+| `yaml.disableSchemaDetection` (default: `[]`) | Disables schema detection for matching YAML files. Modelines still apply. |
+| `yaml.schemaStore.enable` (default: `true`) | When set to true the YAML language server will pull in all available schemas from [JSON Schema Store](https://www.schemastore.org). |
+| `yaml.schemaStore.url` (default: `https://www.schemastore.org/api/json/catalog.json`) | URL of a schema store catalog to use when downloading schemas. |
+| `yaml.kubernetesCRDStore.enable` (default: `true`) | When set to true the YAML language server will parse Kubernetes CRDs automatically and download them from the [CRD store](https://github.com/datreeio/CRDs-catalog). |
+| `yaml.kubernetesCRDStore.url` (default: `https://raw.githubusercontent.com/datreeio/CRDs-catalog/main`) | URL of a CRD store catalog to use when downloading schemas. |
+| `yaml.customTags` (default: `[]`) | Array of custom tags that the parser will validate against. It has three ways to be used. A tag without a type, such as `!Ref`, is treated as a scalar tag. A tag with a node type, such as `!Ref sequence`, specifies the YAML node type that the tag is written on. A tag with a node type and return type, such as `!FindInMap sequence:string`, also specifies the schema type that the tagged value evaluates to. Supported node types are scalar, sequence, and mapping. Supported return types are string, number, integer, boolean, null, array, and object. The return type aliases scalar, sequence, and mapping are accepted as string, array, and object. |
+| `yaml.maxItemsComputed` (default: `5000`) | The maximum number of outline symbols and folding regions computed (limited for performance reasons). |
+| `[yaml].editor.tabSize` (default: `2`) | The number of spaces to use when autocompleting. Takes priority over `editor.tabSize`. |
+| `editor.tabSize` (default: `2`) | The number of spaces to use when autocompleting. |
+| `http.proxy` (default: unset) | The URL of the proxy server that will be used when attempting to download a schema. If it is not set or it is undefined no proxy server will be used. |
+| `http.proxyStrictSSL` (default: `false`) | If true the proxy server certificate should be verified against the list of supplied CAs. |
+| `[yaml].editor.formatOnType` (default: client default) | Enable/disable on type indent and auto formatting array. |
+| `yaml.disableDefaultProperties` (default: `false`) | Disable adding not required properties with default values into completion text. |
+| `yaml.suggest.parentSkeletonSelectedFirst` (default: `false`) | If true, the user must select some parent skeleton first before autocompletion starts to suggest the rest of the properties. When yaml object is not empty, autocompletion ignores this setting and returns all properties and skeletons. |
+| `yaml.style.flowMapping` (default: `allow`) | Forbids flow style mappings if set to `forbid`. |
+| `yaml.style.flowSequence` (default: `allow`) | Forbids flow style sequences if set to `forbid`. |
+| `yaml.keyOrdering` (default: `false`) | Enforces alphabetical ordering of keys in mappings when set to `true`. |
+| `yaml.hoverSchemaSource` (default: `true`) | Enable/disable showing the schema source in hover tooltips. |
 
 ## Suppressing diagnostics
 
