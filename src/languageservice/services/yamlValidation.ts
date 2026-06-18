@@ -10,7 +10,7 @@ import { YAMLDocument, YamlVersion, SingleYAMLDocument } from '../parser/yamlPar
 import { YAMLSchemaService } from './yamlSchemaService';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
+import { JSONValidation } from '../jsonLanguageService/services/jsonValidation';
 import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
 import { TextBuffer } from '../utils/textBuffer';
 import { filterSuppressedDiagnostics } from '../utils/diagnostic-filter';

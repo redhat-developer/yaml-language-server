@@ -6,8 +6,8 @@
 
 import { SymbolInformation, DocumentSymbol } from 'vscode-languageserver-types';
 import { YAMLSchemaService } from './yamlSchemaService';
-import { JSONDocumentSymbols } from 'vscode-json-languageservice/lib/umd/services/jsonDocumentSymbols';
-import { DocumentSymbolsContext } from 'vscode-json-languageservice/lib/umd/jsonLanguageTypes';
+import { JSONDocumentSymbols } from '../jsonLanguageService/services/jsonDocumentSymbols';
+import { DocumentSymbolsContext } from '../jsonLanguageService/jsonLanguageTypes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { Telemetry } from '../telemetry';

@@ -259,12 +259,10 @@ describe('JSON Schema', () => {
     });
 
     const resolvedSchema = await service.getResolvedSchema('https://myschemastore/main/schema.json');
-    assert.strictEqual(resolvedSchema.schema.properties['bar'].description, 'bar desc');
-    assert.strictEqual(
-      resolvedSchema.schema.properties['bar'].markdownDescription,
-      'bar md desc **bold** \n * line \n* another \n\n'
-    );
-    assert.deepStrictEqual(resolvedSchema.schema.properties['bar'].enum, ['potato', 'carrot']);
+    const barSchema = resolvedSchema.schema.properties['bar'] as JsonSchema.JSONSchema;
+    assert.strictEqual(barSchema.description, 'bar desc');
+    assert.strictEqual(barSchema.markdownDescription, 'bar md desc **bold** \n * line \n* another \n\n');
+    assert.deepStrictEqual(barSchema.enum, ['potato', 'carrot']);
   });
 
   describe('Compound Schema Documents', () => {
@@ -820,7 +818,7 @@ address:
     });
 
     const fs = await service.getResolvedSchema(KUBERNETES_SCHEMA_URL);
-    assert.deepEqual(fs.schema.oneOf[1].properties['foobar'], ['hello', 'world']);
+    assert.deepEqual((fs.schema.oneOf[1] as JsonSchema.JSONSchema).properties['foobar'], ['hello', 'world']);
   });
 
   it('Deleting schema works with Kubernetes resolution', async () => {
@@ -835,7 +833,7 @@ address:
     });
 
     const fs = await service.getResolvedSchema(KUBERNETES_SCHEMA_URL);
-    assert.equal(fs.schema.oneOf[1].properties, undefined);
+    assert.equal((fs.schema.oneOf[1] as JsonSchema.JSONSchema).properties, undefined);
   });
 
   it('Adding a brand new schema', async () => {

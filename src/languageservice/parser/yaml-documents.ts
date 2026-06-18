@@ -8,7 +8,7 @@ import { JSONDocument } from './jsonDocument';
 import { CST, Document, isNode, isPair, isScalar, LineCounter, Node, visit, YAMLError } from 'yaml';
 import { ASTNode, YamlNode } from '../jsonASTTypes';
 import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07';
-import { ErrorCode } from 'vscode-json-languageservice';
+import { ErrorCode } from '../jsonLanguageService/jsonLanguageTypes';
 import { convertAST } from './ast-converter';
 import { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { isArrayEqual } from '../utils/arrUtils';

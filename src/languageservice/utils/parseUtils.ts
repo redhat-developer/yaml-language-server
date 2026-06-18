@@ -1,4 +1,4 @@
-import { ErrorCode } from 'vscode-json-languageservice/lib/umd/jsonLanguageTypes';
+import { ErrorCode } from '../jsonLanguageService/jsonLanguageTypes';
 export const DUPLICATE_KEY_REASON = 'duplicate key';
 
 /**

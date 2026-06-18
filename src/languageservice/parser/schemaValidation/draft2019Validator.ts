@@ -9,7 +9,7 @@ import type { ASTNode, ArrayASTNode, ObjectASTNode } from '../../jsonASTTypes';
 import { isNumber } from '../../utils/objects';
 import * as l10n from '@vscode/l10n';
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
-import { ErrorCode } from 'vscode-json-languageservice';
+import { ErrorCode } from '../../jsonLanguageService/jsonLanguageTypes';
 import { Draft07Validator } from './draft07Validator';
 import { ValidationResult, asSchema } from './baseValidator';
 import type { ISchemaCollector, Options } from './baseValidator';

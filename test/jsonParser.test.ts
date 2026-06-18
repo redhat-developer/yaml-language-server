@@ -9,7 +9,10 @@ import { JSONDocument } from '../src/languageservice/parser/jsonDocument';
 import { getNodeValue } from '../src/languageservice/parser/astNodeUtils';
 import * as JsonSchema from './../src/languageservice/jsonSchema';
 import { ASTNode, ObjectASTNode } from './../src/languageservice/jsonASTTypes';
-import { ErrorCode, getLanguageService } from 'vscode-json-languageservice';
+import { parse as parseJSON } from '../src/languageservice/jsonLanguageService/parser/jsonParser';
+import { JSONValidation } from '../src/languageservice/jsonLanguageService/services/jsonValidation';
+import { JSONSchemaService } from '../src/languageservice/jsonLanguageService/services/jsonSchemaService';
+import { ErrorCode } from '../src/languageservice/jsonLanguageService/jsonLanguageTypes';
 import { Diagnostic, TextDocument, Range } from 'vscode-languageserver-types';
 
 describe('JSON Parser', () => {
@@ -36,8 +39,7 @@ describe('JSON Parser', () => {
   function toDocument(text: string): { textDoc: TextDocument; jsonDoc: JSONDocument } {
     const textDoc = TextDocument.create('foo://bar/file.json', 'json', 0, text);
 
-    const ls = getLanguageService({});
-    const jsonDoc = ls.parseJSONDocument(textDoc) as JSONDocument;
+    const jsonDoc = parseJSON(textDoc, { collectComments: true }) as JSONDocument;
     return { textDoc, jsonDoc };
   }
 
@@ -1915,16 +1917,16 @@ describe('JSON Parser', () => {
   it('validate API', async function () {
     const { textDoc, jsonDoc } = toDocument('{ "pages": [  "pages/index", "pages/log", ] }');
 
-    const ls = getLanguageService({});
-    let res = await ls.doValidation(textDoc, jsonDoc);
+    const ls = new JSONValidation(new JSONSchemaService(undefined, undefined, Promise), Promise);
+    let res = await ls.doValidation(textDoc, jsonDoc, undefined, undefined);
     assert.strictEqual(res.length, 1);
     assert.strictEqual(res[0].message, 'Trailing comma');
 
-    res = await ls.doValidation(textDoc, jsonDoc, { trailingCommas: 'error' });
+    res = await ls.doValidation(textDoc, jsonDoc, { trailingCommas: 'error' }, undefined);
     assert.strictEqual(res.length, 1);
     assert.strictEqual(res[0].message, 'Trailing comma');
 
-    res = await ls.doValidation(textDoc, jsonDoc, { trailingCommas: 'ignore' });
+    res = await ls.doValidation(textDoc, jsonDoc, { trailingCommas: 'ignore' }, undefined);
     assert.strictEqual(res.length, 0);
 
     const schema: JsonSchema.JSONSchema = { type: 'object', required: ['foo'] };

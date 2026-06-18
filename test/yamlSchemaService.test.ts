@@ -11,6 +11,7 @@ import * as SchemaService from '../src/languageservice/services/yamlSchemaServic
 import { parse } from '../src/languageservice/parser/yamlParser07';
 import { SettingsState } from '../src/yamlSettings';
 import { DEFAULT_KUBERNETES_SCHEMA_VERSION, getSchemaUrls } from '../src/languageservice/utils/schemaUrls';
+import { JSONSchema } from '../src/languageservice/jsonSchema';
 
 const BASE_KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/`;
 const KUBERNETES_SCHEMA_URL = BASE_KUBERNETES_SCHEMA_URL + 'all.json';
@@ -220,7 +221,7 @@ describe('YAML Schema Service', () => {
       expect(requestedUris).to.include('file:///schemas/repro_defs.json');
       expect(requestedUris).to.not.include('https://example.com/schemas/repro_defs.json');
       expect(schema.errors).to.eql([]);
-      expect(schema.schema.properties.members.items).to.deep.include({
+      expect((schema.schema.properties.members as JSONSchema).items).to.deep.include({
         type: 'object',
         url: 'file:///schemas/repro_defs.json',
       });
@@ -483,7 +484,7 @@ describe('YAML Schema Service', () => {
 
       expect(schema.errors).to.eql([]);
       expect(schema.schema.url).to.equal('schemaservice://combinedSchema/test.yaml');
-      expect(schema.schema.allOf.map((item) => item.url)).to.have.members([schemaOneUri, schemaTwoUri]);
+      expect(schema.schema.allOf.map((item: JSONSchema) => item.url)).to.have.members([schemaOneUri, schemaTwoUri]);
 
       const schemaUris = Array.from(getSchemaUrls(schema.schema).keys());
       expect(schemaUris).to.have.members([schemaOneUri, schemaTwoUri]);

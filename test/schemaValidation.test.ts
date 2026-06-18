@@ -25,7 +25,7 @@ import { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { IProblem } from '../src/languageservice/parser/schemaValidation/baseValidator';
 import { JSONSchema } from '../src/languageservice/jsonSchema';
 import { TestTelemetry } from './utils/testsTypes';
-import { ErrorCode } from 'vscode-json-languageservice';
+import { ErrorCode } from '../src/languageservice/jsonLanguageService/jsonLanguageTypes';
 import { DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls';
 
 const KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/all.json`;

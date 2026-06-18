@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { promises as fs } from 'fs';
-import { ClientCapabilities } from 'vscode-json-languageservice';
+import { ClientCapabilities } from '../../src/languageservice/jsonLanguageService/jsonLanguageTypes';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Connection, createConnection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node';
 import { LanguageService, LanguageSettings } from '../../src';

@@ -5,7 +5,7 @@
 
 import * as l10n from '@vscode/l10n';
 import * as path from 'path';
-import { ErrorCode } from 'vscode-json-languageservice';
+import { ErrorCode } from '../jsonLanguageService/jsonLanguageTypes';
 import {
   CodeAction,
   CodeActionKind,

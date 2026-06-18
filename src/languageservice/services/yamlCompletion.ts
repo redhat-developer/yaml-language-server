@@ -27,7 +27,7 @@ import { guessIndentation } from '../utils/indentationGuesser';
 import { TextBuffer } from '../utils/textBuffer';
 import { LanguageSettings } from '../yamlLanguageService';
 import { YAMLSchemaService } from './yamlSchemaService';
-import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
+import { ResolvedSchema } from '../jsonLanguageService/services/jsonSchemaService';
 import { JSONSchema, JSONSchemaRef } from '../jsonSchema';
 import { stringifyObject, StringifySettings } from '../utils/json';
 import { isDefined, isString } from '../utils/objects';

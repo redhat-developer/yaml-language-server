@@ -33,7 +33,7 @@ import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
-import { DocumentSymbolsContext } from 'vscode-json-languageservice';
+import { DocumentSymbolsContext } from './jsonLanguageService/jsonLanguageTypes';
 import { YamlLinks } from './services/yamlLinks';
 import {
   ClientCapabilities,

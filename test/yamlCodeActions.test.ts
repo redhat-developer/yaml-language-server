@@ -23,7 +23,7 @@ import { setupTextDocument, TEST_URI } from './utils/testHelper';
 import { createDiagnosticWithData, createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
 import { YamlCommands } from '../src/commands';
 import { LanguageSettings } from '../src';
-import { ErrorCode } from 'vscode-json-languageservice';
+import { ErrorCode } from '../src/languageservice/jsonLanguageService/jsonLanguageTypes';
 
 const expect = chai.expect;
 chai.use(sinonChai);

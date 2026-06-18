@@ -15,7 +15,7 @@ import {
   SymbolKind,
   SymbolInformation,
 } from 'vscode-languageserver-types';
-import { ErrorCode } from 'vscode-json-languageservice';
+import { ErrorCode } from '../../src/languageservice/jsonLanguageService/jsonLanguageTypes';
 
 export function createExpectedError(
   message: string,

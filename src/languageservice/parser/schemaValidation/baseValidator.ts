@@ -12,7 +12,7 @@ import { isArrayEqual } from '../../utils/arrUtils';
 import { safeCreateUnicodeRegExp } from '../../utils/strings';
 import { FilePatternAssociation } from '../../utils/filePatternAssociation';
 import { floatSafeRemainder } from '../../utils/math';
-import { ErrorCode } from 'vscode-json-languageservice';
+import { ErrorCode } from '../../jsonLanguageService/jsonLanguageTypes';
 import * as l10n from '@vscode/l10n';
 import { URI } from 'vscode-uri';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
