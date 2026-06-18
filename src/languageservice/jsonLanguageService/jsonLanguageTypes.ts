@@ -284,13 +284,6 @@ export interface PromiseConstructor {
    */
   resolve<T>(value: T | PromiseLike<T>): PromiseLike<T>;
 }
-/**
- * A deprecated alias of {@link PromiseLike}
- *
- * @deprecated
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface Thenable<R> extends PromiseLike<R> {}
 export interface LanguageServiceParams {
   /**
    * The schema request service is used to fetch schemas from a URI. The provider returns the schema file content, or,
@@ -355,9 +348,8 @@ export interface ClientCapabilities {
     };
   };
 }
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace ClientCapabilities {
-  export const LATEST: ClientCapabilities = {
+export const ClientCapabilities: { LATEST: ClientCapabilities } = {
+  LATEST: {
     textDocument: {
       completion: {
         completionItem: {
@@ -367,8 +359,8 @@ export namespace ClientCapabilities {
         },
       },
     },
-  };
-}
+  },
+};
 export interface FoldingRangesContext {
   /**
    * The maximal number of ranges returned.

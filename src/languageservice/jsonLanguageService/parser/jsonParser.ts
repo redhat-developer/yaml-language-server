@@ -236,6 +236,9 @@ export function normalizeId(id: string): string {
   // remove trailing '#', normalize drive capitalization
   try {
     const normalized = URI.parse(id).toString(true);
+    if (/^file:\/\/\/[a-z]%3A(?=\/|$|[?#])/i.test(id)) {
+      return normalized.replace(/^file:\/\/\/([a-z]):(?=\/|$|[?#])/i, 'file:///$1%3A');
+    }
     if (id[id.length - 1] !== '/' && /^[a-z][a-z0-9+.-]*:\/\/[^/?#]+\/$/i.test(normalized)) {
       return normalized.substring(0, normalized.length - 1);
     }
@@ -404,10 +407,6 @@ export class ValidationResult {
     return this.propertiesMatches - other.propertiesMatches;
   }
 }
-
-// export function newJSONDocument(root: ASTNode | undefined, diagnostics: Diagnostic[] = [], comments: Range[] = []) {
-//   return new JSONDocument(root, diagnostics, comments);
-// }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getNodeValue(node: ASTNode): any {
