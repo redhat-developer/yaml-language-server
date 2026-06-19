@@ -5,7 +5,15 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
-import type { ASTNode, ArrayASTNode, NumberASTNode, ObjectASTNode, PropertyASTNode, StringASTNode } from '../../jsonLanguageTypes';
+import type {
+  ASTNode,
+  ArrayASTNode,
+  NumberASTNode,
+  ObjectASTNode,
+  PropertyASTNode,
+  StringASTNode,
+  SchemaDraft,
+} from '../../jsonLanguageTypes';
 import { equals, isBoolean, isDefined, isIterable, isNumber, isString } from '../../utils/objects';
 import { getSchemaTypeName } from '../../utils/schemaUtils';
 import { isArrayEqual } from '../../utils/arrUtils';
@@ -13,7 +21,6 @@ import { safeCreateUnicodeRegExp } from '../../utils/strings';
 import { FilePatternAssociation } from '../../utils/filePatternAssociation';
 import { floatSafeRemainder } from '../../utils/math';
 import { ErrorCode } from '../../jsonLanguageTypes';
-import type { SchemaDraft } from '../../jsonLanguageTypes';
 import * as l10n from '@vscode/l10n';
 import { URI } from 'vscode-uri';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
