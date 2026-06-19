@@ -3,20 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { CompletionItemKind } from './jsonLanguageService/jsonLanguageTypes';
+import type { CompletionItemKind, SchemaDraft } from './jsonLanguageTypes';
 import type { SchemaVersions } from './yamlTypes';
 
 export type JSONSchemaRef = JSONSchema | boolean;
-export enum SchemaDialect {
-  draft04 = 'draft04',
-  draft07 = 'draft07',
-  draft2019 = 'draft2019-09',
-  draft2020 = 'draft2020-12',
-}
 
 export interface JSONSchema {
   // for internal use
-  _dialect?: SchemaDialect;
+  _schemaDraft?: SchemaDraft;
   _baseUri?: string;
   _sourceUri?: string;
   _$ref?: string;

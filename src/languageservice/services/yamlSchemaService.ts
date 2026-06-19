@@ -4,27 +4,17 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type {
-  IJSONSchemaService,
-  ISchemaContributions,
-  SchemaDiagnostic,
-  SchemaDependencies,
-} from '../jsonLanguageService/services/jsonSchemaService';
-import {
-  FilePatternAssociation,
-  ResolvedSchema,
-  SchemaHandle,
-  toDiagnostic as toSchemaDiagnostic,
-  UnresolvedSchema,
-} from '../jsonLanguageService/services/jsonSchemaService';
-import type { SchemaConfiguration } from '../jsonLanguageService/jsonLanguageTypes';
-import { ErrorCode } from '../jsonLanguageService/jsonLanguageTypes';
+import type { PromiseConstructor, SchemaConfiguration } from '../jsonLanguageTypes';
+import { ErrorCode, SchemaDraft } from '../jsonLanguageTypes';
 import * as Strings from '../utils/strings';
+import { createRegex } from '../utils/glob';
 import type { SettingsState } from '../../yamlSettings';
 import type { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
-import { SchemaDialect } from '../jsonSchema';
 import type { SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
 import { SchemaPriority } from '../yamlLanguageService';
+import type { DiagnosticRelatedInformation } from 'vscode-languageserver-types';
+import { Range } from 'vscode-languageserver-types';
+import { asSchema } from '../parser/schemaValidation/baseValidator';
 
 import * as l10n from '@vscode/l10n';
 import * as path from 'path';
@@ -68,8 +58,8 @@ const schema07Validator = ajv7.compile(jsonSchema07);
 const schema2019Validator = ajv2019.compile(jsonSchema2019);
 const schema2020Validator = ajv2020.compile(jsonSchema2020);
 
-const schemaDialectCache = new Map<string, SchemaDialect>();
-const schemaDialectInFlight = new Map<string, Promise<SchemaDialect>>();
+const schemaDraftCache = new Map<string, SchemaDraft>();
+const schemaDraftInFlight = new Map<string, Promise<SchemaDraft>>();
 
 const AJV_LOCALE_ALIASES = new Map<string, string>([
   ['zh-cn', 'zh'],
@@ -85,7 +75,7 @@ const REF_SIBLING_NONCONSTRAINT_KEYS = new Set([
   'id',
   '_baseUri',
   '_sourceUri',
-  '_dialect',
+  '_schemaDraft',
   '$anchor',
   '$dynamicAnchor',
   '$dynamicRef',
@@ -140,6 +130,277 @@ interface SchemaStoreSchema {
   description: string;
   versions?: SchemaVersions;
 }
+
+export interface IJSONSchemaService {
+  /**
+   * Clears all cached schema files
+   */
+  clearExternalSchemas(): void;
+
+  /**
+   * Registers contributed schemas
+   */
+  setSchemaContributions(schemaContributions: ISchemaContributions): void;
+
+  /**
+   * Registers an external schema
+   */
+  registerExternalSchema(
+    config: SchemaConfiguration | string,
+    filePatterns?: string[],
+    unresolvedSchemaContent?: JSONSchema
+  ): SchemaHandle;
+
+  /**
+   * Looks up the appropriate schema for the given URI
+   */
+  getSchemaForResource(resource: string, document?: JSONDocument): PromiseLike<ResolvedSchema | undefined>;
+
+  /**
+   * Looks up schema URIs for the given URI
+   */
+  getSchemaURIsForResource(resource: string, document?: JSONDocument): string[];
+
+  /**
+   * Returns all registered schema ids
+   */
+  getRegisteredSchemaIds(filter?: (scheme: string) => boolean): string[];
+}
+
+export interface SchemaAssociation {
+  pattern: string[];
+  uris: string[];
+  folderUri?: string;
+}
+
+export interface ISchemaContributions {
+  schemas?: { [id: string]: JSONSchema };
+  schemaAssociations?: SchemaAssociation[];
+}
+
+export interface ISchemaHandle {
+  /**
+   * The schema id
+   */
+  uri: string;
+
+  /**
+   * The schema from the file, with potential $ref references
+   */
+  getUnresolvedSchema(): PromiseLike<UnresolvedSchema>;
+
+  /**
+   * The schema from the file, with references resolved
+   */
+  getResolvedSchema(): PromiseLike<ResolvedSchema>;
+}
+
+const BANG = '!';
+const PATH_SEP = '/';
+
+interface IGlobWrapper {
+  regexp: RegExp;
+  include: boolean;
+}
+
+export class FilePatternAssociation {
+  private readonly globWrappers: IGlobWrapper[];
+
+  constructor(
+    pattern: string[],
+    private readonly folderUri: string | undefined,
+    public readonly uris: string[]
+  ) {
+    this.globWrappers = [];
+    try {
+      for (let patternString of pattern) {
+        const include = patternString[0] !== BANG;
+        if (!include) {
+          patternString = patternString.substring(1);
+        }
+        if (patternString.length > 0) {
+          if (patternString[0] === PATH_SEP) {
+            patternString = patternString.substring(1);
+          }
+          this.globWrappers.push({
+            regexp: createRegex(patternString, { extended: true, globstar: true }),
+            include: include,
+          });
+          this.globWrappers.push({
+            regexp: createRegex('**/' + patternString, { extended: true, globstar: true }),
+            include: include,
+          });
+        }
+      }
+      if (folderUri) {
+        folderUri = normalizeResourceForMatching(folderUri);
+        if (!folderUri.endsWith('/')) {
+          folderUri = folderUri + '/';
+        }
+        this.folderUri = folderUri;
+      }
+    } catch {
+      this.globWrappers.length = 0;
+      this.uris = [];
+    }
+  }
+
+  public matchesPattern(fileName: string): boolean {
+    if (this.folderUri && !fileName.startsWith(this.folderUri)) {
+      return false;
+    }
+    let match = false;
+    for (const { regexp, include } of this.globWrappers) {
+      if (regexp.test(fileName)) {
+        match = include;
+      }
+    }
+    return match;
+  }
+
+  public getURIs(): string[] {
+    return this.uris;
+  }
+}
+
+export type SchemaDependencies = { [uri: string]: boolean };
+
+export interface SchemaHandleService {
+  readonly promise: PromiseConstructor;
+  loadSchema(url: string): PromiseLike<UnresolvedSchema>;
+  resolveSchemaContent(
+    schemaToResolve: UnresolvedSchema,
+    schemaURL: string,
+    dependencies: SchemaDependencies
+  ): PromiseLike<ResolvedSchema>;
+}
+
+export class SchemaHandle implements ISchemaHandle {
+  public readonly uri: string;
+  public dependencies: SchemaDependencies;
+  public anchors: Map<string, JSONSchema> | undefined;
+  private resolvedSchema: PromiseLike<ResolvedSchema> | undefined;
+  private unresolvedSchema: PromiseLike<UnresolvedSchema> | undefined;
+  private readonly service: SchemaHandleService;
+
+  constructor(service: SchemaHandleService, uri: string, unresolvedSchemaContent?: JSONSchema) {
+    this.service = service;
+    this.uri = uri;
+    this.dependencies = {};
+    this.anchors = undefined;
+    if (unresolvedSchemaContent) {
+      this.unresolvedSchema = this.service.promise.resolve(new UnresolvedSchema(unresolvedSchemaContent));
+    }
+  }
+
+  public getUnresolvedSchema(): PromiseLike<UnresolvedSchema> {
+    if (!this.unresolvedSchema) {
+      this.unresolvedSchema = this.service.loadSchema(this.uri);
+    }
+    return this.unresolvedSchema;
+  }
+
+  public getResolvedSchema(): PromiseLike<ResolvedSchema> {
+    if (!this.resolvedSchema) {
+      this.resolvedSchema = this.getUnresolvedSchema().then((unresolved) => {
+        return this.service.resolveSchemaContent(unresolved, this.uri, this.dependencies);
+      });
+    }
+    return this.resolvedSchema;
+  }
+
+  public clearSchema(): boolean {
+    const hasChanges = !!this.unresolvedSchema;
+    this.resolvedSchema = undefined;
+    this.unresolvedSchema = undefined;
+    this.dependencies = {};
+    this.anchors = undefined;
+    return hasChanges;
+  }
+}
+
+export class UnresolvedSchema {
+  public readonly schema: JSONSchema;
+  public readonly errors: SchemaDiagnostic[];
+  public uri?: string;
+
+  constructor(schema: JSONSchema, errors: SchemaDiagnostic[] = []) {
+    this.schema = schema;
+    this.errors = errors;
+  }
+}
+
+export type SchemaDiagnostic = {
+  readonly message: string;
+  readonly code: ErrorCode;
+  relatedInformation?: DiagnosticRelatedInformation[];
+};
+
+export function toDiagnostic(message: string, code: ErrorCode, relatedURL?: string): SchemaDiagnostic {
+  const relatedInformation: DiagnosticRelatedInformation[] | undefined = relatedURL
+    ? [
+        {
+          location: { uri: relatedURL, range: Range.create(0, 0, 0, 0) },
+          message,
+        },
+      ]
+    : undefined;
+  return { message, code, relatedInformation };
+}
+
+export class ResolvedSchema {
+  public readonly schema: JSONSchema;
+  public readonly errors: SchemaDiagnostic[];
+  public readonly warnings: SchemaDiagnostic[];
+  public readonly schemaDraft: SchemaDraft | undefined;
+
+  constructor(schema: JSONSchema, errors: SchemaDiagnostic[] = [], warnings: SchemaDiagnostic[] = [], schemaDraft?: SchemaDraft) {
+    this.schema = schema;
+    this.errors = errors;
+    this.warnings = warnings;
+    this.schemaDraft = schemaDraft;
+  }
+
+  public getSection(path: string[]): JSONSchema | undefined {
+    const schemaRef = this.getSectionRecursive(path, this.schema);
+    if (schemaRef) {
+      return asSchema(schemaRef);
+    }
+    return undefined;
+  }
+
+  private getSectionRecursive(path: string[], schema: JSONSchemaRef): JSONSchemaRef | undefined {
+    if (!schema || typeof schema === 'boolean' || path.length === 0) {
+      return schema;
+    }
+    const next = path.shift()!;
+
+    if (schema.properties && typeof schema.properties[next]) {
+      return this.getSectionRecursive(path, schema.properties[next]);
+    } else if (schema.patternProperties) {
+      for (const pattern of Object.keys(schema.patternProperties)) {
+        const regex = Strings.extendedRegExp(pattern);
+        if (regex?.test(next)) {
+          return this.getSectionRecursive(path, schema.patternProperties[pattern]);
+        }
+      }
+    } else if (typeof schema.additionalProperties === 'object') {
+      return this.getSectionRecursive(path, schema.additionalProperties);
+    } else if (next.match('[0-9]+')) {
+      if (Array.isArray(schema.items)) {
+        const index = parseInt(next, 10);
+        if (!isNaN(index) && schema.items[index]) {
+          return this.getSectionRecursive(path, schema.items[index]);
+        }
+      } else if (schema.items) {
+        return this.getSectionRecursive(path, schema.items);
+      }
+    }
+
+    return undefined;
+  }
+}
+
 export class YAMLSchemaService implements IJSONSchemaService {
   private contributionSchemas: { [id: string]: SchemaHandle };
   private contributionAssociations: FilePatternAssociation[];
@@ -356,7 +617,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
     if (raw === null || Array.isArray(raw) || (typeof raw !== 'object' && typeof raw !== 'boolean')) {
       const got = raw === null ? 'null' : Array.isArray(raw) ? 'array' : typeof raw;
       resolveErrors.push(
-        toSchemaDiagnostic(
+        toDiagnostic(
           l10n.t("Schema '{0}' is not valid: {1}", loc, `expected a JSON Schema object or boolean, got "${got}".`),
           ErrorCode.SchemaResolveError,
           schemaURL
@@ -415,12 +676,12 @@ export class YAMLSchemaService implements IJSONSchemaService {
     const ajvErrorLocale = this.yamlSettings?.locale;
     async function _metaValidateSchemaNode(node: JSONSchema, hasNestedSchema: boolean): Promise<void> {
       if (!node || typeof node !== 'object') return;
-      const dialect = await pickSchemaDialect(node.$schema, _loadSchema);
-      if (dialect) {
-        node._dialect = dialect;
+      const schemaDraft = await pickSchemaDraft(node.$schema, _loadSchema);
+      if (schemaDraft) {
+        node._schemaDraft = schemaDraft;
       }
 
-      const validator = pickMetaValidator(dialect);
+      const validator = pickMetaValidator(schemaDraft);
       if (!validator) return;
 
       let toValidate = node;
@@ -448,7 +709,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
           errs.push(`${err.instancePath} : ${err.message}`);
         }
         resolveErrors.push(
-          toSchemaDiagnostic(
+          toDiagnostic(
             l10n.t("Schema '{0}' is not valid: {1}", loc, `\n${errs.join('\n')}`),
             ErrorCode.SchemaResolveError,
             schemaURL
@@ -656,7 +917,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
         return;
       } else {
         resolveErrors.push(
-          toSchemaDiagnostic(
+          toDiagnostic(
             l10n.t("$ref '{0}' in '{1}' cannot be resolved.", refPath, sourceURI),
             ErrorCode.SchemaResolveError,
             sourceURI
@@ -768,11 +1029,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
             const schemaError = unresolvedSchema.errors[0];
             const loc = linkPath ? targetUri + '#' + linkPath : targetUri;
             resolveErrors.push(
-              toSchemaDiagnostic(
-                l10n.t("Problems loading reference '{0}': {1}", loc, schemaError.message),
-                schemaError.code,
-                targetUri
-              )
+              toDiagnostic(l10n.t("Problems loading reference '{0}': {1}", loc, schemaError.message), schemaError.code, targetUri)
             );
           }
           // index resources for the newly loaded schema
@@ -817,7 +1074,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
         node: JSONSchema;
         baseUri?: string;
         sourceUri?: string;
-        dialect?: SchemaDialect;
+        schemaDraft?: SchemaDraft;
         recursiveAnchorBase?: string;
         inheritedDynamicScope?: Map<string, JSONSchema[]>;
         siblingRefCycleKeys?: Set<string>;
@@ -841,7 +1098,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
         next: JSONSchema,
         nodeBaseUri: string,
         nodeSourceUri: string,
-        nodeDialect: SchemaDialect,
+        nodeSchemaDraft: SchemaDraft | undefined,
         recursiveAnchorBase?: string,
         inheritedDynamicScope?: Map<string, JSONSchema[]>,
         siblingRefCycleKeys?: Set<string>
@@ -931,7 +1188,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
 
           if (_hasRefSiblings(next)) {
             // Draft-07 and earlier: ignore siblings
-            if (nodeDialect === SchemaDialect.draft04 || nodeDialect === SchemaDialect.draft07) {
+            if (nodeSchemaDraft === SchemaDraft.v4 || nodeSchemaDraft === SchemaDraft.v7) {
               _stripRefSiblings(next);
             } else {
               if (siblingRefCycleKeys?.has(resolvedRefKey)) break;
@@ -1067,7 +1324,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
               node: entry,
               baseUri: next._baseUri || nodeBaseUri,
               sourceUri: next._sourceUri || nodeSourceUri,
-              dialect: nodeDialect,
+              schemaDraft: nodeSchemaDraft,
               recursiveAnchorBase,
               inheritedDynamicScope: currentDynamicScope,
             }),
@@ -1125,7 +1382,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
         const next = item.node;
         const nodeBaseUri = next._baseUri || item.baseUri;
         const nodeSourceUri = next._sourceUri || nodeBaseUri;
-        const nodeDialect = next._dialect || item.dialect;
+        const nodeSchemaDraft = next._schemaDraft || item.schemaDraft;
         const nodeRecursiveAnchorBase = item.recursiveAnchorBase ?? (next.$recursiveAnchor ? nodeBaseUri : undefined);
         if (seen.has(next)) continue;
         seen.add(next);
@@ -1133,7 +1390,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
           next,
           nodeBaseUri,
           nodeSourceUri,
-          nodeDialect,
+          nodeSchemaDraft,
           nodeRecursiveAnchorBase,
           item.inheritedDynamicScope,
           item.siblingRefCycleKeys
@@ -1495,19 +1752,19 @@ export class YAMLSchemaService implements IJSONSchemaService {
     if (!this.requestService) {
       const errorMessage = l10n.t("Unable to load schema from '{0}'. No schema request service available", toDisplayString(url));
       return this.promise.resolve(
-        new UnresolvedSchema(<JSONSchema>{}, [toSchemaDiagnostic(errorMessage, ErrorCode.SchemaResolveError, url)])
+        new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, url)])
       );
     }
     return this.requestService(url).then(
       (content) => {
         if (!content) {
           const errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(url));
-          return new UnresolvedSchema(<JSONSchema>{}, [toSchemaDiagnostic(errorMessage, ErrorCode.SchemaResolveError, url)]);
+          return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, url)]);
         }
         const errors = [];
         if (content.charCodeAt(0) === 65279) {
           errors.push(
-            toSchemaDiagnostic(
+            toDiagnostic(
               l10n.t("Problem reading content from '{0}': UTF-8 with BOM detected, only UTF 8 is allowed.", toDisplayString(url)),
               ErrorCode.SchemaResolveError,
               url
@@ -1521,7 +1778,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
         schemaContent = Json.parse(content, jsonErrors);
         if (jsonErrors.length) {
           errors.push(
-            toSchemaDiagnostic(
+            toDiagnostic(
               l10n.t(
                 "Unable to parse content from '{0}': Parse error at offset {1}.",
                 toDisplayString(url),
@@ -1551,7 +1808,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
         }
         const errorCode = ErrorCode.SchemaResolveError + (typeof code === 'number' && code < 0x10000 ? code : 0);
         const errorMessage = l10n.t("Unable to load schema from '{0}': {1}.", toDisplayString(url), message);
-        return new UnresolvedSchema(<JSONSchema>{}, [toSchemaDiagnostic(errorMessage, errorCode, url)]);
+        return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, errorCode, url)]);
       }
     );
   }
@@ -1574,9 +1831,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
                 toDisplayString(schemaUri),
                 unresolvedJsonSchema.errors.map((error) => error.message).join(', ')
               );
-              return new UnresolvedSchema(<JSONSchema>{}, [
-                toSchemaDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri),
-              ]);
+              return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri)]);
             }
 
             try {
@@ -1584,9 +1839,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
               return new UnresolvedSchema(schemaContent, []);
             } catch (yamlError) {
               const errorMessage = l10n.t("Unable to parse content from '{0}': {1}.", toDisplayString(schemaUri), yamlError);
-              return new UnresolvedSchema(<JSONSchema>{}, [
-                toSchemaDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri),
-              ]);
+              return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri)]);
             }
           },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1597,9 +1850,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
               // more concise error message, URL and context are attached by caller anyways
               errorMessage = errorSplit[1];
             }
-            return new UnresolvedSchema(<JSONSchema>{}, [
-              toSchemaDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri),
-            ]);
+            return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri)]);
           }
         );
       }
@@ -1629,7 +1880,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
             );
           }
         }
-        return new UnresolvedSchema(<JSONSchema>{}, [toSchemaDiagnostic(errorMessage, schemaError.code, schemaUri)]);
+        return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, schemaError.code, schemaUri)]);
       }
       return unresolvedJsonSchema;
     });
@@ -1780,7 +2031,7 @@ function normalizeId(id: string): string {
   }
 }
 
-function normalizeSchemaUri(uri: string | AnySchemaObject): string {
+function normalizeSchemaDraftUri(uri: string | AnySchemaObject | undefined): string {
   if (!uri) return '';
 
   let s: string;
@@ -1793,22 +2044,15 @@ function normalizeSchemaUri(uri: string | AnySchemaObject): string {
 
   // strips fragment (# or #/something)
   const hash = s.indexOf('#');
-
   s = hash === -1 ? s : s.slice(0, hash);
-
-  // normalize http to https (don't normalize custom dialects)
-  s = s.replace(/^http:\/\/json-schema\.org\//i, jsonSchemaHttpsPrefix);
-
-  // normalize to no trailing slash
-  s = s.replace(/\/+$/g, '');
-  return s;
+  return normalizeId(s).replace(/\/+$/g, '');
 }
 
-function knownDialectFromSchemaUri(schemaUri?: string): SchemaDialect {
-  if (schemaUri === normalizeSchemaUri(ajv4.defaultMeta())) return SchemaDialect.draft04;
-  if (schemaUri === normalizeSchemaUri(ajv7.defaultMeta())) return SchemaDialect.draft07;
-  if (schemaUri === normalizeSchemaUri(ajv2019.defaultMeta())) return SchemaDialect.draft2019;
-  if (schemaUri === normalizeSchemaUri(ajv2020.defaultMeta())) return SchemaDialect.draft2020;
+function knownSchemaDraftFromUri(schemaUri?: string): SchemaDraft | undefined {
+  if (schemaUri === normalizeSchemaDraftUri(ajv4.defaultMeta())) return SchemaDraft.v4;
+  if (schemaUri === normalizeSchemaDraftUri(ajv7.defaultMeta())) return SchemaDraft.v7;
+  if (schemaUri === normalizeSchemaDraftUri(ajv2019.defaultMeta())) return SchemaDraft.v2019_09;
+  if (schemaUri === normalizeSchemaDraftUri(ajv2020.defaultMeta())) return SchemaDraft.v2020_12;
   return undefined;
 }
 
@@ -1826,22 +2070,21 @@ function localizeAjvErrors(errors: ErrorObject[] | null | undefined, locale?: st
   localizer(errors);
 }
 
-async function pickSchemaDialect(
+async function pickSchemaDraft(
   $schema: string | undefined,
   loadSchema?: (uri: string) => Promise<UnresolvedSchema>
-): Promise<SchemaDialect> {
+): Promise<SchemaDraft> {
   if (!$schema) return undefined;
-  const s = normalizeSchemaUri($schema || '');
+  const s = normalizeSchemaDraftUri($schema || '');
 
-  const dialect = knownDialectFromSchemaUri(s);
-  if (dialect) return dialect;
+  const schemaDraft = knownSchemaDraftFromUri(s);
+  if (schemaDraft) return schemaDraft;
 
   // cache custom dialect result
-  const cached = schemaDialectCache.get(s);
-  if (cached) {
-    return cached;
+  if (schemaDraftCache.has(s)) {
+    return schemaDraftCache.get(s);
   }
-  const inflight = schemaDialectInFlight.get(s);
+  const inflight = schemaDraftInFlight.get(s);
   if (inflight) {
     return inflight;
   }
@@ -1854,30 +2097,30 @@ async function pickSchemaDialect(
     if (meta.errors?.length) return undefined;
     const metaSchema = meta.schema;
     if (!metaSchema || typeof metaSchema !== 'object') return undefined;
-    const metaDialect = knownDialectFromSchemaUri(metaSchema.$schema);
-    if (metaDialect) return metaDialect;
+    const metaSchemaDraft = knownSchemaDraftFromUri(metaSchema.$schema);
+    if (metaSchemaDraft) return metaSchemaDraft;
     return undefined;
   })();
 
-  schemaDialectInFlight.set(s, promise);
+  schemaDraftInFlight.set(s, promise);
   try {
     const result = await promise;
-    schemaDialectCache.set(s, result);
+    schemaDraftCache.set(s, result);
     return result;
   } finally {
-    schemaDialectInFlight.delete(s);
+    schemaDraftInFlight.delete(s);
   }
 }
 
-function pickMetaValidator(dialect: SchemaDialect): ValidateFunction | undefined {
-  switch (dialect) {
-    case SchemaDialect.draft04:
+function pickMetaValidator(schemaDraft: SchemaDraft): ValidateFunction | undefined {
+  switch (schemaDraft) {
+    case SchemaDraft.v4:
       return schema04Validator;
-    case SchemaDialect.draft07:
+    case SchemaDraft.v7:
       return schema07Validator;
-    case SchemaDialect.draft2019:
+    case SchemaDraft.v2019_09:
       return schema2019Validator;
-    case SchemaDialect.draft2020:
+    case SchemaDraft.v2020_12:
       return schema2020Validator;
     default:
       // don't meta-validate unknown schema URI

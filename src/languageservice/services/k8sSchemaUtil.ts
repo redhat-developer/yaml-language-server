@@ -1,7 +1,7 @@
 import type { JSONDocument } from '../parser/jsonDocument';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
 
-import type { ResolvedSchema } from '../jsonLanguageService/services/jsonSchemaService';
+import type { ResolvedSchema } from './yamlSchemaService';
 import type { JSONSchema } from '../jsonSchema';
 
 /**

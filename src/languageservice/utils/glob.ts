@@ -4,7 +4,7 @@
  *  Licensed under the MIT License. See LICENCE.md in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-// Forked from vscode-json-languageservice@6.0.0-next.1
+// Copied from vscode-json-languageservice@6.0.0-next.1
 // Source: https://github.com/microsoft/vscode-json-languageservice/blob/810471bbb462bb6b87351c2232e209a3bb4062ca/src/utils/glob.ts
 
 export function createRegex(glob: string, opts: { extended?: boolean; globstar?: boolean; flags?: string }): RegExp {

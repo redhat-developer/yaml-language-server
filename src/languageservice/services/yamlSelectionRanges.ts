@@ -2,7 +2,7 @@ import type { Position, Range } from 'vscode-languageserver-types';
 import { SelectionRange } from 'vscode-languageserver-types';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import type { ASTNode } from '../jsonLanguageService/jsonLanguageTypes';
+import type { ASTNode } from '../jsonLanguageTypes';
 
 export function getSelectionRanges(document: TextDocument, positions: Position[]): SelectionRange[] {
   const doc = yamlDocumentsCache.getYamlDocument(document);

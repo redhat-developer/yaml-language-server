@@ -8,7 +8,7 @@ import { Range } from 'vscode-languageserver-types';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Telemetry } from '../telemetry';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
-import type { ASTNode, PropertyASTNode } from '../jsonASTTypes';
+import type { ASTNode, PropertyASTNode } from '../jsonLanguageTypes';
 import type { JSONDocument } from '../parser/jsonDocument';
 
 export class YamlLinks {

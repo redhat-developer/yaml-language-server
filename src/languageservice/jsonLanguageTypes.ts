@@ -6,7 +6,7 @@
 // Forked from vscode-json-languageservice@6.0.0-next.1
 // Source: https://github.com/microsoft/vscode-json-languageservice/blob/810471bbb462bb6b87351c2232e209a3bb4062ca/src/jsonLanguageTypes.ts
 
-import { JSONSchema } from '../jsonSchema';
+import { JSONSchema } from './jsonSchema';
 import type { FormattingOptions as LSPFormattingOptions } from 'vscode-languageserver-types';
 import {
   Range,
@@ -47,6 +47,8 @@ import {
   DocumentHighlightKind,
 } from 'vscode-languageserver-types';
 import { TextDocument, TextDocumentContentChangeEvent } from 'vscode-languageserver-textdocument';
+import type { Node, Pair } from 'yaml';
+import type { CustomTagReturnType } from './utils/customTags';
 export {
   TextDocument,
   TextDocumentContentChangeEvent,
@@ -117,6 +119,7 @@ export enum ErrorCode {
 export function isSchemaResolveError(code: number): boolean {
   return code >= ErrorCode.SchemaResolveError;
 }
+export type YamlNode = Node | Pair;
 export type ASTNode =
   | ObjectASTNode
   | PropertyASTNode
@@ -132,6 +135,10 @@ export interface BaseASTNode {
   readonly length: number;
   readonly children?: ASTNode[];
   readonly value?: string | boolean | number | null;
+  readonly internalNode: YamlNode;
+  location: string;
+  customTagReturnType?: CustomTagReturnType;
+  getNodeFromOffsetEndInclusive(offset: number): ASTNode;
 }
 export interface ObjectASTNode extends BaseASTNode {
   readonly type: 'object';
@@ -162,11 +169,13 @@ export interface NumberASTNode extends BaseASTNode {
 export interface BooleanASTNode extends BaseASTNode {
   readonly type: 'boolean';
   readonly value: boolean;
+  readonly source: string;
 }
 export interface NullASTNode extends BaseASTNode {
   readonly type: 'null';
   readonly value: null;
 }
+
 export interface MatchingSchema {
   node: ASTNode;
   schema: JSONSchema;

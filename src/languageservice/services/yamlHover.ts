@@ -12,7 +12,7 @@ import { MarkupKind, Range } from 'vscode-languageserver-types';
 import { URI } from 'vscode-uri';
 import type { Node } from 'yaml';
 import { isAlias, isMap, isSeq, stringify as stringifyYAML } from 'yaml';
-import type { ASTNode, ObjectASTNode, PropertyASTNode } from '../jsonASTTypes';
+import type { ASTNode, ObjectASTNode, PropertyASTNode } from '../jsonLanguageTypes';
 import type { JSONSchema } from '../jsonSchema';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
 import { getNodeValue } from '../parser/astNodeUtils';

@@ -14,7 +14,7 @@ import type {
   NullASTNode,
   PropertyASTNode,
   YamlNode,
-} from '../jsonASTTypes';
+} from '../jsonLanguageTypes';
 import type { CustomTagReturnType } from '../utils/customTags';
 import type { Diagnostic, Range } from 'vscode-languageserver-types';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
@@ -227,7 +227,7 @@ export class JSONDocument {
   public validate(textDocument: TextDocument, schema: JSONSchema): Diagnostic[] {
     if (!this.root || !schema) return null;
 
-    const validator = getValidator(schema._dialect);
+    const validator = getValidator(schema._schemaDraft);
     return validator.validateDocument(this.root, textDocument, schema, {
       isKubernetes: this.isKubernetes,
       disableAdditionalProperties: this.disableAdditionalProperties,
@@ -243,7 +243,7 @@ export class JSONDocument {
   ): IApplicableSchema[] {
     if (!this.root || !schema) return [];
 
-    const validator = getValidator(schema._dialect);
+    const validator = getValidator(schema._schemaDraft);
     return validator.getMatchingSchemas(
       this.root,
       schema,

@@ -11,7 +11,7 @@ import type {
   SymbolInformation,
 } from 'vscode-languageserver-types';
 import { Diagnostic, DiagnosticSeverity, DiagnosticTag, DocumentSymbol, Range } from 'vscode-languageserver-types';
-import { ErrorCode } from '../../src/languageservice/jsonLanguageService/jsonLanguageTypes';
+import { ErrorCode } from '../../src/languageservice/jsonLanguageTypes';
 
 export function createExpectedError(
   message: string,
