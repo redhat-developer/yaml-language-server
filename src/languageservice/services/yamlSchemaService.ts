@@ -37,7 +37,8 @@ import { getSchemaFromModeline } from './modelineUtil';
 import { getDollarSchema } from './dollarUtils';
 
 import Ajv from 'ajv';
-import type { DefinedError, AnySchemaObject, ErrorObject, ValidateFunction } from 'ajv';import Ajv4 from 'ajv-draft-04';
+import type { DefinedError, AnySchemaObject, ErrorObject, ValidateFunction } from 'ajv';
+import Ajv4 from 'ajv-draft-04';
 import Ajv2019 from 'ajv/dist/2019';
 import Ajv2020 from 'ajv/dist/2020';
 import type { Localize } from 'ajv-i18n/localize/types';
