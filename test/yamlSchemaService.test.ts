@@ -121,8 +121,8 @@ describe('YAML Schema Service', () => {
       expect(requestServiceMock).calledTwice;
       if (process.platform === 'win32') {
         const driveLetter = path.parse(__dirname).root.split(':')[0].toLowerCase();
-        expect(requestServiceMock).calledWithExactly(`file:///${driveLetter}%3A/schema.json`);
-        expect(requestServiceMock).calledWithExactly(`file:///${driveLetter}%3A/schema.json#/definitions/schemaArray`);
+        expect(requestServiceMock).calledWithExactly(`file:///${driveLetter}:/schema.json`);
+        expect(requestServiceMock).calledWithExactly(`file:///${driveLetter}:/schema.json#/definitions/schemaArray`);
       } else {
         expect(requestServiceMock).calledWithExactly('file:///schema.json');
         expect(requestServiceMock).calledWithExactly('file:///schema.json#/definitions/schemaArray');

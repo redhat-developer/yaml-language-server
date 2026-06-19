@@ -6,18 +6,16 @@
 // Forked from vscode-json-languageservice@6.0.0-next.1
 // Source: https://github.com/microsoft/vscode-json-languageservice/blob/810471bbb462bb6b87351c2232e209a3bb4062ca/src/services/jsonDocumentSymbols.ts
 
-import * as Parser from '../parser/jsonParser';
-import * as Strings from '../utils/strings';
-import { colorFromHex } from '../utils/colors';
+import * as Strings from '../../utils/strings';
 import * as l10n from '@vscode/l10n';
+import type { JSONDocument } from '../../parser/jsonDocument';
+import type { ASTNode, PropertyASTNode } from '../../jsonASTTypes';
+import { getNodeValue } from '../../parser/astNodeUtils';
 
 import {
   TextDocument,
-  ColorInformation,
   ColorPresentation,
   Color,
-  ASTNode,
-  PropertyASTNode,
   DocumentSymbolsContext,
   Range,
   TextEdit,
@@ -34,7 +32,7 @@ export class JSONDocumentSymbols {
 
   public findDocumentSymbols(
     document: TextDocument,
-    doc: Parser.JSONDocument,
+    doc: JSONDocument,
     context: DocumentSymbolsContext = { resultLimit: Number.MAX_VALUE }
   ): SymbolInformation[] {
     const root = doc.root;
@@ -123,7 +121,7 @@ export class JSONDocumentSymbols {
 
   public findDocumentSymbols2(
     document: TextDocument,
-    doc: Parser.JSONDocument,
+    doc: JSONDocument,
     context: DocumentSymbolsContext = { resultLimit: Number.MAX_VALUE }
   ): DocumentSymbol[] {
     const root = doc.root;
@@ -268,54 +266,7 @@ export class JSONDocumentSymbols {
     return undefined;
   }
 
-  public findDocumentColors(
-    document: TextDocument,
-    doc: Parser.JSONDocument,
-    context?: DocumentSymbolsContext
-  ): PromiseLike<ColorInformation[]> {
-    return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
-      const result: ColorInformation[] = [];
-      if (schema) {
-        let limit = context && typeof context.resultLimit === 'number' ? context.resultLimit : Number.MAX_VALUE;
-        const matchingSchemas = doc.getMatchingSchemas(schema.schema);
-        const visitedNode: { [nodeId: string]: boolean } = {};
-        for (const s of matchingSchemas) {
-          if (
-            !s.inverted &&
-            s.schema &&
-            (s.schema.format === 'color' || s.schema.format === 'color-hex') &&
-            s.node &&
-            s.node.type === 'string'
-          ) {
-            const nodeId = String(s.node.offset);
-            if (!visitedNode[nodeId]) {
-              const color = colorFromHex(Parser.getNodeValue(s.node));
-              if (color) {
-                const range = getRange(document, s.node);
-                result.push({ color, range });
-              }
-              visitedNode[nodeId] = true;
-              limit--;
-              if (limit <= 0) {
-                if (context && context.onResultLimitExceeded) {
-                  context.onResultLimitExceeded(document.uri);
-                }
-                return result;
-              }
-            }
-          }
-        }
-      }
-      return result;
-    });
-  }
-
-  public getColorPresentations(
-    document: TextDocument,
-    doc: Parser.JSONDocument,
-    color: Color,
-    range: Range
-  ): ColorPresentation[] {
+  public getColorPresentations(document: TextDocument, doc: JSONDocument, color: Color, range: Range): ColorPresentation[] {
     const result: ColorPresentation[] = [];
     const red256 = Math.round(color.red * 255),
       green256 = Math.round(color.green * 255),
@@ -343,5 +294,5 @@ function getRange(document: TextDocument, node: ASTNode): Range {
 }
 
 function getName(node: ASTNode): string {
-  return Parser.getNodeValue(node) || l10n.t('<empty>');
+  return getNodeValue(node) || l10n.t('<empty>');
 }

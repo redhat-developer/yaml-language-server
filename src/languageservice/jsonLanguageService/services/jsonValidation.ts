@@ -6,9 +6,8 @@
 // Forked from vscode-json-languageservice@6.0.0-next.1
 // Source: https://github.com/microsoft/vscode-json-languageservice/blob/810471bbb462bb6b87351c2232e209a3bb4062ca/src/services/jsonValidation.ts
 
-import { JSONSchemaService, ResolvedSchema } from './jsonSchemaService';
-import { JSONDocument } from '../parser/jsonParser';
-
+import { IJSONSchemaService, ResolvedSchema } from './jsonSchemaService';
+import type { JSONDocument } from '../../parser/jsonDocument';
 import {
   TextDocument,
   ErrorCode,
@@ -23,17 +22,17 @@ import {
 } from '../jsonLanguageTypes';
 import * as l10n from '@vscode/l10n';
 import { JSONSchemaRef, JSONSchema } from '../../jsonSchema';
-import { isBoolean } from '../utils/objects';
+import { isBoolean } from '../../utils/objects';
 import { DiagnosticRelatedInformation } from 'vscode-languageserver-types';
 
 export class JSONValidation {
-  private jsonSchemaService: JSONSchemaService;
+  private jsonSchemaService: IJSONSchemaService;
   private promise: PromiseConstructor;
 
   private validationEnabled: boolean | undefined;
   private commentSeverity: DiagnosticSeverity | undefined;
 
-  public constructor(jsonSchemaService: JSONSchemaService, promiseConstructor: PromiseConstructor) {
+  public constructor(jsonSchemaService: IJSONSchemaService, promiseConstructor: PromiseConstructor) {
     this.jsonSchemaService = jsonSchemaService;
     this.promise = promiseConstructor;
     this.validationEnabled = true;
@@ -106,12 +105,7 @@ export class JSONValidation {
           for (const warning of schema.warnings) {
             addSchemaProblem(warning.message, warning.code, warning.relatedInformation);
           }
-          const semanticErrors = jsonDocument.validate(
-            textDocument,
-            schema.schema,
-            schemaValidation,
-            documentSettings?.schemaDraft
-          );
+          const semanticErrors = jsonDocument.validate(textDocument, schema.schema);
           if (semanticErrors) {
             semanticErrors.forEach(addProblem);
           }
