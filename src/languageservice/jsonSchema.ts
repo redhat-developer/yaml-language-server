@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CompletionItemKind } from './jsonLanguageService/jsonLanguageTypes';
-import { SchemaVersions } from './yamlTypes';
+import type { CompletionItemKind } from './jsonLanguageService/jsonLanguageTypes';
+import type { SchemaVersions } from './yamlTypes';
 
 export type JSONSchemaRef = JSONSchema | boolean;
 export enum SchemaDialect {

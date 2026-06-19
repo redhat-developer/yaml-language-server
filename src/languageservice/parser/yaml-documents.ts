@@ -3,17 +3,19 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { JSONDocument } from './jsonDocument';
-import { CST, Document, isNode, isPair, isScalar, LineCounter, Node, visit, YAMLError } from 'yaml';
-import { ASTNode, YamlNode } from '../jsonASTTypes';
-import { defaultOptions, parse as parseYAML, ParserOptions } from './yamlParser07';
+import type { CST, Document, LineCounter, Node, YAMLError } from 'yaml';
+import { isNode, isPair, isScalar, visit } from 'yaml';
+import type { ASTNode, YamlNode } from '../jsonASTTypes';
+import type { ParserOptions } from './yamlParser07';
+import { defaultOptions, parse as parseYAML } from './yamlParser07';
 import { ErrorCode } from '../jsonLanguageService/jsonLanguageTypes';
 import { convertAST } from './ast-converter';
-import { YAMLDocDiagnostic } from '../utils/parseUtils';
+import type { YAMLDocDiagnostic } from '../utils/parseUtils';
 import { isArrayEqual } from '../utils/arrUtils';
 import { getParent } from '../utils/yamlAstUtils';
-import { TextBuffer } from '../utils/textBuffer';
+import type { TextBuffer } from '../utils/textBuffer';
 import { getIndentation } from '../utils/strings';
 
 /**

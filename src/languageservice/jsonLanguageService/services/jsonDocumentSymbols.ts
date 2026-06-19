@@ -12,20 +12,17 @@ import type { JSONDocument } from '../../parser/jsonDocument';
 import type { ASTNode, PropertyASTNode } from '../../jsonASTTypes';
 import { getNodeValue } from '../../parser/astNodeUtils';
 
-import {
+import type {
   TextDocument,
   ColorPresentation,
   Color,
   DocumentSymbolsContext,
-  Range,
-  TextEdit,
   SymbolInformation,
-  SymbolKind,
   DocumentSymbol,
-  Location,
 } from '../jsonLanguageTypes';
+import { Range, TextEdit, SymbolKind, Location } from '../jsonLanguageTypes';
 
-import { IJSONSchemaService } from './jsonSchemaService';
+import type { IJSONSchemaService } from './jsonSchemaService';
 
 export class JSONDocumentSymbols {
   constructor(private schemaService: IJSONSchemaService) {}

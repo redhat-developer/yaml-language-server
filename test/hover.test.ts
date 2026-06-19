@@ -3,19 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { ServiceSetup } from './utils/serviceSetup';
-import {
-  caretPosition,
-  SCHEMA_ID,
-  setupLanguageService,
-  setupSchemaIDTextDocument,
-  TestCustomSchemaProvider,
-} from './utils/testHelper';
+import type { TestCustomSchemaProvider } from './utils/testHelper';
+import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
 import assert from 'assert';
-import { Hover, MarkupContent, Position } from 'vscode-languageserver-types';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
+import type { Hover } from 'vscode-languageserver-types';
+import { MarkupContent, Position } from 'vscode-languageserver-types';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import type { SettingsState } from '../src/yamlSettings';
+import { TextDocumentTestManager } from '../src/yamlSettings';
 import { expect } from 'chai';
-import { TestTelemetry } from './utils/testsTypes';
+import type { TestTelemetry } from './utils/testsTypes';
 
 describe('Hover Tests', () => {
   let languageSettingsSetup: ServiceSetup;

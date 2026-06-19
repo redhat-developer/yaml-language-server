@@ -4,7 +4,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as l10n from '@vscode/l10n';
-import { Connection, RequestType } from 'vscode-languageserver';
+import type { Connection } from 'vscode-languageserver';
+import { RequestType } from 'vscode-languageserver';
 import { BrowserMessageReader, BrowserMessageWriter, createConnection } from 'vscode-languageserver/browser';
 import { TelemetryImpl } from '../languageserver/telemetry';
 import { schemaRequestHandler, workspaceContext } from '../languageservice/services/schemaRequestHandler';

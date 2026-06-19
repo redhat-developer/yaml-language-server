@@ -7,6 +7,7 @@
 // Source: https://github.com/microsoft/vscode-json-languageservice/blob/810471bbb462bb6b87351c2232e209a3bb4062ca/src/jsonLanguageTypes.ts
 
 import { JSONSchema } from '../jsonSchema';
+import type { FormattingOptions as LSPFormattingOptions } from 'vscode-languageserver-types';
 import {
   Range,
   Position,
@@ -32,7 +33,6 @@ import {
   Location,
   Hover,
   MarkedString,
-  FormattingOptions as LSPFormattingOptions,
   DefinitionLink,
   CodeActionContext,
   Command,

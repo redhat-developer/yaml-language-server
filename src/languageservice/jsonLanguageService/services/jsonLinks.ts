@@ -6,8 +6,9 @@
 // Forked from vscode-json-languageservice@6.0.0-next.1
 // Source: https://github.com/microsoft/vscode-json-languageservice/blob/810471bbb462bb6b87351c2232e209a3bb4062ca/src/services/jsonLinks.ts
 
-import { DocumentLink, Range } from 'vscode-languageserver-types';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import type { DocumentLink } from 'vscode-languageserver-types';
+import { Range } from 'vscode-languageserver-types';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { ASTNode, PropertyASTNode } from '../../jsonASTTypes';
 import type { JSONDocument } from '../../parser/jsonDocument';
 

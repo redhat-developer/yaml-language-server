@@ -6,14 +6,15 @@
 // Forked from vscode-json-languageservice@6.0.0-next.1
 // Source: https://github.com/microsoft/vscode-json-languageservice/blob/810471bbb462bb6b87351c2232e209a3bb4062ca/src/services/jsonSchemaService.ts
 
-import { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
+import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
 import { URI } from 'vscode-uri';
 import * as Strings from '../../utils/strings';
 import type { JSONDocument } from '../../parser/jsonDocument';
 import { isBoolean } from '../../utils/objects';
-import { PromiseConstructor, SchemaConfiguration, SchemaDraft, ErrorCode } from '../jsonLanguageTypes';
+import type { PromiseConstructor, SchemaConfiguration, SchemaDraft, ErrorCode } from '../jsonLanguageTypes';
 import { createRegex } from '../utils/glob';
-import { DiagnosticRelatedInformation, Range } from 'vscode-languageserver-types';
+import type { DiagnosticRelatedInformation } from 'vscode-languageserver-types';
+import { Range } from 'vscode-languageserver-types';
 
 export interface IJSONSchemaService {
   /**

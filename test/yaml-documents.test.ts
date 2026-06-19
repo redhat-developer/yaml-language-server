@@ -10,7 +10,8 @@ import { YamlDocuments } from '../src/languageservice/parser/yaml-documents';
 import { setupTextDocument } from './utils/testHelper';
 import * as yamlParser from '../src/languageservice/parser/yamlParser07';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { isMap, isScalar, isSeq, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
+import type { Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
+import { isMap, isScalar, isSeq } from 'yaml';
 import { TextBuffer } from '../src/languageservice/utils/textBuffer';
 
 const expect = chai.expect;

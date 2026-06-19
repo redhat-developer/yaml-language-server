@@ -6,24 +6,21 @@
 // Forked from vscode-json-languageservice@6.0.0-next.1
 // Source: https://github.com/microsoft/vscode-json-languageservice/blob/810471bbb462bb6b87351c2232e209a3bb4062ca/src/services/jsonValidation.ts
 
-import { IJSONSchemaService, ResolvedSchema } from './jsonSchemaService';
+import type { IJSONSchemaService, ResolvedSchema } from './jsonSchemaService';
 import type { JSONDocument } from '../../parser/jsonDocument';
-import {
+import type {
   TextDocument,
-  ErrorCode,
   PromiseConstructor,
   LanguageSettings,
   DocumentLanguageSettings,
   SeverityLevel,
-  Diagnostic,
-  DiagnosticSeverity,
-  Range,
   JSONLanguageStatus,
 } from '../jsonLanguageTypes';
+import { ErrorCode, Diagnostic, DiagnosticSeverity, Range } from '../jsonLanguageTypes';
 import * as l10n from '@vscode/l10n';
-import { JSONSchemaRef, JSONSchema } from '../../jsonSchema';
+import type { JSONSchemaRef, JSONSchema } from '../../jsonSchema';
 import { isBoolean } from '../../utils/objects';
-import { DiagnosticRelatedInformation } from 'vscode-languageserver-types';
+import type { DiagnosticRelatedInformation } from 'vscode-languageserver-types';
 
 export class JSONValidation {
   private jsonSchemaService: IJSONSchemaService;

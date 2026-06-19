@@ -1,4 +1,5 @@
-import { Connection, InitializeParams, InitializeResult, TextDocumentSyncKind } from 'vscode-languageserver';
+import type { Connection, InitializeParams, InitializeResult } from 'vscode-languageserver';
+import { TextDocumentSyncKind } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { YamlCommands } from './commands';
 import { commandExecutor } from './languageserver/commandExecutor';
@@ -9,15 +10,11 @@ import { SettingsHandler } from './languageserver/handlers/settingsHandlers';
 import { ValidationHandler } from './languageserver/handlers/validationHandlers';
 import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
 import { registerCommands } from './languageservice/services/yamlCommands';
-import { Telemetry } from './languageservice/telemetry';
+import type { Telemetry } from './languageservice/telemetry';
 import { workspaceFoldersChanged } from './languageservice/utils/paths';
-import {
-  getLanguageService as getCustomLanguageService,
-  LanguageService,
-  SchemaRequestService,
-  WorkspaceContextService,
-} from './languageservice/yamlLanguageService';
-import { SettingsState } from './yamlSettings';
+import type { LanguageService, SchemaRequestService, WorkspaceContextService } from './languageservice/yamlLanguageService';
+import { getLanguageService as getCustomLanguageService } from './languageservice/yamlLanguageService';
+import type { SettingsState } from './yamlSettings';
 
 export class YAMLServerInit {
   languageService: LanguageService;

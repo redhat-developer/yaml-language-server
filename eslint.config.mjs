@@ -33,8 +33,10 @@ export default defineConfig(
       },
     },
     rules: {
+      '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-use-before-define': ['error', { functions: false, classes: false }],
       '@typescript-eslint/explicit-function-return-type': ['error', { allowExpressions: true }],
+      'import-x/consistent-type-specifier-style': ['error', 'prefer-top-level'],
     },
   },
   {

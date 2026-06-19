@@ -2,9 +2,9 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { Connection } from 'vscode-languageserver';
-import { CustomSchemaProvider } from '../../languageservice/services/yamlSchemaService';
-import { LanguageService, SchemaConfiguration } from '../../languageservice/yamlLanguageService';
+import type { Connection } from 'vscode-languageserver';
+import type { CustomSchemaProvider } from '../../languageservice/services/yamlSchemaService';
+import type { LanguageService, SchemaConfiguration } from '../../languageservice/yamlLanguageService';
 import {
   CustomSchemaRequest,
   DynamicCustomSchemaRequestRegistration,
@@ -12,8 +12,8 @@ import {
   SchemaSelectionRequests,
   VSCodeContentRequestRegistration,
 } from '../../requestTypes';
-import { SettingsState } from '../../yamlSettings';
-import { SettingsHandler } from './settingsHandlers';
+import type { SettingsState } from '../../yamlSettings';
+import type { SettingsHandler } from './settingsHandlers';
 
 export class NotificationHandlers {
   private languageService: LanguageService;

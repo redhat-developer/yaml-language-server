@@ -4,14 +4,15 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { SymbolInformation, DocumentSymbol } from 'vscode-languageserver-types';
-import { YAMLSchemaService } from './yamlSchemaService';
+import type { SymbolInformation, DocumentSymbol } from 'vscode-languageserver-types';
+import type { YAMLSchemaService } from './yamlSchemaService';
 import { JSONDocumentSymbols } from '../jsonLanguageService/services/jsonDocumentSymbols';
-import { DocumentSymbolsContext } from '../jsonLanguageService/jsonLanguageTypes';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import type { DocumentSymbolsContext } from '../jsonLanguageService/jsonLanguageTypes';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { Telemetry } from '../telemetry';
-import { isMap, isSeq, Node } from 'yaml';
+import type { Telemetry } from '../telemetry';
+import type { Node } from 'yaml';
+import { isMap, isSeq } from 'yaml';
 
 export class YAMLDocumentSymbols {
   private jsonDocumentSymbols;

@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Connection } from 'vscode-languageserver';
-import {
+import type { Connection } from 'vscode-languageserver';
+import type {
   CodeActionParams,
   DidChangeWatchedFilesParams,
   DocumentFormattingParams,
@@ -19,7 +19,7 @@ import {
   PrepareRenameParams,
   RenameParams,
 } from 'vscode-languageserver-protocol';
-import {
+import type {
   CodeAction,
   CodeLens,
   CompletionList,
@@ -35,12 +35,12 @@ import {
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
 import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
-import { LanguageService } from '../../languageservice/yamlLanguageService';
-import { SettingsState } from '../../yamlSettings';
-import { ValidationHandler } from './validationHandlers';
+import type { LanguageService } from '../../languageservice/yamlLanguageService';
+import type { SettingsState } from '../../yamlSettings';
+import type { ValidationHandler } from './validationHandlers';
 import { ResultLimitReachedNotification } from '../../requestTypes';
 import * as path from 'path';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 
 export class LanguageHandlers {
   private languageService: LanguageService;

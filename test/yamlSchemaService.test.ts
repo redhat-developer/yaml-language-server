@@ -11,7 +11,7 @@ import * as SchemaService from '../src/languageservice/services/yamlSchemaServic
 import { parse } from '../src/languageservice/parser/yamlParser07';
 import { SettingsState } from '../src/yamlSettings';
 import { DEFAULT_KUBERNETES_SCHEMA_VERSION, getSchemaUrls } from '../src/languageservice/utils/schemaUrls';
-import { JSONSchema } from '../src/languageservice/jsonSchema';
+import type { JSONSchema } from '../src/languageservice/jsonSchema';
 
 const BASE_KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/`;
 const KUBERNETES_SCHEMA_URL = BASE_KUBERNETES_SCHEMA_URL + 'all.json';

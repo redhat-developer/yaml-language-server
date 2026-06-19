@@ -6,7 +6,7 @@ import * as path from 'path';
 import { existsSync } from 'fs';
 import { URI } from 'vscode-uri';
 import * as l10n from '@vscode/l10n';
-import { InitializeParams } from 'vscode-languageserver';
+import type { InitializeParams } from 'vscode-languageserver';
 
 /**
  * Loads translations from the filesystem based on the configured locale and the folder of translations provided in the initialization parameters.

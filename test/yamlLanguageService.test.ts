@@ -3,8 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { assert } from 'chai';
-import { Position, TextDocument } from 'vscode-languageserver-textdocument';
-import { getLanguageService, LanguageService, SchemaRequestService, WorkspaceContextService } from '../src';
+import type { Position, TextDocument } from 'vscode-languageserver-textdocument';
+import type { LanguageService, SchemaRequestService, WorkspaceContextService } from '../src';
+import { getLanguageService } from '../src';
 import { workspaceContext } from '../src/languageservice/services/schemaRequestHandler';
 import { caretPosition, setupSchemaIDTextDocument } from './utils/testHelper';
 

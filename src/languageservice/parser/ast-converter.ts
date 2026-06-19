@@ -3,23 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import {
-  Node,
-  isScalar,
-  Scalar,
-  isMap,
-  YAMLMap,
-  isPair,
-  Pair,
-  isSeq,
-  YAMLSeq,
-  isNode,
-  isAlias,
-  Alias,
-  Document,
-  LineCounter,
-} from 'yaml';
-import { ASTNode, YamlNode } from '../jsonASTTypes';
+import type { Node, Scalar, YAMLMap, Pair, YAMLSeq, Alias, Document, LineCounter } from 'yaml';
+import { isScalar, isMap, isPair, isSeq, isNode, isAlias } from 'yaml';
+import type { ASTNode, YamlNode } from '../jsonASTTypes';
 import { getCustomTagReturnType } from '../utils/customTags';
 import {
   NullASTNodeImpl,

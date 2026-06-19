@@ -5,18 +5,18 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Diagnostic, Position } from 'vscode-languageserver-types';
-import { LanguageSettings } from '../yamlLanguageService';
-import { YAMLDocument, YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07';
-import { YAMLSchemaService } from './yamlSchemaService';
-import { YAMLDocDiagnostic } from '../utils/parseUtils';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import type { LanguageSettings } from '../yamlLanguageService';
+import type { YAMLDocument, YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07';
+import type { YAMLSchemaService } from './yamlSchemaService';
+import type { YAMLDocDiagnostic } from '../utils/parseUtils';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { JSONValidation } from '../jsonLanguageService/services/jsonValidation';
 import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
 import { TextBuffer } from '../utils/textBuffer';
 import { filterSuppressedDiagnostics } from '../utils/diagnostic-filter';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { Telemetry } from '../telemetry';
-import { AdditionalValidator } from './validation/types';
+import type { Telemetry } from '../telemetry';
+import type { AdditionalValidator } from './validation/types';
 import { UnusedAnchorsValidator } from './validation/unused-anchors';
 import { YAMLStyleValidator } from './validation/yaml-style';
 import { MapKeyOrderValidator } from './validation/map-key-order';
