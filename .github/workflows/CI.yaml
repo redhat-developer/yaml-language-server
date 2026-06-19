@@ -51,6 +51,8 @@ jobs:
       - name: Generate SARIF
         if: matrix.os == 'ubuntu-latest'
         run: npm run lint-ci
+        env:
+          SARIF_ESLINT_IGNORE_SUPPRESSED: 'true'
 
       - name: Upload SARIF file
         if: matrix.os == 'ubuntu-latest'
