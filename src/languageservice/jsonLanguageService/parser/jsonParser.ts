@@ -227,22 +227,9 @@ export function normalizeId(id: string): string {
   if (id.startsWith(httpPrefix)) {
     id = httpsPrefix + id.substring(httpPrefix.length);
   }
-  if (id.endsWith('#')) {
-    id = id.substring(0, id.length - 1);
-  }
-  if (!/^\w[\w\d+.-]*:/.test(id)) {
-    return id;
-  }
   // remove trailing '#', normalize drive capitalization
   try {
-    const normalized = URI.parse(id).toString(true);
-    if (/^file:\/\/\/[a-z]%3A(?=\/|$|[?#])/i.test(id)) {
-      return normalized.replace(/^file:\/\/\/([a-z]):(?=\/|$|[?#])/i, 'file:///$1%3A');
-    }
-    if (id[id.length - 1] !== '/' && /^[a-z][a-z0-9+.-]*:\/\/[^/?#]+\/$/i.test(normalized)) {
-      return normalized.substring(0, normalized.length - 1);
-    }
-    return normalized;
+    return URI.parse(id).toString(true);
   } catch {
     return id;
   }

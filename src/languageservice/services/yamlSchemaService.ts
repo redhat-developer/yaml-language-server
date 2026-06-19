@@ -25,7 +25,7 @@ import { URI } from 'vscode-uri';
 import { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes';
 import { JSONDocument } from '../parser/jsonDocument';
 import { SingleYAMLDocument } from '../parser/yamlParser07';
-import { normalizeId as normalizeJsonSchemaId } from '../jsonLanguageService/parser/jsonParser';
+import { normalizeId } from '../jsonLanguageService/parser/jsonParser';
 import { SchemaVersions } from '../yamlTypes';
 import { getSchemaFromModeline } from './modelineUtil';
 import { getDollarSchema } from './dollarUtils';
@@ -497,14 +497,7 @@ export class YAMLSchemaService extends JSONSchemaService {
     // e.g. resolve "./foo.json" against "http://example.com/bar.json" => "http://example.com/foo.json"
     const _resolveAgainstBase = (baseUri: string, ref: string): string => {
       if (this.contextService) return this.contextService.resolveRelativePath(ref, baseUri);
-      if (!/^\w[\w\d+.-]*:/.test(ref)) {
-        try {
-          return URI.parse(ref).toString(true);
-        } catch {
-          return ref;
-        }
-      }
-      return this.normalizeId(ref);
+      return normalizeId(ref);
     };
 
     const _indexSchemaResources = async (root: JSONSchema, initialBaseUri: string): Promise<void> => {
@@ -1320,7 +1313,7 @@ export class YAMLSchemaService extends JSONSchemaService {
    * Overrides previous schemas set for that schema ID.
    */
   public async saveSchema(schemaId: string, schemaContent: JSONSchema): Promise<void> {
-    const id = this.normalizeId(schemaId);
+    const id = normalizeId(schemaId);
     this.getOrAddSchemaHandle(id, schemaContent);
     this.schemaPriorityMapping.set(id, new Set<SchemaPriority>().add(SchemaPriority.Settings));
     return Promise.resolve(undefined);
@@ -1339,7 +1332,7 @@ export class YAMLSchemaService extends JSONSchemaService {
    * Delete a schema with schema ID.
    */
   public async deleteSchema(schemaId: string): Promise<void> {
-    const id = this.normalizeId(schemaId);
+    const id = normalizeId(schemaId);
     if (this.schemasById[id]) {
       delete this.schemasById[id];
     }
@@ -1406,15 +1399,6 @@ export class YAMLSchemaService extends JSONSchemaService {
     } else if (typeof object === 'object' && typeof token !== 'string') {
       throw new Error('Expected a string after the object');
     }
-  }
-
-  /**
-   * Everything below here wraps local fork internals that are implemented from the upstream
-   * vscode-json-languageservice JavaScript output and intentionally keep a loose type surface.
-   */
-
-  normalizeId(id: string): string {
-    return normalizeJsonSchemaId(id);
   }
 
   getOrAddSchemaHandle(id: string, unresolvedSchemaContent?: JSONSchema): SchemaHandle {
