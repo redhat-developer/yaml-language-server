@@ -7,7 +7,6 @@
 import type { PromiseConstructor, SchemaConfiguration } from '../jsonLanguageTypes';
 import { ErrorCode, SchemaDraft } from '../jsonLanguageTypes';
 import * as Strings from '../utils/strings';
-import { createRegex } from '../utils/glob';
 import type { SettingsState } from '../../yamlSettings';
 import type { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
 import type { SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
@@ -33,6 +32,7 @@ import Ajv2019 from 'ajv/dist/2019';
 import Ajv2020 from 'ajv/dist/2020';
 import type { Localize } from 'ajv-i18n/localize/types';
 import * as Json from 'jsonc-parser';
+import picomatch from 'picomatch';
 import { parse } from 'yaml';
 import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, isKubernetes } from '../utils/schemaUrls';
 import { autoDetectKubernetesSchema } from './k8sSchemaUtil';
@@ -65,6 +65,8 @@ const AJV_LOCALE_ALIASES = new Map<string, string>([
   ['zh-cn', 'zh'],
   ['zh-tw', 'zh-TW'],
 ]);
+
+const PATH_SEP = '/';
 
 // metadata/keywords that don't add constraints and thus don't count as $ref siblings
 const REF_SIBLING_NONCONSTRAINT_KEYS = new Set([
@@ -195,52 +197,40 @@ export interface ISchemaHandle {
   getResolvedSchema(): PromiseLike<ResolvedSchema>;
 }
 
-const BANG = '!';
-const PATH_SEP = '/';
-
-interface IGlobWrapper {
-  regexp: RegExp;
-  include: boolean;
-}
-
 export class FilePatternAssociation {
-  private readonly globWrappers: IGlobWrapper[];
+  private readonly isMatch: (fileName: string) => boolean;
 
   constructor(
     pattern: string[],
     private readonly folderUri: string | undefined,
     public readonly uris: string[]
   ) {
-    this.globWrappers = [];
     try {
-      for (let patternString of pattern) {
-        const include = patternString[0] !== BANG;
-        if (!include) {
-          patternString = patternString.substring(1);
-        }
-        if (patternString.length > 0) {
+      // strip leading / and add **/ prefix
+      const processedPatterns = pattern
+        .map((p) => {
+          let patternString = p;
           if (patternString[0] === PATH_SEP) {
             patternString = patternString.substring(1);
           }
-          this.globWrappers.push({
-            regexp: createRegex(patternString, { extended: true, globstar: true }),
-            include: include,
-          });
-          this.globWrappers.push({
-            regexp: createRegex('**/' + patternString, { extended: true, globstar: true }),
-            include: include,
-          });
-        }
-      }
+          return '**/' + patternString;
+        })
+        .filter((p) => p.length > 0);
+
+      this.isMatch = picomatch(processedPatterns, {
+        bash: true,
+        noglobstar: false,
+      });
+
       if (folderUri) {
         folderUri = normalizeResourceForMatching(folderUri);
-        if (!folderUri.endsWith('/')) {
-          folderUri = folderUri + '/';
+        if (!folderUri.endsWith(PATH_SEP)) {
+          folderUri = folderUri + PATH_SEP;
         }
         this.folderUri = folderUri;
       }
     } catch {
-      this.globWrappers.length = 0;
+      this.isMatch = () => false;
       this.uris = [];
     }
   }
@@ -249,13 +239,7 @@ export class FilePatternAssociation {
     if (this.folderUri && !fileName.startsWith(this.folderUri)) {
       return false;
     }
-    let match = false;
-    for (const { regexp, include } of this.globWrappers) {
-      if (regexp.test(fileName)) {
-        match = include;
-      }
-    }
-    return match;
+    return this.isMatch(fileName);
   }
 
   public getURIs(): string[] {
@@ -885,12 +869,12 @@ export class YAMLSchemaService implements IJSONSchemaService {
       }
 
       // JSON pointer style
-      if (refPath[0] === '/') {
+      if (refPath[0] === PATH_SEP) {
         let current = schemaRoot;
-        const parts = refPath.substr(1).split('/');
+        const parts = refPath.substring(1).split(PATH_SEP);
         for (const part of parts) {
           // in JSON Pointer: ~ must be escaped as ~0, / must be escaped as ~1
-          current = current?.[part.replace(/~1/g, '/').replace(/~0/g, '~')];
+          current = current?.[part.replace(/~1/g, PATH_SEP).replace(/~0/g, '~')];
           if (current === null) return undefined;
         }
         return current as JSONSchema;
@@ -928,7 +912,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
 
     const _resolveRefUri = (parentSchemaURL: string, refUri: string): string => {
       const resolvedAgainstParent = _resolveAgainstBase(parentSchemaURL, refUri);
-      if (!refUri.startsWith('/')) return resolvedAgainstParent;
+      if (!refUri.startsWith(PATH_SEP)) return resolvedAgainstParent;
       const parentResource = resourceIndexByUri.get(parentSchemaURL)?.root;
       const parentResourceId = parentResource?.$id || parentResource?.id;
       if (!parentResourceId) return resolvedAgainstParent;
@@ -998,7 +982,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
         );
       };
 
-      const _resolveByUri = (targetUris: string[], index = 0): Promise<unknown> => {
+      const _resolveByUri = async (targetUris: string[], index = 0): Promise<unknown> => {
         const targetUri = targetUris[index];
 
         const embeddedSchema = resourceIndexByUri.get(targetUri)?.root;
@@ -1017,35 +1001,33 @@ export class YAMLSchemaService implements IJSONSchemaService {
         }
 
         const referencedHandle = this.getOrAddSchemaHandle(targetUri);
-        return Promise.resolve(referencedHandle.getUnresolvedSchema()).then(async (unresolvedSchema) => {
-          if (
-            unresolvedSchema.errors?.some((error) => error.message.toLowerCase().includes('unable to load schema from')) &&
-            index + 1 < targetUris.length
-          ) {
-            return _resolveByUri(targetUris, index + 1);
-          }
-
-          if (unresolvedSchema.errors.length) {
-            const schemaError = unresolvedSchema.errors[0];
-            const loc = linkPath ? targetUri + '#' + linkPath : targetUri;
-            resolveErrors.push(
-              toDiagnostic(l10n.t("Problems loading reference '{0}': {1}", loc, schemaError.message), schemaError.code, targetUri)
-            );
-          }
-          // index resources for the newly loaded schema
-          await _indexSchemaResources(unresolvedSchema.schema, targetUri);
-          return _attachResolvedSchema(
-            node,
-            unresolvedSchema.schema,
-            targetUri,
-            linkPath,
-            parentSchemaDependencies,
-            referencedHandle.dependencies,
-            resolutionStack,
-            recursiveAnchorBase,
-            inheritedDynamicScope
+        const unresolvedSchema = await Promise.resolve(referencedHandle.getUnresolvedSchema());
+        if (
+          unresolvedSchema.errors?.some((error) => error.message.toLowerCase().includes('unable to load schema from')) &&
+          index + 1 < targetUris.length
+        ) {
+          return _resolveByUri(targetUris, index + 1);
+        }
+        if (unresolvedSchema.errors.length) {
+          const schemaError = unresolvedSchema.errors[0];
+          const loc = linkPath ? targetUri + '#' + linkPath : targetUri;
+          resolveErrors.push(
+            toDiagnostic(l10n.t("Problems loading reference '{0}': {1}", loc, schemaError.message), schemaError.code, targetUri)
           );
-        });
+        }
+        // index resources for the newly loaded schema
+        await _indexSchemaResources(unresolvedSchema.schema, targetUri);
+        return await _attachResolvedSchema(
+          node,
+          unresolvedSchema.schema,
+          targetUri,
+          linkPath,
+          parentSchemaDependencies,
+          referencedHandle.dependencies,
+          resolutionStack,
+          recursiveAnchorBase,
+          inheritedDynamicScope
+        );
       };
 
       const resolvedUri = _resolveRefUri(parentSchemaURL, uri);
@@ -1407,11 +1389,10 @@ export class YAMLSchemaService implements IJSONSchemaService {
   }
 
   public getSchemaForResource(resource: string, doc?: JSONDocument): Promise<ResolvedSchema | undefined> {
-    const resolveSchemaForResource = (schemas: string[]): Promise<ResolvedSchema | undefined> => {
+    const resolveSchemaForResource = async (schemas: string[]): Promise<ResolvedSchema | undefined> => {
       const schemaHandle = this.createCombinedSchema(resource, schemas);
-      return Promise.resolve(schemaHandle.getResolvedSchema()).then((schema) => {
-        return this.finalizeResolvedSchema(schema, schemaHandle.uri, doc, false);
-      });
+      const schema = await Promise.resolve(schemaHandle.getResolvedSchema());
+      return this.finalizeResolvedSchema(schema, schemaHandle.uri, doc, false);
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1654,7 +1635,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
    * @returns the JSON Schema resolved at that specific path
    */
   private resolveJSONSchemaToSection(schema: JSONSchema, paths: string): JSONSchema {
-    const splitPathway = paths.split('/');
+    const splitPathway = paths.split(PATH_SEP);
     let resolvedSchemaLocation = schema;
     for (const path of splitPathway) {
       if (path === '') {
@@ -1802,7 +1783,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
             errorString = errorSplit[1];
           }
           if (Strings.endsWith(errorString, '.')) {
-            errorString = errorString.substr(0, errorString.length - 1);
+            errorString = errorString.substring(0, errorString.length - 1);
           }
           message = errorString;
         }
@@ -1813,77 +1794,76 @@ export class YAMLSchemaService implements IJSONSchemaService {
     );
   }
 
-  loadSchema(schemaUri: string): Promise<UnresolvedSchema> {
+  async loadSchema(schemaUri: string): Promise<UnresolvedSchema> {
     const requestService = this.requestService;
-    return Promise.resolve(this.loadJSONSchema(schemaUri)).then(async (unresolvedJsonSchema: UnresolvedSchema) => {
-      // If json-language-server failed to parse the schema, attempt to parse it as YAML instead.
-      // If the YAML file starts with %YAML 1.x or contains a comment with a number the schema will
-      // contain a number instead of being undefined, so we need to check for that too.
-      if (
-        unresolvedJsonSchema.errors &&
-        (unresolvedJsonSchema.schema === undefined || typeof unresolvedJsonSchema.schema === 'number')
-      ) {
-        return requestService(schemaUri).then(
-          (content) => {
-            if (!content) {
-              const errorMessage = l10n.t(
-                "Unable to load schema from '{0}': No content. {1}",
-                toDisplayString(schemaUri),
-                unresolvedJsonSchema.errors.map((error) => error.message).join(', ')
-              );
-              return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri)]);
-            }
-
-            try {
-              const schemaContent = parse(content);
-              return new UnresolvedSchema(schemaContent, []);
-            } catch (yamlError) {
-              const errorMessage = l10n.t("Unable to parse content from '{0}': {1}.", toDisplayString(schemaUri), yamlError);
-              return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri)]);
-            }
-          },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (error: any) => {
-            let errorMessage = error.toString();
-            const errorSplit = error.toString().split('Error: ');
-            if (errorSplit.length > 1) {
-              // more concise error message, URL and context are attached by caller anyways
-              errorMessage = errorSplit[1];
-            }
+    const unresolvedJsonSchema = await Promise.resolve(this.loadJSONSchema(schemaUri));
+    // If json-language-server failed to parse the schema, attempt to parse it as YAML instead.
+    // If the YAML file starts with %YAML 1.x or contains a comment with a number the schema will
+    // contain a number instead of being undefined, so we need to check for that too.
+    if (
+      unresolvedJsonSchema.errors &&
+      (unresolvedJsonSchema.schema === undefined || typeof unresolvedJsonSchema.schema === 'number')
+    ) {
+      return requestService(schemaUri).then(
+        (content) => {
+          if (!content) {
+            const errorMessage = l10n.t(
+              "Unable to load schema from '{0}': No content. {1}",
+              toDisplayString(schemaUri),
+              unresolvedJsonSchema.errors.map((error) => error.message).join(', ')
+            );
             return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri)]);
           }
-        );
-      }
-      unresolvedJsonSchema.uri = schemaUri;
-      if (this.schemaUriToNameAndDescription.has(schemaUri)) {
-        const { name, description, versions } = this.schemaUriToNameAndDescription.get(schemaUri);
-        unresolvedJsonSchema.schema.title = name ?? unresolvedJsonSchema.schema.title;
-        unresolvedJsonSchema.schema.description = description ?? unresolvedJsonSchema.schema.description;
-        unresolvedJsonSchema.schema.versions = versions ?? unresolvedJsonSchema.schema.versions;
-      } else if (unresolvedJsonSchema.errors && unresolvedJsonSchema.errors.length > 0) {
-        const schemaError = unresolvedJsonSchema.errors[0];
-        let errorMessage = schemaError.message;
-        if (errorMessage.toLowerCase().indexOf('load') !== -1) {
-          errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(schemaUri));
-        } else if (errorMessage.toLowerCase().indexOf('parse') !== -1) {
-          const content = await requestService(schemaUri);
-          const jsonErrors: Json.ParseError[] = [];
-          const schemaContent = Json.parse(content, jsonErrors);
-          if (jsonErrors.length && schemaContent) {
-            const { offset } = jsonErrors[0];
-            const { line, column } = getLineAndColumnFromOffset(content, offset);
-            errorMessage = l10n.t(
-              "Unable to parse content from '{0}': Parse error at line: {1} column: {2}",
-              toDisplayString(schemaUri),
-              line,
-              column
-            );
+
+          try {
+            const schemaContent = parse(content);
+            return new UnresolvedSchema(schemaContent, []);
+          } catch (yamlError) {
+            const errorMessage_1 = l10n.t("Unable to parse content from '{0}': {1}.", toDisplayString(schemaUri), yamlError);
+            return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage_1, ErrorCode.SchemaResolveError, schemaUri)]);
           }
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (error_1: any) => {
+          let errorMessage_2 = error_1.toString();
+          const errorSplit = error_1.toString().split('Error: ');
+          if (errorSplit.length > 1) {
+            // more concise error message, URL and context are attached by caller anyways
+            errorMessage_2 = errorSplit[1];
+          }
+          return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage_2, ErrorCode.SchemaResolveError, schemaUri)]);
         }
-        return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, schemaError.code, schemaUri)]);
+      );
+    }
+    unresolvedJsonSchema.uri = schemaUri;
+    if (this.schemaUriToNameAndDescription.has(schemaUri)) {
+      const { name, description, versions } = this.schemaUriToNameAndDescription.get(schemaUri);
+      unresolvedJsonSchema.schema.title = name ?? unresolvedJsonSchema.schema.title;
+      unresolvedJsonSchema.schema.description = description ?? unresolvedJsonSchema.schema.description;
+      unresolvedJsonSchema.schema.versions = versions ?? unresolvedJsonSchema.schema.versions;
+    } else if (unresolvedJsonSchema.errors && unresolvedJsonSchema.errors.length > 0) {
+      const schemaError = unresolvedJsonSchema.errors[0];
+      let errorMessage_3 = schemaError.message;
+      if (errorMessage_3.toLowerCase().indexOf('load') !== -1) {
+        errorMessage_3 = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(schemaUri));
+      } else if (errorMessage_3.toLowerCase().indexOf('parse') !== -1) {
+        const content_1 = await requestService(schemaUri);
+        const jsonErrors: Json.ParseError[] = [];
+        const schemaContent_1 = Json.parse(content_1, jsonErrors);
+        if (jsonErrors.length && schemaContent_1) {
+          const { offset } = jsonErrors[0];
+          const { line, column } = getLineAndColumnFromOffset(content_1, offset);
+          errorMessage_3 = l10n.t(
+            "Unable to parse content from '{0}': Parse error at line: {1} column: {2}",
+            toDisplayString(schemaUri),
+            line,
+            column
+          );
+        }
       }
-      return unresolvedJsonSchema;
-    });
+      return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage_3, schemaError.code, schemaUri)]);
+    }
+    return await unresolvedJsonSchema;
   }
 
   registerExternalSchema(

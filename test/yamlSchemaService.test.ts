@@ -834,5 +834,35 @@ spec:
         BASE_KUBERNETES_SCHEMA_URL + '_definitions.json#/definitions/io.k8s.api.autoscaling.v2.HorizontalPodAutoscaler'
       );
     });
+
+    it('should support extglob !(config) pattern', () => {
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      const issueFormSchema: JSONSchema = {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          description: { type: 'string' },
+        },
+        required: ['name'],
+      };
+      service.registerExternalSchema(
+        'https://json.schemastore.org/github-issue-forms.json',
+        ['**/.github/ISSUE_TEMPLATE/!(config).yml', '**/.github/ISSUE_TEMPLATE/!(config).yaml'],
+        issueFormSchema
+      );
+      const bugReportUris = service.getSchemaURIsForResource('.github/ISSUE_TEMPLATE/bug_report.yml');
+      expect(bugReportUris).to.include('https://json.schemastore.org/github-issue-forms.json');
+      const featureUris = service.getSchemaURIsForResource('.github/ISSUE_TEMPLATE/feature_request.yaml');
+      expect(featureUris).to.include('https://json.schemastore.org/github-issue-forms.json');
+      const customUris = service.getSchemaURIsForResource('project/.github/ISSUE_TEMPLATE/custom.yml');
+      expect(customUris).to.include('https://json.schemastore.org/github-issue-forms.json');
+      const configYmlUris = service.getSchemaURIsForResource('.github/ISSUE_TEMPLATE/config.yml');
+      expect(configYmlUris).to.not.include('https://json.schemastore.org/github-issue-forms.json');
+      const configYamlUris = service.getSchemaURIsForResource('.github/ISSUE_TEMPLATE/config.yaml');
+      expect(configYamlUris).to.not.include('https://json.schemastore.org/github-issue-forms.json');
+      const nestedConfigUris = service.getSchemaURIsForResource('nested/repo/.github/ISSUE_TEMPLATE/config.yml');
+      expect(nestedConfigUris).to.not.include('https://json.schemastore.org/github-issue-forms.json');
+    });
   });
 });
