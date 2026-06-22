@@ -20,7 +20,7 @@ import type { Diagnostic, Range } from 'vscode-languageserver-types';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Node, Pair } from 'yaml';
 import type { IApplicableSchema } from './schemaValidation/baseValidator';
-import { findNodeAtOffset } from './astNodeUtils';
+import { findNodeAtOffset } from '../utils/astNodeUtils';
 import { getValidator } from './schemaValidation/validatorFactory';
 
 abstract class ASTNodeImpl {

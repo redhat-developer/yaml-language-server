@@ -336,7 +336,7 @@ export type SchemaDiagnostic = {
   relatedInformation?: DiagnosticRelatedInformation[];
 };
 
-export function toDiagnostic(message: string, code: ErrorCode, relatedURL?: string): SchemaDiagnostic {
+function toDiagnostic(message: string, code: ErrorCode, relatedURL?: string): SchemaDiagnostic {
   const relatedInformation: DiagnosticRelatedInformation[] | undefined = relatedURL
     ? [
         {

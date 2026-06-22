@@ -15,7 +15,7 @@ import { isAlias, isMap, isSeq, stringify as stringifyYAML } from 'yaml';
 import type { ASTNode, ObjectASTNode, PropertyASTNode } from '../jsonLanguageTypes';
 import type { JSONSchema } from '../jsonSchema';
 import { setKubernetesParserOption } from '../parser/isKubernetes';
-import { getNodeValue } from '../parser/astNodeUtils';
+import { getNodeValue } from '../utils/astNodeUtils';
 import type { IApplicableSchema } from '../parser/schemaValidation/baseValidator';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import type { SingleYAMLDocument } from '../parser/yamlParser07';
