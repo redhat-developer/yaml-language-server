@@ -1080,7 +1080,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
         next: JSONSchema,
         nodeBaseUri: string,
         nodeSourceUri: string,
-        nodeSchemaDraft: SchemaDraft | undefined,
+        nodeSchemaDraft: SchemaDraft,
         recursiveAnchorBase?: string,
         inheritedDynamicScope?: Map<string, JSONSchema[]>,
         siblingRefCycleKeys?: Set<string>
@@ -1388,8 +1388,8 @@ export class YAMLSchemaService implements IJSONSchemaService {
     return new ResolvedSchema(schema, resolveErrors);
   }
 
-  public async getSchemaForResource(resource: string, doc?: JSONDocument): Promise<ResolvedSchema | undefined> {
-    const resolveSchemaForResource = async (schemas: string[]): Promise<ResolvedSchema | undefined> => {
+  public async getSchemaForResource(resource: string, doc: JSONDocument): Promise<ResolvedSchema> {
+    const resolveSchemaForResource = async (schemas: string[]): Promise<ResolvedSchema> => {
       const schemaHandle = this.createCombinedSchema(resource, schemas);
       const schema = await Promise.resolve(schemaHandle.getResolvedSchema());
       return this.finalizeResolvedSchema(schema, schemaHandle.uri, doc, false);
@@ -1406,7 +1406,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
         if (entry.matchesPattern(resource)) {
           for (const schemaId of entry.getURIs()) {
             if (!seen[schemaId]) {
-              if (doc && this.yamlSettings?.kubernetesCRDStoreEnabled && isKubernetes(schemaId)) {
+              if (this.yamlSettings?.kubernetesCRDStoreEnabled && isKubernetes(schemaId)) {
                 if (!k8sAllSchema) {
                   k8sSchemaUrl = schemaId;
                   k8sAllSchema = await this.getResolvedSchema(schemaId);
@@ -1441,18 +1441,16 @@ export class YAMLSchemaService implements IJSONSchemaService {
 
       return Promise.resolve(null);
     };
-    if (doc) {
-      const modelineSchema = this.resolveModelineSchema(resource, doc);
-      if (modelineSchema) {
-        if (modelineSchema === 'none') {
-          return Promise.resolve(null);
-        }
-        return resolveSchemaForResource([modelineSchema]);
+    const modelineSchema = this.resolveModelineSchema(resource, doc);
+    if (modelineSchema) {
+      if (modelineSchema === 'none') {
+        return Promise.resolve(null);
       }
-      const dollarSchema = this.resolveDollarSchema(resource, doc);
-      if (dollarSchema) {
-        return resolveSchemaForResource([dollarSchema]);
-      }
+      return resolveSchemaForResource([modelineSchema]);
+    }
+    const dollarSchema = this.resolveDollarSchema(resource, doc);
+    if (dollarSchema) {
+      return resolveSchemaForResource([dollarSchema]);
     }
     if (this.customSchemaProvider) {
       try {
@@ -1488,12 +1486,12 @@ export class YAMLSchemaService implements IJSONSchemaService {
   private finalizeResolvedSchema(
     schema: ResolvedSchema,
     schemaUrl: string,
-    doc: JSONDocument | undefined,
+    doc: JSONDocument,
     includeErrorsForSequence: boolean
   ): ResolvedSchema {
     if (schema.schema && typeof schema.schema === 'object') {
       schema.schema.url = schemaUrl;
-      if (doc && schema.schema.schemaSequence && schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]) {
+      if (schema.schema.schemaSequence && schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex]) {
         const selectedSchema = schema.schema.schemaSequence[(<SingleYAMLDocument>doc).currentDocIndex];
         if (includeErrorsForSequence) {
           return new ResolvedSchema(selectedSchema, schema.errors, schema.warnings, schema.schemaDraft);
