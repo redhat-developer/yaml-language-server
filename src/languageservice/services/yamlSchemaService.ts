@@ -286,9 +286,9 @@ export class SchemaHandle implements ISchemaHandle {
 
   public getResolvedSchema(): PromiseLike<ResolvedSchema> {
     if (!this.resolvedSchema) {
-      this.resolvedSchema = this.getUnresolvedSchema().then((unresolved) => {
-        return this.service.resolveSchemaContent(unresolved, this.uri, this.dependencies);
-      });
+      this.resolvedSchema = this.getUnresolvedSchema().then((unresolved) =>
+        this.service.resolveSchemaContent(unresolved, this.uri, this.dependencies)
+      );
     }
     return this.resolvedSchema;
   }
@@ -1388,7 +1388,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
     return new ResolvedSchema(schema, resolveErrors);
   }
 
-  public getSchemaForResource(resource: string, doc?: JSONDocument): Promise<ResolvedSchema | undefined> {
+  public async getSchemaForResource(resource: string, doc?: JSONDocument): Promise<ResolvedSchema | undefined> {
     const resolveSchemaForResource = async (schemas: string[]): Promise<ResolvedSchema | undefined> => {
       const schemaHandle = this.createCombinedSchema(resource, schemas);
       const schema = await Promise.resolve(schemaHandle.getResolvedSchema());
@@ -1455,52 +1455,32 @@ export class YAMLSchemaService implements IJSONSchemaService {
       }
     }
     if (this.customSchemaProvider) {
-      return this.customSchemaProvider(resource)
-        .then((schemaUri) => {
-          if (Array.isArray(schemaUri)) {
-            if (schemaUri.length === 0) {
-              return resolveSchema();
-            }
-            return Promise.all(
-              schemaUri.map((schemaUri) => {
-                return this.resolveCustomSchema(schemaUri, doc);
-              })
-            ).then(
-              (schemas) => {
-                const errors = schemas.flatMap((schemaObj) => schemaObj.errors ?? []);
-                const warnings = schemas.flatMap((schemaObj) => schemaObj.warnings ?? []);
-                const schemaDraft = schemas.find((schemaObj) => schemaObj.schemaDraft)?.schemaDraft;
-                return new ResolvedSchema(
-                  {
-                    allOf: schemas.map((schemaObj) => {
-                      return schemaObj.schema;
-                    }),
-                  },
-                  errors,
-                  warnings,
-                  schemaDraft
-                );
-              },
-              () => {
-                return resolveSchema();
-              }
-            );
-          }
-
-          if (!schemaUri) {
+      try {
+        const schemaUri = await this.customSchemaProvider(resource);
+        if (Array.isArray(schemaUri)) {
+          if (schemaUri.length === 0) {
             return resolveSchema();
           }
-
-          return this.resolveCustomSchema(schemaUri, doc);
-        })
-        .then(
-          (schema) => {
-            return schema;
-          },
-          () => {
-            return resolveSchema();
-          }
-        );
+          const schemas = await Promise.all(schemaUri.map((uri) => this.resolveCustomSchema(uri, doc)));
+          const errors = schemas.flatMap((schemaObj) => schemaObj.errors ?? []);
+          const warnings = schemas.flatMap((schemaObj) => schemaObj.warnings ?? []);
+          const schemaDraft = schemas.find((schemaObj) => schemaObj.schemaDraft)?.schemaDraft;
+          return new ResolvedSchema(
+            {
+              allOf: schemas.map((schemaObj) => schemaObj.schema),
+            },
+            errors,
+            warnings,
+            schemaDraft
+          );
+        }
+        if (!schemaUri) {
+          return resolveSchema();
+        }
+        return this.resolveCustomSchema(schemaUri, doc);
+      } catch {
+        return resolveSchema();
+      }
     }
     return resolveSchema();
   }
@@ -1729,74 +1709,61 @@ export class YAMLSchemaService implements IJSONSchemaService {
     return this.getAssociatedSchemas(resource);
   }
 
-  private loadJSONSchema(url: string): PromiseLike<UnresolvedSchema> {
+  private async loadJSONSchema(url: string): Promise<UnresolvedSchema> {
     if (!this.requestService) {
       const errorMessage = l10n.t("Unable to load schema from '{0}'. No schema request service available", toDisplayString(url));
-      return this.promise.resolve(
-        new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, url)])
-      );
+      return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, url)]);
     }
-    return this.requestService(url).then(
-      (content) => {
-        if (!content) {
-          const errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(url));
-          return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, url)]);
-        }
-        const errors = [];
-        if (content.charCodeAt(0) === 65279) {
-          errors.push(
-            toDiagnostic(
-              l10n.t("Problem reading content from '{0}': UTF-8 with BOM detected, only UTF 8 is allowed.", toDisplayString(url)),
-              ErrorCode.SchemaResolveError,
-              url
-            )
-          );
-          content = content.trimStart();
-        }
-
-        let schemaContent: JSONSchema = {};
-        const jsonErrors: Json.ParseError[] = [];
-        schemaContent = Json.parse(content, jsonErrors);
-        if (jsonErrors.length) {
-          errors.push(
-            toDiagnostic(
-              l10n.t(
-                "Unable to parse content from '{0}': Parse error at offset {1}.",
-                toDisplayString(url),
-                jsonErrors[0].offset
-              ),
-              ErrorCode.SchemaResolveError,
-              url
-            )
-          );
-        }
-        return new UnresolvedSchema(schemaContent, errors);
-      },
-      (error) => {
-        let { message } = error;
-        const { code } = error;
-        if (typeof message !== 'string') {
-          let errorString = error.toString() as string;
-          const errorSplit = error.toString().split('Error: ');
-          if (errorSplit.length > 1) {
-            // more concise error message, URL and context are attached by caller anyways
-            errorString = errorSplit[1];
-          }
-          if (Strings.endsWith(errorString, '.')) {
-            errorString = errorString.substring(0, errorString.length - 1);
-          }
-          message = errorString;
-        }
-        const errorCode = ErrorCode.SchemaResolveError + (typeof code === 'number' && code < 0x10000 ? code : 0);
-        const errorMessage = l10n.t("Unable to load schema from '{0}': {1}.", toDisplayString(url), message);
-        return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, errorCode, url)]);
+    try {
+      let content = await this.requestService(url);
+      if (!content) {
+        const errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(url));
+        return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, url)]);
       }
-    );
+      const errors = [];
+      if (content.charCodeAt(0) === 65279) {
+        errors.push(
+          toDiagnostic(
+            l10n.t("Problem reading content from '{0}': UTF-8 with BOM detected, only UTF 8 is allowed.", toDisplayString(url)),
+            ErrorCode.SchemaResolveError,
+            url
+          )
+        );
+        content = content.trimStart();
+      }
+      let schemaContent: JSONSchema = {};
+      const jsonErrors: Json.ParseError[] = [];
+      schemaContent = Json.parse(content, jsonErrors);
+      if (jsonErrors.length) {
+        errors.push(
+          toDiagnostic(
+            l10n.t("Unable to parse content from '{0}': Parse error at offset {1}.", toDisplayString(url), jsonErrors[0].offset),
+            ErrorCode.SchemaResolveError,
+            url
+          )
+        );
+      }
+      return new UnresolvedSchema(schemaContent, errors);
+    } catch (error) {
+      let message = typeof error.message === 'string' ? error.message : error.toString();
+      const { code } = error;
+      const errorSplit = message.split('Error: ');
+      if (errorSplit.length > 1) {
+        // more concise error message, URL and context are attached by caller anyways
+        message = errorSplit[1];
+      }
+      if (message.endsWith('.')) {
+        message = message.slice(0, -1);
+      }
+      const errorCode = ErrorCode.SchemaResolveError + (typeof code === 'number' && code < 0x10000 ? code : 0);
+      const errorMessage = l10n.t("Unable to load schema from '{0}': {1}.", toDisplayString(url), message);
+      return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, errorCode, url)]);
+    }
   }
 
   async loadSchema(schemaUri: string): Promise<UnresolvedSchema> {
     const requestService = this.requestService;
-    const unresolvedJsonSchema = await Promise.resolve(this.loadJSONSchema(schemaUri));
+    const unresolvedJsonSchema = await this.loadJSONSchema(schemaUri);
     // If json-language-server failed to parse the schema, attempt to parse it as YAML instead.
     // If the YAML file starts with %YAML 1.x or contains a comment with a number the schema will
     // contain a number instead of being undefined, so we need to check for that too.
@@ -1804,36 +1771,32 @@ export class YAMLSchemaService implements IJSONSchemaService {
       unresolvedJsonSchema.errors &&
       (unresolvedJsonSchema.schema === undefined || typeof unresolvedJsonSchema.schema === 'number')
     ) {
-      return requestService(schemaUri).then(
-        (content) => {
-          if (!content) {
-            const errorMessage = l10n.t(
-              "Unable to load schema from '{0}': No content. {1}",
-              toDisplayString(schemaUri),
-              unresolvedJsonSchema.errors.map((error) => error.message).join(', ')
-            );
-            return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri)]);
-          }
-
-          try {
-            const schemaContent = parse(content);
-            return new UnresolvedSchema(schemaContent, []);
-          } catch (yamlError) {
-            const errorMessage_1 = l10n.t("Unable to parse content from '{0}': {1}.", toDisplayString(schemaUri), yamlError);
-            return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage_1, ErrorCode.SchemaResolveError, schemaUri)]);
-          }
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (error_1: any) => {
-          let errorMessage_2 = error_1.toString();
-          const errorSplit = error_1.toString().split('Error: ');
-          if (errorSplit.length > 1) {
-            // more concise error message, URL and context are attached by caller anyways
-            errorMessage_2 = errorSplit[1];
-          }
-          return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage_2, ErrorCode.SchemaResolveError, schemaUri)]);
+      try {
+        const content = await requestService(schemaUri);
+        if (!content) {
+          const errorMessage = l10n.t(
+            "Unable to load schema from '{0}': No content. {1}",
+            toDisplayString(schemaUri),
+            unresolvedJsonSchema.errors.map((error) => error.message).join(', ')
+          );
+          return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri)]);
         }
-      );
+        try {
+          const schemaContent = parse(content);
+          return new UnresolvedSchema(schemaContent, []);
+        } catch (yamlError) {
+          const errorMessage = l10n.t("Unable to parse content from '{0}': {1}.", toDisplayString(schemaUri), yamlError);
+          return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri)]);
+        }
+      } catch (error) {
+        let errorMessage = error.toString();
+        const errorSplit = error.toString().split('Error: ');
+        if (errorSplit.length > 1) {
+          // more concise error message, URL and context are attached by caller anyways
+          errorMessage = errorSplit[1];
+        }
+        return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri)]);
+      }
     }
     unresolvedJsonSchema.uri = schemaUri;
     if (this.schemaUriToNameAndDescription.has(schemaUri)) {
@@ -1843,17 +1806,17 @@ export class YAMLSchemaService implements IJSONSchemaService {
       unresolvedJsonSchema.schema.versions = versions ?? unresolvedJsonSchema.schema.versions;
     } else if (unresolvedJsonSchema.errors && unresolvedJsonSchema.errors.length > 0) {
       const schemaError = unresolvedJsonSchema.errors[0];
-      let errorMessage_3 = schemaError.message;
-      if (errorMessage_3.toLowerCase().indexOf('load') !== -1) {
-        errorMessage_3 = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(schemaUri));
-      } else if (errorMessage_3.toLowerCase().indexOf('parse') !== -1) {
-        const content_1 = await requestService(schemaUri);
+      let errorMessage = schemaError.message;
+      if (errorMessage.toLowerCase().indexOf('load') !== -1) {
+        errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(schemaUri));
+      } else if (errorMessage.toLowerCase().indexOf('parse') !== -1) {
+        const content = await requestService(schemaUri);
         const jsonErrors: Json.ParseError[] = [];
-        const schemaContent_1 = Json.parse(content_1, jsonErrors);
-        if (jsonErrors.length && schemaContent_1) {
+        const schemaContent = Json.parse(content, jsonErrors);
+        if (jsonErrors.length && schemaContent) {
           const { offset } = jsonErrors[0];
-          const { line, column } = getLineAndColumnFromOffset(content_1, offset);
-          errorMessage_3 = l10n.t(
+          const { line, column } = getLineAndColumnFromOffset(content, offset);
+          errorMessage = l10n.t(
             "Unable to parse content from '{0}': Parse error at line: {1} column: {2}",
             toDisplayString(schemaUri),
             line,
@@ -1861,9 +1824,9 @@ export class YAMLSchemaService implements IJSONSchemaService {
           );
         }
       }
-      return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage_3, schemaError.code, schemaUri)]);
+      return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, schemaError.code, schemaUri)]);
     }
-    return await unresolvedJsonSchema;
+    return unresolvedJsonSchema;
   }
 
   registerExternalSchema(

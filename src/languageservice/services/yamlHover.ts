@@ -71,7 +71,7 @@ export class YAMLHover {
   }
 
   // method copied from https://github.com/microsoft/vscode-json-languageservice/blob/2ea5ad3d2ffbbe40dea11cfe764a502becf113ce/src/services/jsonHover.ts#L23
-  private getHover(document: TextDocument, position: Position, doc: SingleYAMLDocument): Promise<Hover | null> {
+  private async getHover(document: TextDocument, position: Position, doc: SingleYAMLDocument): Promise<Hover | null> {
     const offset = document.offsetAt(position);
     let node = doc.getNodeFromOffset(offset);
     if (
@@ -122,104 +122,103 @@ export class YAMLHover {
       return value.replace(/\s\|\|\s*$/, '');
     };
 
-    return this.schemaService.getSchemaForResource(document.uri, doc).then((schema) => {
-      if (schema && node && !schema.errors.length) {
-        const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
+    const schema = await this.schemaService.getSchemaForResource(document.uri, doc);
+    if (schema && node && !schema.errors.length) {
+      const matchingSchemas = doc.getMatchingSchemas(schema.schema, node.offset);
 
-        let title: string | undefined = undefined;
-        let markdownDescription: string | undefined = undefined;
-        let markdownEnumDescriptions: string[] = [];
-        const markdownExamples: string[] = [];
-        const markdownEnums: markdownEnum[] = [];
-        let enumIdx: number | undefined = undefined;
-        matchingSchemas.every((s) => {
-          if ((s.node === node || (node.type === 'property' && node.valueNode === s.node)) && !s.inverted && s.schema) {
-            title = title || s.schema.title || s.schema.closestTitle;
-            markdownDescription = markdownDescription || s.schema.markdownDescription || this.toMarkdown(s.schema.description);
-            if (s.schema.enum) {
-              enumIdx = s.schema.enum.indexOf(getNodeValue(node));
-              if (s.schema.markdownEnumDescriptions) {
-                markdownEnumDescriptions = s.schema.markdownEnumDescriptions;
-              } else if (s.schema.enumDescriptions) {
-                markdownEnumDescriptions = s.schema.enumDescriptions.map(this.toMarkdown, this);
-              } else {
-                markdownEnumDescriptions = [];
-              }
-              s.schema.enum.forEach((enumValue, idx) => {
-                enumValue = typeof enumValue === 'string' ? toYamlStringScalar(enumValue, false) : JSON.stringify(enumValue);
-                //insert only if the value is not present yet (avoiding duplicates)
-                //but it also adds or keeps the description of the enum value
-                const foundIdx = markdownEnums.findIndex((me) => me.value === enumValue);
-                if (foundIdx < 0) {
-                  markdownEnums.push({
-                    value: enumValue,
-                    description: markdownEnumDescriptions[idx],
-                  });
-                } else {
-                  markdownEnums[foundIdx].description ||= markdownEnumDescriptions[idx];
-                }
-              });
-            }
-            if (s.schema.anyOf && isAllSchemasMatched(node, matchingSchemas, s.schema)) {
-              //if append title and description of all matched schemas on hover
-              title = '';
-              markdownDescription = s.schema.description ? s.schema.description + '\n' : '';
-              s.schema.anyOf.forEach((childSchema: JSONSchema, index: number) => {
-                title += childSchema.title || s.schema.closestTitle || '';
-                markdownDescription += childSchema.markdownDescription || this.toMarkdown(childSchema.description) || '';
-                if (index !== s.schema.anyOf.length - 1) {
-                  title += ' || ';
-                  markdownDescription += ' || ';
-                }
-              });
-              title = removePipe(title);
-              markdownDescription = removePipe(markdownDescription);
-            }
-            if (s.schema.examples) {
-              s.schema.examples.forEach((example) => {
-                markdownExamples.push(stringifyYAML(example, null, 2));
-              });
-            }
-          }
-          return true;
-        });
-        let result = '';
-        if (title) {
-          result = '#### ' + this.toMarkdown(title);
-        }
-        if (markdownDescription) {
-          result = ensureLineBreak(result);
-          result += markdownDescription;
-        }
-        if (markdownEnums.length !== 0) {
-          result = ensureLineBreak(result);
-          result += l10n.t('Allowed Values:') + '\n\n';
-          if (enumIdx) {
-            markdownEnums.unshift(markdownEnums.splice(enumIdx, 1)[0]);
-          }
-          markdownEnums.forEach((me) => {
-            if (me.description) {
-              result += `* \`${toMarkdownCodeBlock(me.value)}\`: ${me.description}\n`;
+      let title: string | undefined = undefined;
+      let markdownDescription: string | undefined = undefined;
+      let markdownEnumDescriptions: string[] = [];
+      const markdownExamples: string[] = [];
+      const markdownEnums: markdownEnum[] = [];
+      let enumIdx: number | undefined = undefined;
+      matchingSchemas.every((s) => {
+        if ((s.node === node || (node.type === 'property' && node.valueNode === s.node)) && !s.inverted && s.schema) {
+          title = title || s.schema.title || s.schema.closestTitle;
+          markdownDescription = markdownDescription || s.schema.markdownDescription || this.toMarkdown(s.schema.description);
+          if (s.schema.enum) {
+            enumIdx = s.schema.enum.indexOf(getNodeValue(node));
+            if (s.schema.markdownEnumDescriptions) {
+              markdownEnumDescriptions = s.schema.markdownEnumDescriptions;
+            } else if (s.schema.enumDescriptions) {
+              markdownEnumDescriptions = s.schema.enumDescriptions.map(this.toMarkdown, this);
             } else {
-              result += `* \`${toMarkdownCodeBlock(me.value)}\`\n`;
+              markdownEnumDescriptions = [];
             }
-          });
+            s.schema.enum.forEach((enumValue, idx) => {
+              enumValue = typeof enumValue === 'string' ? toYamlStringScalar(enumValue, false) : JSON.stringify(enumValue);
+              //insert only if the value is not present yet (avoiding duplicates)
+              //but it also adds or keeps the description of the enum value
+              const foundIdx = markdownEnums.findIndex((me) => me.value === enumValue);
+              if (foundIdx < 0) {
+                markdownEnums.push({
+                  value: enumValue,
+                  description: markdownEnumDescriptions[idx],
+                });
+              } else {
+                markdownEnums[foundIdx].description ||= markdownEnumDescriptions[idx];
+              }
+            });
+          }
+          if (s.schema.anyOf && isAllSchemasMatched(node, matchingSchemas, s.schema)) {
+            //if append title and description of all matched schemas on hover
+            title = '';
+            markdownDescription = s.schema.description ? s.schema.description + '\n' : '';
+            s.schema.anyOf.forEach((childSchema: JSONSchema, index: number) => {
+              title += childSchema.title || s.schema.closestTitle || '';
+              markdownDescription += childSchema.markdownDescription || this.toMarkdown(childSchema.description) || '';
+              if (index !== s.schema.anyOf.length - 1) {
+                title += ' || ';
+                markdownDescription += ' || ';
+              }
+            });
+            title = removePipe(title);
+            markdownDescription = removePipe(markdownDescription);
+          }
+          if (s.schema.examples) {
+            s.schema.examples.forEach((example) => {
+              markdownExamples.push(stringifyYAML(example, null, 2));
+            });
+          }
         }
-        if (markdownExamples.length !== 0) {
-          markdownExamples.forEach((example) => {
-            result = ensureLineBreak(result);
-            result += l10n.t('Example:') + '\n\n';
-            result += `\`\`\`yaml\n${example}\`\`\`\n`;
-          });
-        }
-        if (result.length > 0 && schema.schema.url && this.hoverSchemaSource) {
-          result = ensureLineBreak(result);
-          result += l10n.t('Source: [{0}]({1})', getSchemaName(schema.schema), schema.schema.url);
-        }
-        return createHover(result);
+        return true;
+      });
+      let result_1 = '';
+      if (title) {
+        result_1 = '#### ' + this.toMarkdown(title);
       }
-      return null;
-    });
+      if (markdownDescription) {
+        result_1 = ensureLineBreak(result_1);
+        result_1 += markdownDescription;
+      }
+      if (markdownEnums.length !== 0) {
+        result_1 = ensureLineBreak(result_1);
+        result_1 += l10n.t('Allowed Values:') + '\n\n';
+        if (enumIdx) {
+          markdownEnums.unshift(markdownEnums.splice(enumIdx, 1)[0]);
+        }
+        markdownEnums.forEach((me_1) => {
+          if (me_1.description) {
+            result_1 += `* \`${toMarkdownCodeBlock(me_1.value)}\`: ${me_1.description}\n`;
+          } else {
+            result_1 += `* \`${toMarkdownCodeBlock(me_1.value)}\`\n`;
+          }
+        });
+      }
+      if (markdownExamples.length !== 0) {
+        markdownExamples.forEach((example_1) => {
+          result_1 = ensureLineBreak(result_1);
+          result_1 += l10n.t('Example:') + '\n\n';
+          result_1 += `\`\`\`yaml\n${example_1}\`\`\`\n`;
+        });
+      }
+      if (result_1.length > 0 && schema.schema.url && this.hoverSchemaSource) {
+        result_1 = ensureLineBreak(result_1);
+        result_1 += l10n.t('Source: [{0}]({1})', getSchemaName(schema.schema), schema.schema.url);
+      }
+      return createHover(result_1);
+    }
+    return null;
   }
 
   /**

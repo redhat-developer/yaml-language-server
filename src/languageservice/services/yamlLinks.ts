@@ -14,7 +14,7 @@ import type { JSONDocument } from '../parser/jsonDocument';
 export class YamlLinks {
   constructor(private readonly telemetry?: Telemetry) {}
 
-  findLinks(document: TextDocument): Promise<DocumentLink[]> {
+  async findLinks(document: TextDocument): Promise<DocumentLink[]> {
     try {
       const doc = yamlDocumentsCache.getYamlDocument(document);
       // Find links across all YAML Documents then report them back once finished
@@ -23,7 +23,8 @@ export class YamlLinks {
         linkPromises.push(findDocumentLinks(document, yamlDoc));
       }
       // Wait for all the promises to return and then flatten them into one DocumentLink array
-      return Promise.all(linkPromises).then((yamlLinkArray) => [].concat(...yamlLinkArray));
+      const yamlLinkArray = await Promise.all(linkPromises);
+      return [].concat(...yamlLinkArray);
     } catch (err) {
       this.telemetry?.sendError('yaml.documentLink.error', err);
     }

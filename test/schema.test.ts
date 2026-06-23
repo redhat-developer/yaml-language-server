@@ -4,7 +4,6 @@ import * as SchemaService from '../src/languageservice/services/yamlSchemaServic
 import type * as JsonSchema from '../src/languageservice/jsonSchema';
 import * as url from 'url';
 import * as path from 'path';
-import type { XHRResponse } from 'request-light';
 import { xhr } from 'request-light';
 import type { SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
 import { MODIFICATION_ACTIONS } from '../src/languageservice/services/yamlSchemaService';
@@ -36,16 +35,14 @@ const workspaceContext = {
   },
 };
 
-const schemaRequestServiceForURL = (uri: string): Promise<string> => {
+const schemaRequestServiceForURL = async (uri: string): Promise<string> => {
   const headers = { 'Accept-Encoding': 'gzip, deflate' };
-  return xhr({ url: uri, followRedirects: 5, headers }).then(
-    (response) => {
-      return response.responseText;
-    },
-    (error: XHRResponse) => {
-      return Promise.reject(error.responseText || error.toString());
-    }
-  );
+  try {
+    const response = await xhr({ url: uri, followRedirects: 5, headers });
+    return response.responseText;
+  } catch (error) {
+    throw error.responseText || error.toString();
+  }
 };
 
 describe('JSON Schema', () => {

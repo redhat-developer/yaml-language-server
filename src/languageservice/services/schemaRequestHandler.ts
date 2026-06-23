@@ -1,5 +1,4 @@
 import { join } from 'path';
-import type { XHRResponse } from 'request-light';
 import { getErrorStatusDescription, xhr } from 'request-light';
 import * as URL from 'url';
 import type { Connection, WorkspaceFolder } from 'vscode-languageserver';
@@ -79,14 +78,11 @@ export const schemaRequestHandler = async (
     // If we are running inside of VSCode we need to make a content request. This content request
     // will make it so that schemas behind VPN's will resolve correctly
     if (useVSCodeContentRequest) {
-      return connection.sendRequest(VSCodeContentRequest.type, uri).then(
-        (responseText) => {
-          return responseText;
-        },
-        (error) => {
-          return Promise.reject(error.message);
-        }
-      ) as Promise<string>;
+      try {
+        return await connection.sendRequest(VSCodeContentRequest.type, uri);
+      } catch (error) {
+        throw error.message;
+      }
     }
 
     // Send the HTTP(S) schema content request and return the result
@@ -97,14 +93,12 @@ export const schemaRequestHandler = async (
       'Accept-Encoding': 'gzip, deflate',
       'User-Agent': `yaml-language-server/${version} (RedHat)${nodeVersion}${platform}`,
     };
-    return xhr({ url: uri, followRedirects: 5, headers }).then(
-      (response) => {
-        return response.responseText;
-      },
-      (error: XHRResponse) => {
-        return Promise.reject(error.responseText || getErrorStatusDescription(error.status) || error.toString());
-      }
-    );
+    try {
+      const response = await xhr({ url: uri, followRedirects: 5, headers });
+      return response.responseText;
+    } catch (error) {
+      throw error.responseText || getErrorStatusDescription(error.status) || error.toString();
+    }
   }
 
   // Neither local file nor vscode, nor HTTP(S) schema request, so send it off as a custom request
