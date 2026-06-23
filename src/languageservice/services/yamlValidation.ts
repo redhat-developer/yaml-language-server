@@ -4,13 +4,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Diagnostic, Position } from 'vscode-languageserver-types';
+import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver-types';
+import type { DiagnosticRelatedInformation } from 'vscode-languageserver-types';
 import type { LanguageSettings } from '../yamlLanguageService';
-import type { YAMLDocument, YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07';
+import type { YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07';
 import type { YAMLSchemaService } from './yamlSchemaService';
 import type { YAMLDocDiagnostic } from '../utils/parseUtils';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONValidation } from 'vscode-json-languageservice/lib/umd/services/jsonValidation';
 import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
 import { TextBuffer } from '../utils/textBuffer';
 import { filterSuppressedDiagnostics } from '../utils/diagnostic-filter';
@@ -22,6 +22,7 @@ import { YAMLStyleValidator } from './validation/yaml-style';
 import { MapKeyOrderValidator } from './validation/map-key-order';
 import { getSchemaFromModeline } from './modelineUtil';
 import { isKubernetes as isKubernetesSchemaURI } from '../utils/schemaUrls';
+import type { ErrorCode } from '../jsonLanguageTypes';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic
@@ -41,9 +42,8 @@ export const yamlDiagToLSDiag = (yamlDiag: YAMLDocDiagnostic, textDocument: Text
 };
 
 export class YAMLValidation {
-  private validationEnabled: boolean;
+  private validationEnabled = true;
   private customTags: string[];
-  private jsonValidation;
   private disableAdditionalProperties: boolean;
   private yamlVersion: YamlVersion;
   private validators: AdditionalValidator[] = [];
@@ -51,12 +51,9 @@ export class YAMLValidation {
   private MATCHES_MULTIPLE = 'Matches multiple schemas when only one must validate.';
 
   constructor(
-    schemaService: YAMLSchemaService,
+    private readonly schemaService: YAMLSchemaService,
     private readonly telemetry?: Telemetry
-  ) {
-    this.validationEnabled = true;
-    this.jsonValidation = new JSONValidation(schemaService, Promise);
-  }
+  ) {}
 
   public configure(settings: LanguageSettings): void {
     this.validators = [];
@@ -78,20 +75,19 @@ export class YAMLValidation {
 
   public async doValidation(textDocument: TextDocument, isKubernetes = false): Promise<Diagnostic[]> {
     if (!this.validationEnabled) {
-      return Promise.resolve([]);
+      return [];
     }
 
-    const validationResult = [];
+    const validationResult: (Diagnostic | YAMLDocDiagnostic)[] = [];
     let suppressKubernetesMatchesMultiple = isKubernetes;
     try {
-      const yamlDocument: YAMLDocument = yamlDocumentsCache.getYamlDocument(
+      const yamlDocument = yamlDocumentsCache.getYamlDocument(
         textDocument,
         { customTags: this.customTags, yamlVersion: this.yamlVersion },
         true
       );
 
-      let index = 0;
-      for (const currentYAMLDoc of yamlDocument.documents) {
+      for (const [index, currentYAMLDoc] of yamlDocument.documents.entries()) {
         const currentDocumentIsKubernetes = isKubernetes || this.hasKubernetesModelineSchema(currentYAMLDoc);
         currentYAMLDoc.isKubernetes = currentDocumentIsKubernetes;
         suppressKubernetesMatchesMultiple = suppressKubernetesMatchesMultiple || currentDocumentIsKubernetes;
@@ -99,20 +95,12 @@ export class YAMLValidation {
         currentYAMLDoc.disableAdditionalProperties = this.disableAdditionalProperties;
         currentYAMLDoc.uri = textDocument.uri;
 
-        const validation = await this.jsonValidation.doValidation(textDocument, currentYAMLDoc);
-
-        const syd = currentYAMLDoc as unknown as SingleYAMLDocument;
-        if (syd.errors.length > 0) {
-          // TODO: Get rid of these type assertions (shouldn't need them)
-          validationResult.push(...syd.errors);
-        }
-        if (syd.warnings.length > 0) {
-          validationResult.push(...syd.warnings);
-        }
-
-        validationResult.push(...validation);
-        validationResult.push(...this.runAdditionalValidators(textDocument, currentYAMLDoc));
-        index++;
+        validationResult.push(
+          ...currentYAMLDoc.errors,
+          ...currentYAMLDoc.warnings,
+          ...(await this.getSchemaDiagnostics(textDocument, currentYAMLDoc)),
+          ...this.runAdditionalValidators(textDocument, currentYAMLDoc)
+        );
       }
     } catch (err) {
       this.telemetry?.sendError('yaml.validation.error', err);
@@ -131,7 +119,7 @@ export class YAMLValidation {
         continue;
       }
 
-      if (Object.prototype.hasOwnProperty.call(err, 'location')) {
+      if (isYAMLDocDiagnostic(err)) {
         err = yamlDiagToLSDiag(err, textDocument);
       }
 
@@ -177,12 +165,59 @@ export class YAMLValidation {
     return typeof schemaFromModeline === 'string' && isKubernetesSchemaURI(schemaFromModeline);
   }
 
-  private runAdditionalValidators(document: TextDocument, yarnDoc: SingleYAMLDocument): Diagnostic[] {
-    const result = [];
-
-    for (const validator of this.validators) {
-      result.push(...validator.validate(document, yarnDoc));
+  private async getSchemaDiagnostics(textDocument: TextDocument, yamlDocument: SingleYAMLDocument): Promise<Diagnostic[]> {
+    const resolvedSchema = await this.schemaService.getSchemaForResource(textDocument.uri, yamlDocument);
+    if (!resolvedSchema) {
+      return [];
     }
-    return result;
+
+    const diagnostics: Diagnostic[] = [];
+    const addSchemaProblem = (
+      errorMessage: string,
+      errorCode: ErrorCode,
+      relatedInformation?: DiagnosticRelatedInformation[]
+    ): void => {
+      if (!yamlDocument.root) {
+        return;
+      }
+
+      const astRoot = yamlDocument.root;
+      const property = astRoot.type === 'object' ? astRoot.properties[0] : undefined;
+      if (property && property.keyNode.value === '$schema') {
+        const node = property.valueNode || property;
+        const range = Range.create(textDocument.positionAt(node.offset), textDocument.positionAt(node.offset + node.length));
+        diagnostics.push(
+          Diagnostic.create(range, errorMessage, DiagnosticSeverity.Warning, errorCode, YAML_SOURCE, relatedInformation)
+        );
+      } else {
+        const range = Range.create(textDocument.positionAt(astRoot.offset), textDocument.positionAt(astRoot.offset + 1));
+        diagnostics.push(
+          Diagnostic.create(range, errorMessage, DiagnosticSeverity.Warning, errorCode, YAML_SOURCE, relatedInformation)
+        );
+      }
+    };
+
+    if (resolvedSchema.errors.length) {
+      const error = resolvedSchema.errors[0];
+      addSchemaProblem(error.message, error.code, error.relatedInformation);
+    } else {
+      for (const warning of resolvedSchema.warnings) {
+        addSchemaProblem(warning.message, warning.code, warning.relatedInformation);
+      }
+      const semanticErrors = yamlDocument.validate(textDocument, resolvedSchema.schema);
+      if (semanticErrors) {
+        diagnostics.push(...semanticErrors);
+      }
+    }
+
+    return diagnostics;
   }
+
+  private runAdditionalValidators(document: TextDocument, yarnDoc: SingleYAMLDocument): Diagnostic[] {
+    return this.validators.flatMap((validator) => validator.validate(document, yarnDoc));
+  }
+}
+
+function isYAMLDocDiagnostic(diagnostic: Diagnostic | YAMLDocDiagnostic): diagnostic is YAMLDocDiagnostic {
+  return 'location' in diagnostic;
 }

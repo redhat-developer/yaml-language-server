@@ -4,13 +4,13 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { JSONSchema } from '../../jsonSchema';
-import { SchemaDialect } from '../../jsonSchema';
+import { SchemaDraft } from '../../jsonLanguageTypes';
 import { isNumber } from '../../utils/objects';
 import { BaseValidator } from './baseValidator';
 
 export class Draft07Validator extends BaseValidator {
-  protected override getCurrentDialect(): SchemaDialect {
-    return SchemaDialect.draft07;
+  protected override getCurrentSchemaDraft(): SchemaDraft {
+    return SchemaDraft.v7;
   }
 
   /**

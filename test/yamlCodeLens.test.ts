@@ -53,12 +53,16 @@ describe('YAML CodeLens', () => {
     return lens;
   }
 
+  function createResolvedSchema(schema: JSONSchema): Awaited<ReturnType<YAMLSchemaService['getSchemaForResource']>> {
+    return { schema } as Awaited<ReturnType<YAMLSchemaService['getSchemaForResource']>>;
+  }
+
   it('should provides CodeLens with jumpToSchema command', async () => {
     const doc = setupTextDocument('foo: bar');
     const schema: JSONSchema = {
       url: 'some://url/to/schema.json',
     };
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result).is.not.empty;
@@ -73,7 +77,7 @@ describe('YAML CodeLens', () => {
     const schema: JSONSchema = {
       url: 'some://url/to/schema.json',
     };
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result[0].range).is.deep.equal(Range.create(0, 0, 0, 0));
@@ -125,7 +129,7 @@ describe('YAML CodeLens', () => {
     const schema: JSONSchema = {
       url: 'some://url/to/schema.json',
     };
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result.length).to.eq(1);
@@ -141,7 +145,7 @@ describe('YAML CodeLens', () => {
       url: 'some://url/to/schema.json',
       title: 'fooBar',
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result[0].command).is.deep.equal(
@@ -156,7 +160,7 @@ describe('YAML CodeLens', () => {
       title: 'fooBar',
       description: 'fooBarDescription',
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result[0].command).is.deep.equal(
@@ -176,7 +180,7 @@ describe('YAML CodeLens', () => {
         },
       ],
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result).has.length(2);
@@ -198,7 +202,7 @@ describe('YAML CodeLens', () => {
         },
       ],
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result).has.length(2);
@@ -220,7 +224,7 @@ describe('YAML CodeLens', () => {
         },
       ],
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves({ schema });
+    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result).has.length(2);

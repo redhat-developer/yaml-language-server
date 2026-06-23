@@ -28,7 +28,7 @@ import { YAMLDocumentSymbols } from './services/documentSymbols';
 import { YAMLHover } from './services/yamlHover';
 import { YAMLValidation } from './services/yamlValidation';
 import { YAMLFormatter } from './services/yamlFormatter';
-import type { DocumentSymbolsContext } from 'vscode-json-languageservice';
+import type { DocumentSymbolsContext } from './jsonLanguageTypes';
 import { YamlLinks } from './services/yamlLinks';
 import type {
   ClientCapabilities,
@@ -201,7 +201,7 @@ export function getLanguageService(params: {
   const schemaService = new YAMLSchemaService(params.schemaRequestService, params.workspaceContext, null, params.yamlSettings);
   const completer = new YamlCompletion(schemaService, params.clientCapabilities, yamlDocumentsCache, params.telemetry);
   const hover = new YAMLHover(schemaService, params.telemetry);
-  const yamlDocumentSymbols = new YAMLDocumentSymbols(schemaService, params.telemetry);
+  const yamlDocumentSymbols = new YAMLDocumentSymbols(params.telemetry);
   const yamlValidation = new YAMLValidation(schemaService, params.telemetry);
   const formatter = new YAMLFormatter();
   const yamlCodeActions = new YamlCodeActions(params.clientCapabilities);

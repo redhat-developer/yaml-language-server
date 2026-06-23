@@ -3,20 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { CompletionItemKind } from 'vscode-json-languageservice';
+import type { CompletionItemKind, SchemaDraft } from './jsonLanguageTypes';
 import type { SchemaVersions } from './yamlTypes';
 
 export type JSONSchemaRef = JSONSchema | boolean;
-export enum SchemaDialect {
-  draft04 = 'draft04',
-  draft07 = 'draft07',
-  draft2019 = 'draft2019-09',
-  draft2020 = 'draft2020-12',
-}
 
 export interface JSONSchema {
   // for internal use
-  _dialect?: SchemaDialect;
+  _schemaDraft?: SchemaDraft;
   _baseUri?: string;
   _sourceUri?: string;
   _$ref?: string;
@@ -88,6 +82,7 @@ export interface JSONSchema {
   dependentRequired?: Record<string, string[]>;
   minContains?: number;
   maxContains?: number;
+  deprecated?: boolean;
 
   // schema draft 2020-12
   prefixItems?: JSONSchemaRef[];
@@ -115,6 +110,7 @@ export interface JSONSchema {
   markdownDescription?: string; // VSCode extension
   doNotSuggest?: boolean; // VSCode extension
   allowComments?: boolean; // VSCode extension
+  allowTrailingCommas?: boolean; // VSCode extension
 
   schemaSequence?: JSONSchema[]; // extension for multiple schemas related to multiple documents in single yaml file
 

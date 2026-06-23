@@ -5,7 +5,7 @@
 
 import type { Node, Scalar, YAMLMap, Pair, YAMLSeq, Alias, Document, LineCounter } from 'yaml';
 import { isScalar, isMap, isPair, isSeq, isNode, isAlias } from 'yaml';
-import type { ASTNode, YamlNode } from '../jsonASTTypes';
+import type { ASTNode, YamlNode } from '../jsonLanguageTypes';
 import { getCustomTagReturnType } from '../utils/customTags';
 import {
   NullASTNodeImpl,

@@ -11,6 +11,7 @@ import * as SchemaService from '../src/languageservice/services/yamlSchemaServic
 import { parse } from '../src/languageservice/parser/yamlParser07';
 import { SettingsState } from '../src/yamlSettings';
 import { DEFAULT_KUBERNETES_SCHEMA_VERSION, getSchemaUrls } from '../src/languageservice/utils/schemaUrls';
+import type { JSONSchema } from '../src/languageservice/jsonSchema';
 
 const BASE_KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/`;
 const KUBERNETES_SCHEMA_URL = BASE_KUBERNETES_SCHEMA_URL + 'all.json';
@@ -120,7 +121,7 @@ describe('YAML Schema Service', () => {
       expect(requestServiceMock).calledTwice;
       if (process.platform === 'win32') {
         const driveLetter = path.parse(__dirname).root.split(':')[0].toLowerCase();
-        expect(requestServiceMock).calledWithExactly(`file:///${driveLetter}%3A/schema.json`);
+        expect(requestServiceMock).calledWithExactly(`file:///${driveLetter}:/schema.json`);
         expect(requestServiceMock).calledWithExactly(`file:///${driveLetter}%3A/schema.json#/definitions/schemaArray`);
       } else {
         expect(requestServiceMock).calledWithExactly('file:///schema.json');
@@ -220,7 +221,7 @@ describe('YAML Schema Service', () => {
       expect(requestedUris).to.include('file:///schemas/repro_defs.json');
       expect(requestedUris).to.not.include('https://example.com/schemas/repro_defs.json');
       expect(schema.errors).to.eql([]);
-      expect(schema.schema.properties.members.items).to.deep.include({
+      expect((schema.schema.properties.members as JSONSchema).items).to.deep.include({
         type: 'object',
         url: 'file:///schemas/repro_defs.json',
       });
@@ -483,7 +484,7 @@ describe('YAML Schema Service', () => {
 
       expect(schema.errors).to.eql([]);
       expect(schema.schema.url).to.equal('schemaservice://combinedSchema/test.yaml');
-      expect(schema.schema.allOf.map((item) => item.url)).to.have.members([schemaOneUri, schemaTwoUri]);
+      expect(schema.schema.allOf.map((item: JSONSchema) => item.url)).to.have.members([schemaOneUri, schemaTwoUri]);
 
       const schemaUris = Array.from(getSchemaUrls(schema.schema).keys());
       expect(schemaUris).to.have.members([schemaOneUri, schemaTwoUri]);
@@ -832,6 +833,36 @@ spec:
       expect(resolvedSchema.schema.url).eqls(
         BASE_KUBERNETES_SCHEMA_URL + '_definitions.json#/definitions/io.k8s.api.autoscaling.v2.HorizontalPodAutoscaler'
       );
+    });
+
+    it('should support extglob !(config) pattern', () => {
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      const issueFormSchema: JSONSchema = {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          description: { type: 'string' },
+        },
+        required: ['name'],
+      };
+      service.registerExternalSchema(
+        'https://json.schemastore.org/github-issue-forms.json',
+        ['**/.github/ISSUE_TEMPLATE/!(config).yml', '**/.github/ISSUE_TEMPLATE/!(config).yaml'],
+        issueFormSchema
+      );
+      const bugReportUris = service.getSchemaURIsForResource('.github/ISSUE_TEMPLATE/bug_report.yml');
+      expect(bugReportUris).to.include('https://json.schemastore.org/github-issue-forms.json');
+      const featureUris = service.getSchemaURIsForResource('.github/ISSUE_TEMPLATE/feature_request.yaml');
+      expect(featureUris).to.include('https://json.schemastore.org/github-issue-forms.json');
+      const customUris = service.getSchemaURIsForResource('project/.github/ISSUE_TEMPLATE/custom.yml');
+      expect(customUris).to.include('https://json.schemastore.org/github-issue-forms.json');
+      const configYmlUris = service.getSchemaURIsForResource('.github/ISSUE_TEMPLATE/config.yml');
+      expect(configYmlUris).to.not.include('https://json.schemastore.org/github-issue-forms.json');
+      const configYamlUris = service.getSchemaURIsForResource('.github/ISSUE_TEMPLATE/config.yaml');
+      expect(configYamlUris).to.not.include('https://json.schemastore.org/github-issue-forms.json');
+      const nestedConfigUris = service.getSchemaURIsForResource('nested/repo/.github/ISSUE_TEMPLATE/config.yml');
+      expect(nestedConfigUris).to.not.include('https://json.schemastore.org/github-issue-forms.json');
     });
   });
 });

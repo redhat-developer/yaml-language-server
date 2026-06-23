@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import { FoldingRange, Range } from 'vscode-languageserver-types';
 import type { FoldingRangesContext } from '../yamlTypes';
-import type { ASTNode } from '../jsonASTTypes';
+import type { ASTNode } from '../jsonLanguageTypes';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 

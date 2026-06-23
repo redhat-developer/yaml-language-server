@@ -4,7 +4,6 @@ import * as SchemaService from '../src/languageservice/services/yamlSchemaServic
 import type * as JsonSchema from '../src/languageservice/jsonSchema';
 import * as url from 'url';
 import * as path from 'path';
-import type { XHRResponse } from 'request-light';
 import { xhr } from 'request-light';
 import type { SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
 import { MODIFICATION_ACTIONS } from '../src/languageservice/services/yamlSchemaService';
@@ -36,16 +35,14 @@ const workspaceContext = {
   },
 };
 
-const schemaRequestServiceForURL = (uri: string): Promise<string> => {
+const schemaRequestServiceForURL = async (uri: string): Promise<string> => {
   const headers = { 'Accept-Encoding': 'gzip, deflate' };
-  return xhr({ url: uri, followRedirects: 5, headers }).then(
-    (response) => {
-      return response.responseText;
-    },
-    (error: XHRResponse) => {
-      return Promise.reject(error.responseText || error.toString());
-    }
-  );
+  try {
+    const response = await xhr({ url: uri, followRedirects: 5, headers });
+    return response.responseText;
+  } catch (error) {
+    throw error.responseText || error.toString();
+  }
 };
 
 describe('JSON Schema', () => {
@@ -258,12 +255,10 @@ describe('JSON Schema', () => {
     });
 
     const resolvedSchema = await service.getResolvedSchema('https://myschemastore/main/schema.json');
-    assert.strictEqual(resolvedSchema.schema.properties['bar'].description, 'bar desc');
-    assert.strictEqual(
-      resolvedSchema.schema.properties['bar'].markdownDescription,
-      'bar md desc **bold** \n * line \n* another \n\n'
-    );
-    assert.deepStrictEqual(resolvedSchema.schema.properties['bar'].enum, ['potato', 'carrot']);
+    const barSchema = resolvedSchema.schema.properties['bar'] as JsonSchema.JSONSchema;
+    assert.strictEqual(barSchema.description, 'bar desc');
+    assert.strictEqual(barSchema.markdownDescription, 'bar md desc **bold** \n * line \n* another \n\n');
+    assert.deepStrictEqual(barSchema.enum, ['potato', 'carrot']);
   });
 
   describe('Compound Schema Documents', () => {
@@ -819,7 +814,7 @@ address:
     });
 
     const fs = await service.getResolvedSchema(KUBERNETES_SCHEMA_URL);
-    assert.deepEqual(fs.schema.oneOf[1].properties['foobar'], ['hello', 'world']);
+    assert.deepEqual((fs.schema.oneOf[1] as JsonSchema.JSONSchema).properties['foobar'], ['hello', 'world']);
   });
 
   it('Deleting schema works with Kubernetes resolution', async () => {
@@ -834,7 +829,7 @@ address:
     });
 
     const fs = await service.getResolvedSchema(KUBERNETES_SCHEMA_URL);
-    assert.equal(fs.schema.oneOf[1].properties, undefined);
+    assert.equal((fs.schema.oneOf[1] as JsonSchema.JSONSchema).properties, undefined);
   });
 
   it('Adding a brand new schema', async () => {

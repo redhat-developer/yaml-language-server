@@ -5,7 +5,7 @@
 
 import * as l10n from '@vscode/l10n';
 import * as path from 'path';
-import { ErrorCode } from 'vscode-json-languageservice';
+import { ErrorCode } from '../jsonLanguageTypes';
 import type { Diagnostic, WorkspaceEdit } from 'vscode-languageserver-types';
 import { CodeAction, CodeActionKind, Command, Position, Range, TextEdit } from 'vscode-languageserver-types';
 import type { ClientCapabilities, CodeActionParams } from 'vscode-languageserver-protocol';
@@ -26,7 +26,7 @@ import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { BlockStringRewriter } from '../utils/block-string-rewriter';
 import { FlowStyleRewriter } from '../utils/flow-style-rewriter';
 
-import type { ASTNode } from '../jsonASTTypes';
+import type { ASTNode } from '../jsonLanguageTypes';
 
 interface YamlDiagnosticData {
   schemaUri: string[];

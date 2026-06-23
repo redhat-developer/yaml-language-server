@@ -1927,7 +1927,7 @@ describe('Auto Completion Tests', () => {
         textDocument: testTextDocument,
       });
       assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
-      assert.strictEqual(result.items[0].label, 'http://google.com');
+      assert.strictEqual(result.items[0].label, 'http://google.com/');
     });
 
     it('should provide schema id completion in modeline for any line', async () => {
@@ -1940,7 +1940,7 @@ describe('Auto Completion Tests', () => {
         textDocument: testTextDocument,
       });
       assert.strictEqual(result.items.length, 1, `Expecting 1 item in completion but found ${result.items.length}`);
-      assert.strictEqual(result.items[0].label, 'http://google.com');
+      assert.strictEqual(result.items[0].label, 'http://google.com/');
     });
   });
 

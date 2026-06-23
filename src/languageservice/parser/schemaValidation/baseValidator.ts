@@ -4,20 +4,28 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { JSONSchema, JSONSchemaRef, SchemaDialect } from '../../jsonSchema';
-import type { ASTNode, ArrayASTNode, NumberASTNode, ObjectASTNode, PropertyASTNode, StringASTNode } from '../../jsonASTTypes';
+import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
+import type {
+  ASTNode,
+  ArrayASTNode,
+  NumberASTNode,
+  ObjectASTNode,
+  PropertyASTNode,
+  StringASTNode,
+  SchemaDraft,
+} from '../../jsonLanguageTypes';
 import { equals, isBoolean, isDefined, isIterable, isNumber, isString } from '../../utils/objects';
 import { getSchemaTypeName } from '../../utils/schemaUtils';
 import { isArrayEqual } from '../../utils/arrUtils';
 import { safeCreateUnicodeRegExp } from '../../utils/strings';
 import { FilePatternAssociation } from '../../utils/filePatternAssociation';
 import { floatSafeRemainder } from '../../utils/math';
-import { ErrorCode } from 'vscode-json-languageservice';
+import { ErrorCode } from '../../jsonLanguageTypes';
 import * as l10n from '@vscode/l10n';
 import { URI } from 'vscode-uri';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { contains, getNodeValue } from '../astNodeUtils';
+import { contains, getNodeValue } from '../../utils/astNodeUtils';
 import { getValidator } from './validatorFactory';
 
 export const YAML_SOURCE = 'YAML';
@@ -426,7 +434,7 @@ export abstract class BaseValidator {
   /**
    * Get the current validator's dialect.
    */
-  protected abstract getCurrentDialect(): SchemaDialect;
+  protected abstract getCurrentSchemaDraft(): SchemaDraft;
 
   protected matchesSchemaType(node: ASTNode, schemaType: string): boolean {
     const type = node.customTagReturnType ?? node.type;
@@ -452,12 +460,12 @@ export abstract class BaseValidator {
     if (!node) return;
     if (!schema || typeof schema !== 'object') return;
 
-    // Draft 2020-12 Compound Schema Document behavior: check if this node explicitly declares a different dialect
-    if (schema._dialect) {
-      const subDialect = schema._dialect;
-      const currentDialect = this.getCurrentDialect();
-      if (subDialect !== currentDialect) {
-        const subValidator = getValidator(subDialect);
+    // Draft 2020-12 Compound Schema Document behavior: check if this node explicitly declares a different draft
+    if (schema._schemaDraft) {
+      const subSchemaDraft = schema._schemaDraft;
+      const currentSchemaDraft = this.getCurrentSchemaDraft();
+      if (subSchemaDraft !== currentSchemaDraft) {
+        const subValidator = getValidator(subSchemaDraft);
         subValidator.validateNode(node, schema, originalSchema, validationResult, matchingSchemas, options);
         return;
       }

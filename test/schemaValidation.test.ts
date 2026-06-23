@@ -28,7 +28,7 @@ import type { LanguageService } from '../src/languageservice/yamlLanguageService
 import type { IProblem } from '../src/languageservice/parser/schemaValidation/baseValidator';
 import type { JSONSchema } from '../src/languageservice/jsonSchema';
 import type { TestTelemetry } from './utils/testsTypes';
-import { ErrorCode } from 'vscode-json-languageservice';
+import { ErrorCode } from '../src/languageservice/jsonLanguageTypes';
 import { DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls';
 
 const KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/all.json`;
@@ -379,7 +379,7 @@ describe('Validation Tests', () => {
   });
 
   describe('Pattern tests', () => {
-    it('Test a valid Unicode pattern', () => {
+    it('Test a valid Unicode pattern', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -389,11 +389,10 @@ describe('Validation Tests', () => {
           },
         },
       });
-      parseSetup('prop: "tesT"').then(function (result) {
-        assert.equal(result.length, 0);
-      });
+      const result = await parseSetup('prop: "tesT"');
+      assert.equal(result.length, 0);
     });
-    it('Test an invalid Unicode pattern', () => {
+    it('Test an invalid Unicode pattern', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -403,26 +402,25 @@ describe('Validation Tests', () => {
           },
         },
       });
-      parseSetup('prop: "tes "').then(function (result) {
-        assert.equal(result.length, 1);
-        assert.ok(result[0].message.startsWith('String does not match the pattern'));
-        assert.deepEqual(
-          result[0],
-          createDiagnosticWithData(
-            result[0].message,
-            0,
-            6,
-            0,
-            12,
-            DiagnosticSeverity.Error,
-            `yaml-schema: file:///${SCHEMA_ID}`,
-            `file:///${SCHEMA_ID}`
-          )
-        );
-      });
+      const result = await parseSetup('prop: "tes "');
+      assert.equal(result.length, 1);
+      assert.ok(result[0].message.startsWith('String does not match the pattern'));
+      assert.deepEqual(
+        result[0],
+        createDiagnosticWithData(
+          result[0].message,
+          0,
+          6,
+          0,
+          12,
+          DiagnosticSeverity.Error,
+          `yaml-schema: file:///${SCHEMA_ID}`,
+          `file:///${SCHEMA_ID}`
+        )
+      );
     });
 
-    it('Test a valid Unicode patternProperty', () => {
+    it('Test a valid Unicode patternProperty', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         patternProperties: {
@@ -430,11 +428,10 @@ describe('Validation Tests', () => {
         },
         additionalProperties: false,
       });
-      parseSetup('tesT: true').then(function (result) {
-        assert.equal(result.length, 0);
-      });
+      const result = await parseSetup('tesT: true');
+      assert.equal(result.length, 0);
     });
-    it('Test an invalid Unicode patternProperty', () => {
+    it('Test an invalid Unicode patternProperty', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         patternProperties: {
@@ -442,25 +439,24 @@ describe('Validation Tests', () => {
         },
         additionalProperties: false,
       });
-      parseSetup('tes9: true').then(function (result) {
-        assert.equal(result.length, 1);
-        assert.deepEqual(
-          result[0],
-          createDiagnosticWithData(
-            'Property tes9 is not allowed.',
-            0,
-            0,
-            0,
-            4,
-            DiagnosticSeverity.Error,
-            `yaml-schema: file:///${SCHEMA_ID}`,
-            `file:///${SCHEMA_ID}`,
-            ErrorCode.PropertyExpected
-          )
-        );
-      });
+      const result = await parseSetup('tes9: true');
+      assert.equal(result.length, 1);
+      assert.deepEqual(
+        result[0],
+        createDiagnosticWithData(
+          'Property tes9 is not allowed.',
+          0,
+          0,
+          0,
+          4,
+          DiagnosticSeverity.Error,
+          `yaml-schema: file:///${SCHEMA_ID}`,
+          `file:///${SCHEMA_ID}`,
+          ErrorCode.PropertyExpected
+        )
+      );
     });
-    it('Test inline pattern modifiers', () => {
+    it('Test inline pattern modifiers', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -522,11 +518,10 @@ describe('Validation Tests', () => {
         '  end',
         '  more text',
       ].join('\n');
-      parseSetup(content).then(function (result) {
-        assert.equal(result.length, 0);
-      });
+      const result = await parseSetup(content);
+      assert.equal(result.length, 0);
     });
-    it('Test an unsupported pattern', () => {
+    it('Test an unsupported pattern', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -536,22 +531,21 @@ describe('Validation Tests', () => {
           },
         },
       });
-      parseSetup('unsupportedPattern: text content').then(function (result) {
-        assert.equal(result.length, 1);
-        assert.deepEqual(
-          result[0],
-          createDiagnosticWithData(
-            'Invalid pattern: "(?x)text .*"',
-            0,
-            20,
-            0,
-            32,
-            DiagnosticSeverity.Error,
-            `yaml-schema: file:///${SCHEMA_ID}`,
-            `file:///${SCHEMA_ID}`
-          )
-        );
-      });
+      const result = await parseSetup('unsupportedPattern: text content');
+      assert.equal(result.length, 1);
+      assert.deepEqual(
+        result[0],
+        createDiagnosticWithData(
+          'Invalid pattern: "(?x)text .*"',
+          0,
+          20,
+          0,
+          32,
+          DiagnosticSeverity.Error,
+          `yaml-schema: file:///${SCHEMA_ID}`,
+          `file:///${SCHEMA_ID}`
+        )
+      );
     });
   });
 

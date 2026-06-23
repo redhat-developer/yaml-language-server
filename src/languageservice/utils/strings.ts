@@ -101,3 +101,22 @@ export function getFirstNonWhitespaceCharacterAfterOffset(str: string, offset: n
   }
   return offset;
 }
+
+export function extendedRegExp(pattern: string): RegExp | undefined {
+  let flags = '';
+  if (startsWith(pattern, '(?i)')) {
+    pattern = pattern.substring(4);
+    flags = 'i';
+  }
+  try {
+    return new RegExp(pattern, flags + 'u');
+  } catch {
+    // could be an exception due to the 'u ' flag
+    try {
+      return new RegExp(pattern, flags);
+    } catch {
+      // invalid pattern
+      return undefined;
+    }
+  }
+}

@@ -4,19 +4,18 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
-import { SchemaDialect } from '../../jsonSchema';
-import type { ASTNode, ArrayASTNode, ObjectASTNode } from '../../jsonASTTypes';
+import { ErrorCode, SchemaDraft } from '../../jsonLanguageTypes';
+import type { ASTNode, ArrayASTNode, ObjectASTNode } from '../../jsonLanguageTypes';
 import { isNumber } from '../../utils/objects';
 import * as l10n from '@vscode/l10n';
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
-import { ErrorCode } from 'vscode-json-languageservice';
 import { Draft07Validator } from './draft07Validator';
 import { ValidationResult, asSchema } from './baseValidator';
 import type { ISchemaCollector, Options } from './baseValidator';
 
 export class Draft2019Validator extends Draft07Validator {
-  protected override getCurrentDialect(): SchemaDialect {
-    return SchemaDialect.draft2019;
+  protected override getCurrentSchemaDraft(): SchemaDraft {
+    return SchemaDraft.v2019_09;
   }
 
   /**
