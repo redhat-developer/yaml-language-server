@@ -1,8 +1,12 @@
 import type { WorkspaceFolder } from 'vscode-languageserver-protocol';
-import { URI } from 'vscode-uri';
-import * as path from 'path';
-import type { Telemetry } from '../telemetry';
+
 import type { JSONSchema, JSONSchemaRef } from '../jsonSchema';
+import type { Telemetry } from '../telemetry';
+
+import * as path from 'path';
+
+import { URI } from 'vscode-uri';
+
 import { isBoolean } from './objects';
 import { isRelativePath, relativeToAbsolutePath } from './paths';
 

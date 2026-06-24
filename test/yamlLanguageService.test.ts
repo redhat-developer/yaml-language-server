@@ -2,12 +2,15 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { assert } from 'chai';
 import type { Position, TextDocument } from 'vscode-languageserver-textdocument';
+
 import type { LanguageService, SchemaRequestService, WorkspaceContextService } from '../src';
+
+import { assert } from 'chai';
+
 import { getLanguageService } from '../src';
-import { workspaceContext } from '../src/languageservice/services/schemaRequestHandler';
 import { caretPosition, setupSchemaIDTextDocument } from './utils/testHelper';
+import { workspaceContext } from '../src/languageservice/services/schemaRequestHandler';
 
 /**
  * Builds a simple schema request service

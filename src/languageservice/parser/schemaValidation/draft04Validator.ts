@@ -4,9 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { JSONSchema } from '../../jsonSchema';
+
+import { BaseValidator } from './baseValidator';
 import { SchemaDraft } from '../../jsonLanguageTypes';
 import { isBoolean, isNumber } from '../../utils/objects';
-import { BaseValidator } from './baseValidator';
 
 export class Draft04Validator extends BaseValidator {
   protected override getCurrentSchemaDraft(): SchemaDraft {

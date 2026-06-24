@@ -4,56 +4,58 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { CustomSchemaProvider, SchemaAdditions, SchemaDeletions, SchemaDeletionsAll } from './services/yamlSchemaService';
-import { YAMLSchemaService } from './services/yamlSchemaService';
-import type {
-  Position,
-  CodeAction,
-  CompletionList,
-  Diagnostic,
-  Hover,
-  SymbolInformation,
-  DocumentSymbol,
-  FoldingRange,
-  TextEdit,
-  DocumentLink,
-  CodeLens,
-  DefinitionLink,
-  SelectionRange,
-  Range,
-  WorkspaceEdit,
-} from 'vscode-languageserver-types';
-import type { JSONSchema } from './jsonSchema';
-import { YAMLDocumentSymbols } from './services/documentSymbols';
-import { YAMLHover } from './services/yamlHover';
-import { YAMLValidation } from './services/yamlValidation';
-import { YAMLFormatter } from './services/yamlFormatter';
-import type { DocumentSymbolsContext } from './jsonLanguageTypes';
-import { YamlLinks } from './services/yamlLinks';
 import type {
   ClientCapabilities,
   CodeActionParams,
   Connection,
-  DocumentOnTypeFormattingParams,
   DefinitionParams,
+  DocumentOnTypeFormattingParams,
   PrepareRenameParams,
   RenameParams,
 } from 'vscode-languageserver';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { getFoldingRanges } from './services/yamlFolding';
-import type { FoldingRangesContext, SchemaVersions } from './yamlTypes';
-import { YamlCodeActions } from './services/yamlCodeActions';
-import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
-import { YamlCodeLens } from './services/yamlCodeLens';
+import type {
+  CodeAction,
+  CodeLens,
+  CompletionList,
+  DefinitionLink,
+  Diagnostic,
+  DocumentLink,
+  DocumentSymbol,
+  FoldingRange,
+  Hover,
+  Position,
+  Range,
+  SelectionRange,
+  SymbolInformation,
+  TextEdit,
+  WorkspaceEdit,
+} from 'vscode-languageserver-types';
+
+import type { DocumentSymbolsContext } from './jsonLanguageTypes';
+import type { JSONSchema } from './jsonSchema';
 import type { Telemetry } from './telemetry';
-import type { YamlVersion } from './parser/yamlParser07';
-import { YamlCompletion } from './services/yamlCompletion';
-import { yamlDocumentsCache } from './parser/yaml-documents';
 import type { SettingsState } from '../yamlSettings';
-import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers';
+import type { YamlVersion } from './parser/yamlParser07';
+import type { CustomSchemaProvider, SchemaAdditions, SchemaDeletions, SchemaDeletionsAll } from './services/yamlSchemaService';
+import type { FoldingRangesContext, SchemaVersions } from './yamlTypes';
+
+import { yamlDocumentsCache } from './parser/yaml-documents';
+import { YAMLDocumentSymbols } from './services/documentSymbols';
+import { YamlCodeActions } from './services/yamlCodeActions';
+import { YamlCodeLens } from './services/yamlCodeLens';
+import { YamlCompletion } from './services/yamlCompletion';
 import { YamlDefinition } from './services/yamlDefinition';
-import { getSelectionRanges } from './services/yamlSelectionRanges';
+import { getFoldingRanges } from './services/yamlFolding';
+import { YAMLFormatter } from './services/yamlFormatter';
+import { YAMLHover } from './services/yamlHover';
+import { YamlLinks } from './services/yamlLinks';
+import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
 import { YamlRename } from './services/yamlRename';
+import { YAMLSchemaService } from './services/yamlSchemaService';
+import { getSelectionRanges } from './services/yamlSelectionRanges';
+import { YAMLValidation } from './services/yamlValidation';
+import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers';
 
 export enum SchemaPriority {
   SchemaStore = 1,

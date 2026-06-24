@@ -2,8 +2,9 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { equals, convertErrorToTelemetryMsg } from '../src/languageservice/utils/objects';
 import assert from 'assert';
+
+import { convertErrorToTelemetryMsg, equals } from '../src/languageservice/utils/objects';
 
 describe('Object Equals Tests', () => {
   describe('Equals', function () {

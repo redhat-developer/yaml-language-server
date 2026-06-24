@@ -2,22 +2,25 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import type { Connection } from 'vscode-languageserver';
+import type { Command } from 'vscode-languageserver-protocol';
+
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import type { JSONSchema } from '../src/languageservice/jsonSchema';
+import type { Telemetry } from '../src/languageservice/telemetry';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService';
+
+import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import * as chai from 'chai';
+import { CodeLens, Range } from 'vscode-languageserver-protocol';
+
+import { setupTextDocument } from './utils/testHelper';
+import { YamlCommands } from '../src/commands';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import { TelemetryImpl } from '../src/languageserver/telemetry';
 import { YamlCodeLens } from '../src/languageservice/services/yamlCodeLens';
 import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
-import { setupTextDocument } from './utils/testHelper';
-import type { JSONSchema } from '../src/languageservice/jsonSchema';
-import type { Command } from 'vscode-languageserver-protocol';
-import { CodeLens, Range } from 'vscode-languageserver-protocol';
-import type { Connection } from 'vscode-languageserver';
-import { YamlCommands } from '../src/commands';
-import { TelemetryImpl } from '../src/languageserver/telemetry';
-import type { Telemetry } from '../src/languageservice/telemetry';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import type { LanguageService } from '../src/languageservice/yamlLanguageService';
 import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
 
 const expect = chai.expect;

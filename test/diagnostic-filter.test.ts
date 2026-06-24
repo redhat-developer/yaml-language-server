@@ -3,11 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { expect } from 'chai';
 import type { GetLineText } from '../src/languageservice/utils/diagnostic-filter';
+
+import { expect } from 'chai';
+
 import {
-  filterSuppressedDiagnostics,
   YAML_DISABLE_PATTERN,
+  filterSuppressedDiagnostics,
   parseDisableSpecifiers,
   shouldSuppressDiagnostic,
 } from '../src/languageservice/utils/diagnostic-filter';

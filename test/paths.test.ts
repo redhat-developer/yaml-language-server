@@ -1,9 +1,11 @@
-import assert from 'assert';
 import type { WorkspaceFolder } from 'vscode-languageserver-protocol';
+
+import assert from 'assert';
 import { join } from 'path';
 
-import { relativeToAbsolutePath, isRelativePath, workspaceFoldersChanged } from '../src/languageservice/utils/paths';
 import { URI } from 'vscode-uri';
+
+import { isRelativePath, relativeToAbsolutePath, workspaceFoldersChanged } from '../src/languageservice/utils/paths';
 
 class TestWorkspace {
   folders: WorkspaceFolder[];

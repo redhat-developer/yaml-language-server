@@ -6,19 +6,20 @@
 import type { Connection } from 'vscode-languageserver';
 import type {
   CodeActionParams,
+  CodeLensParams,
+  DefinitionParams,
   DidChangeWatchedFilesParams,
   DocumentFormattingParams,
   DocumentLinkParams,
   DocumentOnTypeFormattingParams,
   DocumentSymbolParams,
   FoldingRangeParams,
-  SelectionRangeParams,
-  TextDocumentPositionParams,
-  CodeLensParams,
-  DefinitionParams,
   PrepareRenameParams,
   RenameParams,
+  SelectionRangeParams,
+  TextDocumentPositionParams,
 } from 'vscode-languageserver-protocol';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type {
   CodeAction,
   CodeLens,
@@ -26,21 +27,23 @@ import type {
   DefinitionLink,
   DocumentLink,
   DocumentSymbol,
-  Hover,
   FoldingRange,
+  Hover,
   Range,
   SelectionRange,
   SymbolInformation,
   TextEdit,
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
-import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
+
+import type { ValidationHandler } from './validationHandlers';
 import type { LanguageService } from '../../languageservice/yamlLanguageService';
 import type { SettingsState } from '../../yamlSettings';
-import type { ValidationHandler } from './validationHandlers';
-import { ResultLimitReachedNotification } from '../../requestTypes';
+
 import * as path from 'path';
-import type { TextDocument } from 'vscode-languageserver-textdocument';
+
+import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
+import { ResultLimitReachedNotification } from '../../requestTypes';
 
 export class LanguageHandlers {
   private languageService: LanguageService;

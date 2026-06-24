@@ -4,25 +4,28 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver-types';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { DiagnosticRelatedInformation } from 'vscode-languageserver-types';
+
+import type { ErrorCode } from '../jsonLanguageTypes';
+import type { SingleYAMLDocument, YamlVersion } from '../parser/yamlParser07';
+import type { Telemetry } from '../telemetry';
 import type { LanguageSettings } from '../yamlLanguageService';
-import type { YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07';
+import type { AdditionalValidator } from './validation/types';
 import type { YAMLSchemaService } from './yamlSchemaService';
 import type { YAMLDocDiagnostic } from '../utils/parseUtils';
-import type { TextDocument } from 'vscode-languageserver-textdocument';
+
+import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver-types';
+
+import { getSchemaFromModeline } from './modelineUtil';
 import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
-import { TextBuffer } from '../utils/textBuffer';
-import { filterSuppressedDiagnostics } from '../utils/diagnostic-filter';
 import { yamlDocumentsCache } from '../parser/yaml-documents';
-import type { Telemetry } from '../telemetry';
-import type { AdditionalValidator } from './validation/types';
+import { filterSuppressedDiagnostics } from '../utils/diagnostic-filter';
+import { TextBuffer } from '../utils/textBuffer';
+import { MapKeyOrderValidator } from './validation/map-key-order';
 import { UnusedAnchorsValidator } from './validation/unused-anchors';
 import { YAMLStyleValidator } from './validation/yaml-style';
-import { MapKeyOrderValidator } from './validation/map-key-order';
-import { getSchemaFromModeline } from './modelineUtil';
 import { isKubernetes as isKubernetesSchemaURI } from '../utils/schemaUrls';
-import type { ErrorCode } from '../jsonLanguageTypes';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic

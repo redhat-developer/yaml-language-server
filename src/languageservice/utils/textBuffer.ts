@@ -5,6 +5,7 @@
 
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Position } from 'vscode-languageserver-types';
+
 import { Range } from 'vscode-languageserver-types';
 
 interface FullTextDocument {

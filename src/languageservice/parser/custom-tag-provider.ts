@@ -1,6 +1,9 @@
 import type { Tags, YAMLMap, YAMLSeq } from 'yaml';
-import { isSeq, isMap, Scalar } from 'yaml';
+
 import type { CustomTagInputType, CustomTagReturnType } from '../utils/customTags';
+
+import { Scalar, isMap, isSeq } from 'yaml';
+
 import { parseCustomTag, setCustomTagReturnType } from '../utils/customTags';
 
 class CommonTagImpl {

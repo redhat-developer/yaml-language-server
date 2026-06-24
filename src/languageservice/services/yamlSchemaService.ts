@@ -18,6 +18,7 @@ import type { SchemaRequestService, WorkspaceContextService } from '../yamlLangu
 import type { SchemaVersions } from '../yamlTypes';
 
 import * as path from 'path';
+
 import * as l10n from '@vscode/l10n';
 import Ajv from 'ajv';
 import Ajv2019 from 'ajv/dist/2019';

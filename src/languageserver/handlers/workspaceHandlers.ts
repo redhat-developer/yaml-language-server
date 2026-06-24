@@ -3,7 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { ExecuteCommandParams, Connection } from 'vscode-languageserver';
+import type { Connection, ExecuteCommandParams } from 'vscode-languageserver';
+
 import type { CommandExecutor } from '../commandExecutor';
 
 export class WorkspaceHandlers {

@@ -2,11 +2,14 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { FoldingRange, Range } from 'vscode-languageserver-types';
-import type { FoldingRangesContext } from '../yamlTypes';
-import type { ASTNode } from '../jsonLanguageTypes';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
+
+import type { ASTNode } from '../jsonLanguageTypes';
+import type { FoldingRangesContext } from '../yamlTypes';
+
+import { FoldingRange, Range } from 'vscode-languageserver-types';
+
+import { yamlDocumentsCache } from '../parser/yaml-documents';
 
 export function getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | undefined {
   if (!document) {

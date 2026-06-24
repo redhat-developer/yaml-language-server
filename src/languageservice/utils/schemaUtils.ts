@@ -1,6 +1,8 @@
-import { URI } from 'vscode-uri';
 import type { JSONSchema } from '../jsonSchema';
+
 import * as path from 'path';
+
+import { URI } from 'vscode-uri';
 
 export function getSchemaTypeName(schema: JSONSchema): string {
   const closestTitleWithType = schema.type && schema.closestTitle;

@@ -6,9 +6,12 @@
 import type { DefinitionParams } from 'vscode-languageserver-protocol';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { DefinitionLink } from 'vscode-languageserver-types';
+
+import type { Telemetry } from '../telemetry';
+
 import { LocationLink, Range } from 'vscode-languageserver-types';
 import { isAlias } from 'yaml';
-import type { Telemetry } from '../telemetry';
+
 import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { matchOffsetToDocument } from '../utils/arrUtils';
 import { TextBuffer } from '../utils/textBuffer';
