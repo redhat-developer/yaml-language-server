@@ -3,19 +3,22 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { Node, Scalar, YAMLMap, Pair, YAMLSeq, Alias, Document, LineCounter } from 'yaml';
-import { isScalar, isMap, isPair, isSeq, isNode, isAlias } from 'yaml';
+import type { Alias, Document, LineCounter, Node, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
+
 import type { ASTNode, YamlNode } from '../jsonLanguageTypes';
-import { getCustomTagReturnType } from '../utils/customTags';
+
+import { isAlias, isMap, isNode, isPair, isScalar, isSeq } from 'yaml';
+
 import {
-  NullASTNodeImpl,
-  PropertyASTNodeImpl,
-  StringASTNodeImpl,
-  ObjectASTNodeImpl,
-  NumberASTNodeImpl,
   ArrayASTNodeImpl,
   BooleanASTNodeImpl,
+  NullASTNodeImpl,
+  NumberASTNodeImpl,
+  ObjectASTNodeImpl,
+  PropertyASTNodeImpl,
+  StringASTNodeImpl,
 } from './jsonDocument';
+import { getCustomTagReturnType } from '../utils/customTags';
 
 type NodeRange = [number, number, number];
 

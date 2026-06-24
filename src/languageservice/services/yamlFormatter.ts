@@ -4,14 +4,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { FormattingOptions } from 'vscode-languageserver-types';
-import { Range, Position, TextEdit } from 'vscode-languageserver-types';
-import type { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
 import type { Options } from 'prettier';
-import * as yamlPlugin from 'prettier/plugins/yaml';
-import * as estreePlugin from 'prettier/plugins/estree';
-import { format } from 'prettier/standalone';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type { FormattingOptions } from 'vscode-languageserver-types';
+
+import type { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
+
+import * as estreePlugin from 'prettier/plugins/estree';
+import * as yamlPlugin from 'prettier/plugins/yaml';
+import { format } from 'prettier/standalone';
+import { Position, Range, TextEdit } from 'vscode-languageserver-types';
 
 export class YAMLFormatter {
   private formatterEnabled = true;

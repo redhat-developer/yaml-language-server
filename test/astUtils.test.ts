@@ -3,13 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as chai from 'chai';
 import type { Pair, YAMLSeq } from 'yaml';
+
+import * as chai from 'chai';
 import { isPair, isSeq } from 'yaml';
-import { YamlDocuments } from '../src/languageservice/parser/yaml-documents';
-import { getParent, isInComment } from '../src/languageservice/utils/yamlAstUtils';
-import { TextBuffer } from '../src/languageservice/utils/textBuffer';
+
 import { setupTextDocument } from './utils/testHelper';
+import { YamlDocuments } from '../src/languageservice/parser/yaml-documents';
+import { TextBuffer } from '../src/languageservice/utils/textBuffer';
+import { getParent, isInComment } from '../src/languageservice/utils/yamlAstUtils';
+
 const expect = chai.expect;
 
 describe('AST Utils Tests', () => {

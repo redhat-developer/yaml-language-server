@@ -2,17 +2,20 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import type { TestCustomSchemaProvider } from './utils/testHelper';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, TEST_URI } from './utils/testHelper';
-import { ServiceSetup } from './utils/serviceSetup';
 import type { CodeActionParams } from 'vscode-languageserver';
-import { TextDocumentIdentifier, CodeActionContext, TextEdit, Range } from 'vscode-languageserver';
-import { expect } from 'chai';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
-import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
+
+import type { TestCustomSchemaProvider } from './utils/testHelper';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import type { SettingsState } from '../src/yamlSettings';
+
+import { expect } from 'chai';
+import { CodeActionContext, Range, TextDocumentIdentifier, TextEdit } from 'vscode-languageserver';
+
+import { ServiceSetup } from './utils/serviceSetup';
+import { SCHEMA_ID, TEST_URI, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions';
+import { TextDocumentTestManager } from '../src/yamlSettings';
 
 describe('Schema Errors Code Action Tests', () => {
   let languageSettingsSetup: ServiceSetup;

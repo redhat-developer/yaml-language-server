@@ -4,29 +4,32 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
+
 import type {
   ASTNode,
   ArrayASTNode,
   NumberASTNode,
   ObjectASTNode,
   PropertyASTNode,
-  StringASTNode,
   SchemaDraft,
+  StringASTNode,
 } from '../../jsonLanguageTypes';
-import { equals, isBoolean, isDefined, isIterable, isNumber, isString } from '../../utils/objects';
-import { getSchemaTypeName } from '../../utils/schemaUtils';
+import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
+
+import * as l10n from '@vscode/l10n';
+import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
+import { URI } from 'vscode-uri';
+
+import { getValidator } from './validatorFactory';
+import { ErrorCode } from '../../jsonLanguageTypes';
 import { isArrayEqual } from '../../utils/arrUtils';
-import { safeCreateUnicodeRegExp } from '../../utils/strings';
+import { contains, getNodeValue } from '../../utils/astNodeUtils';
 import { FilePatternAssociation } from '../../utils/filePatternAssociation';
 import { floatSafeRemainder } from '../../utils/math';
-import { ErrorCode } from '../../jsonLanguageTypes';
-import * as l10n from '@vscode/l10n';
-import { URI } from 'vscode-uri';
-import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
-import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { contains, getNodeValue } from '../../utils/astNodeUtils';
-import { getValidator } from './validatorFactory';
+import { equals, isBoolean, isDefined, isIterable, isNumber, isString } from '../../utils/objects';
+import { getSchemaTypeName } from '../../utils/schemaUtils';
+import { safeCreateUnicodeRegExp } from '../../utils/strings';
 
 export const YAML_SOURCE = 'YAML';
 const YAML_SCHEMA_PREFIX = 'yaml-schema: ';

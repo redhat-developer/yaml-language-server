@@ -3,11 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type { FoldingRangesContext } from '../src/languageservice/yamlTypes';
+
 import { expect } from 'chai';
 import { FoldingRange } from 'vscode-languageserver-types';
+
+import { TEST_URI, setupTextDocument } from './utils/testHelper';
 import { getFoldingRanges } from '../src/languageservice/services/yamlFolding';
-import type { FoldingRangesContext } from '../src/languageservice/yamlTypes';
-import { setupTextDocument, TEST_URI } from './utils/testHelper';
 
 const context: FoldingRangesContext = { rangeLimit: 10_0000 };
 

@@ -4,9 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { Connection } from 'vscode-languageserver';
-import { YamlCommands } from '../../commands';
+
 import type { CommandExecutor } from '../../languageserver/commandExecutor';
+
 import { URI } from 'vscode-uri';
+
+import { YamlCommands } from '../../commands';
 
 export function registerCommands(commandExecutor: CommandExecutor, connection: Connection): void {
   commandExecutor.registerCommand(YamlCommands.JUMP_TO_SCHEMA, async (uri: string) => {

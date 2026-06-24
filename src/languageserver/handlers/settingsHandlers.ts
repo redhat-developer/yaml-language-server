@@ -2,19 +2,22 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { configure as configureHttpRequests, xhr } from 'request-light';
 import type { Connection } from 'vscode-languageserver';
+
+import type { ValidationHandler } from './validationHandlers';
+import type { Telemetry } from '../../languageservice/telemetry';
+import type { LanguageService, LanguageSettings, SchemasSettings } from '../../languageservice/yamlLanguageService';
+import type { Settings, SettingsState } from '../../yamlSettings';
+
+import { configure as configureHttpRequests, xhr } from 'request-light';
 import { DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
 import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
-import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
-import { checkSchemaURI, EMPTY_SCHEMA_URL, isKubernetes, JSON_SCHEMASTORE_URL } from '../../languageservice/utils/schemaUrls';
+
 import { equals } from '../../languageservice/utils/objects';
-import type { LanguageService, LanguageSettings, SchemasSettings } from '../../languageservice/yamlLanguageService';
+import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
+import { EMPTY_SCHEMA_URL, JSON_SCHEMASTORE_URL, checkSchemaURI, isKubernetes } from '../../languageservice/utils/schemaUrls';
 import { SchemaPriority } from '../../languageservice/yamlLanguageService';
 import { SchemaSelectionRequests } from '../../requestTypes';
-import type { Settings, SettingsState } from '../../yamlSettings';
-import type { Telemetry } from '../../languageservice/telemetry';
-import type { ValidationHandler } from './validationHandlers';
 
 export class SettingsHandler {
   private schemaSettings: SchemasSettings[] | undefined;

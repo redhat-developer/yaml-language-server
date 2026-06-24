@@ -2,34 +2,38 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import type { Diagnostic } from 'vscode-languageserver-types';
+
 import type { TestCustomSchemaProvider } from './utils/testHelper';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
-import { createDiagnosticWithData, createExpectedError } from './utils/verifyError';
-import { ServiceSetup } from './utils/serviceSetup';
-import {
-  StringTypeError,
-  BooleanTypeError,
-  ArrayTypeError,
-  IncludeWithoutValueError,
-  BlockMappingEntryError,
-  DuplicateKeyError,
-  propertyIsNotAllowed,
-  MissingRequiredPropWarning,
-} from './utils/errorMessages';
+import type { TestTelemetry } from './utils/testsTypes';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import type { JSONSchema } from '../src/languageservice/jsonSchema';
+import type { IProblem } from '../src/languageservice/parser/schemaValidation/baseValidator';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService';
+import type { SettingsState } from '../src/yamlSettings';
+
 import assert from 'assert';
 import * as path from 'path';
-import type { Diagnostic } from 'vscode-languageserver-types';
-import { DiagnosticSeverity, Position } from 'vscode-languageserver-types';
+
 import { expect } from 'chai';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
-import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import type { LanguageService } from '../src/languageservice/yamlLanguageService';
-import type { IProblem } from '../src/languageservice/parser/schemaValidation/baseValidator';
-import type { JSONSchema } from '../src/languageservice/jsonSchema';
-import type { TestTelemetry } from './utils/testsTypes';
+import { DiagnosticSeverity, Position } from 'vscode-languageserver-types';
+
+import {
+  ArrayTypeError,
+  BlockMappingEntryError,
+  BooleanTypeError,
+  DuplicateKeyError,
+  IncludeWithoutValueError,
+  MissingRequiredPropWarning,
+  StringTypeError,
+  propertyIsNotAllowed,
+} from './utils/errorMessages';
+import { ServiceSetup } from './utils/serviceSetup';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import { createDiagnosticWithData, createExpectedError } from './utils/verifyError';
 import { ErrorCode } from '../src/languageservice/jsonLanguageTypes';
 import { DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls';
+import { TextDocumentTestManager } from '../src/yamlSettings';
 
 const KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/all.json`;
 

@@ -3,13 +3,15 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type { Connection } from 'vscode-languageserver';
+
+import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import * as chai from 'chai';
-import { registerCommands } from '../src/languageservice/services/yamlCommands';
-import { commandExecutor } from '../src/languageserver/commandExecutor';
-import type { Connection } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
+
+import { commandExecutor } from '../src/languageserver/commandExecutor';
+import { registerCommands } from '../src/languageservice/services/yamlCommands';
 
 const expect = chai.expect;
 chai.use(sinonChai);

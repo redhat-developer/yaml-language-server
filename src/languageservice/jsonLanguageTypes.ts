@@ -6,49 +6,53 @@
 // Forked from vscode-json-languageservice@6.0.0-next.1
 // Source: https://github.com/microsoft/vscode-json-languageservice/blob/810471bbb462bb6b87351c2232e209a3bb4062ca/src/jsonLanguageTypes.ts
 
-import { JSONSchema } from './jsonSchema';
 import type { FormattingOptions as LSPFormattingOptions } from 'vscode-languageserver-types';
+import type { Node, Pair } from 'yaml';
+
+import type { CustomTagReturnType } from './utils/customTags';
+
+import { TextDocument, TextDocumentContentChangeEvent } from 'vscode-languageserver-textdocument';
 import {
-  Range,
-  Position,
-  DocumentUri,
-  MarkupContent,
-  MarkupKind,
+  CodeAction,
+  CodeActionContext,
+  CodeActionKind,
   Color,
   ColorInformation,
   ColorPresentation,
-  FoldingRange,
-  FoldingRangeKind,
-  SelectionRange,
-  Diagnostic,
-  DiagnosticSeverity,
+  Command,
   CompletionItem,
   CompletionItemKind,
-  CompletionList,
   CompletionItemTag,
+  CompletionList,
+  DefinitionLink,
+  Diagnostic,
+  DiagnosticSeverity,
+  DocumentHighlight,
+  DocumentHighlightKind,
+  DocumentLink,
+  DocumentSymbol,
+  DocumentUri,
+  FoldingRange,
+  FoldingRangeKind,
+  Hover,
   InsertTextFormat,
+  Location,
+  MarkedString,
+  MarkupContent,
+  MarkupKind,
+  Position,
+  Range,
+  SelectionRange,
   SymbolInformation,
   SymbolKind,
-  DocumentSymbol,
-  Location,
-  Hover,
-  MarkedString,
-  DefinitionLink,
-  CodeActionContext,
-  Command,
-  CodeAction,
-  DocumentHighlight,
-  DocumentLink,
-  WorkspaceEdit,
-  TextEdit,
-  CodeActionKind,
   TextDocumentEdit,
+  TextEdit,
   VersionedTextDocumentIdentifier,
-  DocumentHighlightKind,
+  WorkspaceEdit,
 } from 'vscode-languageserver-types';
-import { TextDocument, TextDocumentContentChangeEvent } from 'vscode-languageserver-textdocument';
-import type { Node, Pair } from 'yaml';
-import type { CustomTagReturnType } from './utils/customTags';
+
+import { JSONSchema } from './jsonSchema';
+
 export {
   TextDocument,
   TextDocumentContentChangeEvent,

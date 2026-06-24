@@ -4,22 +4,24 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { Disposable, Event, NotificationHandler, RequestHandler } from 'vscode-jsonrpc';
+import type { Connection, RemoteWorkspace } from 'vscode-languageserver';
 import type {
   ApplyWorkspaceEditParams,
-  WorkspaceEdit,
   ApplyWorkspaceEditResponse,
+  ClientCapabilities,
   ConfigurationItem,
+  CreateFilesParams,
+  DeleteFilesParams,
+  RenameFilesParams,
+  ServerCapabilities,
+  WorkspaceEdit,
   WorkspaceFolder,
   WorkspaceFoldersChangeEvent,
-  CreateFilesParams,
-  RenameFilesParams,
-  DeleteFilesParams,
-  ClientCapabilities,
-  ServerCapabilities,
 } from 'vscode-languageserver-protocol';
-import type { Connection, RemoteWorkspace } from 'vscode-languageserver';
-import { TelemetryImpl } from '../../src/languageserver/telemetry';
+
 import type { TelemetryEvent } from '../../src/languageservice/telemetry';
+
+import { TelemetryImpl } from '../../src/languageserver/telemetry';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */

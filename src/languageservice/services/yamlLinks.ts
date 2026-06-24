@@ -3,13 +3,16 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import type { DocumentLink } from 'vscode-languageserver-types';
-import { Range } from 'vscode-languageserver-types';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import type { Telemetry } from '../telemetry';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
+import type { DocumentLink } from 'vscode-languageserver-types';
+
 import type { ASTNode, PropertyASTNode } from '../jsonLanguageTypes';
 import type { JSONDocument } from '../parser/jsonDocument';
+import type { Telemetry } from '../telemetry';
+
+import { Range } from 'vscode-languageserver-types';
+
+import { yamlDocumentsCache } from '../parser/yaml-documents';
 
 export class YamlLinks {
   constructor(private readonly telemetry?: Telemetry) {}

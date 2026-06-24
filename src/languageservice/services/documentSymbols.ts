@@ -4,13 +4,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Location, Range, SymbolKind } from 'vscode-languageserver-types';
-import type { DocumentSymbol, SymbolInformation } from 'vscode-languageserver-types';
-import type { DocumentSymbolsContext, ASTNode, PropertyASTNode } from '../jsonLanguageTypes';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
+import type { DocumentSymbol, SymbolInformation } from 'vscode-languageserver-types';
+
+import type { ASTNode, DocumentSymbolsContext, PropertyASTNode } from '../jsonLanguageTypes';
 import type { Telemetry } from '../telemetry';
+
+import { Location, Range, SymbolKind } from 'vscode-languageserver-types';
 import { isMap, isSeq } from 'yaml';
+
+import { yamlDocumentsCache } from '../parser/yaml-documents';
 
 export class YAMLDocumentSymbols {
   constructor(private readonly telemetry?: Telemetry) {}

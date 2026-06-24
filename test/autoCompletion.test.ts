@@ -3,19 +3,23 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type { CompletionList, MarkupContent } from 'vscode-languageserver-types';
+
+import type { LanguageService } from '../src';
 import type { TestCustomSchemaProvider } from './utils/testHelper';
-import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, toFsPath } from './utils/testHelper';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import type { SettingsState } from '../src/yamlSettings';
+
 import assert from 'assert';
 import * as path from 'path';
-import { createExpectedCompletion } from './utils/verifyError';
-import { ServiceSetup } from './utils/serviceSetup';
-import type { CompletionList, MarkupContent } from 'vscode-languageserver-types';
-import { CompletionItemKind, InsertTextFormat, MarkupKind, Position } from 'vscode-languageserver-types';
+
 import { expect } from 'chai';
-import type { SettingsState } from '../src/yamlSettings';
+import { CompletionItemKind, InsertTextFormat, MarkupKind, Position } from 'vscode-languageserver-types';
+
+import { ServiceSetup } from './utils/serviceSetup';
+import { SCHEMA_ID, caretPosition, setupLanguageService, setupSchemaIDTextDocument, toFsPath } from './utils/testHelper';
+import { createExpectedCompletion } from './utils/verifyError';
 import { TextDocumentTestManager } from '../src/yamlSettings';
-import type { LanguageService } from '../src';
-import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 
 describe('Auto Completion Tests', () => {
   let languageSettingsSetup: ServiceSetup;

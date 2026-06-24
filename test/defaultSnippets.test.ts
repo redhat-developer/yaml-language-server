@@ -2,15 +2,19 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { toFsPath, setupSchemaIDTextDocument, setupLanguageService, caretPosition } from './utils/testHelper';
-import assert from 'assert';
-import * as path from 'path';
-import { ServiceSetup } from './utils/serviceSetup';
+import type { CompletionList, TextEdit } from 'vscode-languageserver-types';
+
 import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
 import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
-import type { CompletionList, TextEdit } from 'vscode-languageserver-types';
+
+import assert from 'assert';
+import * as path from 'path';
+
 import { expect } from 'chai';
+
+import { ServiceSetup } from './utils/serviceSetup';
+import { caretPosition, setupLanguageService, setupSchemaIDTextDocument, toFsPath } from './utils/testHelper';
+import { TextDocumentTestManager } from '../src/yamlSettings';
 
 describe('Default Snippet Tests', () => {
   let languageHandler: LanguageHandlers;

@@ -4,12 +4,15 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { CodeLens, Range } from 'vscode-languageserver-types';
-import { YamlCommands } from '../../commands';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
+
 import type { YAMLSchemaService } from './yamlSchemaService';
 import type { JSONSchema } from '../jsonSchema';
 import type { Telemetry } from '../telemetry';
+
+import { CodeLens, Range } from 'vscode-languageserver-types';
+
+import { YamlCommands } from '../../commands';
+import { yamlDocumentsCache } from '../parser/yaml-documents';
 import { getSchemaUrls } from '../utils/schemaUrls';
 import { getSchemaTitle } from '../utils/schemaUtils';
 
