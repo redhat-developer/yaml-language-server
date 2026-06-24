@@ -4,59 +4,50 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { PromiseConstructor, SchemaConfiguration } from '../jsonLanguageTypes';
-import { ErrorCode, SchemaDraft } from '../jsonLanguageTypes';
-import * as Strings from '../utils/strings';
-import type { SettingsState } from '../../yamlSettings';
-import type { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
-import type { SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
-import { SchemaPriority } from '../yamlLanguageService';
+import type { AnySchemaObject, DefinedError, ErrorObject, ValidateFunction } from 'ajv';
+import type { Localize } from 'ajv-i18n/localize/types';
 import type { DiagnosticRelatedInformation } from 'vscode-languageserver-types';
-import { Range } from 'vscode-languageserver-types';
-import { asSchema } from '../parser/schemaValidation/baseValidator';
 
-import * as l10n from '@vscode/l10n';
-import * as path from 'path';
-import { URI } from 'vscode-uri';
 import type { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes';
+import type { SettingsState } from '../../yamlSettings';
+import type { PromiseConstructor, SchemaConfiguration } from '../jsonLanguageTypes';
+import type { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
 import type { JSONDocument } from '../parser/jsonDocument';
 import type { SingleYAMLDocument } from '../parser/yamlParser07';
+import type { SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
 import type { SchemaVersions } from '../yamlTypes';
-import { getSchemaFromModeline } from './modelineUtil';
-import { getDollarSchema } from './dollarUtils';
 
+import * as path from 'path';
+import * as l10n from '@vscode/l10n';
 import Ajv from 'ajv';
-import type { DefinedError, AnySchemaObject, ErrorObject, ValidateFunction } from 'ajv';
-import Ajv4 from 'ajv-draft-04';
 import Ajv2019 from 'ajv/dist/2019';
 import Ajv2020 from 'ajv/dist/2020';
-import type { Localize } from 'ajv-i18n/localize/types';
+import Ajv4 from 'ajv-draft-04';
+import * as ajvLocalizers from 'ajv-i18n';
 import * as Json from 'jsonc-parser';
 import picomatch from 'picomatch';
+import { Range } from 'vscode-languageserver-types';
+import { URI } from 'vscode-uri';
 import { parse } from 'yaml';
-import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, isKubernetes } from '../utils/schemaUrls';
+
+import { getDollarSchema } from './dollarUtils';
+import { getSchemaFromModeline } from './modelineUtil';
+import { ErrorCode, SchemaDraft } from '../jsonLanguageTypes';
+import { asSchema } from '../parser/schemaValidation/baseValidator';
+import { SchemaPriority } from '../yamlLanguageService';
 import { autoDetectKubernetesSchema } from './k8sSchemaUtil';
+import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, isKubernetes } from '../utils/schemaUrls';
+import * as Strings from '../utils/strings';
 
 const ajv4 = new Ajv4({ allErrors: true });
 const ajv7 = new Ajv({ allErrors: true });
 const ajv2019 = new Ajv2019({ allErrors: true });
 const ajv2020 = new Ajv2020({ allErrors: true });
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const jsonSchema04 = require('ajv-draft-04/dist/refs/json-schema-draft-04.json');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const jsonSchema07 = require('ajv/dist/refs/json-schema-draft-07.json');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const jsonSchema2019 = require('ajv/dist/refs/json-schema-2019-09/schema.json');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const jsonSchema2020 = require('ajv/dist/refs/json-schema-2020-12/schema.json');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const ajvLocalizers: Record<string, Localize> = require('ajv-i18n');
-
-const schema04Validator = ajv4.compile(jsonSchema04);
-const schema07Validator = ajv7.compile(jsonSchema07);
-const schema2019Validator = ajv2019.compile(jsonSchema2019);
-const schema2020Validator = ajv2020.compile(jsonSchema2020);
+const schema04Validator = getDefaultMetaSchemaValidator(ajv4);
+const schema07Validator = getDefaultMetaSchemaValidator(ajv7);
+const schema2019Validator = getDefaultMetaSchemaValidator(ajv2019);
+const schema2020Validator = getDefaultMetaSchemaValidator(ajv2020);
 
 const schemaDraftCache = new Map<string, SchemaDraft>();
 const schemaDraftInFlight = new Map<string, Promise<SchemaDraft>>();
@@ -2007,8 +1998,20 @@ function getAjvLocalizer(locale?: string): Localize | undefined {
 }
 
 function localizeAjvErrors(errors: ErrorObject[] | null | undefined, locale?: string): void {
-  const localizer = getAjvLocalizer(locale) || ajvLocalizers.en;
+  const localizer = getAjvLocalizer(locale) || ajvLocalizers.default.en;
   localizer(errors);
+}
+
+function getDefaultMetaSchemaValidator(ajv: {
+  defaultMeta(): string | AnySchemaObject | undefined;
+  getSchema(keyRef: string): ValidateFunction | undefined;
+}): ValidateFunction {
+  const defaultMeta = ajv.defaultMeta() as string;
+  const validator = ajv.getSchema(defaultMeta);
+  if (validator) {
+    return validator;
+  }
+  throw new Error(`Unable to resolve default JSON meta-schema validator`);
 }
 
 async function pickSchemaDraft(
