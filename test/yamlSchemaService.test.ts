@@ -491,24 +491,56 @@ describe('YAML Schema Service', () => {
       expect(schemaUris.some((uri) => uri.startsWith('schemaservice:///'))).to.be.false;
     });
 
-    it('should handle modeline schema comment in the middle of file', () => {
+    it('should ignore modeline schema comment in the middle of file after yaml content', async () => {
       const documentContent = `foo:\n  bar\n# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#\naa:bbb\n`;
       const content = `${documentContent}`;
       const yamlDock = parse(content);
 
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
-      service.getSchemaForResource('', yamlDock.documents[0]);
+      await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      expect(requestServiceMock).not.called;
+    });
+
+    it('should ignore modeline schema comment using $schema in the middle of file after yaml content', async () => {
+      const documentContent = `foo:\n  bar\n# $schema=https://json-schema.org/draft-07/schema#\naa:bbb\n`;
+      const content = `${documentContent}`;
+      const yamlDock = parse(content);
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      expect(requestServiceMock).not.called;
+    });
+
+    it('should handle modeline schema comment in multiline comments at document header', async () => {
+      const documentContent = `#first comment\n# second comment\n\n# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#\naa:bbb\n`;
+      const content = `${documentContent}`;
+      const yamlDock = parse(content);
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      await service.getSchemaForResource('', yamlDock.documents[0]);
 
       expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
     });
 
-    it('should handle modeline schema comment in multiline comments', () => {
+    it('should ignore modeline schema comment in multiline comments after yaml content', async () => {
       const documentContent = `foo:\n  bar\n#first comment\n# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#\naa:bbb\n`;
       const content = `${documentContent}`;
       const yamlDock = parse(content);
 
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
-      service.getSchemaForResource('', yamlDock.documents[0]);
+      await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      expect(requestServiceMock).not.called;
+    });
+
+    it('should handle modeline schema comment after document separator', () => {
+      const documentContent = `foo:\n  bar\n---\n# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#\naa:bbb\n`;
+      const yamlDock = parse(documentContent);
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      service.getSchemaForResource('', yamlDock.documents[1]);
 
       expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
     });

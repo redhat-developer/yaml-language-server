@@ -28,6 +28,7 @@ export class SingleYAMLDocument extends JSONDocument {
   public root: ASTNode;
   public currentDocIndex: number;
   private _lineComments: string[];
+  private _documentHeaderComments: string[] = [];
 
   constructor(lineCounter?: LineCounter) {
     super(null, []);
@@ -44,6 +45,7 @@ export class SingleYAMLDocument extends JSONDocument {
     copy.uri = this.uri;
     copy.currentDocIndex = this.currentDocIndex;
     copy._lineComments = this.lineComments.slice();
+    copy._documentHeaderComments = this.documentHeaderComments.slice();
     // this will re-create root node
     copy.internalDocument = this._internalDocument.clone();
     return copy;
@@ -98,6 +100,12 @@ export class SingleYAMLDocument extends JSONDocument {
   }
   set lineComments(val: string[]) {
     this._lineComments = val;
+  }
+  get documentHeaderComments(): string[] {
+    return this._documentHeaderComments;
+  }
+  set documentHeaderComments(val: string[]) {
+    this._documentHeaderComments = val;
   }
   get errors(): YAMLDocDiagnostic[] {
     return this.internalDocument.errors.map(YAMLErrorToYamlDocDiagnostics);
