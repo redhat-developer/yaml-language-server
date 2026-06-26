@@ -19,7 +19,6 @@ import type { SettingsState } from '../src/yamlSettings';
 import { TextDocumentTestManager } from '../src/yamlSettings';
 import type { Diagnostic, MarkupContent } from 'vscode-languageserver-types';
 import { Position } from 'vscode-languageserver-types';
-import { LineCounter } from 'yaml';
 import { getSchemaFromModeline } from '../src/languageservice/services/modelineUtil';
 import { getGroupVersionKindFromDocument } from '../src/languageservice/services/k8sSchemaUtil';
 
@@ -1178,6 +1177,10 @@ address:
       checkReturnSchemaUrl('# yaml-language-server: $schema=expectedUrl', 'expectedUrl');
     });
 
+    it('simple $schema case', async () => {
+      checkReturnSchemaUrl('# $schema: expectedUrl', 'expectedUrl');
+    });
+
     it('with several spaces between # and yaml-language-server', async () => {
       checkReturnSchemaUrl('#    yaml-language-server: $schema=expectedUrl', 'expectedUrl');
     });
@@ -1221,9 +1224,31 @@ address:
       checkReturnSchemaUrl('# yaml-language-server: $notschema=url1', undefined);
     });
 
-    function checkReturnSchemaUrl(modeline: string, expectedResult: string): void {
-      const yamlDoc = new parser.SingleYAMLDocument(new LineCounter());
-      yamlDoc.lineComments = [modeline];
+    it('uses first modeline from initial comment block', async () => {
+      const yamlDoc = parser.parse('# first comment\n# yaml-language-server: $schema=expectedUrl\nfoo: bar').documents[0];
+      assert.strictEqual(getSchemaFromModeline(yamlDoc), 'expectedUrl');
+    });
+
+    it('uses first modeline when initial comment block has multiple modelines', async () => {
+      const yamlDoc = parser.parse(
+        '# first comment\n # second comment\n# yaml-language-server: $schema=expectedUrl\n# yaml-language-server: $schema=unexpectedUrl\nfoo: bar'
+      ).documents[0];
+      assert.strictEqual(getSchemaFromModeline(yamlDoc), 'expectedUrl');
+    });
+
+    it('no schema returned if modeline is in the middle of the file after yaml content', async () => {
+      checkReturnSchemaUrl('foo: bar\n# yaml-language-server: $schema=unexpectedUrl', undefined);
+    });
+
+    it('no schema returned from commented out $schema block after yaml content', async () => {
+      checkReturnSchemaUrl(
+        ['- title: test', '  output:', '    scores:', '      $lte: 0.3', '     # $schema:', '     #   type: array'].join('\n'),
+        undefined
+      );
+    });
+
+    function checkReturnSchemaUrl(modeline: string, expectedResult: string, documentIndex?: number): void {
+      const yamlDoc = parser.parse(modeline).documents[documentIndex ?? 0];
       assert.strictEqual(getSchemaFromModeline(yamlDoc), expectedResult);
     }
   });

@@ -4,7 +4,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { Document, ParseOptions, DocumentOptions, SchemaOptions } from 'yaml';
+import type { CST, Document, ParseOptions, DocumentOptions, SchemaOptions } from 'yaml';
 import { Parser, Composer, LineCounter } from 'yaml';
 import { YAMLDocument, SingleYAMLDocument } from './yaml-documents';
 import { getCustomTags } from './custom-tag-provider';
@@ -47,15 +47,55 @@ export function parse(text: string, parserOptions: ParserOptions = defaultOption
   const tokens = parser.parse(text);
   const tokensArr = Array.from(tokens);
   const docs = composer.compose(tokensArr, true, text.length);
+  const documentHeaderComments = getDocumentHeaderComments(tokensArr);
   // Generate the SingleYAMLDocs from the AST nodes
-  const yamlDocs: SingleYAMLDocument[] = Array.from(docs, (doc) => parsedDocToSingleYAMLDocument(doc, lineCounter));
+  const yamlDocs: SingleYAMLDocument[] = Array.from(docs, (doc, index) =>
+    parsedDocToSingleYAMLDocument(doc, lineCounter, documentHeaderComments[index] ?? [])
+  );
 
   // Consolidate the SingleYAMLDocs
   return new YAMLDocument(yamlDocs, tokensArr);
 }
 
-function parsedDocToSingleYAMLDocument(parsedDoc: Document, lineCounter: LineCounter): SingleYAMLDocument {
+function parsedDocToSingleYAMLDocument(
+  parsedDoc: Document,
+  lineCounter: LineCounter,
+  documentHeaderComments: string[]
+): SingleYAMLDocument {
   const syd = new SingleYAMLDocument(lineCounter);
+  syd.documentHeaderComments = documentHeaderComments;
   syd.internalDocument = parsedDoc;
   return syd;
+}
+
+function getDocumentHeaderComments(tokens: CST.Token[]): string[][] {
+  const documentHeaderComments: string[][] = [];
+  let pendingComments: string[] = [];
+
+  for (const token of tokens) {
+    if (token.type === 'comment') {
+      pendingComments.push(token.source);
+      continue;
+    }
+    if (token.type === 'newline' || token.type === 'space' || token.type === 'byte-order-mark' || token.type === 'directive') {
+      continue;
+    }
+    if (token.type === 'doc-end') {
+      pendingComments = [];
+      continue;
+    }
+    if (token.type === 'document') {
+      const startComments = token.start
+        .filter((startToken) => startToken.type === 'comment')
+        .map((startToken) => startToken.source);
+      documentHeaderComments.push([...pendingComments, ...startComments]);
+      pendingComments = [];
+      continue;
+    }
+    pendingComments = [];
+  }
+  if (pendingComments.length > 0) {
+    documentHeaderComments.push(pendingComments);
+  }
+  return documentHeaderComments;
 }

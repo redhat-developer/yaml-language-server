@@ -13,11 +13,11 @@ import type { JSONDocument } from '../parser/jsonDocument';
  */
 export function getSchemaFromModeline(doc: SingleYAMLDocument | JSONDocument): string | undefined {
   if (doc instanceof SingleYAMLDocument) {
-    const yamlLanguageServerModeline = doc.lineComments.find((lineComment) => {
+    const yamlLanguageServerModeline = doc.documentHeaderComments.find((lineComment) => {
       return isModeline(lineComment);
     });
     if (yamlLanguageServerModeline != undefined) {
-      const schemaMatches = yamlLanguageServerModeline.match(/\$schema(?:=|:\s*)(\S+)/);
+      const schemaMatches = yamlLanguageServerModeline.match(/\$schema(?:=|:[^\S\r\n]*)(\S+)/);
       if (schemaMatches !== null && schemaMatches.length === 2) {
         return schemaMatches[1];
       }
