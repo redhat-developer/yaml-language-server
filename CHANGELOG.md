@@ -1,3 +1,34 @@
+### 1.24.0
+- Feat: Add support for declaring a schema using an inline `$schema` property. See [#964](https://github.com/redhat-developer/yaml-language-server/issues/964).
+- Feat: Add support for the `yaml.disableSchemaDetection` setting to disable automatic schema association for matching files. See [#1140](https://github.com/redhat-developer/yaml-language-server/issues/1140) and [vscode-yaml#245](https://github.com/redhat-developer/vscode-yaml/issues/245).
+- Feat: Add support for disabling schema validation via modeline. See [#446](https://github.com/redhat-developer/yaml-language-server/issues/446).
+- Feat: Automatically disable schema detection for dbt, Docker Compose, GitHub Actions, and Azure Pipelines files when the corresponding extension is installed. See [vscode-yaml#1251](https://github.com/redhat-developer/vscode-yaml/issues/1251) and [vscode-yaml#1261](https://github.com/redhat-developer/vscode-yaml/pull/1261).
+- Feat: Add a selectable "No JSON Schema" option to the schema picker. See [vscode-yaml#991](https://github.com/redhat-developer/vscode-yaml/issues/991).
+- Feat: Support selecting multiple schemas in the schema picker. See [vscode-yaml#983](https://github.com/redhat-developer/vscode-yaml/issues/983).
+- Feat: Support return types for `yaml.customTags`. See [vscode-yaml#867](https://github.com/redhat-developer/vscode-yaml/issues/867).
+- Feat: Add the `yaml.kubernetesVersion` setting. See [#211](https://github.com/redhat-developer/yaml-language-server/issues/211).
+- Fix: False "Matches multiple schemas when only one must validate" error when using direct Kubernetes `standalone-strict/all.json` schema URLs. See [vscode-yaml#1180](https://github.com/redhat-developer/vscode-yaml/issues/1180).
+- Fix: Stack overflow in YAML Language Server when trying to open the schema picker for a file with multiple schemas. See [vscode-yaml#1249](https://github.com/redhat-developer/vscode-yaml/issues/1249).
+- Fix: Ignore schema modeline comments after YAML content, allowing `$schema` properties to be commented out normally. See [vscode-yaml#1260](https://github.com/redhat-developer/vscode-yaml/issues/1260).
+- Fix: Missing schemas from SchemaStore. See [vscode-yaml#1130](https://github.com/redhat-developer/vscode-yaml/issues/1130).
+- Fix: Arrays with default and required values are not rendered correctly. See [vscode-yaml#1187](https://github.com/redhat-developer/vscode-yaml/issues/1187).
+- Fix: Autocomplete suggestions from conditional `if` schema branches. See [#1266](https://github.com/redhat-developer/yaml-language-server/issues/1266).
+- Fix: Broken indentation after pressing Enter in nested mappings. See [vscode-yaml#1226](https://github.com/redhat-developer/vscode-yaml/issues/1226) and [#1258](https://github.com/redhat-developer/yaml-language-server/issues/1258).
+- Fix: Allow schema to still validate even if Ajv fails. See [#1269](https://github.com/redhat-developer/yaml-language-server/pull/1269).
+- Fix: `textDocument/codeLens` request hangs on the first file opened. See [#501](https://github.com/redhat-developer/yaml-language-server/issues/501).
+- Fix: Prepare for the transition to ES modules by removing the `vscode-json-languageservice` dependency. See [#1069](https://github.com/redhat-developer/yaml-language-server/issues/1069) and [#1014](https://github.com/redhat-developer/yaml-language-server/issues/1014).
+- Fix: GitHub issue forms schema not detected despite correct directory and naming. See [vscode-yaml#1258](https://github.com/redhat-developer/vscode-yaml/issues/1258).
+- Fix: Correct the default values of `yaml.extension.recommendations` and `yaml.hoverSchemaSource`. See [vscode-yaml#1247](https://github.com/redhat-developer/vscode-yaml/pull/1247).
+- Fix: Cannot Load content for: schema.json Unknown schema: file. See [#948](https://github.com/redhat-developer/yaml-language-server/issues/948).
+- Fix: Imported `jsonc-parser` isn't listed as dependencies. See [#1264](https://github.com/redhat-developer/yaml-language-server/issues/1264).
+- Fix: Correct the `vscode-languageserver-types` version to prevent incompatible TypeScript types. See [#1270](https://github.com/redhat-developer/yaml-language-server/issues/1270).
+- Fix: `yaml/get/all/jsonSchemas` returns schema association declared with inline `$schema`. See [#1290](https://github.com/redhat-developer/yaml-language-server/pull/1290).
+- Fix: Status bar updates when editing inline `$schema` in YAML files. See [vscode-yaml#1263](https://github.com/redhat-developer/vscode-yaml/pull/1263).
+- Chore: Upgrade to ESLint 10 and enforce consistent type imports. See [#1281](https://github.com/redhat-developer/yaml-language-server/pull/1281) and [#1282](https://github.com/redhat-developer/yaml-language-server/pull/1282).
+- Chore: Upgrade to TypeScript 6. See [#1275](https://github.com/redhat-developer/yaml-language-server/pull/1275).
+
+Thanks to [Nicholas Bollweg](https://github.com/bollwyvl), [Heather Lapointe](https://github.com/Alphadelta14), [Remco Haszing](https://github.com/remcohaszing), [Aidan Feldman](https://github.com/afeld), and [Rafał Chłodnicki](https://github.com/rchl) for your contributions.
+
 ### 1.23.0
 - Feat: Disable "Source" URI in hovers. See [#1120](https://github.com/redhat-developer/yaml-language-server/issues/1120), [vscode-yaml#1238](https://github.com/redhat-developer/vscode-yaml/pull/1238).
 - Fix: Add support for ajv-i18n to localize validation messages for errors in referenced JSON schemas [#1131](https://github.com/redhat-developer/yaml-language-server/issues/1131).
