@@ -100,6 +100,49 @@ describe('Schema Selection Handlers', () => {
     });
   });
 
+  it('getSchemas should return an inline $schema', async () => {
+    const schemaUri = 'https://some.com/inline.json';
+    requestServiceMock = sandbox.fake((uri: string) => {
+      if (uri === schemaUri) {
+        return Promise.resolve(
+          JSON.stringify({
+            title: 'Schema name',
+            type: 'object',
+            properties: {
+              $schema: {
+                type: 'string',
+              },
+              firstName: {
+                type: 'string',
+              },
+            },
+            required: ['firstName'],
+            additionalProperties: false,
+          })
+        );
+      }
+      return Promise.reject(`Resource ${uri} not found.`);
+    });
+    service = new YAMLSchemaService(requestServiceMock);
+    const settings = new SettingsState();
+    const testTextDocument = setupSchemaIDTextDocument(`firstName: John\n$schema: ${schemaUri}`);
+    settings.documents = new TextDocumentTestManager();
+    (settings.documents as TextDocumentTestManager).set(testTextDocument);
+    const selection = new JSONSchemaSelection(service, settings, connection);
+
+    const result = await selection.getSchemas(testTextDocument.uri);
+
+    expect(result).to.eql([
+      {
+        uri: schemaUri,
+        name: 'Schema name',
+        description: undefined,
+        versions: undefined,
+      },
+    ]);
+    expect(requestServiceMock).calledOnceWith(schemaUri);
+  });
+
   it('getSchemas should not resolve schema references', async () => {
     requestServiceMock = sandbox.fake((uri: string) => {
       if (uri === 'https://some.com/some.json') {

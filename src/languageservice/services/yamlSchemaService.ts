@@ -516,6 +516,11 @@ export class YAMLSchemaService implements IJSONSchemaService {
       return [modelineSchema];
     }
 
+    const dollarSchema = this.resolveDollarSchema(resource, doc);
+    if (dollarSchema) {
+      return [dollarSchema];
+    }
+
     if (this.customSchemaProvider) {
       try {
         const schemaUri = await this.customSchemaProvider(resource);
