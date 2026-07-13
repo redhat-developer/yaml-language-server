@@ -74,7 +74,7 @@ Settings are supplied through LSP configuration. Setting names match the `yaml.*
 
 The language server uses [JSON Schema](https://json-schema.org/) to understand the shape of YAML files. Schema definitions can be written in JSON (`.json`) or YAML (`.yaml` or `.yml`) format.
 
-Schemas can be associated with YAML files by using a modeline, an inline `$schema` property, or the `yaml.schemas` setting. Integrations can also provide schema associations through LSP notifications. See [Schema association notification](#schema-association-notification) for integration details.
+Schemas can be associated with YAML files by using a modeline, an inline `$schema` property, or the `yaml.schemas` setting. Integrations can also provide schema associations through LSP notifications. See [`json/schemaAssociations` notification](#jsonschemaassociations-notification) for integration details.
 
 When multiple schema sources or schema-disabling settings apply to the same file, see [Schema resolution priority](#schema-resolution-priority).
 
@@ -207,9 +207,9 @@ Specify `yaml.kubernetesVersion` to choose the Kubernetes schema version:
 
 If `yaml.kubernetesVersion` is not set, the language server uses the default Kubernetes version.
 
-## Suppressing Diagnostics
+## Suppressing diagnostics
 
-To hide diagnostics for a specific YAML line, add a suppression comment immediately before that line. To disable schema validation for an entire file, see [Disabling Schema Validation](#disabling-schema-validation).
+To hide diagnostics for a specific YAML line, add a suppression comment immediately before that line. To disable schema validation for an entire file, see [Disabling schema validation](#disabling-schema-validation).
 
 ### Suppress all diagnostics on a line
 
@@ -262,21 +262,26 @@ The IntelliJ-compatible `$schema` comment format is also supported:
 
 Prevent detected schemas from being applied to specific YAML files by configuring `yaml.disableSchemaDetection` with one or more glob patterns.
 
-For matching files, schemas from `yaml.schemas`, schema association notifications, and Schema Store are ignored.
-
 For one file pattern:
 
-```yaml
-yaml.disableSchemaDetection: "**/.github/workflows/*.yaml"
+```json
+{
+  "yaml.disableSchemaDetection": "**/.github/workflows/*.yaml"
+}
 ```
 
 For multiple file patterns:
 
-```yaml
-yaml.disableSchemaDetection: ["some.yaml", "**/.github/workflows/*.yaml"]
+```json
+{
+  "yaml.disableSchemaDetection": [
+    "some.yaml",
+    "**/.github/workflows/*.yaml"
+  ]
+}
 ```
 
-### Schema resolution priority
+## Schema resolution priority
 
 When multiple schema sources apply to the same YAML file, the language server uses the following priority order, from highest to lowest:
 
@@ -285,7 +290,7 @@ When multiple schema sources apply to the same YAML file, the language server us
 3. Custom schema provider API
 4. `yaml.disableSchemaDetection`
 5. `yaml.schemas`
-6. Schema association notification
+6. `json/schemaAssociations` notification
 7. Schema Store
 
 ## Adding custom tags
@@ -304,13 +309,15 @@ Supported return types are `string`, `number`, `integer`, `boolean`, `null`, `ar
 
 For example:
 
-```yaml
-yaml.customTags: [
-  "!Scalar-example",
-  "!Seq-example sequence",
-  "!Mapping-example mapping",
-  "!Seq-as-string-example sequence:string"
-]
+```json
+{
+  "yaml.customTags": [
+    "!Scalar-example",
+    "!Seq-example sequence",
+    "!Mapping-example mapping",
+    "!Seq-as-string-example sequence:string"
+  ]
+}
 ```
 
 These tags can then be used in YAML files:
@@ -568,7 +575,7 @@ The main server output is generated in `out/server/src`.
 
 Use `npm test` to run tests.
 
-### Module Builds
+### Module builds
 
 Building YAML Language Server produces [CommonJS](http://www.commonjs.org/) output in the `out/server/src` directory. In addition, a build also produces [UMD](https://github.com/umdjs/umd) (Universal Module Definition) modules and [ES Modules](https://tc39.es/ecma262/#sec-modules) (ESM) in the `lib` directory. These module formats support different server-side module loaders and browser bundlers such as webpack.
 
