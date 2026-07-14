@@ -35,7 +35,7 @@ Completion and hover content are schema-driven. See [Associating schemas](#assoc
 
 ## Language server settings
 
-LSP clients pass configuration to the server through `workspace/configuration`. YAML-specific settings use the `yaml.*` namespace. The server can also read related `http`, `[yaml]`, `editor`, and `files` settings when supplied by the client.
+The server supports the following settings supplied by LSP clients:
 
 - `yaml.yamlVersion`: Set default YAML spec version (`1.2` or `1.1`). Defaults to `1.2`.
 - `yaml.maxItemsComputed`: The maximum number of document symbols and folding regions computed (limited for performance reasons). Defaults to `5000`.
