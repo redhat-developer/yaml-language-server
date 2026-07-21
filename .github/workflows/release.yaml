@@ -1,59 +1,46 @@
-# This is a basic workflow to help you get started with Actions
-
 name: Release to NPM
 
-# Controls when the action will run. Triggers the workflow on new tag
+# Prerelease builds run when there's a push to `main`,
+# and release builds are published when a tag is pushed
 on:
   push:
     tags:
       - '*'
+    branches:
+      - main
 
 permissions:
   id-token: write  # Required for OIDC
   contents: read
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    runs-on: ubuntu-latest
+    if: ${{ github.ref != 'refs/heads/main'}}
+    name: 'Publish Release'
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v7
 
-      # Set up Node
     - name: Use Node 20
       uses: actions/setup-node@v5
       with:
         node-version: 20
         registry-url: 'https://registry.npmjs.org'
 
-      # Run install dependencies
     - name: Install dependencies
       run: npm ci
 
-      # Build extension
     - name: Run build
       run: npm run build
 
-      # Run tests
-    - name: Run Test
+    - name: Run Tests
       run: npm test
 
-      # Check Dependencies
     - name: Run Check Dependencies
       run: npm run check-dependencies
 
-    # Publish to npm
-    - name: Publish to npm
-      run: npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+    - name: Publish Release to npm
+      run: npm publish --access public --provenance
 
       # Get the current package.json version so we can tag the image correctly
     - name: Get current package.json version
@@ -70,7 +57,7 @@ jobs:
 
       # Login to Quay
     - name: Login to Quay
-      uses: docker/login-action@v1 
+      uses: docker/login-action@v1
       with:
         registry: quay.io
         username: ${{ secrets.QUAY_USERNAME }}
@@ -87,3 +74,58 @@ jobs:
         tags: |
           quay.io/redhat-developer/yaml-language-server:latest
           quay.io/redhat-developer/yaml-language-server:${{ steps.package-version.outputs.current-version}}
+  
+  prerelease:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main'}}
+    name: 'Publish Prerelease'
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Use Node 20
+      uses: actions/setup-node@v5
+      with:
+        node-version: 20
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run build
+      run: npm run build
+
+    - name: Run Tests
+      run: npm test
+
+    - name: Run Check Dependencies
+      run: npm run check-dependencies
+    
+    - name: Publish Prerelease to npm
+      run: |
+        npm version prerelease --preid $(git rev-parse --short HEAD) --no-git-tag-version
+        npm publish --tag next --provenance
+    
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2.2.0
+
+      # Setup DockerBuildx as requirement for docker
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@6a58db7e0d21ca03e6c44877909e80e45217eed2 # v2.6.0
+
+      # Login to Quay
+    - name: Login to Quay
+      uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc  # v2.2.0
+      with:
+        registry: quay.io
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_TOKEN }}
+
+      # Build and push the latest version of yaml language server image
+    - name: Build and push
+      uses: docker/build-push-action@44ea916f6c540f9302d50c2b1e5a8dc071f15cdf #v4.1.0
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64
+        push: true
+        tags: quay.io/redhat-developer/yaml-language-server:next
