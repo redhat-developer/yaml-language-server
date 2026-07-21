@@ -1,11 +1,10 @@
 FROM node:lts
 
-WORKDIR /yaml-language-server
+COPY . /yaml-language-server
 
-COPY . .
-
-RUN npm install && \
+RUN cd /yaml-language-server && \
+    npm install && \
     npm run build
 
-ENTRYPOINT [ "node", "./out/server/src/server.js" ]
+ENTRYPOINT [ "node", "/yaml-language-server/out/server/src/server.js" ]
 CMD [ "--stdio" ]
