@@ -41,7 +41,7 @@ jobs:
       run: npm run check-dependencies
 
     - name: Publish Release to npm
-      run: npm publish --access public --provenance
+      run: NODE_AUTH_TOKEN="" npm publish --access public --provenance
 
       # Get the current package.json version so we can tag the image correctly
     - name: Get current package.json version
@@ -104,7 +104,7 @@ jobs:
     - name: Publish Prerelease to npm
       run: |
         npm version prerelease --preid $(git rev-parse --short HEAD) --no-git-tag-version
-        npm publish --tag next --provenance
+        NODE_AUTH_TOKEN="" npm publish --tag next --provenance
     
     - name: Set up QEMU
       uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2.2.0
