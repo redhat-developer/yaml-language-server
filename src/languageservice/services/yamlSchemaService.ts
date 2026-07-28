@@ -1702,17 +1702,8 @@ export class YAMLSchemaService implements IJSONSchemaService {
     return this.getAssociatedSchemas(resource);
   }
 
-  private async loadJSONSchema(url: string): Promise<UnresolvedSchema> {
-    if (!this.requestService) {
-      const errorMessage = l10n.t("Unable to load schema from '{0}'. No schema request service available", toDisplayString(url));
-      return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, url)]);
-    }
+  private async loadJSONSchema(url: string, content: string): Promise<UnresolvedSchema> {
     try {
-      let content = await this.requestService(url);
-      if (!content) {
-        const errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(url));
-        return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, url)]);
-      }
       const errors = [];
       if (content.charCodeAt(0) === 65279) {
         errors.push(
@@ -1754,51 +1745,97 @@ export class YAMLSchemaService implements IJSONSchemaService {
     }
   }
 
+  async loadYAMLSchema(url: string, content: string): Promise<UnresolvedSchema> {
+    try {
+      try {
+        const schemaContent = parse(content);
+        return new UnresolvedSchema(schemaContent, []);
+      } catch (yamlError) {
+        const errorMessage = l10n.t("Unable to parse content from '{0}': {1}.", toDisplayString(url), yamlError);
+        return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, url)]);
+      }
+    } catch (error) {
+      let errorMessage = error.toString();
+      const errorSplit = error.toString().split('Error: ');
+      if (errorSplit.length > 1) {
+        // more concise error message, URL and context are attached by caller anyways
+        errorMessage = errorSplit[1];
+      }
+      return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, url)]);
+    }
+  }
+
   async loadSchema(schemaUri: string): Promise<UnresolvedSchema> {
     const requestService = this.requestService;
-    const unresolvedJsonSchema = await this.loadJSONSchema(schemaUri);
-    // If json-language-server failed to parse the schema, attempt to parse it as YAML instead.
-    // If the YAML file starts with %YAML 1.x or contains a comment with a number the schema will
-    // contain a number instead of being undefined, so we need to check for that too.
-    if (
-      unresolvedJsonSchema.errors &&
-      (unresolvedJsonSchema.schema === undefined || typeof unresolvedJsonSchema.schema === 'number')
-    ) {
+    let probablyYaml = false;
+    try {
+      const extension = path.extname(URI.parse(schemaUri).path);
+      probablyYaml = extension === '.yaml' || extension === '.yml';
+    } catch {
+      // url parse or path parse error; do nothing
+    }
+
+    let unresolvedSchema: UnresolvedSchema;
+    if (!requestService) {
+      const errorMessage = l10n.t(
+        "Unable to load schema from '{0}'. No schema request service available",
+        toDisplayString(schemaUri)
+      );
+      unresolvedSchema = new UnresolvedSchema(<JSONSchema>{}, [
+        toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri),
+      ]);
+    } else {
+      let content = undefined;
+      let caughtError = undefined;
       try {
-        const content = await requestService(schemaUri);
-        if (!content) {
-          const errorMessage = l10n.t(
-            "Unable to load schema from '{0}': No content. {1}",
-            toDisplayString(schemaUri),
-            unresolvedJsonSchema.errors.map((error) => error.message).join(', ')
-          );
-          return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri)]);
+        content = await this.requestService(schemaUri);
+      } catch (e) {
+        caughtError = e;
+      }
+      if (!content) {
+        if (caughtError) {
+          let message = typeof caughtError.message === 'string' ? caughtError.message : caughtError.toString();
+          const { code } = caughtError;
+          const errorSplit = message.split('Error: ');
+          if (errorSplit.length > 1) {
+            // more concise error message, URL and context are attached by caller anyways
+            message = errorSplit[1];
+          }
+          if (message.endsWith('.')) {
+            message = message.slice(0, -1);
+          }
+          const errorCode = ErrorCode.SchemaResolveError + (typeof code === 'number' && code < 0x10000 ? code : 0);
+          const errorMessage = l10n.t("Unable to load schema from '{0}': {1}.", toDisplayString(schemaUri), message);
+          unresolvedSchema = new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, errorCode, schemaUri)]);
+        } else {
+          const errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(schemaUri));
+          unresolvedSchema = new UnresolvedSchema(<JSONSchema>{}, [
+            toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri),
+          ]);
         }
-        try {
-          const schemaContent = parse(content);
-          return new UnresolvedSchema(schemaContent, []);
-        } catch (yamlError) {
-          const errorMessage = l10n.t("Unable to parse content from '{0}': {1}.", toDisplayString(schemaUri), yamlError);
-          return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri)]);
+      } else {
+        if (!probablyYaml) {
+          unresolvedSchema = await this.loadJSONSchema(schemaUri, content);
+          // If json-language-server failed to parse the schema, attempt to parse it as YAML instead.
+          // If the YAML file starts with %YAML 1.x or contains a comment with a number the schema will
+          // contain a number instead of being undefined, so we need to check for that too.
+          if (unresolvedSchema.errors && (unresolvedSchema.schema === undefined || typeof unresolvedSchema.schema === 'number')) {
+            unresolvedSchema = await this.loadYAMLSchema(schemaUri, content);
+          }
+        } else {
+          unresolvedSchema = await this.loadYAMLSchema(schemaUri, content);
         }
-      } catch (error) {
-        let errorMessage = error.toString();
-        const errorSplit = error.toString().split('Error: ');
-        if (errorSplit.length > 1) {
-          // more concise error message, URL and context are attached by caller anyways
-          errorMessage = errorSplit[1];
-        }
-        return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, ErrorCode.SchemaResolveError, schemaUri)]);
       }
     }
-    unresolvedJsonSchema.uri = schemaUri;
+
+    unresolvedSchema.uri = schemaUri;
     if (this.schemaUriToNameAndDescription.has(schemaUri)) {
       const { name, description, versions } = this.schemaUriToNameAndDescription.get(schemaUri);
-      unresolvedJsonSchema.schema.title = name ?? unresolvedJsonSchema.schema.title;
-      unresolvedJsonSchema.schema.description = description ?? unresolvedJsonSchema.schema.description;
-      unresolvedJsonSchema.schema.versions = versions ?? unresolvedJsonSchema.schema.versions;
-    } else if (unresolvedJsonSchema.errors && unresolvedJsonSchema.errors.length > 0) {
-      const schemaError = unresolvedJsonSchema.errors[0];
+      unresolvedSchema.schema.title = name ?? unresolvedSchema.schema.title;
+      unresolvedSchema.schema.description = description ?? unresolvedSchema.schema.description;
+      unresolvedSchema.schema.versions = versions ?? unresolvedSchema.schema.versions;
+    } else if (unresolvedSchema.errors && unresolvedSchema.errors.length > 0) {
+      const schemaError = unresolvedSchema.errors[0];
       let errorMessage = schemaError.message;
       if (errorMessage.toLowerCase().indexOf('load') !== -1) {
         errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(schemaUri));
@@ -1819,7 +1856,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
       }
       return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, schemaError.code, schemaUri)]);
     }
-    return unresolvedJsonSchema;
+    return unresolvedSchema;
   }
 
   registerExternalSchema(

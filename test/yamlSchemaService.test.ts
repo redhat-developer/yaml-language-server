@@ -2,16 +2,18 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as sinon from 'sinon';
 import * as chai from 'chai';
-import sinonChai from 'sinon-chai';
+import * as JSONC from 'jsonc-parser';
 import * as path from 'path';
+import * as sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import * as url from 'url';
-import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
-import { parse } from '../src/languageservice/parser/yamlParser07';
-import { SettingsState } from '../src/yamlSettings';
-import { DEFAULT_KUBERNETES_SCHEMA_VERSION, getSchemaUrls } from '../src/languageservice/utils/schemaUrls';
+import * as YAML from 'yaml';
 import type { JSONSchema } from '../src/languageservice/jsonSchema';
+import { parse } from '../src/languageservice/parser/yamlParser07';
+import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
+import { DEFAULT_KUBERNETES_SCHEMA_VERSION, getSchemaUrls } from '../src/languageservice/utils/schemaUrls';
+import { SettingsState } from '../src/yamlSettings';
 
 const BASE_KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/`;
 const KUBERNETES_SCHEMA_URL = BASE_KUBERNETES_SCHEMA_URL + 'all.json';
@@ -907,6 +909,120 @@ spec:
 
       const roleTaskUris = service.getSchemaURIsForResource('project/playbooks/roles/demo/tasks/main.yml');
       expect(roleTaskUris).to.not.include(playbookSchemaUri);
+    });
+
+    it('should only request the content of a YAML schema once', async () => {
+      const content = `# yaml-language-server: $schema=file:///dir/my-schema.yaml\nname: John\nage: -1`;
+      const yamlDock = parse(content);
+
+      const mySchema = {
+        $id: 'https://example.com/schemas/my-schema.yaml',
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          age: { type: 'integer', minimum: 0 },
+        },
+        required: ['name', 'age'],
+      };
+
+      requestServiceMock = sandbox.fake((uri: string) => {
+        if (uri === 'file:///dir/my-schema.yaml') {
+          return Promise.resolve(YAML.stringify(mySchema));
+        }
+        return Promise.reject<string>(`Resource ${uri} not found.`);
+      });
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+      const resolvedSchema = await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      expect(requestedUris).to.include('file:///dir/my-schema.yaml');
+      expect(requestedUris.length).to.equal(1);
+      expect(resolvedSchema.errors.length).to.equal(0);
+    });
+
+    it('should match a schema written in YAML that parses incorrectly as JSON', async () => {
+      const content = `# yaml-language-server: $schema=file:///dir/my-schema.yaml\nname: John\nage: -1`;
+      const yamlDock = parse(content);
+
+      const mySchema = `
+---
+"$id": https://github.com/apis-json/api-json/blob/develop/spec/
+"$schema": https://json-schema.org/draft/2020-12/schema
+title: JSON Schema for APIs.json 0.21
+type: object
+additionalProperties: false
+patternProperties:
+  "^X-":
+    type: object
+
+$defs:
+  contact:
+    description: Information on contacting the API support
+    required:
+    - FN
+    additionalProperties: true
+    patternProperties:
+      "^X-":
+        type: string
+    properties:
+      FN:
+        type: string
+        minLength: 1
+      email:
+        type: string
+        format: email
+      organizationName:
+        type: string
+        minLength: 1
+      adr:
+        type: string
+      tel:
+        type: string
+        minLength: 1
+      X-twitter:
+        type: string
+      X-github:
+        type: string
+      photo:
+        type: string
+        pattern: "^(http)|(https)://(.*)$"
+      vCard:
+        type: string
+        pattern: "^(http)|(https)://(.*)$"
+      url:
+        type: string
+        pattern: "^(http)|(https)://(.*)$"
+
+required:
+- maintainers
+
+properties:
+  maintainers:
+    type: array
+    items:
+      "$ref": "#/$defs/contact"
+    description: Maintainers of the apis.json file`;
+
+      requestServiceMock = sandbox.fake((uri: string) => {
+        if (uri === 'file:///dir/my-schema.yaml') {
+          return Promise.resolve(mySchema);
+        }
+        return Promise.reject<string>(`Resource ${uri} not found.`);
+      });
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+      const resolvedSchema = await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+
+      const errors = [];
+      const parsedSchema = JSONC.parse(mySchema, errors);
+      expect(errors.length).to.be.greaterThan(0);
+      expect(typeof parsedSchema === 'string');
+      expect(requestedUris).to.include('file:///dir/my-schema.yaml');
+      expect(requestedUris.length).to.equal(1);
+      expect(resolvedSchema.errors.length).to.equal(0);
     });
   });
 });
