@@ -739,6 +739,110 @@ spec:
       expect(requestServiceMock.callCount).equals(4);
     });
 
+    it('should treat CustomResourceDefinition as a builtin Kubernetes resource', async () => {
+      const documentContent = 'apiVersion: apiextensions.k8s.io/v1\nkind: CustomResourceDefinition';
+      const yamlDock = parse(documentContent);
+      const builtinDefinition =
+        '_definitions.json#/definitions/io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.CustomResourceDefinition';
+      const crdCatalogURL =
+        'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/apiextensions.k8s.io/customresourcedefinition_v1.json';
+
+      const settings = new SettingsState();
+      settings.schemaAssociations = {
+        kubernetes: ['*.yaml'],
+      };
+      settings.kubernetesCRDStoreEnabled = true;
+      requestServiceMock = sandbox.fake.resolves(
+        JSON.stringify({
+          oneOf: [{ $ref: builtinDefinition }],
+        })
+      );
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
+      service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
+
+      const resolvedSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+
+      expect(resolvedSchema.schema.url).equals(BASE_KUBERNETES_SCHEMA_URL + builtinDefinition);
+      expect(requestServiceMock).not.calledWith(crdCatalogURL);
+    });
+
+    it('should treat an older CustomResourceDefinition version as builtin when present', async () => {
+      const documentContent = 'apiVersion: apiextensions.k8s.io/v1beta1\nkind: CustomResourceDefinition';
+      const yamlDock = parse(documentContent);
+      const builtinDefinition =
+        '_definitions.json#/definitions/io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1beta1.CustomResourceDefinition';
+      const crdCatalogURL =
+        'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/apiextensions.k8s.io/customresourcedefinition_v1beta1.json';
+
+      const settings = new SettingsState();
+      settings.schemaAssociations = {
+        kubernetes: ['*.yaml'],
+      };
+      settings.kubernetesCRDStoreEnabled = true;
+      requestServiceMock = sandbox.fake.resolves(
+        JSON.stringify({
+          oneOf: [{ $ref: builtinDefinition }],
+        })
+      );
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
+      service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
+
+      const resolvedSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+
+      expect(resolvedSchema.schema.url).equals(BASE_KUBERNETES_SCHEMA_URL + builtinDefinition);
+      expect(requestServiceMock).not.calledWith(crdCatalogURL);
+    });
+
+    it('should fall back to all.json for an unsupported CustomResourceDefinition version', async () => {
+      const documentContent = 'apiVersion: apiextensions.k8s.io/v1beta1\nkind: CustomResourceDefinition';
+      const yamlDock = parse(documentContent);
+      const crdCatalogURL =
+        'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/apiextensions.k8s.io/customresourcedefinition_v1beta1.json';
+
+      const settings = new SettingsState();
+      settings.schemaAssociations = {
+        kubernetes: ['*.yaml'],
+      };
+      settings.kubernetesCRDStoreEnabled = true;
+      requestServiceMock = sandbox.fake.resolves('{"oneOf": []}');
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
+      service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
+
+      const resolvedSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+
+      expect(resolvedSchema.schema.url).equals(KUBERNETES_SCHEMA_URL);
+      expect(requestServiceMock).not.calledWith(crdCatalogURL);
+    });
+
+    it('should still use the CRD catalog for a similarly named custom API group', async () => {
+      const documentContent = 'apiVersion: apiextensions.example.com/v1\nkind: CustomResourceDefinition';
+      const yamlDock = parse(documentContent);
+      const crdCatalogURL =
+        'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/apiextensions.example.com/customresourcedefinition_v1.json';
+
+      const settings = new SettingsState();
+      settings.schemaAssociations = {
+        kubernetes: ['*.yaml'],
+      };
+      settings.kubernetesCRDStoreEnabled = true;
+      requestServiceMock = sandbox.fake.resolves(
+        JSON.stringify({
+          oneOf: [
+            {
+              $ref: '_definitions.json#/definitions/io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.CustomResourceDefinition',
+            },
+          ],
+        })
+      );
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
+      service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
+
+      const resolvedSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
+
+      expect(resolvedSchema.schema.url).equals(crdCatalogURL);
+      expect(requestServiceMock).calledWithExactly(crdCatalogURL);
+    });
+
     it('should fall back to all.json instead of the CRD catalog for an unknown core resource', async () => {
       const yamlDock = parse('apiVersion: v1\nkind: UnknownCoreResource');
       const settings = new SettingsState();
