@@ -28,8 +28,8 @@ export function autoDetectKubernetesSchema(
   if (builtinResource) {
     return builtinResource;
   }
-  // core resources cannot be CRDs: fall back to all.json for unknown core kinds
-  if (gvk.group === 'core') {
+  // core and apiextensions resources cannot be CRDs: fall back to all.json for unknown kinds or versions
+  if (gvk.group === 'core' || gvk.group === 'apiextensions.k8s.io') {
     return undefined;
   }
   const customResource = autoDetectCustomResource(gvk, crdCatalogURI);
@@ -47,7 +47,9 @@ function autoDetectBuiltinResource(
   const { group, version, kind } = gvk;
 
   const groupWithoutK8sIO = group.replace('.k8s.io', '').replace('rbac.authorization', 'rbac');
-  const k8sTypeName = `io.k8s.api.${groupWithoutK8sIO.toLowerCase()}.${version.toLowerCase()}.${kind.toLowerCase()}`;
+  const normalizedGVK = `${groupWithoutK8sIO.toLowerCase()}.${version.toLowerCase()}.${kind.toLowerCase()}`;
+  const k8sTypePrefix = group === 'apiextensions.k8s.io' ? 'io.k8s.apiextensions-apiserver.pkg.apis' : 'io.k8s.api';
+  const k8sTypeName = `${k8sTypePrefix}.${normalizedGVK}`;
   const k8sSchema: JSONSchema = kubernetesSchema.schema;
   const matchingBuiltin: string | undefined = (k8sSchema.oneOf || [])
     .map((s) => {
