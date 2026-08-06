@@ -10,6 +10,7 @@ import {
   StringTypeError,
   BooleanTypeError,
   ArrayTypeError,
+  ObjectTypeError,
   IncludeWithoutValueError,
   BlockMappingEntryError,
   DuplicateKeyError,
@@ -1837,6 +1838,56 @@ spec:
         'file:///sharedSchema.json',
         'file:///default_schema_id.yaml',
       ]);
+    });
+    it('should report "object" instead of schema file names when multiple schemas expect an object', async () => {
+      schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///schema1.json', {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+          },
+        },
+      });
+      schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///schema2.json', {
+        type: 'object',
+        properties: {
+          enabled: {
+            type: 'boolean',
+          },
+        },
+      });
+      const content = '- invalid';
+      const result = await parseSetup(content);
+
+      assert.ok(result.length >= 1);
+      for (const diagnostic of result) {
+        assert.strictEqual(diagnostic.message, ObjectTypeError);
+      }
+    });
+    it('should report "object" instead of schema file names when schema files use the ".schema.json" extension', async () => {
+      schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///schema1.schema.json', {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+          },
+        },
+      });
+      schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///schema2.schema.json', {
+        type: 'object',
+        properties: {
+          enabled: {
+            type: 'boolean',
+          },
+        },
+      });
+      const content = '- invalid';
+      const result = await parseSetup(content);
+
+      assert.ok(result.length >= 1);
+      for (const diagnostic of result) {
+        assert.strictEqual(diagnostic.message, ObjectTypeError);
+      }
     });
   });
 
