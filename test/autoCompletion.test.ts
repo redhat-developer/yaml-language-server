@@ -751,6 +751,33 @@ describe('Auto Completion Tests', () => {
         );
       });
 
+      it('Check text edit when there is a newline', async () => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
+        schemaProvider.addSchema(SCHEMA_ID, schema);
+        const content = '- \n';
+        const result = await parseSetup(content, content.length - 1);
+        assert.equal(result.items.length, 3);
+        assert.deepEqual(
+          result.items[0],
+          createExpectedCompletion('prop1', 'prop1: $1', 0, 2, 0, 2, 10, 2, {
+            documentation: '',
+          })
+        );
+        assert.deepEqual(
+          result.items[1],
+          createExpectedCompletion('prop2', 'prop2: $1', 0, 2, 0, 2, 10, 2, {
+            documentation: '',
+          })
+        );
+        assert.deepEqual(
+          result.items[2],
+          createExpectedCompletion('prop3', 'prop3: $1', 0, 2, 0, 2, 10, 2, {
+            documentation: '',
+          })
+        );
+      });
+
       it('Provide the 2 types when one is provided', async () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));

@@ -257,8 +257,20 @@ export class YamlCompletion {
             const char = singleCharMatch[2];
             completionItem.insertText = `${key}: ${this.getQuote()}\\${char}${this.getQuote()}`;
           }
-          // trim $1 from end of completion
-          if (completionItem.insertText.endsWith('$1') && !isForParentCompletion) {
+          // trim $1 from end of completion only when there is no newline after
+          // the cursor, OR the line before the cursor has no non-whitespace
+          // content. When the caret sits at the end of a line that ends with a
+          // newline and the line has meaningful content before it (e.g. the
+          // sequence marker `- ` from issue #288), preserve the $1 snippet
+          // placeholder so editors can place the caret at the snippet position.
+          const hasNewlineAfterPosition = lineAfterPosition.includes('\n');
+          const lineBeforeCursor = lineContent.substring(0, position.character);
+          const hasNonWhitespaceBeforeCursor = lineBeforeCursor.trim().length > 0;
+          if (
+            completionItem.insertText.endsWith('$1') &&
+            !isForParentCompletion &&
+            !(hasNewlineAfterPosition && hasNonWhitespaceBeforeCursor)
+          ) {
             completionItem.insertText = completionItem.insertText.substr(0, completionItem.insertText.length - 2);
           }
           if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
