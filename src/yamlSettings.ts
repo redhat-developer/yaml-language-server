@@ -7,6 +7,7 @@ import type { JSONSchema } from './languageservice/jsonSchema';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { CRD_CATALOG_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
 import type { YamlVersion } from './languageservice/parser/yamlParser07';
+import type { TemplateMode } from './languageservice/parser/templateMasking';
 
 // Client settings interface to grab settings relevant for the language server
 export interface Settings {
@@ -37,6 +38,7 @@ export interface Settings {
       flowSequence: 'allow' | 'forbid';
     };
     keyOrdering: boolean;
+    template: TemplateMode;
     maxItemsComputed: number;
     yamlVersion: YamlVersion;
     hoverSchemaSource: boolean;
@@ -104,6 +106,7 @@ export class SettingsState {
     flowSequence: 'allow' | 'forbid';
   };
   keyOrdering = false;
+  template: TemplateMode = 'none';
   maxItemsComputed = 5000;
 
   // File validation helpers

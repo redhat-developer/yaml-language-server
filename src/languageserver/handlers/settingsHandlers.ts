@@ -164,6 +164,7 @@ export class SettingsHandler {
         flowSequence: settings.yaml.style?.flowSequence ?? 'allow',
       };
       this.yamlSettings.keyOrdering = settings.yaml.keyOrdering ?? false;
+      this.yamlSettings.template = settings.yaml.template ?? 'none';
     }
 
     this.yamlSettings.schemaConfigurationSettings = [];
@@ -318,6 +319,7 @@ export class SettingsHandler {
       flowSequence: this.yamlSettings.style?.flowSequence,
       yamlVersion: this.yamlSettings.yamlVersion,
       keyOrdering: this.yamlSettings.keyOrdering,
+      template: this.yamlSettings.template,
       hoverSchemaSource: this.yamlSettings.yamlHoverSchemaSource,
     };
 

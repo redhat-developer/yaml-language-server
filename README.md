@@ -39,6 +39,7 @@ The server supports the following settings supplied by LSP clients:
 
 - `yaml.yamlVersion`: Set default YAML spec version (`1.2` or `1.1`). Defaults to `1.2`.
 - `yaml.maxItemsComputed`: The maximum number of document symbols and folding regions computed (limited for performance reasons). Defaults to `5000`.
+- `yaml.template`: Mask templating expressions before parsing, so that templated documents such as Helm charts parse as plain YAML instead of reporting syntax errors on every `{{ ... }}`. Set to `helm` to enable, `none` to disable. Defaults to `none`. See [Templated documents](#templated-documents).
 - `yaml.format.enable`: Enable/disable the default YAML formatter. Defaults to `true`.
 - `yaml.format.singleQuote`: Use single quotes instead of double quotes. Defaults to `false`.
 - `yaml.format.bracketSpacing`: Print spaces between brackets in objects. Defaults to `true`.
@@ -292,6 +293,24 @@ When multiple schema sources or schema-disabling mechanisms apply to the same YA
 5. `yaml.schemas`
 6. `json/schemaAssociations` notification
 7. SchemaStore
+
+## Templated documents
+
+Templating languages that wrap YAML, such as Helm's Go templates, produce files that are not valid YAML until they are rendered. A control-flow line like `{{- if .Values.autoscaling.enabled }}` breaks the document structure, and the parser reports a cascade of syntax errors on every line that follows.
+
+Setting `yaml.template` to `helm` masks `{{ ... }}` expressions with inert text of exactly the same length before the document is parsed:
+
+- A line containing only a template expression becomes a comment, so control flow drops out of the document structure.
+- An inline expression such as `replicas: {{ .Values.replicaCount }}` becomes a plain scalar, so the value parses as a string.
+
+Because masking preserves length, all offsets are unchanged, and diagnostics, hover, completion, and symbol ranges continue to point at the real document. Schema validation, duplicate key detection, completion, hover, folding, and document symbols keep working on the untemplated parts of the file.
+
+The setting is off by default. Its limits are worth knowing before enabling it:
+
+- There is no completion, hover, or validation inside `{{ }}`. Masking only stops template syntax from breaking the surrounding document.
+- A fully templated value validates as a string, so a schema expecting a number or boolean at that position still reports a type error.
+- Expressions that expand to block content, such as `{{ include "chart.labels" . | nindent 4 }}`, and `if`/`else` branches that each define the same key, can still produce false positives. Masking cannot know what a template expands to.
+- Formatting is disabled for documents containing template expressions, since the formatter would rewrite the template syntax.
 
 ## Adding custom tags
 
