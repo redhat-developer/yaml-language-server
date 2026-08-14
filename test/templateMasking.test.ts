@@ -81,6 +81,35 @@ describe('Template masking', () => {
     assert.strictEqual(masked, 'name: "xxxxxxxxxxxxxxxxxx"');
   });
 
+  it('should comment out a line wrapped in inline control flow', () => {
+    const line = '  {{ if eq .Values.favorite.drink "coffee" }}mug: "true"{{ end }}';
+    const masked = maskTemplates(`data:\n${line}\n  food: pie`);
+    const middle = masked.split('\n')[1];
+    assert.strictEqual(middle, '  #' + ' '.repeat(line.length - 3));
+    assert.strictEqual(middle.length, line.length);
+  });
+
+  it('should keep an inline non-control expression before content as filler', () => {
+    const masked = maskTemplates('{{ .Values.prefix }}name: bar');
+    assert.strictEqual(masked, 'xxxxxxxxxxxxxxxxxxxxname: bar');
+  });
+
+  it('should produce no parse errors on a ConfigMap with inline control flow', () => {
+    const chart = [
+      'apiVersion: v1',
+      'kind: ConfigMap',
+      'metadata:',
+      '  name: {{ .Release.Name }}-configmap',
+      'data:',
+      '  myvalue: "Hello World"',
+      '  drink: {{ .Values.favorite.drink | default "tea" | quote }}',
+      '  food: {{ .Values.favorite.food | upper | quote }}',
+      '  {{ if eq .Values.favorite.drink "coffee" }}mug: "true"{{ end }}',
+      '',
+    ].join('\n');
+    assert.strictEqual(errorCount(chart, 'helm'), 0);
+  });
+
   it('should produce parse errors on a Helm chart when disabled', () => {
     assert.ok(errorCount(HELM_CHART, 'none') > 0);
   });
