@@ -1161,11 +1161,10 @@ export class YAMLSchemaService implements IJSONSchemaService {
 
         const _mergeIfResourceAlreadyInResolutionStack = (ref: string, resolvedResource: string, frag: string): boolean => {
           if (!resolutionStack.has(resolvedResource)) return false;
+          const source = resourceIndexByUri.get(resolvedResource)?.root;
+          if (!source || typeof source !== 'object') return false;
           if (!seenRefs.has(ref)) {
-            const source = resourceIndexByUri.get(resolvedResource)?.root;
-            if (source && typeof source === 'object') {
-              _merge(next, source, resolvedResource, frag, !!recursiveAnchorBase);
-            }
+            _merge(next, source, resolvedResource, frag, !!recursiveAnchorBase);
             seenRefs.add(ref);
           }
           return true;
