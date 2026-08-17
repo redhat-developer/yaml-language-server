@@ -305,6 +305,53 @@ describe('YAML Schema Service', () => {
       });
     });
 
+    it('should keep constraints on cyclic cross-file $refs when the resources have no $id', async () => {
+      const content = `# yaml-language-server: $schema=file:///schemas/node.json\nname: root\nchildren:\n  - name: child`;
+      const yamlDock = parse(content);
+
+      // draft-07, split across files, relative $refs, no $id anywhere:
+      // node.json -> wrapper.json -> node.json
+      const nodeSchema = {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
+        required: ['name'],
+        additionalProperties: false,
+        properties: {
+          name: { type: 'string' },
+          children: { type: 'array', items: { $ref: 'wrapper.json' } },
+        },
+      };
+      const wrapperSchema = {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        oneOf: [{ $ref: 'node.json' }],
+      };
+
+      requestServiceMock = sandbox.fake((uri: string) => {
+        if (uri === 'file:///schemas/node.json') {
+          return Promise.resolve(JSON.stringify(nodeSchema));
+        }
+        if (uri === 'file:///schemas/wrapper.json') {
+          return Promise.resolve(JSON.stringify(wrapperSchema));
+        }
+        return Promise.reject<string>(`Resource ${uri} not found.`);
+      });
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+      const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      const children = schema.schema.properties.children as JSONSchema;
+      const wrapper = children.items as JSONSchema;
+      expect(wrapper.oneOf, 'wrapper lost its oneOf branches').to.have.length(1);
+
+      // This is the node that closes the cycle back to node.json. An empty schema
+      // here would silently accept anything nested under `children`.
+      const cycleTarget = wrapper.oneOf[0] as JSONSchema;
+      expect(cycleTarget.type, 'cycle target lost its type').to.equal('object');
+      expect(cycleTarget.properties, 'cycle target lost its properties').to.have.property('name');
+      expect(cycleTarget.required, 'cycle target lost its required list').to.eql(['name']);
+      expect(cycleTarget.additionalProperties, 'cycle target lost additionalProperties').to.equal(false);
+    });
+
     it('should resolve nested local sibling refs relative to the loaded sibling schema file', async () => {
       const content = `# yaml-language-server: $schema=file:///schemas/primary.json\nitem: ok`;
       const yamlDock = parse(content);
