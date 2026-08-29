@@ -46,8 +46,31 @@ export function doDocumentOnTypeFormatting(
       return [TextEdit.insert(position, ' '.repeat(params.options.tabSize))];
     }
 
-    if (previousLine.includes(' - ') && !previousLine.includes(': ')) {
-      return [TextEdit.insert(position, '- ')];
+    if (previousLine.trimStart().startsWith('-') && !previousLine.includes(': ')) {
+      const indentation = previousLine.slice(0, previousLine.length - previousLine.trimStart().length);
+      const expectedText = indentation + '- ';
+      const currentLine = tb.getLineContent(position.line).replace('\r', '').replace('\n', '');
+      if (currentLine.trim().length !== 0) {
+        // non-space content, do nothing
+        return;
+      } else if (currentLine.length === expectedText.length) {
+        // already right; do nothing
+        return;
+      } else if (currentLine.length < expectedText.length) {
+        // insert after whatever indentation is already on the line, so a leading
+        // dash never lands before existing spaces (e.g. client-side auto-indent)
+        const insertPosition = Position.create(position.line, currentLine.length);
+        return [TextEdit.insert(insertPosition, expectedText.slice(currentLine.length))];
+      } else {
+        return [
+          TextEdit.del(
+            Range.create(
+              Position.create(position.line, 0),
+              Position.create(position.line, currentLine.length - expectedText.length)
+            )
+          ),
+        ];
+      }
     }
 
     if (previousLine.includes(' - ') && previousLine.includes(': ')) {
