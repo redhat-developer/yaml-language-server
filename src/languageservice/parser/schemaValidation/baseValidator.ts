@@ -568,7 +568,8 @@ export abstract class BaseValidator {
       }
     } else if (schema.type) {
       if (!matchesType(schema.type as string)) {
-        const schemaType = schema.type === 'object' ? getSchemaTypeName(schema) : schema.type;
+        // ignore file name refs so that a schema associated by file name reports "object", not the file name
+        const schemaType = schema.type === 'object' ? getSchemaTypeName(schema, true) : schema.type;
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
           severity: DiagnosticSeverity.Warning,

@@ -2,22 +2,32 @@ import { URI } from 'vscode-uri';
 import type { JSONSchema } from '../jsonSchema';
 import * as path from 'path';
 
-export function getSchemaTypeName(schema: JSONSchema): string {
+export function getSchemaTypeName(schema: JSONSchema, ignoreFileNameRefs = false): string {
   const closestTitleWithType = schema.type && schema.closestTitle;
   if (schema.title) {
     return schema.title;
   }
-  if (schema.$id) {
+  if (schema.$id && !(ignoreFileNameRefs && isSchemaFileRef(schema.$id))) {
     return getSchemaRefTypeTitle(schema.$id);
   }
-  if (schema.$ref || schema._$ref) {
-    return getSchemaRefTypeTitle(schema.$ref || schema._$ref);
+  const ref = schema.$ref || schema._$ref;
+  if (ref && !(ignoreFileNameRefs && isSchemaFileRef(ref))) {
+    return getSchemaRefTypeTitle(ref);
   }
   return Array.isArray(schema.type)
     ? schema.type.join(' | ')
     : closestTitleWithType
       ? schema.type.concat('(', schema.closestTitle, ')')
       : schema.type || schema.closestTitle; //object
+}
+
+/**
+ * A `$id`/`$ref` pointing at a whole schema document (no `#/...` fragment) yields a
+ * plain file name such as `schema1.json` or `schema1.schema.json`, which is a schema
+ * file name rather than a type name.
+ */
+function isSchemaFileRef($ref: string): boolean {
+  return !$ref.includes('#');
 }
 
 /**
