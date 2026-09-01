@@ -1363,14 +1363,6 @@ export class YAMLSchemaService implements IJSONSchemaService {
             recursiveAnchorBase,
             inheritedDynamicScope
           );
-          for (const key in schema) {
-            if (key === 'required') {
-              continue;
-            }
-            if (Object.prototype.hasOwnProperty.call(schema, key) && !Object.prototype.hasOwnProperty.call(newSchema, key)) {
-              newSchema[key] = schema[key];
-            }
-          }
           schema = newSchema;
         }
       }
