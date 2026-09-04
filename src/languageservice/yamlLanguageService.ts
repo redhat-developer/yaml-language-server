@@ -47,6 +47,7 @@ import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
 import { YamlCodeLens } from './services/yamlCodeLens';
 import type { Telemetry } from './telemetry';
 import type { YamlVersion } from './parser/yamlParser07';
+import type { TemplateMode } from './parser/templateMasking';
 import { YamlCompletion } from './services/yamlCompletion';
 import { yamlDocumentsCache } from './parser/yaml-documents';
 import type { SettingsState } from '../yamlSettings';
@@ -125,6 +126,12 @@ export interface LanguageSettings {
    * Show schema source URI in hover popups. Default is true.
    */
   hoverSchemaSource?: boolean;
+
+  /**
+   * Mask templating expressions before parsing, so that templated documents
+   * parse as plain YAML. Default is `none`.
+   */
+  template?: TemplateMode;
 }
 
 export interface WorkspaceContextService {
@@ -230,6 +237,7 @@ export function getLanguageService(params: {
           );
         });
       }
+      yamlDocumentsCache.configure(settings);
       yamlValidation.configure(settings);
       hover.configure(settings);
       completer.configure(settings, params.yamlSettings);

@@ -17,6 +17,8 @@ import { isArrayEqual } from '../utils/arrUtils';
 import { getParent } from '../utils/yamlAstUtils';
 import type { TextBuffer } from '../utils/textBuffer';
 import { getIndentation } from '../utils/strings';
+import type { TemplateMode } from './templateMasking';
+import { maskTemplates } from './templateMasking';
 
 /**
  * These documents are collected into a final YAMLDocument
@@ -266,11 +268,23 @@ export class YAMLDocument {
 interface YamlCachedDocument {
   version: number;
   parserOptions: ParserOptions;
+  templateMode: TemplateMode;
   document: YAMLDocument;
 }
 export class YamlDocuments {
   // a mapping of URIs to cached documents
   private cache = new Map<string, YamlCachedDocument>();
+  private templateMode: TemplateMode = 'none';
+
+  /**
+   * The template mode is global rather than a `ParserOptions` field because
+   * most callers of `getYamlDocument` pass no options at all; keying it off
+   * the options would make masking depend on which feature filled the cache
+   * first.
+   */
+  configure(settings: { template?: TemplateMode }): void {
+    this.templateMode = settings?.template ?? 'none';
+  }
 
   /**
    * Get cached YAMLDocument
@@ -294,14 +308,24 @@ export class YamlDocuments {
   private ensureCache(document: TextDocument, parserOptions: ParserOptions, addRootObject: boolean): void {
     const key = document.uri;
     if (!this.cache.has(key)) {
-      this.cache.set(key, { version: -1, document: new YAMLDocument([], []), parserOptions: defaultOptions });
+      this.cache.set(key, {
+        version: -1,
+        document: new YAMLDocument([], []),
+        parserOptions: defaultOptions,
+        templateMode: this.templateMode,
+      });
     }
     const cacheEntry = this.cache.get(key);
     if (
       cacheEntry.version !== document.version ||
+      cacheEntry.templateMode !== this.templateMode ||
       (parserOptions.customTags && !isArrayEqual(cacheEntry.parserOptions.customTags, parserOptions.customTags))
     ) {
       let text = document.getText();
+      // Masking is length-preserving, so every offset below stays valid.
+      if (this.templateMode === 'helm') {
+        text = maskTemplates(text);
+      }
       // if text is contains only whitespace wrap all text in object to force schema selection
       if (addRootObject && !/\S/.test(text)) {
         text = `{${text}}`;
@@ -310,6 +334,7 @@ export class YamlDocuments {
       cacheEntry.document = doc;
       cacheEntry.version = document.version;
       cacheEntry.parserOptions = parserOptions;
+      cacheEntry.templateMode = this.templateMode;
     }
   }
 }
