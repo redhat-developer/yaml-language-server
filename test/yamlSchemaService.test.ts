@@ -352,6 +352,114 @@ describe('YAML Schema Service', () => {
       expect(cycleTarget.additionalProperties, 'cycle target lost additionalProperties').to.equal(false);
     });
 
+    it('should resolve a relative local self-reference through non-standard schema container without a remote request', async () => {
+      const schemaUri = 'file:///schemas/schema3.json';
+      const content = `# yaml-language-server: $schema=${schemaUri}\nname: hello\nchild:\n  value: invalid`;
+      const yamlDock = parse(content);
+
+      const schema3 = {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        $id: 'https://example.com/test-schema',
+        $ref: 'https://example.com/test-schema#/customSchemas/Root',
+        customSchemas: {
+          Root: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              child: {
+                $ref: './schema3.json#/customSchemas/Child',
+              },
+            },
+          },
+          Child: {
+            type: 'object',
+            properties: {
+              value: { type: 'integer' },
+            },
+          },
+        },
+      };
+
+      requestServiceMock = sandbox.fake((uri: string) => {
+        if (uri === schemaUri) {
+          return Promise.resolve(JSON.stringify(schema3));
+        }
+        return Promise.reject<string>(`Resource ${uri} not found.`);
+      });
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+      const resolvedSchema = await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      expect(resolvedSchema.schema._sourceUri).to.equal(schemaUri);
+      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      expect(requestedUris).to.eql([schemaUri]);
+      expect(resolvedSchema.errors).to.eql([]);
+      expect(resolvedSchema.schema.properties.child).to.deep.include({ type: 'object' });
+      expect((resolvedSchema.schema.properties.child as JSONSchema).properties.value).to.deep.include({ type: 'integer' });
+      expect(requestServiceMock).calledOnceWithExactly(schemaUri);
+    });
+
+    it('should resolve a relative local sibling-file reference through non-standard schema containers', async () => {
+      const schema3Uri = 'file:///schemas/schema3.json';
+      const schema2Uri = 'file:///schemas/schema2.json';
+      const content = `# yaml-language-server: $schema=${schema3Uri}\nname: hello\nchild:\n  value: invalid`;
+      const yamlDock = parse(content);
+
+      const schema3 = {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        $id: 'https://example.com/test-schema',
+        $ref: 'https://example.com/test-schema#/customSchemas/Root',
+        customSchemas: {
+          Root: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              child: {
+                $ref: './schema2.json#/customSchemas/Child',
+              },
+            },
+          },
+        },
+      };
+      const schema2 = {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        $id: 'https://example.com/schema2',
+        customSchemas: {
+          Child: {
+            type: 'object',
+            properties: {
+              value: { type: 'integer' },
+            },
+          },
+        },
+      };
+
+      requestServiceMock = sandbox.fake((uri: string) => {
+        if (uri === schema3Uri) {
+          return Promise.resolve(JSON.stringify(schema3));
+        }
+        if (uri === schema2Uri) {
+          return Promise.resolve(JSON.stringify(schema2));
+        }
+        return Promise.reject<string>(`Resource ${uri} not found.`);
+      });
+
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
+      const resolvedSchema = await service.getSchemaForResource('', yamlDock.documents[0]);
+
+      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      expect(requestedUris).to.eql([schema3Uri, schema2Uri]);
+      expect(resolvedSchema.errors).to.eql([]);
+      expect(resolvedSchema.schema.properties.child).to.deep.include({
+        type: 'object',
+        url: schema2Uri,
+      });
+      expect((resolvedSchema.schema.properties.child as JSONSchema).properties.value).to.deep.include({ type: 'integer' });
+      expect(requestServiceMock).calledWithExactly(schema3Uri);
+      expect(requestServiceMock).calledWithExactly(schema2Uri);
+      expect(requestServiceMock).callCount(2);
+    });
+
     it('should resolve nested local sibling refs relative to the loaded sibling schema file', async () => {
       const content = `# yaml-language-server: $schema=file:///schemas/primary.json\nitem: ok`;
       const yamlDock = parse(content);
