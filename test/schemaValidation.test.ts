@@ -2392,6 +2392,117 @@ option: local
       expect(bad[0].message).to.include('string');
     });
 
+    it('Resolving $refs: should resolve a root $ref through non-standard schema container', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        $ref: '#/customSchemas/Root',
+        customSchemas: {
+          Root: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              child: { $ref: '#/customSchemas/Child' },
+            },
+          },
+          Child: {
+            type: 'object',
+            properties: {
+              value: { type: 'integer' },
+            },
+          },
+        },
+      } as JSONSchema);
+
+      expect(await parseSetup(`name: hello\nchild:\n  value: 42`)).to.be.empty;
+      const bad = await parseSetup(`name: 123`);
+      expect(bad[0].message).to.include('Incorrect type. Expected');
+      expect(bad[0].message).to.include('string');
+    });
+
+    it('Resolving $refs: should resolve a nested Draft-07 $ref through non-standard schema container and ignore constraint siblings', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
+        properties: {
+          config: {
+            $ref: '#/customSchemas/Config',
+            type: 'number',
+          },
+        },
+        customSchemas: {
+          Config: {
+            type: 'object',
+            properties: {
+              enabled: { type: 'boolean' },
+            },
+          },
+        },
+      } as JSONSchema);
+
+      expect(await parseSetup(`config:\n  enabled: true`)).to.be.empty;
+      const bad = await parseSetup(`config:\n  enabled: 1`);
+      expect(bad[0].message).to.include('Incorrect type. Expected');
+      expect(bad[0].message).to.include('boolean');
+    });
+
+    it('Resolving $refs: should resolve canonical $id self-references through non-standard schema container', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        $id: SCHEMA_ID,
+        $ref: '#/customSchemas/Root',
+        customSchemas: {
+          Root: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              child: { $ref: `${SCHEMA_ID}#/customSchemas/Child` },
+            },
+          },
+          Child: {
+            type: 'object',
+            properties: {
+              value: { type: 'integer' },
+            },
+          },
+        },
+      } as JSONSchema);
+
+      expect(await parseSetup(`name: hello\nchild:\n  value: 42`)).to.be.empty;
+      const bad = await parseSetup(`name: hello\nchild:\n  value: not_int`);
+      expect(bad[0].message).to.include('Incorrect type. Expected');
+      expect(bad[0].message).to.include('integer');
+    });
+
+    it('Resolving $refs: should validate a relative local self-reference through non-standard schema container after an absolute root reference', async () => {
+      const schemaUri = 'file:///schemas/schema3.json';
+      schemaProvider.addSchemaWithUri(SCHEMA_ID, schemaUri, {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        $id: 'https://example.com/test-schema',
+        $ref: 'https://example.com/test-schema#/customSchemas/Root',
+        customSchemas: {
+          Root: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              child: { $ref: './schema3.json#/customSchemas/Child' },
+            },
+          },
+          Child: {
+            type: 'object',
+            properties: {
+              value: { type: 'integer' },
+            },
+          },
+        },
+      } as JSONSchema);
+
+      expect(await parseSetup(`name: hello\nchild:\n  value: 42`)).to.be.empty;
+      const bad = await parseSetup(`name: hello\nchild:\n  value: e`);
+      expect(bad).to.have.length(1);
+      expect(bad[0].message).to.include('Incorrect type. Expected');
+      expect(bad[0].message).to.include('integer');
+    });
+
     it('schema should validate additionalProp oneOf', async () => {
       const schema = {
         properties: {
