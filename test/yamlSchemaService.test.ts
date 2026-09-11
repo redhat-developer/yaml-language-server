@@ -96,7 +96,7 @@ describe('YAML Schema Service', () => {
     "bar": {
       "type": "string"
     }
-  }, "properties": {"foo": {"type": "boolean"}}, "required": ["foo"]}`);
+  }, "type": "object", "properties": {"foo": {"type": "boolean"}}, "required": ["foo"]}`);
 
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
@@ -107,7 +107,8 @@ describe('YAML Schema Service', () => {
 
       expect(schema.schema.type).eqls('array');
       expect(schema.schema.required).is.undefined;
-      expect(schema.schema.definitions.bar.type).eqls('string');
+      expect(schema.schema.properties).is.undefined;
+      expect(schema.schema.definitions).is.undefined;
     });
 
     it('should handle file path with fragments', async () => {
