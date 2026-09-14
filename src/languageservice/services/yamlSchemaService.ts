@@ -267,12 +267,17 @@ export interface SchemaHandleService {
   ): PromiseLike<ResolvedSchema>;
 }
 
+/** How long a failed schema load is remembered, in milliseconds. */
+export const FAILED_SCHEMA_CACHE_MS = 5000;
+
 export class SchemaHandle implements ISchemaHandle {
   public readonly uri: string;
   public dependencies: SchemaDependencies;
   public anchors: Map<string, JSONSchema> | undefined;
   private resolvedSchema: PromiseLike<ResolvedSchema> | undefined;
   private unresolvedSchema: PromiseLike<UnresolvedSchema> | undefined;
+  /** When the cached load failed, or undefined if it succeeded or has not been attempted. */
+  private failedAt: number | undefined;
   private readonly service: SchemaHandleService;
 
   constructor(service: SchemaHandleService, uri: string, unresolvedSchemaContent?: JSONSchema) {
@@ -285,16 +290,34 @@ export class SchemaHandle implements ISchemaHandle {
     }
   }
 
+  /**
+   * Whether a previously cached failure has been held long enough that the schema is worth requesting again.
+   * @returns true when the cached failure has expired
+   */
+  private isFailureExpired(): boolean {
+    return this.failedAt !== undefined && Date.now() - this.failedAt >= FAILED_SCHEMA_CACHE_MS;
+  }
+
   public getUnresolvedSchema(): PromiseLike<UnresolvedSchema> {
+    if (this.unresolvedSchema && this.isFailureExpired()) {
+      this.resolvedSchema = undefined;
+      this.unresolvedSchema = undefined;
+      this.failedAt = undefined;
+    }
+
     if (!this.unresolvedSchema) {
-      this.unresolvedSchema = this.service.loadSchema(this.uri);
+      this.unresolvedSchema = this.service.loadSchema(this.uri).then((unresolved) => {
+        this.failedAt = unresolved.errors?.length ? Date.now() : undefined;
+        return unresolved;
+      });
     }
     return this.unresolvedSchema;
   }
 
   public getResolvedSchema(): PromiseLike<ResolvedSchema> {
+    const unresolvedSchema = this.getUnresolvedSchema();
     if (!this.resolvedSchema) {
-      this.resolvedSchema = this.getUnresolvedSchema().then((unresolved) =>
+      this.resolvedSchema = unresolvedSchema.then((unresolved) =>
         this.service.resolveSchemaContent(unresolved, this.uri, this.dependencies)
       );
     }
@@ -305,6 +328,7 @@ export class SchemaHandle implements ISchemaHandle {
     const hasChanges = !!this.unresolvedSchema;
     this.resolvedSchema = undefined;
     this.unresolvedSchema = undefined;
+    this.failedAt = undefined;
     this.dependencies = {};
     this.anchors = undefined;
     return hasChanges;
