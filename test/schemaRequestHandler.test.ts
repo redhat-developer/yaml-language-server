@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { schemaRequestHandler } from '../src/languageservice/services/schemaRequestHandler';
+import type { SchemaRequestRetryOptions } from '../src/languageservice/services/schemaRequestHandler';
 import * as sinon from 'sinon';
 import * as request from 'request-light';
 import type { XHRResponse } from 'request-light';
@@ -147,6 +148,137 @@ describe('Schema Request Handler Tests', () => {
       } catch (err) {
         expect(err).to.equal('Not Found');
       }
+    });
+  });
+
+  describe('HTTP(S) schema request retries', () => {
+    const sandbox = sinon.createSandbox();
+    let xhrStub: sinon.SinonStub;
+    let delays: number[];
+    const connection = {} as Connection;
+
+    const retryOptions = {
+      delay: async (ms: number): Promise<void> => {
+        delays.push(ms);
+      },
+    };
+
+    const success = { responseText: '{"$schema":"http://json-schema.org/draft-07/schema"}', status: 200 } as XHRResponse;
+
+    const doRequest = (options: SchemaRequestRetryOptions = retryOptions): Promise<string> =>
+      schemaRequestHandler(
+        connection,
+        'https://example.com/schema.json',
+        [],
+        URI.parse(''),
+        false,
+        testFileSystem,
+        false,
+        options
+      );
+
+    beforeEach(() => {
+      delays = [];
+      xhrStub = sandbox.stub(request, 'xhr');
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should retry a transient status and return the eventual response', async () => {
+      xhrStub.onFirstCall().rejects({ responseText: '', status: 429 } as XHRResponse);
+      xhrStub.onSecondCall().resolves(success);
+
+      const result = await doRequest();
+
+      expect(xhrStub).calledTwice;
+      expect(result).to.equal(success.responseText);
+    });
+
+    it('should retry connection level failures', async () => {
+      xhrStub.onFirstCall().rejects({ code: 'ECONNRESET', message: 'socket hang up' });
+      xhrStub.onSecondCall().resolves(success);
+
+      const result = await doRequest();
+
+      expect(xhrStub).calledTwice;
+      expect(result).to.equal(success.responseText);
+    });
+
+    it('should not retry a permanent status', async () => {
+      xhrStub.rejects({ responseText: 'Not Found', status: 404 } as XHRResponse);
+
+      try {
+        await doRequest();
+        expect.fail('Expected promise to be rejected');
+      } catch (err) {
+        expect(err).to.equal('Not Found');
+      }
+      expect(xhrStub).calledOnce;
+    });
+
+    it('should give up after the retry budget is exhausted', async () => {
+      xhrStub.rejects({ responseText: 'Service Unavailable', status: 503 } as XHRResponse);
+
+      try {
+        await doRequest();
+        expect.fail('Expected promise to be rejected');
+      } catch (err) {
+        expect(err).to.equal('Service Unavailable');
+      }
+      // The initial attempt plus the default budget of 2 retries.
+      expect(xhrStub).calledThrice;
+    });
+
+    it('should honour a Retry-After header in preference to backoff', async () => {
+      xhrStub
+        .onFirstCall()
+        .rejects({ responseText: '', status: 429, headers: { 'retry-after': '0.5' } } as unknown as XHRResponse);
+      xhrStub.onSecondCall().resolves(success);
+
+      await doRequest();
+
+      expect(delays).to.eql([500]);
+    });
+
+    it('should cap an excessive Retry-After value', async () => {
+      xhrStub
+        .onFirstCall()
+        .rejects({ responseText: '', status: 429, headers: { 'retry-after': '600' } } as unknown as XHRResponse);
+      xhrStub.onSecondCall().resolves(success);
+
+      await doRequest();
+
+      expect(delays).to.eql([1000]);
+    });
+
+    it('should back off between attempts when no Retry-After is given', async () => {
+      xhrStub.rejects({ responseText: 'Service Unavailable', status: 503 } as XHRResponse);
+
+      try {
+        await doRequest();
+      } catch {
+        // expected once the budget is exhausted
+      }
+
+      expect(delays).to.have.length(2);
+      // Exponential with jitter, each capped.
+      expect(delays[0]).to.be.at.least(200).and.at.most(1000);
+      expect(delays[1]).to.be.at.least(400).and.at.most(1000);
+      expect(delays[1]).to.be.at.least(delays[0]);
+    });
+
+    it('should not retry when the budget is zero', async () => {
+      xhrStub.rejects({ responseText: 'Too Many Requests', status: 429 } as XHRResponse);
+
+      try {
+        await doRequest({ ...retryOptions, maxRetries: 0 });
+        expect.fail('Expected promise to be rejected');
+      } catch (err) {
+        expect(err).to.equal('Too Many Requests');
+      }
+      expect(xhrStub).calledOnce;
     });
   });
 });
