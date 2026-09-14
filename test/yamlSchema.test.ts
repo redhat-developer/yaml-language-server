@@ -55,6 +55,23 @@ type: object
     expect(result.errors[0].message).includes('Unable to load schema from');
   });
 
+  it('Error while loading yaml should keep the underlying reason', async () => {
+    requestServiceStub.rejects(new Error('Request failed with status code 429'));
+    const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
+    const result = await service.loadSchema('https://example.com/fooScheme.json');
+    expect(result.errors).length(1);
+    expect(result.errors[0].message).includes('Request failed with status code 429');
+    expect(result.errors[0].message).not.includes('No content');
+  });
+
+  it('Empty response while loading yaml should report no content', async () => {
+    requestServiceStub.resolves('');
+    const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
+    const result = await service.loadSchema('https://example.com/fooScheme.json');
+    expect(result.errors).length(1);
+    expect(result.errors[0].message).includes('No content');
+  });
+
   it('Error while parsing yaml scheme', async () => {
     requestServiceStub.resolves(`%464*&^^&*%@$&^##$`);
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);

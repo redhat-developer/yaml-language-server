@@ -1821,9 +1821,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
     } else if (unresolvedSchema.errors && unresolvedSchema.errors.length > 0) {
       const schemaError = unresolvedSchema.errors[0];
       let errorMessage = schemaError.message;
-      if (errorMessage.toLowerCase().indexOf('load') !== -1) {
-        errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(schemaUri));
-      } else if (errorMessage.toLowerCase().indexOf('parse') !== -1) {
+      if (errorMessage.toLowerCase().indexOf('parse') !== -1) {
         const content = await requestService(schemaUri);
         const jsonErrors: Json.ParseError[] = [];
         const schemaContent = Json.parse(content, jsonErrors);
