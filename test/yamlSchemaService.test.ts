@@ -1575,4 +1575,84 @@ properties:
       expect(resolvedSchema.errors.length).to.equal(0);
     });
   });
+
+  describe('Caching of failed schema loads', () => {
+    const SCHEMA_URI = 'https://example.com/schema.json';
+    const schemaContent = JSON.stringify({ type: 'object', properties: { foo: { type: 'string' } } });
+    let clock: sinon.SinonFakeTimers;
+
+    beforeEach(() => {
+      clock = sandbox.useFakeTimers({ now: Date.now(), shouldAdvanceTime: false });
+    });
+
+    afterEach(() => {
+      clock.restore();
+    });
+
+    const createService = (requestService: sinon.SinonStub): SchemaService.YAMLSchemaService => {
+      const service = new SchemaService.YAMLSchemaService(requestService, workspaceContext);
+      service.registerExternalSchema(SCHEMA_URI, ['*.yaml']);
+      return service;
+    };
+
+    const resolveSchema = (service: SchemaService.YAMLSchemaService): Promise<SchemaService.ResolvedSchema> =>
+      service.getSchemaForResource('test.yaml', parse('foo: bar\n').documents[0]);
+
+    it('should not request a failed schema again within the caching window', async () => {
+      const requestService = sandbox.stub().rejects(new Error('Request failed with status code 429'));
+      const service = createService(requestService);
+
+      await resolveSchema(service);
+      await clock.tickAsync(SchemaService.FAILED_SCHEMA_CACHE_MS - 1);
+      await resolveSchema(service);
+
+      expect(requestService).calledOnce;
+    });
+
+    it('should request a failed schema again once the caching window has passed', async () => {
+      const requestService = sandbox.stub();
+      requestService.onFirstCall().rejects(new Error('Request failed with status code 429'));
+      requestService.resolves(schemaContent);
+      const service = createService(requestService);
+
+      const failed = await resolveSchema(service);
+      expect(failed.errors).to.not.be.empty;
+
+      await clock.tickAsync(SchemaService.FAILED_SCHEMA_CACHE_MS);
+      const recovered = await resolveSchema(service);
+
+      expect(requestService).calledTwice;
+      expect(recovered.errors).to.be.empty;
+      expect(recovered.schema.properties).to.have.property('foo');
+    });
+
+    it('should keep caching a successful schema load', async () => {
+      const requestService = sandbox.stub().resolves(schemaContent);
+      const service = createService(requestService);
+
+      await resolveSchema(service);
+      await clock.tickAsync(SchemaService.FAILED_SCHEMA_CACHE_MS * 10);
+      const second = await resolveSchema(service);
+
+      expect(requestService).calledOnce;
+      expect(second.errors).to.be.empty;
+    });
+
+    it('should not serve a stale resolved schema after a cached failure expires', async () => {
+      const requestService = sandbox.stub();
+      requestService.onFirstCall().rejects(new Error('Request failed with status code 429'));
+      requestService.resolves(schemaContent);
+      const service = createService(requestService);
+
+      // Resolve first, so a resolved schema built from the failure is cached too.
+      const failed = await resolveSchema(service);
+      expect(failed.errors).to.not.be.empty;
+
+      await clock.tickAsync(SchemaService.FAILED_SCHEMA_CACHE_MS);
+      const recovered = await resolveSchema(service);
+
+      expect(recovered.errors).to.be.empty;
+      expect(recovered.schema.properties).to.have.property('foo');
+    });
+  });
 });
