@@ -737,6 +737,14 @@ export class YAMLSchemaService implements IJSONSchemaService {
     type PlainNameFragmentMap = Map<string, FragmentEntry>;
     type ResourceIndex = { root?: JSONSchema; fragments: PlainNameFragmentMap };
     const resourceIndexByUri = new Map<string, ResourceIndex>();
+    const lookupRoots = new WeakMap<JSONSchema, JSONSchema>();
+
+    // Preserve root keys before $ref processing removes or rewrites siblings
+    const _preserveLookupRoot = (root: JSONSchema): void => {
+      if (root && typeof root === 'object' && !lookupRoots.has(root)) {
+        lookupRoots.set(root, { ...root });
+      }
+    };
 
     const _getResourceIndex = (resourceUri: string): ResourceIndex => {
       let entry = resourceIndexByUri.get(resourceUri);
@@ -745,6 +753,14 @@ export class YAMLSchemaService implements IJSONSchemaService {
         resourceIndexByUri.set(resourceUri, entry);
       }
       return entry;
+    };
+
+    const _registerResourceRoot = (resourceUri: string, root: JSONSchema): void => {
+      const entry = _getResourceIndex(resourceUri);
+      if (entry.root) return;
+
+      entry.root = root;
+      _preserveLookupRoot(root);
     };
 
     /**
@@ -811,12 +827,11 @@ export class YAMLSchemaService implements IJSONSchemaService {
           } else {
             // $id without fragment creates a new embedded resource scope
             baseUri = resolvedBaseUri;
-            const entry = _getResourceIndex(resolvedBaseUri);
-            if (!entry.root) {
-              entry.root = node;
-            }
+            _registerResourceRoot(resolvedBaseUri, node);
           }
         }
+        // keep the retrieval URI usable even when $id changes the base URI
+        if (node === root) _registerResourceRoot(initialBaseUri, node);
         // Draft 2019-09+: $anchor keyword
         if (node.$anchor) {
           _getResourceIndex(baseUri).fragments.set(node.$anchor, { node });
@@ -887,7 +902,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
 
       // JSON pointer style
       if (refPath[0] === PATH_SEP) {
-        let current = schemaRoot;
+        let current = lookupRoots.get(schemaRoot) ?? schemaRoot;
         const parts = refPath.substring(1).split(PATH_SEP);
         for (const part of parts) {
           // in JSON Pointer: ~ must be escaped as ~0, / must be escaped as ~1
@@ -1088,6 +1103,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
         },
       ];
       const seen = new WeakSet<JSONSchema>(); // prevents re-walking the same schema object graph
+      _preserveLookupRoot(parentSchema);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const openPromises: Promise<any>[] = [];
@@ -1379,7 +1395,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
         const item = toWalk.pop();
         const next = item.node;
         const nodeBaseUri = next._baseUri || item.baseUri;
-        const nodeSourceUri = next._sourceUri || nodeBaseUri;
+        const nodeSourceUri = next._sourceUri || item.sourceUri || nodeBaseUri;
         const nodeSchemaDraft = next._schemaDraft || item.schemaDraft;
         const nodeRecursiveAnchorBase = item.recursiveAnchorBase ?? (next.$recursiveAnchor ? nodeBaseUri : undefined);
         if (seen.has(next)) continue;
