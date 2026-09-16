@@ -1729,18 +1729,12 @@ export class YAMLSchemaService implements IJSONSchemaService {
       }
       return new UnresolvedSchema(schemaContent, errors);
     } catch (error) {
-      let message = typeof error.message === 'string' ? error.message : error.toString();
       const { code } = error;
-      const errorSplit = message.split('Error: ');
-      if (errorSplit.length > 1) {
-        // more concise error message, URL and context are attached by caller anyways
-        message = errorSplit[1];
-      }
-      if (message.endsWith('.')) {
-        message = message.slice(0, -1);
-      }
+      const message = toLoadErrorReason(error);
       const errorCode = ErrorCode.SchemaResolveError + (typeof code === 'number' && code < 0x10000 ? code : 0);
-      const errorMessage = l10n.t("Unable to load schema from '{0}': {1}.", toDisplayString(url), message);
+      const errorMessage = message
+        ? l10n.t("Unable to load schema from '{0}': {1}.", toDisplayString(url), message)
+        : l10n.t("Unable to load schema from '{0}'.", toDisplayString(url));
       return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, errorCode, url)]);
     }
   }
@@ -1794,18 +1788,12 @@ export class YAMLSchemaService implements IJSONSchemaService {
       }
       if (!content) {
         if (caughtError) {
-          let message = typeof caughtError.message === 'string' ? caughtError.message : caughtError.toString();
           const { code } = caughtError;
-          const errorSplit = message.split('Error: ');
-          if (errorSplit.length > 1) {
-            // more concise error message, URL and context are attached by caller anyways
-            message = errorSplit[1];
-          }
-          if (message.endsWith('.')) {
-            message = message.slice(0, -1);
-          }
+          const message = toLoadErrorReason(caughtError);
           const errorCode = ErrorCode.SchemaResolveError + (typeof code === 'number' && code < 0x10000 ? code : 0);
-          const errorMessage = l10n.t("Unable to load schema from '{0}': {1}.", toDisplayString(schemaUri), message);
+          const errorMessage = message
+            ? l10n.t("Unable to load schema from '{0}': {1}.", toDisplayString(schemaUri), message)
+            : l10n.t("Unable to load schema from '{0}'.", toDisplayString(schemaUri));
           unresolvedSchema = new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, errorCode, schemaUri)]);
         } else {
           const errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(schemaUri));
@@ -1837,9 +1825,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
     } else if (unresolvedSchema.errors && unresolvedSchema.errors.length > 0) {
       const schemaError = unresolvedSchema.errors[0];
       let errorMessage = schemaError.message;
-      if (errorMessage.toLowerCase().indexOf('load') !== -1) {
-        errorMessage = l10n.t("Unable to load schema from '{0}': No content.", toDisplayString(schemaUri));
-      } else if (errorMessage.toLowerCase().indexOf('parse') !== -1) {
+      if (errorMessage.toLowerCase().indexOf('parse') !== -1) {
         const content = await requestService(schemaUri);
         const jsonErrors: Json.ParseError[] = [];
         const schemaContent = Json.parse(content, jsonErrors);
@@ -1967,6 +1953,36 @@ function toDisplayString(url: string): string {
     // ignore
   }
   return url;
+}
+
+/**
+ * Extracts a concise, human-readable reason from a schema request failure.
+ * @param error the value thrown by the request, an Error or a string
+ * @returns the reason to report, or an empty string when none can be determined
+ */
+export function toLoadErrorReason(error: unknown): string {
+  const err = error as { message?: unknown; code?: unknown } | undefined;
+  let message = typeof err?.message === 'string' ? err.message : String(error ?? '');
+
+  const errorSplit = message.split('Error: ');
+  if (errorSplit.length > 1) {
+    // more concise error message, URL and context are attached by caller anyways
+    const tail = errorSplit[errorSplit.length - 1].trim();
+    // keep the leading context when the nested prefix has nothing after it
+    message = tail || errorSplit.slice(0, -1).join('Error: ');
+  }
+
+  // drop a now-dangling 'Error:'/'Error' marker left by an empty nested message
+  message = message.trim().replace(/[.\s]*\bError:?$/, '');
+  if (message.endsWith('.')) {
+    message = message.slice(0, -1).trimEnd();
+  }
+
+  // e.g. ECONNREFUSED carries no message at all; the code is the only detail available
+  if (!message && typeof err?.code === 'string' && err.code) {
+    return err.code;
+  }
+  return message;
 }
 
 function normalizeResourceForMatching(resource: string): string {
