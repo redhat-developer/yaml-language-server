@@ -38,6 +38,7 @@
     "vscode-languageserver": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.1",
     "vscode-languageserver-types": "~3.17.5",
+    "vscode-snippet-parser": "0.0.5",
     "vscode-uri": "^3.0.2",
     "yaml": "2.8.3"
   },

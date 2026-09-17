@@ -5,6 +5,7 @@
 
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { ClientCapabilities } from 'vscode-languageserver';
+import { SnippetParser } from 'vscode-snippet-parser';
 import type { MarkupContent } from 'vscode-languageserver-types';
 import {
   CompletionItem as CompletionItemBase,
@@ -101,6 +102,30 @@ export class YamlCompletion {
   }
 
   async doComplete(document: TextDocument, position: Position, isKubernetes = false, doComplete = true): Promise<CompletionList> {
+    const result = await this.doCompleteWithSnippets(document, position, isKubernetes, doComplete);
+    if (!this.clientCapabilities.textDocument?.completion?.completionItem?.snippetSupport) {
+      for (const item of result.items) {
+        if (item.insertTextFormat !== InsertTextFormat.Snippet) {
+          continue;
+        }
+        if (item.insertText !== undefined) {
+          item.insertText = new SnippetParser().parse(item.insertText).toString();
+        }
+        if (item.textEdit) {
+          item.textEdit.newText = new SnippetParser().parse(item.textEdit.newText).toString();
+        }
+        item.insertTextFormat = InsertTextFormat.PlainText;
+      }
+    }
+    return result;
+  }
+
+  private async doCompleteWithSnippets(
+    document: TextDocument,
+    position: Position,
+    isKubernetes: boolean,
+    doComplete: boolean
+  ): Promise<CompletionList> {
     const result = CompletionList.create([], false);
     if (!this.completionEnabled) {
       return result;

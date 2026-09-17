@@ -33,6 +33,10 @@ Schema validation supports JSON Schema `draft-04`, `draft-07`, `2019-09`, and `2
 
 Completion and hover content are schema-driven. See [Associating schemas](#associating-schemas) for configuration details.
 
+Snippet completions require the client capability `textDocument.completion.completionItem.snippetSupport`.
+When it is absent or `false`, completions insert plain text using placeholder defaults and the first choice,
+without tab stops. Clients that support snippets retain editable placeholders.
+
 ## Language server settings
 
 The server supports the following settings supplied by LSP clients:
