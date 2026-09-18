@@ -111,7 +111,7 @@ Configure schema-to-file mappings in your LSP client settings using the `yaml.sc
 Each entry maps a schema to one or more file patterns:
 
 - **Key**: Schema URI, local file path, or the `kubernetes` keyword
-- **Value**: A glob pattern or array of glob patterns
+- **Value**: A glob pattern or array of glob patterns. Prefix a pattern with `!` to exclude matching files; at least one positive pattern is required.
 
 #### Remote schemas
 

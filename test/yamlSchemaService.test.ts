@@ -1380,6 +1380,87 @@ spec:
       expect(roleTaskUris).to.not.include(playbookSchemaUri);
     });
 
+    it('should support negation patterns with ! prefix', () => {
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      const schemaUri = 'https://example.com/schema.json';
+      service.registerExternalSchema(schemaUri, ['*test.yaml', '!test.yaml'], {});
+
+      const xxTestUris = service.getSchemaURIsForResource('file:///project/xxtest.yaml');
+      expect(xxTestUris).to.include(schemaUri);
+
+      const aTestUris = service.getSchemaURIsForResource('file:///project/a_test.yaml');
+      expect(aTestUris).to.include(schemaUri);
+
+      const testUris = service.getSchemaURIsForResource('file:///project/test.yaml');
+      expect(testUris).to.not.include(schemaUri);
+    });
+
+    it('should support glob patterns after the negation prefix', () => {
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      const schemaUri = 'https://example.com/schema.json';
+      service.registerExternalSchema(schemaUri, ['*.yaml', '!*test.yaml'], {});
+
+      const appUris = service.getSchemaURIsForResource('file:///project/app.yaml');
+      expect(appUris).to.include(schemaUri);
+
+      const testUris = service.getSchemaURIsForResource('file:///project/test.yaml');
+      expect(testUris).to.not.include(schemaUri);
+
+      const nestedTestUris = service.getSchemaURIsForResource('file:///project/nested/a_test.yaml');
+      expect(nestedTestUris).to.not.include(schemaUri);
+    });
+
+    it('should support negation with full file URI path', () => {
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      const schemaUri = 'https://example.com/schema.json';
+      service.registerExternalSchema(schemaUri, ['*test.yaml', '!file:///Users/dev/project/test.yaml'], {});
+
+      const otherTestUris = service.getSchemaURIsForResource('file:///Users/dev/project/mytest.yaml');
+      expect(otherTestUris).to.include(schemaUri);
+
+      const excludedUris = service.getSchemaURIsForResource('file:///Users/dev/project/test.yaml');
+      expect(excludedUris).to.not.include(schemaUri);
+    });
+
+    it('should match all files when there are no negation patterns', () => {
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      const schemaUri = 'https://example.com/schema.json';
+      service.registerExternalSchema(schemaUri, ['*.yaml'], {});
+
+      const uris = service.getSchemaURIsForResource('file:///project/test.yaml');
+      expect(uris).to.include(schemaUri);
+
+      const uris2 = service.getSchemaURIsForResource('file:///project/config.yaml');
+      expect(uris2).to.include(schemaUri);
+    });
+
+    it('should not match any file when only negation patterns are provided', () => {
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      const schemaUri = 'https://example.com/schema.json';
+      service.registerExternalSchema(schemaUri, ['!test.yaml'], {});
+
+      const uris = service.getSchemaURIsForResource('file:///project/test.yaml');
+      expect(uris).to.not.include(schemaUri);
+
+      const uris2 = service.getSchemaURIsForResource('file:///project/other.yaml');
+      expect(uris2).to.not.include(schemaUri);
+    });
+
+    it('should support multiple negation patterns', () => {
+      const service = new SchemaService.YAMLSchemaService(requestServiceMock);
+      const schemaUri = 'https://example.com/schema.json';
+      service.registerExternalSchema(schemaUri, ['*.yaml', '!test.yaml', '!config.yaml'], {});
+
+      const appUris = service.getSchemaURIsForResource('file:///project/app.yaml');
+      expect(appUris).to.include(schemaUri);
+
+      const testUris = service.getSchemaURIsForResource('file:///project/test.yaml');
+      expect(testUris).to.not.include(schemaUri);
+
+      const configUris = service.getSchemaURIsForResource('file:///project/config.yaml');
+      expect(configUris).to.not.include(schemaUri);
+    });
+
     it('should only request the content of a YAML schema once', async () => {
       const content = `# yaml-language-server: $schema=file:///dir/my-schema.yaml\nname: John\nage: -1`;
       const yamlDock = parse(content);

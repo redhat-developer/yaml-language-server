@@ -238,7 +238,7 @@ export interface SchemaConfiguration {
    * A list of glob patterns that describe for which file URIs the JSON schema will be used.
    * '*' and '**' wildcards are supported. Exclusion patterns start with '!'.
    * For example '*.schema.json', 'package.json', '!foo*.schema.json', 'foo/**\/BADRESP.json'.
-   * A match succeeds when there is at least one pattern matching and last matching pattern does not start with '!'.
+   * A match succeeds when at least one positive pattern matches and no exclusion pattern matches.
    */
   fileMatch?: string[];
   /**

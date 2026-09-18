@@ -144,7 +144,8 @@ export interface SchemaConfiguration {
    */
   uri: string;
   /**
-   * A list of file names that are associated to the schema. The '*' wildcard can be used. For example '*.schema.json', 'package.json'
+   * A list of glob patterns that associate files with the schema. Prefix a pattern with '!' to exclude matching files.
+   * For example '*.schema.json', 'package.json', '!foo*.schema.json'.
    */
   fileMatch?: string[];
   /**

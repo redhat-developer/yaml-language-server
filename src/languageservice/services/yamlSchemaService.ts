@@ -195,6 +195,7 @@ export interface ISchemaHandle {
 
 export class FilePatternAssociation {
   private readonly isMatch: (fileName: string) => boolean;
+  private readonly isNegMatch: ((fileName: string) => boolean) | null;
 
   constructor(
     pattern: string[],
@@ -202,18 +203,29 @@ export class FilePatternAssociation {
     public readonly uris: string[]
   ) {
     try {
-      // strip leading / and add **/ prefix
-      const processedPatterns = pattern
-        .map((p) => {
-          let patternString = p;
-          if (patternString[0] === PATH_SEP) {
-            patternString = patternString.substring(1);
-          }
-          return '**/' + patternString;
-        })
-        .filter((p) => p.length > 0);
+      const positivePatterns: string[] = [];
+      const negativePatterns: string[] = [];
 
-      this.isMatch = picomatch(processedPatterns, {
+      for (const p of pattern) {
+        let patternString = p;
+        const isNegation = patternString.startsWith('!');
+        if (isNegation) {
+          patternString = patternString.substring(1);
+        }
+        // strip leading / and add **/ prefix
+        if (patternString[0] === PATH_SEP) {
+          patternString = patternString.substring(1);
+        }
+        if (patternString.length > 0) {
+          const processed = '**/' + patternString;
+          (isNegation ? negativePatterns : positivePatterns).push(processed);
+        }
+      }
+
+      this.isMatch = picomatch(positivePatterns, {
+        noglobstar: false,
+      });
+      this.isNegMatch = picomatch(negativePatterns, {
         noglobstar: false,
       });
 
@@ -226,6 +238,7 @@ export class FilePatternAssociation {
       }
     } catch {
       this.isMatch = () => false;
+      this.isNegMatch = () => false;
       this.uris = [];
     }
   }
@@ -234,7 +247,7 @@ export class FilePatternAssociation {
     if (this.folderUri && !fileName.startsWith(this.folderUri)) {
       return false;
     }
-    return this.isMatch(fileName);
+    return this.isMatch(fileName) && !this.isNegMatch(fileName);
   }
 
   public getURIs(): string[] {
