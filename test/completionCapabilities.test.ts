@@ -45,21 +45,18 @@ describe('Completion snippet capabilities', () => {
     assert.equal(item.textEdit.newText, 'greeting: ');
   });
 
-  for (const [bodyText, expected] of [
-    ['name: ${1:world}\nagain: $1\nend: $0', 'name: world\nagain: world\nend: '],
-    ['name: ${1:hello ${2:world}}', 'name: hello world'],
-    ['color: ${1|red,green|}', 'color: red'],
-    ['price: \\$5\npath: C:\\\\tmp', 'price: $5\npath: C:\\tmp'],
-    ['name: ${NAME:world}', 'name: world'],
+  for (const bodyText of [
+    'name: ${1:world}\nagain: $1\nend: $0',
+    'name: ${1:hello ${2:world}}',
+    'color: ${1|red,green|}',
+    'price: \\$5\npath: C:\\\\tmp',
+    'name: ${NAME:world}',
   ]) {
-    it(`expands the initial text of a schema snippet: ${bodyText}`, async () => {
+    it(`offers custom snippets only to snippet-capable clients: ${bodyText}`, async () => {
       const snippetSchema: JSONSchema = { type: 'object', defaultSnippets: [{ label: 'example', bodyText }] };
       const result = await complete({}, snippetSchema);
       const item = result.items.find((item) => item.label === 'example');
-      assert.ok(item);
-      assert.equal(item.insertTextFormat, InsertTextFormat.PlainText);
-      assert.equal(item.insertText, expected);
-      assert.equal(item.textEdit.newText, expected);
+      assert.equal(item, undefined);
 
       const supported = await complete(
         { textDocument: { completion: { completionItem: { snippetSupport: true } } } },
@@ -68,7 +65,46 @@ describe('Completion snippet capabilities', () => {
       const original = supported.items.find((item) => item.label === 'example');
       assert.equal(original.insertTextFormat, InsertTextFormat.Snippet);
       assert.equal(original.insertText, bodyText);
-      assert.deepEqual({ ...item.textEdit, newText: '' }, { ...original.textEdit, newText: '' });
+      assert.equal(original.textEdit.newText, bodyText);
     });
   }
+  for (const [type, value, expected] of [
+    ['string', 'cost $1', 'cost $1'],
+    ['number', 42, '42'],
+    ['boolean', false, 'false'],
+    ['null', null, 'null'],
+  ] as [string, string | number | boolean | null, string][]) {
+    it(`keeps a ${type} default without adding tab stops`, async () => {
+      const result = await complete({}, { type: 'object', properties: { value: { type, default: value } } });
+      const item = result.items.find((item) => item.label === 'value');
+      assert.ok(item);
+      assert.equal(item.insertTextFormat, InsertTextFormat.PlainText);
+      assert.equal(item.textEdit.newText, `value: ${expected}`);
+    });
+  }
+
+  it('builds nested required properties without snippet syntax', async () => {
+    const result = await complete(
+      {},
+      {
+        type: 'object',
+        properties: {
+          settings: {
+            type: 'object',
+            required: ['enabled', 'count'],
+            properties: {
+              enabled: { type: 'boolean', default: false },
+              count: { type: 'integer', default: 7 },
+            },
+          },
+        },
+      }
+    );
+    const item = result.items.find((item) => item.label === 'settings');
+    assert.ok(item);
+    assert.equal(item.insertTextFormat, InsertTextFormat.PlainText);
+    assert.match(item.textEdit.newText, /enabled: false/);
+    assert.match(item.textEdit.newText, /count: 7/);
+    assert.ok(!item.textEdit.newText.includes('$'));
+  });
 });

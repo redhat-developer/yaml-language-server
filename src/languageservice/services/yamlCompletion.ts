@@ -5,7 +5,6 @@
 
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { ClientCapabilities } from 'vscode-languageserver';
-import { SnippetParser } from 'vscode-snippet-parser';
 import type { MarkupContent } from 'vscode-languageserver-types';
 import {
   CompletionItem as CompletionItemBase,
@@ -101,31 +100,22 @@ export class YamlCompletion {
     this.parentSkeletonSelectedFirst = languageSettings.parentSkeletonSelectedFirst;
   }
 
-  async doComplete(document: TextDocument, position: Position, isKubernetes = false, doComplete = true): Promise<CompletionList> {
-    const result = await this.doCompleteWithSnippets(document, position, isKubernetes, doComplete);
-    if (!this.clientCapabilities.textDocument?.completion?.completionItem?.snippetSupport) {
-      for (const item of result.items) {
-        if (item.insertTextFormat !== InsertTextFormat.Snippet) {
-          continue;
-        }
-        if (item.insertText !== undefined) {
-          item.insertText = new SnippetParser().parse(item.insertText).toString();
-        }
-        if (item.textEdit) {
-          item.textEdit.newText = new SnippetParser().parse(item.textEdit.newText).toString();
-        }
-        item.insertTextFormat = InsertTextFormat.PlainText;
-      }
-    }
-    return result;
+  private get supportsSnippets(): boolean {
+    return !!this.clientCapabilities.textDocument?.completion?.completionItem?.snippetSupport;
   }
 
-  private async doCompleteWithSnippets(
-    document: TextDocument,
-    position: Position,
-    isKubernetes: boolean,
-    doComplete: boolean
-  ): Promise<CompletionList> {
+  private get insertTextFormat(): InsertTextFormat {
+    return this.supportsSnippets ? InsertTextFormat.Snippet : InsertTextFormat.PlainText;
+  }
+
+  private tabStop(index: number, value?: string): string {
+    if (!this.supportsSnippets) {
+      return value ?? '';
+    }
+    return value === undefined ? '$' + index : '${' + index + ':' + value + '}';
+  }
+
+  async doComplete(document: TextDocument, position: Position, isKubernetes = false, doComplete = true): Promise<CompletionList> {
     const result = CompletionList.create([], false);
     if (!this.completionEnabled) {
       return result;
@@ -283,7 +273,7 @@ export class YamlCompletion {
             completionItem.insertText = `${key}: ${this.getQuote()}\\${char}${this.getQuote()}`;
           }
           // trim $1 from end of completion
-          if (completionItem.insertText.endsWith('$1') && !isForParentCompletion) {
+          if (this.supportsSnippets && completionItem.insertText.endsWith('$1') && !isForParentCompletion) {
             completionItem.insertText = completionItem.insertText.substr(0, completionItem.insertText.length - 2);
           }
           if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
@@ -579,7 +569,7 @@ export class YamlCompletion {
             kind: CompletionItemKind.Property,
             label: currentWord,
             insertText: this.getInsertTextForProperty(currentWord, null, ''),
-            insertTextFormat: InsertTextFormat.Snippet,
+            insertTextFormat: this.insertTextFormat,
           });
         }
       }
@@ -637,6 +627,8 @@ export class YamlCompletion {
     const newValues = Array.prototype.concat(existingValues, addingValues);
     if (!newValues.length) {
       return undefined;
+    } else if (!this.supportsSnippets) {
+      return `${label}: ${newValues[0]}`;
     } else if (newValues.length === 1) {
       return `${label}: \${1:${newValues[0]}}`;
     } else {
@@ -680,13 +672,15 @@ export class YamlCompletion {
       if (this.isParentCompletionItem(completionItem)) {
         const indent = completionItem.parent.indent || '';
 
-        const reindexedTexts = reindexText(completionItem.parent.insertTexts);
+        const reindexedTexts = this.supportsSnippets
+          ? reindexText(completionItem.parent.insertTexts)
+          : completionItem.parent.insertTexts;
 
         // add indent to each object property and join completion item texts
         let insertText = reindexedTexts.join(`\n${indent}`);
 
         // trim $1 from end of completion
-        if (insertText.endsWith('$1')) {
+        if (this.supportsSnippets && insertText.endsWith('$1')) {
           insertText = insertText.substring(0, insertText.length - 2);
         }
 
@@ -832,7 +826,7 @@ export class YamlCompletion {
                         kind: CompletionItemKind.Property,
                         label: key,
                         insertText,
-                        insertTextFormat: InsertTextFormat.Snippet,
+                        insertTextFormat: this.insertTextFormat,
                         documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
                       },
                       didOneOfSchemaMatches
@@ -849,7 +843,7 @@ export class YamlCompletion {
                         identCompensation + this.indentation,
                         true
                       ),
-                      insertTextFormat: InsertTextFormat.Snippet,
+                      insertTextFormat: this.insertTextFormat,
                       documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
                       parent: {
                         schema: schema.schema,
@@ -896,8 +890,8 @@ export class YamlCompletion {
               collector.add({
                 kind: CompletionItemKind.Property,
                 label,
-                insertText: '$' + `{1:${label}}: `,
-                insertTextFormat: InsertTextFormat.Snippet,
+                insertText: this.tabStop(1, label) + ': ',
+                insertTextFormat: this.insertTextFormat,
                 documentation: doc,
               });
             }
@@ -1040,7 +1034,7 @@ export class YamlCompletion {
       label: l10n.t('- (array item) ') + (schemaType || index),
       documentation: documentation,
       insertText: insertText,
-      insertTextFormat: InsertTextFormat.Snippet,
+      insertTextFormat: this.insertTextFormat,
     });
   }
 
@@ -1068,7 +1062,7 @@ export class YamlCompletion {
           type = 'anyOf';
         }
       }
-      if (Array.isArray(propertySchema.defaultSnippets)) {
+      if (this.supportsSnippets && Array.isArray(propertySchema.defaultSnippets)) {
         if (propertySchema.defaultSnippets.length === 1) {
           const body = propertySchema.defaultSnippets[0].body;
           if (isDefined(body)) {
@@ -1143,7 +1137,7 @@ export class YamlCompletion {
           case 'boolean':
           case 'string':
           case 'anyOf':
-            value = ' $1';
+            value = ' ' + this.tabStop(1);
             break;
           case 'object':
             value = `\n${indent}`;
@@ -1153,10 +1147,10 @@ export class YamlCompletion {
             break;
           case 'number':
           case 'integer':
-            value = ' ${1:0}';
+            value = ' ' + this.tabStop(1, '0');
             break;
           case 'null':
-            value = ' ${1:null}';
+            value = ' ' + this.tabStop(1, 'null');
             break;
           default:
             return propertyText;
@@ -1164,7 +1158,7 @@ export class YamlCompletion {
       }
     }
     if (!value || (nValueProposals > 1 && !hasRequiredDefault)) {
-      value = ' $1';
+      value = ' ' + this.tabStop(1);
     }
     return resultText + value + separatorAfter;
   }
@@ -1177,7 +1171,7 @@ export class YamlCompletion {
   ): InsertText {
     let insertText = '';
     if (!schema.properties) {
-      insertText = `${indent}$${insertIndex++}\n`;
+      insertText = `${indent}${this.tabStop(insertIndex++)}\n`;
       return { insertText, insertIndex };
     }
 
@@ -1207,9 +1201,9 @@ export class YamlCompletion {
               if (type === 'string') {
                 value = toYamlStringScalar(value);
               }
-              insertText += `${indent}${key}: \${${insertIndex++}:${value}}\n`;
+              insertText += `${indent}${key}: ${this.tabStop(insertIndex++, String(value))}\n`;
             } else {
-              insertText += `${indent}${key}: $${insertIndex++}\n`;
+              insertText += `${indent}${key}: ${this.tabStop(insertIndex++)}\n`;
             }
             break;
           }
@@ -1250,10 +1244,10 @@ export class YamlCompletion {
             insertText += `${indent}${
               //added quote if key is null
               key === 'null' ? this.getInsertTextForValue(key, '', 'string') : key
-            }: \${${insertIndex++}:${propertySchema.default}}\n`;
+            }: ${this.tabStop(insertIndex++, String(propertySchema.default))}\n`;
             break;
           case 'string':
-            insertText += `${indent}${key}: \${${insertIndex++}:${toYamlStringScalar(propertySchema.default)}}\n`;
+            insertText += `${indent}${key}: ${this.tabStop(insertIndex++, toYamlStringScalar(propertySchema.default))}\n`;
             break;
           case 'array':
           case 'object':
@@ -1263,7 +1257,7 @@ export class YamlCompletion {
       }
     });
     if (insertText.trim().length === 0) {
-      insertText = `${indent}$${insertIndex++}\n`;
+      insertText = `${indent}${this.tabStop(insertIndex++)}\n`;
     }
     insertText = insertText.trimEnd() + separatorAfter;
     return { insertText, insertIndex };
@@ -1273,7 +1267,7 @@ export class YamlCompletion {
   private getInsertTextForArray(schema: any, separatorAfter: string, insertIndex = 1, indent = this.indentation): InsertText {
     let insertText = '';
     if (!schema) {
-      insertText = `$${insertIndex++}`;
+      insertText = this.tabStop(insertIndex++);
       return { insertText, insertIndex };
     }
     let type = Array.isArray(schema.type) ? schema.type[0] : schema.type;
@@ -1290,14 +1284,14 @@ export class YamlCompletion {
     } else {
       switch (schema.type) {
         case 'boolean':
-          insertText = `\${${insertIndex++}:false}`;
+          insertText = this.tabStop(insertIndex++, 'false');
           break;
         case 'number':
         case 'integer':
-          insertText = `\${${insertIndex++}:0}`;
+          insertText = this.tabStop(insertIndex++, '0');
           break;
         case 'string':
-          insertText = `\${${insertIndex++}}`;
+          insertText = this.supportsSnippets ? `\${${insertIndex++}}` : this.tabStop(insertIndex++);
           break;
         case 'object':
           {
@@ -1316,24 +1310,27 @@ export class YamlCompletion {
     switch (typeof value) {
       case 'object':
         if (value === null) {
-          return '${1:null}' + separatorAfter;
+          return this.tabStop(1, 'null') + separatorAfter;
         }
         return this.getInsertTextForValue(value, separatorAfter, type);
       case 'string': {
         if (type === 'number' || type === 'integer') {
-          return '${1:' + value + '}' + separatorAfter;
+          return this.tabStop(1, String(value)) + separatorAfter;
         }
         const snippetValue = this.getInsertTextForPlainText(toYamlStringScalar(value));
-        return '${1:' + snippetValue + '}' + separatorAfter;
+        return this.tabStop(1, snippetValue) + separatorAfter;
       }
       case 'number':
       case 'boolean':
-        return '${1:' + value + '}' + separatorAfter;
+        return this.tabStop(1, String(value)) + separatorAfter;
     }
     return this.getInsertTextForValue(value, separatorAfter, type);
   }
 
   private getInsertTextForPlainText(text: string): string {
+    if (!this.supportsSnippets) {
+      return text;
+    }
     return text.replace(/\\(?=[$}\\])/g, '\\\\').replace(/[$}]/g, '\\$&');
   }
 
@@ -1367,7 +1364,7 @@ export class YamlCompletion {
     if (Array.isArray(value)) {
       let insertText = '\n';
       for (const arrValue of value) {
-        insertText += `${indent}- \${${navOrder.index++}:${arrValue}}\n`;
+        insertText += `${indent}- ${this.tabStop(navOrder.index++, String(arrValue))}\n`;
       }
       return insertText;
     } else if (typeof value === 'object') {
@@ -1375,12 +1372,12 @@ export class YamlCompletion {
       for (const key in value) {
         if (Object.prototype.hasOwnProperty.call(value, key)) {
           const element = value[key];
-          insertText += `${indent}\${${navOrder.index++}:${key}}:`;
+          insertText += `${indent}${this.tabStop(navOrder.index++, key)}:`;
           let valueTemplate;
           if (typeof element === 'object') {
             valueTemplate = `${this.getInsertTemplateForValue(element, indent + this.indentation, navOrder, separatorAfter)}`;
           } else {
-            valueTemplate = ` \${${navOrder.index++}:${this.getInsertTextForPlainText(element + separatorAfter)}}\n`;
+            valueTemplate = ` ${this.tabStop(navOrder.index++, this.getInsertTextForPlainText(element + separatorAfter))}\n`;
           }
           insertText += `${valueTemplate}`;
         }
@@ -1463,7 +1460,7 @@ export class YamlCompletion {
         kind: this.getSuggestionKind(type),
         label,
         insertText: this.getInsertTextForValue(value, separatorAfter, type),
-        insertTextFormat: InsertTextFormat.Snippet,
+        insertTextFormat: this.insertTextFormat,
         detail: l10n.t('Default value'),
       });
       hasProposals = true;
@@ -1480,7 +1477,7 @@ export class YamlCompletion {
           kind: this.getSuggestionKind(type),
           label: this.getLabelForValue(value),
           insertText: this.getInsertTextForValue(value, separatorAfter, type),
-          insertTextFormat: InsertTextFormat.Snippet,
+          insertTextFormat: this.insertTextFormat,
         });
         hasProposals = true;
       });
@@ -1507,7 +1504,7 @@ export class YamlCompletion {
           kind: this.getSuggestionKind(schema.type),
           label: this.getLabelForValue(schema.const),
           insertText: this.getInsertTextForValue(schema.const, separatorAfter, schema.type),
-          insertTextFormat: InsertTextFormat.Snippet,
+          insertTextFormat: this.insertTextFormat,
           documentation: this.fromMarkup(schema.markdownDescription) || schema.description,
         });
       }
@@ -1528,7 +1525,7 @@ export class YamlCompletion {
           kind: this.getSuggestionKind(schema.type),
           label: this.getLabelForValue(enm),
           insertText: this.getInsertTextForValue(enm, separatorAfter, schema.type),
-          insertTextFormat: InsertTextFormat.Snippet,
+          insertTextFormat: this.insertTextFormat,
           documentation: documentation,
         });
       }
@@ -1555,7 +1552,7 @@ export class YamlCompletion {
     settings: StringifySettings,
     arrayDepth = 0
   ): void {
-    if (Array.isArray(schema.defaultSnippets)) {
+    if (this.supportsSnippets && Array.isArray(schema.defaultSnippets)) {
       for (const s of schema.defaultSnippets) {
         let type = schema.type;
         let value = s.body;
@@ -1606,7 +1603,7 @@ export class YamlCompletion {
           sortText: s.sortText || s.label,
           documentation: this.fromMarkup(s.markdownDescription) || s.description,
           insertText,
-          insertTextFormat: InsertTextFormat.Snippet,
+          insertTextFormat: this.insertTextFormat,
           filterText,
         });
       }
@@ -1642,7 +1639,7 @@ export class YamlCompletion {
       kind: this.getSuggestionKind('boolean'),
       label: value ? 'true' : 'false',
       insertText: this.getInsertTextForValue(value, separatorAfter, 'boolean'),
-      insertTextFormat: InsertTextFormat.Snippet,
+      insertTextFormat: this.insertTextFormat,
       documentation: '',
     });
   }
@@ -1652,7 +1649,7 @@ export class YamlCompletion {
       kind: this.getSuggestionKind('null'),
       label: 'null',
       insertText: 'null' + separatorAfter,
-      insertTextFormat: InsertTextFormat.Snippet,
+      insertTextFormat: this.insertTextFormat,
       documentation: '',
     });
   }
@@ -1677,7 +1674,7 @@ export class YamlCompletion {
       kind: this.getSuggestionKind('string'),
       label: label,
       insertText: label + separatorAfter,
-      insertTextFormat: InsertTextFormat.Snippet,
+      insertTextFormat: this.insertTextFormat,
       documentation: '',
     });
   }
