@@ -2,6 +2,7 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import * as path from 'path';
 import { configure as configureHttpRequests, xhr } from 'request-light';
 import type { Connection } from 'vscode-languageserver';
 import { DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
@@ -54,7 +55,6 @@ export class SettingsHandler {
       { section: 'http' },
       { section: '[yaml]' },
       { section: 'editor' },
-      { section: 'files' },
     ]);
     const settings: Readonly<Settings> = {
       yaml: config[0],
@@ -64,7 +64,6 @@ export class SettingsHandler {
       },
       yamlEditor: config[2],
       vscodeEditor: config[3],
-      files: config[4],
     };
     await this.setConfiguration(settings);
   }
@@ -122,13 +121,6 @@ export class SettingsHandler {
         }
       }
 
-      if (settings.files?.associations) {
-        for (const [ext, languageId] of Object.entries(settings.files.associations)) {
-          if (languageId === 'yaml') {
-            this.yamlSettings.fileExtensions.push(ext);
-          }
-        }
-      }
       this.yamlSettings.yamlVersion = settings.yaml.yamlVersion ?? '1.2';
 
       if (settings.yaml.format) {
@@ -275,22 +267,18 @@ export class SettingsHandler {
           versions: schema.versions,
         });
       } else {
-        for (const currFileMatch of fileMatches) {
-          // If the schema is for files with a YAML extension, save the schema association
-          if (
-            this.yamlSettings.fileExtensions.findIndex((value) => {
-              return currFileMatch.indexOf(value) > -1;
-            }) > -1
-          ) {
-            languageSettings.schemas.push({
-              uri: schema.url,
-              fileMatch: [currFileMatch],
-              priority: SchemaPriority.SchemaStore,
-              name: schema.name,
-              description: schema.description,
-              versions: schema.versions,
-            });
-          }
+        const nonJsonFileMatches = fileMatches.filter((fileMatch: string) => {
+          return !['.json', '.jsonc', '.json5'].includes(path.posix.extname(fileMatch));
+        });
+        if (nonJsonFileMatches.length > 0) {
+          languageSettings.schemas.push({
+            uri: schema.url,
+            fileMatch: nonJsonFileMatches,
+            priority: SchemaPriority.SchemaStore,
+            name: schema.name,
+            description: schema.description,
+            versions: schema.versions,
+          });
         }
       }
     }
