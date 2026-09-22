@@ -12,13 +12,16 @@ import * as yamlPlugin from 'prettier/plugins/yaml';
 import * as estreePlugin from 'prettier/plugins/estree';
 import { format } from 'prettier/standalone';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type { TemplateMode } from '../parser/templateMasking';
 
 export class YAMLFormatter {
   private formatterEnabled = true;
+  private templateMode: TemplateMode = 'none';
 
   public configure(shouldFormat: LanguageSettings): void {
     if (shouldFormat) {
       this.formatterEnabled = shouldFormat.format;
+      this.templateMode = shouldFormat.template ?? 'none';
     }
   }
 
@@ -32,6 +35,12 @@ export class YAMLFormatter {
 
     try {
       const text = document.getText();
+
+      // Prettier has no notion of template expressions and would rewrite or
+      // reject them, so a templated document is left untouched.
+      if (this.templateMode !== 'none' && text.includes('{{')) {
+        return [];
+      }
 
       const prettierOptions: Options = {
         parser: 'yaml',
