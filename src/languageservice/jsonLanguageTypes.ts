@@ -329,6 +329,8 @@ export interface ClientCapabilities {
        * capabilities.
        */
       completionItem?: {
+        /** Whether the client supports snippet completion text. */
+        snippetSupport?: boolean;
         /**
          * Client supports the follow content formats for the documentation
          * property. The order describes the preferred format of the client.
@@ -362,6 +364,7 @@ export const ClientCapabilities: { LATEST: ClientCapabilities } = {
     textDocument: {
       completion: {
         completionItem: {
+          snippetSupport: true,
           documentationFormat: [MarkupKind.Markdown, MarkupKind.PlainText],
           commitCharactersSupport: true,
           labelDetailsSupport: true,
