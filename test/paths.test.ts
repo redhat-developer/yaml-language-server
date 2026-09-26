@@ -180,6 +180,7 @@ describe('File path tests', () => {
       const path2 = join('folder-2', 'file.json');
       const path3 = join('carrots', 'file.json');
       const path4 = join('test', 'test.json');
+      const path5 = join('folder-2', 'schemas', 'file.json');
 
       it('Recognises relative path "' + path1 + '"', () => {
         assert(isRelativePath(path1));
@@ -199,6 +200,10 @@ describe('File path tests', () => {
 
       it('Resolves "' + path4 + '" in multi-root nested workspace', () => {
         assert.equal(ws4.resolve(path4), 'file:///c%3A/Users/testuser/dev/test/test.json');
+      });
+
+      it('Resolves "' + path5 + '" in multi-root workspace', () => {
+        assert.equal(ws2.resolve(path5), 'file:///usr/testuser/projects/workspace/folder-2/schemas/file.json');
       });
     });
 
