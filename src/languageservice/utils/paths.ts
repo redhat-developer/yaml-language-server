@@ -17,7 +17,7 @@ export const relativeToAbsolutePath = (workspaceFolders: WorkspaceFolder[], work
       const withoutFolderPrefix = uri.split(sep);
       withoutFolderPrefix.shift();
 
-      return URI.file(join(pathToFolder, withoutFolderPrefix.join())).toString();
+      return URI.file(join(pathToFolder, withoutFolderPrefix.join(sep))).toString();
     }
   }
 
