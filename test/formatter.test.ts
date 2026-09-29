@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import assert from 'assert';
 import * as sinon from 'sinon';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import type { FormattingOptions, TextEdit } from 'vscode-languageserver-types';
 import type { CustomFormatterOptions } from '../src';
 import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
@@ -15,7 +16,9 @@ import { setupLanguageService, setupTextDocument } from './utils/testHelper';
 type LanguageHandlerWithConnection = {
   connection: {
     workspace: {
-      getConfiguration: (item?: { section?: string }) => Promise<unknown>;
+      getConfiguration: (
+        item?: { section?: string; scopeUri?: string } | Array<{ section?: string; scopeUri?: string }>
+      ) => Promise<unknown>;
     };
   };
 };
@@ -67,13 +70,46 @@ describe('Formatter Tests', () => {
         yamlSettings.documents = new TextDocumentTestManager();
         (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
         const connection = (languageHandler as unknown as LanguageHandlerWithConnection).connection;
-        sandbox.stub(connection.workspace, 'getConfiguration').resolves({ 'yaml.format.enable': false });
+        sandbox.stub(connection.workspace, 'getConfiguration').resolves([{}, { 'yaml.format.enable': false }]);
         yamlSettings.hasConfigurationCapability = true;
         const edits = await languageHandler.formatterHandler({
           options: { tabSize: 2, insertSpaces: true },
           textDocument: testTextDocument,
         });
         assert.equal(edits.length, 0);
+      });
+
+      it('Formatting uses resource-scoped settings for each document', async () => {
+        const content = 'root:\n  - child: "text"\n';
+        const singleQuoteDocument = TextDocument.create('file:///workspace/single/test.yaml', 'yaml', 0, content);
+        const doubleQuoteDocument = TextDocument.create('file:///workspace/double/test.yaml', 'yaml', 0, content);
+        yamlSettings.documents = new TextDocumentTestManager();
+        (yamlSettings.documents as TextDocumentTestManager).set(singleQuoteDocument);
+        (yamlSettings.documents as TextDocumentTestManager).set(doubleQuoteDocument);
+        yamlSettings.yamlFormatterSettings = { singleQuote: false, enable: true };
+        yamlSettings.hasConfigurationCapability = true;
+
+        const connection = (languageHandler as unknown as LanguageHandlerWithConnection).connection;
+        const getConfiguration = sandbox.stub(connection.workspace, 'getConfiguration').callsFake(async (items) => {
+          assert.ok(Array.isArray(items));
+          assert.equal(items[0].section, 'yaml.format');
+          assert.equal(items[1].section, '[yaml]');
+          assert.equal(items[0].scopeUri, items[1].scopeUri);
+          return [{ singleQuote: items[0].scopeUri?.includes('/single/') }, {}];
+        });
+
+        const singleQuoteEdits = await languageHandler.formatterHandler({
+          options: { tabSize: 2, insertSpaces: true },
+          textDocument: singleQuoteDocument,
+        });
+        const doubleQuoteEdits = await languageHandler.formatterHandler({
+          options: { tabSize: 2, insertSpaces: true },
+          textDocument: doubleQuoteDocument,
+        });
+
+        assert.equal(singleQuoteEdits[0].newText, "root:\n  - child: 'text'\n");
+        assert.equal(doubleQuoteEdits.length, 0);
+        assert.equal(getConfiguration.callCount, 2);
       });
 
       it('Formatting works with custom tags', async () => {
