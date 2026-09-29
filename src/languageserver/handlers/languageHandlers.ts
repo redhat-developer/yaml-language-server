@@ -35,7 +35,7 @@ import type {
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
 import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
-import type { LanguageService } from '../../languageservice/yamlLanguageService';
+import type { CustomFormatterOptions, LanguageService } from '../../languageservice/yamlLanguageService';
 import type { SettingsState } from '../../yamlSettings';
 import type { ValidationHandler } from './validationHandlers';
 import { ResultLimitReachedNotification } from '../../requestTypes';
@@ -128,14 +128,14 @@ export class LanguageHandlers {
       return [];
     }
 
-    const formatEnabled = await this.resolveFormatterState(document);
-    if (!formatEnabled) {
+    const formatterSettings = await this.resolveFormatterSettings(document);
+    if (formatterSettings.enable === false) {
       return [];
     }
 
     const customFormatterSettings = {
       tabWidth: formatParams.options.tabSize,
-      ...this.yamlSettings.yamlFormatterSettings,
+      ...formatterSettings,
     };
 
     return this.languageService.doFormat(document, customFormatterSettings);
@@ -317,18 +317,31 @@ export class LanguageHandlers {
     };
   }
 
-  private async resolveFormatterState(document: TextDocument): Promise<boolean> {
-    const fallback = this.yamlSettings.yamlFormatterSettings.enable !== false;
+  private async resolveFormatterSettings(document: TextDocument): Promise<CustomFormatterOptions> {
+    const fallback = this.yamlSettings.yamlFormatterSettings;
     if (this.yamlSettings.hasConfigurationCapability && this.connection.workspace?.getConfiguration) {
       try {
-        const scopedLanguageSettings = await this.connection.workspace.getConfiguration({
-          section: `[${document.languageId}]`,
-          scopeUri: document.uri,
-        });
+        const [scopedFormatterSettings, scopedLanguageSettings] = await this.connection.workspace.getConfiguration([
+          {
+            section: 'yaml.format',
+            scopeUri: document.uri,
+          },
+          {
+            section: `[${document.languageId}]`,
+            scopeUri: document.uri,
+          },
+        ]);
+
+        const resolvedSettings = {
+          ...fallback,
+          ...(scopedFormatterSettings ?? {}),
+        };
 
         if (typeof scopedLanguageSettings?.['yaml.format.enable'] === 'boolean') {
-          return scopedLanguageSettings['yaml.format.enable'];
+          resolvedSettings.enable = scopedLanguageSettings['yaml.format.enable'];
         }
+
+        return resolvedSettings;
       } catch {
         // ignore and fall back to global setting
       }
