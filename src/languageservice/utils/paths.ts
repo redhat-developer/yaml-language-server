@@ -12,7 +12,7 @@ export const relativeToAbsolutePath = (workspaceFolders: WorkspaceFolder[], work
   for (const folder of workspaceFolders) {
     // If the requested schema URI specifies a workspace root folder
     // Convert it into an absolute path with the appropriate root folder path
-    if (uri.startsWith(folder.name)) {
+    if (uri.startsWith(folder.name + sep)) {
       const pathToFolder = URI.parse(folder.uri).fsPath;
       const withoutFolderPrefix = uri.split(sep);
       withoutFolderPrefix.shift();
