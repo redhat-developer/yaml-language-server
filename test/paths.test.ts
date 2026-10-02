@@ -215,6 +215,10 @@ describe('File path tests', () => {
       it('Resolves "' + path7 + '" when it starts with a folder name', () => {
         assert.equal(ws4.resolve(path7), 'file:///c%3A/Users/testuser/dev/test2/test.json');
       });
+
+      it('Resolves "test2/schemas/file.json" written with forward slashes', () => {
+        assert.equal(ws4.resolve('test2/schemas/file.json'), 'file:///c%3A/Users/testuser/dev/test2/schemas/file.json');
+      });
     });
 
     describe('Path with mixed delimiters (Windows only)', () => {
