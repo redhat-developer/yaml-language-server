@@ -12,12 +12,11 @@ export const relativeToAbsolutePath = (workspaceFolders: WorkspaceFolder[], work
   for (const folder of workspaceFolders) {
     // If the requested schema URI specifies a workspace root folder
     // Convert it into an absolute path with the appropriate root folder path
-    if (uri.startsWith(folder.name)) {
+    // Settings may use '/' on any platform
+    const rest = uri.slice(folder.name.length);
+    if (uri.startsWith(folder.name) && (rest.startsWith('/') || rest.startsWith(sep))) {
       const pathToFolder = URI.parse(folder.uri).fsPath;
-      const withoutFolderPrefix = uri.split(sep);
-      withoutFolderPrefix.shift();
-
-      return URI.file(join(pathToFolder, withoutFolderPrefix.join(sep))).toString();
+      return URI.file(join(pathToFolder, rest)).toString();
     }
   }
 

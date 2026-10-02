@@ -181,6 +181,8 @@ describe('File path tests', () => {
       const path3 = join('carrots', 'file.json');
       const path4 = join('test', 'test.json');
       const path5 = join('folder-2', 'schemas', 'file.json');
+      const path6 = join('test2', 'test.json');
+      const path7 = 'test.json';
 
       it('Recognises relative path "' + path1 + '"', () => {
         assert(isRelativePath(path1));
@@ -204,6 +206,18 @@ describe('File path tests', () => {
 
       it('Resolves "' + path5 + '" in multi-root workspace', () => {
         assert.equal(ws2.resolve(path5), 'file:///usr/testuser/projects/workspace/folder-2/schemas/file.json');
+      });
+
+      it('Resolves "' + path6 + '" when another folder name is its prefix', () => {
+        assert.equal(ws4.resolve(path6), 'file:///c%3A/Users/testuser/dev/test2/test.json');
+      });
+
+      it('Resolves "' + path7 + '" when it starts with a folder name', () => {
+        assert.equal(ws4.resolve(path7), 'file:///c%3A/Users/testuser/dev/test2/test.json');
+      });
+
+      it('Resolves "test2/schemas/file.json" written with forward slashes', () => {
+        assert.equal(ws4.resolve('test2/schemas/file.json'), 'file:///c%3A/Users/testuser/dev/test2/schemas/file.json');
       });
     });
 
