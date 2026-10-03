@@ -111,7 +111,7 @@ export class YAMLValidation {
     const duplicateMessagesRemoved: Diagnostic[] = [];
     for (let err of validationResult) {
       /**
-       * A patch ontop of the validation that removes the
+       * A patch on top of the validation that removes the
        * 'Matches many schemas' error for kubernetes
        * for a better user experience.
        */

@@ -600,7 +600,7 @@ export class YamlCompletion {
       return index > 0 && value.substring(index, value.length).trim().length === 0;
     };
     if (containsNewLineAfterColon(existingText) || containsNewLineAfterColon(addingText)) {
-      //if the exisiting object null one then replace with the non-null object
+      //if the existing object null one then replace with the non-null object
       if (oneOfSchema && isNullObject(existingText) && !isNullObject(addingText) && !startWithNewLine(addingText)) {
         return addingText;
       }

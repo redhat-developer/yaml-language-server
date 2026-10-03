@@ -197,7 +197,7 @@ describe('Hover Tests', () => {
       );
     });
 
-    it('Hover does not show results when there isnt description field', async () => {
+    it('Hover does not show results when there is no description field', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {

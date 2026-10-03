@@ -896,7 +896,7 @@ address:
       });
     }
 
-    it('Modeline Schema takes precendence over all other schema APIs', async () => {
+    it('Modeline Schema takes precedence over all other schema APIs', async () => {
       languageSettingsSetup
         .withSchemaFileMatch({
           fileMatch: ['test.yaml'],
@@ -960,7 +960,7 @@ address:
       assert.strictEqual(result.items[0].label, 'dollar-schema');
     });
 
-    it('Manually setting schema takes precendence over all other lower priority schemas', async () => {
+    it('Manually setting schema takes precedence over all other lower priority schemas', async () => {
       languageSettingsSetup
         .withSchemaFileMatch({
           fileMatch: ['test.yaml'],
@@ -1007,7 +1007,7 @@ address:
       assert.strictEqual(result.items.length, 0);
     });
 
-    it('SchemaAssociation takes precendence over SchemaStore', async () => {
+    it('SchemaAssociation takes precedence over SchemaStore', async () => {
       languageSettingsSetup
         .withSchemaFileMatch({
           fileMatch: ['test.yaml'],

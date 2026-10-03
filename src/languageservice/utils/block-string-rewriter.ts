@@ -68,13 +68,13 @@ export class BlockStringRewriter {
           // so do not increment i
           continue;
         } else {
-          // It's unconvertable, give up
+          // It's unconvertible, give up
           // Explanation:
           // If the line of text is only whitespace and it's more whitespace than the expected indentation,
           // then it's joined with the previous line with a real newline instead of a space.
           // This means an extra newline gets inserted if we change nothing.
-          // We can avoid this if the preceeding text is a newline,
-          // because we can just remove the preceeding newline to compensate,
+          // We can avoid this if the preceding text is a newline,
+          // because we can just remove the preceding newline to compensate,
           // but if it's not we are SOL
           return null;
         }

@@ -116,7 +116,7 @@ describe('Kubernetes Integration Tests', () => {
      * No longer has those types of validation
      */
     // describe('Test that validation DOES throw errors', function () {
-    //     it('Error when theres no value for a node', async () => {
+    //     it('Error when there is no value for a node', async () => {
     //         const content = 'apiVersion:';
     //         const result = await parseSetup(content);
     //         assert.notEqual(result.length, 0);
