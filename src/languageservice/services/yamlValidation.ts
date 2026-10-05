@@ -6,23 +6,23 @@
 
 import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver-types';
 import type { DiagnosticRelatedInformation } from 'vscode-languageserver-types';
-import type { LanguageSettings } from '../yamlLanguageService';
-import type { YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07';
-import type { YAMLSchemaService } from './yamlSchemaService';
-import type { YAMLDocDiagnostic } from '../utils/parseUtils';
+import type { LanguageSettings } from '../yamlLanguageService.js';
+import type { YamlVersion, SingleYAMLDocument } from '../parser/yamlParser07.js';
+import type { YAMLSchemaService } from './yamlSchemaService.js';
+import type { YAMLDocDiagnostic } from '../utils/parseUtils.js';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
-import { TextBuffer } from '../utils/textBuffer';
-import { filterSuppressedDiagnostics } from '../utils/diagnostic-filter';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
-import type { Telemetry } from '../telemetry';
-import type { AdditionalValidator } from './validation/types';
-import { UnusedAnchorsValidator } from './validation/unused-anchors';
-import { YAMLStyleValidator } from './validation/yaml-style';
-import { MapKeyOrderValidator } from './validation/map-key-order';
-import { getSchemaFromModeline } from './modelineUtil';
-import { isKubernetes as isKubernetesSchemaURI } from '../utils/schemaUrls';
-import type { ErrorCode } from '../jsonLanguageTypes';
+import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator.js';
+import { TextBuffer } from '../utils/textBuffer.js';
+import { filterSuppressedDiagnostics } from '../utils/diagnostic-filter.js';
+import { yamlDocumentsCache } from '../parser/yaml-documents.js';
+import type { Telemetry } from '../telemetry.js';
+import type { AdditionalValidator } from './validation/types.js';
+import { UnusedAnchorsValidator } from './validation/unused-anchors.js';
+import { YAMLStyleValidator } from './validation/yaml-style.js';
+import { MapKeyOrderValidator } from './validation/map-key-order.js';
+import { getSchemaFromModeline } from './modelineUtil.js';
+import { isKubernetes as isKubernetesSchemaURI } from '../utils/schemaUrls.js';
+import type { ErrorCode } from '../jsonLanguageTypes.js';
 
 /**
  * Convert a YAMLDocDiagnostic to a language server Diagnostic

@@ -2,10 +2,12 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import type { TestCustomSchemaProvider } from './utils/testHelper';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
-import { createDiagnosticWithData, createExpectedError } from './utils/verifyError';
-import { ServiceSetup } from './utils/serviceSetup';
+
+import { describe, it, before, after, afterEach } from 'node:test';
+import type { TestCustomSchemaProvider } from './utils/testHelper.js';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
+import { createDiagnosticWithData, createExpectedError } from './utils/verifyError.js';
+import { ServiceSetup } from './utils/serviceSetup.js';
 import {
   StringTypeError,
   BooleanTypeError,
@@ -16,21 +18,22 @@ import {
   DuplicateKeyError,
   propertyIsNotAllowed,
   MissingRequiredPropWarning,
-} from './utils/errorMessages';
+} from './utils/errorMessages.js';
 import assert from 'assert';
-import * as path from 'path';
 import type { Diagnostic } from 'vscode-languageserver-types';
 import { DiagnosticSeverity, Position } from 'vscode-languageserver-types';
 import { expect } from 'chai';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
-import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import type { LanguageService } from '../src/languageservice/yamlLanguageService';
-import type { IProblem } from '../src/languageservice/parser/schemaValidation/baseValidator';
-import type { JSONSchema } from '../src/languageservice/jsonSchema';
-import type { TestTelemetry } from './utils/testsTypes';
-import { ErrorCode } from '../src/languageservice/jsonLanguageTypes';
-import { DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls';
+import type { SettingsState } from '../src/yamlSettings.js';
+import { TextDocumentTestManager } from '../src/yamlSettings.js';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService.js';
+import type { IProblem } from '../src/languageservice/parser/schemaValidation/baseValidator.js';
+import type { JSONSchema } from '../src/languageservice/jsonSchema.js';
+import type { TestTelemetry } from './utils/testsTypes.js';
+import { ErrorCode } from '../src/languageservice/jsonLanguageTypes.js';
+import { DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls.js';
+
+import multipleSimilarSchemas from './fixtures/testMultipleSimilarSchema.json' with { type: 'json' };
 
 const KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/all.json`;
 
@@ -1769,10 +1772,8 @@ spec:
       schemaProvider.deleteSchema(sharedSchemaId);
     });
     it('should distinguish types in error "Incorrect type (Expected "type1 | type2 | type3")"', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
-      schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', schema.sharedSchema);
-      schemaProvider.addSchema(SCHEMA_ID, schema.schema);
+      schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', multipleSimilarSchemas.sharedSchema);
+      schemaProvider.addSchema(SCHEMA_ID, multipleSimilarSchemas.schema);
       const content = 'test_anyOf_objects:\n  ';
       const result = await parseSetup(content);
 
@@ -1785,11 +1786,8 @@ spec:
       ]);
     });
     it('should combine types in "Incorrect type error"', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
-
-      schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', schema.sharedSchema);
-      schemaProvider.addSchema(SCHEMA_ID, schema.schema);
+      schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', multipleSimilarSchemas.sharedSchema);
+      schemaProvider.addSchema(SCHEMA_ID, multipleSimilarSchemas.schema);
       const content = 'test_anyOf_objects:\n  propA:';
       const result = await parseSetup(content);
 
@@ -1798,11 +1796,8 @@ spec:
       assert.strictEqual(result[2].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
     });
     it('should combine const value', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
-
-      schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', schema.sharedSchema);
-      schemaProvider.addSchema(SCHEMA_ID, schema.schema);
+      schemaProvider.addSchemaWithUri(SCHEMA_ID, 'file:///sharedSchema.json', multipleSimilarSchemas.sharedSchema);
+      schemaProvider.addSchema(SCHEMA_ID, multipleSimilarSchemas.schema);
       const content = 'test_anyOf_objects:\n  constA:';
       const result = await parseSetup(content);
 
@@ -1811,11 +1806,8 @@ spec:
       assert.strictEqual(result[3].source, 'yaml-schema: file:///sharedSchema.json | file:///default_schema_id.yaml');
     });
     it('should distinguish types in error: "Missing property from multiple schemas"', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testMultipleSimilarSchema.json'));
-
-      schemaProvider.addSchemaWithUri(sharedSchemaId, 'file:///sharedSchema.json', schema.sharedSchema);
-      schemaProvider.addSchema(SCHEMA_ID, schema.schema);
+      schemaProvider.addSchemaWithUri(sharedSchemaId, 'file:///sharedSchema.json', multipleSimilarSchemas.sharedSchema);
+      schemaProvider.addSchema(SCHEMA_ID, multipleSimilarSchemas.schema);
       const content = 'test_anyOf_objects:\n  someProp:';
       const result = await parseSetup(content);
 

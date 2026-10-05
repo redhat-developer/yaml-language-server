@@ -2,24 +2,27 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as sinon from 'sinon';
+
+import { describe, it, beforeEach, afterEach } from 'node:test';
+import type { SinonSpy } from 'sinon';
+import { createSandbox } from 'sinon';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers';
-import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
-import type { Connection, RemoteClient } from 'vscode-languageserver/node';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { SchemaSelectionRequests } from '../src/requestTypes';
-import { SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper';
+import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers.js';
+import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService.js';
+import type { Connection, RemoteClient } from 'vscode-languageserver/node.js';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
+import { SchemaSelectionRequests } from '../src/requestTypes.js';
+import { SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper.js';
 
 const expect = chai.expect;
 chai.use(sinonChai);
 
 describe('Schema Selection Handlers', () => {
-  const sandbox = sinon.createSandbox();
+  const sandbox = createSandbox();
   const connection: Connection = {} as Connection;
   let service: YAMLSchemaService;
-  let requestServiceMock: sinon.SinonSpy;
+  let requestServiceMock: SinonSpy;
 
   beforeEach(() => {
     requestServiceMock = sandbox.fake.resolves(undefined);

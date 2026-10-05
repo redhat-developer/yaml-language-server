@@ -2,17 +2,19 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
+import { describe, it, before } from 'node:test';
 import * as path from 'path';
-import { setupLanguageService, setupTextDocument, toFsPath } from './utils/testHelper';
+import { setupLanguageService, setupTextDocument, toFsPath } from './utils/testHelper.js';
 import assert from 'assert';
-import { ServiceSetup } from './utils/serviceSetup';
+import { ServiceSetup } from './utils/serviceSetup.js';
 import type { Diagnostic, Hover } from 'vscode-languageserver-types';
 import { MarkupContent } from 'vscode-languageserver-types';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
-import type { LanguageService } from '../src/languageservice/yamlLanguageService';
-import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import type { SettingsState } from '../src/yamlSettings.js';
+import { TextDocumentTestManager } from '../src/yamlSettings.js';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService.js';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
 
 /**
  * Setup the schema we are going to use with the language settings
@@ -27,7 +29,7 @@ describe('Multiple Documents Validation Tests', () => {
   let yamlSettings: SettingsState;
 
   before(() => {
-    const uri = toFsPath(path.join(__dirname, './fixtures/customMultipleSchemaSequences.json'));
+    const uri = toFsPath(path.join(import.meta.dirname, './fixtures/customMultipleSchemaSequences.json'));
     const fileMatch = ['*.yml', '*.yaml'];
     languageSettingsSetup = new ServiceSetup()
       .withHover()

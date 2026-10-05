@@ -2,16 +2,18 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
+import { describe, it, before, afterEach } from 'node:test';
 import assert from 'assert';
-import * as sinon from 'sinon';
+import { createSandbox } from 'sinon';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import type { FormattingOptions, TextEdit } from 'vscode-languageserver-types';
-import type { CustomFormatterOptions } from '../src';
-import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
-import { ServiceSetup } from './utils/serviceSetup';
-import { setupLanguageService, setupTextDocument } from './utils/testHelper';
+import type { CustomFormatterOptions } from '../src/index.js';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
+import type { SettingsState } from '../src/yamlSettings.js';
+import { TextDocumentTestManager } from '../src/yamlSettings.js';
+import { ServiceSetup } from './utils/serviceSetup.js';
+import { setupLanguageService, setupTextDocument } from './utils/testHelper.js';
 
 type LanguageHandlerWithConnection = {
   connection: {
@@ -24,7 +26,7 @@ type LanguageHandlerWithConnection = {
 };
 
 describe('Formatter Tests', () => {
-  const sandbox = sinon.createSandbox();
+  const sandbox = createSandbox();
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
 

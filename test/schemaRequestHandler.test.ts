@@ -3,10 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { schemaRequestHandler } from '../src/languageservice/services/schemaRequestHandler';
-import type { SchemaRequestRetryOptions } from '../src/languageservice/services/schemaRequestHandler';
-import * as sinon from 'sinon';
-import * as request from 'request-light';
+import { describe, it, beforeEach, afterEach } from 'node:test';
+
+import { schemaRequestHandler } from '../src/languageservice/services/schemaRequestHandler.js';
+import type { SchemaRequestRetryOptions } from '../src/languageservice/services/schemaRequestHandler.js';
+import type { SinonStub } from 'sinon';
+import { createSandbox } from 'sinon';
+import request from 'request-light';
 import type { XHRResponse } from 'request-light';
 import type { Connection } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
@@ -15,12 +18,12 @@ import sinonChai from 'sinon-chai';
 
 const expect = chai.expect;
 chai.use(sinonChai);
-import { testFileSystem } from './utils/testHelper';
+import { testFileSystem } from './utils/testHelper.js';
 
 describe('Schema Request Handler Tests', () => {
   describe('schemaRequestHandler', () => {
-    const sandbox = sinon.createSandbox();
-    let readFileStub: sinon.SinonStub;
+    const sandbox = createSandbox();
+    let readFileStub: SinonStub;
 
     beforeEach(() => {
       readFileStub = sandbox.stub(testFileSystem, 'readFile');
@@ -71,8 +74,8 @@ describe('Schema Request Handler Tests', () => {
   });
 
   describe('HTTP(S) schema requests', () => {
-    const sandbox = sinon.createSandbox();
-    let xhrStub: sinon.SinonStub;
+    const sandbox = createSandbox();
+    let xhrStub: SinonStub;
     const connection = {} as Connection;
 
     beforeEach(() => {
@@ -152,8 +155,8 @@ describe('Schema Request Handler Tests', () => {
   });
 
   describe('HTTP(S) schema request retries', () => {
-    const sandbox = sinon.createSandbox();
-    let xhrStub: sinon.SinonStub;
+    const sandbox = createSandbox();
+    let xhrStub: SinonStub;
     let delays: number[];
     const connection = {} as Connection;
 

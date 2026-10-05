@@ -4,19 +4,19 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { JSONDocument } from './jsonDocument';
+import { JSONDocument } from './jsonDocument.js';
 import type { CST, Document, LineCounter, Node, YAMLError } from 'yaml';
 import { isNode, isPair, isScalar, visit } from 'yaml';
-import type { ASTNode, YamlNode } from '../jsonLanguageTypes';
-import type { ParserOptions } from './yamlParser07';
-import { defaultOptions, parse as parseYAML } from './yamlParser07';
-import { ErrorCode } from '../jsonLanguageTypes';
-import { convertAST } from './ast-converter';
-import type { YAMLDocDiagnostic } from '../utils/parseUtils';
-import { isArrayEqual } from '../utils/arrUtils';
-import { getParent } from '../utils/yamlAstUtils';
-import type { TextBuffer } from '../utils/textBuffer';
-import { getIndentation } from '../utils/strings';
+import type { ASTNode, YamlNode } from '../jsonLanguageTypes.js';
+import type { ParserOptions } from './yamlParser07.js';
+import { defaultOptions, parse as parseYAML } from './yamlParser07.js';
+import { ErrorCode } from '../jsonLanguageTypes.js';
+import { convertAST } from './ast-converter.js';
+import type { YAMLDocDiagnostic } from '../utils/parseUtils.js';
+import { isArrayEqual } from '../utils/arrUtils.js';
+import { getParent } from '../utils/yamlAstUtils.js';
+import type { TextBuffer } from '../utils/textBuffer.js';
+import { getIndentation } from '../utils/strings.js';
 
 /**
  * These documents are collected into a final YAMLDocument
@@ -272,6 +272,8 @@ export class YamlDocuments {
   // a mapping of URIs to cached documents
   private cache = new Map<string, YamlCachedDocument>();
 
+  constructor(private readonly parse: typeof parseYAML = parseYAML) {}
+
   /**
    * Get cached YAMLDocument
    * @param document TextDocument to parse
@@ -306,7 +308,7 @@ export class YamlDocuments {
       if (addRootObject && !/\S/.test(text)) {
         text = `{${text}}`;
       }
-      const doc = parseYAML(text, parserOptions, document);
+      const doc = this.parse(text, parserOptions, document);
       cacheEntry.document = doc;
       cacheEntry.version = document.version;
       cacheEntry.parserOptions = parserOptions;

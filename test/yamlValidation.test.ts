@@ -2,16 +2,18 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
+import { describe, it, before, afterEach } from 'node:test';
 import type { Diagnostic } from 'vscode-languageserver-types';
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
-import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
-import { ServiceSetup } from './utils/serviceSetup';
-import { setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
+import type { SettingsState } from '../src/yamlSettings.js';
+import { TextDocumentTestManager } from '../src/yamlSettings.js';
+import { ServiceSetup } from './utils/serviceSetup.js';
+import { setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
 import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
+import { createSandbox } from 'sinon';
+import { createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError.js';
 
 type ValidationHandlerWithConnection = {
   connection: {
@@ -22,7 +24,7 @@ type ValidationHandlerWithConnection = {
 };
 
 describe('YAML Validation Tests', () => {
-  const sandbox = sinon.createSandbox();
+  const sandbox = createSandbox();
   let languageSettingsSetup: ServiceSetup;
   let validationHandler: ValidationHandler;
   let yamlSettings: SettingsState;

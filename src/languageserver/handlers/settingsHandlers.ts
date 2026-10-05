@@ -3,19 +3,19 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as path from 'path';
-import { configure as configureHttpRequests, xhr } from 'request-light';
+import requestLight from 'request-light';
 import type { Connection } from 'vscode-languageserver';
 import { DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
 import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
-import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
-import { checkSchemaURI, EMPTY_SCHEMA_URL, isKubernetes, JSON_SCHEMASTORE_URL } from '../../languageservice/utils/schemaUrls';
-import { equals } from '../../languageservice/utils/objects';
-import type { LanguageService, LanguageSettings, SchemasSettings } from '../../languageservice/yamlLanguageService';
-import { SchemaPriority } from '../../languageservice/yamlLanguageService';
-import { SchemaSelectionRequests } from '../../requestTypes';
-import type { Settings, SettingsState } from '../../yamlSettings';
-import type { Telemetry } from '../../languageservice/telemetry';
-import type { ValidationHandler } from './validationHandlers';
+import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths.js';
+import { checkSchemaURI, EMPTY_SCHEMA_URL, isKubernetes, JSON_SCHEMASTORE_URL } from '../../languageservice/utils/schemaUrls.js';
+import { equals } from '../../languageservice/utils/objects.js';
+import type { LanguageService, LanguageSettings, SchemasSettings } from '../../languageservice/yamlLanguageService.js';
+import { SchemaPriority } from '../../languageservice/yamlLanguageService.js';
+import { SchemaSelectionRequests } from '../../requestTypes.js';
+import type { Settings, SettingsState } from '../../yamlSettings.js';
+import type { Telemetry } from '../../languageservice/telemetry.js';
+import type { ValidationHandler } from './validationHandlers.js';
 
 export class SettingsHandler {
   private schemaSettings: SchemasSettings[] | undefined;
@@ -69,7 +69,7 @@ export class SettingsHandler {
   }
 
   private async setConfiguration(settings: Settings): Promise<void> {
-    configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
+    requestLight.configure(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
 
     this.yamlSettings.specificValidatorPaths = [];
     if (settings.yaml) {
@@ -242,7 +242,7 @@ export class SettingsHandler {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async getSchemaStoreMatchingSchemas(schemaStoreUrl: string): Promise<{ schemas: any[] }> {
-    const response = await xhr({ url: schemaStoreUrl });
+    const response = await requestLight.xhr({ url: schemaStoreUrl });
 
     const languageSettings = {
       schemas: [],

@@ -2,7 +2,9 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { startsWith, endsWith, convertSimple2RegExp, safeCreateUnicodeRegExp } from '../src/languageservice/utils/strings';
+
+import { describe, it } from 'node:test';
+import { startsWith, endsWith, convertSimple2RegExp, safeCreateUnicodeRegExp } from '../src/languageservice/utils/strings.js';
 import assert from 'assert';
 import { expect } from 'chai';
 

@@ -6,14 +6,14 @@
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Position, WorkspaceEdit } from 'vscode-languageserver-types';
 import { Range, TextEdit } from 'vscode-languageserver-types';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
-import { matchOffsetToDocument } from '../utils/arrUtils';
-import { TextBuffer } from '../utils/textBuffer';
-import type { Telemetry } from '../telemetry';
+import { yamlDocumentsCache } from '../parser/yaml-documents.js';
+import { matchOffsetToDocument } from '../utils/arrUtils.js';
+import { TextBuffer } from '../utils/textBuffer.js';
+import type { Telemetry } from '../telemetry.js';
 import type { Node } from 'yaml';
 import { CST, isAlias, isCollection, isScalar, visit } from 'yaml';
-import type { SingleYAMLDocument } from '../parser/yamlParser07';
-import { isCollectionItem } from '../utils/yamlAstUtils';
+import type { SingleYAMLDocument } from '../parser/yamlParser07.js';
+import { isCollectionItem } from '../utils/yamlAstUtils.js';
 import type { PrepareRenameParams, RenameParams } from 'vscode-languageserver-protocol';
 import { ResponseError, ErrorCodes } from 'vscode-languageserver-protocol';
 

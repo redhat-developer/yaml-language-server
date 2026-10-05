@@ -2,21 +2,23 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
+import { describe, it, beforeEach, afterEach } from 'node:test';
 import * as chai from 'chai';
 import * as JSONC from 'jsonc-parser';
 import * as path from 'path';
-import * as sinon from 'sinon';
+import type { SinonFakeTimers, SinonSpy, SinonStub } from 'sinon';
+import { createSandbox } from 'sinon';
 import sinonChai from 'sinon-chai';
-import * as url from 'url';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import * as YAML from 'yaml';
-import type { JSONSchema } from '../src/languageservice/jsonSchema';
-import { parse } from '../src/languageservice/parser/yamlParser07';
-import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
-import { DEFAULT_KUBERNETES_SCHEMA_VERSION, getSchemaUrls } from '../src/languageservice/utils/schemaUrls';
-import { SchemaPriority } from '../src/languageservice/yamlLanguageService';
-import { SettingsState } from '../src/yamlSettings';
+import type { JSONSchema } from '../src/languageservice/jsonSchema.js';
+import { parse } from '../src/languageservice/parser/yamlParser07.js';
+import * as SchemaService from '../src/languageservice/services/yamlSchemaService.js';
+import { DEFAULT_KUBERNETES_SCHEMA_VERSION, getSchemaUrls } from '../src/languageservice/utils/schemaUrls.js';
+import { SchemaPriority } from '../src/languageservice/yamlLanguageService.js';
+import { SettingsState } from '../src/yamlSettings.js';
 
 const BASE_KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/`;
 const KUBERNETES_SCHEMA_URL = BASE_KUBERNETES_SCHEMA_URL + 'all.json';
@@ -25,18 +27,18 @@ const expect = chai.expect;
 chai.use(sinonChai);
 const workspaceContext = {
   resolveRelativePath: (relativePath: string, resource: string) => {
-    return url.resolve(resource, relativePath);
+    return new URL(relativePath, resource).toString();
   },
 };
 
 describe('YAML Schema Service', () => {
-  const sandbox = sinon.createSandbox();
+  const sandbox = createSandbox();
   afterEach(() => {
     sandbox.restore();
   });
 
   describe('Schema for resource', () => {
-    let requestServiceMock: sinon.SinonSpy;
+    let requestServiceMock: SinonSpy;
 
     beforeEach(() => {
       requestServiceMock = sandbox.fake.resolves(undefined);
@@ -125,7 +127,10 @@ describe('YAML Schema Service', () => {
 
       expect(requestServiceMock).calledTwice;
       if (process.platform === 'win32') {
-        const driveLetter = path.parse(__dirname).root.split(':')[0].toLowerCase();
+        const driveLetter = path
+          .parse(import.meta.dirname)
+          .root.split(':')[0]
+          .toLowerCase();
         expect(requestServiceMock).calledWithExactly(`file:///${driveLetter}:/schema.json`);
         expect(requestServiceMock).calledWithExactly(`file:///${driveLetter}:/schema.json#/definitions/schemaArray`);
       } else {
@@ -139,8 +144,8 @@ describe('YAML Schema Service', () => {
     it('should resolve encoded characters in a relative modeline schema path', async () => {
       const content = `# yaml-language-server: $schema=./encoded%20schema.json\nfoo: bar`;
       const yamlDock = parse(content);
-      const resource = URI.file(path.join(__dirname, 'test.yaml')).toString();
-      const expectedSchemaPath = URI.parse(URI.file(path.join(__dirname, 'encoded schema.json')).toString()).fsPath;
+      const resource = URI.file(path.join(import.meta.dirname, 'test.yaml')).toString();
+      const expectedSchemaPath = URI.parse(URI.file(path.join(import.meta.dirname, 'encoded schema.json')).toString()).fsPath;
       requestServiceMock = sandbox.fake.resolves(
         JSON.stringify({
           type: 'object',
@@ -159,13 +164,13 @@ describe('YAML Schema Service', () => {
     });
 
     it('should resolve encoded characters in an absolute modeline schema path', async () => {
-      const rootPath = path.parse(__dirname).root.replace(/\\/g, '/');
+      const rootPath = path.parse(import.meta.dirname).root.replace(/\\/g, '/');
       const encodedSchemaPath = path.posix.join(rootPath, 'encoded%20schema.json');
       const content = `# yaml-language-server: $schema=${encodedSchemaPath}\nfoo: bar`;
       const yamlDock = parse(content);
-      const resource = URI.file(path.join(__dirname, 'test.yaml')).toString();
+      const resource = URI.file(path.join(import.meta.dirname, 'test.yaml')).toString();
       const expectedSchemaPath = URI.parse(
-        URI.file(path.join(path.parse(__dirname).root, 'encoded schema.json')).toString()
+        URI.file(path.join(path.parse(import.meta.dirname).root, 'encoded schema.json')).toString()
       ).fsPath;
       requestServiceMock = sandbox.fake.resolves(
         JSON.stringify({
@@ -1579,7 +1584,7 @@ properties:
   describe('Caching of failed schema loads', () => {
     const SCHEMA_URI = 'https://example.com/schema.json';
     const schemaContent = JSON.stringify({ type: 'object', properties: { foo: { type: 'string' } } });
-    let clock: sinon.SinonFakeTimers;
+    let clock: SinonFakeTimers;
 
     beforeEach(() => {
       clock = sandbox.useFakeTimers({ now: Date.now(), shouldAdvanceTime: false });
@@ -1589,7 +1594,7 @@ properties:
       clock.restore();
     });
 
-    const createService = (requestService: sinon.SinonStub): SchemaService.YAMLSchemaService => {
+    const createService = (requestService: SinonStub): SchemaService.YAMLSchemaService => {
       const service = new SchemaService.YAMLSchemaService(requestService, workspaceContext);
       service.registerExternalSchema(SCHEMA_URI, ['*.yaml']);
       return service;

@@ -2,32 +2,35 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as sinon from 'sinon';
+
+import { describe, it, beforeEach, afterEach } from 'node:test';
+import type { SinonStubbedInstance } from 'sinon';
+import { createSandbox } from 'sinon';
 import sinonChai from 'sinon-chai';
 import * as chai from 'chai';
-import { YamlCodeLens } from '../src/languageservice/services/yamlCodeLens';
-import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
-import { setupTextDocument } from './utils/testHelper';
-import type { JSONSchema } from '../src/languageservice/jsonSchema';
+import { YamlCodeLens } from '../src/languageservice/services/yamlCodeLens.js';
+import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService.js';
+import { setupTextDocument } from './utils/testHelper.js';
+import type { JSONSchema } from '../src/languageservice/jsonSchema.js';
 import type { Command } from 'vscode-languageserver-protocol';
 import { CodeLens, Range } from 'vscode-languageserver-protocol';
 import type { Connection } from 'vscode-languageserver';
-import { YamlCommands } from '../src/commands';
-import { TelemetryImpl } from '../src/languageserver/telemetry';
-import type { Telemetry } from '../src/languageservice/telemetry';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import type { LanguageService } from '../src/languageservice/yamlLanguageService';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import type { SingleYAMLDocument } from '../src/languageservice/parser/yaml-documents';
+import { YamlCommands } from '../src/commands.js';
+import { TelemetryImpl } from '../src/languageserver/telemetry.js';
+import type { Telemetry } from '../src/languageservice/telemetry.js';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService.js';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
+import type { SingleYAMLDocument } from '../src/languageservice/parser/yaml-documents.js';
 
 const expect = chai.expect;
 chai.use(sinonChai);
 
 describe('YAML CodeLens', () => {
-  const sandbox = sinon.createSandbox();
-  let yamlSchemaService: sinon.SinonStubbedInstance<YAMLSchemaService>;
-  let telemetryStub: sinon.SinonStubbedInstance<TelemetryImpl>;
+  const sandbox = createSandbox();
+  let yamlSchemaService: SinonStubbedInstance<YAMLSchemaService>;
+  let telemetryStub: SinonStubbedInstance<TelemetryImpl>;
   let telemetry: Telemetry;
 
   beforeEach(() => {

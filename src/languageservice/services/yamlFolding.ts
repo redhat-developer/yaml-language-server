@@ -3,9 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { FoldingRange, Range } from 'vscode-languageserver-types';
-import type { FoldingRangesContext } from '../yamlTypes';
-import type { ASTNode } from '../jsonLanguageTypes';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
+import type { FoldingRangesContext } from '../yamlTypes.js';
+import type { ASTNode } from '../jsonLanguageTypes.js';
+import { yamlDocumentsCache } from '../parser/yaml-documents.js';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 
 export function getFoldingRanges(document: TextDocument, context: FoldingRangesContext): FoldingRange[] | undefined {

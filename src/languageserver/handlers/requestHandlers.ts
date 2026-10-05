@@ -3,10 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import type { Connection } from 'vscode-languageserver';
-import type { SchemaAdditions, SchemaDeletions, SchemaDeletionsAll } from '../../languageservice/services/yamlSchemaService';
-import { MODIFICATION_ACTIONS } from '../../languageservice/services/yamlSchemaService';
-import type { LanguageService } from '../../languageservice/yamlLanguageService';
-import { SchemaModificationNotification } from '../../requestTypes';
+import type { SchemaAdditions, SchemaDeletions, SchemaDeletionsAll } from '../../languageservice/services/yamlSchemaService.js';
+import { MODIFICATION_ACTIONS } from '../../languageservice/services/yamlSchemaService.js';
+import type { LanguageService } from '../../languageservice/yamlLanguageService.js';
+import { SchemaModificationNotification } from '../../requestTypes.js';
 
 export class RequestHandlers {
   private languageService: LanguageService;

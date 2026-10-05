@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { ExecuteCommandParams, Connection } from 'vscode-languageserver';
-import type { CommandExecutor } from '../commandExecutor';
+import type { CommandExecutor } from '../commandExecutor.js';
 
 export class WorkspaceHandlers {
   constructor(

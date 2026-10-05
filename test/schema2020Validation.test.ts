@@ -2,16 +2,18 @@
  *  Copyright (c) IBM Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import type { TestCustomSchemaProvider } from './utils/testHelper';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
-import { ServiceSetup } from './utils/serviceSetup';
+
+import { describe, it, before, beforeEach, afterEach } from 'node:test';
+import type { TestCustomSchemaProvider } from './utils/testHelper.js';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
+import { ServiceSetup } from './utils/serviceSetup.js';
 import type { Diagnostic } from 'vscode-languageserver-types';
 import { expect } from 'chai';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
-import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls';
-import type { JSONSchema } from '../src/languageservice/jsonSchema';
+import type { SettingsState } from '../src/yamlSettings.js';
+import { TextDocumentTestManager } from '../src/yamlSettings.js';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
+import { DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls.js';
+import type { JSONSchema } from '../src/languageservice/jsonSchema.js';
 
 describe('Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;

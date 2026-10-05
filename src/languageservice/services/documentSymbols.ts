@@ -6,10 +6,10 @@
 
 import { Location, Range, SymbolKind } from 'vscode-languageserver-types';
 import type { DocumentSymbol, SymbolInformation } from 'vscode-languageserver-types';
-import type { DocumentSymbolsContext, ASTNode, PropertyASTNode } from '../jsonLanguageTypes';
+import type { DocumentSymbolsContext, ASTNode, PropertyASTNode } from '../jsonLanguageTypes.js';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
-import type { Telemetry } from '../telemetry';
+import { yamlDocumentsCache } from '../parser/yaml-documents.js';
+import type { Telemetry } from '../telemetry.js';
 import { isMap, isSeq } from 'yaml';
 
 export class YAMLDocumentSymbols {

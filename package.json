@@ -13,6 +13,7 @@
       "name": "Google LLC"
     }
   ],
+  "type": "module",
   "bin": {
     "yaml-language-server": "bin/yaml-language-server"
   },
@@ -25,6 +26,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/redhat-developer/yaml-language-server.git"
+  },
+  "engines": {
+    "node": ">=22.13.0"
   },
   "dependencies": {
     "@vscode/l10n": "^0.0.18",
@@ -44,56 +48,42 @@
   "devDependencies": {
     "@microsoft/eslint-formatter-sarif": "^3.0.0",
     "@types/chai": "^4.2.12",
-    "@types/mocha": "8.2.2",
     "@types/node": "22.x",
     "@types/picomatch": "^4.0.3",
-    "@types/sinon": "^9.0.5",
+    "@types/sinon": "^22.0.0",
     "@types/sinon-chai": "^3.2.5",
     "@typescript-eslint/parser": "^8.59.4",
+    "c8": "^12.0.0",
     "chai": "^4.2.0",
     "eslint": "^10.0.0",
     "eslint-plugin-import-x": "^4.0.0",
     "eslint-plugin-prettier": "^5.0.0",
-    "mocha": "12.0.0",
-    "nyc": "^18.0.0",
     "rimraf": "^3.0.2",
-    "sinon": "^9.0.3",
+    "sinon": "^22.1.0",
     "sinon-chai": "^3.5.0",
-    "source-map-support": "^0.5.19",
     "ts-node": "^10.0.0",
     "typescript": "^6.0.0",
     "typescript-eslint": "^8.59.4"
   },
   "scripts": {
-    "clean": "rimraf out/server && rimraf lib",
+    "clean": "rimraf out/server",
     "compile": "tsc -p .",
     "watch": "tsc --watch -p .",
-    "test": "mocha --require ts-node/register --timeout 10000 --ui bdd ./test/*.test.ts",
-    "coverage": "nyc mocha --require ts-node/register --timeout 10000 --require source-map-support/register --recursive --ui bdd ./test/*.test.ts",
-    "coveralls": "nyc --reporter=lcov --reporter=text mocha --timeout 10000 --require ts-node/register --require source-map-support/register --recursive --ui bdd ./test/*.test.ts",
+    "test": "node --enable-source-maps --experimental-loader=ts-node/esm --test test/*.test.ts",
+    "coveralls": "c8 --reporter=lcov --reporter=text npm test",
     "lint": "eslint --max-warnings 0",
     "lint-ci": "eslint --max-warnings 0 -f @microsoft/eslint-formatter-sarif -o eslint-result.sarif",
     "prettier-fix": "npm run prettier --write .",
-    "build": "npm run clean && npm run lint && npm run compile && npm run build:libs",
-    "build:libs": "npm run compile:umd && npm run compile:esm",
-    "compile:umd": "tsc -p ./tsconfig.umd.json",
-    "compile:esm": "tsc -p ./tsconfig.esm.json",
+    "build": "npm run clean && npm run lint && npm run compile",
     "check-dependencies": "node ./scripts/check-dependencies.js",
     "pull-remote": "git pull https://github.com/redhat-developer/yaml-language-server.git main"
   },
-  "nyc": {
-    "extension": [
-      ".ts",
-      ".tsx"
+  "c8": {
+    "include": [
+      "src/**/*.ts"
     ],
     "exclude": [
-      "**/*.d.ts",
-      "test/",
-      "out",
-      "lib",
-      "coverage/",
-      ".eslintrc.js",
-      "scripts"
+      "**/*.d.ts"
     ],
     "all": true
   }

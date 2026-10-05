@@ -1,4 +1,4 @@
-import type { ASTNode } from '../jsonLanguageTypes';
+import type { ASTNode } from '../jsonLanguageTypes.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getNodeValue(node: ASTNode): any {

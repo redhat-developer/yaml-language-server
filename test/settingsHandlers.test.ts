@@ -3,34 +3,42 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { describe, it, beforeEach, afterEach } from 'node:test';
+
 import * as chai from 'chai';
-import * as request from 'request-light';
-import * as sinon from 'sinon';
+import request from 'request-light';
+import type { SinonMock, SinonStub, SinonStubbedInstance } from 'sinon';
+import { createSandbox, spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver';
 import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
-import type { LanguageService, LanguageSettings, SchemaConfiguration } from '../src';
-import { SchemaPriority } from '../src';
-import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { EMPTY_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
-import type { Telemetry } from '../src/languageservice/telemetry';
-import { SettingsState } from '../src/yamlSettings';
-import { TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument, setupTextDocument } from './utils/testHelper';
-import { TestWorkspace } from './utils/testsTypes';
+import type { LanguageService, LanguageSettings, SchemaConfiguration } from '../src/index.js';
+import { SchemaPriority } from '../src/index.js';
+import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers.js';
+import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
+import { EMPTY_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls.js';
+import type { Telemetry } from '../src/languageservice/telemetry.js';
+import { SettingsState } from '../src/yamlSettings.js';
+import {
+  TestCustomSchemaProvider,
+  setupLanguageService,
+  setupSchemaIDTextDocument,
+  setupTextDocument,
+} from './utils/testHelper.js';
+import { TestWorkspace } from './utils/testsTypes.js';
 
 const expect = chai.expect;
 chai.use(sinonChai);
 
 describe('Settings Handlers Tests', () => {
-  const sandbox = sinon.createSandbox();
+  const sandbox = createSandbox();
   const connection: Connection = {} as Connection;
-  let workspaceStub: sinon.SinonStubbedInstance<RemoteWorkspace>;
+  let workspaceStub: SinonStubbedInstance<RemoteWorkspace>;
   let languageService: LanguageService;
   let settingsState: SettingsState;
-  let validationHandler: sinon.SinonMock;
-  let xhrStub: sinon.SinonStub;
+  let validationHandler: SinonMock;
+  let xhrStub: SinonStub;
 
   beforeEach(() => {
     workspaceStub = sandbox.createStubInstance(TestWorkspace);
@@ -266,7 +274,7 @@ describe('Settings Handlers Tests', () => {
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
-      const configureSpy = sinon.stub(languageService, 'configure');
+      const configureSpy = stub(languageService, 'configure');
       await settingsHandler.pullConfiguration();
       configureSpy.restore();
       expect(settingsState.schemaStoreSettings).deep.include({
@@ -300,7 +308,7 @@ describe('Settings Handlers Tests', () => {
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
-      const configureSpy = sinon.stub(languageService, 'configure');
+      const configureSpy = stub(languageService, 'configure');
 
       await settingsHandler.pullConfiguration();
 
@@ -338,7 +346,7 @@ describe('Settings Handlers Tests', () => {
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
-      const configureSpy = sinon.stub(languageService, 'configure');
+      const configureSpy = stub(languageService, 'configure');
       await settingsHandler.pullConfiguration();
       configureSpy.restore();
       expect(settingsState.schemaStoreSettings.some((schema) => schema.uri === 'https://example.com/config.schema.json')).to.be
@@ -363,7 +371,7 @@ describe('Settings Handlers Tests', () => {
         {} as Telemetry
       );
       workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
-      const configureSpy = sinon.stub(languageService, 'configure');
+      const configureSpy = stub(languageService, 'configure');
       await settingsHandler.pullConfiguration();
       configureSpy.restore();
       expect(settingsState.schemaStoreSettings).deep.include({
@@ -401,7 +409,7 @@ describe('Settings Handlers Tests', () => {
       {} as Telemetry
     );
     workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
-    const configureSpy = sinon.stub(languageService, 'configure');
+    const configureSpy = stub(languageService, 'configure');
     await settingsHandler.pullConfiguration();
     configureSpy.restore();
     expect(settingsState.schemaStoreSettings).deep.include({
@@ -418,7 +426,7 @@ describe('Settings Handlers Tests', () => {
     const testSchemaFileMatch = ['foo/*.yml'];
 
     async function configureSchemaSettingsTest(): Promise<LanguageSettings> {
-      const telemetry = { send: sinon.stub(), sendError: sinon.stub() } as unknown as Telemetry;
+      const telemetry = { send: stub(), sendError: stub() } as unknown as Telemetry;
       const settingsHandler = new SettingsHandler(
         connection,
         languageService,
@@ -426,7 +434,7 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         telemetry
       );
-      const configureSpy = sinon.spy(languageService, 'configure');
+      const configureSpy = spy(languageService, 'configure');
       await settingsHandler.pullConfiguration();
       configureSpy.restore();
       return configureSpy.args[0][0];
@@ -547,7 +555,7 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      const configureSpy = sinon.spy(languageService, 'configure');
+      const configureSpy = spy(languageService, 'configure');
       await settingsHandler.pullConfiguration();
       configureSpy.restore();
       return configureSpy.args[0][0];
@@ -811,7 +819,7 @@ describe('Settings Handlers Tests', () => {
 
       workspaceStub.getConfiguration.resolves([{ schemaStore: { enable: false, url: 'http://shouldnot.activate' } }, {}, {}, {}]);
 
-      // const configureSpy = sinon.spy(languageService, 'configure');
+      // const configureSpy = spy(languageService, 'configure');
       await settingsHandler.pullConfiguration();
       // configureSpy.restore();
       expect(settingsState.schemaStoreEnabled).to.be.false;

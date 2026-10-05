@@ -2,17 +2,19 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { ServiceSetup } from './utils/serviceSetup';
-import type { TestCustomSchemaProvider } from './utils/testHelper';
-import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+
+import { describe, it, before, afterEach } from 'node:test';
+import { ServiceSetup } from './utils/serviceSetup.js';
+import type { TestCustomSchemaProvider } from './utils/testHelper.js';
+import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
 import assert from 'assert';
 import type { Hover } from 'vscode-languageserver-types';
 import { MarkupContent, Position } from 'vscode-languageserver-types';
-import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
+import type { SettingsState } from '../src/yamlSettings.js';
+import { TextDocumentTestManager } from '../src/yamlSettings.js';
 import { expect } from 'chai';
-import type { TestTelemetry } from './utils/testsTypes';
+import type { TestTelemetry } from './utils/testsTypes.js';
 
 describe('Hover Tests', () => {
   let languageSettingsSetup: ServiceSetup;

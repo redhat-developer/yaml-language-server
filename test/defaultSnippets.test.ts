@@ -2,13 +2,15 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { toFsPath, setupSchemaIDTextDocument, setupLanguageService, caretPosition } from './utils/testHelper';
+
+import { describe, it, before } from 'node:test';
+import { toFsPath, setupSchemaIDTextDocument, setupLanguageService, caretPosition } from './utils/testHelper.js';
 import assert from 'assert';
 import * as path from 'path';
-import { ServiceSetup } from './utils/serviceSetup';
-import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
+import { ServiceSetup } from './utils/serviceSetup.js';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
+import type { SettingsState } from '../src/yamlSettings.js';
+import { TextDocumentTestManager } from '../src/yamlSettings.js';
 import type { CompletionList, TextEdit } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 
@@ -17,7 +19,7 @@ describe('Default Snippet Tests', () => {
   let yamlSettings: SettingsState;
 
   before(() => {
-    const uri = toFsPath(path.join(__dirname, './fixtures/defaultSnippets.json'));
+    const uri = toFsPath(path.join(import.meta.dirname, './fixtures/defaultSnippets.json'));
     const fileMatch = ['*.yml', '*.yaml'];
     const languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
       fileMatch,
