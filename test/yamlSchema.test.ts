@@ -2,8 +2,11 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
-import * as sinon from 'sinon';
+
+import { describe, it, beforeEach, afterEach } from 'node:test';
+import * as SchemaService from '../src/languageservice/services/yamlSchemaService.js';
+import type { SinonStub } from 'sinon';
+import { createSandbox } from 'sinon';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 
@@ -17,8 +20,8 @@ const workspaceContext = {
 };
 
 describe('YAML Schema', () => {
-  const sandbox = sinon.createSandbox();
-  let requestServiceStub: sinon.SinonStub;
+  const sandbox = createSandbox();
+  let requestServiceStub: SinonStub;
   beforeEach(() => {
     requestServiceStub = sandbox.stub();
   });

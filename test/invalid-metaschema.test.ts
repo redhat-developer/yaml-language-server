@@ -2,19 +2,22 @@
  *  Copyright (c) IBM Corp. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
+import { describe, it, beforeEach, afterEach } from 'node:test';
 import { assert } from 'chai';
-import * as sinon from 'sinon';
-import type { Connection, RemoteClient } from 'vscode-languageserver/node';
-import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers';
-import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { setupSchemaIDTextDocument } from './utils/testHelper';
+import type { SinonSpy } from 'sinon';
+import { createSandbox } from 'sinon';
+import type { Connection, RemoteClient } from 'vscode-languageserver/node.js';
+import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers.js';
+import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService.js';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
+import { setupSchemaIDTextDocument } from './utils/testHelper.js';
 
 describe('unexpected meta schema', () => {
-  const sandbox = sinon.createSandbox();
+  const sandbox = createSandbox();
   const connection: Connection = {} as Connection;
   let service: YAMLSchemaService;
-  let requestServiceMock: sinon.SinonSpy;
+  let requestServiceMock: SinonSpy;
 
   beforeEach(() => {
     requestServiceMock = sandbox.fake.resolves('{ "$schema": "https://example.com/my-custom-meta-schema/v1", "type": "object" }');

@@ -2,21 +2,22 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
 import { promises as fs } from 'fs';
-import { ClientCapabilities } from '../../src/languageservice/jsonLanguageTypes';
+import { ClientCapabilities } from '../../src/languageservice/jsonLanguageTypes.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import type { Connection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node';
-import { createConnection } from 'vscode-languageserver/node';
-import type { LanguageService, LanguageSettings } from '../../src';
-import type { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers';
-import type { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers';
-import type { JSONSchema } from '../../src/languageservice/jsonSchema';
-import { yamlDocumentsCache } from '../../src/languageservice/parser/yaml-documents';
-import type { FileSystem } from '../../src/languageservice/services/schemaRequestHandler';
-import { schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler';
-import { YAMLServerInit } from '../../src/yamlServerInit';
-import { SettingsState } from '../../src/yamlSettings';
-import { TestTelemetry } from './testsTypes';
+import type { Connection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node.js';
+import { createConnection } from 'vscode-languageserver/node.js';
+import type { LanguageService, LanguageSettings } from '../../src/index.js';
+import type { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers.js';
+import type { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers.js';
+import type { JSONSchema } from '../../src/languageservice/jsonSchema.js';
+import { yamlDocumentsCache } from '../../src/languageservice/parser/yaml-documents.js';
+import type { FileSystem } from '../../src/languageservice/services/schemaRequestHandler.js';
+import { schemaRequestHandler, workspaceContext } from '../../src/languageservice/services/schemaRequestHandler.js';
+import { YAMLServerInit } from '../../src/yamlServerInit.js';
+import { SettingsState } from '../../src/yamlSettings.js';
+import { TestTelemetry } from './testsTypes.js';
 import * as path from 'path';
 
 export function toFsPath(str: unknown): string {
@@ -85,14 +86,13 @@ export function setupLanguageService(languageSettings: LanguageSettings): TestLa
   const schemaRequestService = schemaRequestHandlerWrapper.bind(this, connection);
   const telemetry = new TestTelemetry(connection);
   const serverInit = new YAMLServerInit(connection, yamlSettings, workspaceContext, schemaRequestService, telemetry);
-  const __dirname = path.resolve(path.dirname(__filename), '..');
   serverInit.connectionInitialized({
     processId: null,
     capabilities: ClientCapabilities.LATEST as LSPClientCapabilities,
     rootUri: null,
     workspaceFolders: null,
     initializationOptions: {
-      l10nPath: path.join(__dirname, '../l10n'),
+      l10nPath: path.join(process.cwd(), 'l10n'),
     },
     locale: 'en',
   });

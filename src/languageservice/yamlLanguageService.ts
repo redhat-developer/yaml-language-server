@@ -4,8 +4,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { CustomSchemaProvider, SchemaAdditions, SchemaDeletions, SchemaDeletionsAll } from './services/yamlSchemaService';
-import { YAMLSchemaService } from './services/yamlSchemaService';
+import type { CustomSchemaProvider, SchemaAdditions, SchemaDeletions, SchemaDeletionsAll } from './services/yamlSchemaService.js';
+import { YAMLSchemaService } from './services/yamlSchemaService.js';
 import type {
   Position,
   CodeAction,
@@ -23,13 +23,13 @@ import type {
   Range,
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
-import type { JSONSchema } from './jsonSchema';
-import { YAMLDocumentSymbols } from './services/documentSymbols';
-import { YAMLHover } from './services/yamlHover';
-import { YAMLValidation } from './services/yamlValidation';
-import { YAMLFormatter } from './services/yamlFormatter';
-import type { DocumentSymbolsContext } from './jsonLanguageTypes';
-import { YamlLinks } from './services/yamlLinks';
+import type { JSONSchema } from './jsonSchema.js';
+import { YAMLDocumentSymbols } from './services/documentSymbols.js';
+import { YAMLHover } from './services/yamlHover.js';
+import { YAMLValidation } from './services/yamlValidation.js';
+import { YAMLFormatter } from './services/yamlFormatter.js';
+import type { DocumentSymbolsContext } from './jsonLanguageTypes.js';
+import { YamlLinks } from './services/yamlLinks.js';
 import type {
   ClientCapabilities,
   CodeActionParams,
@@ -40,20 +40,20 @@ import type {
   RenameParams,
 } from 'vscode-languageserver';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { getFoldingRanges } from './services/yamlFolding';
-import type { FoldingRangesContext, SchemaVersions } from './yamlTypes';
-import { YamlCodeActions } from './services/yamlCodeActions';
-import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting';
-import { YamlCodeLens } from './services/yamlCodeLens';
-import type { Telemetry } from './telemetry';
-import type { YamlVersion } from './parser/yamlParser07';
-import { YamlCompletion } from './services/yamlCompletion';
-import { yamlDocumentsCache } from './parser/yaml-documents';
-import type { SettingsState } from '../yamlSettings';
-import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers';
-import { YamlDefinition } from './services/yamlDefinition';
-import { getSelectionRanges } from './services/yamlSelectionRanges';
-import { YamlRename } from './services/yamlRename';
+import { getFoldingRanges } from './services/yamlFolding.js';
+import type { FoldingRangesContext, SchemaVersions } from './yamlTypes.js';
+import { YamlCodeActions } from './services/yamlCodeActions.js';
+import { doDocumentOnTypeFormatting } from './services/yamlOnTypeFormatting.js';
+import { YamlCodeLens } from './services/yamlCodeLens.js';
+import type { Telemetry } from './telemetry.js';
+import type { YamlVersion } from './parser/yamlParser07.js';
+import { YamlCompletion } from './services/yamlCompletion.js';
+import { yamlDocumentsCache } from './parser/yaml-documents.js';
+import type { SettingsState } from '../yamlSettings.js';
+import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionHandlers.js';
+import { YamlDefinition } from './services/yamlDefinition.js';
+import { getSelectionRanges } from './services/yamlSelectionRanges.js';
+import { YamlRename } from './services/yamlRename.js';
 
 export enum SchemaPriority {
   SchemaStore = 1,

@@ -2,17 +2,19 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
+import { describe, it, before, after } from 'node:test';
 import * as l10n from '@vscode/l10n';
 import assert from 'assert';
 import * as path from 'path';
-import type { Connection } from 'vscode-languageserver/node';
-import { createConnection } from 'vscode-languageserver/node';
-import { schemaRequestHandler, workspaceContext } from '../src/languageservice/services/schemaRequestHandler';
-import { setupl10nBundle } from '../src/nodeTranslationSetup';
-import { YAMLServerInit } from '../src/yamlServerInit';
-import { SettingsState } from '../src/yamlSettings';
-import { TestCustomSchemaProvider, testFileSystem } from './utils/testHelper';
-import { TestTelemetry } from './utils/testsTypes';
+import type { Connection } from 'vscode-languageserver/node.js';
+import { createConnection } from 'vscode-languageserver/node.js';
+import { schemaRequestHandler, workspaceContext } from '../src/languageservice/services/schemaRequestHandler.js';
+import { setupl10nBundle } from '../src/nodeTranslationSetup.js';
+import { YAMLServerInit } from '../src/yamlServerInit.js';
+import { SettingsState } from '../src/yamlSettings.js';
+import { TestCustomSchemaProvider, testFileSystem } from './utils/testHelper.js';
+import { TestTelemetry } from './utils/testsTypes.js';
 
 describe('Bundle l10n Test', () => {
   let serverInit: YAMLServerInit;
@@ -49,7 +51,7 @@ describe('Bundle l10n Test', () => {
       rootUri: '',
       capabilities: undefined,
       initializationOptions: {
-        l10nPath: path.join(__dirname, '../l10n'),
+        l10nPath: path.join(process.cwd(), 'l10n'),
       },
     });
   });
@@ -62,7 +64,7 @@ describe('Bundle l10n Test', () => {
         rootUri: '',
         capabilities: undefined,
         initializationOptions: {
-          l10nPath: path.join(__dirname, '../l10n'),
+          l10nPath: path.join(process.cwd(), 'l10n'),
         },
       });
       assert.equal(l10n.t('Default value'), 'Valeur par défaut');
@@ -75,7 +77,7 @@ describe('Bundle l10n Test', () => {
         rootUri: '',
         capabilities: undefined,
         initializationOptions: {
-          l10nPath: path.join(__dirname, '../l10n'),
+          l10nPath: path.join(process.cwd(), 'l10n'),
         },
       });
       assert.equal(l10n.t('Default value'), 'Default value');

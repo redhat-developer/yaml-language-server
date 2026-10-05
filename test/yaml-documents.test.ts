@@ -3,26 +3,29 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as sinon from 'sinon';
+import { describe, it, beforeEach, afterEach } from 'node:test';
+
+import type { SinonStub } from 'sinon';
+import { createSandbox } from 'sinon';
 import sinonChai from 'sinon-chai';
 import * as chai from 'chai';
-import { YamlDocuments } from '../src/languageservice/parser/yaml-documents';
-import { setupTextDocument } from './utils/testHelper';
-import * as yamlParser from '../src/languageservice/parser/yamlParser07';
+import { YamlDocuments } from '../src/languageservice/parser/yaml-documents.js';
+import { setupTextDocument } from './utils/testHelper.js';
+import type { ParserOptions } from '../src/languageservice/parser/yamlParser07.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
 import { isMap, isScalar, isSeq } from 'yaml';
-import { TextBuffer } from '../src/languageservice/utils/textBuffer';
+import { TextBuffer } from '../src/languageservice/utils/textBuffer.js';
 
 const expect = chai.expect;
 chai.use(sinonChai);
 describe('YAML Documents', () => {
-  const sandbox = sinon.createSandbox();
+  const sandbox = createSandbox();
   describe('YAML Documents Cache Tests', () => {
-    let parseStub: sinon.SinonStub;
+    let parseStub: SinonStub;
 
     beforeEach(() => {
-      parseStub = sandbox.stub(yamlParser, 'parse');
+      parseStub = sandbox.stub();
     });
 
     afterEach(() => {
@@ -30,7 +33,7 @@ describe('YAML Documents', () => {
     });
 
     it('should cache parsed document', () => {
-      const cache = new YamlDocuments();
+      const cache = new YamlDocuments(parseStub);
       const doc = setupTextDocument('foo: bar');
       parseStub.returns({});
 
@@ -42,7 +45,7 @@ describe('YAML Documents', () => {
     });
 
     it('should re parse document if document changed', () => {
-      const cache = new YamlDocuments();
+      const cache = new YamlDocuments(parseStub);
       const doc = setupTextDocument('foo: bar');
 
       parseStub.onFirstCall().returns({});
@@ -57,7 +60,7 @@ describe('YAML Documents', () => {
     });
 
     it('should invalidate cache if custom tags provided', () => {
-      const cache = new YamlDocuments();
+      const cache = new YamlDocuments(parseStub);
       const doc = setupTextDocument('foo: bar');
       parseStub.onFirstCall().returns({});
       parseStub.onSecondCall().returns({ foo: 'bar' });
@@ -70,7 +73,7 @@ describe('YAML Documents', () => {
     });
 
     it('should use cache if custom tags are same', () => {
-      const cache = new YamlDocuments();
+      const cache = new YamlDocuments(parseStub);
       const doc = setupTextDocument('foo: bar');
       parseStub.onFirstCall().returns({});
       parseStub.onSecondCall().returns({ foo: 'bar' });
@@ -249,6 +252,6 @@ objB:
   });
 });
 
-function getParserOptions(customTags: string[]): yamlParser.ParserOptions {
+function getParserOptions(customTags: string[]): ParserOptions {
   return { customTags, yamlVersion: '1.2' };
 }

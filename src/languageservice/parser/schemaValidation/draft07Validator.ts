@@ -3,10 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { JSONSchema } from '../../jsonSchema';
-import { SchemaDraft } from '../../jsonLanguageTypes';
-import { isNumber } from '../../utils/objects';
-import { BaseValidator } from './baseValidator';
+import type { JSONSchema } from '../../jsonSchema.js';
+import { SchemaDraft } from '../../jsonLanguageTypes.js';
+import { isNumber } from '../../utils/objects.js';
+import { BaseValidator } from './baseValidator.js';
 
 export class Draft07Validator extends BaseValidator {
   protected override getCurrentSchemaDraft(): SchemaDraft {

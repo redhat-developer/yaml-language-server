@@ -620,7 +620,7 @@ Use `npm test` to run tests.
 
 ### Module builds
 
-Building YAML Language Server produces [CommonJS](http://www.commonjs.org/) output in the `out/server/src` directory. In addition, a build also produces [UMD](https://github.com/umdjs/umd) (Universal Module Definition) modules and [ES Modules](https://tc39.es/ecma262/#sec-modules) (ESM) in the `lib` directory. These module formats support different server-side module loaders and browser bundlers such as webpack.
+Building YAML Language Server produces [ES Modules](https://tc39.es/ecma262/#sec-modules) (ESM) and declarations in the `out/server/src` directory.
 
 ### CI
 

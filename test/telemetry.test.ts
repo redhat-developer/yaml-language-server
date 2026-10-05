@@ -2,11 +2,14 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as sinon from 'sinon';
+
+import { describe, it, beforeEach, afterEach } from 'node:test';
+import type { SinonStubbedInstance } from 'sinon';
+import { createSandbox } from 'sinon';
 import sinonChai from 'sinon-chai';
 import * as chai from 'chai';
-import { checkSchemaURI } from '../src/languageservice/utils/schemaUrls';
-import { TelemetryImpl } from '../src/languageserver/telemetry';
+import { checkSchemaURI } from '../src/languageservice/utils/schemaUrls.js';
+import { TelemetryImpl } from '../src/languageserver/telemetry.js';
 import { URI } from 'vscode-uri';
 import type { Connection } from 'vscode-languageserver';
 
@@ -14,9 +17,9 @@ const expect = chai.expect;
 chai.use(sinonChai);
 
 describe('Telemetry Tests', () => {
-  const sandbox = sinon.createSandbox();
+  const sandbox = createSandbox();
 
-  let telemetry: sinon.SinonStubbedInstance<TelemetryImpl>;
+  let telemetry: SinonStubbedInstance<TelemetryImpl>;
   beforeEach(() => {
     const telemetryInstance = new TelemetryImpl({} as Connection);
     telemetry = sandbox.stub(telemetryInstance);

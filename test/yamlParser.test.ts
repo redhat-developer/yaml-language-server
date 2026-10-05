@@ -2,12 +2,14 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
+import { describe, it } from 'node:test';
 import assert from 'assert';
 import { expect } from 'chai';
-import type { ArrayASTNode, ObjectASTNode, PropertyASTNode } from '../src/languageservice/jsonLanguageTypes';
-import type { YAMLDocument } from './../src/languageservice/parser/yamlParser07';
-import { parse } from './../src/languageservice/parser/yamlParser07';
-import { aliasDepth } from '../src/languageservice/parser/ast-converter';
+import type { ArrayASTNode, ObjectASTNode, PropertyASTNode } from '../src/languageservice/jsonLanguageTypes.js';
+import type { YAMLDocument } from './../src/languageservice/parser/yamlParser07.js';
+import { parse } from './../src/languageservice/parser/yamlParser07.js';
+import { aliasDepth } from '../src/languageservice/parser/ast-converter.js';
 
 describe('YAML parser', () => {
   describe('YAML parser', function () {

@@ -3,11 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as sinon from 'sinon';
+import { describe, it, beforeEach, afterEach } from 'node:test';
+
+import type { SinonStub } from 'sinon';
+import { createSandbox, match } from 'sinon';
 import sinonChai from 'sinon-chai';
 import * as chai from 'chai';
-import { registerCommands } from '../src/languageservice/services/yamlCommands';
-import { commandExecutor } from '../src/languageserver/commandExecutor';
+import { registerCommands } from '../src/languageservice/services/yamlCommands.js';
+import { commandExecutor } from '../src/languageserver/commandExecutor.js';
 import type { Connection } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 
@@ -16,9 +19,9 @@ chai.use(sinonChai);
 
 describe('Yaml Commands', () => {
   const JSON_SCHEMA_LOCAL = 'file://some/path/schema.json';
-  const sandbox = sinon.createSandbox();
+  const sandbox = createSandbox();
 
-  let commandExecutorStub: sinon.SinonStub;
+  let commandExecutorStub: SinonStub;
 
   beforeEach(() => {
     commandExecutorStub = sandbox.stub(commandExecutor, 'registerCommand');
@@ -30,7 +33,7 @@ describe('Yaml Commands', () => {
 
   it('should register handler for "JumpToSchema" command', () => {
     registerCommands(commandExecutor, {} as Connection);
-    expect(commandExecutorStub).to.have.been.calledWithMatch(sinon.match('jumpToSchema'), sinon.match.func);
+    expect(commandExecutorStub).to.have.been.calledWithMatch(match('jumpToSchema'), match.func);
   });
 
   it('JumpToSchema handler should call "showDocument"', async () => {

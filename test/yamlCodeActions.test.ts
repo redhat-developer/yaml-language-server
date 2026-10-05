@@ -3,10 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as sinon from 'sinon';
+import { describe, it, beforeEach, afterEach } from 'node:test';
+
+import { createSandbox } from 'sinon';
 import sinonChai from 'sinon-chai';
 import * as chai from 'chai';
-import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions';
+import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions.js';
 import {
   CodeAction,
   CodeActionContext,
@@ -19,11 +21,11 @@ import {
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
 import type { ClientCapabilities, CodeActionParams } from 'vscode-languageserver';
-import { setupTextDocument, TEST_URI } from './utils/testHelper';
-import { createDiagnosticWithData, createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError';
-import { YamlCommands } from '../src/commands';
-import type { LanguageSettings } from '../src';
-import { ErrorCode } from '../src/languageservice/jsonLanguageTypes';
+import { setupTextDocument, TEST_URI } from './utils/testHelper.js';
+import { createDiagnosticWithData, createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError.js';
+import { YamlCommands } from '../src/commands.js';
+import type { LanguageSettings } from '../src/index.js';
+import { ErrorCode } from '../src/languageservice/jsonLanguageTypes.js';
 
 const expect = chai.expect;
 chai.use(sinonChai);
@@ -32,7 +34,7 @@ const JSON_SCHEMA_LOCAL = 'file://some/path/schema.json';
 const JSON_SCHEMA2_LOCAL = 'file://some/path/schema2.json';
 
 describe('CodeActions Tests', () => {
-  const sandbox = sinon.createSandbox();
+  const sandbox = createSandbox();
 
   let clientCapabilities: ClientCapabilities;
   beforeEach(() => {

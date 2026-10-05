@@ -2,13 +2,15 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { setupLanguageService, setupTextDocument } from './utils/testHelper';
-import { ServiceSetup } from './utils/serviceSetup';
-import { createExpectedError } from './utils/verifyError';
+
+import { describe, it, before } from 'node:test';
+import { setupLanguageService, setupTextDocument } from './utils/testHelper.js';
+import { ServiceSetup } from './utils/serviceSetup.js';
+import { createExpectedError } from './utils/verifyError.js';
 import assert from 'assert';
 import type { Diagnostic } from 'vscode-languageserver-types';
-import type { LanguageService } from '../src/languageservice/yamlLanguageService';
-import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService.js';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
 
 // Defines a Mocha test describe to group tests of similar kind together
 describe('Custom Tag tests Tests', () => {
