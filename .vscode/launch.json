@@ -8,37 +8,41 @@
       "request": "attach",
       "port": 6009,
       "sourceMaps": true,
-      "outFiles": ["${workspaceRoot}/out/server/**/*.ts"],
+      "outFiles": ["${workspaceRoot}/out/server/**/*.js"],
       "protocol": "inspector",
       "trace": true,
       "preLaunchTask": "watch typescript",
     },
-    // A launch configuration that compiles the server and runs mocha unit tests
+    // A launch configuration that compiles the server and runs tests with Node's test runner
     {
       "type": "node",
       "request": "launch",
       "name": "Launch Tests",
-      "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
-      "args": ["-u", "bdd", "--timeout", "999999", "--colors", "-r", "ts-node/register", "${workspaceRoot}/test/*.test.ts"],
-      "preLaunchTask": "watch typescript",
+      "runtimeArgs": ["--enable-source-maps", "--test"],
+      "args": ["${workspaceFolder}/out/server/test/*.test.js"],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "npm: compile",
       "resolveSourceMapLocations": [
         "${workspaceFolder}/**",
         "!**/node_modules/**"
       ],
+      "console": "integratedTerminal",
     },
-    // A launch configuration that compiles the server and runs mocha unit tests
+    // A launch configuration that compiles the server and runs the currently open test file
     {
       "type": "node",
       "request": "launch",
       "name": "Launch Single File Tests",
-      "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
-      "args": ["-u", "bdd", "--timeout", "999999", "--colors", "-r", "ts-node/register", "${workspaceRoot}/${relativeFile}"],
-      "preLaunchTask": "watch typescript",
+      "runtimeArgs": ["--enable-source-maps", "--test"],
+      "args": ["${workspaceFolder}/out/server/test/${fileBasenameNoExtension}.js"],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "npm: compile",
       "sourceMaps": true,
       "resolveSourceMapLocations": [
         "${workspaceFolder}/**",
         "!**/node_modules/**"
       ],
+      "console": "integratedTerminal",
     }
   ]
 }
