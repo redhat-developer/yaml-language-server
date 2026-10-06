@@ -14,7 +14,6 @@ import type { SettingsState } from '../src/yamlSettings.js';
 import { TextDocumentTestManager } from '../src/yamlSettings.js';
 import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
 
-// Defines a Mocha test describe to group tests of similar kind together
 describe('Kubernetes Integration Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageHandler: LanguageHandlers;

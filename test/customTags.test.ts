@@ -12,7 +12,6 @@ import type { Diagnostic } from 'vscode-languageserver-types';
 import type { LanguageService } from '../src/languageservice/yamlLanguageService.js';
 import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
 
-// Defines a Mocha test describe to group tests of similar kind together
 describe('Custom Tag tests Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageService: LanguageService;

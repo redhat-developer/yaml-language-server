@@ -4,8 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { describe, it, before } from 'node:test';
-import * as path from 'path';
-import { setupLanguageService, setupTextDocument, toFsPath } from './utils/testHelper.js';
+import { setupLanguageService, setupTextDocument } from './utils/testHelper.js';
 import assert from 'assert';
 import { ServiceSetup } from './utils/serviceSetup.js';
 import type { Diagnostic, Hover } from 'vscode-languageserver-types';
@@ -16,11 +15,12 @@ import type { LanguageService } from '../src/languageservice/yamlLanguageService
 import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
 import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
 
+import multipleDocumentsSchema from './fixtures/customMultipleSchemaSequences.json' with { type: 'json' };
+
 /**
  * Setup the schema we are going to use with the language settings
  */
 
-// Defines a Mocha test describe to group tests of similar kind together
 describe('Multiple Documents Validation Tests', () => {
   let languageSettingsSetup: ServiceSetup;
   let languageHandler: LanguageHandlers;
@@ -29,7 +29,7 @@ describe('Multiple Documents Validation Tests', () => {
   let yamlSettings: SettingsState;
 
   before(() => {
-    const uri = toFsPath(path.join(import.meta.dirname, './fixtures/customMultipleSchemaSequences.json'));
+    const uri = new URL('./fixtures/customMultipleSchemaSequences.json', import.meta.url).href;
     const fileMatch = ['*.yml', '*.yaml'];
     languageSettingsSetup = new ServiceSetup()
       .withHover()
@@ -38,6 +38,7 @@ describe('Multiple Documents Validation Tests', () => {
       .withSchemaFileMatch({
         fileMatch,
         uri,
+        schema: multipleDocumentsSchema,
       })
       .withCustomTags(['!Test', '!Ref sequence']);
     const {
