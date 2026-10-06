@@ -3,7 +3,6 @@ import assert from 'assert';
 import * as parser from '../src/languageservice/parser/yamlParser07.js';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService.js';
 import type * as JsonSchema from '../src/languageservice/jsonSchema.js';
-import * as path from 'path';
 import requestLight from 'request-light';
 import type { SchemaDeletions } from '../src/languageservice/services/yamlSchemaService.js';
 import { MODIFICATION_ACTIONS } from '../src/languageservice/services/yamlSchemaService.js';
@@ -26,6 +25,9 @@ import schemaAssociationSample from './fixtures/sample-association.json' with { 
 import schemaStoreSample from './fixtures/sample-schemastore.json' with { type: 'json' };
 import schemaSettingsSample from './fixtures/sample-settings.json' with { type: 'json' };
 import schemaDefaultSnippetSample from './fixtures/defaultSnippets-const-if-else.json' with { type: 'json' };
+
+import schemaModelineSample from './fixtures/sample-modeline.json' with { type: 'json' };
+import schemaDollarSample from './fixtures/sample-dollar-schema.json' with { type: 'json' };
 
 const KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/all.json`;
 
@@ -859,13 +861,16 @@ address:
   });
 
   describe('Test schema priority', function () {
-    const schemaModelineSample = path.join(import.meta.dirname, './fixtures/sample-modeline.json');
-    const schemaDollarSample = path.join(import.meta.dirname, './fixtures/sample-dollar-schema.json');
+    const modelineSchemaUri = new URL('./fixtures/sample-modeline.json', import.meta.url).href;
+    const dollarSchemaUri = new URL('./fixtures/sample-dollar-schema.json', import.meta.url).href;
 
     let languageSettingsSetup: ServiceSetup;
 
     beforeEach(() => {
-      languageSettingsSetup = new ServiceSetup().withCompletion();
+      languageSettingsSetup = new ServiceSetup()
+        .withCompletion()
+        .withSchemaFileMatch({ uri: modelineSchemaUri, fileMatch: [], schema: schemaModelineSample })
+        .withSchemaFileMatch({ uri: dollarSchemaUri, fileMatch: [], schema: schemaDollarSample });
     });
 
     for (const { description, uri } of [
@@ -923,7 +928,7 @@ address:
       languageService.configure(languageSettingsSetup.languageSettings);
       languageService.registerCustomSchemaProvider((uri: string) => Promise.resolve(uri));
       const testTextDocument = setupTextDocument(
-        `# yaml-language-server: $schema=${schemaModelineSample}\n$schema: ${schemaDollarSample}\n\n`
+        `# yaml-language-server: $schema=${modelineSchemaUri}\n$schema: ${dollarSchemaUri}\n\n`
       );
       const result = await languageService.doComplete(testTextDocument, Position.create(1, 0), false);
       assert.strictEqual(result.items.length, 1);
@@ -952,7 +957,7 @@ address:
         });
       languageService.configure(languageSettingsSetup.languageSettings);
       languageService.registerCustomSchemaProvider((uri: string) => Promise.resolve(uri));
-      const testTextDocument = setupTextDocument(`$schema: ${schemaDollarSample}\n\n`);
+      const testTextDocument = setupTextDocument(`$schema: ${dollarSchemaUri}\n\n`);
       const result = await languageService.doComplete(testTextDocument, Position.create(1, 0), false);
       assert.strictEqual(result.items.length, 1);
       assert.strictEqual(result.items[0].label, 'dollar-schema');

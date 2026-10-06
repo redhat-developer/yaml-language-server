@@ -4,9 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { describe, it, before } from 'node:test';
-import { toFsPath, setupSchemaIDTextDocument, setupLanguageService, caretPosition } from './utils/testHelper.js';
+import { setupSchemaIDTextDocument, setupLanguageService, caretPosition } from './utils/testHelper.js';
 import assert from 'assert';
-import * as path from 'path';
 import { ServiceSetup } from './utils/serviceSetup.js';
 import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
 import type { SettingsState } from '../src/yamlSettings.js';
@@ -14,16 +13,19 @@ import { TextDocumentTestManager } from '../src/yamlSettings.js';
 import type { CompletionList, TextEdit } from 'vscode-languageserver-types';
 import { expect } from 'chai';
 
+import defaultSnippetsSchema from './fixtures/defaultSnippets.json' with { type: 'json' };
+
 describe('Default Snippet Tests', () => {
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
 
   before(() => {
-    const uri = toFsPath(path.join(import.meta.dirname, './fixtures/defaultSnippets.json'));
+    const uri = new URL('./fixtures/defaultSnippets.json', import.meta.url).href;
     const fileMatch = ['*.yml', '*.yaml'];
     const languageSettingsSetup = new ServiceSetup().withCompletion().withSchemaFileMatch({
       fileMatch,
       uri,
+      schema: defaultSnippetsSchema,
     });
     const { languageHandler: langHandler, yamlSettings: settings } = setupLanguageService(languageSettingsSetup.languageSettings);
     languageHandler = langHandler;

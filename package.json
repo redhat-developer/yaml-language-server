@@ -61,7 +61,6 @@
     "rimraf": "^3.0.2",
     "sinon": "^22.1.0",
     "sinon-chai": "^3.5.0",
-    "ts-node": "^10.0.0",
     "typescript": "^6.0.0",
     "typescript-eslint": "^8.59.4"
   },
@@ -69,7 +68,7 @@
     "clean": "rimraf out/server",
     "compile": "tsc -p .",
     "watch": "tsc --watch -p .",
-    "test": "node --enable-source-maps --experimental-loader=ts-node/esm --test test/*.test.ts",
+    "test": "npm run compile && node --enable-source-maps --test out/server/test/*.test.js",
     "coveralls": "c8 --reporter=lcov --reporter=text npm test",
     "lint": "eslint --max-warnings 0",
     "lint-ci": "eslint --max-warnings 0 -f @microsoft/eslint-formatter-sarif -o eslint-result.sarif",
@@ -85,6 +84,7 @@
     "exclude": [
       "**/*.d.ts"
     ],
-    "all": true
+    "all": true,
+    "exclude-after-remap": true
   }
 }
