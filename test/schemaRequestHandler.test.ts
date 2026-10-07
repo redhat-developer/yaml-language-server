@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { schemaRequestHandler } from '../src/languageservice/services/schemaRequestHandler';
+import { schemaRequestHandler, workspaceContext } from '../src/languageservice/services/schemaRequestHandler';
 import type { SchemaRequestRetryOptions } from '../src/languageservice/services/schemaRequestHandler';
 import * as sinon from 'sinon';
 import * as request from 'request-light';
@@ -18,6 +18,53 @@ chai.use(sinonChai);
 import { testFileSystem } from './utils/testHelper';
 
 describe('Schema Request Handler Tests', () => {
+  describe('workspaceContext', () => {
+    const cases = [
+      {
+        name: 'relative HTTP schema references',
+        resource: 'https://example.com/schemas/root.json',
+        relativePath: '../shared.json#/definitions/value',
+        expected: 'https://example.com/shared.json#/definitions/value',
+      },
+      {
+        name: 'absolute schema references',
+        resource: 'https://example.com/schemas/root.json',
+        relativePath: 'https://other.example.com/schema.json',
+        expected: 'https://other.example.com/schema.json',
+      },
+      {
+        name: 'schema fragments',
+        resource: 'https://example.com/schema.json',
+        relativePath: '#/definitions/value',
+        expected: 'https://example.com/schema.json#/definitions/value',
+      },
+      {
+        name: 'file URLs with encoded spaces',
+        resource: 'file:///home/user/my%20schemas/root.json',
+        relativePath: './other%20schema.json',
+        expected: 'file:///home/user/my%20schemas/other%20schema.json',
+      },
+      {
+        name: 'Windows file URLs',
+        resource: 'file:///c%3A/Users/user/schemas/root.json',
+        relativePath: '../shared.json',
+        expected: 'file:///c%3A/Users/user/shared.json',
+      },
+      {
+        name: 'custom document schemes',
+        resource: 'vscode-test:///workspace/schemas/root.json',
+        relativePath: '../shared.json',
+        expected: 'vscode-test:///workspace/shared.json',
+      },
+    ];
+
+    for (const { name, resource, relativePath, expected } of cases) {
+      it(`should resolve ${name}`, () => {
+        expect(workspaceContext.resolveRelativePath(relativePath, resource)).to.equal(expected);
+      });
+    }
+  });
+
   describe('schemaRequestHandler', () => {
     const sandbox = sinon.createSandbox();
     let readFileStub: sinon.SinonStub;

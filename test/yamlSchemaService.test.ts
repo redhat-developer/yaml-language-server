@@ -7,7 +7,6 @@ import * as JSONC from 'jsonc-parser';
 import * as path from 'path';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import * as url from 'url';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import * as YAML from 'yaml';
@@ -25,7 +24,7 @@ const expect = chai.expect;
 chai.use(sinonChai);
 const workspaceContext = {
   resolveRelativePath: (relativePath: string, resource: string) => {
-    return url.resolve(resource, relativePath);
+    return new URL(relativePath, resource).toString();
   },
 };
 

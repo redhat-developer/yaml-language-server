@@ -2,7 +2,6 @@ import assert from 'assert';
 import * as parser from '../src/languageservice/parser/yamlParser07';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
 import type * as JsonSchema from '../src/languageservice/jsonSchema';
-import * as url from 'url';
 import * as path from 'path';
 import { xhr } from 'request-light';
 import type { SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
@@ -30,7 +29,7 @@ const requestServiceMock = function (uri: string): Promise<string> {
 
 const workspaceContext = {
   resolveRelativePath: (relativePath: string, resource: string) => {
-    return url.resolve(resource, relativePath);
+    return new URL(relativePath, resource).toString();
   },
 };
 
