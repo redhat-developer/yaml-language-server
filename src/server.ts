@@ -6,8 +6,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { promises as fs } from 'fs';
-import type { Connection } from 'vscode-languageserver/node.js';
-import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
+import type { Connection } from 'vscode-languageserver/node';
+import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import { TelemetryImpl } from './languageserver/telemetry.js';
 import { schemaRequestHandler, workspaceContext } from './languageservice/services/schemaRequestHandler.js';
 import { convertErrorToTelemetryMsg } from './languageservice/utils/objects.js';

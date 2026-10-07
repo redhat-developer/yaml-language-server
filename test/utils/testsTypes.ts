@@ -25,6 +25,7 @@ import type { TelemetryEvent } from '../../src/languageservice/telemetry.js';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export class TestWorkspace implements RemoteWorkspace {
   connection: Connection;
+  textDocumentContent: RemoteWorkspace['textDocumentContent'];
   applyEdit(paramOrEdit: ApplyWorkspaceEditParams | WorkspaceEdit): Promise<ApplyWorkspaceEditResponse> {
     throw new Error('Method not implemented.');
   }

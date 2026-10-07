@@ -5,7 +5,7 @@
 
 import { describe, it, before, after, afterEach } from 'node:test';
 import type { TestCustomSchemaProvider } from './utils/testHelper.js';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, getDiagnosticMessage } from './utils/testHelper.js';
 import { createDiagnosticWithData, createExpectedError } from './utils/verifyError.js';
 import { ServiceSetup } from './utils/serviceSetup.js';
 import {
@@ -474,11 +474,11 @@ describe('Validation Tests', () => {
       });
       const result = await parseSetup('prop: "tes "');
       assert.equal(result.length, 1);
-      assert.ok(result[0].message.startsWith('String does not match the pattern'));
+      assert.ok(getDiagnosticMessage(result[0]).startsWith('String does not match the pattern'));
       assert.deepEqual(
         result[0],
         createDiagnosticWithData(
-          result[0].message,
+          getDiagnosticMessage(result[0]),
           0,
           6,
           0,
@@ -1168,7 +1168,7 @@ obj:
       const content = 'ImageId: !FindInMap [AWSRegionArch2AMI, !Ref "AWS::Region", HVM64]';
       const result = await parseSetup(content);
       assert.equal(result.length, 1);
-      assert.ok(result[0].message.includes('Incorrect type. Expected "string".'));
+      assert.ok(getDiagnosticMessage(result[0]).includes('Incorrect type. Expected "string".'));
     });
   });
 
@@ -2140,7 +2140,7 @@ spec:
 x: A
 `;
         const result = await parseSetup(yaml, 'file:///root.schema.json');
-        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result.some((d) => /Problems loading reference/i.test(getDiagnosticMessage(d)))).to.eq(false);
         expect(result).to.have.length(1);
         expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
       });
@@ -2169,7 +2169,7 @@ x: A
 x: A
 `;
         const result = await parseSetup(yaml, 'file:///nested-base.schema.json');
-        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result.some((d) => /Problems loading reference/i.test(getDiagnosticMessage(d)))).to.eq(false);
         expect(result).to.have.length(1);
         expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
       });
@@ -2200,7 +2200,7 @@ x: A
 x: A
 `;
         const result = await parseSetup(yaml, 'file:///embedded-resource.schema.json');
-        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result.some((d) => /Problems loading reference/i.test(getDiagnosticMessage(d)))).to.eq(false);
         expect(result).to.have.length(1);
         expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
       });
@@ -2225,7 +2225,7 @@ x: A
 pkg: 123
 `;
         const result = await parseSetup(yaml, 'file:///baseuri-ok.schema.json');
-        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result.some((d) => /Problems loading reference/i.test(getDiagnosticMessage(d)))).to.eq(false);
         expect(result[0].message).to.include('Incorrect type.');
       });
 
@@ -2244,7 +2244,11 @@ pkg: 123
 `;
         const result = await parseSetup(yaml, 'file:///baseuri-fail.schema.json');
         expect(result).to.not.be.empty;
-        expect(result.some((d) => /Problems loading reference/i.test(d.message) && /No content/i.test(d.message))).to.eq(true);
+        expect(
+          result.some(
+            (d) => /Problems loading reference/i.test(getDiagnosticMessage(d)) && /No content/i.test(getDiagnosticMessage(d))
+          )
+        ).to.eq(true);
       });
 
       it('root $id ending in the loaded schema filename should not break embedded resource refs', async () => {
@@ -2278,7 +2282,7 @@ option:
   suboption: 1
 `;
         const result = await parseSetup(yaml, 'file:///validated.yaml');
-        expect(result.some((d) => /\$ref '\/\$defs\/sub_options'/.test(d.message))).to.eq(false);
+        expect(result.some((d) => /\$ref '\/\$defs\/sub_options'/.test(getDiagnosticMessage(d)))).to.eq(false);
         expect(result).to.have.length(1);
         expect(result[0].message).to.include('Incorrect type. Expected "string".');
       });
@@ -2318,8 +2322,8 @@ option:
   suboption: 1
 `;
         const result = await parseSetup(yaml, 'file:///validated-local-sibling.yaml');
-        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
-        expect(result.some((d) => /\$ref '\/\$defs\/sub_options'/.test(d.message))).to.eq(false);
+        expect(result.some((d) => /Problems loading reference/i.test(getDiagnosticMessage(d)))).to.eq(false);
+        expect(result.some((d) => /\$ref '\/\$defs\/sub_options'/.test(getDiagnosticMessage(d)))).to.eq(false);
         expect(result).to.have.length(1);
         expect(result[0].message).to.include('Incorrect type. Expected "string".');
       });
@@ -2357,7 +2361,7 @@ option:
 option: local
 `;
         const result = await parseSetup(yaml, 'file:///validated-embedded-precedence.yaml');
-        expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+        expect(result.some((d) => /Problems loading reference/i.test(getDiagnosticMessage(d)))).to.eq(false);
         expect(result).to.have.length(1);
         expect(result[0].message).to.include('embedded');
       });

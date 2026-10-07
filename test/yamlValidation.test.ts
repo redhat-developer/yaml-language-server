@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { describe, it, before, afterEach } from 'node:test';
+import { describe, it, before, afterEach, mock } from 'node:test';
 import type { Diagnostic } from 'vscode-languageserver-types';
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
 import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
@@ -12,7 +12,6 @@ import { TextDocumentTestManager } from '../src/yamlSettings.js';
 import { ServiceSetup } from './utils/serviceSetup.js';
 import { setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
 import { expect } from 'chai';
-import { createSandbox } from 'sinon';
 import { createExpectedError, createUnusedAnchorDiagnostic } from './utils/verifyError.js';
 
 type ValidationHandlerWithConnection = {
@@ -24,13 +23,12 @@ type ValidationHandlerWithConnection = {
 };
 
 describe('YAML Validation Tests', () => {
-  const sandbox = createSandbox();
   let languageSettingsSetup: ServiceSetup;
   let validationHandler: ValidationHandler;
   let yamlSettings: SettingsState;
 
   afterEach(() => {
-    sandbox.restore();
+    mock.reset();
   });
 
   before(() => {
@@ -54,7 +52,7 @@ describe('YAML Validation Tests', () => {
     yamlSettings.documents = new TextDocumentTestManager();
     (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
     const connection = (validationHandler as unknown as ValidationHandlerWithConnection).connection;
-    sandbox.stub(connection.workspace, 'getConfiguration').resolves({ 'yaml.validate': false });
+    mock.method(connection.workspace, 'getConfiguration', () => Promise.resolve({ 'yaml.validate': false }));
     yamlSettings.hasConfigurationCapability = true;
     const result = await validationHandler.validateTextDocument(testTextDocument);
     expect(result).to.be.empty;

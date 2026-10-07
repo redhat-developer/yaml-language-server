@@ -6,7 +6,7 @@
 import * as l10n from '@vscode/l10n';
 import type { Connection } from 'vscode-languageserver';
 import { RequestType } from 'vscode-languageserver';
-import { BrowserMessageReader, BrowserMessageWriter, createConnection } from 'vscode-languageserver/browser.js';
+import { BrowserMessageReader, BrowserMessageWriter, createConnection } from 'vscode-languageserver/browser';
 import { TelemetryImpl } from '../languageserver/telemetry.js';
 import { schemaRequestHandler, workspaceContext } from '../languageservice/services/schemaRequestHandler.js';
 import { YAMLServerInit } from '../yamlServerInit.js';

@@ -3,10 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, beforeEach } from 'node:test';
 
-import { createSandbox } from 'sinon';
-import sinonChai from 'sinon-chai';
 import * as chai from 'chai';
 import { YamlCodeActions } from '../src/languageservice/services/yamlCodeActions.js';
 import {
@@ -28,21 +26,14 @@ import type { LanguageSettings } from '../src/index.js';
 import { ErrorCode } from '../src/languageservice/jsonLanguageTypes.js';
 
 const expect = chai.expect;
-chai.use(sinonChai);
 
 const JSON_SCHEMA_LOCAL = 'file://some/path/schema.json';
 const JSON_SCHEMA2_LOCAL = 'file://some/path/schema2.json';
 
 describe('CodeActions Tests', () => {
-  const sandbox = createSandbox();
-
   let clientCapabilities: ClientCapabilities;
   beforeEach(() => {
     clientCapabilities = {};
-  });
-
-  afterEach(() => {
-    sandbox.restore();
   });
 
   describe('JumpToSchema tests', () => {

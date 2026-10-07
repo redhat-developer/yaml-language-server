@@ -6,8 +6,8 @@
 import { promises as fs } from 'fs';
 import { ClientCapabilities } from '../../src/languageservice/jsonLanguageTypes.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import type { Connection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node.js';
-import { createConnection } from 'vscode-languageserver/node.js';
+import type { Connection, ClientCapabilities as LSPClientCapabilities } from 'vscode-languageserver/node';
+import { createConnection } from 'vscode-languageserver/node';
 import type { LanguageService, LanguageSettings } from '../../src/index.js';
 import type { LanguageHandlers } from '../../src/languageserver/handlers/languageHandlers.js';
 import type { ValidationHandler } from '../../src/languageserver/handlers/validationHandlers.js';
@@ -19,6 +19,11 @@ import { YAMLServerInit } from '../../src/yamlServerInit.js';
 import { SettingsState } from '../../src/yamlSettings.js';
 import { TestTelemetry } from './testsTypes.js';
 import * as path from 'path';
+import type { Diagnostic } from 'vscode-languageserver-types';
+
+export function getDiagnosticMessage(diagnostic: Diagnostic): string {
+  return typeof diagnostic.message === 'string' ? diagnostic.message : diagnostic.message.value;
+}
 
 export function toFsPath(str: unknown): string {
   if (typeof str !== 'string') {

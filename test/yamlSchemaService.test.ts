@@ -3,13 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, beforeEach, afterEach, mock } from 'node:test';
+import type { Mock } from 'node:test';
+import type { SchemaRequestService } from '../src/languageservice/yamlLanguageService.js';
+import { isDeepStrictEqual } from 'node:util';
+import assert from 'node:assert/strict';
 import * as chai from 'chai';
 import * as JSONC from 'jsonc-parser';
 import * as path from 'path';
-import type { SinonFakeTimers, SinonSpy, SinonStub } from 'sinon';
-import { createSandbox } from 'sinon';
-import sinonChai from 'sinon-chai';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import * as YAML from 'yaml';
@@ -19,12 +20,12 @@ import * as SchemaService from '../src/languageservice/services/yamlSchemaServic
 import { DEFAULT_KUBERNETES_SCHEMA_VERSION, getSchemaUrls } from '../src/languageservice/utils/schemaUrls.js';
 import { SchemaPriority } from '../src/languageservice/yamlLanguageService.js';
 import { SettingsState } from '../src/yamlSettings.js';
+import { getDiagnosticMessage } from './utils/testHelper.js';
 
 const BASE_KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/`;
 const KUBERNETES_SCHEMA_URL = BASE_KUBERNETES_SCHEMA_URL + 'all.json';
 
 const expect = chai.expect;
-chai.use(sinonChai);
 const workspaceContext = {
   resolveRelativePath: (relativePath: string, resource: string) => {
     return new URL(relativePath, resource).toString();
@@ -32,16 +33,15 @@ const workspaceContext = {
 };
 
 describe('YAML Schema Service', () => {
-  const sandbox = createSandbox();
   afterEach(() => {
-    sandbox.restore();
+    mock.reset();
   });
 
   describe('Schema for resource', () => {
-    let requestServiceMock: SinonSpy;
+    let requestServiceMock: Mock<SchemaRequestService>;
 
     beforeEach(() => {
-      requestServiceMock = sandbox.fake.resolves(undefined);
+      requestServiceMock = mock.fn(() => Promise.resolve(undefined));
     });
 
     it('should handle inline schema http url', () => {
@@ -52,7 +52,8 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       service.getSchemaForResource('', yamlDock.documents[0]);
 
-      expect(requestServiceMock).calledOnceWith('http://json-schema.org/draft-07/schema#');
+      assert.equal(requestServiceMock.mock.callCount(), 1);
+      assert.deepEqual(requestServiceMock.mock.calls[0].arguments.slice(0, 1), ['http://json-schema.org/draft-07/schema#']);
     });
 
     it('should handle inline schema https url', () => {
@@ -63,25 +64,36 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       service.getSchemaForResource('', yamlDock.documents[0]);
 
-      expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
+      assert.equal(requestServiceMock.mock.callCount(), 1);
+      assert.deepEqual(requestServiceMock.mock.calls[0].arguments.slice(0, 1), ['https://json-schema.org/draft-07/schema#']);
     });
 
     it('should handle url with fragments', async () => {
       const content = `# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#/definitions/schemaArray\nfoo: bar`;
       const yamlDock = parse(content);
 
-      requestServiceMock = sandbox.fake.resolves(`{"definitions": {"schemaArray": {
+      requestServiceMock = mock.fn(() =>
+        Promise.resolve(`{"definitions": {"schemaArray": {
         "type": "array",
         "minItems": 1,
         "items": { "$ref": "#" }
-    }}, "properties": {}}`);
+    }}, "properties": {}}`)
+      );
 
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      expect(requestServiceMock).calledTwice;
-      expect(requestServiceMock).calledWithExactly('https://json-schema.org/draft-07/schema');
-      expect(requestServiceMock).calledWithExactly('https://json-schema.org/draft-07/schema#/definitions/schemaArray');
+      assert.equal(requestServiceMock.mock.callCount(), 2);
+      assert.ok(
+        requestServiceMock.mock.calls.some((call) =>
+          isDeepStrictEqual(call.arguments, ['https://json-schema.org/draft-07/schema'])
+        )
+      );
+      assert.ok(
+        requestServiceMock.mock.calls.some((call) =>
+          isDeepStrictEqual(call.arguments, ['https://json-schema.org/draft-07/schema#/definitions/schemaArray'])
+        )
+      );
 
       expect(schema.schema.type).eqls('array');
     });
@@ -90,7 +102,8 @@ describe('YAML Schema Service', () => {
       const content = `# yaml-language-server: $schema=https://json-schema.org/draft-07/schema#/definitions/schemaArray`;
       const yamlDock = parse(content);
 
-      requestServiceMock = sandbox.fake.resolves(`{"definitions": {"schemaArray": {
+      requestServiceMock = mock.fn(() =>
+        Promise.resolve(`{"definitions": {"schemaArray": {
         "type": "array",
         "minItems": 1,
         "items": { "$ref": "#" }
@@ -98,14 +111,23 @@ describe('YAML Schema Service', () => {
     "bar": {
       "type": "string"
     }
-  }, "properties": {"foo": {"type": "boolean"}}, "required": ["foo"]}`);
+  }, "properties": {"foo": {"type": "boolean"}}, "required": ["foo"]}`)
+      );
 
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      expect(requestServiceMock).calledTwice;
-      expect(requestServiceMock).calledWithExactly('https://json-schema.org/draft-07/schema');
-      expect(requestServiceMock).calledWithExactly('https://json-schema.org/draft-07/schema#/definitions/schemaArray');
+      assert.equal(requestServiceMock.mock.callCount(), 2);
+      assert.ok(
+        requestServiceMock.mock.calls.some((call) =>
+          isDeepStrictEqual(call.arguments, ['https://json-schema.org/draft-07/schema'])
+        )
+      );
+      assert.ok(
+        requestServiceMock.mock.calls.some((call) =>
+          isDeepStrictEqual(call.arguments, ['https://json-schema.org/draft-07/schema#/definitions/schemaArray'])
+        )
+      );
 
       expect(schema.schema.type).eqls('array');
       expect(schema.schema.required).is.undefined;
@@ -116,26 +138,38 @@ describe('YAML Schema Service', () => {
       const content = `# yaml-language-server: $schema=schema.json#/definitions/schemaArray\nfoo: bar`;
       const yamlDock = parse(content);
 
-      requestServiceMock = sandbox.fake.resolves(`{"definitions": {"schemaArray": {
+      requestServiceMock = mock.fn(() =>
+        Promise.resolve(`{"definitions": {"schemaArray": {
         "type": "array",
         "minItems": 1,
         "items": { "$ref": "#" }
-    }}, "properties": {}}`);
+    }}, "properties": {}}`)
+      );
 
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      expect(requestServiceMock).calledTwice;
+      assert.equal(requestServiceMock.mock.callCount(), 2);
       if (process.platform === 'win32') {
         const driveLetter = path
           .parse(import.meta.dirname)
           .root.split(':')[0]
           .toLowerCase();
-        expect(requestServiceMock).calledWithExactly(`file:///${driveLetter}:/schema.json`);
-        expect(requestServiceMock).calledWithExactly(`file:///${driveLetter}:/schema.json#/definitions/schemaArray`);
+        assert.ok(
+          requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, [`file:///${driveLetter}:/schema.json`]))
+        );
+        assert.ok(
+          requestServiceMock.mock.calls.some((call) =>
+            isDeepStrictEqual(call.arguments, [`file:///${driveLetter}:/schema.json#/definitions/schemaArray`])
+          )
+        );
       } else {
-        expect(requestServiceMock).calledWithExactly('file:///schema.json');
-        expect(requestServiceMock).calledWithExactly('file:///schema.json#/definitions/schemaArray');
+        assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, ['file:///schema.json'])));
+        assert.ok(
+          requestServiceMock.mock.calls.some((call) =>
+            isDeepStrictEqual(call.arguments, ['file:///schema.json#/definitions/schemaArray'])
+          )
+        );
       }
 
       expect(schema.schema.type).eqls('array');
@@ -146,20 +180,22 @@ describe('YAML Schema Service', () => {
       const yamlDock = parse(content);
       const resource = URI.file(path.join(import.meta.dirname, 'test.yaml')).toString();
       const expectedSchemaPath = URI.parse(URI.file(path.join(import.meta.dirname, 'encoded schema.json')).toString()).fsPath;
-      requestServiceMock = sandbox.fake.resolves(
-        JSON.stringify({
-          type: 'object',
-          properties: {
-            foo: { type: 'string' },
-          },
-        })
+      requestServiceMock = mock.fn(() =>
+        Promise.resolve(
+          JSON.stringify({
+            type: 'object',
+            properties: {
+              foo: { type: 'string' },
+            },
+          })
+        )
       );
 
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       const schema = await service.getSchemaForResource(resource, yamlDock.documents[0]);
 
-      expect(requestServiceMock).calledOnce;
-      expect(URI.parse(requestServiceMock.firstCall.args[0]).fsPath).equals(expectedSchemaPath);
+      assert.equal(requestServiceMock.mock.callCount(), 1);
+      expect(URI.parse(requestServiceMock.mock.calls[0].arguments[0]).fsPath).equals(expectedSchemaPath);
       expect(schema.schema.properties.foo).to.include({ type: 'string' });
     });
 
@@ -172,20 +208,22 @@ describe('YAML Schema Service', () => {
       const expectedSchemaPath = URI.parse(
         URI.file(path.join(path.parse(import.meta.dirname).root, 'encoded schema.json')).toString()
       ).fsPath;
-      requestServiceMock = sandbox.fake.resolves(
-        JSON.stringify({
-          type: 'object',
-          properties: {
-            foo: { type: 'string' },
-          },
-        })
+      requestServiceMock = mock.fn(() =>
+        Promise.resolve(
+          JSON.stringify({
+            type: 'object',
+            properties: {
+              foo: { type: 'string' },
+            },
+          })
+        )
       );
 
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       const schema = await service.getSchemaForResource(resource, yamlDock.documents[0]);
 
-      expect(requestServiceMock).calledOnce;
-      expect(URI.parse(requestServiceMock.firstCall.args[0]).fsPath).equals(expectedSchemaPath);
+      assert.equal(requestServiceMock.mock.callCount(), 1);
+      expect(URI.parse(requestServiceMock.mock.calls[0].arguments[0]).fsPath).equals(expectedSchemaPath);
       expect(schema.schema.properties.foo).to.include({ type: 'string' });
     });
 
@@ -196,20 +234,23 @@ describe('YAML Schema Service', () => {
       it(`should resolve a schema URI with an ${description}`, async () => {
         const yamlDock = parse('foo: bar');
         const normalizedUri = 'file:///c:/Users/user1/schema.json';
-        requestServiceMock = sandbox.fake.resolves(
-          JSON.stringify({
-            type: 'object',
-            properties: {
-              foo: { type: 'string' },
-            },
-          })
+        requestServiceMock = mock.fn(() =>
+          Promise.resolve(
+            JSON.stringify({
+              type: 'object',
+              properties: {
+                foo: { type: 'string' },
+              },
+            })
+          )
         );
 
         const service = new SchemaService.YAMLSchemaService(requestServiceMock);
         service.registerExternalSchema(uri, ['test.yaml']);
         const schema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
 
-        expect(requestServiceMock).calledOnceWithExactly(normalizedUri);
+        assert.equal(requestServiceMock.mock.callCount(), 1);
+        assert.deepEqual(requestServiceMock.mock.calls[0].arguments, [normalizedUri]);
         expect(schema.schema.properties.foo).to.include({ type: 'string' });
       });
     }
@@ -232,7 +273,7 @@ describe('YAML Schema Service', () => {
         enum: ['dev', 'prod'],
       };
 
-      requestServiceMock = sandbox.fake((uri: string) => {
+      requestServiceMock = mock.fn((uri: string) => {
         if (uri === 'file:///schemas/primary.json') {
           return Promise.resolve(JSON.stringify(primarySchema));
         }
@@ -245,7 +286,7 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
       await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      const requestedUris = requestServiceMock.mock.calls.map((call) => call.arguments[0]);
       expect(requestedUris).to.include('file:///schemas/primary.json');
       expect(requestedUris).to.include('file:///schemas/secondary.json');
       expect(requestedUris).to.not.include('https://example.com/schemas/secondary.json');
@@ -286,7 +327,7 @@ describe('YAML Schema Service', () => {
         },
       };
 
-      requestServiceMock = sandbox.fake((uri: string) => {
+      requestServiceMock = mock.fn((uri: string) => {
         if (uri === 'file:///schemas/repro_main_schema.json') {
           return Promise.resolve(JSON.stringify(primarySchema));
         }
@@ -299,7 +340,7 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
       const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      const requestedUris = requestServiceMock.mock.calls.map((call) => call.arguments[0]);
       expect(requestedUris).to.include('file:///schemas/repro_main_schema.json');
       expect(requestedUris).to.include('file:///schemas/repro_defs.json');
       expect(requestedUris).to.not.include('https://example.com/schemas/repro_defs.json');
@@ -331,7 +372,7 @@ describe('YAML Schema Service', () => {
         oneOf: [{ $ref: 'node.json' }],
       };
 
-      requestServiceMock = sandbox.fake((uri: string) => {
+      requestServiceMock = mock.fn((uri: string) => {
         if (uri === 'file:///schemas/node.json') {
           return Promise.resolve(JSON.stringify(nodeSchema));
         }
@@ -385,7 +426,7 @@ describe('YAML Schema Service', () => {
         },
       };
 
-      requestServiceMock = sandbox.fake((uri: string) => {
+      requestServiceMock = mock.fn((uri: string) => {
         if (uri === schemaUri) {
           return Promise.resolve(JSON.stringify(schema3));
         }
@@ -396,12 +437,13 @@ describe('YAML Schema Service', () => {
       const resolvedSchema = await service.getSchemaForResource('', yamlDock.documents[0]);
 
       expect(resolvedSchema.schema._sourceUri).to.equal(schemaUri);
-      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      const requestedUris = requestServiceMock.mock.calls.map((call) => call.arguments[0]);
       expect(requestedUris).to.eql([schemaUri]);
       expect(resolvedSchema.errors).to.eql([]);
       expect(resolvedSchema.schema.properties.child).to.deep.include({ type: 'object' });
       expect((resolvedSchema.schema.properties.child as JSONSchema).properties.value).to.deep.include({ type: 'integer' });
-      expect(requestServiceMock).calledOnceWithExactly(schemaUri);
+      assert.equal(requestServiceMock.mock.callCount(), 1);
+      assert.deepEqual(requestServiceMock.mock.calls[0].arguments, [schemaUri]);
     });
 
     it('should resolve a relative local sibling-file reference through non-standard schema containers', async () => {
@@ -439,7 +481,7 @@ describe('YAML Schema Service', () => {
         },
       };
 
-      requestServiceMock = sandbox.fake((uri: string) => {
+      requestServiceMock = mock.fn((uri: string) => {
         if (uri === schema3Uri) {
           return Promise.resolve(JSON.stringify(schema3));
         }
@@ -452,7 +494,7 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
       const resolvedSchema = await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      const requestedUris = requestServiceMock.mock.calls.map((call) => call.arguments[0]);
       expect(requestedUris).to.eql([schema3Uri, schema2Uri]);
       expect(resolvedSchema.errors).to.eql([]);
       expect(resolvedSchema.schema.properties.child).to.deep.include({
@@ -460,9 +502,9 @@ describe('YAML Schema Service', () => {
         url: schema2Uri,
       });
       expect((resolvedSchema.schema.properties.child as JSONSchema).properties.value).to.deep.include({ type: 'integer' });
-      expect(requestServiceMock).calledWithExactly(schema3Uri);
-      expect(requestServiceMock).calledWithExactly(schema2Uri);
-      expect(requestServiceMock).callCount(2);
+      assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, [schema3Uri])));
+      assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, [schema2Uri])));
+      assert.equal(requestServiceMock.mock.callCount(), 2);
     });
 
     it('should resolve nested local sibling refs relative to the loaded sibling schema file', async () => {
@@ -492,7 +534,7 @@ describe('YAML Schema Service', () => {
         enum: ['ok'],
       };
 
-      requestServiceMock = sandbox.fake((uri: string) => {
+      requestServiceMock = mock.fn((uri: string) => {
         if (uri === 'file:///schemas/primary.json') {
           return Promise.resolve(JSON.stringify(primarySchema));
         }
@@ -508,7 +550,7 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
       const schema = await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      const requestedUris = requestServiceMock.mock.calls.map((call) => call.arguments[0]);
       expect(requestedUris).to.include('file:///schemas/primary.json');
       expect(requestedUris).to.include('file:///schemas/secondary.json');
       expect(requestedUris).to.include('file:///schemas/third.json');
@@ -539,7 +581,7 @@ describe('YAML Schema Service', () => {
         required: ['name', 'age'],
       };
 
-      requestServiceMock = sandbox.fake((uri: string) => {
+      requestServiceMock = mock.fn((uri: string) => {
         if (uri === 'file:///dir/primary.json') {
           return Promise.resolve(JSON.stringify(primarySchema));
         }
@@ -552,7 +594,7 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
       await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      const requestedUris = requestServiceMock.mock.calls.map((call) => call.arguments[0]);
       expect(requestedUris).to.include('file:///dir/primary.json');
       expect(requestedUris).to.include('file:///dir/secondary.json');
       expect(requestedUris).to.not.include('file:///schemas/secondary.json');
@@ -577,7 +619,7 @@ describe('YAML Schema Service', () => {
         required: ['name', 'age'],
       };
 
-      requestServiceMock = sandbox.fake((uri: string) => {
+      requestServiceMock = mock.fn((uri: string) => {
         if (uri === 'file:///dir/primary.json') {
           return Promise.resolve(JSON.stringify(primarySchema));
         }
@@ -590,7 +632,7 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
       await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      const requestedUris = requestServiceMock.mock.calls.map((call) => call.arguments[0]);
       expect(requestedUris).to.include('file:///dir/primary.json');
       expect(requestedUris).to.include('file:///dir/secondary.json');
       expect(requestedUris).to.include('https://example.com/schemas/secondary.json');
@@ -618,7 +660,7 @@ describe('YAML Schema Service', () => {
         enum: ['dev', 'prod'],
       };
 
-      requestServiceMock = sandbox.fake((uri: string) => {
+      requestServiceMock = mock.fn((uri: string) => {
         if (uri === 'file:///schemas/primary.json') {
           return Promise.resolve(JSON.stringify(primarySchema));
         }
@@ -631,9 +673,8 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
       await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      const requestedSecondaryUrisAfterFirstLoad = requestServiceMock
-        .getCalls()
-        .map((call) => call.args[0])
+      const requestedSecondaryUrisAfterFirstLoad = requestServiceMock.mock.calls
+        .map((call) => call.arguments[0])
         .filter((uri) => uri === 'file:///schemas/secondary.json');
       expect(requestedSecondaryUrisAfterFirstLoad).to.have.length(1);
 
@@ -641,9 +682,8 @@ describe('YAML Schema Service', () => {
       service.onResourceChange('file:///schemas/secondary.json');
       await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      const requestedSecondaryUrisAfterChange = requestServiceMock
-        .getCalls()
-        .map((call) => call.args[0])
+      const requestedSecondaryUrisAfterChange = requestServiceMock.mock.calls
+        .map((call) => call.arguments[0])
         .filter((uri) => uri === 'file:///schemas/secondary.json');
       expect(requestedSecondaryUrisAfterChange).to.have.length(2);
     });
@@ -672,7 +712,7 @@ describe('YAML Schema Service', () => {
         required: ['openapi', 'info'],
       };
 
-      requestServiceMock = sandbox.fake((uri: string) => {
+      requestServiceMock = mock.fn((uri: string) => {
         if (uri === 'https://example.com/schemas/openapi-extensions.json') {
           return Promise.resolve(JSON.stringify(extensionsSchema));
         }
@@ -685,7 +725,7 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
       await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      const requestedUris = requestServiceMock.mock.calls.map((call) => call.arguments[0]);
       expect(requestedUris).to.include('https://example.com/schemas/openapi-extensions.json');
       expect(requestedUris).to.include('https://example.com/schemas/openapi.v3.1.json');
       // _preferLocalBaseForRemoteId should NOT probe for the $id basename as a local sibling
@@ -699,7 +739,7 @@ describe('YAML Schema Service', () => {
       const schemaOneUri = 'file:///Users/test/schemas/schema1.json';
       const schemaTwoUri = 'file:///Users/test/schemas/schema2.json';
 
-      requestServiceMock = sandbox.fake((uri: string) => {
+      requestServiceMock = mock.fn((uri: string) => {
         if (uri === schemaOneUri) {
           return Promise.resolve(JSON.stringify({ title: 'Schema 1', type: 'object' }));
         }
@@ -715,7 +755,7 @@ describe('YAML Schema Service', () => {
 
       const schema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
 
-      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      const requestedUris = requestServiceMock.mock.calls.map((call) => call.arguments[0]);
       expect(requestedUris).to.include(schemaOneUri);
       expect(requestedUris).to.include(schemaTwoUri);
       expect(requestedUris.some((uri) => uri.startsWith('schemaservice:///'))).to.be.false;
@@ -737,7 +777,7 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      expect(requestServiceMock).not.called;
+      assert.equal(requestServiceMock.mock.callCount(), 0);
     });
 
     it('should ignore modeline schema comment using $schema in the middle of file after yaml content', async () => {
@@ -748,7 +788,7 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      expect(requestServiceMock).not.called;
+      assert.equal(requestServiceMock.mock.callCount(), 0);
     });
 
     it('should handle modeline schema comment in multiline comments at document header', async () => {
@@ -759,7 +799,8 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
+      assert.equal(requestServiceMock.mock.callCount(), 1);
+      assert.deepEqual(requestServiceMock.mock.calls[0].arguments.slice(0, 1), ['https://json-schema.org/draft-07/schema#']);
     });
 
     it('should ignore modeline schema comment in multiline comments after yaml content', async () => {
@@ -770,7 +811,7 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      expect(requestServiceMock).not.called;
+      assert.equal(requestServiceMock.mock.callCount(), 0);
     });
 
     it('should handle modeline schema comment after document separator', () => {
@@ -780,7 +821,8 @@ describe('YAML Schema Service', () => {
       const service = new SchemaService.YAMLSchemaService(requestServiceMock);
       service.getSchemaForResource('', yamlDock.documents[1]);
 
-      expect(requestServiceMock).calledOnceWith('https://json-schema.org/draft-07/schema#');
+      assert.equal(requestServiceMock.mock.callCount(), 1);
+      assert.deepEqual(requestServiceMock.mock.calls[0].arguments.slice(0, 1), ['https://json-schema.org/draft-07/schema#']);
     });
 
     it('should handle crd catalog for crd', async () => {
@@ -793,15 +835,15 @@ describe('YAML Schema Service', () => {
         kubernetes: ['*.yaml'],
       };
       settings.kubernetesCRDStoreEnabled = true;
-      requestServiceMock = sandbox.fake.resolves(
-        `
+      requestServiceMock = mock.fn(() =>
+        Promise.resolve(`
         {
           "oneOf": [ {
               "$ref": "_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingWebhook"
             }
           ]
         }
-        `
+        `)
       );
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
@@ -811,13 +853,17 @@ describe('YAML Schema Service', () => {
         'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/argoproj.io/application_v1alpha1.json'
       );
 
-      expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
-      expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
+      assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, [KUBERNETES_SCHEMA_URL])));
+      assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, ['file:///_definitions.json'])));
 
-      expect(requestServiceMock).calledWithExactly(
-        'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/argoproj.io/application_v1alpha1.json'
+      assert.ok(
+        requestServiceMock.mock.calls.some((call) =>
+          isDeepStrictEqual(call.arguments, [
+            'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/argoproj.io/application_v1alpha1.json',
+          ])
+        )
       );
-      expect(requestServiceMock).calledThrice;
+      assert.equal(requestServiceMock.mock.callCount(), 3);
     });
 
     it('should handle nonstandard location for OpenShift crd', async () => {
@@ -836,15 +882,15 @@ spec:
         kubernetes: ['*.yaml'],
       };
       settings.kubernetesCRDStoreEnabled = true;
-      requestServiceMock = sandbox.fake.resolves(
-        `
+      requestServiceMock = mock.fn(() =>
+        Promise.resolve(`
         {
           "oneOf": [ {
               "$ref": "_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingWebhook"
             }
           ]
         }
-        `
+        `)
       );
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
@@ -854,13 +900,17 @@ spec:
         'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/openshift/v4.15-strict/route_route.openshift.io_v1.json'
       );
 
-      expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
-      expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
+      assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, [KUBERNETES_SCHEMA_URL])));
+      assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, ['file:///_definitions.json'])));
 
-      expect(requestServiceMock).calledWithExactly(
-        'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/openshift/v4.15-strict/route_route.openshift.io_v1.json'
+      assert.ok(
+        requestServiceMock.mock.calls.some((call) =>
+          isDeepStrictEqual(call.arguments, [
+            'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/openshift/v4.15-strict/route_route.openshift.io_v1.json',
+          ])
+        )
       );
-      expect(requestServiceMock).calledThrice;
+      assert.equal(requestServiceMock.mock.callCount(), 3);
     });
 
     it('should not get schema from crd catalog if definition in kubernetes schema', async () => {
@@ -873,15 +923,15 @@ spec:
         kubernetes: ['*.yaml'],
       };
       settings.kubernetesCRDStoreEnabled = true;
-      requestServiceMock = sandbox.fake.resolves(
-        `
+      requestServiceMock = mock.fn(() =>
+        Promise.resolve(`
         {
           "oneOf": [ {
               "$ref": "_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingWebhook"
             }
           ]
         }
-        `
+        `)
       );
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
@@ -890,13 +940,21 @@ spec:
         BASE_KUBERNETES_SCHEMA_URL + '_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingWebhook'
       );
 
-      expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
-      expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
-      expect(requestServiceMock).calledWithExactly(
-        BASE_KUBERNETES_SCHEMA_URL + '_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingWebhook'
+      assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, [KUBERNETES_SCHEMA_URL])));
+      assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, ['file:///_definitions.json'])));
+      assert.ok(
+        requestServiceMock.mock.calls.some((call) =>
+          isDeepStrictEqual(call.arguments, [
+            BASE_KUBERNETES_SCHEMA_URL + '_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingWebhook',
+          ])
+        )
       );
-      expect(requestServiceMock).calledWithExactly(BASE_KUBERNETES_SCHEMA_URL + '_definitions.json');
-      expect(requestServiceMock.callCount).equals(4);
+      assert.ok(
+        requestServiceMock.mock.calls.some((call) =>
+          isDeepStrictEqual(call.arguments, [BASE_KUBERNETES_SCHEMA_URL + '_definitions.json'])
+        )
+      );
+      expect(requestServiceMock.mock.callCount()).equals(4);
     });
 
     it('should treat CustomResourceDefinition as a builtin Kubernetes resource', async () => {
@@ -912,10 +970,12 @@ spec:
         kubernetes: ['*.yaml'],
       };
       settings.kubernetesCRDStoreEnabled = true;
-      requestServiceMock = sandbox.fake.resolves(
-        JSON.stringify({
-          oneOf: [{ $ref: builtinDefinition }],
-        })
+      requestServiceMock = mock.fn(() =>
+        Promise.resolve(
+          JSON.stringify({
+            oneOf: [{ $ref: builtinDefinition }],
+          })
+        )
       );
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
@@ -923,7 +983,10 @@ spec:
       const resolvedSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
 
       expect(resolvedSchema.schema.url).equals(BASE_KUBERNETES_SCHEMA_URL + builtinDefinition);
-      expect(requestServiceMock).not.calledWith(crdCatalogURL);
+      assert.equal(
+        requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments.slice(0, 1), [crdCatalogURL])),
+        false
+      );
     });
 
     it('should treat an older CustomResourceDefinition version as builtin when present', async () => {
@@ -939,10 +1002,12 @@ spec:
         kubernetes: ['*.yaml'],
       };
       settings.kubernetesCRDStoreEnabled = true;
-      requestServiceMock = sandbox.fake.resolves(
-        JSON.stringify({
-          oneOf: [{ $ref: builtinDefinition }],
-        })
+      requestServiceMock = mock.fn(() =>
+        Promise.resolve(
+          JSON.stringify({
+            oneOf: [{ $ref: builtinDefinition }],
+          })
+        )
       );
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
@@ -950,7 +1015,10 @@ spec:
       const resolvedSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
 
       expect(resolvedSchema.schema.url).equals(BASE_KUBERNETES_SCHEMA_URL + builtinDefinition);
-      expect(requestServiceMock).not.calledWith(crdCatalogURL);
+      assert.equal(
+        requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments.slice(0, 1), [crdCatalogURL])),
+        false
+      );
     });
 
     it('should fall back to all.json for an unsupported CustomResourceDefinition version', async () => {
@@ -964,14 +1032,17 @@ spec:
         kubernetes: ['*.yaml'],
       };
       settings.kubernetesCRDStoreEnabled = true;
-      requestServiceMock = sandbox.fake.resolves('{"oneOf": []}');
+      requestServiceMock = mock.fn(() => Promise.resolve('{"oneOf": []}'));
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
 
       const resolvedSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
 
       expect(resolvedSchema.schema.url).equals(KUBERNETES_SCHEMA_URL);
-      expect(requestServiceMock).not.calledWith(crdCatalogURL);
+      assert.equal(
+        requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments.slice(0, 1), [crdCatalogURL])),
+        false
+      );
     });
 
     it('should still use the CRD catalog for a similarly named custom API group', async () => {
@@ -985,14 +1056,16 @@ spec:
         kubernetes: ['*.yaml'],
       };
       settings.kubernetesCRDStoreEnabled = true;
-      requestServiceMock = sandbox.fake.resolves(
-        JSON.stringify({
-          oneOf: [
-            {
-              $ref: '_definitions.json#/definitions/io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.CustomResourceDefinition',
-            },
-          ],
-        })
+      requestServiceMock = mock.fn(() =>
+        Promise.resolve(
+          JSON.stringify({
+            oneOf: [
+              {
+                $ref: '_definitions.json#/definitions/io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.CustomResourceDefinition',
+              },
+            ],
+          })
+        )
       );
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
@@ -1000,21 +1073,22 @@ spec:
       const resolvedSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
 
       expect(resolvedSchema.schema.url).equals(crdCatalogURL);
-      expect(requestServiceMock).calledWithExactly(crdCatalogURL);
+      assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, [crdCatalogURL])));
     });
 
     it('should fall back to all.json instead of the CRD catalog for an unknown core resource', async () => {
       const yamlDock = parse('apiVersion: v1\nkind: UnknownCoreResource');
       const settings = new SettingsState();
       settings.kubernetesCRDStoreEnabled = true;
-      requestServiceMock = sandbox.fake.resolves('{"oneOf": []}');
+      requestServiceMock = mock.fn(() => Promise.resolve('{"oneOf": []}'));
 
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
       const resolvedSchema = await service.getSchemaForResource('test.yaml', yamlDock.documents[0]);
 
       expect(resolvedSchema.schema.url).equals(KUBERNETES_SCHEMA_URL);
-      expect(requestServiceMock).calledOnceWithExactly(KUBERNETES_SCHEMA_URL);
+      assert.equal(requestServiceMock.mock.callCount(), 1);
+      assert.deepEqual(requestServiceMock.mock.calls[0].arguments, [KUBERNETES_SCHEMA_URL]);
     });
 
     it('should not get schema from crd catalog if definition in kubernetes schema (multiple oneOf)', async () => {
@@ -1027,8 +1101,8 @@ spec:
         kubernetes: ['*.yaml'],
       };
       settings.kubernetesCRDStoreEnabled = true;
-      requestServiceMock = sandbox.fake.resolves(
-        `
+      requestServiceMock = mock.fn(() =>
+        Promise.resolve(`
         {
           "oneOf": [
             {
@@ -1039,7 +1113,7 @@ spec:
             }
           ]
         }
-        `
+        `)
       );
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
@@ -1048,13 +1122,21 @@ spec:
         BASE_KUBERNETES_SCHEMA_URL + '_definitions.json#/definitions/io.k8s.api.apps.v1.Deployment'
       );
 
-      expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
-      expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
-      expect(requestServiceMock).calledWithExactly(
-        BASE_KUBERNETES_SCHEMA_URL + '_definitions.json#/definitions/io.k8s.api.apps.v1.Deployment'
+      assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, [KUBERNETES_SCHEMA_URL])));
+      assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, ['file:///_definitions.json'])));
+      assert.ok(
+        requestServiceMock.mock.calls.some((call) =>
+          isDeepStrictEqual(call.arguments, [
+            BASE_KUBERNETES_SCHEMA_URL + '_definitions.json#/definitions/io.k8s.api.apps.v1.Deployment',
+          ])
+        )
       );
-      expect(requestServiceMock).calledWithExactly(BASE_KUBERNETES_SCHEMA_URL + '_definitions.json');
-      expect(requestServiceMock.callCount).equals(4);
+      assert.ok(
+        requestServiceMock.mock.calls.some((call) =>
+          isDeepStrictEqual(call.arguments, [BASE_KUBERNETES_SCHEMA_URL + '_definitions.json'])
+        )
+      );
+      expect(requestServiceMock.mock.callCount()).equals(4);
     });
 
     it('should not get schema from crd catalog for RBAC-related resources', async () => {
@@ -1067,8 +1149,8 @@ spec:
         kubernetes: ['*.yaml'],
       };
       settings.kubernetesCRDStoreEnabled = true;
-      requestServiceMock = sandbox.fake.resolves(
-        `
+      requestServiceMock = mock.fn(() =>
+        Promise.resolve(`
         {
           "oneOf": [
             {
@@ -1076,7 +1158,7 @@ spec:
             }
           ]
         }
-        `
+        `)
       );
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, undefined, undefined, settings);
       service.registerExternalSchema(KUBERNETES_SCHEMA_URL, ['*.yaml']);
@@ -1085,13 +1167,21 @@ spec:
         BASE_KUBERNETES_SCHEMA_URL + '_definitions.json#/definitions/io.k8s.api.rbac.v1.RoleBinding'
       );
 
-      expect(requestServiceMock).calledWithExactly(KUBERNETES_SCHEMA_URL);
-      expect(requestServiceMock).calledWithExactly('file:///_definitions.json');
-      expect(requestServiceMock).calledWithExactly(
-        BASE_KUBERNETES_SCHEMA_URL + '_definitions.json#/definitions/io.k8s.api.rbac.v1.RoleBinding'
+      assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, [KUBERNETES_SCHEMA_URL])));
+      assert.ok(requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments, ['file:///_definitions.json'])));
+      assert.ok(
+        requestServiceMock.mock.calls.some((call) =>
+          isDeepStrictEqual(call.arguments, [
+            BASE_KUBERNETES_SCHEMA_URL + '_definitions.json#/definitions/io.k8s.api.rbac.v1.RoleBinding',
+          ])
+        )
       );
-      expect(requestServiceMock).calledWithExactly(BASE_KUBERNETES_SCHEMA_URL + '_definitions.json');
-      expect(requestServiceMock.callCount).equals(4);
+      assert.ok(
+        requestServiceMock.mock.calls.some((call) =>
+          isDeepStrictEqual(call.arguments, [BASE_KUBERNETES_SCHEMA_URL + '_definitions.json'])
+        )
+      );
+      expect(requestServiceMock.mock.callCount()).equals(4);
     });
 
     it('should use GVK to get correct schema', async () => {
@@ -1123,7 +1213,7 @@ spec:
         kubernetes: ['*.yaml'],
       };
       settings.kubernetesCRDStoreEnabled = true;
-      requestServiceMock = sandbox.fake((uri) => {
+      requestServiceMock = mock.fn((uri) => {
         if (uri === KUBERNETES_SCHEMA_URL) {
           return Promise.resolve(`
 {
@@ -1279,7 +1369,7 @@ spec:
             },
           },
         });
-        requestServiceMock = sandbox.fake((uri) => {
+        requestServiceMock = mock.fn((uri) => {
           if (uri === KUBERNETES_SCHEMA_URL) {
             return Promise.resolve(
               JSON.stringify({
@@ -1312,7 +1402,7 @@ spec:
           yamlDock.documents.map((document) => service.getSchemaForResource('templates/policies/foo.yaml', document))
         );
         const messages = yamlDock.documents.flatMap((document, index) =>
-          document.validate(textDocument, resolvedSchemas[index].schema).map((diagnostic) => diagnostic.message)
+          document.validate(textDocument, resolvedSchemas[index].schema).map(getDiagnosticMessage)
         );
         return {
           schemaUrls: resolvedSchemas.map((schema) => schema.schema.url),
@@ -1480,7 +1570,7 @@ spec:
         required: ['name', 'age'],
       };
 
-      requestServiceMock = sandbox.fake((uri: string) => {
+      requestServiceMock = mock.fn((uri: string) => {
         if (uri === 'file:///dir/my-schema.yaml') {
           return Promise.resolve(YAML.stringify(mySchema));
         }
@@ -1490,7 +1580,7 @@ spec:
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
       const resolvedSchema = await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      const requestedUris = requestServiceMock.mock.calls.map((call) => call.arguments[0]);
       expect(requestedUris).to.include('file:///dir/my-schema.yaml');
       expect(requestedUris.length).to.equal(1);
       expect(resolvedSchema.errors.length).to.equal(0);
@@ -1559,7 +1649,7 @@ properties:
       "$ref": "#/$defs/contact"
     description: Maintainers of the apis.json file`;
 
-      requestServiceMock = sandbox.fake((uri: string) => {
+      requestServiceMock = mock.fn((uri: string) => {
         if (uri === 'file:///dir/my-schema.yaml') {
           return Promise.resolve(mySchema);
         }
@@ -1569,7 +1659,7 @@ properties:
       const service = new SchemaService.YAMLSchemaService(requestServiceMock, workspaceContext);
       const resolvedSchema = await service.getSchemaForResource('', yamlDock.documents[0]);
 
-      const requestedUris = requestServiceMock.getCalls().map((call) => call.args[0]);
+      const requestedUris = requestServiceMock.mock.calls.map((call) => call.arguments[0]);
 
       const errors = [];
       const parsedSchema = JSONC.parse(mySchema, errors);
@@ -1584,17 +1674,14 @@ properties:
   describe('Caching of failed schema loads', () => {
     const SCHEMA_URI = 'https://example.com/schema.json';
     const schemaContent = JSON.stringify({ type: 'object', properties: { foo: { type: 'string' } } });
-    let clock: SinonFakeTimers;
+    let now: number;
 
     beforeEach(() => {
-      clock = sandbox.useFakeTimers({ now: Date.now(), shouldAdvanceTime: false });
+      now = Date.now();
+      mock.method(Date, 'now', () => now);
     });
 
-    afterEach(() => {
-      clock.restore();
-    });
-
-    const createService = (requestService: SinonStub): SchemaService.YAMLSchemaService => {
+    const createService = (requestService: SchemaRequestService): SchemaService.YAMLSchemaService => {
       const service = new SchemaService.YAMLSchemaService(requestService, workspaceContext);
       service.registerExternalSchema(SCHEMA_URI, ['*.yaml']);
       return service;
@@ -1604,56 +1691,58 @@ properties:
       service.getSchemaForResource('test.yaml', parse('foo: bar\n').documents[0]);
 
     it('should not request a failed schema again within the caching window', async () => {
-      const requestService = sandbox.stub().rejects(new Error('Request failed with status code 429'));
+      const requestService = mock.fn<SchemaRequestService>(() =>
+        Promise.reject(new Error('Request failed with status code 429'))
+      );
       const service = createService(requestService);
 
       await resolveSchema(service);
-      await clock.tickAsync(SchemaService.FAILED_SCHEMA_CACHE_MS - 1);
+      now += SchemaService.FAILED_SCHEMA_CACHE_MS - 1;
       await resolveSchema(service);
 
-      expect(requestService).calledOnce;
+      assert.equal(requestService.mock.callCount(), 1);
     });
 
     it('should request a failed schema again once the caching window has passed', async () => {
-      const requestService = sandbox.stub();
-      requestService.onFirstCall().rejects(new Error('Request failed with status code 429'));
-      requestService.resolves(schemaContent);
+      const requestService = mock.fn<SchemaRequestService>();
+      requestService.mock.mockImplementationOnce(() => Promise.reject(new Error('Request failed with status code 429')), 0);
+      requestService.mock.mockImplementation(() => Promise.resolve(schemaContent));
       const service = createService(requestService);
 
       const failed = await resolveSchema(service);
       expect(failed.errors).to.not.be.empty;
 
-      await clock.tickAsync(SchemaService.FAILED_SCHEMA_CACHE_MS);
+      now += SchemaService.FAILED_SCHEMA_CACHE_MS;
       const recovered = await resolveSchema(service);
 
-      expect(requestService).calledTwice;
+      assert.equal(requestService.mock.callCount(), 2);
       expect(recovered.errors).to.be.empty;
       expect(recovered.schema.properties).to.have.property('foo');
     });
 
     it('should keep caching a successful schema load', async () => {
-      const requestService = sandbox.stub().resolves(schemaContent);
+      const requestService = mock.fn<SchemaRequestService>(() => Promise.resolve(schemaContent));
       const service = createService(requestService);
 
       await resolveSchema(service);
-      await clock.tickAsync(SchemaService.FAILED_SCHEMA_CACHE_MS * 10);
+      now += SchemaService.FAILED_SCHEMA_CACHE_MS * 10;
       const second = await resolveSchema(service);
 
-      expect(requestService).calledOnce;
+      assert.equal(requestService.mock.callCount(), 1);
       expect(second.errors).to.be.empty;
     });
 
     it('should not serve a stale resolved schema after a cached failure expires', async () => {
-      const requestService = sandbox.stub();
-      requestService.onFirstCall().rejects(new Error('Request failed with status code 429'));
-      requestService.resolves(schemaContent);
+      const requestService = mock.fn<SchemaRequestService>();
+      requestService.mock.mockImplementationOnce(() => Promise.reject(new Error('Request failed with status code 429')), 0);
+      requestService.mock.mockImplementation(() => Promise.resolve(schemaContent));
       const service = createService(requestService);
 
       // Resolve first, so a resolved schema built from the failure is cached too.
       const failed = await resolveSchema(service);
       expect(failed.errors).to.not.be.empty;
 
-      await clock.tickAsync(SchemaService.FAILED_SCHEMA_CACHE_MS);
+      now += SchemaService.FAILED_SCHEMA_CACHE_MS;
       const recovered = await resolveSchema(service);
 
       expect(recovered.errors).to.be.empty;
