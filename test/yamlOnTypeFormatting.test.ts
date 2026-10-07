@@ -40,6 +40,22 @@ describe('YAML On Type Formatter', () => {
     expect(result[0]).to.eqls(TextEdit.insert(pos, '- '));
   });
 
+  it('should preserve list element indentation after newline', () => {
+    const doc = setupTextDocument('test:\n  - hello\n  - world\n');
+    const pos = Position.create(3, 0);
+    const params = createParams(pos);
+    const result = doDocumentOnTypeFormatting(doc, params);
+    expect(result[0]).to.eql(TextEdit.insert(pos, '  - '));
+  });
+
+  it('should align list element dash after existing client-side indentation', () => {
+    const doc = setupTextDocument('test:\n  - hello\n  - world\n  ');
+    const pos = Position.create(3, 0);
+    const params = createParams(pos);
+    const result = doDocumentOnTypeFormatting(doc, params);
+    expect(result[0]).to.eql(TextEdit.replace(Range.create(Position.create(3, 0), Position.create(3, 2)), '  - '));
+  });
+
   it('should add indentation for mapping in array', () => {
     const doc = setupTextDocument('some:\n  - arr:\n  ');
     const pos = Position.create(2, 2);
