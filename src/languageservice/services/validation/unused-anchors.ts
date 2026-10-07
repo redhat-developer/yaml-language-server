@@ -7,10 +7,10 @@ import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity, DiagnosticTag, Range } from 'vscode-languageserver-types';
 import type { Node, Scalar, YAMLMap, YAMLSeq, Pair } from 'yaml';
 import { isAlias, isCollection, isNode, isScalar, visit, CST } from 'yaml';
-import type { YamlNode } from '../../jsonLanguageTypes';
-import type { SingleYAMLDocument } from '../../parser/yaml-documents';
-import type { AdditionalValidator } from './types';
-import { isCollectionItem } from '../../utils/yamlAstUtils';
+import type { YamlNode } from '../../jsonLanguageTypes.js';
+import type { SingleYAMLDocument } from '../../parser/yaml-documents.js';
+import type { AdditionalValidator } from './types.js';
+import { isCollectionItem } from '../../utils/yamlAstUtils.js';
 import * as l10n from '@vscode/l10n';
 
 export class UnusedAnchorsValidator implements AdditionalValidator {

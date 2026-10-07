@@ -1,8 +1,9 @@
+import { describe, it } from 'node:test';
 import assert from 'assert';
 import type { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import { join } from 'path';
 
-import { relativeToAbsolutePath, isRelativePath, workspaceFoldersChanged } from '../src/languageservice/utils/paths';
+import { relativeToAbsolutePath, isRelativePath, workspaceFoldersChanged } from '../src/languageservice/utils/paths.js';
 import { URI } from 'vscode-uri';
 
 class TestWorkspace {
@@ -224,33 +225,33 @@ describe('File path tests', () => {
     describe('Path with mixed delimiters (Windows only)', () => {
       const path = 'some/strange\\but/functional\\path\\file.json';
 
-      it('Recognises relative path "' + path + '"', function () {
+      it('Recognises relative path "' + path + '"', function (t) {
         if (process.platform !== 'win32') {
-          this.skip();
+          t.skip();
         } else {
           assert(isRelativePath(path));
         }
       });
 
-      it('Resolves "' + path + '" in single-root workspace', function () {
+      it('Resolves "' + path + '" in single-root workspace', function (t) {
         if (process.platform !== 'win32') {
-          this.skip();
+          t.skip();
         } else {
           assert.equal(ws1.resolve(path), 'file:///home/aFolder/some/strange/but/functional/path/file.json');
         }
       });
 
-      it('Resolves "' + path + '" in multi-root workspace', function () {
+      it('Resolves "' + path + '" in multi-root workspace', function (t) {
         if (process.platform !== 'win32') {
-          this.skip();
+          t.skip();
         } else {
           assert.equal(ws2.resolve(path), 'file:///usr/testuser/projects/workspace/some/strange/but/functional/path/file.json');
         }
       });
 
-      it('Resolves "' + path + '" in multi-root nested workspace', function () {
+      it('Resolves "' + path + '" in multi-root nested workspace', function (t) {
         if (process.platform !== 'win32') {
-          this.skip();
+          t.skip();
         } else {
           assert.equal(ws3.resolve(path), 'file:///c%3A/Users/testuser/dev/potatoes/some/strange/but/functional/path/file.json');
         }

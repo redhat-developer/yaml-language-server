@@ -2,12 +2,14 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
+import { describe, it, before } from 'node:test';
 import { assert } from 'chai';
 import type { Position, TextDocument } from 'vscode-languageserver-textdocument';
-import type { LanguageService, SchemaRequestService, WorkspaceContextService } from '../src';
-import { getLanguageService } from '../src';
-import { workspaceContext } from '../src/languageservice/services/schemaRequestHandler';
-import { caretPosition, setupSchemaIDTextDocument } from './utils/testHelper';
+import type { LanguageService, SchemaRequestService, WorkspaceContextService } from '../src/index.js';
+import { getLanguageService } from '../src/index.js';
+import { workspaceContext } from '../src/languageservice/services/schemaRequestHandler.js';
+import { caretPosition, setupSchemaIDTextDocument } from './utils/testHelper.js';
 
 /**
  * Builds a simple schema request service

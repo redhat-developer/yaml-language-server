@@ -5,44 +5,44 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { AnySchemaObject, DefinedError, ErrorObject, ValidateFunction } from 'ajv';
-import type { Localize } from 'ajv-i18n/localize/types';
+import type { Localize } from 'ajv-i18n/localize/types.js';
 import type { DiagnosticRelatedInformation } from 'vscode-languageserver-types';
 
-import type { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes';
-import type { SettingsState } from '../../yamlSettings';
-import type { PromiseConstructor, SchemaConfiguration } from '../jsonLanguageTypes';
-import type { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
-import type { JSONDocument } from '../parser/jsonDocument';
-import type { SingleYAMLDocument } from '../parser/yamlParser07';
-import type { SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
-import type { SchemaVersions } from '../yamlTypes';
+import type { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes.js';
+import type { SettingsState } from '../../yamlSettings.js';
+import type { PromiseConstructor, SchemaConfiguration } from '../jsonLanguageTypes.js';
+import type { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema.js';
+import type { JSONDocument } from '../parser/jsonDocument.js';
+import type { SingleYAMLDocument } from '../parser/yamlParser07.js';
+import type { SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService.js';
+import type { SchemaVersions } from '../yamlTypes.js';
 
 import * as path from 'path';
 import * as l10n from '@vscode/l10n';
 import Ajv from 'ajv';
-import Ajv2019 from 'ajv/dist/2019';
-import Ajv2020 from 'ajv/dist/2020';
+import Ajv2019 from 'ajv/dist/2019.js';
+import Ajv2020 from 'ajv/dist/2020.js';
 import Ajv4 from 'ajv-draft-04';
-import * as ajvLocalizers from 'ajv-i18n';
+import ajvLocalizers from 'ajv-i18n';
 import * as Json from 'jsonc-parser';
 import picomatch from 'picomatch';
 import { Range } from 'vscode-languageserver-types';
 import { URI } from 'vscode-uri';
 import { parse } from 'yaml';
 
-import { getDollarSchema } from './dollarUtils';
-import { getSchemaFromModeline } from './modelineUtil';
-import { ErrorCode, SchemaDraft } from '../jsonLanguageTypes';
-import { asSchema } from '../parser/schemaValidation/baseValidator';
-import { SchemaPriority } from '../yamlLanguageService';
-import { autoDetectKubernetesSchema } from './k8sSchemaUtil';
-import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, isKubernetes } from '../utils/schemaUrls';
-import * as Strings from '../utils/strings';
+import { getDollarSchema } from './dollarUtils.js';
+import { getSchemaFromModeline } from './modelineUtil.js';
+import { ErrorCode, SchemaDraft } from '../jsonLanguageTypes.js';
+import { asSchema } from '../parser/schemaValidation/baseValidator.js';
+import { SchemaPriority } from '../yamlLanguageService.js';
+import { autoDetectKubernetesSchema } from './k8sSchemaUtil.js';
+import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, isKubernetes } from '../utils/schemaUrls.js';
+import * as Strings from '../utils/strings.js';
 
-const ajv4 = new Ajv4({ allErrors: true });
-const ajv7 = new Ajv({ allErrors: true });
-const ajv2019 = new Ajv2019({ allErrors: true });
-const ajv2020 = new Ajv2020({ allErrors: true });
+const ajv4 = new Ajv4.default({ allErrors: true });
+const ajv7 = new Ajv.default({ allErrors: true });
+const ajv2019 = new Ajv2019.default({ allErrors: true });
+const ajv2020 = new Ajv2020.default({ allErrors: true });
 
 const schema04Validator = getDefaultMetaSchemaValidator(ajv4);
 const schema07Validator = getDefaultMetaSchemaValidator(ajv7);

@@ -2,41 +2,48 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as sinon from 'sinon';
+
+import { describe, it, beforeEach, afterEach, mock } from 'node:test';
+import type { Mock } from 'node:test';
+import type { SchemaRequestService } from '../src/languageservice/yamlLanguageService.js';
+import { isDeepStrictEqual } from 'node:util';
+import assert from 'node:assert/strict';
 import * as chai from 'chai';
-import sinonChai from 'sinon-chai';
-import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers';
-import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
+import { JSONSchemaSelection } from '../src/languageserver/handlers/schemaSelectionHandlers.js';
+import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService.js';
 import type { Connection, RemoteClient } from 'vscode-languageserver/node';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import { SchemaSelectionRequests } from '../src/requestTypes';
-import { SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
+import { SchemaSelectionRequests } from '../src/requestTypes.js';
+import { SCHEMA_ID, setupSchemaIDTextDocument } from './utils/testHelper.js';
 
 const expect = chai.expect;
-chai.use(sinonChai);
 
 describe('Schema Selection Handlers', () => {
-  const sandbox = sinon.createSandbox();
   const connection: Connection = {} as Connection;
   let service: YAMLSchemaService;
-  let requestServiceMock: sinon.SinonSpy;
+  let requestServiceMock: Mock<SchemaRequestService>;
+  let onRequest: Mock<Connection['onRequest']>;
 
   beforeEach(() => {
-    requestServiceMock = sandbox.fake.resolves(undefined);
+    requestServiceMock = mock.fn(() => Promise.resolve(undefined));
     service = new YAMLSchemaService(requestServiceMock);
     connection.client = {} as RemoteClient;
-    const onRequest = sandbox.fake();
+    onRequest = mock.fn();
     connection.onRequest = onRequest;
   });
 
   afterEach(() => {
-    sandbox.restore();
+    mock.reset();
   });
 
   it('add handler for "getSchema" and "getAllSchemas" requests', () => {
     new JSONSchemaSelection(service, new SettingsState(), connection);
-    expect(connection.onRequest).calledWith(SchemaSelectionRequests.getSchema);
-    expect(connection.onRequest).calledWith(SchemaSelectionRequests.getAllSchemas);
+    assert.ok(
+      onRequest.mock.calls.some((call) => isDeepStrictEqual(call.arguments.slice(0, 1), [SchemaSelectionRequests.getSchema]))
+    );
+    assert.ok(
+      onRequest.mock.calls.some((call) => isDeepStrictEqual(call.arguments.slice(0, 1), [SchemaSelectionRequests.getAllSchemas]))
+    );
   });
 
   it('getAllSchemas should return all schemas', async () => {
@@ -102,7 +109,7 @@ describe('Schema Selection Handlers', () => {
 
   it('getSchemas should return an inline $schema', async () => {
     const schemaUri = 'https://some.com/inline.json';
-    requestServiceMock = sandbox.fake((uri: string) => {
+    requestServiceMock = mock.fn((uri: string) => {
       if (uri === schemaUri) {
         return Promise.resolve(
           JSON.stringify({
@@ -140,11 +147,12 @@ describe('Schema Selection Handlers', () => {
         versions: undefined,
       },
     ]);
-    expect(requestServiceMock).calledOnceWith(schemaUri);
+    assert.equal(requestServiceMock.mock.callCount(), 1);
+    assert.deepEqual(requestServiceMock.mock.calls[0].arguments.slice(0, 1), [schemaUri]);
   });
 
   it('getSchemas should not resolve schema references', async () => {
-    requestServiceMock = sandbox.fake((uri: string) => {
+    requestServiceMock = mock.fn((uri: string) => {
       if (uri === 'https://some.com/some.json') {
         return Promise.resolve(
           JSON.stringify({
@@ -177,8 +185,12 @@ describe('Schema Selection Handlers', () => {
       description: 'Schema description',
       versions: undefined,
     });
-    expect(requestServiceMock).calledOnceWith('https://some.com/some.json');
-    expect(requestServiceMock).not.calledWith('https://some.com/ref.json');
+    assert.equal(requestServiceMock.mock.callCount(), 1);
+    assert.deepEqual(requestServiceMock.mock.calls[0].arguments.slice(0, 1), ['https://some.com/some.json']);
+    assert.equal(
+      requestServiceMock.mock.calls.some((call) => isDeepStrictEqual(call.arguments.slice(0, 1), ['https://some.com/ref.json'])),
+      false
+    );
   });
 
   it('getSchemas should use registered schema metadata without loading schema content', async () => {
@@ -209,7 +221,7 @@ describe('Schema Selection Handlers', () => {
       description: 'Schema description',
       versions,
     });
-    expect(requestServiceMock).not.called;
+    assert.equal(requestServiceMock.mock.callCount(), 0);
   });
 
   it('getSchemas should handle empty schemas', async () => {

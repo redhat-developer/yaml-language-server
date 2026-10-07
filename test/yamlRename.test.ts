@@ -1,7 +1,8 @@
+import { describe, it } from 'node:test';
 import { expect } from 'chai';
 import type { TextEdit } from 'vscode-languageserver-types';
 import { Position } from 'vscode-languageserver-types';
-import { setupLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper';
+import { setupLanguageService, setupTextDocument, TEST_URI } from './utils/testHelper.js';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 
 function applyEdits(document: TextDocument, edits: TextEdit[]): string {

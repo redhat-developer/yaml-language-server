@@ -2,34 +2,35 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
-import * as url from 'url';
-import * as sinon from 'sinon';
+
+import { describe, it, beforeEach, afterEach, mock } from 'node:test';
+import type { Mock } from 'node:test';
+import type { SchemaRequestService } from '../src/languageservice/yamlLanguageService.js';
+import assert from 'node:assert/strict';
+import * as SchemaService from '../src/languageservice/services/yamlSchemaService.js';
 import * as chai from 'chai';
-import sinonChai from 'sinon-chai';
 
 const expect = chai.expect;
-chai.use(sinonChai);
 
 const workspaceContext = {
   resolveRelativePath: (relativePath: string, resource: string) => {
-    return url.resolve(resource, relativePath);
+    return new URL(relativePath, resource).toString();
   },
 };
 
 describe('YAML Schema', () => {
-  const sandbox = sinon.createSandbox();
-  let requestServiceStub: sinon.SinonStub;
+  let requestServiceStub: Mock<SchemaRequestService>;
   beforeEach(() => {
-    requestServiceStub = sandbox.stub();
+    requestServiceStub = mock.fn();
   });
 
   afterEach(() => {
-    sandbox.restore();
+    mock.reset();
   });
 
   it('Loading yaml scheme', async () => {
-    requestServiceStub.resolves(`%YAML 1.2
+    requestServiceStub.mock.mockImplementation(() =>
+      Promise.resolve(`%YAML 1.2
 ---
 properties:
   fooBar:
@@ -37,10 +38,12 @@ properties:
       type: string
     type: array
 type: object
-`);
+`)
+    );
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('fooScheme.yaml');
-    expect(requestServiceStub.calledOnceWith('fooScheme.yaml'));
+    assert.equal(requestServiceStub.mock.callCount(), 1);
+    assert.deepEqual(requestServiceStub.mock.calls[0].arguments.slice(0, 1), ['fooScheme.yaml']);
     expect(result.schema.properties['fooBar']).eql({
       items: { type: 'string' },
       type: 'array',
@@ -48,7 +51,7 @@ type: object
   });
 
   it('Error while loading yaml', async () => {
-    requestServiceStub.rejects();
+    requestServiceStub.mock.mockImplementation(() => Promise.reject(new Error()));
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('fooScheme.yaml');
     expect(result.errors).length(1);
@@ -56,7 +59,7 @@ type: object
   });
 
   it('Error while loading yaml should keep the underlying reason', async () => {
-    requestServiceStub.rejects(new Error('Request failed with status code 429'));
+    requestServiceStub.mock.mockImplementation(() => Promise.reject(new Error('Request failed with status code 429')));
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('https://example.com/fooScheme.json');
     expect(result.errors).length(1);
@@ -65,7 +68,7 @@ type: object
   });
 
   it('Empty response while loading yaml should report no content', async () => {
-    requestServiceStub.resolves('');
+    requestServiceStub.mock.mockImplementation(() => Promise.resolve(''));
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('https://example.com/fooScheme.json');
     expect(result.errors).length(1);
@@ -75,7 +78,9 @@ type: object
   it('Unreachable host should report the connection failure, not an empty reason', async () => {
     // request-light wraps connection errors as '<context>. Error: <message>', and for
     // ECONNREFUSED the underlying message is empty - the reason must not collapse to ''
-    requestServiceStub.rejects(new Error('Unable to connect to https://example.com/fooScheme.json. Error: '));
+    requestServiceStub.mock.mockImplementation(() =>
+      Promise.reject(new Error('Unable to connect to https://example.com/fooScheme.json. Error: '))
+    );
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('https://example.com/fooScheme.json');
     expect(result.errors).length(1);
@@ -87,7 +92,7 @@ type: object
   it('Error with no message should fall back to the error code', async () => {
     const connectionError = new Error('');
     (connectionError as Error & { code: string }).code = 'ECONNREFUSED';
-    requestServiceStub.rejects(connectionError);
+    requestServiceStub.mock.mockImplementation(() => Promise.reject(connectionError));
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('https://example.com/fooScheme.json');
     expect(result.errors).length(1);
@@ -96,7 +101,7 @@ type: object
 
   it('Non-Error rejection should still report its reason', async () => {
     // schemaRequestHandler rethrows the response body as a plain string, not an Error
-    requestServiceStub.callsFake(() => Promise.reject('Too Many Requests'));
+    requestServiceStub.mock.mockImplementation(() => Promise.reject('Too Many Requests'));
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('https://example.com/fooScheme.json');
     expect(result.errors).length(1);
@@ -104,10 +109,13 @@ type: object
   });
 
   it('Error while parsing yaml scheme', async () => {
-    requestServiceStub.resolves(`%464*&^^&*%@$&^##$`);
+    requestServiceStub.mock.mockImplementation(() => Promise.resolve(`%464*&^^&*%@$&^##$`));
     const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
     const result = await service.loadSchema('fooScheme.yaml');
-    expect(requestServiceStub.calledOnceWith('fooScheme.yaml'));
+    assert.deepEqual(
+      requestServiceStub.mock.calls.map((call) => call.arguments),
+      [['fooScheme.yaml'], ['fooScheme.yaml']]
+    );
     expect(result.errors).length(1);
     expect(result.errors[0].message).includes('Unable to parse content from');
   });

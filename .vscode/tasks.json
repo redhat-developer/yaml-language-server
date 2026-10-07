@@ -19,6 +19,12 @@
     },
     {
       "type": "npm",
+      "script": "compile",
+      "problemMatcher": ["$tsc"],
+      "label": "npm: compile"
+    },
+    {
+      "type": "npm",
       "script": "lint",
       "problemMatcher": ["$eslint-stylish"],
       "label": "npm: lint",

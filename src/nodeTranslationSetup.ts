@@ -16,8 +16,7 @@ import type { InitializeParams } from 'vscode-languageserver';
  * @param params the language server initialization parameters
  */
 export async function setupl10nBundle(params: InitializeParams): Promise<void> {
-  const __dirname = path.dirname(__filename);
-  const l10nPath: string = params.initializationOptions?.l10nPath || path.join(__dirname, '../../../l10n');
+  const l10nPath: string = params.initializationOptions?.l10nPath || path.join(import.meta.dirname, '../../../l10n');
   const locale: string = params.locale || 'en';
   if (l10nPath) {
     const bundleFile = !existsSync(path.join(l10nPath, `bundle.l10n.${locale}.json`))

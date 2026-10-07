@@ -6,10 +6,10 @@
 import type { DocumentLink } from 'vscode-languageserver-types';
 import { Range } from 'vscode-languageserver-types';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import type { Telemetry } from '../telemetry';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
-import type { ASTNode, PropertyASTNode } from '../jsonLanguageTypes';
-import type { JSONDocument } from '../parser/jsonDocument';
+import type { Telemetry } from '../telemetry.js';
+import { yamlDocumentsCache } from '../parser/yaml-documents.js';
+import type { ASTNode, PropertyASTNode } from '../jsonLanguageTypes.js';
+import type { JSONDocument } from '../parser/jsonDocument.js';
 
 export class YamlLinks {
   constructor(private readonly telemetry?: Telemetry) {}

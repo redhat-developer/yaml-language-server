@@ -594,7 +594,7 @@ interface JSONSchemaDescriptionExt extends JSONSchemaDescription {
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v18.18.0 or higher
+- [Node.js](https://nodejs.org/) v22.13.0 or higher
 - npm
 
 ### Setup
@@ -618,9 +618,17 @@ The main server output is generated in `out/server/src`.
 
 Use `npm test` to run tests.
 
+Use `npm run coveralls` to run tests with coverage and generate text and LCOV reports. Coverage uses nyc with pre-instrumented ESM:
+
+1. Clean and compile the source and tests into `out/server`.
+2. Run `npm run coverage:instrument` to create a copy in `out/coverage`, adding coverage counters to the server JavaScript and copying tests and fixtures unchanged.
+3. Run the copied tests with `nyc --instrument=false`, collecting the existing counters and mapping coverage back to TypeScript through source maps.
+
+The instrumented copy is only for coverage; the package entry point remains under `out/server`.
+
 ### Module builds
 
-Building YAML Language Server produces [CommonJS](http://www.commonjs.org/) output in the `out/server/src` directory. In addition, a build also produces [UMD](https://github.com/umdjs/umd) (Universal Module Definition) modules and [ES Modules](https://tc39.es/ecma262/#sec-modules) (ESM) in the `lib` directory. These module formats support different server-side module loaders and browser bundlers such as webpack.
+Building YAML Language Server produces [ES Modules](https://tc39.es/ecma262/#sec-modules) (ESM) and declarations in the `out/server/src` directory.
 
 ### CI
 

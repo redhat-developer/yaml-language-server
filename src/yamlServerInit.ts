@@ -1,20 +1,20 @@
 import type { Connection, InitializeParams, InitializeResult } from 'vscode-languageserver';
 import { TextDocumentSyncKind } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { YamlCommands } from './commands';
-import { commandExecutor } from './languageserver/commandExecutor';
-import { LanguageHandlers } from './languageserver/handlers/languageHandlers';
-import { NotificationHandlers } from './languageserver/handlers/notificationHandlers';
-import { RequestHandlers } from './languageserver/handlers/requestHandlers';
-import { SettingsHandler } from './languageserver/handlers/settingsHandlers';
-import { ValidationHandler } from './languageserver/handlers/validationHandlers';
-import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers';
-import { registerCommands } from './languageservice/services/yamlCommands';
-import type { Telemetry } from './languageservice/telemetry';
-import { workspaceFoldersChanged } from './languageservice/utils/paths';
-import type { LanguageService, SchemaRequestService, WorkspaceContextService } from './languageservice/yamlLanguageService';
-import { getLanguageService as getCustomLanguageService } from './languageservice/yamlLanguageService';
-import type { SettingsState } from './yamlSettings';
+import { YamlCommands } from './commands.js';
+import { commandExecutor } from './languageserver/commandExecutor.js';
+import { LanguageHandlers } from './languageserver/handlers/languageHandlers.js';
+import { NotificationHandlers } from './languageserver/handlers/notificationHandlers.js';
+import { RequestHandlers } from './languageserver/handlers/requestHandlers.js';
+import { SettingsHandler } from './languageserver/handlers/settingsHandlers.js';
+import { ValidationHandler } from './languageserver/handlers/validationHandlers.js';
+import { WorkspaceHandlers } from './languageserver/handlers/workspaceHandlers.js';
+import { registerCommands } from './languageservice/services/yamlCommands.js';
+import type { Telemetry } from './languageservice/telemetry.js';
+import { workspaceFoldersChanged } from './languageservice/utils/paths.js';
+import type { LanguageService, SchemaRequestService, WorkspaceContextService } from './languageservice/yamlLanguageService.js';
+import { getLanguageService as getCustomLanguageService } from './languageservice/yamlLanguageService.js';
+import type { SettingsState } from './yamlSettings.js';
 
 export class YAMLServerInit {
   languageService: LanguageService;

@@ -7,8 +7,8 @@ import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import type { CST, Node, Pair } from 'yaml';
 import { isMap, visit } from 'yaml';
-import type { SingleYAMLDocument } from '../../parser/yaml-documents';
-import type { AdditionalValidator } from './types';
+import type { SingleYAMLDocument } from '../../parser/yaml-documents.js';
+import type { AdditionalValidator } from './types.js';
 
 export class MapKeyOrderValidator implements AdditionalValidator {
   validate(document: TextDocument, yamlDoc: SingleYAMLDocument): Diagnostic[] {

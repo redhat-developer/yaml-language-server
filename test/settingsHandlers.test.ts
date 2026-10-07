@@ -3,52 +3,58 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { describe, it, beforeEach, afterEach, mock } from 'node:test';
+import type { Mock } from 'node:test';
+import assert from 'node:assert/strict';
+
 import * as chai from 'chai';
-import * as request from 'request-light';
-import * as sinon from 'sinon';
-import sinonChai from 'sinon-chai';
+import request from 'request-light';
 import type { Connection, RemoteClient, RemoteWorkspace } from 'vscode-languageserver';
 import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
-import type { LanguageService, LanguageSettings, SchemaConfiguration } from '../src';
-import { SchemaPriority } from '../src';
-import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers';
-import { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import { EMPTY_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls';
-import type { Telemetry } from '../src/languageservice/telemetry';
-import { SettingsState } from '../src/yamlSettings';
-import { TestCustomSchemaProvider, setupLanguageService, setupSchemaIDTextDocument, setupTextDocument } from './utils/testHelper';
-import { TestWorkspace } from './utils/testsTypes';
+import type { LanguageService, LanguageSettings, SchemaConfiguration } from '../src/index.js';
+import { SchemaPriority } from '../src/index.js';
+import { SettingsHandler } from '../src/languageserver/handlers/settingsHandlers.js';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
+import { EMPTY_SCHEMA_URL } from '../src/languageservice/utils/schemaUrls.js';
+import type { Telemetry } from '../src/languageservice/telemetry.js';
+import { SettingsState } from '../src/yamlSettings.js';
+import {
+  TestCustomSchemaProvider,
+  setupLanguageService,
+  setupSchemaIDTextDocument,
+  setupTextDocument,
+} from './utils/testHelper.js';
 
 const expect = chai.expect;
-chai.use(sinonChai);
 
 describe('Settings Handlers Tests', () => {
-  const sandbox = sinon.createSandbox();
   const connection: Connection = {} as Connection;
-  let workspaceStub: sinon.SinonStubbedInstance<RemoteWorkspace>;
+  let workspaceStub: { getConfiguration: Mock<RemoteWorkspace['getConfiguration']> };
+  let register: Mock<RemoteClient['register']>;
   let languageService: LanguageService;
   let settingsState: SettingsState;
-  let validationHandler: sinon.SinonMock;
-  let xhrStub: sinon.SinonStub;
+  let validationHandler: Pick<ValidationHandler, 'validate'>;
+  let xhrStub: Mock<typeof request.xhr>;
 
   beforeEach(() => {
-    workspaceStub = sandbox.createStubInstance(TestWorkspace);
+    workspaceStub = { getConfiguration: mock.fn() };
     connection.workspace = workspaceStub as unknown as RemoteWorkspace;
-    connection.onDidChangeConfiguration = sandbox.mock();
+    connection.onDidChangeConfiguration = mock.fn();
     connection.client = {} as RemoteClient;
-    connection.client.register = sandbox.mock();
+    register = mock.fn();
+    connection.client.register = register;
     const languageServerSetup = setupLanguageService({});
     languageService = languageServerSetup.languageService;
     settingsState = new SettingsState();
-    validationHandler = sandbox.mock(ValidationHandler);
-    xhrStub = sandbox.stub(request, 'xhr');
-    const sendRequest = sandbox.fake();
+    validationHandler = { validate: mock.fn() };
+    xhrStub = mock.method(request, 'xhr', () => undefined);
+    const sendRequest = mock.fn();
     connection.sendRequest = sendRequest;
   });
 
   afterEach(() => {
-    sandbox.restore();
+    mock.reset();
   });
 
   it('should not register configuration notification handler if client not supports dynamic handlers', () => {
@@ -63,7 +69,7 @@ describe('Settings Handlers Tests', () => {
     );
 
     settingsHandler.registerHandlers();
-    expect(connection.client.register).not.called;
+    assert.equal(register.mock.callCount(), 0);
   });
 
   it('should register configuration notification handler only if client supports dynamic handlers', () => {
@@ -78,23 +84,28 @@ describe('Settings Handlers Tests', () => {
     );
 
     settingsHandler.registerHandlers();
-    expect(connection.client.register).calledOnce;
+    assert.equal(register.mock.callCount(), 1);
   });
 
   it('should request CodeLens refresh after schema settings update if client supports it', async () => {
     settingsState.hasCodeLensRefreshSupport = true;
-    const sendRequest = sandbox.stub().resolves();
+    const sendRequest = mock.fn(() => Promise.resolve(undefined));
     connection.sendRequest = sendRequest;
-    workspaceStub.getConfiguration.onFirstCall().resolves([{ schemaStore: { enable: false } }, {}, {}, {}, {}]);
-    workspaceStub.getConfiguration
-      .onSecondCall()
-      .resolves([
-        { schemas: { 'https://example.com/schema.json': 'test.yaml' }, schemaStore: { enable: false } },
-        {},
-        {},
-        {},
-        {},
-      ]);
+    workspaceStub.getConfiguration.mock.mockImplementationOnce(
+      () => Promise.resolve([{ schemaStore: { enable: false } }, {}, {}, {}, {}]),
+      0
+    );
+    workspaceStub.getConfiguration.mock.mockImplementationOnce(
+      () =>
+        Promise.resolve([
+          { schemas: { 'https://example.com/schema.json': 'test.yaml' }, schemaStore: { enable: false } },
+          {},
+          {},
+          {},
+          {},
+        ]),
+      1
+    );
     const settingsHandler = new SettingsHandler(
       connection,
       languageService as unknown as LanguageService,
@@ -104,19 +115,23 @@ describe('Settings Handlers Tests', () => {
     );
     await settingsHandler.pullConfiguration();
     await settingsHandler.pullConfiguration();
-    expect(sendRequest).calledOnceWithExactly(CodeLensRefreshRequest.type);
+    assert.equal(sendRequest.mock.callCount(), 1);
+    assert.deepEqual(sendRequest.mock.calls[0].arguments, [CodeLensRefreshRequest.type]);
   });
 
   it('should not request CodeLens refresh when only non-schema settings update', async () => {
     settingsState.hasCodeLensRefreshSupport = true;
-    const sendRequest = sandbox.stub().resolves();
+    const sendRequest = mock.fn(() => Promise.resolve(undefined));
     connection.sendRequest = sendRequest;
     const yamlSettings = {
       schemas: { 'https://example.com/schema.json': 'test.yaml' },
       schemaStore: { enable: false },
     };
-    workspaceStub.getConfiguration.onFirstCall().resolves([yamlSettings, {}, {}, {}, {}]);
-    workspaceStub.getConfiguration.onSecondCall().resolves([{ ...yamlSettings, keyOrdering: true }, {}, {}, {}, {}]);
+    workspaceStub.getConfiguration.mock.mockImplementationOnce(() => Promise.resolve([yamlSettings, {}, {}, {}, {}]), 0);
+    workspaceStub.getConfiguration.mock.mockImplementationOnce(
+      () => Promise.resolve([{ ...yamlSettings, keyOrdering: true }, {}, {}, {}, {}]),
+      1
+    );
     const settingsHandler = new SettingsHandler(
       connection,
       languageService as unknown as LanguageService,
@@ -126,7 +141,7 @@ describe('Settings Handlers Tests', () => {
     );
     await settingsHandler.pullConfiguration();
     await settingsHandler.pullConfiguration();
-    expect(sendRequest).not.called;
+    assert.equal(sendRequest.mock.callCount(), 0);
   });
 
   describe('Settings for YAML style should ', () => {
@@ -138,7 +153,9 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{ style: { flowMapping: 'forbid', flowSequence: 'forbid' } }, {}, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() =>
+        Promise.resolve([{ style: { flowMapping: 'forbid', flowSequence: 'forbid' } }, {}, {}, {}, {}])
+      );
 
       await settingsHandler.pullConfiguration();
       expect(settingsState.style).to.exist;
@@ -153,7 +170,7 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{}, {}, {}, {}]));
 
       await settingsHandler.pullConfiguration();
       expect(settingsState.style).to.exist;
@@ -171,7 +188,7 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{ keyOrdering: true }, {}, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{ keyOrdering: true }, {}, {}, {}, {}]));
 
       await settingsHandler.pullConfiguration();
       expect(settingsState.keyOrdering).to.exist;
@@ -185,7 +202,7 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{}, {}, {}, {}]));
 
       await settingsHandler.pullConfiguration();
       expect(settingsState.style).to.exist;
@@ -203,11 +220,14 @@ describe('Settings Handlers Tests', () => {
         {} as Telemetry
       );
 
-      workspaceStub.getConfiguration
-        .onFirstCall()
-        .resolves([{ kubernetesVersion: '1.36.1' }, {}, {}, {}, {}])
-        .onSecondCall()
-        .resolves([{ kubernetesVersion: 'v1.37.2' }, {}, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementationOnce(
+        () => Promise.resolve([{ kubernetesVersion: '1.36.1' }, {}, {}, {}, {}]),
+        0
+      );
+      workspaceStub.getConfiguration.mock.mockImplementationOnce(
+        () => Promise.resolve([{ kubernetesVersion: 'v1.37.2' }, {}, {}, {}, {}]),
+        1
+      );
 
       await settingsHandler.pullConfiguration();
       expect(settingsState.kubernetesVersion).to.equal('v1.36.1');
@@ -224,13 +244,15 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration
-        .onFirstCall()
-        .resolves([{ kubernetesVersion: '1.36.1' }, {}, {}, {}, {}])
-        .onSecondCall()
-        .resolves([{ kubernetesVersion: 'invalid' }, {}, {}, {}, {}])
-        .onThirdCall()
-        .resolves([{}, {}, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementationOnce(
+        () => Promise.resolve([{ kubernetesVersion: '1.36.1' }, {}, {}, {}, {}]),
+        0
+      );
+      workspaceStub.getConfiguration.mock.mockImplementationOnce(
+        () => Promise.resolve([{ kubernetesVersion: 'invalid' }, {}, {}, {}, {}]),
+        1
+      );
+      workspaceStub.getConfiguration.mock.mockImplementationOnce(() => Promise.resolve([{}, {}, {}, {}, {}]), 2);
 
       await settingsHandler.pullConfiguration();
       expect(settingsState.kubernetesVersion).to.equal('v1.36.1');
@@ -247,8 +269,12 @@ describe('Settings Handlers Tests', () => {
     it('should include patterns with nonstandard extensions', async () => {
       const languageServerSetup = setupLanguageService({});
       const languageService = languageServerSetup.languageService;
-      xhrStub.resolves({
-        responseText: `{"schemas": [
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({
+          status: 200,
+          headers: {},
+          body: undefined,
+          responseText: `{"schemas": [
         {
           "name": "Butane config schema",
           "description": "Schema to validate butane files for Fedora CoreOS",
@@ -257,7 +283,8 @@ describe('Settings Handlers Tests', () => {
           ],
           "url": "https://raw.githubusercontent.com/Relativ-IT/Butane-Schemas/Release/Butane-Schema.json"
         }]}`,
-      });
+        })
+      );
       const settingsHandler = new SettingsHandler(
         connection,
         languageService as unknown as LanguageService,
@@ -265,10 +292,10 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
-      const configureSpy = sinon.stub(languageService, 'configure');
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{}, {}, {}, {}]));
+      const configureSpy = mock.method(languageService, 'configure', () => undefined);
       await settingsHandler.pullConfiguration();
-      configureSpy.restore();
+      configureSpy.mock.restore();
       expect(settingsState.schemaStoreSettings).deep.include({
         uri: 'https://raw.githubusercontent.com/Relativ-IT/Butane-Schemas/Release/Butane-Schema.json',
         fileMatch: ['*.bu'],
@@ -281,8 +308,12 @@ describe('Settings Handlers Tests', () => {
     it('should include extensionless patterns', async () => {
       const languageServerSetup = setupLanguageService({});
       const languageService = languageServerSetup.languageService;
-      xhrStub.resolves({
-        responseText: `{"schemas": [
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({
+          status: 200,
+          headers: {},
+          body: undefined,
+          responseText: `{"schemas": [
         {
           "name": "clang-format (.clang-format)",
           "description": "yaml clang-format config",
@@ -291,7 +322,8 @@ describe('Settings Handlers Tests', () => {
           ],
           "url": "https://www.schemastore.org/clang-format-21.x.json"
         }]}`,
-      });
+        })
+      );
       const settingsHandler = new SettingsHandler(
         connection,
         languageService as unknown as LanguageService,
@@ -299,12 +331,12 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
-      const configureSpy = sinon.stub(languageService, 'configure');
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{}, {}, {}, {}]));
+      const configureSpy = mock.method(languageService, 'configure', () => undefined);
 
       await settingsHandler.pullConfiguration();
 
-      configureSpy.restore();
+      configureSpy.mock.restore();
       expect(settingsState.schemaStoreSettings).deep.include({
         uri: 'https://www.schemastore.org/clang-format-21.x.json',
         fileMatch: ['.clang-format'],
@@ -317,8 +349,12 @@ describe('Settings Handlers Tests', () => {
     it('should exclude JSON file extensions', async () => {
       const languageServerSetup = setupLanguageService({});
       const languageService = languageServerSetup.languageService;
-      xhrStub.resolves({
-        responseText: `{"schemas": [
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({
+          status: 200,
+          headers: {},
+          body: undefined,
+          responseText: `{"schemas": [
         {
           "name": "JSON config schema",
           "description": "Schema to validate JSON config files",
@@ -329,7 +365,8 @@ describe('Settings Handlers Tests', () => {
           ],
           "url": "https://example.com/config.schema.json"
         }]}`,
-      });
+        })
+      );
       const settingsHandler = new SettingsHandler(
         connection,
         languageService as unknown as LanguageService,
@@ -337,24 +374,29 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
-      const configureSpy = sinon.stub(languageService, 'configure');
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{}, {}, {}, {}]));
+      const configureSpy = mock.method(languageService, 'configure', () => undefined);
       await settingsHandler.pullConfiguration();
-      configureSpy.restore();
+      configureSpy.mock.restore();
       expect(settingsState.schemaStoreSettings.some((schema) => schema.uri === 'https://example.com/config.schema.json')).to.be
         .false;
     });
     it('SettingsHandler should include schemas without file matches as selectable schemas', async () => {
       const languageServerSetup = setupLanguageService({});
       const languageService = languageServerSetup.languageService;
-      xhrStub.resolves({
-        responseText: `{"schemas": [
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({
+          status: 200,
+          headers: {},
+          body: undefined,
+          responseText: `{"schemas": [
         {
           "name": "Traefik v3",
           "description": "Traefik v3 YAML configuration file",
           "url": "https://www.schemastore.org/traefik-v3.json"
         }]}`,
-      });
+        })
+      );
       const settingsHandler = new SettingsHandler(
         connection,
         languageService as unknown as LanguageService,
@@ -362,10 +404,10 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
-      const configureSpy = sinon.stub(languageService, 'configure');
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{}, {}, {}, {}]));
+      const configureSpy = mock.method(languageService, 'configure', () => undefined);
       await settingsHandler.pullConfiguration();
-      configureSpy.restore();
+      configureSpy.mock.restore();
       expect(settingsState.schemaStoreSettings).deep.include({
         uri: 'https://www.schemastore.org/traefik-v3.json',
         fileMatch: [],
@@ -382,8 +424,12 @@ describe('Settings Handlers Tests', () => {
 
     const languageService = languageServerSetup.languageService;
 
-    xhrStub.resolves({
-      responseText: `{"schemas": [
+    xhrStub.mock.mockImplementation(() =>
+      Promise.resolve({
+        status: 200,
+        headers: {},
+        body: undefined,
+        responseText: `{"schemas": [
       {
         "name": ".adonisrc.json",
         "description": "AdonisJS configuration file",
@@ -392,7 +438,8 @@ describe('Settings Handlers Tests', () => {
         ],
         "url": "https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json"
       }]}`,
-    });
+      })
+    );
     const settingsHandler = new SettingsHandler(
       connection,
       languageService as unknown as LanguageService,
@@ -400,10 +447,10 @@ describe('Settings Handlers Tests', () => {
       validationHandler as unknown as ValidationHandler,
       {} as Telemetry
     );
-    workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
-    const configureSpy = sinon.stub(languageService, 'configure');
+    workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{}, {}, {}, {}]));
+    const configureSpy = mock.method(languageService, 'configure', () => undefined);
     await settingsHandler.pullConfiguration();
-    configureSpy.restore();
+    configureSpy.mock.restore();
     expect(settingsState.schemaStoreSettings).deep.include({
       uri: 'https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json',
       fileMatch: ['.adonisrc.yaml'],
@@ -418,7 +465,7 @@ describe('Settings Handlers Tests', () => {
     const testSchemaFileMatch = ['foo/*.yml'];
 
     async function configureSchemaSettingsTest(): Promise<LanguageSettings> {
-      const telemetry = { send: sinon.stub(), sendError: sinon.stub() } as unknown as Telemetry;
+      const telemetry = { send: mock.fn(), sendError: mock.fn() } as unknown as Telemetry;
       const settingsHandler = new SettingsHandler(
         connection,
         languageService,
@@ -426,20 +473,20 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         telemetry
       );
-      const configureSpy = sinon.spy(languageService, 'configure');
+      const configureSpy = mock.method(languageService, 'configure');
       await settingsHandler.pullConfiguration();
-      configureSpy.restore();
-      return configureSpy.args[0][0];
+      configureSpy.mock.restore();
+      return configureSpy.mock.calls[0].arguments[0];
     }
 
     it('Schema Settings should normalize absolute local paths', async () => {
-      xhrStub.resolves({
-        responseText: '{"schemas":[]}',
-      });
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({ status: 200, headers: {}, body: undefined, responseText: '{"schemas":[]}' })
+      );
       const absoluteSchemaPath = '/Users/test/schemas/schema.json';
       const schemas = {};
       schemas[absoluteSchemaPath] = testSchemaFileMatch;
-      workspaceStub.getConfiguration.resolves([{ schemas: schemas }, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{ schemas: schemas }, {}, {}, {}]));
       const configureSpy = await configureSchemaSettingsTest();
 
       expect(configureSpy.schemas).deep.include({
@@ -451,14 +498,14 @@ describe('Settings Handlers Tests', () => {
     });
 
     it('Schema Settings should preserve fragments when normalizing absolute local paths', async () => {
-      xhrStub.resolves({
-        responseText: '{"schemas":[]}',
-      });
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({ status: 200, headers: {}, body: undefined, responseText: '{"schemas":[]}' })
+      );
       const absoluteSchemaPath = '/Users/test/schemas/schema.json';
       const schemaUri = `${absoluteSchemaPath}#/definitions/foo`;
       const schemas = {};
       schemas[schemaUri] = testSchemaFileMatch;
-      workspaceStub.getConfiguration.resolves([{ schemas: schemas }, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{ schemas: schemas }, {}, {}, {}]));
       const configureSpy = await configureSchemaSettingsTest();
 
       expect(configureSpy.schemas).deep.include({
@@ -470,13 +517,13 @@ describe('Settings Handlers Tests', () => {
     });
 
     it('Schema Settings should preserve remote schema URLs', async () => {
-      xhrStub.resolves({
-        responseText: '{"schemas":[]}',
-      });
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({ status: 200, headers: {}, body: undefined, responseText: '{"schemas":[]}' })
+      );
       const schemaUri = 'https://example.com/schemas/schema.json#/definitions/foo';
       const schemas = {};
       schemas[schemaUri] = testSchemaFileMatch;
-      workspaceStub.getConfiguration.resolves([{ schemas: schemas }, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{ schemas: schemas }, {}, {}, {}]));
       const configureSpy = await configureSchemaSettingsTest();
 
       expect(configureSpy.schemas).deep.include({
@@ -488,14 +535,14 @@ describe('Settings Handlers Tests', () => {
     });
 
     it('Schema Settings should treat direct Kubernetes standalone-strict/all.json URLs as Kubernetes associations', async () => {
-      xhrStub.resolves({
-        responseText: '{"schemas":[]}',
-      });
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({ status: 200, headers: {}, body: undefined, responseText: '{"schemas":[]}' })
+      );
       const schemaUri =
         'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.32.9-standalone-strict/all.json';
       const schemas = {};
       schemas[schemaUri] = ['*.yaml'];
-      workspaceStub.getConfiguration.resolves([{ schemas }, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{ schemas }, {}, {}, {}]));
       const configureSpy = await configureSchemaSettingsTest();
 
       expect(configureSpy.schemas).deep.include({
@@ -508,16 +555,16 @@ describe('Settings Handlers Tests', () => {
     });
 
     it('Schema Settings should normalize multiple absolute local paths for the same file', async () => {
-      xhrStub.resolves({
-        responseText: '{"schemas":[]}',
-      });
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({ status: 200, headers: {}, body: undefined, responseText: '{"schemas":[]}' })
+      );
       const schemaPath1 = '/Users/test/schemas/schema1.json';
       const schemaPath2 = '/Users/test/schemas/schema2.json';
       const fileMatch = ['asdf.yaml'];
       const schemas = {};
       schemas[schemaPath1] = fileMatch;
       schemas[schemaPath2] = fileMatch;
-      workspaceStub.getConfiguration.resolves([{ schemas }, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{ schemas }, {}, {}, {}]));
       const configureSpy = await configureSchemaSettingsTest();
 
       expect(configureSpy.schemas).deep.include({
@@ -547,15 +594,19 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      const configureSpy = sinon.spy(languageService, 'configure');
+      const configureSpy = mock.method(languageService, 'configure');
       await settingsHandler.pullConfiguration();
-      configureSpy.restore();
-      return configureSpy.args[0][0];
+      configureSpy.mock.restore();
+      return configureSpy.mock.calls[0].arguments[0];
     }
 
     it('Schema Settings should have a priority', async () => {
-      xhrStub.resolves({
-        responseText: `{"schemas": [
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({
+          status: 200,
+          headers: {},
+          body: undefined,
+          responseText: `{"schemas": [
       {
         "name": ".adonisrc.json",
         "description": "AdonisJS configuration file",
@@ -564,10 +615,11 @@ describe('Settings Handlers Tests', () => {
         ],
         "url": "https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json"
       }]}`,
-      });
+        })
+      );
       const schemas = {};
       schemas[testSchemaURI] = testSchemaFileMatch;
-      workspaceStub.getConfiguration.resolves([{ schemas: schemas }, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{ schemas: schemas }, {}, {}, {}]));
       const configureSpy = await configureSchemaPriorityTest();
 
       expect(configureSpy.schemas).deep.include({
@@ -579,8 +631,12 @@ describe('Settings Handlers Tests', () => {
     });
 
     it('SchemaDetectionDisabled should have a priority', async () => {
-      xhrStub.resolves({
-        responseText: `{"schemas": [
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({
+          status: 200,
+          headers: {},
+          body: undefined,
+          responseText: `{"schemas": [
       {
         "name": ".adonisrc.json",
         "description": "AdonisJS configuration file",
@@ -589,9 +645,12 @@ describe('Settings Handlers Tests', () => {
         ],
         "url": "https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json"
       }]}`,
-      });
+        })
+      );
       const disabledSchemaFileMatch = ['foo/*.yml'];
-      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: disabledSchemaFileMatch }, {}, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() =>
+        Promise.resolve([{ disableSchemaDetection: disabledSchemaFileMatch }, {}, {}, {}, {}])
+      );
       const configureSpy = await configureSchemaPriorityTest();
 
       expect(configureSpy.schemas).deep.include({
@@ -603,8 +662,12 @@ describe('Settings Handlers Tests', () => {
     });
 
     it('SchemaDetectionDisabled should accept a single file match string', async () => {
-      xhrStub.resolves({
-        responseText: `{"schemas": [
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({
+          status: 200,
+          headers: {},
+          body: undefined,
+          responseText: `{"schemas": [
       {
         "name": ".adonisrc.json",
         "description": "AdonisJS configuration file",
@@ -613,9 +676,12 @@ describe('Settings Handlers Tests', () => {
         ],
         "url": "https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json"
       }]}`,
-      });
+        })
+      );
       const disabledSchemaFileMatch = 'foo/*.yml';
-      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: disabledSchemaFileMatch }, {}, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() =>
+        Promise.resolve([{ disableSchemaDetection: disabledSchemaFileMatch }, {}, {}, {}, {}])
+      );
       const configureSpy = await configureSchemaPriorityTest();
 
       expect(configureSpy.schemas).deep.include({
@@ -627,8 +693,12 @@ describe('Settings Handlers Tests', () => {
     });
 
     it('Schema Associations should have a priority when schema association is an array', async () => {
-      xhrStub.resolves({
-        responseText: `{"schemas": [
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({
+          status: 200,
+          headers: {},
+          body: undefined,
+          responseText: `{"schemas": [
       {
         "name": ".adonisrc.json",
         "description": "AdonisJS configuration file",
@@ -637,7 +707,8 @@ describe('Settings Handlers Tests', () => {
         ],
         "url": "https://raw.githubusercontent.com/adonisjs/application/master/adonisrc.schema.json"
       }]}`,
-      });
+        })
+      );
       settingsState.schemaAssociations = [
         {
           fileMatch: testSchemaFileMatch,
@@ -645,7 +716,7 @@ describe('Settings Handlers Tests', () => {
         },
       ] as SchemaConfiguration[];
 
-      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{}, {}, {}, {}]));
       const configureSpy = await configureSchemaPriorityTest();
 
       expect(configureSpy.schemas).deep.include({
@@ -660,7 +731,7 @@ describe('Settings Handlers Tests', () => {
       settingsState.schemaAssociations = {
         [testSchemaURI]: testSchemaFileMatch,
       } as Record<string, string[]>;
-      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{}, {}, {}, {}]));
       const configureSpy = await configureSchemaPriorityTest();
 
       expect(configureSpy.schemas).deep.include({
@@ -686,10 +757,14 @@ describe('Settings Handlers Tests', () => {
       const schemaUri = 'file:///schemas/schema-detection-disable-settings.json';
       const schemaProvider = TestCustomSchemaProvider.instance();
       schemaProvider.addSchemaWithUri('disableSchemaDetection-settings', schemaUri, restrictiveSchema);
-      xhrStub.resolves({ responseText: '{"schemas":[]}' });
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({ status: 200, headers: {}, body: undefined, responseText: '{"schemas":[]}' })
+      );
       const schemas = {};
       schemas[schemaUri] = 'test.yaml';
-      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: ['test.yaml'], schemas }, {}, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() =>
+        Promise.resolve([{ disableSchemaDetection: ['test.yaml'], schemas }, {}, {}, {}, {}])
+      );
 
       try {
         await new SettingsHandler(
@@ -713,19 +788,26 @@ describe('Settings Handlers Tests', () => {
       const githubWorkflowFileMatch = ['.github/workflows/*.yml'];
       const schemaProvider = TestCustomSchemaProvider.instance();
       schemaProvider.addSchemaWithUri('disableSchemaDetection-github-actions', schemaUri, restrictiveSchema);
-      xhrStub.resolves({
-        responseText: JSON.stringify({
-          schemas: [
-            {
-              name: 'GitHub Workflow',
-              description: 'GitHub Actions workflow schema',
-              fileMatch: githubWorkflowFileMatch,
-              url: schemaUri,
-            },
-          ],
-        }),
-      });
-      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: githubWorkflowFileMatch }, {}, {}, {}, {}]);
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({
+          status: 200,
+          headers: {},
+          body: undefined,
+          responseText: JSON.stringify({
+            schemas: [
+              {
+                name: 'GitHub Workflow',
+                description: 'GitHub Actions workflow schema',
+                fileMatch: githubWorkflowFileMatch,
+                url: schemaUri,
+              },
+            ],
+          }),
+        })
+      );
+      workspaceStub.getConfiguration.mock.mockImplementation(() =>
+        Promise.resolve([{ disableSchemaDetection: githubWorkflowFileMatch }, {}, {}, {}, {}])
+      );
 
       try {
         await new SettingsHandler(
@@ -751,8 +833,12 @@ describe('Settings Handlers Tests', () => {
       const schemaUri = 'file:///schemas/schema-detection-disable-modeline.json';
       const schemaProvider = TestCustomSchemaProvider.instance();
       schemaProvider.addSchemaWithUri('disableSchemaDetection-modeline', schemaUri, restrictiveSchema);
-      xhrStub.resolves({ responseText: '{"schemas":[]}' });
-      workspaceStub.getConfiguration.resolves([{ disableSchemaDetection: ['test.yaml'] }, {}, {}, {}, {}]);
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({ status: 200, headers: {}, body: undefined, responseText: '{"schemas":[]}' })
+      );
+      workspaceStub.getConfiguration.mock.mockImplementation(() =>
+        Promise.resolve([{ disableSchemaDetection: ['test.yaml'] }, {}, {}, {}, {}])
+      );
 
       try {
         await new SettingsHandler(
@@ -785,15 +871,13 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{}, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() => Promise.resolve([{}, {}, {}, {}]));
 
       await settingsHandler.pullConfiguration();
 
-      expect(workspaceStub.getConfiguration).calledOnceWith([
-        { section: 'yaml' },
-        { section: 'http' },
-        { section: '[yaml]' },
-        { section: 'editor' },
+      assert.equal(workspaceStub.getConfiguration.mock.callCount(), 1);
+      assert.deepEqual(workspaceStub.getConfiguration.mock.calls[0].arguments.slice(0, 1), [
+        [{ section: 'yaml' }, { section: 'http' }, { section: '[yaml]' }, { section: 'editor' }],
       ]);
     });
     it('should set schemaStoreSettings to empty when schemaStore is disabled', async () => {
@@ -809,11 +893,13 @@ describe('Settings Handlers Tests', () => {
         {} as Telemetry
       );
 
-      workspaceStub.getConfiguration.resolves([{ schemaStore: { enable: false, url: 'http://shouldnot.activate' } }, {}, {}, {}]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() =>
+        Promise.resolve([{ schemaStore: { enable: false, url: 'http://shouldnot.activate' } }, {}, {}, {}])
+      );
 
-      // const configureSpy = sinon.spy(languageService, 'configure');
+      // const configureSpy = spy(languageService, 'configure');
       await settingsHandler.pullConfiguration();
-      // configureSpy.restore();
+      // configureSpy.mock.restore();
       expect(settingsState.schemaStoreEnabled).to.be.false;
       expect(settingsState.schemaStoreSettings).to.be.empty;
     });
@@ -825,14 +911,14 @@ describe('Settings Handlers Tests', () => {
         validationHandler as unknown as ValidationHandler,
         {} as Telemetry
       );
-      workspaceStub.getConfiguration.resolves([{}, {}, {}, { tabSize: 4, detectIndentation: false }]);
+      workspaceStub.getConfiguration.mock.mockImplementation(() =>
+        Promise.resolve([{}, {}, {}, { tabSize: 4, detectIndentation: false }])
+      );
       await settingsHandler.pullConfiguration();
 
-      expect(workspaceStub.getConfiguration).calledOnceWith([
-        { section: 'yaml' },
-        { section: 'http' },
-        { section: '[yaml]' },
-        { section: 'editor' },
+      assert.equal(workspaceStub.getConfiguration.mock.callCount(), 1);
+      assert.deepEqual(workspaceStub.getConfiguration.mock.calls[0].arguments.slice(0, 1), [
+        [{ section: 'yaml' }, { section: 'http' }, { section: '[yaml]' }, { section: 'editor' }],
       ]);
     });
   });

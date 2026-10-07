@@ -1,8 +1,8 @@
-import type { JSONDocument } from '../parser/jsonDocument';
-import { SingleYAMLDocument } from '../parser/yamlParser07';
+import type { JSONDocument } from '../parser/jsonDocument.js';
+import { SingleYAMLDocument } from '../parser/yamlParser07.js';
 
-import type { ResolvedSchema } from './yamlSchemaService';
-import type { JSONSchema } from '../jsonSchema';
+import type { ResolvedSchema } from './yamlSchemaService.js';
+import type { JSONSchema } from '../jsonSchema.js';
 
 /**
  * Attempt to retrieve the schema for a given YAML document based on the Kubernetes GroupVersionKind (GVK).

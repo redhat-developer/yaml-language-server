@@ -1,5 +1,5 @@
 import { URI } from 'vscode-uri';
-import type { JSONSchema } from '../jsonSchema';
+import type { JSONSchema } from '../jsonSchema.js';
 import * as path from 'path';
 
 export function getSchemaTypeName(schema: JSONSchema, ignoreFileNameRefs = false): string {
