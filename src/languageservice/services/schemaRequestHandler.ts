@@ -1,6 +1,5 @@
 import { join } from 'path';
 import { getErrorStatusDescription, xhr } from 'request-light';
-import * as URL from 'url';
 import type { Connection, WorkspaceFolder } from 'vscode-languageserver';
 import { RequestType } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
@@ -227,6 +226,6 @@ export const schemaRequestHandler = async (
 
 export const workspaceContext: WorkspaceContextService = {
   resolveRelativePath: (relativePath: string, resource: string) => {
-    return URL.resolve(resource, relativePath);
+    return new URL(relativePath, resource).toString();
   },
 };
