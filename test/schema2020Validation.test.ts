@@ -5,7 +5,7 @@
 
 import { describe, it, before, beforeEach, afterEach } from 'node:test';
 import type { TestCustomSchemaProvider } from './utils/testHelper.js';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, getDiagnosticMessage } from './utils/testHelper.js';
 import { ServiceSetup } from './utils/serviceSetup.js';
 import type { Diagnostic } from 'vscode-languageserver-types';
 import { expect } from 'chai';
@@ -2000,8 +2000,10 @@ a: true`);
 elements:
   - b: 1`);
         expect(result).to.have.length(2);
-        expect(result.some((d) => d.message.includes('Missing property') && d.message.includes('a'))).to.eq(true);
-        expect(result.some((d) => d.message.includes('Property b is not allowed.'))).to.eq(true);
+        expect(
+          result.some((d) => getDiagnosticMessage(d).includes('Missing property') && getDiagnosticMessage(d).includes('a'))
+        ).to.eq(true);
+        expect(result.some((d) => getDiagnosticMessage(d).includes('Property b is not allowed.'))).to.eq(true);
       });
 
       it('correct extended schema', async () => {
@@ -2055,8 +2057,10 @@ a: true`);
 elements:
   - b: 1`);
         expect(result).to.have.length(2);
-        expect(result.some((d) => d.message.includes('Missing property') && d.message.includes('a'))).to.eq(true);
-        expect(result.some((d) => d.message.includes('Property b is not allowed.'))).to.eq(true);
+        expect(
+          result.some((d) => getDiagnosticMessage(d).includes('Missing property') && getDiagnosticMessage(d).includes('a'))
+        ).to.eq(true);
+        expect(result.some((d) => getDiagnosticMessage(d).includes('Property b is not allowed.'))).to.eq(true);
       });
 
       it('correct extended schema', async () => {

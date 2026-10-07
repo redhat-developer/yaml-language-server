@@ -150,7 +150,7 @@ export class YAMLValidation {
     return filterSuppressedDiagnostics(
       duplicateMessagesRemoved,
       (d) => d.range.start.line,
-      (d) => d.message,
+      (d) => (typeof d.message === 'string' ? d.message : d.message.value),
       (line) => {
         if (line < 0 || line >= textBuffer.getLineCount()) {
           return undefined;

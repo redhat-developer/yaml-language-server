@@ -184,7 +184,7 @@ export class YamlCodeActions {
     const result = [];
     const buffer = new TextBuffer(document);
     for (const diag of diagnostics) {
-      if (diag.message.startsWith('Unused anchor') && diag.source === YAML_SOURCE) {
+      if (typeof diag.message === 'string' && diag.message.startsWith('Unused anchor') && diag.source === YAML_SOURCE) {
         const range = Range.create(diag.range.start, diag.range.end);
         const actual = buffer.getText(range);
         const lineContent = buffer.getLineContent(range.end.line);

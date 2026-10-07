@@ -5,7 +5,7 @@
 
 import { describe, it, before, beforeEach, afterEach } from 'node:test';
 import type { TestCustomSchemaProvider } from './utils/testHelper.js';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, getDiagnosticMessage } from './utils/testHelper.js';
 import { ServiceSetup } from './utils/serviceSetup.js';
 import type { Diagnostic } from 'vscode-languageserver-types';
 import { expect } from 'chai';
@@ -2680,7 +2680,7 @@ unknown: 1
       schemaProvider.addSchema(SCHEMA_ID, root);
       const yaml = `x: A`;
       const result = await parseSetup(yaml);
-      expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+      expect(result.some((d) => /Problems loading reference/i.test(getDiagnosticMessage(d)))).to.eq(false);
       expect(result).to.have.length(1);
       expect(result[0].message).to.include('String is shorter than the minimum length of 2.');
     });
@@ -2711,7 +2711,7 @@ unknown: 1
       schemaProvider.addSchema(SCHEMA_ID, root);
       const yaml = `address:\n  zipCode: "123"`;
       const result = await parseSetup(yaml);
-      expect(result.some((d) => /Problems loading reference/i.test(d.message))).to.eq(false);
+      expect(result.some((d) => /Problems loading reference/i.test(getDiagnosticMessage(d)))).to.eq(false);
       expect(result[0].message).to.include('String is shorter than the minimum length of 5.');
     });
   });
