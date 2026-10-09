@@ -1,3 +1,30 @@
+### 1.25.0
+
+- Feat: Add support for negated schema file-match patterns in `yaml.schemas`. See [#1345](https://github.com/redhat-developer/yaml-language-server/pull/1345).
+- Feat: Show a separate schema CodeLens for each YAML document, with resource-specific titles for Kubernetes schemas. See [#1309](https://github.com/redhat-developer/yaml-language-server/pull/1309).
+- Fix: Schema fileMatch regression in 1.24.0 where single `*` in glob patterns matches across path separators. See [#1295](https://github.com/redhat-developer/yaml-language-server/issues/1295).
+- Fix: Preserve Kubernetes schema priority after resource-specific schema detection, preventing SchemaStore associations from overriding the configured Kubernetes schema. See [#1298](https://github.com/redhat-developer/yaml-language-server/issues/1298).
+- Fix: Schema priority lookup for normalized file URIs. See [#1312](https://github.com/redhat-developer/yaml-language-server/pull/1312).
+- Fix: Type diagnostic reports schema filenames instead of `"object"` when multiple schemas match. See [#1317](https://github.com/redhat-developer/yaml-language-server/issues/1317).
+- Fix: `enum` and `const` validation for nested boolean values. See [#1323](https://github.com/redhat-developer/yaml-language-server/pull/1323).
+- Fix: Resolve schema references through non-standard containers such as `#/components/schemas`, including nested references to the same local file or a sibling file. See [#1322](https://github.com/redhat-developer/yaml-language-server/issues/1322).
+- Fix: Report the underlying reason when a schema fails to load instead of always reporting `No content`. See [#1337](https://github.com/redhat-developer/yaml-language-server/issues/1337) and [vscode-yaml#1282](https://github.com/redhat-developer/vscode-yaml/pull/1282).
+- Fix: Retry remote schema requests after transient HTTP or connection failures. See [#1341](https://github.com/redhat-developer/yaml-language-server/issues/1341) and [vscode-yaml#1284](https://github.com/redhat-developer/vscode-yaml/issues/1284).
+- Fix: Resolve nested schema paths prefixed with a workspace folder name and match a workspace folder name only as a whole path segment in multi-root workspaces. See [#1348](https://github.com/redhat-developer/yaml-language-server/pull/1348) and [#1349](https://github.com/redhat-developer/yaml-language-server/pull/1349).
+- Fix: Improve handling of schemas written using YAML when the first key is quoted, and avoid requesting the same schema content twice. See [vscode-yaml#1275](https://github.com/redhat-developer/vscode-yaml/issues/1275).
+- Fix: Detect SchemaStore schemas for nonstandard and extensionless YAML filenames such as `.clang-format`. See [vscode-yaml#1124](https://github.com/redhat-developer/vscode-yaml/issues/1124).
+- Fix: Make formatter settings resource scoped. See [vscode-yaml#1240](https://github.com/redhat-developer/vscode-yaml/issues/1240).
+- Fix: Keep automatic schema detection for more specific extensions out of user settings. See [vscode-yaml#1271](https://github.com/redhat-developer/vscode-yaml/issues/1271).
+- Fix: Restore auto indentation after a key with an anchor when `editor.autoIndent` is set to `full`. See [vscode-yaml#1289](https://github.com/redhat-developer/vscode-yaml/pull/1289).
+- Fix: Exclude YAML delimiters from word selection. See [vscode-yaml#940](https://github.com/redhat-developer/vscode-yaml/issues/940).
+- Chore: Remove the unmaintained `setup-xvfb` CI action to eliminate Node 20 deprecation warnings. See [#1343](https://github.com/redhat-developer/yaml-language-server/issues/1343).
+- Chore: Remove the unused `mocha-lcov-reporter` dependency. See [#1351](https://github.com/redhat-developer/yaml-language-server/pull/1351).
+- Chore: Remove the redundant direct dependency on `@typescript-eslint/parser`. See [#1357](https://github.com/redhat-developer/yaml-language-server/pull/1357).
+- Chore: Replace legacy URL resolution to address `DEP0169`. See [#1359](https://github.com/redhat-developer/yaml-language-server/pull/1359).
+- Chore: Upgrade `rimraf` to v6. See [#1360](https://github.com/redhat-developer/yaml-language-server/pull/1360).
+
+Thanks to [Simon Heather](https://github.com/X-Guardian), [Yusuke Hayashi](https://github.com/yhay81), [Noritaka Kobayashi](https://github.com/noritaka1166), [Alexandre Kohler](https://github.com/kwy404), [youdie006](https://github.com/youdie006), and [hassan](https://github.com/h55n) for your contributions.
+
 ### 1.24.0
 - Feat: Add support for declaring a schema using an inline `$schema` property. See [#964](https://github.com/redhat-developer/yaml-language-server/issues/964).
 - Feat: Add support for the `yaml.disableSchemaDetection` setting to disable automatic schema association for matching files. See [#1140](https://github.com/redhat-developer/yaml-language-server/issues/1140) and [vscode-yaml#245](https://github.com/redhat-developer/vscode-yaml/issues/245).
