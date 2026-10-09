@@ -4,10 +4,14 @@
 - Feat: Show a separate schema CodeLens for each YAML document, with resource-specific titles for Kubernetes schemas. See [#1309](https://github.com/redhat-developer/yaml-language-server/pull/1309).
 - Fix: Schema fileMatch regression in 1.24.0 where single `*` in glob patterns matches across path separators. See [#1295](https://github.com/redhat-developer/yaml-language-server/issues/1295).
 - Fix: Preserve Kubernetes schema priority after resource-specific schema detection, preventing SchemaStore associations from overriding the configured Kubernetes schema. See [#1298](https://github.com/redhat-developer/yaml-language-server/issues/1298).
+- Fix: Do not depend on specific working directory within container image. See [#1301](https://github.com/redhat-developer/yaml-language-server/pull/1301).
+- Fix: Recognize Kubernetes CRD schema as built-in resources. See [#1310](https://github.com/redhat-developer/yaml-language-server/issues/1310).
 - Fix: Schema priority lookup for normalized file URIs. See [#1312](https://github.com/redhat-developer/yaml-language-server/pull/1312).
+- Fix: Resolve percent-encoded schema paths in modelines without encoding them a second time. See [#1316](https://github.com/redhat-developer/yaml-language-server/pull/1316).
 - Fix: Type diagnostic reports schema filenames instead of `"object"` when multiple schemas match. See [#1317](https://github.com/redhat-developer/yaml-language-server/issues/1317).
 - Fix: `enum` and `const` validation for nested boolean values. See [#1323](https://github.com/redhat-developer/yaml-language-server/pull/1323).
 - Fix: Resolve schema references through non-standard containers such as `#/components/schemas`, including nested references to the same local file or a sibling file. See [#1322](https://github.com/redhat-developer/yaml-language-server/issues/1322).
+- Fix: Keep constraints on cyclic cross-file `$refs` in unindexed resources. See [#1326](https://github.com/redhat-developer/yaml-language-server/pull/1326).
 - Fix: Report the underlying reason when a schema fails to load instead of always reporting `No content`. See [#1337](https://github.com/redhat-developer/yaml-language-server/issues/1337) and [vscode-yaml#1282](https://github.com/redhat-developer/vscode-yaml/pull/1282).
 - Fix: Retry remote schema requests after transient HTTP or connection failures. See [#1341](https://github.com/redhat-developer/yaml-language-server/issues/1341) and [vscode-yaml#1284](https://github.com/redhat-developer/vscode-yaml/issues/1284).
 - Fix: Resolve nested schema paths prefixed with a workspace folder name and match a workspace folder name only as a whole path segment in multi-root workspaces. See [#1348](https://github.com/redhat-developer/yaml-language-server/pull/1348) and [#1349](https://github.com/redhat-developer/yaml-language-server/pull/1349).
@@ -23,7 +27,7 @@
 - Chore: Replace legacy URL resolution to address `DEP0169`. See [#1359](https://github.com/redhat-developer/yaml-language-server/pull/1359).
 - Chore: Upgrade `rimraf` to v6. See [#1360](https://github.com/redhat-developer/yaml-language-server/pull/1360).
 
-Thanks to [Simon Heather](https://github.com/X-Guardian), [Yusuke Hayashi](https://github.com/yhay81), [Noritaka Kobayashi](https://github.com/noritaka1166), [Alexandre Kohler](https://github.com/kwy404), [youdie006](https://github.com/youdie006), and [hassan](https://github.com/h55n) for your contributions.
+Thanks to [Alexandre Kohler](https://github.com/kwy404), [Andreas Reichel](https://github.com/AndreasReichel), [Noritaka Kobayashi](https://github.com/noritaka1166), [Simon Heather](https://github.com/X-Guardian), [Yusuke Hayashi](https://github.com/yhay81), [ProbstDJakob](https://github.com/ProbstDJakob), [youdie006](https://github.com/youdie006), [hassan](https://github.com/h55n), [sama Pyb](https://github.com/Pybsama)for your contributions.
 
 ### 1.24.0
 - Feat: Add support for declaring a schema using an inline `$schema` property. See [#964](https://github.com/redhat-developer/yaml-language-server/issues/964).
