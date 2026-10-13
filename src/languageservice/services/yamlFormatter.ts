@@ -6,7 +6,7 @@
 
 import type { FormattingOptions } from 'vscode-languageserver-types';
 import { Range, Position, TextEdit } from 'vscode-languageserver-types';
-import type { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService';
+import type { CustomFormatterOptions, LanguageSettings } from '../yamlLanguageService.js';
 import type { Options } from 'prettier';
 import * as yamlPlugin from 'prettier/plugins/yaml';
 import * as estreePlugin from 'prettier/plugins/estree';

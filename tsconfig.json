@@ -12,7 +12,7 @@
     "strictFunctionTypes": false,
     "strictNullChecks": false,
     "target": "es2020",
-    "types": ["mocha", "node"],
+    "types": ["node"],
     "useUnknownInCatchVariables": false
   },
   "include": ["src", "test"],

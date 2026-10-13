@@ -1,13 +1,12 @@
 /src
 /test
+/out/server/test
+/lib
 .editorconfig
-Jenkinsfile
 tsconfig.json
-.nyc_output/
 coverage/
 .vscode/
 .github/
-.eslintrc.js
 .prettierrc.json
-.travis.yml
-.mocharc.json
+eslint.config.mjs
+eslint-result.sarif

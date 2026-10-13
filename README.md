@@ -423,7 +423,7 @@ docker run --rm -p <port>:<port> quay.io/redhat-developer/yaml-language-server:l
 
 ## LSP extensions
 
-The server uses `vscode-languageserver@^9.0.0` and implements [LSP 3.17](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/).
+The server uses `vscode-languageserver@^10.1.2` and implements [LSP 3.18](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/).
 
 The following non-standard LSP extensions support schema association, custom schema providers, and schema selection.
 
@@ -594,7 +594,7 @@ interface JSONSchemaDescriptionExt extends JSONSchemaDescription {
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v18.18.0 or higher
+- [Node.js](https://nodejs.org/) v22.13.0 or higher
 - npm
 
 ### Setup
@@ -620,7 +620,11 @@ Use `npm test` to run tests.
 
 ### Module builds
 
-Building YAML Language Server produces [CommonJS](http://www.commonjs.org/) output in the `out/server/src` directory. In addition, a build also produces [UMD](https://github.com/umdjs/umd) (Universal Module Definition) modules and [ES Modules](https://tc39.es/ecma262/#sec-modules) (ESM) in the `lib` directory. These module formats support different server-side module loaders and browser bundlers such as webpack.
+Building YAML Language Server produces [ES modules](https://tc39.es/ecma262/#sec-modules) (ESM) and TypeScript declarations under `out/server/src`.
+
+The browser server entry point is `out/server/src/webworker/yamlServerMain.js`.
+
+> **Note:** Starting with `yaml-language-server@2.0.0`, the package publishes ESM-only builds. Files under `out/server/src` now use ESM instead of CommonJS, and the `lib/esm` and `lib/umd` output directories are no longer published.
 
 ### CI
 

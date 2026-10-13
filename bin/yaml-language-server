@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
-const version = require('../package.json').version;
+import packageConfig from '../package.json' with { type: 'json' };
+
+const version = packageConfig.version;
 const args = process.argv.slice(2);
 
 if (args.includes('--version') || args.includes('-version')) {
@@ -24,4 +26,4 @@ Other:
 }
 
 process.env.YAML_LANGUAGE_SERVER_VERSION = version;
-require('../out/server/src/server.js');
+await import('../out/server/src/server.js');

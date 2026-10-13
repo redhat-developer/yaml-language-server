@@ -2,42 +2,39 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as sinon from 'sinon';
-import sinonChai from 'sinon-chai';
+
+import { describe, it, beforeEach, afterEach, mock } from 'node:test';
+import type { Mock } from 'node:test';
+import assert from 'node:assert/strict';
 import * as chai from 'chai';
-import { YamlCodeLens } from '../src/languageservice/services/yamlCodeLens';
-import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService';
-import { setupTextDocument } from './utils/testHelper';
-import type { JSONSchema } from '../src/languageservice/jsonSchema';
+import { YamlCodeLens } from '../src/languageservice/services/yamlCodeLens.js';
+import type { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService.js';
+import { setupTextDocument } from './utils/testHelper.js';
+import type { JSONSchema } from '../src/languageservice/jsonSchema.js';
 import type { Command } from 'vscode-languageserver-protocol';
 import { CodeLens, Range } from 'vscode-languageserver-protocol';
 import type { Connection } from 'vscode-languageserver';
-import { YamlCommands } from '../src/commands';
-import { TelemetryImpl } from '../src/languageserver/telemetry';
-import type { Telemetry } from '../src/languageservice/telemetry';
-import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import type { LanguageService } from '../src/languageservice/yamlLanguageService';
-import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings';
-import type { SingleYAMLDocument } from '../src/languageservice/parser/yaml-documents';
+import { YamlCommands } from '../src/commands.js';
+import type { Telemetry } from '../src/languageservice/telemetry.js';
+import { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService.js';
+import { SettingsState, TextDocumentTestManager } from '../src/yamlSettings.js';
+import type { SingleYAMLDocument } from '../src/languageservice/parser/yaml-documents.js';
 
 const expect = chai.expect;
-chai.use(sinonChai);
 
 describe('YAML CodeLens', () => {
-  const sandbox = sinon.createSandbox();
-  let yamlSchemaService: sinon.SinonStubbedInstance<YAMLSchemaService>;
-  let telemetryStub: sinon.SinonStubbedInstance<TelemetryImpl>;
+  let yamlSchemaService: { getSchemaForResource: Mock<YAMLSchemaService['getSchemaForResource']> };
   let telemetry: Telemetry;
 
   beforeEach(() => {
-    yamlSchemaService = sandbox.createStubInstance(YAMLSchemaService);
-    telemetryStub = sandbox.createStubInstance(TelemetryImpl);
-    telemetry = telemetryStub;
+    yamlSchemaService = { getSchemaForResource: mock.fn() };
+    telemetry = { send: mock.fn(), sendError: mock.fn(), sendTrack: mock.fn() };
   });
 
   afterEach(() => {
-    sandbox.restore();
+    mock.reset();
   });
 
   function createCommand(title: string, command: string, arg: string): Command {
@@ -63,7 +60,7 @@ describe('YAML CodeLens', () => {
     const schema: JSONSchema = {
       url: 'some://url/to/schema.json',
     };
-    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
+    yamlSchemaService.getSchemaForResource.mock.mockImplementation(() => Promise.resolve(createResolvedSchema(schema)));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result).is.not.empty;
@@ -78,7 +75,7 @@ describe('YAML CodeLens', () => {
     const schema: JSONSchema = {
       url: 'some://url/to/schema.json',
     };
-    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
+    yamlSchemaService.getSchemaForResource.mock.mockImplementation(() => Promise.resolve(createResolvedSchema(schema)));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result[0].range).is.deep.equal(Range.create(0, 0, 0, 0));
@@ -99,7 +96,7 @@ describe('YAML CodeLens', () => {
       resolveConfiguration = resolve;
     });
 
-    const getCodeLensStub = sandbox.stub().returns([expected]);
+    const getCodeLensStub = mock.fn(() => [expected]);
     const languageService = {
       getCodeLens: getCodeLensStub,
     } as unknown as LanguageService;
@@ -117,11 +114,12 @@ describe('YAML CodeLens', () => {
 
     await Promise.resolve();
     expect(settled).to.be.false;
-    expect(getCodeLensStub).not.called;
+    assert.equal(getCodeLensStub.mock.callCount(), 0);
 
     resolveConfiguration();
     const result = await response;
-    expect(getCodeLensStub).calledOnceWithExactly(doc);
+    assert.equal(getCodeLensStub.mock.callCount(), 1);
+    assert.deepEqual(getCodeLensStub.mock.calls[0].arguments, [doc]);
     expect(result).deep.equal([expected]);
   });
 
@@ -130,7 +128,7 @@ describe('YAML CodeLens', () => {
     const schema: JSONSchema = {
       url: 'some://url/to/schema.json',
     };
-    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
+    yamlSchemaService.getSchemaForResource.mock.mockImplementation(() => Promise.resolve(createResolvedSchema(schema)));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result.length).to.eq(2);
@@ -149,7 +147,7 @@ describe('YAML CodeLens', () => {
     const schema: JSONSchema = {
       url: 'some://url/to/schema.json',
     };
-    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
+    yamlSchemaService.getSchemaForResource.mock.mockImplementation(() => Promise.resolve(createResolvedSchema(schema)));
 
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
@@ -165,8 +163,14 @@ describe('YAML CodeLens', () => {
     const podSchemaUrl = 'https://example.com/v1.36.1-standalone-strict/_definitions.json#/definitions/io.k8s.api.core.v1.Pod';
     const policySchemaUrl =
       'https://example.com/v1.36.1-standalone-strict/_definitions.json#/definitions/io.k8s.api.admissionregistration.v1.MutatingAdmissionPolicy';
-    yamlSchemaService.getSchemaForResource.onFirstCall().resolves(createResolvedSchema({ url: podSchemaUrl }));
-    yamlSchemaService.getSchemaForResource.onSecondCall().resolves(createResolvedSchema({ url: policySchemaUrl }));
+    yamlSchemaService.getSchemaForResource.mock.mockImplementationOnce(
+      () => Promise.resolve(createResolvedSchema({ url: podSchemaUrl })),
+      0
+    );
+    yamlSchemaService.getSchemaForResource.mock.mockImplementationOnce(
+      () => Promise.resolve(createResolvedSchema({ url: policySchemaUrl })),
+      1
+    );
 
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
@@ -175,14 +179,16 @@ describe('YAML CodeLens', () => {
       createCodeLens('Pod (Kubernetes v1.36.1)', YamlCommands.JUMP_TO_SCHEMA, podSchemaUrl),
       createCodeLens('MutatingAdmissionPolicy (Kubernetes v1.36.1)', YamlCommands.JUMP_TO_SCHEMA, policySchemaUrl, 3),
     ]);
-    expect((yamlSchemaService.getSchemaForResource.firstCall.args[1] as SingleYAMLDocument).currentDocIndex).to.eq(0);
-    expect((yamlSchemaService.getSchemaForResource.secondCall.args[1] as SingleYAMLDocument).currentDocIndex).to.eq(1);
+    expect((yamlSchemaService.getSchemaForResource.mock.calls[0].arguments[1] as SingleYAMLDocument).currentDocIndex).to.eq(0);
+    expect((yamlSchemaService.getSchemaForResource.mock.calls[1].arguments[1] as SingleYAMLDocument).currentDocIndex).to.eq(1);
   });
 
   it('should show the Kubernetes version for the generic all.json schema', async () => {
     const doc = setupTextDocument('apiVersion: v1\nkind: UnknownCoreResource');
     const schemaUrl = 'https://example.com/v1.36.1-standalone-strict/all.json';
-    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema({ url: schemaUrl }));
+    yamlSchemaService.getSchemaForResource.mock.mockImplementation(() =>
+      Promise.resolve(createResolvedSchema({ url: schemaUrl }))
+    );
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result).is.deep.equal([createCodeLens('Kubernetes v1.36.1', YamlCommands.JUMP_TO_SCHEMA, schemaUrl)]);
@@ -194,7 +200,7 @@ describe('YAML CodeLens', () => {
       url: 'some://url/to/schema.json',
       title: 'fooBar',
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
+    yamlSchemaService.getSchemaForResource.mock.mockImplementation(() => Promise.resolve(createResolvedSchema(schema)));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result[0].command).is.deep.equal(
@@ -209,7 +215,7 @@ describe('YAML CodeLens', () => {
       title: 'fooBar',
       description: 'fooBarDescription',
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
+    yamlSchemaService.getSchemaForResource.mock.mockImplementation(() => Promise.resolve(createResolvedSchema(schema)));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result[0].command).is.deep.equal(
@@ -223,7 +229,7 @@ describe('YAML CodeLens', () => {
       url: 'https://json-schema.org/draft/2020-12/schema',
       title: 'JSON Schema Draft 2020-12',
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
+    yamlSchemaService.getSchemaForResource.mock.mockImplementation(() => Promise.resolve(createResolvedSchema(schema)));
 
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
@@ -249,7 +255,7 @@ describe('YAML CodeLens', () => {
         },
       ],
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
+    yamlSchemaService.getSchemaForResource.mock.mockImplementation(() => Promise.resolve(createResolvedSchema(schema)));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result).has.length(2);
@@ -271,7 +277,7 @@ describe('YAML CodeLens', () => {
         },
       ],
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
+    yamlSchemaService.getSchemaForResource.mock.mockImplementation(() => Promise.resolve(createResolvedSchema(schema)));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result).has.length(2);
@@ -293,7 +299,7 @@ describe('YAML CodeLens', () => {
         },
       ],
     } as JSONSchema;
-    yamlSchemaService.getSchemaForResource.resolves(createResolvedSchema(schema));
+    yamlSchemaService.getSchemaForResource.mock.mockImplementation(() => Promise.resolve(createResolvedSchema(schema)));
     const codeLens = new YamlCodeLens(yamlSchemaService as unknown as YAMLSchemaService, telemetry);
     const result = await codeLens.getCodeLens(doc);
     expect(result).has.length(2);

@@ -6,9 +6,16 @@
 // Forked from vscode-json-languageservice@6.0.0-next.1
 // Source: https://github.com/microsoft/vscode-json-languageservice/blob/810471bbb462bb6b87351c2232e209a3bb4062ca/src/jsonLanguageTypes.ts
 
-import { JSONSchema } from './jsonSchema';
+import type { JSONSchema } from './jsonSchema.js';
 import type { FormattingOptions as LSPFormattingOptions } from 'vscode-languageserver-types';
-import {
+import { MarkupKind } from 'vscode-languageserver-types';
+import type { Node, Pair } from 'yaml';
+import type { CustomTagReturnType } from './utils/customTags.js';
+
+export type { JSONSchema } from './jsonSchema.js';
+export { TextDocument } from 'vscode-languageserver-textdocument';
+export type { TextDocumentContentChangeEvent } from 'vscode-languageserver-textdocument';
+export {
   Range,
   Position,
   DocumentUri,
@@ -27,13 +34,13 @@ import {
   CompletionList,
   CompletionItemTag,
   InsertTextFormat,
+  DefinitionLink,
   SymbolInformation,
   SymbolKind,
   DocumentSymbol,
   Location,
   Hover,
   MarkedString,
-  DefinitionLink,
   CodeActionContext,
   Command,
   CodeAction,
@@ -46,50 +53,7 @@ import {
   VersionedTextDocumentIdentifier,
   DocumentHighlightKind,
 } from 'vscode-languageserver-types';
-import { TextDocument, TextDocumentContentChangeEvent } from 'vscode-languageserver-textdocument';
-import type { Node, Pair } from 'yaml';
-import type { CustomTagReturnType } from './utils/customTags';
-export {
-  TextDocument,
-  TextDocumentContentChangeEvent,
-  Range,
-  Position,
-  DocumentUri,
-  MarkupContent,
-  MarkupKind,
-  JSONSchema,
-  Color,
-  ColorInformation,
-  ColorPresentation,
-  FoldingRange,
-  FoldingRangeKind,
-  SelectionRange,
-  Diagnostic,
-  DiagnosticSeverity,
-  CompletionItem,
-  CompletionItemKind,
-  CompletionList,
-  CompletionItemTag,
-  InsertTextFormat,
-  DefinitionLink,
-  SymbolInformation,
-  SymbolKind,
-  DocumentSymbol,
-  Location,
-  Hover,
-  MarkedString,
-  CodeActionContext,
-  Command,
-  CodeAction,
-  DocumentHighlight,
-  DocumentLink,
-  WorkspaceEdit,
-  TextEdit,
-  CodeActionKind,
-  TextDocumentEdit,
-  VersionedTextDocumentIdentifier,
-  DocumentHighlightKind,
-};
+
 /**
  * Error codes used by diagnostics
  */
@@ -121,13 +85,7 @@ export function isSchemaResolveError(code: number): boolean {
 }
 export type YamlNode = Node | Pair;
 export type ASTNode =
-  | ObjectASTNode
-  | PropertyASTNode
-  | ArrayASTNode
-  | StringASTNode
-  | NumberASTNode
-  | BooleanASTNode
-  | NullASTNode;
+  ObjectASTNode | PropertyASTNode | ArrayASTNode | StringASTNode | NumberASTNode | BooleanASTNode | NullASTNode;
 export interface BaseASTNode {
   readonly type: 'object' | 'array' | 'property' | 'string' | 'number' | 'boolean' | 'null';
   readonly parent?: ASTNode;

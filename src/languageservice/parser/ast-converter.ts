@@ -5,8 +5,8 @@
 
 import type { Node, Scalar, YAMLMap, Pair, YAMLSeq, Alias, Document, LineCounter } from 'yaml';
 import { isScalar, isMap, isPair, isSeq, isNode, isAlias } from 'yaml';
-import type { ASTNode, YamlNode } from '../jsonLanguageTypes';
-import { getCustomTagReturnType } from '../utils/customTags';
+import type { ASTNode, YamlNode } from '../jsonLanguageTypes.js';
+import { getCustomTagReturnType } from '../utils/customTags.js';
 import {
   NullASTNodeImpl,
   PropertyASTNodeImpl,
@@ -15,7 +15,7 @@ import {
   NumberASTNodeImpl,
   ArrayASTNodeImpl,
   BooleanASTNodeImpl,
-} from './jsonDocument';
+} from './jsonDocument.js';
 
 type NodeRange = [number, number, number];
 
