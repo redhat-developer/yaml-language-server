@@ -17,7 +17,7 @@
   "bin": {
     "yaml-language-server": "bin/yaml-language-server"
   },
-  "main": "./out/server/src/index.js",
+  "main": "./out/src/index.js",
   "l10n": "./l10n",
   "keywords": [
     "yaml",
@@ -60,10 +60,10 @@
     "typescript-eslint": "^8.59.4"
   },
   "scripts": {
-    "clean": "rimraf out/server lib",
+    "clean": "rimraf out",
     "compile": "tsc -p .",
     "watch": "tsc --watch -p .",
-    "test": "npm run compile && node --enable-source-maps --test out/server/test/*.test.js",
+    "test": "npm run compile && node --enable-source-maps --test out/test/*.test.js",
     "coveralls": "c8 --reporter=lcov --reporter=text npm test",
     "lint": "eslint --max-warnings 0",
     "lint-ci": "eslint --max-warnings 0 -f @microsoft/eslint-formatter-sarif -o eslint-result.sarif",

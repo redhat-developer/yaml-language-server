@@ -26,4 +26,4 @@ Other:
 }
 
 process.env.YAML_LANGUAGE_SERVER_VERSION = version;
-await import('../out/server/src/server.js');
+await import('../out/src/server.js');

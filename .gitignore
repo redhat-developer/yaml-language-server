@@ -1,7 +1,7 @@
 npm-debug.log
 .vscode
 node_modules/
-out/server
+out/
 .DS_Store
 yarn-error.log
 coverage

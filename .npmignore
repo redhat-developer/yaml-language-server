@@ -1,7 +1,6 @@
 /src
 /test
-/out/server/test
-/lib
+/out/test
 .editorconfig
 tsconfig.json
 coverage/
