@@ -1170,7 +1170,7 @@ obj:
   });
 
   describe('Multiple type tests', function () {
-    it('Do not error when there are multiple types in schema and theyre valid', async () => {
+    it('Do not error when there are multiple types in schema and they are valid', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -1186,7 +1186,7 @@ obj:
   });
 
   describe('Invalid YAML errors', function () {
-    it('Error when theres a finished untyped item', async () => {
+    it('Error when there is a finished untyped item', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {
@@ -1204,7 +1204,7 @@ obj:
       assert.deepEqual(result[0], createExpectedError(BlockMappingEntryError, 1, 0, 1, 2));
     });
 
-    it('Error when theres no value for a node', async () => {
+    it('Error when there is no value for a node', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
         type: 'object',
         properties: {

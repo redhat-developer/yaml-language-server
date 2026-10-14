@@ -2756,7 +2756,7 @@ describe('Auto Completion Tests', () => {
       assert.equal(result.items[0].insertText, ' obj1:\n    ');
     });
 
-    it('Simple array object completion without "-" befor array empty item', async () => {
+    it('Simple array object completion without "-" before array empty item', async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
       schemaProvider.addSchema(SCHEMA_ID, schema);
@@ -3012,7 +3012,7 @@ describe('Auto Completion Tests', () => {
         createExpectedCompletion('options', 'options:\n    description: ', 0, 2, 0, 2, 10, 2, { documentation: '' })
       );
     });
-    it('Should not agregate suggested text from different schemas', async () => {
+    it('Should not aggregate suggested text from different schemas', async () => {
       const schema = {
         definitions: { obj1, obj2 },
         anyOf: [

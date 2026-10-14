@@ -247,7 +247,7 @@ export interface SchemaConfiguration {
    */
   schema?: JSONSchema;
   /**
-   * A parent folder for folder specifc associations. An association that has a folder URI set is only used
+   * A parent folder for folder specific associations. An association that has a folder URI set is only used
    * if the document that is validated has the folderUri as parent
    */
   folderUri?: string;
@@ -392,7 +392,7 @@ export interface DocumentSymbolsContext {
 }
 export interface ColorInformationContext {
   /**
-   * The maximal number of color informations returned.
+   * The maximal number of color information entries returned.
    */
   resultLimit?: number;
   /**

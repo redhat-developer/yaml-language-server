@@ -724,7 +724,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
 
       let toValidate = node;
       if (hasNestedSchema) {
-        // clone for meta-validation: stop at dialect boundaries abd replace with {}
+        // clone for meta-validation: stop at dialect boundaries and replace with {}
         const stopAtDialectBoundary = (val: JSONSchema, seenSize: number): JSONSchema | undefined => {
           if (seenSize !== 0 && val && typeof val === 'object' && val.$schema) return {};
           return undefined;

@@ -11,7 +11,7 @@ import { aliasDepth } from '../src/languageservice/parser/ast-converter';
 
 describe('YAML parser', () => {
   describe('YAML parser', function () {
-    it('parse emtpy text', () => {
+    it('parse empty text', () => {
       const parsedDocument = parse('');
       assert(parsedDocument.documents.length === 1, 'A document has been created for an empty text');
     });

@@ -49,7 +49,7 @@ export class TextBuffer {
     return this.doc.getText(range);
   }
 
-  getPosition(offest: number): Position {
-    return this.doc.positionAt(offest);
+  getPosition(offset: number): Position {
+    return this.doc.positionAt(offset);
   }
 }

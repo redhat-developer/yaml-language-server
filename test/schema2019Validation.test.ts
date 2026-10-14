@@ -1492,7 +1492,7 @@ describe('Validation Tests', () => {
       });
     });
 
-    describe('dynamic evalation inside nested refs', () => {
+    describe('dynamic evaluation inside nested refs', () => {
       const schema: JSONSchema = {
         $schema: 'https://json-schema.org/draft/2019-09/schema',
         $defs: {
