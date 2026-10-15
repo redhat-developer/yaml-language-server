@@ -1,3 +1,14 @@
+### 2.0.0
+
+- Breaking: Replace the separate CommonJS, UMD, and ESM builds with one ESM build, including TypeScript declarations, under `out/src`. Consumers referencing `out/server/src`, `lib/esm`, or `lib/umd` must update their paths and ensure their configuration supports ESM.
+- Breaking: Move the browser server entry point to `yaml-language-server/out/src/webworker/yamlServerMain.js`.
+- Chore: Replace Mocha with Node’s built-in `node:test` runner and compile tests with `tsc` instead of running them through `ts-node`.
+- Chore: Replace `nyc` with `c8` to collect coverage from native ESM execution and generate LCOV reports.
+- Chore: Replace Sinon, sinon-chai, and their typings with Node’s built-in mocks.
+- Chore: Upgrade `vscode-languageserver` to 10.1.2 and `vscode-languageserver-types` to 3.18.4, and adapt code to the updated APIs.
+
+See [#1363](https://github.com/redhat-developer/yaml-language-server/pull/1363) for details.
+
 ### 1.25.0
 
 - Feat: Add support for negated schema file-match patterns in `yaml.schemas`. See [#1345](https://github.com/redhat-developer/yaml-language-server/pull/1345).
