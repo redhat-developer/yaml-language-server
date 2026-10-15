@@ -3,13 +3,15 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { describe, it, beforeEach } from 'node:test';
+
 import * as chai from 'chai';
 import type { Pair, YAMLSeq } from 'yaml';
 import { isPair, isSeq } from 'yaml';
-import { YamlDocuments } from '../src/languageservice/parser/yaml-documents';
-import { getParent, isInComment } from '../src/languageservice/utils/yamlAstUtils';
-import { TextBuffer } from '../src/languageservice/utils/textBuffer';
-import { setupTextDocument } from './utils/testHelper';
+import { YamlDocuments } from '../src/languageservice/parser/yaml-documents.js';
+import { getParent, isInComment } from '../src/languageservice/utils/yamlAstUtils.js';
+import { TextBuffer } from '../src/languageservice/utils/textBuffer.js';
+import { setupTextDocument } from './utils/testHelper.js';
 const expect = chai.expect;
 
 describe('AST Utils Tests', () => {

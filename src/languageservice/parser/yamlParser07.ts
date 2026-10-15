@@ -6,10 +6,10 @@
 
 import type { CST, Document, ParseOptions, DocumentOptions, SchemaOptions } from 'yaml';
 import { Parser, Composer, LineCounter } from 'yaml';
-import { YAMLDocument, SingleYAMLDocument } from './yaml-documents';
-import { getCustomTags } from './custom-tag-provider';
+import { YAMLDocument, SingleYAMLDocument } from './yaml-documents.js';
+import { getCustomTags } from './custom-tag-provider.js';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { TextBuffer } from '../utils/textBuffer';
+import { TextBuffer } from '../utils/textBuffer.js';
 
 export { YAMLDocument, SingleYAMLDocument };
 

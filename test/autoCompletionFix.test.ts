@@ -3,19 +3,23 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { describe, it, before, beforeEach, afterEach } from 'node:test';
+
 import type { CompletionList } from 'vscode-languageserver-types';
 import { CompletionItemKind, InsertTextFormat, Position, Range } from 'vscode-languageserver-types';
-import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import type { LanguageService } from '../src/languageservice/yamlLanguageService';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
-import { ServiceSetup } from './utils/serviceSetup';
-import type { TestCustomSchemaProvider } from './utils/testHelper';
-import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService.js';
+import type { SettingsState } from '../src/yamlSettings.js';
+import { TextDocumentTestManager } from '../src/yamlSettings.js';
+import { ServiceSetup } from './utils/serviceSetup.js';
+import type { TestCustomSchemaProvider } from './utils/testHelper.js';
+import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
 import { expect } from 'chai';
-import { createExpectedCompletion } from './utils/verifyError';
-import * as path from 'path';
-import type { JSONSchema } from './../src/languageservice/jsonSchema';
+import { createExpectedCompletion } from './utils/verifyError.js';
+import type { JSONSchema } from './../src/languageservice/jsonSchema.js';
+
+import nestedObjectArraySchema from './fixtures/test-nested-object-array.json' with { type: 'json' };
+import completionOneOfSchema from './fixtures/test-completion-oneOf.json' with { type: 'json' };
 
 describe('Auto Completion Fix Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -196,9 +200,7 @@ spec:
   });
 
   it('should complete  array', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const schema = require(path.join(__dirname, './fixtures/test-nested-object-array.json'));
-    schemaProvider.addSchema(SCHEMA_ID, schema);
+    schemaProvider.addSchema(SCHEMA_ID, nestedObjectArraySchema as JSONSchema);
     const content = `objA:
   - name: nameA1
       
@@ -211,9 +213,7 @@ objB:
   });
 
   it('should complete array item for "oneOf" schema', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const schema = require(path.join(__dirname, './fixtures/test-completion-oneOf.json'));
-    schemaProvider.addSchema(SCHEMA_ID, schema);
+    schemaProvider.addSchema(SCHEMA_ID, completionOneOfSchema);
     const content = `metadata:
   Selector:
     query:

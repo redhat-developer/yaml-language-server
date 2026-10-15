@@ -18,13 +18,14 @@ import type {
   ServerCapabilities,
 } from 'vscode-languageserver-protocol';
 import type { Connection, RemoteWorkspace } from 'vscode-languageserver';
-import { TelemetryImpl } from '../../src/languageserver/telemetry';
-import type { TelemetryEvent } from '../../src/languageservice/telemetry';
+import { TelemetryImpl } from '../../src/languageserver/telemetry.js';
+import type { TelemetryEvent } from '../../src/languageservice/telemetry.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export class TestWorkspace implements RemoteWorkspace {
   connection: Connection;
+  textDocumentContent: RemoteWorkspace['textDocumentContent'];
   applyEdit(paramOrEdit: ApplyWorkspaceEditParams | WorkspaceEdit): Promise<ApplyWorkspaceEditResponse> {
     throw new Error('Method not implemented.');
   }

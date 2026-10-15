@@ -395,14 +395,14 @@ npm install
 npm run build
 ```
 
-The built server is located at `./out/server/src/server.js`.
+The built server is located at `./out/src/server.js`.
 
 Run the built server with the communication channel required by your client:
 
 ```sh
-node ./out/server/src/server.js --stdio
-node ./out/server/src/server.js --socket=<port>
-node ./out/server/src/server.js --node-ipc
+node ./out/src/server.js --stdio
+node ./out/src/server.js --socket=<port>
+node ./out/src/server.js --node-ipc
 ```
 
 #### Using the container image
@@ -423,7 +423,7 @@ docker run --rm -p <port>:<port> quay.io/redhat-developer/yaml-language-server:l
 
 ## LSP extensions
 
-The server uses `vscode-languageserver@^9.0.0` and implements [LSP 3.17](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/).
+The server uses `vscode-languageserver@^10.1.2` and implements [LSP 3.18](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/).
 
 The following non-standard LSP extensions support schema association, custom schema providers, and schema selection.
 
@@ -594,7 +594,7 @@ interface JSONSchemaDescriptionExt extends JSONSchemaDescription {
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v18.18.0 or higher
+- [Node.js](https://nodejs.org/) v22.13.0 or higher
 - npm
 
 ### Setup
@@ -614,13 +614,21 @@ Build the language server:
 npm run build
 ```
 
-The main server output is generated in `out/server/src`.
+Building YAML Language Server produces [ES modules](https://tc39.es/ecma262/#sec-modules) (ESM) and TypeScript declarations under `out/src`.
 
-Use `npm test` to run tests.
+The browser server entry point is `out/src/webworker/yamlServerMain.js`.
 
-### Module builds
+> **Note:** Starting with `yaml-language-server@2.0.0`, the package publishes a single ESM build under `out/src`, replacing the CommonJS build under `out/server/src` and the separate builds under `lib/esm` and `lib/umd`. Consumers referencing these previous output paths must update them to `out/src`. CommonJS and UMD builds are no longer provided.
 
-Building YAML Language Server produces [CommonJS](http://www.commonjs.org/) output in the `out/server/src` directory. In addition, a build also produces [UMD](https://github.com/umdjs/umd) (Universal Module Definition) modules and [ES Modules](https://tc39.es/ecma262/#sec-modules) (ESM) in the `lib` directory. These module formats support different server-side module loaders and browser bundlers such as webpack.
+### Test
+
+Run the test suite:
+
+```sh
+npm test
+```
+
+This command compiles the TypeScript files before running the tests.
 
 ### CI
 

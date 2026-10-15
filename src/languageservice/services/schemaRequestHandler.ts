@@ -1,11 +1,11 @@
 import { join } from 'path';
-import { getErrorStatusDescription, xhr } from 'request-light';
+import requestLight from 'request-light';
 import type { Connection, WorkspaceFolder } from 'vscode-languageserver';
 import { RequestType } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { CustomSchemaContentRequest, VSCodeContentRequest } from '../../requestTypes';
-import { isRelativePath, relativeToAbsolutePath } from '../utils/paths';
-import type { WorkspaceContextService } from '../yamlLanguageService';
+import { CustomSchemaContentRequest, VSCodeContentRequest } from '../../requestTypes.js';
+import { isRelativePath, relativeToAbsolutePath } from '../utils/paths.js';
+import type { WorkspaceContextService } from '../yamlLanguageService.js';
 
 export interface FileSystem {
   readFile(fsPath: string, encoding?: string): Promise<string>;
@@ -119,7 +119,7 @@ async function requestSchemaWithRetry(
 
   for (let attempt = 0; ; attempt++) {
     try {
-      const response = await xhr({ url, followRedirects: 5, headers });
+      const response = await requestLight.xhr({ url, followRedirects: 5, headers });
       return response.responseText;
     } catch (error) {
       if (attempt >= maxRetries || !isRetryableError(error)) {
@@ -216,7 +216,7 @@ export const schemaRequestHandler = async (
     try {
       return await requestSchemaWithRetry(uri, headers, retryOptions);
     } catch (error) {
-      throw error.responseText || getErrorStatusDescription(error.status) || error.toString();
+      throw error.responseText || requestLight.getErrorStatusDescription(error.status) || error.toString();
     }
   }
 

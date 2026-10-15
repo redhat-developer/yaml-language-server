@@ -1,10 +1,10 @@
 import type { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
-import type { Telemetry } from '../telemetry';
-import type { JSONSchema, JSONSchemaRef } from '../jsonSchema';
-import { isBoolean } from './objects';
-import { isRelativePath, relativeToAbsolutePath } from './paths';
+import type { Telemetry } from '../telemetry.js';
+import type { JSONSchema, JSONSchemaRef } from '../jsonSchema.js';
+import { isBoolean } from './objects.js';
+import { isRelativePath, relativeToAbsolutePath } from './paths.js';
 
 export const DEFAULT_KUBERNETES_SCHEMA_VERSION = 'v1.34.1';
 export const JSON_SCHEMASTORE_URL = 'https://www.schemastore.org/api/json/catalog.json';

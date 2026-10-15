@@ -5,7 +5,7 @@
 
 import * as l10n from '@vscode/l10n';
 import * as path from 'path';
-import { ErrorCode } from '../jsonLanguageTypes';
+import { ErrorCode } from '../jsonLanguageTypes.js';
 import type { Diagnostic, WorkspaceEdit } from 'vscode-languageserver-types';
 import { CodeAction, CodeActionKind, Command, Position, Range, TextEdit } from 'vscode-languageserver-types';
 import type { ClientCapabilities, CodeActionParams } from 'vscode-languageserver-protocol';
@@ -14,19 +14,19 @@ import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Scalar, YAMLMap } from 'yaml';
 import { CST, isMap, isSeq, isScalar, visit } from 'yaml';
 
-import { YamlCommands } from '../../commands';
-import { TextBuffer } from '../utils/textBuffer';
-import { toYamlStringScalar } from '../utils/yamlScalar';
-import type { LanguageSettings } from '../yamlLanguageService';
-import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator';
-import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings';
-import { matchOffsetToDocument } from '../utils/arrUtils';
-import { yamlDocumentsCache } from '../parser/yaml-documents';
+import { YamlCommands } from '../../commands.js';
+import { TextBuffer } from '../utils/textBuffer.js';
+import { toYamlStringScalar } from '../utils/yamlScalar.js';
+import type { LanguageSettings } from '../yamlLanguageService.js';
+import { YAML_SOURCE } from '../parser/schemaValidation/baseValidator.js';
+import { getFirstNonWhitespaceCharacterAfterOffset } from '../utils/strings.js';
+import { matchOffsetToDocument } from '../utils/arrUtils.js';
+import { yamlDocumentsCache } from '../parser/yaml-documents.js';
 
-import { BlockStringRewriter } from '../utils/block-string-rewriter';
-import { FlowStyleRewriter } from '../utils/flow-style-rewriter';
+import { BlockStringRewriter } from '../utils/block-string-rewriter.js';
+import { FlowStyleRewriter } from '../utils/flow-style-rewriter.js';
 
-import type { ASTNode } from '../jsonLanguageTypes';
+import type { ASTNode } from '../jsonLanguageTypes.js';
 
 interface YamlDiagnosticData {
   schemaUri: string[];
@@ -184,7 +184,7 @@ export class YamlCodeActions {
     const result = [];
     const buffer = new TextBuffer(document);
     for (const diag of diagnostics) {
-      if (diag.message.startsWith('Unused anchor') && diag.source === YAML_SOURCE) {
+      if (typeof diag.message === 'string' && diag.message.startsWith('Unused anchor') && diag.source === YAML_SOURCE) {
         const range = Range.create(diag.range.start, diag.range.end);
         const actual = buffer.getText(range);
         const lineContent = buffer.getLineContent(range.end.line);

@@ -3,14 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { describe, it } from 'node:test';
+
 import { expect } from 'chai';
-import type { GetLineText } from '../src/languageservice/utils/diagnostic-filter';
+import type { GetLineText } from '../src/languageservice/utils/diagnostic-filter.js';
 import {
   filterSuppressedDiagnostics,
   YAML_DISABLE_PATTERN,
   parseDisableSpecifiers,
   shouldSuppressDiagnostic,
-} from '../src/languageservice/utils/diagnostic-filter';
+} from '../src/languageservice/utils/diagnostic-filter.js';
 
 function makeDiag(startLine: number, message: string): { startLine: number; message: string } {
   return { startLine, message };

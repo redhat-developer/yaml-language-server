@@ -34,11 +34,11 @@ import type {
   TextEdit,
   WorkspaceEdit,
 } from 'vscode-languageserver-types';
-import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes';
-import type { CustomFormatterOptions, LanguageService } from '../../languageservice/yamlLanguageService';
-import type { SettingsState } from '../../yamlSettings';
-import type { ValidationHandler } from './validationHandlers';
-import { ResultLimitReachedNotification } from '../../requestTypes';
+import { isKubernetesAssociatedDocument } from '../../languageservice/parser/isKubernetes.js';
+import type { CustomFormatterOptions, LanguageService } from '../../languageservice/yamlLanguageService.js';
+import type { SettingsState } from '../../yamlSettings.js';
+import type { ValidationHandler } from './validationHandlers.js';
+import { ResultLimitReachedNotification } from '../../requestTypes.js';
 import * as path from 'path';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 
