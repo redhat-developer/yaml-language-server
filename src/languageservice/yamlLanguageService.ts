@@ -54,6 +54,7 @@ import { JSONSchemaSelection } from '../languageserver/handlers/schemaSelectionH
 import { YamlDefinition } from './services/yamlDefinition.js';
 import { getSelectionRanges } from './services/yamlSelectionRanges.js';
 import { YamlRename } from './services/yamlRename.js';
+import type { TemplateMode } from './parser/templateMasking.js';
 
 export enum SchemaPriority {
   SchemaStore = 1,
@@ -125,6 +126,12 @@ export interface LanguageSettings {
    * Show schema source URI in hover popups. Default is true.
    */
   hoverSchemaSource?: boolean;
+
+  /**
+   * Mask templating expressions before parsing, so that templated documents
+   * parse as plain YAML. Default is `none`.
+   */
+  template?: TemplateMode;
 }
 
 export interface WorkspaceContextService {
@@ -231,6 +238,7 @@ export function getLanguageService(params: {
           );
         });
       }
+      yamlDocumentsCache.configure(settings);
       yamlValidation.configure(settings);
       hover.configure(settings);
       completer.configure(settings, params.yamlSettings);
