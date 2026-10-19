@@ -31,6 +31,8 @@ import type { IProblem } from '../src/languageservice/parser/schemaValidation/ba
 import type { JSONSchema } from '../src/languageservice/jsonSchema.js';
 import type { TestTelemetry } from './utils/testsTypes.js';
 import { ErrorCode } from '../src/languageservice/jsonLanguageTypes.js';
+import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService.js';
+import { YAMLValidation } from '../src/languageservice/services/yamlValidation.js';
 import { DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls.js';
 
 import multipleSimilarSchemas from './fixtures/testMultipleSimilarSchema.json' with { type: 'json' };
@@ -85,6 +87,30 @@ describe('Validation Tests', () => {
   afterEach(() => {
     configureCustomTags([]);
     schemaProvider.deleteSchema(SCHEMA_ID);
+  });
+
+  it('returns a schema-load diagnostic on root for the IBM schema 404', async () => {
+    const schemaUri = 'https://ibm.com/schemas/zosconfig/v0/meta/zos_meta.schema.json';
+    const response = '<!DOCTYPE html><html>404 Not Found<script>JSON.parse(data)</script></html>';
+    const requests: string[] = [];
+    const service = new YAMLSchemaService(async (uri) => {
+      requests.push(uri);
+      throw response;
+    });
+    const validation = new YAMLValidation(service);
+    validation.configure({ validate: true, customTags: [], yamlVersion: '1.2' });
+    const document = setupSchemaIDTextDocument(`# yaml-language-server: $schema=${schemaUri}\nroot:\n  content: words`);
+
+    const diagnostics = await validation.doValidation(document);
+
+    assert.strictEqual(diagnostics.length, 1);
+    assert.strictEqual(getDiagnosticMessage(diagnostics[0]), `Unable to load schema from '${schemaUri}': ${response}.`);
+    assert.strictEqual(diagnostics[0].code, ErrorCode.SchemaResolveError);
+    assert.deepStrictEqual(diagnostics[0].range, {
+      start: Position.create(1, 0),
+      end: Position.create(1, 1),
+    });
+    assert.deepStrictEqual(requests, [schemaUri]);
   });
 
   describe('Boolean tests', () => {

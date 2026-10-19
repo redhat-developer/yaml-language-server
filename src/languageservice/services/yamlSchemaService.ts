@@ -1756,9 +1756,15 @@ export class YAMLSchemaService implements IJSONSchemaService {
       const jsonErrors: Json.ParseError[] = [];
       schemaContent = Json.parse(content, jsonErrors);
       if (jsonErrors.length) {
+        const { line, column } = getLineAndColumnFromOffset(content, jsonErrors[0].offset);
         errors.push(
           toDiagnostic(
-            l10n.t("Unable to parse content from '{0}': Parse error at offset {1}.", toDisplayString(url), jsonErrors[0].offset),
+            l10n.t(
+              "Unable to parse content from '{0}': Parse error at line: {1} column: {2}",
+              toDisplayString(url),
+              line,
+              column
+            ),
             ErrorCode.SchemaResolveError,
             url
           )
@@ -1861,23 +1867,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
       unresolvedSchema.schema.versions = versions ?? unresolvedSchema.schema.versions;
     } else if (unresolvedSchema.errors && unresolvedSchema.errors.length > 0) {
       const schemaError = unresolvedSchema.errors[0];
-      let errorMessage = schemaError.message;
-      if (errorMessage.toLowerCase().indexOf('parse') !== -1) {
-        const content = await requestService(schemaUri);
-        const jsonErrors: Json.ParseError[] = [];
-        const schemaContent = Json.parse(content, jsonErrors);
-        if (jsonErrors.length && schemaContent) {
-          const { offset } = jsonErrors[0];
-          const { line, column } = getLineAndColumnFromOffset(content, offset);
-          errorMessage = l10n.t(
-            "Unable to parse content from '{0}': Parse error at line: {1} column: {2}",
-            toDisplayString(schemaUri),
-            line,
-            column
-          );
-        }
-      }
-      return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, schemaError.code, schemaUri)]);
+      return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(schemaError.message, schemaError.code, schemaUri)]);
     }
     return unresolvedSchema;
   }
