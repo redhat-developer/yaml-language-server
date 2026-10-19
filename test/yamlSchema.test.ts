@@ -8,6 +8,7 @@ import type { Mock } from 'node:test';
 import type { SchemaRequestService } from '../src/languageservice/yamlLanguageService.js';
 import assert from 'node:assert/strict';
 import * as SchemaService from '../src/languageservice/services/yamlSchemaService.js';
+import { ErrorCode } from '../src/languageservice/jsonLanguageTypes.js';
 import * as chai from 'chai';
 
 const expect = chai.expect;
@@ -56,6 +57,24 @@ type: object
     const result = await service.loadSchema('fooScheme.yaml');
     expect(result.errors).length(1);
     expect(result.errors[0].message).includes('Unable to load schema from');
+  });
+
+  it('returns a schema-load error for the unavailable IBM schema', async () => {
+    const schemaUri = 'https://ibm.com/schemas/zosconfig/v0/meta/zos_meta.schema.json';
+    const response = '<!DOCTYPE html><html>404 Not Found<script>JSON.parse(data)</script></html>';
+    requestServiceStub.mock.mockImplementation(() => Promise.reject(response));
+    const service = new SchemaService.YAMLSchemaService(requestServiceStub, workspaceContext);
+
+    const result = await service.loadSchema(schemaUri);
+
+    assert.deepEqual(result.schema, {});
+    assert.equal(result.errors.length, 1);
+    assert.equal(result.errors[0].code, ErrorCode.SchemaResolveError);
+    assert.equal(result.errors[0].message, `Unable to load schema from '${schemaUri}': ${response}.`);
+    assert.deepEqual(
+      requestServiceStub.mock.calls.map((call) => call.arguments),
+      [[schemaUri]]
+    );
   });
 
   it('Error while loading yaml should keep the underlying reason', async () => {
@@ -114,7 +133,7 @@ type: object
     const result = await service.loadSchema('fooScheme.yaml');
     assert.deepEqual(
       requestServiceStub.mock.calls.map((call) => call.arguments),
-      [['fooScheme.yaml'], ['fooScheme.yaml']]
+      [['fooScheme.yaml']]
     );
     expect(result.errors).length(1);
     expect(result.errors[0].message).includes('Unable to parse content from');

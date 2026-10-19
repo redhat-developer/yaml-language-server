@@ -130,6 +130,20 @@ async function requestSchemaWithRetry(
   }
 }
 
+function getSchemaRequestErrorMessage(error: unknown): string {
+  const response = error as { responseText?: string; message?: string; status?: number; code?: number } | undefined;
+  const message =
+    response?.responseText || response?.message || requestLight.getErrorStatusDescription(response?.status) || String(error);
+  const status = response?.status ?? response?.code;
+  if (typeof status === 'number' && status >= 400 && status < 600) {
+    if (message.toLowerCase().includes('html>')) {
+      return `HTTP response code ${status}`;
+    }
+    return `HTTP response code ${status}: ${message}`;
+  }
+  return message;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace FSReadUri {
   export const type: RequestType<string, string, unknown> = new RequestType('fs/readUri');
@@ -201,7 +215,7 @@ export const schemaRequestHandler = async (
       try {
         return await connection.sendRequest(VSCodeContentRequest.type, uri);
       } catch (error) {
-        throw error.message;
+        throw getSchemaRequestErrorMessage(error);
       }
     }
 
@@ -216,7 +230,7 @@ export const schemaRequestHandler = async (
     try {
       return await requestSchemaWithRetry(uri, headers, retryOptions);
     } catch (error) {
-      throw error.responseText || requestLight.getErrorStatusDescription(error.status) || error.toString();
+      throw getSchemaRequestErrorMessage(error);
     }
   }
 

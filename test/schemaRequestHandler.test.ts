@@ -12,6 +12,7 @@ import type { SchemaRequestRetryOptions } from '../src/languageservice/services/
 import request from 'request-light';
 import type { XHRResponse } from 'request-light';
 import type { Connection } from 'vscode-languageserver';
+import { ResponseError } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import * as chai from 'chai';
 
@@ -196,9 +197,64 @@ describe('Schema Request Handler Tests', () => {
         );
         expect.fail('Expected promise to be rejected');
       } catch (err) {
-        expect(err).to.equal('Not Found');
+        expect(err).to.equal('HTTP response code 404: Not Found');
       }
     });
+
+    for (const delegated of [false, true]) {
+      describe(delegated ? 'VS Code request errors' : 'Direct HTTP request errors', () => {
+        for (const { name, status, message, expected } of [
+          {
+            name: 'omits the HTML error page',
+            status: 404,
+            message: '<!-- Error page --><html><script>JSON.parse(data)</script></html>',
+            expected: 'HTTP response code 404',
+          },
+          {
+            name: 'omits an HTML fragment with a closing tag',
+            status: 500,
+            message: 'Internal server error</html>',
+            expected: 'HTTP response code 500',
+          },
+          {
+            name: 'omits a truncated HTML error page',
+            status: 403,
+            message: '<HTML>Access denied',
+            expected: 'HTTP response code 403',
+          },
+          {
+            name: 'includes the plain-text error details',
+            status: 401,
+            message: 'Authentication required',
+            expected: 'HTTP response code 401: Authentication required',
+          },
+        ]) {
+          it(name, async () => {
+            const httpError: XHRResponse = { status, responseText: message, body: Buffer.from(message), headers: {} };
+            xhrStub.mock.mockImplementation(() => Promise.reject(httpError));
+            const sendRequest = mock.fn(async () => {
+              throw new ResponseError(status, message);
+            });
+            const failedConnection = { sendRequest } as unknown as Connection;
+
+            await assert.rejects(
+              schemaRequestHandler(
+                failedConnection,
+                'https://example.com/schema.json',
+                [],
+                URI.parse(''),
+                delegated,
+                testFileSystem,
+                false
+              ),
+              (error) => error === expected
+            );
+            assert.equal(xhrStub.mock.callCount(), delegated ? 0 : 1);
+            assert.equal(sendRequest.mock.callCount(), delegated ? 1 : 0);
+          });
+        }
+      });
+    }
   });
 
   describe('HTTP(S) schema request retries', () => {
@@ -262,7 +318,7 @@ describe('Schema Request Handler Tests', () => {
         await doRequest();
         expect.fail('Expected promise to be rejected');
       } catch (err) {
-        expect(err).to.equal('Not Found');
+        expect(err).to.equal('HTTP response code 404: Not Found');
       }
       assert.equal(xhrStub.mock.callCount(), 1);
     });
@@ -274,7 +330,7 @@ describe('Schema Request Handler Tests', () => {
         await doRequest();
         expect.fail('Expected promise to be rejected');
       } catch (err) {
-        expect(err).to.equal('Service Unavailable');
+        expect(err).to.equal('HTTP response code 503: Service Unavailable');
       }
       // The initial attempt plus the default budget of 2 retries.
       assert.equal(xhrStub.mock.callCount(), 3);
@@ -327,7 +383,7 @@ describe('Schema Request Handler Tests', () => {
         await doRequest({ ...retryOptions, maxRetries: 0 });
         expect.fail('Expected promise to be rejected');
       } catch (err) {
-        expect(err).to.equal('Too Many Requests');
+        expect(err).to.equal('HTTP response code 429: Too Many Requests');
       }
       assert.equal(xhrStub.mock.callCount(), 1);
     });
