@@ -55,7 +55,9 @@ async function assertCompletion(fixture: string, label: string, expected: string
     type: 'object',
     properties: {
       settings: {
+        title: 'Settings',
         type: 'object',
+        required: [property],
         additionalProperties: false,
         properties: { [property]: { type: 'string', enum: ['on', 'off'] } },
       },
@@ -82,4 +84,11 @@ async function assertCompletion(fixture: string, label: string, expected: string
   assert.equal(actual, expected);
   const updated = TextDocument.create(document.uri, document.languageId, 2, actual);
   assert.deepEqual(await service.doValidation(updated, false), []);
+  for (const item of completions.items) {
+    assert.ok(item.textEdit && 'range' in item.textEdit, 'Expected a replacement edit');
+    const edited = TextDocument.applyEdits(document, [item.textEdit]);
+    yamlDocumentsCache.clear();
+    const completed = TextDocument.create(document.uri, document.languageId, 2, edited);
+    assert.deepEqual(await service.doValidation(completed, false), [], `Invalid ${item.label} completion: ${edited}`);
+  }
 }

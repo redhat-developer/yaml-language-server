@@ -818,7 +818,7 @@ export class YamlCompletion {
                     );
                   }
                   // if the prop is required add it also to parent suggestion
-                  if (schema.schema.required?.includes(key)) {
+                  if (!isQuotedKeyWithColon && schema.schema.required?.includes(key)) {
                     collector.add({
                       label: key,
                       insertText: this.getInsertTextForProperty(
