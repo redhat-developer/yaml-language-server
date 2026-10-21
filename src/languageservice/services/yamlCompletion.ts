@@ -171,7 +171,7 @@ export class YamlCompletion {
       const nodeEndPos = document.positionAt(node.range[2]);
       nodeEndPos.character += 1;
       overwriteRange = Range.create(nodeStartPos, nodeEndPos);
-    } else if (node && isScalar(node) && node.value) {
+    } else if (node && isScalar(node) && (node.value || node.type === 'QUOTE_SINGLE' || node.type === 'QUOTE_DOUBLE')) {
       const start = document.positionAt(node.range[0]);
       overwriteRange = Range.create(start, document.positionAt(node.range[1]));
     } else if (node && isScalar(node) && node.value === null && currentWord === '-') {
@@ -385,7 +385,7 @@ export class YamlCompletion {
           const parent = currentDoc.getParent(node);
           if (parent) {
             if (isScalar(node)) {
-              if (node.value) {
+              if (node.value || node.type === 'QUOTE_SINGLE' || node.type === 'QUOTE_DOUBLE') {
                 if (isPair(parent)) {
                   if (parent.value === node) {
                     if (lineContent.trim().length > 0 && lineContent.indexOf(':') < 0) {
@@ -706,6 +706,10 @@ export class YamlCompletion {
   ): void {
     const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
     const existingKey = textBuffer.getText(overwriteRange);
+    const isQuotedKeyWithColon =
+      isScalar(originalNode) &&
+      (originalNode.type === 'QUOTE_SINGLE' || originalNode.type === 'QUOTE_DOUBLE') &&
+      /^[ \t]*:/.test(textBuffer.getText().slice(originalNode.range[1]));
     const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
     const hasOnlyWhitespace = lineContent.trim().length === 0;
     const hasColon = lineContent.indexOf(':') !== -1;
@@ -786,9 +790,9 @@ export class YamlCompletion {
                     }
                   }
 
-                  let insertText = key;
+                  let insertText = isQuotedKeyWithColon ? this.getInsertTextForValue(key, '', 'string') : key;
                   const isRequiredProp = Array.isArray(schema.schema.required) ? schema.schema.required.includes(key) : false;
-                  if (!key.startsWith(existingKey) || !hasColon) {
+                  if (!isQuotedKeyWithColon && (!key.startsWith(existingKey) || !hasColon)) {
                     insertText = this.getInsertTextForProperty(
                       key,
                       propertySchema,
