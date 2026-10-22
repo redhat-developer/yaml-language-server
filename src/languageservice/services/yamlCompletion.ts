@@ -1179,7 +1179,7 @@ export class YamlCompletion {
           case 'anyOf': {
             let value = propertySchema.default !== undefined ? propertySchema.default : propertySchema.const;
             if (value !== undefined) {
-              if (type === 'string') {
+              if (type === 'string' && typeof value === 'string') {
                 value = toYamlStringScalar(value);
               }
               insertText += `${indent}${key}: \${${insertIndex++}:${value}}\n`;
@@ -1227,9 +1227,12 @@ export class YamlCompletion {
               key === 'null' ? this.getInsertTextForValue(key, '', 'string') : key
             }: \${${insertIndex++}:${propertySchema.default}}\n`;
             break;
-          case 'string':
-            insertText += `${indent}${key}: \${${insertIndex++}:${toYamlStringScalar(propertySchema.default)}}\n`;
+          case 'string': {
+            const value =
+              typeof propertySchema.default === 'string' ? toYamlStringScalar(propertySchema.default) : propertySchema.default;
+            insertText += `${indent}${key}: \${${insertIndex++}:${value}}\n`;
             break;
+          }
           case 'array':
           case 'object':
             // TODO: support default value for array object
