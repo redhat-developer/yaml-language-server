@@ -85,6 +85,36 @@ describe('Auto Completion Fix Tests', () => {
     languageService.configure(languageSettingsSetup.languageSettings);
   });
 
+  describe('nullable string defaults in object snippets', () => {
+    for (const required of [false, true]) {
+      for (const value of [null, 'null']) {
+        it(`should retain completions for ${required ? 'required' : 'optional'} properties with default ${JSON.stringify(value)}`, async () => {
+          schemaProvider.addSchema(SCHEMA_ID, {
+            type: 'object',
+            properties: {
+              first: { type: 'integer' },
+              second: {
+                type: 'object',
+                required: required ? ['name'] : [],
+                properties: {
+                  name: { type: ['string', 'null'], default: value },
+                },
+              },
+              third: { type: 'integer' },
+            },
+          });
+
+          const completion = await parseSetup('', 0, 0);
+          expect(completion.items.map((item) => item.label)).to.include.members(['first', 'second', 'third']);
+          const expectedValue = value === null ? 'null' : '"null"';
+          expect(completion.items.find((item) => item.label === 'second').insertText).to.equal(
+            `second:\n  name: \${1:${expectedValue}}`
+          );
+        });
+      }
+    }
+  });
+
   it('should show completion on map under array', async () => {
     schemaProvider.addSchema(SCHEMA_ID, {
       type: 'array',
