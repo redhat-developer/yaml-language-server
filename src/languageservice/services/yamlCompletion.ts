@@ -18,7 +18,7 @@ import {
   TextEdit,
 } from 'vscode-languageserver-types';
 import type { Node, YAMLMap, YAMLSeq, Pair } from 'yaml';
-import { isPair, isScalar, isMap, isSeq, isNode } from 'yaml';
+import { isPair, isScalar, isMap, isSeq, isNode, parseDocument } from 'yaml';
 import { parseCustomTag } from '../utils/customTags.js';
 import type { Telemetry } from '../telemetry.js';
 import type { SingleYAMLDocument, YamlDocuments } from '../parser/yaml-documents.js';
@@ -185,6 +185,7 @@ export class YamlCompletion {
       overwriteRange = Range.create(document.positionAt(overwriteStart), position);
     }
 
+    const overwriteQuote = text.charAt(document.offsetAt(overwriteRange.start));
     const proposed: { [key: string]: CompletionItem } = {};
     const collector: CompletionsCollector = {
       add: (completionItem: CompletionItem, oneOfSchema: boolean) => {
@@ -232,6 +233,18 @@ export class YamlCompletion {
         }
         if (!isString(label)) {
           label = String(label);
+        }
+        if (overwriteQuote === '"' || overwriteQuote === "'") {
+          // Clients filter from the edit's start, which includes the opening quote.
+          // Keep replacing the entire scalar, but match the quote style being typed.
+          let filterText = completionItem.filterText ?? label;
+          if (completionItem.kind !== CompletionItemKind.Property && /^["']/.test(filterText)) {
+            const scalar = parseDocument(filterText);
+            if (scalar.errors.length === 0 && isScalar(scalar.contents) && typeof scalar.contents.value === 'string') {
+              filterText = scalar.contents.value;
+            }
+          }
+          completionItem.filterText = overwriteQuote === '"' ? JSON.stringify(filterText) : `'${filterText.replace(/'/g, "''")}'`;
         }
         label = label.replace(/\n|\\n/g, '↵');
         if (label.length > 60) {
@@ -706,10 +719,7 @@ export class YamlCompletion {
   ): void {
     const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
     const existingKey = textBuffer.getText(overwriteRange);
-    const isQuotedKeyWithColon =
-      isScalar(originalNode) &&
-      (originalNode.type === 'QUOTE_SINGLE' || originalNode.type === 'QUOTE_DOUBLE') &&
-      /^[ \t]*:/.test(textBuffer.getText().slice(originalNode.range[1]));
+    const isKeyWithColon = isScalar(originalNode) && /^[ \t]*:/.test(textBuffer.getText().slice(originalNode.range[1]));
     const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
     const hasOnlyWhitespace = lineContent.trim().length === 0;
     const hasColon = lineContent.indexOf(':') !== -1;
@@ -790,9 +800,9 @@ export class YamlCompletion {
                     }
                   }
 
-                  let insertText = isQuotedKeyWithColon ? this.getInsertTextForValue(key, '', 'string') : key;
+                  let insertText = isKeyWithColon ? this.getInsertTextForValue(key, '', 'string') : key;
                   const isRequiredProp = Array.isArray(schema.schema.required) ? schema.schema.required.includes(key) : false;
-                  if (!isQuotedKeyWithColon && (!key.startsWith(existingKey) || !hasColon)) {
+                  if (!isKeyWithColon && (!key.startsWith(existingKey) || !hasColon)) {
                     insertText = this.getInsertTextForProperty(
                       key,
                       propertySchema,
@@ -818,7 +828,7 @@ export class YamlCompletion {
                     );
                   }
                   // if the prop is required add it also to parent suggestion
-                  if (!isQuotedKeyWithColon && schema.schema.required?.includes(key)) {
+                  if (!isKeyWithColon && schema.schema.required?.includes(key)) {
                     collector.add({
                       label: key,
                       insertText: this.getInsertTextForProperty(

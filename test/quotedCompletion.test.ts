@@ -48,9 +48,31 @@ describe('Quoted scalar completion', () => {
       );
     });
   }
+
+  it('matches doubled apostrophes in a single-quoted value', async () => {
+    await assertCompletion("settings:\n  security: 'don''t|'\n", "don't", "settings:\n  security: don't\n", 'security', "don't");
+  });
+
+  it('preserves a literal leading quote in a property name', async () => {
+    await assertCompletion("settings:\n  '''s|': on\n", "'security", `settings:\n  "'security": on\n`, "'security");
+  });
+
+  it('keeps unquoted key completion working', async () => {
+    await assertCompletion('settings:\n  s|: on\n', 'security', 'settings:\n  security: on\n');
+  });
+
+  it('keeps unquoted value completion working', async () => {
+    await assertCompletion('settings:\n  security: o|\n', '"on"', 'settings:\n  security: "on"\n');
+  });
 });
 
-async function assertCompletion(fixture: string, label: string, expected: string, property = 'security'): Promise<void> {
+async function assertCompletion(
+  fixture: string,
+  label: string,
+  expected: string,
+  property = 'security',
+  value = 'on'
+): Promise<void> {
   const schema = {
     type: 'object',
     properties: {
@@ -59,7 +81,7 @@ async function assertCompletion(fixture: string, label: string, expected: string
         type: 'object',
         required: [property],
         additionalProperties: false,
-        properties: { [property]: { type: 'string', enum: ['on', 'off'] } },
+        properties: { [property]: { type: 'string', enum: [value, 'off'] } },
       },
     },
   };
@@ -80,6 +102,20 @@ async function assertCompletion(fixture: string, label: string, expected: string
   const completion = completions.items.find((item) => item.label === label);
   assert.ok(completion, `Missing ${label} completion for ${fixture}`);
   assert.ok(completion.textEdit && 'range' in completion.textEdit, 'Expected a replacement edit');
+  // Editors filter against the text from the replacement start to the cursor.
+  // Applying an edit directly does not check whether the suggestion is visible.
+  const prefix = document.getText({
+    start: completion.textEdit.range.start,
+    end: document.positionAt(fixture.indexOf('|')),
+  });
+  if (prefix.startsWith('"') || prefix.startsWith("'")) {
+    assert.ok(
+      (completion.filterText ?? completion.label).startsWith(prefix),
+      `Completion ${label} does not match typed prefix ${JSON.stringify(prefix)} in ${fixture}`
+    );
+  } else {
+    assert.equal(completion.filterText, undefined, 'Unquoted completion should keep its original filtering');
+  }
   const actual = TextDocument.applyEdits(document, [completion.textEdit]);
   assert.equal(actual, expected);
   const updated = TextDocument.create(document.uri, document.languageId, 2, actual);
