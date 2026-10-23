@@ -104,7 +104,7 @@ export class YAMLServerInit {
       },
       capabilities: {
         textDocumentSync: TextDocumentSyncKind.Incremental,
-        completionProvider: { resolveProvider: false },
+        completionProvider: { resolveProvider: false, triggerCharacters: ['"', "'"] },
         hoverProvider: true,
         documentSymbolProvider: true,
         documentFormattingProvider: !this.yamlSettings.clientDynamicRegisterSupport,
