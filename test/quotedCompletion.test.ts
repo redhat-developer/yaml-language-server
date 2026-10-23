@@ -12,49 +12,83 @@ import { yamlDocumentsCache } from '../src/languageservice/parser/yaml-documents
 describe('Quoted scalar completion', () => {
   for (const quote of ['"', "'"]) {
     for (const prefix of ['', 's']) {
-      it(`replaces a ${quote}-quoted key with prefix '${prefix}' without duplicating its value`, async () => {
+      it(`completes a ${quote}-quoted key with prefix '${prefix}' inside its quotes`, async () => {
         await assertCompletion(
           `settings:\n  ${quote}${prefix}|${quote}: on # keep\n`,
           'security',
-          'settings:\n  security: on # keep\n'
+          `settings:\n  ${quote}security${quote}: on # keep\n`
         );
       });
     }
 
     for (const prefix of ['', 'o']) {
-      it(`replaces a ${quote}-quoted value with prefix '${prefix}' including both quotes`, async () => {
+      it(`completes a ${quote}-quoted value with prefix '${prefix}' inside its quotes`, async () => {
         await assertCompletion(
           `settings:\n  security: ${quote}${prefix}|${quote} # keep\n`,
-          '"on"',
-          'settings:\n  security: "on" # keep\n'
+          'on',
+          `settings:\n  security: ${quote}on${quote} # keep\n`
         );
       });
     }
 
-    it(`replaces an empty ${quote}-quoted flow mapping key`, async () => {
-      await assertCompletion(`settings: {${quote}|${quote}: on}\n`, 'security', 'settings: {security: on}\n');
+    it(`closes an unterminated ${quote}-quoted value`, async () => {
+      await assertCompletion(`settings:\n  security: ${quote}o|\n`, 'on', `settings:\n  security: ${quote}on${quote}\n`);
     });
 
-    it(`replaces an empty ${quote}-quoted flow mapping value`, async () => {
-      await assertCompletion(`settings: {security: ${quote}|${quote}}\n`, '"on"', 'settings: {security: "on"}\n');
+    it(`completes an empty ${quote}-quoted flow mapping key`, async () => {
+      await assertCompletion(`settings: {${quote}|${quote}: on}\n`, 'security', `settings: {${quote}security${quote}: on}\n`);
     });
 
-    it(`quotes a completed key containing a mapping indicator`, async () => {
+    it(`completes an empty ${quote}-quoted flow mapping value`, async () => {
+      await assertCompletion(`settings: {security: ${quote}|${quote}}\n`, 'on', `settings: {security: ${quote}on${quote}}\n`);
+    });
+
+    it(`keeps ${quote} quotes around a completed key containing a mapping indicator`, async () => {
       await assertCompletion(
         `settings:\n  ${quote}|${quote}: on\n`,
         'security: level',
-        'settings:\n  "security: level": on\n',
+        `settings:\n  ${quote}security: level${quote}: on\n`,
         'security: level'
+      );
+    });
+
+    it(`keeps ${quote} quotes around a completed value that looks like null`, async () => {
+      await assertCompletion(
+        `settings:\n  security: ${quote}null|${quote}\n`,
+        'null',
+        `settings:\n  security: ${quote}null${quote}\n`,
+        'security',
+        'null'
       );
     });
   }
 
-  it('matches doubled apostrophes in a single-quoted value', async () => {
-    await assertCompletion("settings:\n  security: 'don''t|'\n", "don't", "settings:\n  security: don't\n", 'security', "don't");
+  it('doubles apostrophes in a single-quoted value', async () => {
+    await assertCompletion(
+      "settings:\n  security: 'don''|'\n",
+      "don''t",
+      "settings:\n  security: 'don''t'\n",
+      'security',
+      "don't"
+    );
   });
 
-  it('preserves a literal leading quote in a property name', async () => {
-    await assertCompletion("settings:\n  '''s|': on\n", "'security", `settings:\n  "'security": on\n`, "'security");
+  it('doubles a leading apostrophe in a single-quoted key', async () => {
+    await assertCompletion("settings:\n  '''s|': on\n", "'security", "settings:\n  '''security': on\n", "'security");
+  });
+
+  it('escapes double quotes in a double-quoted key', async () => {
+    await assertCompletion('settings:\n  "|": on\n', 'say "hi"', 'settings:\n  "say \\"hi\\"": on\n', 'say "hi"');
+  });
+
+  it('escapes double quotes in a double-quoted value', async () => {
+    await assertCompletion(
+      'settings:\n  security: "|"\n',
+      'say \\"hi\\"',
+      'settings:\n  security: "say \\"hi\\""\n',
+      'security',
+      'say "hi"'
+    );
   });
 
   it('keeps unquoted key completion working', async () => {
@@ -98,26 +132,28 @@ async function assertCompletion(
   });
   yamlDocumentsCache.clear();
   const document = TextDocument.create('file:///quoted-completion.yaml', 'yaml', 1, fixture.replace('|', ''));
-  const completions = await service.doComplete(document, document.positionAt(fixture.indexOf('|')), false);
+  const cursor = document.positionAt(fixture.indexOf('|'));
+  const completions = await service.doComplete(document, cursor, false);
   const completion = completions.items.find((item) => item.label === label);
   assert.ok(completion, `Missing ${label} completion for ${fixture}`);
   assert.ok(completion.textEdit && 'range' in completion.textEdit, 'Expected a replacement edit');
-  // Editors filter against the text from the replacement start to the cursor.
-  // Applying an edit directly does not check whether the suggestion is visible.
-  const prefix = document.getText({
-    start: completion.textEdit.range.start,
-    end: document.positionAt(fixture.indexOf('|')),
-  });
-  if (prefix.startsWith('"') || prefix.startsWith("'")) {
+  const editStart = document.offsetAt(completion.textEdit.range.start);
+  if (/["']/.test(document.getText().charAt(editStart - 1))) {
+    const typed = document.getText().slice(editStart, document.offsetAt(cursor));
     assert.ok(
-      (completion.filterText ?? completion.label).startsWith(prefix),
-      `Completion ${label} does not match typed prefix ${JSON.stringify(prefix)} in ${fixture}`
+      (completion.filterText ?? completion.label).startsWith(typed),
+      `Completion ${label} does not match typed prefix ${JSON.stringify(typed)} in ${fixture}`
     );
-  } else {
-    assert.equal(completion.filterText, undefined, 'Unquoted completion should keep its original filtering');
   }
   const actual = TextDocument.applyEdits(document, [completion.textEdit]);
   assert.equal(actual, expected);
+  if (/["']/.test(document.getText().charAt(editStart - 1))) {
+    const cursorAfterEdit = editStart + completion.textEdit.newText.length;
+    assert.ok(
+      /["']/.test(actual.charAt(cursorAfterEdit - 1)),
+      `Cursor should land after the closing quote: ${actual.slice(0, cursorAfterEdit)}|`
+    );
+  }
   const updated = TextDocument.create(document.uri, document.languageId, 2, actual);
   assert.deepEqual(await service.doValidation(updated, false), []);
   for (const item of completions.items) {

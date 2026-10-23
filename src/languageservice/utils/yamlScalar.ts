@@ -83,3 +83,10 @@ export function toYamlStringScalar(s: string, preferSingleQuote = false): string
 
   return s;
 }
+
+export function toYamlQuotedContent(s: string, quote: '"' | "'"): string {
+  if (quote === "'") {
+    return s.replace(/'/g, "''");
+  }
+  return JSON.stringify(s).slice(1, -1);
+}
