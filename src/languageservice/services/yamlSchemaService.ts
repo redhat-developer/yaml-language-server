@@ -5,44 +5,44 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { AnySchemaObject, DefinedError, ErrorObject, ValidateFunction } from 'ajv';
-import type { Localize } from 'ajv-i18n/localize/types';
+import type { Localize } from 'ajv-i18n/localize/types.js';
 import type { DiagnosticRelatedInformation } from 'vscode-languageserver-types';
 
-import type { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes';
-import type { SettingsState } from '../../yamlSettings';
-import type { PromiseConstructor, SchemaConfiguration } from '../jsonLanguageTypes';
-import type { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema';
-import type { JSONDocument } from '../parser/jsonDocument';
-import type { SingleYAMLDocument } from '../parser/yamlParser07';
-import type { SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService';
-import type { SchemaVersions } from '../yamlTypes';
+import type { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes.js';
+import type { SettingsState } from '../../yamlSettings.js';
+import type { PromiseConstructor, SchemaConfiguration } from '../jsonLanguageTypes.js';
+import type { JSONSchema, JSONSchemaMap, JSONSchemaRef } from '../jsonSchema.js';
+import type { JSONDocument } from '../parser/jsonDocument.js';
+import type { SingleYAMLDocument } from '../parser/yamlParser07.js';
+import type { SchemaRequestService, WorkspaceContextService } from '../yamlLanguageService.js';
+import type { SchemaVersions } from '../yamlTypes.js';
 
 import * as path from 'path';
 import * as l10n from '@vscode/l10n';
 import Ajv from 'ajv';
-import Ajv2019 from 'ajv/dist/2019';
-import Ajv2020 from 'ajv/dist/2020';
+import Ajv2019 from 'ajv/dist/2019.js';
+import Ajv2020 from 'ajv/dist/2020.js';
 import Ajv4 from 'ajv-draft-04';
-import * as ajvLocalizers from 'ajv-i18n';
+import ajvLocalizers from 'ajv-i18n';
 import * as Json from 'jsonc-parser';
 import picomatch from 'picomatch';
 import { Range } from 'vscode-languageserver-types';
 import { URI } from 'vscode-uri';
 import { parse } from 'yaml';
 
-import { getDollarSchema } from './dollarUtils';
-import { getSchemaFromModeline } from './modelineUtil';
-import { ErrorCode, SchemaDraft } from '../jsonLanguageTypes';
-import { asSchema } from '../parser/schemaValidation/baseValidator';
-import { SchemaPriority } from '../yamlLanguageService';
-import { autoDetectKubernetesSchema } from './k8sSchemaUtil';
-import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, isKubernetes } from '../utils/schemaUrls';
-import * as Strings from '../utils/strings';
+import { getDollarSchema } from './dollarUtils.js';
+import { getSchemaFromModeline } from './modelineUtil.js';
+import { ErrorCode, SchemaDraft } from '../jsonLanguageTypes.js';
+import { asSchema } from '../parser/schemaValidation/baseValidator.js';
+import { SchemaPriority } from '../yamlLanguageService.js';
+import { autoDetectKubernetesSchema } from './k8sSchemaUtil.js';
+import { CRD_CATALOG_URL, EMPTY_SCHEMA_URL, isKubernetes } from '../utils/schemaUrls.js';
+import * as Strings from '../utils/strings.js';
 
-const ajv4 = new Ajv4({ allErrors: true });
-const ajv7 = new Ajv({ allErrors: true });
-const ajv2019 = new Ajv2019({ allErrors: true });
-const ajv2020 = new Ajv2020({ allErrors: true });
+const ajv4 = new Ajv4.default({ allErrors: true });
+const ajv7 = new Ajv.default({ allErrors: true });
+const ajv2019 = new Ajv2019.default({ allErrors: true });
+const ajv2020 = new Ajv2020.default({ allErrors: true });
 
 const schema04Validator = getDefaultMetaSchemaValidator(ajv4);
 const schema07Validator = getDefaultMetaSchemaValidator(ajv7);
@@ -92,9 +92,9 @@ const REF_SIBLING_NONCONSTRAINT_KEYS = new Set([
 export declare type CustomSchemaProvider = (uri: string) => Promise<string | string[]>;
 
 export enum MODIFICATION_ACTIONS {
-  'delete',
-  'add',
-  'deleteAll',
+  delete,
+  add,
+  deleteAll,
 }
 
 export interface SchemaAdditions {
@@ -195,6 +195,7 @@ export interface ISchemaHandle {
 
 export class FilePatternAssociation {
   private readonly isMatch: (fileName: string) => boolean;
+  private readonly isNegMatch: ((fileName: string) => boolean) | null;
 
   constructor(
     pattern: string[],
@@ -202,18 +203,29 @@ export class FilePatternAssociation {
     public readonly uris: string[]
   ) {
     try {
-      // strip leading / and add **/ prefix
-      const processedPatterns = pattern
-        .map((p) => {
-          let patternString = p;
-          if (patternString[0] === PATH_SEP) {
-            patternString = patternString.substring(1);
-          }
-          return '**/' + patternString;
-        })
-        .filter((p) => p.length > 0);
+      const positivePatterns: string[] = [];
+      const negativePatterns: string[] = [];
 
-      this.isMatch = picomatch(processedPatterns, {
+      for (const p of pattern) {
+        let patternString = p;
+        const isNegation = patternString.startsWith('!');
+        if (isNegation) {
+          patternString = patternString.substring(1);
+        }
+        // strip leading / and add **/ prefix
+        if (patternString[0] === PATH_SEP) {
+          patternString = patternString.substring(1);
+        }
+        if (patternString.length > 0) {
+          const processed = '**/' + patternString;
+          (isNegation ? negativePatterns : positivePatterns).push(processed);
+        }
+      }
+
+      this.isMatch = picomatch(positivePatterns, {
+        noglobstar: false,
+      });
+      this.isNegMatch = picomatch(negativePatterns, {
         noglobstar: false,
       });
 
@@ -226,6 +238,7 @@ export class FilePatternAssociation {
       }
     } catch {
       this.isMatch = () => false;
+      this.isNegMatch = () => false;
       this.uris = [];
     }
   }
@@ -234,7 +247,7 @@ export class FilePatternAssociation {
     if (this.folderUri && !fileName.startsWith(this.folderUri)) {
       return false;
     }
-    return this.isMatch(fileName);
+    return this.isMatch(fileName) && !this.isNegMatch(fileName);
   }
 
   public getURIs(): string[] {
@@ -254,12 +267,17 @@ export interface SchemaHandleService {
   ): PromiseLike<ResolvedSchema>;
 }
 
+/** How long a failed schema load is remembered, in milliseconds. */
+export const FAILED_SCHEMA_CACHE_MS = 5000;
+
 export class SchemaHandle implements ISchemaHandle {
   public readonly uri: string;
   public dependencies: SchemaDependencies;
   public anchors: Map<string, JSONSchema> | undefined;
   private resolvedSchema: PromiseLike<ResolvedSchema> | undefined;
   private unresolvedSchema: PromiseLike<UnresolvedSchema> | undefined;
+  /** When the cached load failed, or undefined if it succeeded or has not been attempted. */
+  private failedAt: number | undefined;
   private readonly service: SchemaHandleService;
 
   constructor(service: SchemaHandleService, uri: string, unresolvedSchemaContent?: JSONSchema) {
@@ -272,16 +290,34 @@ export class SchemaHandle implements ISchemaHandle {
     }
   }
 
+  /**
+   * Whether a previously cached failure has been held long enough that the schema is worth requesting again.
+   * @returns true when the cached failure has expired
+   */
+  private isFailureExpired(): boolean {
+    return this.failedAt !== undefined && Date.now() - this.failedAt >= FAILED_SCHEMA_CACHE_MS;
+  }
+
   public getUnresolvedSchema(): PromiseLike<UnresolvedSchema> {
+    if (this.unresolvedSchema && this.isFailureExpired()) {
+      this.resolvedSchema = undefined;
+      this.unresolvedSchema = undefined;
+      this.failedAt = undefined;
+    }
+
     if (!this.unresolvedSchema) {
-      this.unresolvedSchema = this.service.loadSchema(this.uri);
+      this.unresolvedSchema = this.service.loadSchema(this.uri).then((unresolved) => {
+        this.failedAt = unresolved.errors?.length ? Date.now() : undefined;
+        return unresolved;
+      });
     }
     return this.unresolvedSchema;
   }
 
   public getResolvedSchema(): PromiseLike<ResolvedSchema> {
+    const unresolvedSchema = this.getUnresolvedSchema();
     if (!this.resolvedSchema) {
-      this.resolvedSchema = this.getUnresolvedSchema().then((unresolved) =>
+      this.resolvedSchema = unresolvedSchema.then((unresolved) =>
         this.service.resolveSchemaContent(unresolved, this.uri, this.dependencies)
       );
     }
@@ -292,6 +328,7 @@ export class SchemaHandle implements ISchemaHandle {
     const hasChanges = !!this.unresolvedSchema;
     this.resolvedSchema = undefined;
     this.unresolvedSchema = undefined;
+    this.failedAt = undefined;
     this.dependencies = {};
     this.anchors = undefined;
     return hasChanges;
@@ -1719,9 +1756,15 @@ export class YAMLSchemaService implements IJSONSchemaService {
       const jsonErrors: Json.ParseError[] = [];
       schemaContent = Json.parse(content, jsonErrors);
       if (jsonErrors.length) {
+        const { line, column } = getLineAndColumnFromOffset(content, jsonErrors[0].offset);
         errors.push(
           toDiagnostic(
-            l10n.t("Unable to parse content from '{0}': Parse error at offset {1}.", toDisplayString(url), jsonErrors[0].offset),
+            l10n.t(
+              "Unable to parse content from '{0}': Parse error at line: {1} column: {2}",
+              toDisplayString(url),
+              line,
+              column
+            ),
             ErrorCode.SchemaResolveError,
             url
           )
@@ -1824,23 +1867,7 @@ export class YAMLSchemaService implements IJSONSchemaService {
       unresolvedSchema.schema.versions = versions ?? unresolvedSchema.schema.versions;
     } else if (unresolvedSchema.errors && unresolvedSchema.errors.length > 0) {
       const schemaError = unresolvedSchema.errors[0];
-      let errorMessage = schemaError.message;
-      if (errorMessage.toLowerCase().indexOf('parse') !== -1) {
-        const content = await requestService(schemaUri);
-        const jsonErrors: Json.ParseError[] = [];
-        const schemaContent = Json.parse(content, jsonErrors);
-        if (jsonErrors.length && schemaContent) {
-          const { offset } = jsonErrors[0];
-          const { line, column } = getLineAndColumnFromOffset(content, offset);
-          errorMessage = l10n.t(
-            "Unable to parse content from '{0}': Parse error at line: {1} column: {2}",
-            toDisplayString(schemaUri),
-            line,
-            column
-          );
-        }
-      }
-      return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(errorMessage, schemaError.code, schemaUri)]);
+      return new UnresolvedSchema(<JSONSchema>{}, [toDiagnostic(schemaError.message, schemaError.code, schemaUri)]);
     }
     return unresolvedSchema;
   }

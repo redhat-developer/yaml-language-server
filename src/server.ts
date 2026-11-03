@@ -8,12 +8,12 @@
 import { promises as fs } from 'fs';
 import type { Connection } from 'vscode-languageserver/node';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
-import { TelemetryImpl } from './languageserver/telemetry';
-import { schemaRequestHandler, workspaceContext } from './languageservice/services/schemaRequestHandler';
-import { convertErrorToTelemetryMsg } from './languageservice/utils/objects';
-import { setupl10nBundle } from './nodeTranslationSetup';
-import { YAMLServerInit } from './yamlServerInit';
-import { SettingsState } from './yamlSettings';
+import { TelemetryImpl } from './languageserver/telemetry.js';
+import { schemaRequestHandler, workspaceContext } from './languageservice/services/schemaRequestHandler.js';
+import { convertErrorToTelemetryMsg } from './languageservice/utils/objects.js';
+import { setupl10nBundle } from './nodeTranslationSetup.js';
+import { YAMLServerInit } from './yamlServerInit.js';
+import { SettingsState } from './yamlSettings.js';
 
 // Create a connection for the server.
 let connection: Connection = null;

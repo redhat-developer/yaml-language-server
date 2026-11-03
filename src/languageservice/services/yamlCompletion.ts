@@ -19,27 +19,27 @@ import {
 } from 'vscode-languageserver-types';
 import type { Node, YAMLMap, YAMLSeq, Pair } from 'yaml';
 import { isPair, isScalar, isMap, isSeq, isNode } from 'yaml';
-import { parseCustomTag } from '../utils/customTags';
-import type { Telemetry } from '../telemetry';
-import type { SingleYAMLDocument, YamlDocuments } from '../parser/yaml-documents';
-import type { YamlVersion } from '../parser/yamlParser07';
-import { matchOffsetToDocument } from '../utils/arrUtils';
-import { guessIndentation } from '../utils/indentationGuesser';
-import { TextBuffer } from '../utils/textBuffer';
-import type { LanguageSettings } from '../yamlLanguageService';
-import type { ResolvedSchema, YAMLSchemaService } from './yamlSchemaService';
-import type { JSONSchema, JSONSchemaRef } from '../jsonSchema';
-import type { StringifySettings } from '../utils/json';
-import { stringifyObject } from '../utils/json';
-import { isDefined, isString } from '../utils/objects';
-import { setKubernetesParserOption } from '../parser/isKubernetes';
-import { asSchema } from '../parser/schemaValidation/baseValidator';
-import { indexOf, isInComment, isMapContainsEmptyPair } from '../utils/yamlAstUtils';
-import { isModeline } from './modelineUtil';
-import { getSchemaTypeName, isAnyOfAllOfOneOfType, isPrimitiveType } from '../utils/schemaUtils';
-import type { YamlNode } from '../jsonLanguageTypes';
-import type { SettingsState } from '../../yamlSettings';
-import { toYamlStringScalar } from '../utils/yamlScalar';
+import { parseCustomTag } from '../utils/customTags.js';
+import type { Telemetry } from '../telemetry.js';
+import type { SingleYAMLDocument, YamlDocuments } from '../parser/yaml-documents.js';
+import type { YamlVersion } from '../parser/yamlParser07.js';
+import { matchOffsetToDocument } from '../utils/arrUtils.js';
+import { guessIndentation } from '../utils/indentationGuesser.js';
+import { TextBuffer } from '../utils/textBuffer.js';
+import type { LanguageSettings } from '../yamlLanguageService.js';
+import type { ResolvedSchema, YAMLSchemaService } from './yamlSchemaService.js';
+import type { JSONSchema, JSONSchemaRef } from '../jsonSchema.js';
+import type { StringifySettings } from '../utils/json.js';
+import { stringifyObject } from '../utils/json.js';
+import { isDefined, isString } from '../utils/objects.js';
+import { setKubernetesParserOption } from '../parser/isKubernetes.js';
+import { asSchema } from '../parser/schemaValidation/baseValidator.js';
+import { indexOf, isInComment, isMapContainsEmptyPair } from '../utils/yamlAstUtils.js';
+import { isModeline } from './modelineUtil.js';
+import { getSchemaTypeName, isAnyOfAllOfOneOfType, isPrimitiveType } from '../utils/schemaUtils.js';
+import type { YamlNode } from '../jsonLanguageTypes.js';
+import type { SettingsState } from '../../yamlSettings.js';
+import { toYamlStringScalar } from '../utils/yamlScalar.js';
 import * as l10n from '@vscode/l10n';
 
 const parentCompletionKind = CompletionItemKind.Class;
@@ -1198,7 +1198,7 @@ export class YamlCompletion {
           case 'anyOf': {
             let value = propertySchema.default !== undefined ? propertySchema.default : propertySchema.const;
             if (value !== undefined) {
-              if (type === 'string') {
+              if (type === 'string' && typeof value === 'string') {
                 value = toYamlStringScalar(value);
               }
               insertText += `${indent}${key}: ${this.tabStop(insertIndex++, String(value))}\n`;
@@ -1246,9 +1246,12 @@ export class YamlCompletion {
               key === 'null' ? this.getInsertTextForValue(key, '', 'string') : key
             }: ${this.tabStop(insertIndex++, String(propertySchema.default))}\n`;
             break;
-          case 'string':
-            insertText += `${indent}${key}: ${this.tabStop(insertIndex++, toYamlStringScalar(propertySchema.default))}\n`;
+          case 'string': {
+            const value =
+              typeof propertySchema.default === 'string' ? toYamlStringScalar(propertySchema.default) : propertySchema.default;
+            insertText += `${indent}${key}: ${this.tabStop(insertIndex++, String(value))}\n`;
             break;
+          }
           case 'array':
           case 'object':
             // TODO: support default value for array object

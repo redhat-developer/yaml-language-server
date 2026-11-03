@@ -1,12 +1,12 @@
 import type { Disposable, ClientCapabilities, WorkspaceFolder } from 'vscode-languageserver';
 import { TextDocuments } from 'vscode-languageserver';
-import type { CustomFormatterOptions, SchemaConfiguration } from './languageservice/yamlLanguageService';
-import type { ISchemaAssociations } from './requestTypes';
+import type { CustomFormatterOptions, SchemaConfiguration } from './languageservice/yamlLanguageService.js';
+import type { ISchemaAssociations } from './requestTypes.js';
 import type { URI } from 'vscode-uri';
-import type { JSONSchema } from './languageservice/jsonSchema';
+import type { JSONSchema } from './languageservice/jsonSchema.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { CRD_CATALOG_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls';
-import type { YamlVersion } from './languageservice/parser/yamlParser07';
+import { CRD_CATALOG_URL, JSON_SCHEMASTORE_URL } from './languageservice/utils/schemaUrls.js';
+import type { YamlVersion } from './languageservice/parser/yamlParser07.js';
 
 // Client settings interface to grab settings relevant for the language server
 export interface Settings {
@@ -53,9 +53,6 @@ export interface Settings {
   };
   vscodeEditor: {
     detectIndentation: boolean;
-  };
-  files: {
-    associations: Map<string, string>;
   };
 }
 
@@ -128,7 +125,6 @@ export class SettingsState {
   yamlVersion: YamlVersion = '1.2';
   useSchemaSelectionRequests = false;
   hasWsChangeWatchedFileDynamicRegistration = false;
-  fileExtensions: string[] = ['.yml', '.yaml'];
   locale = 'en';
 }
 

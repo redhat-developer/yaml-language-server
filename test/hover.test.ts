@@ -2,17 +2,21 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { ServiceSetup } from './utils/serviceSetup';
-import type { TestCustomSchemaProvider } from './utils/testHelper';
-import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+
+import { describe, it, before, afterEach } from 'node:test';
+import { ServiceSetup } from './utils/serviceSetup.js';
+import type { TestCustomSchemaProvider } from './utils/testHelper.js';
+import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
 import assert from 'assert';
 import type { Hover } from 'vscode-languageserver-types';
 import { MarkupContent, Position } from 'vscode-languageserver-types';
-import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
+import type { SettingsState } from '../src/yamlSettings.js';
+import { TextDocumentTestManager } from '../src/yamlSettings.js';
 import { expect } from 'chai';
-import type { TestTelemetry } from './utils/testsTypes';
+import type { TestTelemetry } from './utils/testsTypes.js';
+import { YAMLHover } from '../src/languageservice/services/yamlHover.js';
+import { YAMLSchemaService } from '../src/languageservice/services/yamlSchemaService.js';
 
 describe('Hover Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -898,6 +902,23 @@ Source: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
         (result.contents as MarkupContent).value,
         `should return this description\n\nSource: [${SCHEMA_ID}](file:///${SCHEMA_ID})`
       );
+    });
+
+    it('returns null when hovering content with the unavailable IBM schema', async () => {
+      const schemaUri = 'https://ibm.com/schemas/zosconfig/v0/meta/zos_meta.schema.json';
+      const requests: string[] = [];
+      const service = new YAMLSchemaService(async (uri) => {
+        requests.push(uri);
+        throw '<!DOCTYPE html><html>404 Not Found<script>JSON.parse(data)</script></html>';
+      });
+      const hover = new YAMLHover(service);
+      hover.configure({ hover: true });
+      const document = setupSchemaIDTextDocument(`# yaml-language-server: $schema=${schemaUri}\nroot:\n  content: words`);
+
+      const result = await hover.doHover(document, Position.create(2, 4));
+
+      assert.strictEqual(result, null);
+      assert.deepStrictEqual(requests, [schemaUri]);
     });
 
     it('should work with bad schema', async () => {

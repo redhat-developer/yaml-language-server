@@ -4,7 +4,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema';
+import type { JSONSchema, JSONSchemaRef } from '../../jsonSchema.js';
 import type {
   ASTNode,
   ArrayASTNode,
@@ -13,20 +13,19 @@ import type {
   PropertyASTNode,
   StringASTNode,
   SchemaDraft,
-} from '../../jsonLanguageTypes';
-import { equals, isBoolean, isDefined, isIterable, isNumber, isString } from '../../utils/objects';
-import { getSchemaTypeName } from '../../utils/schemaUtils';
-import { isArrayEqual } from '../../utils/arrUtils';
-import { safeCreateUnicodeRegExp } from '../../utils/strings';
-import { FilePatternAssociation } from '../../utils/filePatternAssociation';
-import { floatSafeRemainder } from '../../utils/math';
-import { ErrorCode } from '../../jsonLanguageTypes';
+} from '../../jsonLanguageTypes.js';
+import { equals, isBoolean, isDefined, isIterable, isNumber, isString } from '../../utils/objects.js';
+import { getSchemaTypeName } from '../../utils/schemaUtils.js';
+import { isArrayEqual } from '../../utils/arrUtils.js';
+import { safeCreateUnicodeRegExp } from '../../utils/strings.js';
+import { FilePatternAssociation } from '../../utils/filePatternAssociation.js';
+import { floatSafeRemainder } from '../../utils/math.js';
+import { ErrorCode } from '../../jsonLanguageTypes.js';
 import * as l10n from '@vscode/l10n';
 import { URI } from 'vscode-uri';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import { contains, getNodeValue } from '../../utils/astNodeUtils';
-import { getValidator } from './validatorFactory';
+import { contains, getNodeValue } from '../../utils/astNodeUtils.js';
 
 export const YAML_SOURCE = 'YAML';
 const YAML_SCHEMA_PREFIX = 'yaml-schema: ';
@@ -314,6 +313,7 @@ export interface Options {
   disableAdditionalProperties: boolean;
   uri: string;
   callFromAutoComplete?: boolean;
+  createValidator: (schemaDraft: SchemaDraft) => BaseValidator;
 }
 
 interface IValidationMatch {
@@ -465,7 +465,7 @@ export abstract class BaseValidator {
       const subSchemaDraft = schema._schemaDraft;
       const currentSchemaDraft = this.getCurrentSchemaDraft();
       if (subSchemaDraft !== currentSchemaDraft) {
-        const subValidator = getValidator(subSchemaDraft);
+        const subValidator = options.createValidator(subSchemaDraft);
         subValidator.validateNode(node, schema, originalSchema, validationResult, matchingSchemas, options);
         return;
       }

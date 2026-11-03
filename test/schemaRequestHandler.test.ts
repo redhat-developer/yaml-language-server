@@ -3,31 +3,80 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { schemaRequestHandler } from '../src/languageservice/services/schemaRequestHandler';
-import * as sinon from 'sinon';
-import * as request from 'request-light';
+import { describe, it, beforeEach, afterEach, mock } from 'node:test';
+import type { Mock } from 'node:test';
+import assert from 'node:assert/strict';
+
+import { schemaRequestHandler, workspaceContext } from '../src/languageservice/services/schemaRequestHandler.js';
+import type { SchemaRequestRetryOptions } from '../src/languageservice/services/schemaRequestHandler.js';
+import request from 'request-light';
 import type { XHRResponse } from 'request-light';
 import type { Connection } from 'vscode-languageserver';
+import { ResponseError } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import * as chai from 'chai';
-import sinonChai from 'sinon-chai';
 
 const expect = chai.expect;
-chai.use(sinonChai);
-import { testFileSystem } from './utils/testHelper';
+import { testFileSystem } from './utils/testHelper.js';
 
 describe('Schema Request Handler Tests', () => {
+  describe('workspaceContext', () => {
+    const cases = [
+      {
+        name: 'relative HTTP schema references',
+        resource: 'https://example.com/schemas/root.json',
+        relativePath: '../shared.json#/definitions/value',
+        expected: 'https://example.com/shared.json#/definitions/value',
+      },
+      {
+        name: 'absolute schema references',
+        resource: 'https://example.com/schemas/root.json',
+        relativePath: 'https://other.example.com/schema.json',
+        expected: 'https://other.example.com/schema.json',
+      },
+      {
+        name: 'schema fragments',
+        resource: 'https://example.com/schema.json',
+        relativePath: '#/definitions/value',
+        expected: 'https://example.com/schema.json#/definitions/value',
+      },
+      {
+        name: 'file URLs with encoded spaces',
+        resource: 'file:///home/user/my%20schemas/root.json',
+        relativePath: './other%20schema.json',
+        expected: 'file:///home/user/my%20schemas/other%20schema.json',
+      },
+      {
+        name: 'Windows file URLs',
+        resource: 'file:///c%3A/Users/user/schemas/root.json',
+        relativePath: '../shared.json',
+        expected: 'file:///c%3A/Users/user/shared.json',
+      },
+      {
+        name: 'custom document schemes',
+        resource: 'vscode-test:///workspace/schemas/root.json',
+        relativePath: '../shared.json',
+        expected: 'vscode-test:///workspace/shared.json',
+      },
+    ];
+
+    for (const { name, resource, relativePath, expected } of cases) {
+      it(`should resolve ${name}`, () => {
+        expect(workspaceContext.resolveRelativePath(relativePath, resource)).to.equal(expected);
+      });
+    }
+  });
+
   describe('schemaRequestHandler', () => {
-    const sandbox = sinon.createSandbox();
-    let readFileStub: sinon.SinonStub;
+    let readFileStub: Mock<typeof testFileSystem.readFile>;
 
     beforeEach(() => {
-      readFileStub = sandbox.stub(testFileSystem, 'readFile');
-      readFileStub.returns(Promise.resolve('{some: "json"}'));
+      readFileStub = mock.method(testFileSystem, 'readFile', () => undefined);
+      readFileStub.mock.mockImplementation(() => Promise.resolve('{some: "json"}'));
     });
 
     afterEach(() => {
-      sandbox.restore();
+      mock.reset();
     });
     it('Should care Win URI', async () => {
       const connection = {} as Connection;
@@ -40,7 +89,8 @@ describe('Schema Request Handler Tests', () => {
         testFileSystem,
         false
       );
-      expect(readFileStub).calledOnceWith('c:\\some\\window\\path\\scheme.json');
+      assert.equal(readFileStub.mock.callCount(), 1);
+      assert.deepEqual(readFileStub.mock.calls[0].arguments.slice(0, 1), ['c:\\some\\window\\path\\scheme.json']);
       const result = await resultPromise;
       expect(result).to.be.equal('{some: "json"}');
     });
@@ -63,24 +113,26 @@ describe('Schema Request Handler Tests', () => {
         testFileSystem,
         false
       );
-      expect(readFileStub).calledOnceWith(URI.file('a:/some/window/path/scheme.json').fsPath);
+      assert.equal(readFileStub.mock.callCount(), 1);
+      assert.deepEqual(readFileStub.mock.calls[0].arguments.slice(0, 1), [URI.file('a:/some/window/path/scheme.json').fsPath]);
       const result = await resultPromise;
       expect(result).to.be.equal('{some: "json"}');
     });
   });
 
   describe('HTTP(S) schema requests', () => {
-    const sandbox = sinon.createSandbox();
-    let xhrStub: sinon.SinonStub;
+    let xhrStub: Mock<typeof request.xhr>;
     const connection = {} as Connection;
 
     beforeEach(() => {
-      xhrStub = sandbox.stub(request, 'xhr');
-      xhrStub.resolves({ responseText: '{"$schema":"http://json-schema.org/draft-07/schema"}', status: 200 } as XHRResponse);
+      xhrStub = mock.method(request, 'xhr', () => undefined);
+      xhrStub.mock.mockImplementation(() =>
+        Promise.resolve({ responseText: '{"$schema":"http://json-schema.org/draft-07/schema"}', status: 200 } as XHRResponse)
+      );
     });
 
     afterEach(() => {
-      sandbox.restore();
+      mock.reset();
       delete process.env.YAML_LANGUAGE_SERVER_VERSION;
     });
 
@@ -88,8 +140,8 @@ describe('Schema Request Handler Tests', () => {
       process.env.YAML_LANGUAGE_SERVER_VERSION = '1.0.0-test';
       await schemaRequestHandler(connection, 'https://example.com/schema.json', [], URI.parse(''), false, testFileSystem, false);
 
-      expect(xhrStub).calledOnce;
-      const { headers } = xhrStub.firstCall.args[0];
+      assert.equal(xhrStub.mock.callCount(), 1);
+      const { headers } = xhrStub.mock.calls[0].arguments[0];
       expect(headers['User-Agent']).to.equal(
         `yaml-language-server/1.0.0-test (RedHat) node/${process.versions.node} (${process.platform})`
       );
@@ -99,7 +151,7 @@ describe('Schema Request Handler Tests', () => {
       delete process.env.YAML_LANGUAGE_SERVER_VERSION;
       await schemaRequestHandler(connection, 'https://example.com/schema.json', [], URI.parse(''), false, testFileSystem, false);
 
-      const { headers } = xhrStub.firstCall.args[0];
+      const { headers } = xhrStub.mock.calls[0].arguments[0];
       expect(headers['User-Agent']).to.match(/^yaml-language-server\/unknown \(RedHat\)/);
     });
 
@@ -107,14 +159,14 @@ describe('Schema Request Handler Tests', () => {
       process.env.YAML_LANGUAGE_SERVER_VERSION = '2.0.0';
       await schemaRequestHandler(connection, 'http://example.com/schema.json', [], URI.parse(''), false, testFileSystem, false);
 
-      const { headers } = xhrStub.firstCall.args[0];
+      const { headers } = xhrStub.mock.calls[0].arguments[0];
       expect(headers['User-Agent']).to.match(/^yaml-language-server\/2\.0\.0 \(RedHat\)/);
     });
 
     it('should preserve Accept-Encoding header alongside User-Agent', async () => {
       await schemaRequestHandler(connection, 'https://example.com/schema.json', [], URI.parse(''), false, testFileSystem, false);
 
-      const { headers } = xhrStub.firstCall.args[0];
+      const { headers } = xhrStub.mock.calls[0].arguments[0];
       expect(headers['Accept-Encoding']).to.equal('gzip, deflate');
     });
 
@@ -132,7 +184,7 @@ describe('Schema Request Handler Tests', () => {
     });
 
     it('should reject with responseText on xhr error', async () => {
-      xhrStub.rejects({ responseText: 'Not Found', status: 404 } as XHRResponse);
+      xhrStub.mock.mockImplementation(() => Promise.reject({ responseText: 'Not Found', status: 404 } as XHRResponse));
       try {
         await schemaRequestHandler(
           connection,
@@ -145,8 +197,195 @@ describe('Schema Request Handler Tests', () => {
         );
         expect.fail('Expected promise to be rejected');
       } catch (err) {
-        expect(err).to.equal('Not Found');
+        expect(err).to.equal('HTTP response code 404: Not Found');
       }
+    });
+
+    for (const delegated of [false, true]) {
+      describe(delegated ? 'VS Code request errors' : 'Direct HTTP request errors', () => {
+        for (const { name, status, message, expected } of [
+          {
+            name: 'omits the HTML error page',
+            status: 404,
+            message: '<!-- Error page --><html><script>JSON.parse(data)</script></html>',
+            expected: 'HTTP response code 404',
+          },
+          {
+            name: 'omits an HTML fragment with a closing tag',
+            status: 500,
+            message: 'Internal server error</html>',
+            expected: 'HTTP response code 500',
+          },
+          {
+            name: 'omits a truncated HTML error page',
+            status: 403,
+            message: '<HTML>Access denied',
+            expected: 'HTTP response code 403',
+          },
+          {
+            name: 'includes the plain-text error details',
+            status: 401,
+            message: 'Authentication required',
+            expected: 'HTTP response code 401: Authentication required',
+          },
+        ]) {
+          it(name, async () => {
+            const httpError: XHRResponse = { status, responseText: message, body: Buffer.from(message), headers: {} };
+            xhrStub.mock.mockImplementation(() => Promise.reject(httpError));
+            const sendRequest = mock.fn(async () => {
+              throw new ResponseError(status, message);
+            });
+            const failedConnection = { sendRequest } as unknown as Connection;
+
+            await assert.rejects(
+              schemaRequestHandler(
+                failedConnection,
+                'https://example.com/schema.json',
+                [],
+                URI.parse(''),
+                delegated,
+                testFileSystem,
+                false
+              ),
+              (error) => error === expected
+            );
+            assert.equal(xhrStub.mock.callCount(), delegated ? 0 : 1);
+            assert.equal(sendRequest.mock.callCount(), delegated ? 1 : 0);
+          });
+        }
+      });
+    }
+  });
+
+  describe('HTTP(S) schema request retries', () => {
+    let xhrStub: Mock<typeof request.xhr>;
+    let delays: number[];
+    const connection = {} as Connection;
+
+    const retryOptions = {
+      delay: async (ms: number): Promise<void> => {
+        delays.push(ms);
+      },
+    };
+
+    const success = { responseText: '{"$schema":"http://json-schema.org/draft-07/schema"}', status: 200 } as XHRResponse;
+
+    const doRequest = (options: SchemaRequestRetryOptions = retryOptions): Promise<string> =>
+      schemaRequestHandler(
+        connection,
+        'https://example.com/schema.json',
+        [],
+        URI.parse(''),
+        false,
+        testFileSystem,
+        false,
+        options
+      );
+
+    beforeEach(() => {
+      delays = [];
+      xhrStub = mock.method(request, 'xhr', () => undefined);
+    });
+
+    afterEach(() => {
+      mock.reset();
+    });
+
+    it('should retry a transient status and return the eventual response', async () => {
+      xhrStub.mock.mockImplementationOnce(() => Promise.reject({ responseText: '', status: 429 } as XHRResponse), 0);
+      xhrStub.mock.mockImplementationOnce(() => Promise.resolve(success), 1);
+
+      const result = await doRequest();
+
+      assert.equal(xhrStub.mock.callCount(), 2);
+      expect(result).to.equal(success.responseText);
+    });
+
+    it('should retry connection level failures', async () => {
+      xhrStub.mock.mockImplementationOnce(() => Promise.reject({ code: 'ECONNRESET', message: 'socket hang up' }), 0);
+      xhrStub.mock.mockImplementationOnce(() => Promise.resolve(success), 1);
+
+      const result = await doRequest();
+
+      assert.equal(xhrStub.mock.callCount(), 2);
+      expect(result).to.equal(success.responseText);
+    });
+
+    it('should not retry a permanent status', async () => {
+      xhrStub.mock.mockImplementation(() => Promise.reject({ responseText: 'Not Found', status: 404 } as XHRResponse));
+
+      try {
+        await doRequest();
+        expect.fail('Expected promise to be rejected');
+      } catch (err) {
+        expect(err).to.equal('HTTP response code 404: Not Found');
+      }
+      assert.equal(xhrStub.mock.callCount(), 1);
+    });
+
+    it('should give up after the retry budget is exhausted', async () => {
+      xhrStub.mock.mockImplementation(() => Promise.reject({ responseText: 'Service Unavailable', status: 503 } as XHRResponse));
+
+      try {
+        await doRequest();
+        expect.fail('Expected promise to be rejected');
+      } catch (err) {
+        expect(err).to.equal('HTTP response code 503: Service Unavailable');
+      }
+      // The initial attempt plus the default budget of 2 retries.
+      assert.equal(xhrStub.mock.callCount(), 3);
+    });
+
+    it('should honour a Retry-After header in preference to backoff', async () => {
+      xhrStub.mock.mockImplementationOnce(
+        () => Promise.reject({ responseText: '', status: 429, headers: { 'retry-after': '0.5' } } as unknown as XHRResponse),
+        0
+      );
+      xhrStub.mock.mockImplementationOnce(() => Promise.resolve(success), 1);
+
+      await doRequest();
+
+      expect(delays).to.eql([500]);
+    });
+
+    it('should cap an excessive Retry-After value', async () => {
+      xhrStub.mock.mockImplementationOnce(
+        () => Promise.reject({ responseText: '', status: 429, headers: { 'retry-after': '600' } } as unknown as XHRResponse),
+        0
+      );
+      xhrStub.mock.mockImplementationOnce(() => Promise.resolve(success), 1);
+
+      await doRequest();
+
+      expect(delays).to.eql([1000]);
+    });
+
+    it('should back off between attempts when no Retry-After is given', async () => {
+      xhrStub.mock.mockImplementation(() => Promise.reject({ responseText: 'Service Unavailable', status: 503 } as XHRResponse));
+
+      try {
+        await doRequest();
+      } catch {
+        // expected once the budget is exhausted
+      }
+
+      expect(delays).to.have.length(2);
+      // Exponential with jitter, each capped.
+      expect(delays[0]).to.be.at.least(200).and.at.most(1000);
+      expect(delays[1]).to.be.at.least(400).and.at.most(1000);
+      expect(delays[1]).to.be.at.least(delays[0]);
+    });
+
+    it('should not retry when the budget is zero', async () => {
+      xhrStub.mock.mockImplementation(() => Promise.reject({ responseText: 'Too Many Requests', status: 429 } as XHRResponse));
+
+      try {
+        await doRequest({ ...retryOptions, maxRetries: 0 });
+        expect.fail('Expected promise to be rejected');
+      } catch (err) {
+        expect(err).to.equal('HTTP response code 429: Too Many Requests');
+      }
+      assert.equal(xhrStub.mock.callCount(), 1);
     });
   });
 });

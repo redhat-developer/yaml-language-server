@@ -2,19 +2,20 @@
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { configure as configureHttpRequests, xhr } from 'request-light';
+import * as path from 'path';
+import requestLight from 'request-light';
 import type { Connection } from 'vscode-languageserver';
 import { DidChangeConfigurationNotification, DocumentFormattingRequest } from 'vscode-languageserver';
 import { CodeLensRefreshRequest } from 'vscode-languageserver-protocol';
-import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths';
-import { checkSchemaURI, EMPTY_SCHEMA_URL, isKubernetes, JSON_SCHEMASTORE_URL } from '../../languageservice/utils/schemaUrls';
-import { equals } from '../../languageservice/utils/objects';
-import type { LanguageService, LanguageSettings, SchemasSettings } from '../../languageservice/yamlLanguageService';
-import { SchemaPriority } from '../../languageservice/yamlLanguageService';
-import { SchemaSelectionRequests } from '../../requestTypes';
-import type { Settings, SettingsState } from '../../yamlSettings';
-import type { Telemetry } from '../../languageservice/telemetry';
-import type { ValidationHandler } from './validationHandlers';
+import { isRelativePath, relativeToAbsolutePath } from '../../languageservice/utils/paths.js';
+import { checkSchemaURI, EMPTY_SCHEMA_URL, isKubernetes, JSON_SCHEMASTORE_URL } from '../../languageservice/utils/schemaUrls.js';
+import { equals } from '../../languageservice/utils/objects.js';
+import type { LanguageService, LanguageSettings, SchemasSettings } from '../../languageservice/yamlLanguageService.js';
+import { SchemaPriority } from '../../languageservice/yamlLanguageService.js';
+import { SchemaSelectionRequests } from '../../requestTypes.js';
+import type { Settings, SettingsState } from '../../yamlSettings.js';
+import type { Telemetry } from '../../languageservice/telemetry.js';
+import type { ValidationHandler } from './validationHandlers.js';
 
 export class SettingsHandler {
   private schemaSettings: SchemasSettings[] | undefined;
@@ -54,7 +55,6 @@ export class SettingsHandler {
       { section: 'http' },
       { section: '[yaml]' },
       { section: 'editor' },
-      { section: 'files' },
     ]);
     const settings: Readonly<Settings> = {
       yaml: config[0],
@@ -64,13 +64,12 @@ export class SettingsHandler {
       },
       yamlEditor: config[2],
       vscodeEditor: config[3],
-      files: config[4],
     };
     await this.setConfiguration(settings);
   }
 
   private async setConfiguration(settings: Settings): Promise<void> {
-    configureHttpRequests(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
+    requestLight.configure(settings.http && settings.http.proxy, settings.http && settings.http.proxyStrictSSL);
 
     this.yamlSettings.specificValidatorPaths = [];
     if (settings.yaml) {
@@ -122,13 +121,6 @@ export class SettingsHandler {
         }
       }
 
-      if (settings.files?.associations) {
-        for (const [ext, languageId] of Object.entries(settings.files.associations)) {
-          if (languageId === 'yaml') {
-            this.yamlSettings.fileExtensions.push(ext);
-          }
-        }
-      }
       this.yamlSettings.yamlVersion = settings.yaml.yamlVersion ?? '1.2';
 
       if (settings.yaml.format) {
@@ -250,7 +242,7 @@ export class SettingsHandler {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async getSchemaStoreMatchingSchemas(schemaStoreUrl: string): Promise<{ schemas: any[] }> {
-    const response = await xhr({ url: schemaStoreUrl });
+    const response = await requestLight.xhr({ url: schemaStoreUrl });
 
     const languageSettings = {
       schemas: [],
@@ -275,22 +267,18 @@ export class SettingsHandler {
           versions: schema.versions,
         });
       } else {
-        for (const currFileMatch of fileMatches) {
-          // If the schema is for files with a YAML extension, save the schema association
-          if (
-            this.yamlSettings.fileExtensions.findIndex((value) => {
-              return currFileMatch.indexOf(value) > -1;
-            }) > -1
-          ) {
-            languageSettings.schemas.push({
-              uri: schema.url,
-              fileMatch: [currFileMatch],
-              priority: SchemaPriority.SchemaStore,
-              name: schema.name,
-              description: schema.description,
-              versions: schema.versions,
-            });
-          }
+        const nonJsonFileMatches = fileMatches.filter((fileMatch: string) => {
+          return !['.json', '.jsonc', '.json5'].includes(path.posix.extname(fileMatch));
+        });
+        if (nonJsonFileMatches.length > 0) {
+          languageSettings.schemas.push({
+            uri: schema.url,
+            fileMatch: nonJsonFileMatches,
+            priority: SchemaPriority.SchemaStore,
+            name: schema.name,
+            description: schema.description,
+            versions: schema.versions,
+          });
         }
       }
     }

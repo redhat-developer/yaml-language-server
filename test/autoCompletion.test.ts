@@ -3,19 +3,27 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { TestCustomSchemaProvider } from './utils/testHelper';
-import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, toFsPath } from './utils/testHelper';
+import { describe, it, before, beforeEach, afterEach } from 'node:test';
+
+import type { TestCustomSchemaProvider } from './utils/testHelper.js';
+import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, toFsPath } from './utils/testHelper.js';
 import assert from 'assert';
 import * as path from 'path';
-import { createExpectedCompletion } from './utils/verifyError';
-import { ServiceSetup } from './utils/serviceSetup';
+import { createExpectedCompletion } from './utils/verifyError.js';
+import { ServiceSetup } from './utils/serviceSetup.js';
 import type { CompletionList, MarkupContent } from 'vscode-languageserver-types';
 import { CompletionItemKind, InsertTextFormat, MarkupKind, Position } from 'vscode-languageserver-types';
 import { expect } from 'chai';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
-import type { LanguageService } from '../src';
-import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
+import type { SettingsState } from '../src/yamlSettings.js';
+import { TextDocumentTestManager } from '../src/yamlSettings.js';
+import type { LanguageService } from '../src/index.js';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
+
+import requiredPropertiesSchema from './fixtures/testRequiredProperties.json' with { type: 'json' };
+import arrayMaxPropertiesSchema from './fixtures/testArrayMaxProperties.json' with { type: 'json' };
+import stringArraySchema from './fixtures/testStringArray.json' with { type: 'json' };
+import arrayIndentSchema from './fixtures/testArrayIndent.json' with { type: 'json' };
+import arrayCompletionSchema from './fixtures/testArrayCompletionSchema.json' with { type: 'json' };
 
 describe('Auto Completion Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -695,9 +703,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Insert required attributes at correct level', async () => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const schema = require(path.join(__dirname, './fixtures/testRequiredProperties.json'));
-        schemaProvider.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, requiredPropertiesSchema);
         const content = '- top:\n    prop1: demo\n- ';
         const result = await parseSetup(content, content.length);
         assert.equal(result.items.length, 1);
@@ -710,9 +716,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Insert required attributes at correct level even on first element', async () => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const schema = require(path.join(__dirname, './fixtures/testRequiredProperties.json'));
-        schemaProvider.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, requiredPropertiesSchema);
         const content = '- ';
         const result = await parseSetup(content, content.length);
         assert.equal(result.items.length, 1);
@@ -725,9 +729,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide the 3 types when none provided', async () => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
-        schemaProvider.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, arrayMaxPropertiesSchema);
         const content = '- ';
         const result = await parseSetup(content, content.length);
         assert.equal(result.items.length, 3);
@@ -752,9 +754,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide the 2 types when one is provided', async () => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
-        schemaProvider.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, arrayMaxPropertiesSchema);
         const content = '- prop1:\n  ';
         const result = await parseSetup(content, content.length);
         assert.equal(result.items.length, 2);
@@ -773,9 +773,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide the 2 types when one is provided and the second is typed', async () => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
-        schemaProvider.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, arrayMaxPropertiesSchema);
         const content = '- prop1:\n  p';
         const result = await parseSetup(content, content.length);
         assert.equal(result.items.length, 2);
@@ -794,9 +792,7 @@ describe('Auto Completion Tests', () => {
       });
 
       it('Provide no completion when maxProperties reached', async () => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const schema = require(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
-        schemaProvider.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, arrayMaxPropertiesSchema);
         const content = '- prop1:\n  prop2:\n  ';
         const result = await parseSetup(content, content.length);
         assert.equal(result.items.length, 0);
@@ -932,9 +928,7 @@ describe('Auto Completion Tests', () => {
 
     describe('Array Specific Tests', function () {
       it('Should insert empty array item', async () => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const schema = require(path.join(__dirname, './fixtures/testStringArray.json'));
-        schemaProvider.addSchema(SCHEMA_ID, schema);
+        schemaProvider.addSchema(SCHEMA_ID, stringArraySchema);
         const content = 'fooBa'; // len: 5
         const result = await parseSetup(content, content.lastIndexOf('Ba') + 2); // pos: 3+2
         assert.strictEqual('fooBar:\n  - ${1}', result.items[0].insertText);
@@ -1547,7 +1541,7 @@ describe('Auto Completion Tests', () => {
         });
         // For some reason, this gets inserted at the cursor (char 4)
         // It should be inserted at char 2
-        xit('Next line const no :', async () => {
+        it.skip('Next line const no :', async () => {
           const content = 'test:\n  - constProp\n    ';
           const result = await parseSetup(content, content.length);
           expect(result.items.length).to.be.equal(1);
@@ -1772,9 +1766,7 @@ describe('Auto Completion Tests', () => {
 
   describe('Indentation Specific Tests', function () {
     it('Indent should be considered with position relative to slash', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
-      schemaProvider.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, arrayIndentSchema);
       const content = 'install:\n  - he'; // len: 15
       const result = await parseSetup(content, content.lastIndexOf('he') + 2); // pos: 13+2
       assert.equal(result.items.length, 2);
@@ -1787,9 +1779,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Large indent should be considered with position relative to slash', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
-      schemaProvider.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, arrayIndentSchema);
       const content = 'install:\n -            he'; // len: 25
       const result = await parseSetup(content, content.lastIndexOf('he') + 2); // pos: 23+2
       assert.equal(result.items.length, 2);
@@ -1802,9 +1792,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Tab indent should be considered with position relative to slash', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testArrayIndent.json'));
-      schemaProvider.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, arrayIndentSchema);
       const content = 'install:\n -\t             he'; // len: 27
       const result = await parseSetup(content, content.lastIndexOf('he') + 2); // pos: 25+2
       assert.equal(result.items.length, 2);
@@ -1818,7 +1806,7 @@ describe('Auto Completion Tests', () => {
   });
 
   describe('Yaml schema defined in file', function () {
-    const uri = toFsPath(path.join(__dirname, './fixtures/testArrayMaxProperties.json'));
+    const uri = toFsPath(path.join(import.meta.dirname, './fixtures/testArrayMaxProperties.json'));
 
     it('Provide completion from schema declared in file', async () => {
       const content = `# yaml-language-server: $schema=${uri}\n- `;
@@ -1850,7 +1838,7 @@ describe('Auto Completion Tests', () => {
 
     it('should handle absolute path', async () => {
       const documentContent = `# yaml-language-server: $schema=${path.join(
-        __dirname,
+        import.meta.dirname,
         './fixtures/testArrayMaxProperties.json'
       )} anothermodeline=value\n- `; // len: 142
       const content = `${documentContent}|\n|---\n- `; // len: 149, pos: 142
@@ -1861,7 +1849,7 @@ describe('Auto Completion Tests', () => {
     it('should handle relative path', async () => {
       const documentContent = `# yaml-language-server: $schema=./fixtures/testArrayMaxProperties.json anothermodeline=value\n- `; // 95
       const content = `${documentContent}\n---\n- `;
-      const testTextDocument = setupSchemaIDTextDocument(content, path.join(__dirname, 'test.yaml'));
+      const testTextDocument = setupSchemaIDTextDocument(content, path.join(import.meta.dirname, 'test.yaml'));
       yamlSettings.documents = new TextDocumentTestManager();
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
       const result = await languageHandler.completionHandler({
@@ -1874,7 +1862,7 @@ describe('Auto Completion Tests', () => {
     const inlineSchemaLabel = 'Inline schema';
 
     it('should provide modeline completion on first character with no schema associated and no modeline yet', async () => {
-      const testTextDocument = setupSchemaIDTextDocument('', path.join(__dirname, 'test.yaml'));
+      const testTextDocument = setupSchemaIDTextDocument('', path.join(import.meta.dirname, 'test.yaml'));
       yamlSettings.documents = new TextDocumentTestManager();
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
       const result = await languageHandler.completionHandler({
@@ -1886,7 +1874,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should not provide modeline completion on first character when schema is associated', async () => {
-      const specificSchemaId = path.join(__dirname, 'test.yaml');
+      const specificSchemaId = path.join(import.meta.dirname, 'test.yaml');
       const testTextDocument = setupSchemaIDTextDocument('', specificSchemaId);
       schemaProvider.addSchema(specificSchemaId, {
         type: 'object',
@@ -1907,7 +1895,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('should not provide modeline completion on first character when modeline already present', async () => {
-      const testTextDocument = setupSchemaIDTextDocument('# yaml-language-server:', path.join(__dirname, 'test.yaml'));
+      const testTextDocument = setupSchemaIDTextDocument('# yaml-language-server:', path.join(import.meta.dirname, 'test.yaml'));
       yamlSettings.documents = new TextDocumentTestManager();
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
       const result = await languageHandler.completionHandler({
@@ -1919,7 +1907,7 @@ describe('Auto Completion Tests', () => {
 
     it('should provide schema id completion in modeline', async () => {
       const modeline = '# yaml-language-server: $schema=';
-      const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(__dirname, 'test.yaml'));
+      const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(import.meta.dirname, 'test.yaml'));
       yamlSettings.documents = new TextDocumentTestManager();
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
       const result = await languageHandler.completionHandler({
@@ -1932,7 +1920,7 @@ describe('Auto Completion Tests', () => {
 
     it('should provide schema id completion in modeline for any line', async () => {
       const modeline = 'foo:\n  bar\n# yaml-language-server: $schema=';
-      const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(__dirname, 'test.yaml'));
+      const testTextDocument = setupSchemaIDTextDocument(modeline, path.join(import.meta.dirname, 'test.yaml'));
       yamlSettings.documents = new TextDocumentTestManager();
       (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
       const result = await languageHandler.completionHandler({
@@ -2701,9 +2689,7 @@ describe('Auto Completion Tests', () => {
 
   describe('Array completion', () => {
     it('Simple array object completion with "-" without any item', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      schemaProvider.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, arrayCompletionSchema);
       const content = 'test_simpleArrayObject:\n  -';
       const result = await parseSetup(content, content.length);
       assert.equal(result.items.length, 2);
@@ -2712,9 +2698,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Simple array object completion without "-" after array item', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      schemaProvider.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, arrayCompletionSchema);
       const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  ';
       const result = await parseSetup(content, content.length);
       assert.equal(result.items.length, 1);
@@ -2722,9 +2706,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Simple array object completion with "-" after array item', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      schemaProvider.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, arrayCompletionSchema);
       const content = 'test_simpleArrayObject:\n  - obj1:\n      name: 1\n  -';
       const result = await parseSetup(content, content.length);
       assert.equal(result.items.length, 2);
@@ -2733,9 +2715,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion with "- " without any item', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      schemaProvider.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, arrayCompletionSchema);
       const content = 'test_array_anyOf_2objects:\n  - ';
       const result = await parseSetup(content, content.length);
       assert.equal(result.items.length, 4);
@@ -2746,9 +2726,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion with "-" without any item', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      schemaProvider.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, arrayCompletionSchema);
       const content = 'test_array_anyOf_2objects:\n  -';
       const result = await parseSetup(content, content.length);
       assert.equal(result.items.length, 4);
@@ -2757,9 +2735,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Simple array object completion without "-" befor array empty item', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      schemaProvider.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, arrayCompletionSchema);
       const content = 'test_simpleArrayObject:\n  |\n|  -'; // len: 30, pos: 26
       const result = await parseSetup(content);
       assert.equal(result.items.length, 1);
@@ -2767,27 +2743,21 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion without "-" after array item', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      schemaProvider.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, arrayCompletionSchema);
       const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  ';
       const result = await parseSetup(content, content.length);
       expect(result.items.map((i) => i.label)).deep.eq(['- (array item) obj1', '- (array item) obj2']);
     });
 
     it('Array nested anyOf without "-" should return all array items', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      schemaProvider.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, arrayCompletionSchema);
       const content = 'test_array_nested_anyOf:\n  - obj1:\n    name:1\n  ';
       const result = await parseSetup(content, content.length);
       expect(result.items.map((i) => i.label)).deep.eq(['- (array item) obj1', '- (array item) obj2', '- (array item) obj3']);
     });
 
     it('Array anyOf two objects completion with "-" after array item', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      schemaProvider.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, arrayCompletionSchema);
       const content = 'test_array_anyOf_2objects:\n  - obj1:\n      name: 1\n  -';
       const result = await parseSetup(content, content.length);
       assert.equal(result.items.length, 4);
@@ -2796,9 +2766,7 @@ describe('Auto Completion Tests', () => {
     });
 
     it('Array anyOf two objects completion indentation', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const schema = require(path.join(__dirname, './fixtures/testArrayCompletionSchema.json'));
-      schemaProvider.addSchema(SCHEMA_ID, schema);
+      schemaProvider.addSchema(SCHEMA_ID, arrayCompletionSchema);
       const content = 'test_array_anyOf_2objects:\n  - obj';
       const completion = await parseSetup(content, content.length);
       expect(completion.items.length).is.equal(4);

@@ -3,19 +3,23 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { describe, it, before, beforeEach, afterEach } from 'node:test';
+
 import type { CompletionList } from 'vscode-languageserver-types';
 import { CompletionItemKind, InsertTextFormat, Position, Range } from 'vscode-languageserver-types';
-import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import type { LanguageService } from '../src/languageservice/yamlLanguageService';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
-import { ServiceSetup } from './utils/serviceSetup';
-import type { TestCustomSchemaProvider } from './utils/testHelper';
-import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
+import type { LanguageService } from '../src/languageservice/yamlLanguageService.js';
+import type { SettingsState } from '../src/yamlSettings.js';
+import { TextDocumentTestManager } from '../src/yamlSettings.js';
+import { ServiceSetup } from './utils/serviceSetup.js';
+import type { TestCustomSchemaProvider } from './utils/testHelper.js';
+import { caretPosition, SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument } from './utils/testHelper.js';
 import { expect } from 'chai';
-import { createExpectedCompletion } from './utils/verifyError';
-import * as path from 'path';
-import type { JSONSchema } from './../src/languageservice/jsonSchema';
+import { createExpectedCompletion } from './utils/verifyError.js';
+import type { JSONSchema } from './../src/languageservice/jsonSchema.js';
+
+import nestedObjectArraySchema from './fixtures/test-nested-object-array.json' with { type: 'json' };
+import completionOneOfSchema from './fixtures/test-completion-oneOf.json' with { type: 'json' };
 
 describe('Auto Completion Fix Tests', () => {
   let languageSettingsSetup: ServiceSetup;
@@ -79,6 +83,36 @@ describe('Auto Completion Fix Tests', () => {
   afterEach(() => {
     schemaProvider.deleteSchema(SCHEMA_ID);
     languageService.configure(languageSettingsSetup.languageSettings);
+  });
+
+  describe('nullable string defaults in object snippets', () => {
+    for (const required of [false, true]) {
+      for (const value of [null, 'null']) {
+        it(`should retain completions for ${required ? 'required' : 'optional'} properties with default ${JSON.stringify(value)}`, async () => {
+          schemaProvider.addSchema(SCHEMA_ID, {
+            type: 'object',
+            properties: {
+              first: { type: 'integer' },
+              second: {
+                type: 'object',
+                required: required ? ['name'] : [],
+                properties: {
+                  name: { type: ['string', 'null'], default: value },
+                },
+              },
+              third: { type: 'integer' },
+            },
+          });
+
+          const completion = await parseSetup('', 0, 0);
+          expect(completion.items.map((item) => item.label)).to.include.members(['first', 'second', 'third']);
+          const expectedValue = value === null ? 'null' : '"null"';
+          expect(completion.items.find((item) => item.label === 'second').insertText).to.equal(
+            `second:\n  name: \${1:${expectedValue}}`
+          );
+        });
+      }
+    }
   });
 
   it('should show completion on map under array', async () => {
@@ -196,9 +230,7 @@ spec:
   });
 
   it('should complete  array', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const schema = require(path.join(__dirname, './fixtures/test-nested-object-array.json'));
-    schemaProvider.addSchema(SCHEMA_ID, schema);
+    schemaProvider.addSchema(SCHEMA_ID, nestedObjectArraySchema as JSONSchema);
     const content = `objA:
   - name: nameA1
       
@@ -211,9 +243,7 @@ objB:
   });
 
   it('should complete array item for "oneOf" schema', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const schema = require(path.join(__dirname, './fixtures/test-completion-oneOf.json'));
-    schemaProvider.addSchema(SCHEMA_ID, schema);
+    schemaProvider.addSchema(SCHEMA_ID, completionOneOfSchema);
     const content = `metadata:
   Selector:
     query:

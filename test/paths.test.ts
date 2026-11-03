@@ -1,8 +1,9 @@
+import { describe, it } from 'node:test';
 import assert from 'assert';
 import type { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import { join } from 'path';
 
-import { relativeToAbsolutePath, isRelativePath, workspaceFoldersChanged } from '../src/languageservice/utils/paths';
+import { relativeToAbsolutePath, isRelativePath, workspaceFoldersChanged } from '../src/languageservice/utils/paths.js';
 import { URI } from 'vscode-uri';
 
 class TestWorkspace {
@@ -180,6 +181,9 @@ describe('File path tests', () => {
       const path2 = join('folder-2', 'file.json');
       const path3 = join('carrots', 'file.json');
       const path4 = join('test', 'test.json');
+      const path5 = join('folder-2', 'schemas', 'file.json');
+      const path6 = join('test2', 'test.json');
+      const path7 = 'test.json';
 
       it('Recognises relative path "' + path1 + '"', () => {
         assert(isRelativePath(path1));
@@ -200,38 +204,54 @@ describe('File path tests', () => {
       it('Resolves "' + path4 + '" in multi-root nested workspace', () => {
         assert.equal(ws4.resolve(path4), 'file:///c%3A/Users/testuser/dev/test/test.json');
       });
+
+      it('Resolves "' + path5 + '" in multi-root workspace', () => {
+        assert.equal(ws2.resolve(path5), 'file:///usr/testuser/projects/workspace/folder-2/schemas/file.json');
+      });
+
+      it('Resolves "' + path6 + '" when another folder name is its prefix', () => {
+        assert.equal(ws4.resolve(path6), 'file:///c%3A/Users/testuser/dev/test2/test.json');
+      });
+
+      it('Resolves "' + path7 + '" when it starts with a folder name', () => {
+        assert.equal(ws4.resolve(path7), 'file:///c%3A/Users/testuser/dev/test2/test.json');
+      });
+
+      it('Resolves "test2/schemas/file.json" written with forward slashes', () => {
+        assert.equal(ws4.resolve('test2/schemas/file.json'), 'file:///c%3A/Users/testuser/dev/test2/schemas/file.json');
+      });
     });
 
     describe('Path with mixed delimiters (Windows only)', () => {
       const path = 'some/strange\\but/functional\\path\\file.json';
 
-      it('Recognises relative path "' + path + '"', function () {
+      it('Recognises relative path "' + path + '"', function (t) {
         if (process.platform !== 'win32') {
-          this.skip();
+          t.skip();
         } else {
           assert(isRelativePath(path));
         }
       });
 
-      it('Resolves "' + path + '" in single-root workspace', function () {
+      it('Resolves "' + path + '" in single-root workspace', function (t) {
         if (process.platform !== 'win32') {
-          this.skip();
+          t.skip();
         } else {
           assert.equal(ws1.resolve(path), 'file:///home/aFolder/some/strange/but/functional/path/file.json');
         }
       });
 
-      it('Resolves "' + path + '" in multi-root workspace', function () {
+      it('Resolves "' + path + '" in multi-root workspace', function (t) {
         if (process.platform !== 'win32') {
-          this.skip();
+          t.skip();
         } else {
           assert.equal(ws2.resolve(path), 'file:///usr/testuser/projects/workspace/some/strange/but/functional/path/file.json');
         }
       });
 
-      it('Resolves "' + path + '" in multi-root nested workspace', function () {
+      it('Resolves "' + path + '" in multi-root nested workspace', function (t) {
         if (process.platform !== 'win32') {
-          this.skip();
+          t.skip();
         } else {
           assert.equal(ws3.resolve(path), 'file:///c%3A/Users/testuser/dev/potatoes/some/strange/but/functional/path/file.json');
         }

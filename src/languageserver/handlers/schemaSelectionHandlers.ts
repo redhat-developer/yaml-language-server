@@ -4,12 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { Connection } from 'vscode-languageserver/node';
-import type { JSONSchema } from '../../languageservice/jsonSchema';
-import { yamlDocumentsCache } from '../../languageservice/parser/yaml-documents';
-import type { YAMLSchemaService } from '../../languageservice/services/yamlSchemaService';
-import type { SettingsState } from '../../yamlSettings';
-import type { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes';
-import { SchemaSelectionRequests } from '../../requestTypes';
+import type { JSONSchema } from '../../languageservice/jsonSchema.js';
+import { yamlDocumentsCache } from '../../languageservice/parser/yaml-documents.js';
+import type { YAMLSchemaService } from '../../languageservice/services/yamlSchemaService.js';
+import type { SettingsState } from '../../yamlSettings.js';
+import type { JSONSchemaDescription, JSONSchemaDescriptionExt } from '../../requestTypes.js';
+import { SchemaSelectionRequests } from '../../requestTypes.js';
 
 export class JSONSchemaSelection {
   constructor(

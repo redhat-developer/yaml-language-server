@@ -1,26 +1,33 @@
+import { describe, it, before, beforeEach, afterEach } from 'node:test';
 import assert from 'assert';
-import * as parser from '../src/languageservice/parser/yamlParser07';
-import * as SchemaService from '../src/languageservice/services/yamlSchemaService';
-import type * as JsonSchema from '../src/languageservice/jsonSchema';
-import * as url from 'url';
-import * as path from 'path';
-import { xhr } from 'request-light';
-import type { SchemaDeletions } from '../src/languageservice/services/yamlSchemaService';
-import { MODIFICATION_ACTIONS } from '../src/languageservice/services/yamlSchemaService';
-import { EMPTY_SCHEMA_URL, DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls';
+import * as parser from '../src/languageservice/parser/yamlParser07.js';
+import * as SchemaService from '../src/languageservice/services/yamlSchemaService.js';
+import type * as JsonSchema from '../src/languageservice/jsonSchema.js';
+import requestLight from 'request-light';
+import type { SchemaDeletions } from '../src/languageservice/services/yamlSchemaService.js';
+import { MODIFICATION_ACTIONS } from '../src/languageservice/services/yamlSchemaService.js';
+import { EMPTY_SCHEMA_URL, DEFAULT_KUBERNETES_SCHEMA_VERSION } from '../src/languageservice/utils/schemaUrls.js';
 import { expect } from 'chai';
-import { ServiceSetup } from './utils/serviceSetup';
-import type { TestCustomSchemaProvider } from './utils/testHelper';
-import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, setupTextDocument, TEST_URI } from './utils/testHelper';
-import type { LanguageService } from '../src';
-import { SchemaPriority } from '../src';
-import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
+import { ServiceSetup } from './utils/serviceSetup.js';
+import type { TestCustomSchemaProvider } from './utils/testHelper.js';
+import { SCHEMA_ID, setupLanguageService, setupSchemaIDTextDocument, setupTextDocument, TEST_URI } from './utils/testHelper.js';
+import type { LanguageService } from '../src/index.js';
+import { SchemaPriority } from '../src/index.js';
+import type { ValidationHandler } from '../src/languageserver/handlers/validationHandlers.js';
+import type { SettingsState } from '../src/yamlSettings.js';
+import { TextDocumentTestManager } from '../src/yamlSettings.js';
 import type { Diagnostic, MarkupContent } from 'vscode-languageserver-types';
 import { Position } from 'vscode-languageserver-types';
-import { getSchemaFromModeline } from '../src/languageservice/services/modelineUtil';
-import { getGroupVersionKindFromDocument } from '../src/languageservice/services/k8sSchemaUtil';
+import { getSchemaFromModeline } from '../src/languageservice/services/modelineUtil.js';
+import { getGroupVersionKindFromDocument } from '../src/languageservice/services/k8sSchemaUtil.js';
+
+import schemaAssociationSample from './fixtures/sample-association.json' with { type: 'json' };
+import schemaStoreSample from './fixtures/sample-schemastore.json' with { type: 'json' };
+import schemaSettingsSample from './fixtures/sample-settings.json' with { type: 'json' };
+import schemaDefaultSnippetSample from './fixtures/defaultSnippets-const-if-else.json' with { type: 'json' };
+
+import schemaModelineSample from './fixtures/sample-modeline.json' with { type: 'json' };
+import schemaDollarSample from './fixtures/sample-dollar-schema.json' with { type: 'json' };
 
 const KUBERNETES_SCHEMA_URL = `https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/${DEFAULT_KUBERNETES_SCHEMA_VERSION}-standalone-strict/all.json`;
 
@@ -30,14 +37,14 @@ const requestServiceMock = function (uri: string): Promise<string> {
 
 const workspaceContext = {
   resolveRelativePath: (relativePath: string, resource: string) => {
-    return url.resolve(resource, relativePath);
+    return new URL(relativePath, resource).toString();
   },
 };
 
 const schemaRequestServiceForURL = async (uri: string): Promise<string> => {
   const headers = { 'Accept-Encoding': 'gzip, deflate' };
   try {
-    const response = await xhr({ url: uri, followRedirects: 5, headers });
+    const response = await requestLight.xhr({ url: uri, followRedirects: 5, headers });
     return response.responseText;
   } catch (error) {
     throw error.responseText || error.toString();
@@ -854,20 +861,16 @@ address:
   });
 
   describe('Test schema priority', function () {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const schemaAssociationSample = require(path.join(__dirname, './fixtures/sample-association.json'));
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const schemaStoreSample = require(path.join(__dirname, './fixtures/sample-schemastore.json'));
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const schemaSettingsSample = require(path.join(__dirname, './fixtures/sample-settings.json'));
-    const schemaModelineSample = path.join(__dirname, './fixtures/sample-modeline.json');
-    const schemaDollarSample = path.join(__dirname, './fixtures/sample-dollar-schema.json');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const schemaDefaultSnippetSample = require(path.join(__dirname, './fixtures/defaultSnippets-const-if-else.json'));
+    const modelineSchemaUri = new URL('./fixtures/sample-modeline.json', import.meta.url).href;
+    const dollarSchemaUri = new URL('./fixtures/sample-dollar-schema.json', import.meta.url).href;
+
     let languageSettingsSetup: ServiceSetup;
 
     beforeEach(() => {
-      languageSettingsSetup = new ServiceSetup().withCompletion();
+      languageSettingsSetup = new ServiceSetup()
+        .withCompletion()
+        .withSchemaFileMatch({ uri: modelineSchemaUri, fileMatch: [], schema: schemaModelineSample })
+        .withSchemaFileMatch({ uri: dollarSchemaUri, fileMatch: [], schema: schemaDollarSample });
     });
 
     for (const { description, uri } of [
@@ -925,7 +928,7 @@ address:
       languageService.configure(languageSettingsSetup.languageSettings);
       languageService.registerCustomSchemaProvider((uri: string) => Promise.resolve(uri));
       const testTextDocument = setupTextDocument(
-        `# yaml-language-server: $schema=${schemaModelineSample}\n$schema: ${schemaDollarSample}\n\n`
+        `# yaml-language-server: $schema=${modelineSchemaUri}\n$schema: ${dollarSchemaUri}\n\n`
       );
       const result = await languageService.doComplete(testTextDocument, Position.create(1, 0), false);
       assert.strictEqual(result.items.length, 1);
@@ -954,7 +957,7 @@ address:
         });
       languageService.configure(languageSettingsSetup.languageSettings);
       languageService.registerCustomSchemaProvider((uri: string) => Promise.resolve(uri));
-      const testTextDocument = setupTextDocument(`$schema: ${schemaDollarSample}\n\n`);
+      const testTextDocument = setupTextDocument(`$schema: ${dollarSchemaUri}\n\n`);
       const result = await languageService.doComplete(testTextDocument, Position.create(1, 0), false);
       assert.strictEqual(result.items.length, 1);
       assert.strictEqual(result.items[0].label, 'dollar-schema');

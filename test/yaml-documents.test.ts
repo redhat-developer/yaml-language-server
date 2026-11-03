@@ -3,82 +3,83 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as sinon from 'sinon';
-import sinonChai from 'sinon-chai';
+import { describe, it, beforeEach, afterEach, mock } from 'node:test';
+import type { Mock } from 'node:test';
+import assert from 'node:assert/strict';
+
 import * as chai from 'chai';
-import { YamlDocuments } from '../src/languageservice/parser/yaml-documents';
-import { setupTextDocument } from './utils/testHelper';
-import * as yamlParser from '../src/languageservice/parser/yamlParser07';
+import { YamlDocuments } from '../src/languageservice/parser/yaml-documents.js';
+import { setupTextDocument } from './utils/testHelper.js';
+import type { ParserOptions } from '../src/languageservice/parser/yamlParser07.js';
+import { parse } from '../src/languageservice/parser/yamlParser07.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
 import { isMap, isScalar, isSeq } from 'yaml';
-import { TextBuffer } from '../src/languageservice/utils/textBuffer';
+import { TextBuffer } from '../src/languageservice/utils/textBuffer.js';
 
 const expect = chai.expect;
-chai.use(sinonChai);
 describe('YAML Documents', () => {
-  const sandbox = sinon.createSandbox();
   describe('YAML Documents Cache Tests', () => {
-    let parseStub: sinon.SinonStub;
+    let parseStub: Mock<typeof parse>;
 
     beforeEach(() => {
-      parseStub = sandbox.stub(yamlParser, 'parse');
+      parseStub = mock.fn();
     });
 
     afterEach(() => {
-      sandbox.restore();
+      mock.reset();
     });
 
     it('should cache parsed document', () => {
-      const cache = new YamlDocuments();
+      const cache = new YamlDocuments(parseStub);
       const doc = setupTextDocument('foo: bar');
-      parseStub.returns({});
+      parseStub.mock.mockImplementation(() => parse('foo: bar'));
 
       const result1 = cache.getYamlDocument(doc);
       const result2 = cache.getYamlDocument(doc);
 
-      expect(parseStub).calledOnce;
+      assert.equal(parseStub.mock.callCount(), 1);
       expect(result1).to.be.equal(result2);
     });
 
     it('should re parse document if document changed', () => {
-      const cache = new YamlDocuments();
+      const cache = new YamlDocuments(parseStub);
       const doc = setupTextDocument('foo: bar');
 
-      parseStub.onFirstCall().returns({});
-      parseStub.onSecondCall().returns({ foo: 'bar' });
+      parseStub.mock.mockImplementationOnce(() => parse('foo: bar'), 0);
+      parseStub.mock.mockImplementationOnce(() => parse('foo: baz'), 1);
 
       const result1 = cache.getYamlDocument(doc);
       TextDocument.update(doc, [], 2);
       const result2 = cache.getYamlDocument(doc);
 
-      expect(parseStub).calledTwice;
+      assert.equal(parseStub.mock.callCount(), 2);
       expect(result1).to.be.not.equal(result2);
     });
 
     it('should invalidate cache if custom tags provided', () => {
-      const cache = new YamlDocuments();
+      const cache = new YamlDocuments(parseStub);
       const doc = setupTextDocument('foo: bar');
-      parseStub.onFirstCall().returns({});
-      parseStub.onSecondCall().returns({ foo: 'bar' });
+      parseStub.mock.mockImplementationOnce(() => parse('foo: bar'), 0);
+      parseStub.mock.mockImplementationOnce(() => parse('foo: baz'), 1);
 
       const result1 = cache.getYamlDocument(doc);
       const result2 = cache.getYamlDocument(doc, getParserOptions(['some']));
 
-      expect(parseStub).calledTwice;
+      assert.equal(parseStub.mock.callCount(), 2);
       expect(result1).to.not.equal(result2);
     });
 
     it('should use cache if custom tags are same', () => {
-      const cache = new YamlDocuments();
+      const cache = new YamlDocuments(parseStub);
       const doc = setupTextDocument('foo: bar');
-      parseStub.onFirstCall().returns({});
-      parseStub.onSecondCall().returns({ foo: 'bar' });
+      parseStub.mock.mockImplementationOnce(() => parse('foo: bar'), 0);
+      parseStub.mock.mockImplementationOnce(() => parse('foo: baz'), 1);
 
       const result1 = cache.getYamlDocument(doc, getParserOptions(['some']));
       const result2 = cache.getYamlDocument(doc, getParserOptions(['some']));
 
-      expect(parseStub).calledOnce;
+      assert.equal(parseStub.mock.callCount(), 1);
       expect(result1).to.be.equal(result2);
     });
   });
@@ -90,7 +91,7 @@ describe('YAML Documents', () => {
     });
 
     afterEach(() => {
-      sandbox.restore();
+      mock.reset();
     });
 
     it('Get node from position: key', () => {
@@ -249,6 +250,6 @@ objB:
   });
 });
 
-function getParserOptions(customTags: string[]): yamlParser.ParserOptions {
+function getParserOptions(customTags: string[]): ParserOptions {
   return { customTags, yamlVersion: '1.2' };
 }

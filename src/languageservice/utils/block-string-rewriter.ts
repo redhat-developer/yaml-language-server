@@ -59,7 +59,7 @@ export class BlockStringRewriter {
     // no trailng newline
     lines.pop();
 
-    for (let i = 1; i < lines.length; ) {
+    for (let i = 1; i < lines.length;) {
       if (/^[ \t]+$/.test(lines[i])) {
         if (lines[i - 1] === '\n' || lines[i - 1] === '') {
           lines.splice(i - 1, 1);

@@ -2,31 +2,34 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
+import { describe, it, before, afterEach, mock } from 'node:test';
 import assert from 'assert';
-import * as sinon from 'sinon';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import type { FormattingOptions, TextEdit } from 'vscode-languageserver-types';
-import type { CustomFormatterOptions } from '../src';
-import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers';
-import type { SettingsState } from '../src/yamlSettings';
-import { TextDocumentTestManager } from '../src/yamlSettings';
-import { ServiceSetup } from './utils/serviceSetup';
-import { setupLanguageService, setupTextDocument } from './utils/testHelper';
+import type { CustomFormatterOptions } from '../src/index.js';
+import type { LanguageHandlers } from '../src/languageserver/handlers/languageHandlers.js';
+import type { SettingsState } from '../src/yamlSettings.js';
+import { TextDocumentTestManager } from '../src/yamlSettings.js';
+import { ServiceSetup } from './utils/serviceSetup.js';
+import { setupLanguageService, setupTextDocument } from './utils/testHelper.js';
 
 type LanguageHandlerWithConnection = {
   connection: {
     workspace: {
-      getConfiguration: (item?: { section?: string }) => Promise<unknown>;
+      getConfiguration: (
+        item?: { section?: string; scopeUri?: string } | Array<{ section?: string; scopeUri?: string }>
+      ) => Promise<unknown>;
     };
   };
 };
 
 describe('Formatter Tests', () => {
-  const sandbox = sinon.createSandbox();
   let languageHandler: LanguageHandlers;
   let yamlSettings: SettingsState;
 
   afterEach(() => {
-    sandbox.restore();
+    mock.reset();
   });
 
   before(() => {
@@ -67,13 +70,46 @@ describe('Formatter Tests', () => {
         yamlSettings.documents = new TextDocumentTestManager();
         (yamlSettings.documents as TextDocumentTestManager).set(testTextDocument);
         const connection = (languageHandler as unknown as LanguageHandlerWithConnection).connection;
-        sandbox.stub(connection.workspace, 'getConfiguration').resolves({ 'yaml.format.enable': false });
+        mock.method(connection.workspace, 'getConfiguration', () => Promise.resolve([{}, { 'yaml.format.enable': false }]));
         yamlSettings.hasConfigurationCapability = true;
         const edits = await languageHandler.formatterHandler({
           options: { tabSize: 2, insertSpaces: true },
           textDocument: testTextDocument,
         });
         assert.equal(edits.length, 0);
+      });
+
+      it('Formatting uses resource-scoped settings for each document', async () => {
+        const content = 'root:\n  - child: "text"\n';
+        const singleQuoteDocument = TextDocument.create('file:///workspace/single/test.yaml', 'yaml', 0, content);
+        const doubleQuoteDocument = TextDocument.create('file:///workspace/double/test.yaml', 'yaml', 0, content);
+        yamlSettings.documents = new TextDocumentTestManager();
+        (yamlSettings.documents as TextDocumentTestManager).set(singleQuoteDocument);
+        (yamlSettings.documents as TextDocumentTestManager).set(doubleQuoteDocument);
+        yamlSettings.yamlFormatterSettings = { singleQuote: false, enable: true };
+        yamlSettings.hasConfigurationCapability = true;
+
+        const connection = (languageHandler as unknown as LanguageHandlerWithConnection).connection;
+        const getConfiguration = mock.method(connection.workspace, 'getConfiguration', async (items) => {
+          assert.ok(Array.isArray(items));
+          assert.equal(items[0].section, 'yaml.format');
+          assert.equal(items[1].section, '[yaml]');
+          assert.equal(items[0].scopeUri, items[1].scopeUri);
+          return [{ singleQuote: items[0].scopeUri?.includes('/single/') }, {}];
+        });
+
+        const singleQuoteEdits = await languageHandler.formatterHandler({
+          options: { tabSize: 2, insertSpaces: true },
+          textDocument: singleQuoteDocument,
+        });
+        const doubleQuoteEdits = await languageHandler.formatterHandler({
+          options: { tabSize: 2, insertSpaces: true },
+          textDocument: doubleQuoteDocument,
+        });
+
+        assert.equal(singleQuoteEdits[0].newText, "root:\n  - child: 'text'\n");
+        assert.equal(doubleQuoteEdits.length, 0);
+        assert.equal(getConfiguration.mock.callCount(), 2);
       });
 
       it('Formatting works with custom tags', async () => {

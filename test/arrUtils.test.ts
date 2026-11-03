@@ -2,7 +2,9 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { getLineOffsets, removeDuplicatesObj } from '../src/languageservice/utils/arrUtils';
+
+import { describe, it } from 'node:test';
+import { getLineOffsets, removeDuplicatesObj } from '../src/languageservice/utils/arrUtils.js';
 import assert from 'assert';
 
 describe('Array Utils Tests', () => {

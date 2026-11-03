@@ -3,8 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { CompletionItemKind, SchemaDraft } from './jsonLanguageTypes';
-import type { SchemaVersions } from './yamlTypes';
+import type { CompletionItemKind } from 'vscode-languageserver-types';
+import type { SchemaDraft } from './jsonLanguageTypes.js';
+import type { SchemaVersions } from './yamlTypes.js';
 
 export type JSONSchemaRef = JSONSchema | boolean;
 

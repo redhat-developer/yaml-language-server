@@ -6,5 +6,5 @@ RUN cd /yaml-language-server && \
     npm install && \
     npm run build
 
-ENTRYPOINT [ "node", "/yaml-language-server/out/server/src/server.js" ]
+ENTRYPOINT [ "node", "/yaml-language-server/out/src/server.js" ]
 CMD [ "--stdio" ]

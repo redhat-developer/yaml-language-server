@@ -3,7 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { TextBuffer } from '../src/languageservice/utils/textBuffer';
+import { describe, it } from 'node:test';
+
+import { TextBuffer } from '../src/languageservice/utils/textBuffer.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import assert from 'assert';
 

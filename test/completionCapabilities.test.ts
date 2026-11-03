@@ -1,11 +1,12 @@
 import assert from 'assert';
+import { describe, it } from 'node:test';
 import type { ClientCapabilities } from 'vscode-languageserver';
 import type { CompletionList } from 'vscode-languageserver-types';
 import { InsertTextFormat, Position } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { getLanguageService } from '../src';
-import type { JSONSchema } from '../src/languageservice/jsonSchema';
-import { workspaceContext } from '../src/languageservice/services/schemaRequestHandler';
+import { getLanguageService } from '../src/index.js';
+import type { JSONSchema } from '../src/languageservice/jsonSchema.js';
+import { workspaceContext } from '../src/languageservice/services/schemaRequestHandler.js';
 
 describe('Completion snippet capabilities', () => {
   async function complete(capabilities: ClientCapabilities, schema: JSONSchema): Promise<CompletionList> {
@@ -81,6 +82,30 @@ describe('Completion snippet capabilities', () => {
       assert.equal(item.insertTextFormat, InsertTextFormat.PlainText);
       assert.equal(item.textEdit.newText, `value: ${expected}`);
     });
+  }
+
+  for (const snippetSupport of [false, true]) {
+    for (const type of ['string', ['string', 'null']]) {
+      it(`preserves a null default for a required ${JSON.stringify(type)} with snippetSupport=${snippetSupport}`, async () => {
+        const result = await complete(
+          { textDocument: { completion: { completionItem: { snippetSupport } } } },
+          {
+            type: 'object',
+            properties: {
+              settings: {
+                type: 'object',
+                required: ['value'],
+                properties: { value: { type, default: null } },
+              },
+            },
+          }
+        );
+        const item = result.items.find((item) => item.label === 'settings');
+        assert.ok(item);
+        assert.equal(item.insertTextFormat, snippetSupport ? InsertTextFormat.Snippet : InsertTextFormat.PlainText);
+        assert.equal(item.textEdit.newText, snippetSupport ? 'settings:\n  value: ${1:null}' : 'settings:\n  value: null');
+      });
+    }
   }
 
   it('builds nested required properties without snippet syntax', async () => {

@@ -5,7 +5,7 @@
 
 import type { CST, Document, Node, YAMLMap, YAMLSeq } from 'yaml';
 import { isDocument, isScalar, visit } from 'yaml';
-import type { YamlNode } from '../jsonLanguageTypes';
+import type { YamlNode } from '../jsonLanguageTypes.js';
 
 type Visitor = (item: CST.SourceToken, path: CST.VisitPath) => number | symbol | Visitor | void;
 

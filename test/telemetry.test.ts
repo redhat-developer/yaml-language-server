@@ -2,39 +2,36 @@
  *  Copyright (c) Red Hat. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as sinon from 'sinon';
-import sinonChai from 'sinon-chai';
-import * as chai from 'chai';
-import { checkSchemaURI } from '../src/languageservice/utils/schemaUrls';
-import { TelemetryImpl } from '../src/languageserver/telemetry';
-import { URI } from 'vscode-uri';
-import type { Connection } from 'vscode-languageserver';
 
-const expect = chai.expect;
-chai.use(sinonChai);
+import { describe, it, beforeEach, afterEach, mock } from 'node:test';
+import type { Mock } from 'node:test';
+import assert from 'node:assert/strict';
+import { checkSchemaURI } from '../src/languageservice/utils/schemaUrls.js';
+import type { Telemetry } from '../src/languageservice/telemetry.js';
+import { URI } from 'vscode-uri';
 
 describe('Telemetry Tests', () => {
-  const sandbox = sinon.createSandbox();
-
-  let telemetry: sinon.SinonStubbedInstance<TelemetryImpl>;
+  let telemetry: Telemetry & { send: Mock<Telemetry['send']> };
   beforeEach(() => {
-    const telemetryInstance = new TelemetryImpl({} as Connection);
-    telemetry = sandbox.stub(telemetryInstance);
+    telemetry = { send: mock.fn(), sendError: mock.fn(), sendTrack: mock.fn() };
   });
 
   afterEach(() => {
-    sandbox.restore();
+    mock.reset();
   });
 
   describe('Kubernetos schema mapping', () => {
     it('should not report if schema is not k8s', () => {
       checkSchemaURI([], URI.parse('file:///some/path'), 'file:///some/path/to/schema.json', telemetry);
-      expect(telemetry.send).not.called;
+      assert.equal(telemetry.send.mock.callCount(), 0);
     });
 
     it('should report if schema is k8s', () => {
       checkSchemaURI([], URI.parse('file:///some/path'), 'kubernetes', telemetry);
-      expect(telemetry.send).calledOnceWith({ name: 'yaml.schema.configured', properties: { kubernetes: true } });
+      assert.equal(telemetry.send.mock.callCount(), 1);
+      assert.deepEqual(telemetry.send.mock.calls[0].arguments.slice(0, 1), [
+        { name: 'yaml.schema.configured', properties: { kubernetes: true } },
+      ]);
     });
   });
 });
