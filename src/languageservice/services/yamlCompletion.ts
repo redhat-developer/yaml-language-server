@@ -39,7 +39,7 @@ import { isModeline } from './modelineUtil.js';
 import { getSchemaTypeName, isAnyOfAllOfOneOfType, isPrimitiveType } from '../utils/schemaUtils.js';
 import type { YamlNode } from '../jsonLanguageTypes.js';
 import type { SettingsState } from '../../yamlSettings.js';
-import { toYamlStringScalar } from '../utils/yamlScalar.js';
+import { toYamlQuotedContent, toYamlStringScalar } from '../utils/yamlScalar.js';
 import * as l10n from '@vscode/l10n';
 
 const parentCompletionKind = CompletionItemKind.Class;
@@ -77,6 +77,7 @@ export class YamlCompletion {
   private isSingleQuote: boolean;
   private indentation: string;
   private arrayPrefixIndentation = '';
+  private scalarQuote: '"' | "'" | undefined;
   private supportsMarkdown: boolean | undefined;
   private disableDefaultProperties: boolean;
   private parentSkeletonSelectedFirst: boolean;
@@ -145,8 +146,30 @@ export class YamlCompletion {
     const areOnlySpacesAfterPosition = /^[ ]+\n?$/.test(lineAfterPosition);
 
     this.arrayPrefixIndentation = '';
+    this.scalarQuote = undefined;
+    let closingQuote = '';
     let overwriteRange: Range = null;
-    if (areOnlySpacesAfterPosition) {
+    const quotedScalar = node && isScalar(node) && (node.type === 'QUOTE_SINGLE' || node.type === 'QUOTE_DOUBLE') ? node : null;
+    const quotedContentStart = quotedScalar ? quotedScalar.range[0] + 1 : -1;
+    const isClosedQuote =
+      quotedScalar &&
+      quotedScalar.range[1] > quotedContentStart &&
+      text.charAt(quotedScalar.range[1] - 1) === text.charAt(quotedScalar.range[0]);
+    const quotedContentEnd = quotedScalar
+      ? Math.min(
+          quotedScalar.range[1] - (isClosedQuote ? 1 : 0),
+          document.offsetAt(Position.create(position.line, lineContent.length))
+        )
+      : -1;
+    if (quotedScalar && offset >= quotedContentStart && offset <= quotedContentEnd) {
+      this.scalarQuote = quotedScalar.type === 'QUOTE_SINGLE' ? "'" : '"';
+      const replacesClosingQuote = isClosedQuote && quotedContentEnd === quotedScalar.range[1] - 1;
+      closingQuote = isClosedQuote && !replacesClosingQuote ? '' : this.scalarQuote;
+      overwriteRange = Range.create(
+        document.positionAt(quotedContentStart),
+        document.positionAt(replacesClosingQuote ? quotedContentEnd + 1 : quotedContentEnd)
+      );
+    } else if (areOnlySpacesAfterPosition) {
       overwriteRange = Range.create(position, Position.create(position.line, lineContent.length));
       const isOnlyWhitespace = lineContent.trim().length === 0;
       const isOnlyDash = lineContent.match(/^\s*(-)\s*$/);
@@ -261,6 +284,7 @@ export class YamlCompletion {
           if (completionItem.insertText.endsWith('$1') && !isForParentCompletion) {
             completionItem.insertText = completionItem.insertText.substr(0, completionItem.insertText.length - 2);
           }
+          completionItem.insertText += closingQuote;
           if (overwriteRange && overwriteRange.start.line === overwriteRange.end.line) {
             completionItem.textEdit = TextEdit.replace(overwriteRange, completionItem.insertText);
           }
@@ -385,7 +409,7 @@ export class YamlCompletion {
           const parent = currentDoc.getParent(node);
           if (parent) {
             if (isScalar(node)) {
-              if (node.value) {
+              if (node.value || this.scalarQuote) {
                 if (isPair(parent)) {
                   if (parent.value === node) {
                     if (lineContent.trim().length > 0 && lineContent.indexOf(':') < 0) {
@@ -706,6 +730,9 @@ export class YamlCompletion {
   ): void {
     const matchingSchemas = doc.getMatchingSchemas(schema.schema, -1, null, doComplete);
     const existingKey = textBuffer.getText(overwriteRange);
+    const quotedKey = this.scalarQuote;
+    const isKeyWithColon = isScalar(originalNode) && /^[ \t]*:/.test(textBuffer.getText().slice(originalNode.range[1]));
+    const replacesKeyOnly = quotedKey !== undefined || isKeyWithColon;
     const lineContent = textBuffer.getLineContent(overwriteRange.start.line);
     const hasOnlyWhitespace = lineContent.trim().length === 0;
     const hasColon = lineContent.indexOf(':') !== -1;
@@ -786,9 +813,13 @@ export class YamlCompletion {
                     }
                   }
 
-                  let insertText = key;
+                  let insertText = quotedKey
+                    ? toYamlQuotedContent(key, quotedKey)
+                    : isKeyWithColon
+                      ? this.getInsertTextForValue(key, '', 'string')
+                      : key;
                   const isRequiredProp = Array.isArray(schema.schema.required) ? schema.schema.required.includes(key) : false;
-                  if (!key.startsWith(existingKey) || !hasColon) {
+                  if (!replacesKeyOnly && (!key.startsWith(existingKey) || !hasColon)) {
                     insertText = this.getInsertTextForProperty(
                       key,
                       propertySchema,
@@ -809,12 +840,13 @@ export class YamlCompletion {
                         insertText,
                         insertTextFormat: InsertTextFormat.Snippet,
                         documentation: this.fromMarkup(propertySchema.markdownDescription) || propertySchema.description || '',
+                        ...(quotedKey && insertText !== key ? { filterText: insertText } : {}),
                       },
                       didOneOfSchemaMatches
                     );
                   }
                   // if the prop is required add it also to parent suggestion
-                  if (schema.schema.required?.includes(key)) {
+                  if (!replacesKeyOnly && schema.schema.required?.includes(key)) {
                     collector.add({
                       label: key,
                       insertText: this.getInsertTextForProperty(
@@ -1301,7 +1333,9 @@ export class YamlCompletion {
         if (type === 'number' || type === 'integer') {
           return '${1:' + value + '}' + separatorAfter;
         }
-        const snippetValue = this.getInsertTextForPlainText(toYamlStringScalar(value));
+        const snippetValue = this.getInsertTextForPlainText(
+          this.scalarQuote ? toYamlQuotedContent(value, this.scalarQuote) : toYamlStringScalar(value)
+        );
         return '${1:' + snippetValue + '}' + separatorAfter;
       }
       case 'number':
@@ -1330,7 +1364,9 @@ export class YamlCompletion {
         return this.getInsertTextForPlainText(value + separatorAfter);
     }
     type = Array.isArray(type) ? type[0] : type;
-    if (type === 'string') {
+    if (this.scalarQuote) {
+      value = toYamlQuotedContent(String(value), this.scalarQuote);
+    } else if (type === 'string') {
       value = toYamlStringScalar(String(value), this.isSingleQuote);
     }
     return this.getInsertTextForPlainText(value + separatorAfter);
@@ -1521,7 +1557,7 @@ export class YamlCompletion {
       return JSON.stringify(value);
     }
     if (typeof value === 'string') {
-      return toYamlStringScalar(value, this.isSingleQuote);
+      return this.scalarQuote ? toYamlQuotedContent(value, this.scalarQuote) : toYamlStringScalar(value, this.isSingleQuote);
     }
     return String(value);
   }
