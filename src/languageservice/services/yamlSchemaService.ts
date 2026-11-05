@@ -224,9 +224,11 @@ export class FilePatternAssociation {
 
       this.isMatch = picomatch(positivePatterns, {
         noglobstar: false,
+        dot: true,
       });
       this.isNegMatch = picomatch(negativePatterns, {
         noglobstar: false,
+        dot: true,
       });
 
       if (folderUri) {
