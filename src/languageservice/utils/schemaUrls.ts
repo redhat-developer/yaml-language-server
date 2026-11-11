@@ -37,8 +37,9 @@ export function checkSchemaURI(
   } else if (path.isAbsolute(uri) || /^[a-z]:[\\/]/i.test(uri)) {
     const localPath = uri.split('#', 2)[0];
     return URI.file(localPath).toString() + uri.substring(localPath.length);
-  } else if (isRelativePath(uri)) {
-    return relativeToAbsolutePath(workspaceFolders, workspaceRoot, uri);
+  } else if (isRelativePath(uri.split('#', 2)[0])) {
+    const localPath = uri.split('#', 2)[0];
+    return relativeToAbsolutePath(workspaceFolders, workspaceRoot, localPath) + uri.substring(localPath.length);
   } else {
     return uri;
   }
