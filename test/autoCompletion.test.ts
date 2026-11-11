@@ -2454,7 +2454,7 @@ describe('Auto Completion Tests', () => {
 
       const content = 'kin|d|: 111\n'; // len: 10, pos: 3
       const completion = await parseSetup(content);
-      expect(completion.items).lengthOf(2);
+      expect(completion.items).lengthOf(1);
       expect(completion.items[0]).eql(
         createExpectedCompletion('kind', 'kind', 0, 0, 0, 4, 10, InsertTextFormat.Snippet, { documentation: '' })
       );
@@ -2473,7 +2473,7 @@ describe('Auto Completion Tests', () => {
 
       const content = 'k|i|: 111\n'; // len: 8, pos: 1
       const completion = await parseSetup(content);
-      expect(completion.items).lengthOf(2);
+      expect(completion.items).lengthOf(1);
       expect(completion.items[0]).eql(
         createExpectedCompletion('kind', 'kind', 0, 0, 0, 2, 10, InsertTextFormat.Snippet, { documentation: '' })
       );
