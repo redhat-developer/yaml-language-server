@@ -218,6 +218,25 @@ animals: [dog , cat , mouse]  `;
         createExpectedError('Flow style sequence is forbidden', 1, 9, 1, 11, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
       ]);
     });
+    it('should keep syntax errors when a flow collection is not closed', async () => {
+      const yaml = 'datacenter: {location: canada\nanimals: [dog, cat]\nhosts: [phl-42';
+      yamlSettings.style = {
+        flowMapping: 'forbid',
+        flowSequence: 'forbid',
+      };
+      languageSettingsSetup = new ServiceSetup().withValidate().withFlowMapping('forbid').withFlowSequence('forbid');
+      const { validationHandler: valHandler, yamlSettings: settings } = setupLanguageService(
+        languageSettingsSetup.languageSettings
+      );
+      validationHandler = valHandler;
+      yamlSettings = settings;
+      const result = await parseSetup(yaml);
+      expect(result).to.deep.equal([
+        createExpectedError('Flow map in block collection must be sufficiently indented and end with a }', 1, 0, 1, 20),
+        createExpectedError('Flow sequence in block collection must be sufficiently indented and end with a ]', 2, 14, 2, 14),
+        createExpectedError('Flow style sequence is forbidden', 1, 9, 1, 19, DiagnosticSeverity.Error, 'YAML', 'flowSeq'),
+      ]);
+    });
   });
   describe('Map keys order Tests', () => {
     it('should report the first key order error - test 1', async () => {

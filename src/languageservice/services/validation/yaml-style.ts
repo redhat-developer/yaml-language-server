@@ -18,7 +18,7 @@ export class YAMLStyleValidator implements AdditionalValidator {
   validate(document: TextDocument, yamlDoc: SingleYAMLDocument): Diagnostic[] {
     const result = [];
     visit(yamlDoc.internalDocument, (key, node) => {
-      if (this.forbidMapping && isMap(node) && node.srcToken?.type === 'flow-collection') {
+      if (this.forbidMapping && isMap(node) && isClosedFlowCollection(node.srcToken)) {
         result.push(
           Diagnostic.create(
             this.getRangeOf(document, node.srcToken),
@@ -28,7 +28,7 @@ export class YAMLStyleValidator implements AdditionalValidator {
           )
         );
       }
-      if (this.forbidSequence && isSeq(node) && node.srcToken?.type === 'flow-collection') {
+      if (this.forbidSequence && isSeq(node) && isClosedFlowCollection(node.srcToken)) {
         result.push(
           Diagnostic.create(
             this.getRangeOf(document, node.srcToken),
@@ -48,4 +48,9 @@ export class YAMLStyleValidator implements AdditionalValidator {
     endPosition = { character: endPosition.character + 1, line: endPosition.line };
     return Range.create(document.positionAt(node.start.offset), endPosition);
   }
+}
+
+function isClosedFlowCollection(token: CST.Token | undefined): token is CST.FlowCollection {
+  // An unclosed flow collection has no end token. The parser already reports it as a syntax error.
+  return token?.type === 'flow-collection' && token.end.length > 0;
 }
