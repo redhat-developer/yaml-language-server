@@ -10,7 +10,7 @@ import { isAlias, isCollection, isNode, isScalar, visit, CST } from 'yaml';
 import type { YamlNode } from '../../jsonLanguageTypes.js';
 import type { SingleYAMLDocument } from '../../parser/yaml-documents.js';
 import type { AdditionalValidator } from './types.js';
-import { isCollectionItem } from '../../utils/yamlAstUtils.js';
+import { isCollectionItem, resolveAliases } from '../../utils/yamlAstUtils.js';
 import * as l10n from '@vscode/l10n';
 
 export class UnusedAnchorsValidator implements AdditionalValidator {
@@ -20,6 +20,7 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
     const usedAnchors = new Set<Node>();
     const unIdentifiedAlias = new Set<Node>();
     const anchorParent = new Map<Scalar | YAMLMap | YAMLSeq, Node | Pair>();
+    const aliasTargets = resolveAliases(yamlDoc.internalDocument);
 
     visit(yamlDoc.internalDocument, (key, node, path) => {
       if (!isNode(node)) {
@@ -30,10 +31,11 @@ export class UnusedAnchorsValidator implements AdditionalValidator {
         anchorParent.set(node, path[path.length - 1] as Node);
       }
       if (isAlias(node)) {
-        if (!node.resolve(yamlDoc.internalDocument)) {
+        const target = aliasTargets.get(node);
+        if (!target) {
           unIdentifiedAlias.add(node);
         } else {
-          usedAnchors.add(node.resolve(yamlDoc.internalDocument));
+          usedAnchors.add(target);
         }
       }
     });

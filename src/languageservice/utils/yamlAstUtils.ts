@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { CST, Document, Node, YAMLMap, YAMLSeq } from 'yaml';
-import { isDocument, isScalar, visit } from 'yaml';
+import type { Alias, CST, Document, Node, YAMLMap, YAMLSeq } from 'yaml';
+import { isAlias, isCollection, isDocument, isScalar, visit } from 'yaml';
 import type { YamlNode } from '../jsonLanguageTypes.js';
 
 type Visitor = (item: CST.SourceToken, path: CST.VisitPath) => number | symbol | Visitor | void;
@@ -111,4 +111,22 @@ function _visit(path: CST.VisitPath, item: CST.SourceToken, visitor: Visitor): n
     }
   }
   return typeof ctrl === 'function' ? ctrl(item, path) : ctrl;
+}
+
+/**
+ * Resolves every alias of a document in one walk. `Alias.resolve()` walks the whole document on
+ * each call, which is quadratic when it is called for every alias. Like `Alias.resolve()`, an alias
+ * resolves to the last node before it that has its anchor.
+ */
+export function resolveAliases(doc: Document): Map<Alias, Node | undefined> {
+  const targets = new Map<Alias, Node | undefined>();
+  const anchored = new Map<string, Node>();
+  visit(doc, (_, node) => {
+    if (isAlias(node)) {
+      targets.set(node, anchored.get(node.source));
+    } else if ((isScalar(node) || isCollection(node)) && node.anchor) {
+      anchored.set(node.anchor, node);
+    }
+  });
+  return targets;
 }
