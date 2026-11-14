@@ -341,6 +341,12 @@ metadata:
       );
     });
 
+    it('resolves an alias to the last anchor of its name before it', () => {
+      const parsedDocument = parse('a: &x first\nb: *x\nc: &x second\nd: *x\ne: *missing\n');
+      const values = (parsedDocument.documents[0].root as ObjectASTNode).properties.map((property) => property.valueNode?.value);
+      expect(values).to.deep.equal(['first', 'first', 'second', 'second', 'missing']);
+    });
+
     it('should work with circular aliases', () => {
       const yaml = '&a [ 1, *a ]\n';
       const parsedDocument = parse(yaml);

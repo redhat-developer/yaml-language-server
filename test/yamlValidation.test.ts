@@ -129,6 +129,23 @@ ee: *g`;
     });
   });
 
+  describe('Anchors redefined or used before they are defined', () => {
+    it('should report an anchor that a later anchor of the same name hides', async () => {
+      const yaml = 'a: &x 1\nb: &x 2\nc: *x';
+      const result = await parseSetup(yaml);
+      expect(result).to.deep.equal([createUnusedAnchorDiagnostic('Unused anchor "&x"', 0, 3, 0, 5)]);
+    });
+
+    it('should report an alias that comes before its anchor', async () => {
+      const yaml = 'a: *x\nb: &x 1';
+      const result = await parseSetup(yaml);
+      expect(result).to.include.deep.members([
+        createUnusedAnchorDiagnostic('Unused anchor "&x"', 1, 3, 1, 5),
+        createUnusedAnchorDiagnostic('Unresolved alias "*x"', 0, 3, 0, 5),
+      ]);
+    });
+  });
+
   describe('Unresolved alias diagnostics', () => {
     it('should report unresolved alias', async () => {
       const yaml = 'foo: *bar';

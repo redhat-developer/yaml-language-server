@@ -7,6 +7,7 @@ import type { Node, Scalar, YAMLMap, Pair, YAMLSeq, Alias, Document, LineCounter
 import { isScalar, isMap, isPair, isSeq, isNode, isAlias } from 'yaml';
 import type { ASTNode, YamlNode } from '../jsonLanguageTypes.js';
 import { getCustomTagReturnType } from '../utils/customTags.js';
+import { resolveAliases } from '../utils/yamlAstUtils.js';
 import {
   NullASTNodeImpl,
   PropertyASTNodeImpl,
@@ -24,6 +25,7 @@ export const aliasDepth = {
   maxRefCount: 1000,
   currentRefDepth: 0,
   aliasResolutionCache: new Map<Alias, ASTNode>(),
+  aliasTargets: undefined as Map<Alias, Node | undefined> | undefined,
 };
 
 export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineCounter: LineCounter): ASTNode | undefined {
@@ -31,6 +33,7 @@ export function convertAST(parent: ASTNode, node: YamlNode, doc: Document, lineC
     // first invocation
     aliasDepth.currentRefDepth = 0;
     aliasDepth.aliasResolutionCache = new Map();
+    aliasDepth.aliasTargets = undefined;
   }
 
   if (!node) {
@@ -149,7 +152,8 @@ function convertAlias(node: Alias, parent: ASTNode, doc: Document, lineCounter: 
   }
 
   aliasDepth.currentRefDepth++;
-  const resolvedNode = node.resolve(doc);
+  aliasDepth.aliasTargets ??= resolveAliases(doc);
+  const resolvedNode = aliasDepth.aliasTargets.get(node);
   let ans: ASTNode;
   if (resolvedNode) {
     ans = convertAST(parent, resolvedNode, doc, lineCounter);
