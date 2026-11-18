@@ -46,8 +46,33 @@ export function doDocumentOnTypeFormatting(
       return [TextEdit.insert(position, ' '.repeat(params.options.tabSize))];
     }
 
-    if (previousLine.includes(' - ') && !previousLine.includes(': ')) {
-      return [TextEdit.insert(position, '- ')];
+    if (previousLine.trimStart().startsWith('-') && !previousLine.includes(': ')) {
+      const indentation = previousLine.slice(0, previousLine.length - previousLine.trimStart().length);
+      const expectedText = indentation + '- ';
+      const currentLine = tb.getLineContent(position.line).replace('\r', '').replace('\n', '');
+      if (currentLine.trim().length !== 0) {
+        // non-space content, do nothing
+        return;
+      }
+      if (currentLine === expectedText) {
+        // already right; do nothing
+        return;
+      }
+      if (position.character >= indentation.length) {
+        // The client already auto-indented the line and placed the cursor at
+        // (or past) the indentation; just append the dash.
+        return [TextEdit.insert(Position.create(position.line, currentLine.length), '- ')];
+      }
+      // The client sent a position before the existing whitespace
+      // (e.g. lsp-mode, eglot send column 0 even though the line already has
+      // auto-indented spaces).  Replace the whole line content so the
+      // result is always correct.
+      return [
+        TextEdit.replace(
+          Range.create(Position.create(position.line, 0), Position.create(position.line, currentLine.length)),
+          expectedText
+        ),
+      ];
     }
 
     if (previousLine.includes(' - ') && previousLine.includes(': ')) {
