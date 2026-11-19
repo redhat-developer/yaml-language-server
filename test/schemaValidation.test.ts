@@ -472,6 +472,18 @@ describe('Validation Tests', () => {
         )
       );
     });
+
+    it('Test that minLength and maxLength count code points', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          name: { type: 'string', maxLength: 3 },
+          icon: { type: 'string', minLength: 2 },
+        },
+      });
+      const result = await parseSetup('name: "a\\U0001F44Db"\nicon: "\\U0001F44D"');
+      assert.deepStrictEqual(result.map(getDiagnosticMessage), ['String is shorter than the minimum length of 2.']);
+    });
   });
 
   describe('Pattern tests', () => {
@@ -526,6 +538,18 @@ describe('Validation Tests', () => {
       });
       const result = await parseSetup('tesT: true');
       assert.equal(result.length, 0);
+    });
+    it('Test that patternProperties apply to keys matched by properties or an earlier pattern', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: { port: { type: 'integer' } },
+        patternProperties: { '^x_': { type: 'integer' }, '^p|_port$': { minimum: 1024 } },
+      });
+      const result = await parseSetup('port: 80\nx_port: 80');
+      assert.deepStrictEqual(result.map(getDiagnosticMessage), [
+        'Value is below the minimum of 1024.',
+        'Value is below the minimum of 1024.',
+      ]);
     });
     it('Test an invalid Unicode patternProperty', async () => {
       schemaProvider.addSchema(SCHEMA_ID, {
@@ -879,6 +903,18 @@ describe('Validation Tests', () => {
           `file:///${SCHEMA_ID}`
         )
       );
+    });
+
+    it('Test that uniqueItems detects duplicate objects and arrays', async () => {
+      schemaProvider.addSchema(SCHEMA_ID, {
+        type: 'object',
+        properties: {
+          objects: { type: 'array', uniqueItems: true },
+          arrays: { type: 'array', uniqueItems: true },
+        },
+      });
+      const result = await parseSetup('objects:\n  - a: 1\n  - a: 1\narrays:\n  - [1, 2]\n  - [1, 2]');
+      assert.deepStrictEqual(result.map(getDiagnosticMessage), ['Array has duplicate items.', 'Array has duplicate items.']);
     });
   });
 

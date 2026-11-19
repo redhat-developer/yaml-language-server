@@ -822,8 +822,9 @@ export abstract class BaseValidator {
     validationResult: ValidationResult
   ): void {
     const value = node.value;
+    const length = [...value].length;
 
-    if (isNumber(schema.minLength) && value.length < (schema.minLength ?? 0)) {
+    if (isNumber(schema.minLength) && length < (schema.minLength ?? 0)) {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
@@ -833,7 +834,7 @@ export abstract class BaseValidator {
       });
     }
 
-    if (isNumber(schema.maxLength) && value.length > (schema.maxLength ?? 0)) {
+    if (isNumber(schema.maxLength) && length > (schema.maxLength ?? 0)) {
       validationResult.problems.push({
         location: { offset: node.offset, length: node.length },
         severity: DiagnosticSeverity.Warning,
@@ -1132,7 +1133,7 @@ export abstract class BaseValidator {
   ): void {
     if (schema.uniqueItems === true) {
       const values = getNodeValue(node);
-      const duplicates = Array.isArray(values) && values.some((v, i) => i !== values.lastIndexOf(v));
+      const duplicates = Array.isArray(values) && values.some((v, i) => values.some((other, j) => j > i && equals(v, other)));
       if (duplicates) {
         validationResult.problems.push({
           location: { offset: node.offset, length: node.length },
@@ -1318,7 +1319,7 @@ export abstract class BaseValidator {
     matchingSchemas: ISchemaCollector,
     options: Options,
     seenKeys: Record<string, ASTNode>,
-    unprocessedProperties: string[],
+    _unprocessedProperties: string[],
     propertyProcessed: (prop: string) => void
   ): void {
     const { isKubernetes } = options;
@@ -1330,7 +1331,7 @@ export abstract class BaseValidator {
       const regex = safeCreateUnicodeRegExp(propertyPattern);
       if (!regex) continue;
 
-      for (const propertyName of unprocessedProperties.slice(0)) {
+      for (const propertyName of Object.keys(seenKeys)) {
         if (!regex.test(propertyName)) continue;
 
         propertyProcessed(propertyName);
